@@ -1,0 +1,314 @@
+'use client';
+import { createPortal } from "react-dom"
+import { useHighlighter } from "./highlighter"
+import { useRef, useState } from "react"
+import { useEffectEvent } from "../hooks/effect-event";
+
+export const Inspector: React.FunctionComponent = () => {
+	const containerRef = useRef<HTMLDivElement>(null);
+	const [hoverElement, setHoverElement] = useState<HTMLElement>();
+	const [selectElement, setSelectElement] = useState<HTMLElement>();
+	const overlayRef = useRef<Overlay>();
+
+	const onHover = useEffectEvent((element: HTMLElement) => {
+		const container = containerRef.current;
+		if (container === null) return false;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container);
+		}
+		if (hoverElement && hoverElement !== selectElement) {
+			overlayRef.current.remove(hoverElement);
+		}
+
+		//We don't want this hover element to override the select element
+		if (element !== selectElement) {
+			overlayRef.current.hover(element);
+		}
+		setHoverElement(element);
+
+		return true;
+	});
+	const onClick = useEffectEvent((element: HTMLElement) => {
+		const container = containerRef.current;
+		if (container === null) return false;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container);
+		}
+		selectElement && overlayRef.current.remove(selectElement);
+
+		overlayRef.current.select(element);
+		setSelectElement(element);
+
+		return true;
+	})
+	useHighlighter({
+		handlers: {
+			onClick,
+			onHover,
+			onHold(element) {
+				return true;
+			}
+		}
+	});
+
+	return (
+		createPortal(<div ref={containerRef} className="z-[10000000]">
+		</div>, document.body)
+	)
+}
+
+export interface Rect {
+  bottom: number;
+  height: number;
+  left: number;
+  right: number;
+  top: number;
+  width: number;
+}
+
+export interface BoxSizing {
+  borderTop: number;
+  borderBottom: number;
+  borderLeft: number;
+  borderRight: number;
+  paddingTop: number;
+  paddingBottom: number;
+  paddingLeft: number;
+  paddingRight: number;
+  marginTop: number;
+  marginBottom: number;
+  marginLeft: number;
+  marginRight: number;
+}
+
+class Overlay {
+	window: Window
+  tipBoundsWindow: Window
+	rects: Map<HTMLElement, OverlayRect>
+  
+	constructor(private container: HTMLElement) {
+		// Find the root window, because overlays are positioned relative to it.
+    const currentWindow = window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window
+    this.window = currentWindow
+
+    // When opened in shells/dev,
+    // the tooltip should be bound by the app iframe, not by the topmost window.
+    const tipBoundsWindow = window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window
+    this.tipBoundsWindow = tipBoundsWindow
+
+		this.rects = new Map();
+	}
+
+	remove(element: HTMLElement) {
+		const rect = this.rects.get(element);
+		if (rect) {
+			rect.remove();
+			this.rects.delete(element);
+		}
+	}
+
+	name(element: HTMLElement) {
+		let name = element.nodeName.toLowerCase()
+
+		const node = element
+		const hook = node.ownerDocument.defaultView?.__REACT_DEVTOOLS_GLOBAL_HOOK__
+		if (hook?.rendererInterfaces) {
+			let ownerName = null
+			for (const rendererInterface of hook.rendererInterfaces.values()) {
+				const id = rendererInterface.getFiberIDForNative(node, true)
+				if (id !== null) {
+					ownerName = rendererInterface.getDisplayNameForFiberID(id, true)
+					break
+				}
+			}
+
+			if (ownerName) {
+				name += ` (in ${ownerName})`
+			}
+		}
+
+		return name;
+	}
+
+	hover(element: HTMLElement) {
+		this.inspect(element, 'hover');
+	}
+
+	select(element: HTMLElement) {
+		this.inspect(element, 'select');
+	}
+
+	inspect(element: HTMLElement, method: 'select' | 'hover') {
+		// We can't get the size of text nodes or comment nodes. React as of v15
+    // heavily uses comment nodes to delimit text.
+		if (element.nodeType !== Node.ELEMENT_NODE) {
+			return;
+		}
+
+		const [box, dims] = this.getSizing(element);
+		const rect = new OverlayRect(this.window.document, this.container);
+		rect[method](box, dims);
+
+		if (this.rects.has(element)) {
+			this.rects.get(element)?.remove();
+		}
+		this.rects.set(element, rect);
+	}
+
+	getSizing(element: HTMLElement): [Rect, BoxSizing] {
+    const outerBox = {
+      top: Number.POSITIVE_INFINITY,
+      right: Number.NEGATIVE_INFINITY,
+      bottom: Number.NEGATIVE_INFINITY,
+      left: Number.POSITIVE_INFINITY,
+    }
+    const box = getNestedBoundingClientRect(element, this.window)
+		const dims = getElementDimensions(element)
+
+		outerBox.top = Math.min(outerBox.top, box.top - dims.marginTop)
+		outerBox.right = Math.max(
+			outerBox.right,
+			box.left + box.width + dims.marginRight,
+		)
+		outerBox.bottom = Math.max(
+			outerBox.bottom,
+			box.top + box.height + dims.marginBottom,
+		)
+		outerBox.left = Math.min(outerBox.left, box.left - dims.marginLeft)
+
+		return [box, dims];
+  }
+}
+
+const overlayStyles = {
+  background: 'rgba(120, 170, 210, 0.7)',
+  padding: 'rgba(77, 200, 0, 0.3)',
+  margin: 'rgba(255, 155, 0, 0.3)',
+  border: 'rgba(255, 200, 50, 0.3)',
+}
+
+export class OverlayRect {
+  node: HTMLElement
+  border: HTMLElement
+  padding: HTMLElement
+  content: HTMLElement
+
+  constructor(doc: Document, container: HTMLElement) {
+    this.node = doc.createElement('div')
+    this.border = doc.createElement('div')
+    this.padding = doc.createElement('div')
+    this.content = doc.createElement('div')
+
+    this.border.style.borderColor = overlayStyles.background
+    this.padding.style.borderColor = overlayStyles.padding
+    //this.content.style.backgroundColor = overlayStyles.background
+
+    Object.assign(this.node.style, {
+      borderColor: overlayStyles.margin,
+      pointerEvents: 'none',
+      position: 'fixed',
+    })
+
+    this.node.style.zIndex = '10000000'
+
+    this.node.appendChild(this.border)
+    this.border.appendChild(this.padding)
+    this.padding.appendChild(this.content)
+
+    // ensure OverlayRect dom always before OverlayTip dom rather than cover OverlayTip
+    container.prepend(this.node)
+  }
+
+  remove() {
+    if (this.node.parentNode) {
+      this.node.parentNode.removeChild(this.node)
+    }
+  }
+
+	public hover(box: Rect, dims: BoxSizing) {
+		this.update(box, dims, 1, false);
+	}
+
+	public select(box: Rect, dims: BoxSizing) {
+		this.update(box, dims, 2, true);
+	}
+
+  private update(box: Rect, dims: BoxSizing, borderSize: number, showPadding: boolean) {
+		dims.borderBottom = borderSize;
+		dims.borderLeft = borderSize;
+		dims.borderRight = borderSize;
+		dims.borderTop = borderSize;
+		boxWrap(dims, 'border', this.border)
+		boxWrap(dims, 'margin', this.node)
+		boxWrap(dims, 'padding', this.padding);
+
+		this.border.style.borderColor = overlayStyles.background
+    this.padding.style.borderColor = overlayStyles.padding
+		this.node.style.borderColor = overlayStyles.margin;
+		if (!showPadding) {
+			this.node.style.borderColor = 'transparent';
+			this.padding.style.borderColor = 'transparent';
+		}
+
+    Object.assign(this.content.style, {
+      height:
+        `${
+          box.height
+          - dims.borderTop
+          - dims.borderBottom
+          - dims.paddingTop
+          - dims.paddingBottom
+        }px`,
+      width:
+        `${
+          box.width
+          - dims.borderLeft
+          - dims.borderRight
+          - dims.paddingLeft
+          - dims.paddingRight
+        }px`,
+    })
+
+    Object.assign(this.node.style, {
+      top: `${box.top - dims.marginTop}px`,
+      left: `${box.left - dims.marginLeft}px`,
+    })
+  }
+}
+
+function boxWrap(dims: BoxSizing, what: 'margin' | 'padding' | 'border', node: HTMLElement) {
+  Object.assign(node.style, {
+    borderTopWidth: `${dims[`${what}Top`]}px`,
+    borderLeftWidth: `${dims[`${what}Left`]}px`,
+    borderRightWidth: `${dims[`${what}Right`]}px`,
+    borderBottomWidth: `${dims[`${what}Bottom`]}px`,
+    borderStyle: 'solid',
+  })
+}
+
+// Calculate a boundingClientRect for a node relative to boundaryWindow,
+// taking into account any offsets caused by intermediate iframes.
+export function getNestedBoundingClientRect(node: HTMLElement, boundaryWindow: Window | HTMLElement): Rect
+export function getNestedBoundingClientRect(node: HTMLElement): Rect {
+  return node.getBoundingClientRect()
+}
+
+export function getElementDimensions(domElement: Element) {
+  const calculatedStyle = window.getComputedStyle(domElement)
+  return {
+    borderLeft: Number.parseInt(calculatedStyle.borderLeftWidth, 10),
+    borderRight: Number.parseInt(calculatedStyle.borderRightWidth, 10),
+    borderTop: Number.parseInt(calculatedStyle.borderTopWidth, 10),
+    borderBottom: Number.parseInt(calculatedStyle.borderBottomWidth, 10),
+    marginLeft: Number.parseInt(calculatedStyle.marginLeft, 10),
+    marginRight: Number.parseInt(calculatedStyle.marginRight, 10),
+    marginTop: Number.parseInt(calculatedStyle.marginTop, 10),
+    marginBottom: Number.parseInt(calculatedStyle.marginBottom, 10),
+    paddingLeft: Number.parseInt(calculatedStyle.paddingLeft, 10),
+    paddingRight: Number.parseInt(calculatedStyle.paddingRight, 10),
+    paddingTop: Number.parseInt(calculatedStyle.paddingTop, 10),
+    paddingBottom: Number.parseInt(calculatedStyle.paddingBottom, 10),
+  }
+}
