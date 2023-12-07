@@ -19,30 +19,42 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}}: Highlight
 	}, []);
 
 	const registerListeners = (): void => {
-		window.addEventListener('pointerup', onPointerUp, true);
-		window.addEventListener('pointerover', onPointerOver, true);
-		window.addEventListener('pointerdown', onMouseEvent, true); //TODO: Add a mouse hold event
-		window.addEventListener('click', onMouseEvent, true)
-		window.addEventListener('mousedown', onMouseEvent, true)
-		window.addEventListener('mouseover', onMouseEvent, true)
-		window.addEventListener('mouseup', onMouseEvent, true)
+		// const elements = window.document.body.querySelectorAll('*');
+		// elements.forEach((element) => {
+		// 	const htmlElement = element as HTMLElement
+		// 	htmlElement.addEventListener('pointerup', onPointerUp, false);
+		// 	htmlElement.addEventListener('pointerover', onPointerOver, false);
+		// 	htmlElement.addEventListener('pointerdown', onMouseEvent, false); //TODO: Add a mouse hold event
+		// 	htmlElement.addEventListener('click', onMouseEvent, false)
+		// 	htmlElement.addEventListener('mousedown', onMouseEvent, false)
+		// 	htmlElement.addEventListener('mouseover', onMouseEvent, false)
+		// 	htmlElement.addEventListener('mouseup', onMouseEvent, false);
+		// });
+		window.addEventListener('pointerup', onPointerUp, false);
+		window.addEventListener('pointermove', onPointerOver, false);
+		window.addEventListener('click', onMouseEvent, false)
+		window.addEventListener('mousedown', onMouseEvent, false)
+		window.addEventListener('mouseover', onMouseEvent, false)
+		window.addEventListener('mouseup', onMouseEvent, false)
+		window.addEventListener('pointerdown', onMouseEvent, false)
 	}
 
 	const removeListeners = (): void => {
-		window.removeEventListener('pointerup', onPointerUp, true);
-		window.removeEventListener('pointerover', onPointerOver, true);
-		window.removeEventListener('click', onMouseEvent, true)
-		window.removeEventListener('mousedown', onMouseEvent, true)
-		window.removeEventListener('mouseover', onMouseEvent, true)
-		window.removeEventListener('mouseup', onMouseEvent, true)
-		window.removeEventListener('pointerdown', onMouseEvent, true)
+		window.removeEventListener('pointerup', onPointerUp, false);
+		window.removeEventListener('pointermove', onPointerOver, false);
+		window.removeEventListener('click', onMouseEvent, false)
+		window.removeEventListener('mousedown', onMouseEvent, false)
+		window.removeEventListener('mouseover', onMouseEvent, false)
+		window.removeEventListener('mouseup', onMouseEvent, false)
+		window.removeEventListener('pointerdown', onMouseEvent, false)
 	}
 
 	const highligherDispatcher = (dispatch: HighlighterDispatch) => (event: MouseEvent) => {
-		const target = event.target as HTMLElement;
-		if (dispatch(target)) {
-			event.preventDefault();
-			event.stopPropagation();
+		event.preventDefault();
+		event.stopPropagation();
+		let target = event.target as HTMLElement | null;
+		while (target !== null && !dispatch(target)) {
+			target = target.parentElement;
 		}
 	}
 

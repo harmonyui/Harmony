@@ -1,45 +1,75 @@
 'use client';
 import { createPortal } from "react-dom"
 import { useHighlighter } from "./highlighter"
-import { useRef, useState } from "react"
-import { useEffectEvent } from "../hooks/effect-event";
+import { useCallback, useRef, useState } from "react"
+import { useEffectEvent } from "../../hooks/effect-event";
+import { ReactComponentIdentifier } from "./component-identifier";
+import { ComponentElement } from "../../types/component";
 
-export const Inspector: React.FunctionComponent = () => {
+const componentIdentifier = new ReactComponentIdentifier();
+
+export interface InspectorProps {
+	hoveredComponent: ComponentElement | undefined;
+	selectedComponent: ComponentElement | undefined;
+	onHover: (component: ComponentElement | undefined) => void;
+	onSelect: (component: ComponentElement | undefined) => void;
+	rootElement: HTMLElement | undefined;
+}
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
-	const [hoverElement, setHoverElement] = useState<HTMLElement>();
-	const [selectElement, setSelectElement] = useState<HTMLElement>();
 	const overlayRef = useRef<Overlay>();
+
+	const isInteractableComponent = useCallback((component: ComponentElement) => {
+		const startingComponent = selectedComponent || (rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined);
+		if (startingComponent) {
+			return startingComponent.children.map(comp => comp.element).includes(component.element);
+		}
+		return true;
+	}, [selectedComponent, rootElement]);
 
 	const onHover = useEffectEvent((element: HTMLElement) => {
 		const container = containerRef.current;
 		if (container === null) return false;
 
+		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
+
 		if (overlayRef.current === undefined) {
 			overlayRef.current = new Overlay(container);
 		}
-		if (hoverElement && hoverElement !== selectElement) {
-			overlayRef.current.remove(hoverElement);
+		if (hoveredComponent && hoveredComponent.element !== selectedComponent?.element) {
+			overlayRef.current.remove(hoveredComponent.element);
+		}
+		//We put the logic this far down so that hovering out of a component will get rid of the overlay rect
+		if (!isInteractableComponent(component)) {
+			return false;
 		}
 
 		//We don't want this hover element to override the select element
-		if (element !== selectElement) {
+		if (element !== selectedComponent?.element) {
 			overlayRef.current.hover(element);
 		}
-		setHoverElement(element);
+		onHoverProps(component);
 
 		return true;
 	});
 	const onClick = useEffectEvent((element: HTMLElement) => {
 		const container = containerRef.current;
 		if (container === null) return false;
+		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
 		if (overlayRef.current === undefined) {
 			overlayRef.current = new Overlay(container);
 		}
-		selectElement && overlayRef.current.remove(selectElement);
+		selectedComponent && overlayRef.current.remove(selectedComponent.element);
+		if (!isInteractableComponent(component)) {
+			//If we get here, that means we have clicked outside of the parent, which means we should deselect
+			onSelect(undefined);
+			return false;
+		}
 
 		overlayRef.current.select(element);
-		setSelectElement(element);
+		onSelect(component);
+		console.log(component);
 
 		return true;
 	})
@@ -90,12 +120,12 @@ class Overlay {
   
 	constructor(private container: HTMLElement) {
 		// Find the root window, because overlays are positioned relative to it.
-    const currentWindow = window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window
+    const currentWindow = (window as unknown as (Window & typeof globalThis & {__REACT_DEVTOOLS_TARGET_WINDOW__: Window | undefined})).__REACT_DEVTOOLS_TARGET_WINDOW__ || window
     this.window = currentWindow
 
     // When opened in shells/dev,
     // the tooltip should be bound by the app iframe, not by the topmost window.
-    const tipBoundsWindow = window.__REACT_DEVTOOLS_TARGET_WINDOW__ || window
+    const tipBoundsWindow = (window as unknown as (Window & typeof globalThis & {__REACT_DEVTOOLS_TARGET_WINDOW__: Window | undefined})).__REACT_DEVTOOLS_TARGET_WINDOW__ || window
     this.tipBoundsWindow = tipBoundsWindow
 
 		this.rects = new Map();
@@ -113,7 +143,7 @@ class Overlay {
 		let name = element.nodeName.toLowerCase()
 
 		const node = element
-		const hook = node.ownerDocument.defaultView?.__REACT_DEVTOOLS_GLOBAL_HOOK__
+		const hook = (node.ownerDocument.defaultView as unknown as (Window & typeof globalThis & {__REACT_DEVTOOLS_GLOBAL_HOOK__: any}) | undefined)?.__REACT_DEVTOOLS_GLOBAL_HOOK__
 		if (hook?.rendererInterfaces) {
 			let ownerName = null
 			for (const rendererInterface of hook.rendererInterfaces.values()) {
