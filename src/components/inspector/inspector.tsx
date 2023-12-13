@@ -1,12 +1,13 @@
 'use client';
 import { createPortal } from "react-dom"
 import { useHighlighter } from "./highlighter"
-import { useCallback, useRef, useState } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useEffectEvent } from "../../hooks/effect-event";
 import { ReactComponentIdentifier } from "./component-identifier";
 import { ComponentElement } from "../../types/component";
+import hotkeys from 'hotkeys-js';
 
-const componentIdentifier = new ReactComponentIdentifier();
+export const componentIdentifier = new ReactComponentIdentifier();
 
 export interface InspectorProps {
 	hoveredComponent: ComponentElement | undefined;
@@ -18,6 +19,44 @@ export interface InspectorProps {
 export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
+
+	useEffect(() => {
+		const onEscape = () => {
+			const parent = selectedComponent?.getParent();
+			onSelect(rootElement?.contains(parent?.element ?? null) ? parent : undefined);
+		}
+		hotkeys('esc', onEscape);
+
+		return () => hotkeys.unbind('esc', onEscape);
+	}, [selectedComponent, onSelect, rootElement]);
+
+	useEffect(() => {
+		const container = containerRef.current;
+		if (container === null) return;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container);
+		}
+		if (selectedComponent) {
+			overlayRef.current.select(selectedComponent.element);
+		} else {
+			overlayRef.current.remove('select');
+		}
+	}, [selectedComponent])
+
+	useEffect(() => {
+		const container = containerRef.current;
+		if (container === null) return;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container);
+		}
+		if (hoveredComponent) {
+			overlayRef.current.hover(hoveredComponent.element);
+		} else {
+			overlayRef.current.remove('hover');
+		}
+	}, [hoveredComponent])
 
 	const isInteractableComponent = useCallback((component: ComponentElement) => {
 		// The current component scope is determined by either the currently selected component or 
@@ -36,21 +75,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
-		if (overlayRef.current === undefined) {
-			overlayRef.current = new Overlay(container);
-		}
-		if (hoveredComponent && hoveredComponent.element !== selectedComponent?.element) {
-			overlayRef.current.remove(hoveredComponent.element);
-		}
-		//We put the logic this far down so that hovering out of a component will get rid of the overlay rect
 		if (!isInteractableComponent(component)) {
+			onHoverProps(undefined);
 			return false;
 		}
 
-		//We don't want this hover element to override the select element
-		if (element !== selectedComponent?.element) {
-			overlayRef.current.hover(element);
-		}
 		onHoverProps(component);
 
 		return true;
@@ -61,20 +90,14 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		if (rootElement && !rootElement.contains(element)) return true;
 		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
-		if (overlayRef.current === undefined) {
-			overlayRef.current = new Overlay(container);
-		}
-		selectedComponent && overlayRef.current.remove(selectedComponent.element);
 		if (!isInteractableComponent(component)) {
 			//If we get here, that means we have clicked outside of the parent, which means we should deselect
 			onSelect(undefined);
 			return false;
 		}
 
-		overlayRef.current.select(element);
 		onSelect(component);
-		console.log(component);
-
+		
 		return true;
 	})
 	useHighlighter({
@@ -121,7 +144,7 @@ export interface BoxSizing {
 class Overlay {
 	window: Window
   tipBoundsWindow: Window
-	rects: Map<HTMLElement, OverlayRect>
+	rects: Map<'select' | 'hover', OverlayRect>
   
 	constructor(private container: HTMLElement) {
 		// Find the root window, because overlays are positioned relative to it.
@@ -136,11 +159,11 @@ class Overlay {
 		this.rects = new Map();
 	}
 
-	remove(element: HTMLElement) {
-		const rect = this.rects.get(element);
+	remove(method: 'select' | 'hover') {
+		const rect = this.rects.get(method);
 		if (rect) {
 			rect.remove();
-			this.rects.delete(element);
+			this.rects.delete(method);
 		}
 	}
 
@@ -186,10 +209,10 @@ class Overlay {
 		const rect = new OverlayRect(this.window.document, this.container);
 		rect[method](box, dims);
 
-		if (this.rects.has(element)) {
-			this.rects.get(element)?.remove();
+		if (this.rects.has(method)) {
+			this.rects.get(method)?.remove();
 		}
-		this.rects.set(element, rect);
+		this.rects.set(method, rect);
 	}
 
 	getSizing(element: HTMLElement): [Rect, BoxSizing] {

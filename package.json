@@ -9,19 +9,19 @@
     "lint": "next lint"
   },
   "dependencies": {
-		"@react-aria/calendar": "^3.5.0",
+    "@react-aria/calendar": "^3.5.0",
     "@react-aria/color": "^3.0.0-beta.21",
     "@react-aria/i18n": "^3.8.2",
     "@react-stately/calendar": "^3.4.0",
     "@react-types/datepicker": "^3.6.0",
     "dayjs": "^1.11.10",
-    "hotkeys-js": "^3.12.2",
+    "hotkeys-js": "^3.13.2",
     "next": "14.0.3",
     "react": "^18",
-		"react-aria": "^3.27.0",
+    "react-aria": "^3.27.0",
     "react-dom": "^18",
     "react-reconciler": "^0.29.0",
-		"react-stately": "^3.23.0",
+    "react-stately": "^3.23.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {

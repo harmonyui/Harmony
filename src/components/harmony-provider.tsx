@@ -1,8 +1,9 @@
 'use client';
 import { useEffect, useRef, useState } from "react";
-import { Inspector } from "./inspector/inspector";
+import { Inspector, componentIdentifier } from "./inspector/inspector";
 import { Attribute, ComponentElement } from "../types/component";
 import { HarmonyPanel } from "./panel/harmony-panel";
+import { getClass } from "@harmony/utils/util";
 
 export interface HarmonyProviderProps {
 	children: React.ReactNode
@@ -10,12 +11,13 @@ export interface HarmonyProviderProps {
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({children}) => {
 	const [selectedComponent, setSelectedComponent] = useState<ComponentElement>();
 	const [hoveredComponent, setHoveredComponent] = useState<ComponentElement>();
-	const [rootElement, setRootElement] = useState<HTMLElement>();
+	const [rootComponent, setRootComponent] = useState<ComponentElement>();
 	const ref = useRef<HTMLDivElement>(null);
 
 	useEffect(() => {
 		if (ref.current) {
-			setRootElement(ref.current.nextElementSibling as HTMLElement);
+			const element = componentIdentifier.getComponentFromElement(ref.current.nextElementSibling as HTMLElement);
+			setRootComponent(element);
 		}
 	}, [ref]);
 
@@ -32,8 +34,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		<>
 			<div ref={ref}></div>
 			{children}
-			<Inspector rootElement={rootElement} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent}/>
-			<HarmonyPanel selectedComponent={selectedComponent} onAttributesChange={onAttributesChange}/>
+			<Inspector rootElement={rootComponent?.element} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent}/>
+			<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent}/>
 		</>
 	)
 }

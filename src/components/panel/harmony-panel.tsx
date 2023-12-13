@@ -7,21 +7,23 @@ import { TabButton, TabItem } from "../core/tab";
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, CursorArrowRaysIcon, EyeDropperIcon, IconComponent } from "../core/icons";
 import { getClass, groupBy } from "@harmony/utils/util";
 import { useState } from "react";
-import ColorPicker, { ColorPickerFull } from "../core/color-picker";
 import { Button } from "../core/button";
 
 export interface HarmonyPanelProps {
+	root: ComponentElement | undefined;
 	selectedComponent: ComponentElement | undefined;
 	onAttributesChange: (attributes: Attribute[]) => void;
+	onComponentSelect: (component: ComponentElement) => void;
+	onComponentHover: (component: ComponentElement) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({selectedComponent, onAttributesChange}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root, selectedComponent, onAttributesChange, onComponentHover, onComponentSelect}) => {
 	return (<>
 		{createPortal(<div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[10000000]">
 			<ToolbarPanel/>
 			<div className="text-center">
 				
 			</div>
-			<AttributePanel selectedComponent={selectedComponent} onAttributesChange={onAttributesChange}/>
+			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={onComponentHover} onComponentSelect={onComponentSelect}/>
 		</div>, document.body)}
 		</>
 	)
@@ -46,14 +48,28 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({}) => {
 interface AttributePanelProps {
 	selectedComponent: ComponentElement | undefined;
 	onAttributesChange: (attributes: Attribute[]) => void;
+	root: ComponentElement | undefined;
+	onComponentSelect: (component: ComponentElement) => void;
+	onComponentHover: (component: ComponentElement) => void;
 }
-const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({selectedComponent, onAttributesChange}) => {
+const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, selectedComponent, onAttributesChange, onComponentHover, onComponentSelect}) => {
+	const getTreeItems = (children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
+		return children.map<TreeViewItem<ComponentElement>>(child => ({
+			id: child,
+			content: child.name,
+			items: getTreeItems(child.children),
+			selected: selectedComponent?.element === child.element
+		}))
+	}
+	const treeItems: TreeViewItem<ComponentElement>[] = root ? getTreeItems([root]) : []
+	
 	return (
 		<div className="absolute right-0 flex flex-col h-full border border-gray-200 p-4 bg-white pointer-events-auto min-w-[400px] overflow-auto">
 			<div className="flex-1">
 				{selectedComponent ? <ComponentDisplay value={selectedComponent} onAttributesChange={onAttributesChange}/> : null}
 			</div>
-			<div className="flex-1 overflow-auto">
+			<div className="flex-1">
+				<TreeView items={treeItems} expand={true} onClick={(item) => onComponentSelect(item.id)} onHover={(item) => onComponentHover(item.id)}/>
 				{/* {rootFiber ? <ComponentTree node={rootFiber} expand={true} onHover={onFiberHover} onClick={onFiberClick}/> : null} */}
 			</div>
 		</div>
@@ -281,4 +297,68 @@ const AlignmentSelector: React.FunctionComponent<AlignmentSelectorProps> = ({val
 			</div>)}
 		</div>
 	)
+}
+
+interface TreeViewItem<T = string> {
+	id: T;
+	content: React.ReactNode,
+	items: TreeViewItem<T>[],
+	selected: boolean,
+}
+const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
+	if (item.selected) return true;
+
+	if (item.items.some(it => isSelected(it))) return true;
+
+	return false;
+}
+
+const TreeViewItem = <T,>({item, onClick, onHover}: {item: TreeViewItem<T>, onClick: (item: TreeViewItem<T>) => void, onHover: (item: TreeViewItem<T>) => void,}) => {
+	const [expand, setExpand] = useState(isSelected(item));
+	const onExpand = () => {
+		setExpand(!expand);
+	}
+
+	return (<>
+		{item.items.length === 0 ? <li className={getClass("px-2 hover:bg-gray-100", item.selected ? 'bg-gray-200' : '')}>
+			<button onClick={() => onClick(item)} onMouseOver={() => onHover(item)}>{item.content}</button></li> : null}
+			{item.items.length > 0 ? <li >
+				<div className={getClass("flex", item.selected ? "bg-gray-200" : "")}>
+				<button
+					onClick={onExpand}
+					role="button"
+					aria-expanded="false"
+					aria-controls="collapseThree"
+					className="flex items-center px-1 hover:bg-gray-100 rounded-md focus:text-primary active:text-primary">
+					<svg
+						xmlns="http://www.w3.org/2000/svg"
+						fill="none"
+						viewBox="0 0 24 24"
+						stroke-width="2.5"
+						stroke="currentColor"
+						className={getClass('h-4 w-4', expand ? 'rotate-90' : '')}>
+						<path
+							stroke-linecap="round"
+							stroke-linejoin="round"
+							d="M8.25 4.5l7.5 7.5-7.5 7.5" />
+					</svg>
+				</button>
+				<button className="px-1 hover:bg-gray-100 rounded-md" onClick={() => onClick(item)} onMouseOver={() => onHover(item)}>
+					{item.content}
+				</button>
+				</div>
+				<TreeView items={item.items} expand={expand} onClick={onClick} onHover={onHover}/>
+			</li> : null}
+		</>
+	)
+}
+
+const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeViewItem<T>[], expand?: boolean, onClick: (item: TreeViewItem<T>) => void, onHover: (item: TreeViewItem<T>) => void}) => {
+	return <>
+		<ul className={getClass('!visible ml-4', expand ? '' : 'hidden')}>
+			{items.map(item => <>
+				<TreeViewItem key={String(item.selected)} item={item} onClick={onClick} onHover={onHover}/>
+			</>)}
+		</ul>
+	</>
 }
