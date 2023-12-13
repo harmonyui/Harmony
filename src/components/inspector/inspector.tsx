@@ -6,6 +6,7 @@ import { useEffectEvent } from "../../hooks/effect-event";
 import { ReactComponentIdentifier } from "./component-identifier";
 import { ComponentElement } from "../../types/component";
 import hotkeys from 'hotkeys-js';
+import { SelectMode } from "../panel/harmony-panel";
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -15,8 +16,9 @@ export interface InspectorProps {
 	onHover: (component: ComponentElement | undefined) => void;
 	onSelect: (component: ComponentElement | undefined) => void;
 	rootElement: HTMLElement | undefined;
+	mode: SelectMode;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement, mode}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
@@ -59,6 +61,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	}, [hoveredComponent])
 
 	const isInteractableComponent = useCallback((component: ComponentElement) => {
+		if (mode === 'tweezer') return true;
+
 		// The current component scope is determined by either the currently selected component or 
 		// the parent of the root element (this is because we want the root element to be selectable) 
 		const startingComponent = selectedComponent || (rootElement && rootElement.parentElement ? componentIdentifier.getComponentFromElement(rootElement.parentElement) : undefined);
@@ -66,7 +70,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			return startingComponent.children.map(comp => comp.element).includes(component.element);
 		}
 		return true;
-	}, [selectedComponent, rootElement]);
+	}, [selectedComponent, rootElement, mode]);
 
 	const onHover = useEffectEvent((element: HTMLElement) => {
 		const container = containerRef.current;

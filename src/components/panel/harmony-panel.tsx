@@ -9,17 +9,21 @@ import { getClass, groupBy } from "@harmony/utils/util";
 import { useState } from "react";
 import { Button } from "../core/button";
 
+export type SelectMode = 'scope' | 'tweezer';
+
 export interface HarmonyPanelProps {
 	root: ComponentElement | undefined;
 	selectedComponent: ComponentElement | undefined;
 	onAttributesChange: (attributes: Attribute[]) => void;
 	onComponentSelect: (component: ComponentElement) => void;
 	onComponentHover: (component: ComponentElement) => void;
+	mode: SelectMode;
+	onModeChange: (mode: SelectMode) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root, selectedComponent, onAttributesChange, onComponentHover, onComponentSelect}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root, selectedComponent, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange}) => {
 	return (<>
 		{createPortal(<div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[10000000]">
-			<ToolbarPanel/>
+			<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
 			<div className="text-center">
 				
 			</div>
@@ -30,15 +34,16 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root, 
 }
 
 interface ToolbarPanelProps {
-
+	mode: SelectMode;
+	onModeChange: (mode: SelectMode) => void;
 }
-const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({}) => {
+const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({mode, onModeChange}) => {
 	return (
 		<div className="absolute left-0 inline-flex flex-col gap-2 h-full border border-gray-200 p-4 bg-white pointer-events-auto overflow-auto">
-			<Button className="p-1" mode='secondary'>
+			<Button className="p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
 				<CursorArrowRaysIcon className="w-5 h-5"/>
 			</Button>
-			<Button className="p-1" mode='secondary'>
+			<Button className="p-1" mode={mode === 'tweezer' ? 'primary' : 'secondary'} onClick={() => onModeChange('tweezer')}>
 				<EyeDropperIcon className="w-5 h-5"/>
 			</Button>
 		</div>

@@ -2,7 +2,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Inspector, componentIdentifier } from "./inspector/inspector";
 import { Attribute, ComponentElement } from "../types/component";
-import { HarmonyPanel } from "./panel/harmony-panel";
+import { HarmonyPanel, SelectMode } from "./panel/harmony-panel";
 import { getClass } from "@harmony/utils/util";
 
 export interface HarmonyProviderProps {
@@ -13,6 +13,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [hoveredComponent, setHoveredComponent] = useState<ComponentElement>();
 	const [rootComponent, setRootComponent] = useState<ComponentElement>();
 	const ref = useRef<HTMLDivElement>(null);
+	const [mode, setMode] = useState<SelectMode>('scope');
 
 	useEffect(() => {
 		if (ref.current) {
@@ -34,8 +35,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		<>
 			<div ref={ref}></div>
 			{children}
-			<Inspector rootElement={rootComponent?.element} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent}/>
-			<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent}/>
+			<Inspector rootElement={rootComponent?.element} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} mode={mode}/>
+			<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode}/>
 		</>
 	)
 }
