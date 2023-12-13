@@ -1,6 +1,7 @@
 'use client';
 
-import { useEffect } from "react";
+import { useEffectEvent } from "@harmony/hooks/effect-event";
+import { useCallback, useEffect } from "react";
 
 //The event function emitted. Return whether or not this is the desired element (should stop propagation)
 export type HighlighterDispatch = (element: HTMLElement) => boolean
@@ -9,16 +10,11 @@ export interface HighlighterProps {
 		onClick: HighlighterDispatch,
 		onHover: HighlighterDispatch,
 		onHold: HighlighterDispatch
-	}
+	},
+	container: HTMLElement | undefined;
 }
-export const useHighlighter = ({handlers: {onClick, onHover, onHold}}: HighlighterProps) => {
-	useEffect(() => {
-		registerListeners();
-
-		return () => removeListeners();
-	}, []);
-
-	const registerListeners = (): void => {
+export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container}: HighlighterProps) => {
+	const registerListeners = useEffectEvent((): void => {
 		// const elements = window.document.body.querySelectorAll('*');
 		// elements.forEach((element) => {
 		// 	const htmlElement = element as HTMLElement
@@ -30,24 +26,30 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}}: Highlight
 		// 	htmlElement.addEventListener('mouseover', onMouseEvent, false)
 		// 	htmlElement.addEventListener('mouseup', onMouseEvent, false);
 		// });
-		window.addEventListener('pointerup', onPointerUp, false);
-		window.addEventListener('pointermove', onPointerOver, false);
-		window.addEventListener('click', onMouseEvent, false)
-		window.addEventListener('mousedown', onMouseEvent, false)
-		window.addEventListener('mouseover', onMouseEvent, false)
-		window.addEventListener('mouseup', onMouseEvent, false)
-		window.addEventListener('pointerdown', onMouseEvent, false)
-	}
+		container?.addEventListener('pointerup', onPointerUp, false);
+		container?.addEventListener('pointermove', onPointerOver, false);
+		container?.addEventListener('click', onMouseEvent, false)
+		container?.addEventListener('mousedown', onMouseEvent, false)
+		container?.addEventListener('mouseover', onMouseEvent, false)
+		container?.addEventListener('mouseup', onMouseEvent, false)
+		container?.addEventListener('pointerdown', onMouseEvent, false)
+	});
 
-	const removeListeners = (): void => {
-		window.removeEventListener('pointerup', onPointerUp, false);
-		window.removeEventListener('pointermove', onPointerOver, false);
-		window.removeEventListener('click', onMouseEvent, false)
-		window.removeEventListener('mousedown', onMouseEvent, false)
-		window.removeEventListener('mouseover', onMouseEvent, false)
-		window.removeEventListener('mouseup', onMouseEvent, false)
-		window.removeEventListener('pointerdown', onMouseEvent, false)
-	}
+	const removeListeners = useEffectEvent((): void => {
+		container?.removeEventListener('pointerup', onPointerUp, false);
+		container?.removeEventListener('pointermove', onPointerOver, false);
+		container?.removeEventListener('click', onMouseEvent, false)
+		container?.removeEventListener('mousedown', onMouseEvent, false)
+		container?.removeEventListener('mouseover', onMouseEvent, false)
+		container?.removeEventListener('mouseup', onMouseEvent, false)
+		container?.removeEventListener('pointerdown', onMouseEvent, false)
+	})
+
+	useEffect(() => {
+		registerListeners();
+
+		return () => removeListeners();
+	}, [registerListeners, removeListeners, container]);
 
 	const highligherDispatcher = (dispatch: HighlighterDispatch) => (event: MouseEvent) => {
 		event.preventDefault();

@@ -20,7 +20,9 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const overlayRef = useRef<Overlay>();
 
 	const isInteractableComponent = useCallback((component: ComponentElement) => {
-		const startingComponent = selectedComponent || (rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined);
+		// The current component scope is determined by either the currently selected component or 
+		// the parent of the root element (this is because we want the root element to be selectable) 
+		const startingComponent = selectedComponent || (rootElement && rootElement.parentElement ? componentIdentifier.getComponentFromElement(rootElement.parentElement) : undefined);
 		if (startingComponent) {
 			return startingComponent.children.map(comp => comp.element).includes(component.element);
 		}
@@ -30,6 +32,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const onHover = useEffectEvent((element: HTMLElement) => {
 		const container = containerRef.current;
 		if (container === null) return false;
+		if (rootElement && !rootElement.contains(element)) return true;
 
 		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
@@ -55,6 +58,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const onClick = useEffectEvent((element: HTMLElement) => {
 		const container = containerRef.current;
 		if (container === null) return false;
+		if (rootElement && !rootElement.contains(element)) return true;
 		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
 		if (overlayRef.current === undefined) {
@@ -80,7 +84,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			onHold(element) {
 				return true;
 			}
-		}
+		},
+		container: rootElement
 	});
 
 	return (

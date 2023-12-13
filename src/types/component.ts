@@ -1,5 +1,6 @@
 export interface Attribute {
-
+	name: string;
+	value: string;
 }
 
 export interface ComponentElement {

@@ -1,4 +1,4 @@
-import { ComponentElement } from "../../types/component";
+import { Attribute, ComponentElement } from "../../types/component";
 import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementInspect, getFiberName } from "./inspector-dev";
 
 export interface ComponentIdentifier {
@@ -34,6 +34,8 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		const sourceFile = codeInfo?.absolutePath || '';
 		const lineNumber = !isNaN(Number(codeInfo?.lineNumber)) ? Number(codeInfo?.lineNumber) : -1;
 		const isComponent = Boolean(fiber?.stateNode);
+		const props = typeof fiber?.memoizedProps === 'object' ? fiber.memoizedProps : {};
+		const attributes: Attribute[] = Object.entries(props).map(([key, value]) => ({name: key, value: String(value)}));
 
 		//const parent = element.parentElement ? this.getComponentFromElement(element.parentElement) : undefined;
 		const getParent = () => {
@@ -46,7 +48,7 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 			sourceFile,
 			lineNumber,
 			children: this.getComponentChildren(element),
-			attributes: [],
+			attributes,
 			isComponent
 		}
 	}
