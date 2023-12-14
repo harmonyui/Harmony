@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import { CheckmarkIcon } from "./icons";
 import { Label } from "./label";
 
@@ -60,6 +60,15 @@ export const Input: React.FunctionComponent<InputProps> = ({
   }
   return input;
 };
+
+export const InputBlur: React.FunctionComponent<Omit<InputProps, 'onBlur'>> = ({onChange, value: valueProps, ...rest}) => {
+	const [value, setValue] = useState(valueProps);
+
+	const onInputChange = (value: string): void => {
+		setValue(value);
+	}
+	return <Input {...rest} value={value} onChange={onInputChange} onBlur={onChange} />
+}
 
 export interface CheckboxInputProps {
   className?: string;

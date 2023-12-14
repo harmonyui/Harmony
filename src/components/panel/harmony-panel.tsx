@@ -2,7 +2,7 @@ import { Attribute, ComponentElement } from "@harmony/types/component"
 import { createPortal } from "react-dom"
 import { Header } from "@harmony/components/core/header";
 import { Label } from "@harmony/components/core/label";
-import { Input } from "../core/input";
+import { Input, InputBlur } from "../core/input";
 import { TabButton, TabItem } from "../core/tab";
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, CursorArrowRaysIcon, EyeDropperIcon, IconComponent } from "../core/icons";
 import { getClass, groupBy } from "@harmony/utils/util";
@@ -15,19 +15,21 @@ export interface HarmonyPanelProps {
 	root: ComponentElement | undefined;
 	selectedComponent: ComponentElement | undefined;
 	onAttributesChange: (attributes: Attribute[]) => void;
+	onAttributesSave: () => void;
+	onAttributesCancel: () => void;
 	onComponentSelect: (component: ComponentElement) => void;
 	onComponentHover: (component: ComponentElement) => void;
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root, selectedComponent, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root, selectedComponent, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel}) => {
 	return (<>
 		{createPortal(<div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[10000000]">
 			<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
 			<div className="text-center">
 				
 			</div>
-			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={onComponentHover} onComponentSelect={onComponentSelect}/>
+			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={onComponentHover} onComponentSelect={onComponentSelect} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/>
 		</div>, document.body)}
 		</>
 	)
@@ -53,11 +55,14 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({mode, onModeC
 interface AttributePanelProps {
 	selectedComponent: ComponentElement | undefined;
 	onAttributesChange: (attributes: Attribute[]) => void;
+	onAttributesSave: () => void;
+	onAttributesCancel: () => void;
 	root: ComponentElement | undefined;
 	onComponentSelect: (component: ComponentElement) => void;
 	onComponentHover: (component: ComponentElement) => void;
 }
-const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, selectedComponent, onAttributesChange, onComponentHover, onComponentSelect}) => {
+const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, selectedComponent, onAttributesChange: onAttributesChangeProps, onAttributesSave, onAttributesCancel, onComponentHover, onComponentSelect}) => {
+	const [isDirty, setIsDirty] = useState(false);
 	const getTreeItems = (children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
 		return children.map<TreeViewItem<ComponentElement>>(child => ({
 			id: child,
@@ -66,12 +71,33 @@ const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, sel
 			selected: selectedComponent?.element === child.element
 		}))
 	}
-	const treeItems: TreeViewItem<ComponentElement>[] = root ? getTreeItems([root]) : []
+	const treeItems: TreeViewItem<ComponentElement>[] = root ? getTreeItems([root]) : [];
+
+	const onAttributesChange = (attributes: Attribute[]): void => {
+		setIsDirty(true);
+		onAttributesChangeProps(attributes);
+	}
+
+	const onSave = (): void => {
+		onAttributesSave();
+		setIsDirty(false);
+	}
+
+	const onCancel = (): void => {
+		onAttributesCancel();
+		setIsDirty(false);
+	}
 	
 	return (
 		<div className="absolute right-0 flex flex-col h-full border border-gray-200 p-4 bg-white pointer-events-auto min-w-[400px] overflow-auto">
 			<div className="flex-1">
-				{selectedComponent ? <ComponentDisplay value={selectedComponent} onAttributesChange={onAttributesChange}/> : null}
+				{isDirty ? <div className="flex gap-2">
+					<Button onClick={onSave}>Save</Button>
+					<Button onClick={onCancel} mode='secondary'>Cancel</Button>
+				</div> : null}
+				{selectedComponent ? <>
+					<ComponentDisplay value={selectedComponent} onAttributesChange={onAttributesChange}/>
+				</> : null}
 			</div>
 			<div className="flex-1">
 				<TreeView items={treeItems} expand={true} onClick={(item) => onComponentSelect(item.id)} onHover={(item) => onComponentHover(item.id)}/>
@@ -81,48 +107,72 @@ const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, sel
 	)
 }
 
-const useSpacingAttributeConverter = () => {
-	return {
-		getSpacingValues: (attributes: Attribute[]): Record<SpacingType, SpacingValue[]> => {
-			const values: Record<SpacingType, SpacingValue[]> = {'border': [], 'padding': [], 'margin': []};
-			for (const {name, value: attributeValue} of attributes) {
-				const spacingType = spacingTypes.find(type => name.includes(type));
-				if (spacingType) {
-					const directions = spacingDirections.filter(type => name.includes(type));
-					const value = Number(attributeValue);
-					if (isNaN(value)) {
-						throw new Error("Invalid attribute value for " + name);
-					}
-					const finalDirections = (directions.length > 0 ? directions : spacingDirections);
-					values[spacingType].push(...finalDirections.map(direction => ({direction, value})))
-				}
-			}
-		
-			return values;
-		},
-		//padding -> p
-		//padding-left-right -> px
-		//padding-top-bottom -> py
-		//padding-left -> pl
-		//padding-top -> pt
-		//padding-right -> pr
-		//padding-bottom -> pb
-		getAttributes: (spacingValues: Record<SpacingType, SpacingValue[]>): Attribute[] => {
-			const attributes: Attribute[] = [];
-			for (const type in spacingValues) {
-				const values = spacingValues[type as SpacingType];
-				const sameValues = groupBy(values, 'value');
-				for (const value in sameValues) {
-					const sameDirection = groupBy(sameValues[Number(value)], 'direction');
-					const directions = Object.keys(sameDirection) as SpacingDirection[];
-					const directionTag: string = directions.length === 4 ? '' : `-${directions.join('-')}`;
-					attributes.push({name: `${type}${directionTag}`, value});
-				}
+const spacingTypes = ['padding', 'margin', 'border'] as const;
+const spacingDirections = ['top', 'left', 'right', 'bottom'] as const;
+type SpacingType = typeof spacingTypes[number]
+type SpacingDirection = typeof spacingDirections[number];
+interface SpacingValue {
+	direction: SpacingDirection, 
+	value: number,
+}
+const spacingConvesions = {
+	getSpacingValues: (attributes: Attribute[]): Record<SpacingType, SpacingValue[]> => {
+		const values: Record<SpacingType, SpacingValue[]> = {'border': [], 'padding': [], 'margin': []};
+		for (const attribute of attributes) {
+			const {name, value: attributeValue} = attribute;
+			const [type, direction] = name.split('-');
+
+			const spacingType = spacingTypes.find(sType => type === sType);
+			const spacingDirection = spacingDirections.find(sDirection => sDirection === direction);
+			if (!spacingType || !spacingDirection) throw new Error('Invalid attribute name ' + name);
+
+			const value = Number(attributeValue);
+			if (isNaN(value)) {
+				throw new Error(`Invalid attribute value for ${name}: ${attributeValue}`);
 			}
 
-			return attributes;
+			values[spacingType].push({direction: spacingDirection, value});
+			// const spacingType = spacingTypes.find(type => name.includes(type));
+			// if (spacingType) {
+			// 	const directions = spacingDirections.filter(type => name.includes(type));
+			// 	const value = Number(attributeValue);
+			// 	if (isNaN(value)) {
+			// 		throw new Error("Invalid attribute value for " + name);
+			// 	}
+			// 	const finalDirections = (directions.length > 0 ? directions : spacingDirections);
+			// 	values[spacingType].push(...finalDirections.map(direction => ({direction, value, attribute })))
+			// }
 		}
+	
+		return values;
+	},
+	//padding -> p
+	//padding-left-right -> px
+	//padding-top-bottom -> py
+	//padding-left -> pl
+	//padding-top -> pt
+	//padding-right -> pr
+	//padding-bottom -> pb
+	getAttributes: (spacingValues: Record<SpacingType, SpacingValue[]>): Attribute[] => {
+		const attributes: Attribute[] = [];
+		for (const type in spacingValues) {
+			const values = spacingValues[type as SpacingType];
+			attributes.push(...values.map(value => ({name: `${type}-${value.direction}`, value: String(value.value), className: undefined})));
+			// const sameValues = groupBy(values, 'value');
+			// for (const value in sameValues) {
+			// 	const sameDirection = groupBy(sameValues[Number(value)], 'direction');
+			// 	const directions = Object.keys(sameDirection) as SpacingDirection[];
+			// 	const directionTag: string = directions.length === 4 ? '' : `-${directions.join('-')}`;
+			// 	attributes.push({name: `${type}${directionTag}`, value, });
+			// }
+		}
+
+		return attributes;
 	}
+}
+
+const useSpacingAttributeConverter = () => {
+	return spacingConvesions;
 }
 
 interface ComponentDisplayProps {
@@ -148,17 +198,17 @@ const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value
 		{
 			id: 0,
 			label: 'padding',
-			component: <SpacingInput values={padding} onChange={onSpacingChange('padding')}/>
+			component: <SpacingInput type='padding' values={padding} onChange={onSpacingChange('padding')}/>
 		},
 		{
 			id: 1,
 			label: 'margin',
-			component: <SpacingInput values={margin} onChange={onSpacingChange('margin')}/>
+			component: <SpacingInput type='margin' values={margin} onChange={onSpacingChange('margin')}/>
 		},
 		{
 			id: 2,
 			label: 'border',
-			component: <SpacingInput values={border} onChange={onSpacingChange('border')}/>
+			component: <SpacingInput type='border' values={border} onChange={onSpacingChange('border')}/>
 		}
 	]
 	return (
@@ -182,19 +232,12 @@ const PropsDisplay: React.FunctionComponent<PropsDisplayProps> = ({attributes}) 
 	)
 }
 
-const spacingTypes = ['padding', 'margin', 'border'] as const;
-const spacingDirections = ['top', 'left', 'right', 'bottom'] as const;
-type SpacingType = typeof spacingTypes[number]
-type SpacingDirection = typeof spacingDirections[number];
-interface SpacingValue {
-	direction: SpacingDirection, 
-	value: number
-}
 interface SpacingInputProps {
 	values: SpacingValue[],
-	onChange: (values: SpacingValue[]) => void
+	onChange: (values: SpacingValue[]) => void,
+	type: SpacingType
 }
-const SpacingInput: React.FunctionComponent<SpacingInputProps> = ({values, onChange}) => {
+const SpacingInput: React.FunctionComponent<SpacingInputProps> = ({values, onChange, type}) => {
 	const [selectedDirection, setSelectedDirection] = useState<SpacingDirection>('top');
 	const selectedValue = values.find(value => value.direction === selectedDirection)?.value || 0;
 
@@ -238,7 +281,7 @@ const SpacingInput: React.FunctionComponent<SpacingInputProps> = ({values, onCha
 					</Button>
 				</div>
 			</div>
-			<Input value={selectedValue || ''} onChange={onChangeInput} className="w-full"/>
+			<InputBlur key={selectedValue} value={selectedValue || ''} onChange={onChangeInput} className="w-full"/>
 		</div>
 	)
 }

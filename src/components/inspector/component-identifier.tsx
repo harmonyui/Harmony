@@ -1,14 +1,28 @@
+import { Fiber } from "react-reconciler";
 import { Attribute, ComponentElement } from "../../types/component";
-import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementInspect, getFiberName } from "./inspector-dev";
+import { TailwindAttributeTranslator } from "../harmony-provider";
+import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementFiberUpward, getElementInspect, getFiberName, getNamedFiber, getReferenceFiber } from "./inspector-dev";
 
 export interface ComponentIdentifier {
-	getComponentFromElement: (element: HTMLElement) => ComponentElement
+	getComponentFromElement: (element: HTMLElement) => ComponentElement;
 	//getComponentTree: (rootElement: HTMLElement) => ComponentElement | undefined
 }
 
-export class ReactComponentIdentifier implements ComponentIdentifier {
-	private rootComponent: ComponentElement | undefined;
+const getComponentElementFiber = (element: HTMLElement): Fiber | undefined => {
+	//const fiber = getElementFiber(element as FiberHTMLElement);
+	// //If the fiber of an html element is the first element in a component, just return the component
+	// if (fiber?.return && typeof fiber.return.type === 'function') {
+	// 	return fiber.return;
+	// }
 
+	// return fiber;
+
+	const fiber = getElementFiberUpward(element)
+  const referenceFiber = getReferenceFiber(fiber)
+	return referenceFiber
+}
+
+export class ReactComponentIdentifier implements ComponentIdentifier {
 	// public getComponentTree(rootElement: HTMLElement): ComponentElement | undefined {
 	// 	let node = getElementFiber(rootElement as FiberHTMLElement);
 	// 	if (node === undefined) return undefined;
@@ -28,20 +42,24 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 	// }
 
 	public getComponentFromElement(element: HTMLElement): ComponentElement {
-		const fiber = getElementFiber(element as FiberHTMLElement);
+		const fiber = getComponentElementFiber(element);
+		const elementFiber = getElementFiber(element as FiberHTMLElement);
+		
+		const id = fiber?.key || nextId();
 		const name = getFiberName(fiber) || '';
-		const codeInfo = getCodeInfoFromFiber(fiber);
+		const codeInfo = getCodeInfoFromFiber(elementFiber);
 		const sourceFile = codeInfo?.absolutePath || '';
 		const lineNumber = !isNaN(Number(codeInfo?.lineNumber)) ? Number(codeInfo?.lineNumber) : -1;
-		const isComponent = Boolean(fiber?.stateNode);
-		const props = typeof fiber?.memoizedProps === 'object' ? fiber.memoizedProps : {};
-		const attributes: Attribute[] = Object.entries(props).map(([key, value]) => ({name: key, value: String(value)}));
-
+		const isComponent = !Boolean(fiber?.stateNode);
+		const className = typeof element.className === 'string' ? element.className : ''//typeof props === 'object' && 'className' in props && typeof props.className === 'string' ? props.className as string : '';
+		const attributes: Attribute[] = className ? TailwindAttributeTranslator.translateCSSAttributes(className) : [];
+		
 		//const parent = element.parentElement ? this.getComponentFromElement(element.parentElement) : undefined;
 		const getParent = () => {
 			return element.parentElement ? this.getComponentFromElement(element.parentElement) : undefined
 		}
 		return {
+			id,
 			element,
 			name,
 			getParent,
@@ -62,4 +80,9 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 
 		return children;
 	}
+}
+
+let currId = 0;
+const nextId = () => {
+	return String(currId++);
 }

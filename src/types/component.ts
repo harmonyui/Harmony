@@ -1,9 +1,11 @@
 export interface Attribute {
 	name: string;
 	value: string;
+	className: string | undefined;
 }
 
 export interface ComponentElement {
+	id: string;
 	name: string;
 	children: ComponentElement[];
 	getParent: () => ComponentElement | undefined;

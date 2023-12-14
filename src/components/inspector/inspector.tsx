@@ -39,6 +39,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		if (overlayRef.current === undefined) {
 			overlayRef.current = new Overlay(container);
 		}
+
 		if (selectedComponent) {
 			overlayRef.current.select(selectedComponent.element);
 		} else {
