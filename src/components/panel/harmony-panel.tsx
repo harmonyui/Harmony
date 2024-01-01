@@ -194,7 +194,7 @@ const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value
 		onAttributesChange(newAttributes);
 	}
 	
-	const borderItemTabs: TabItem[] = [
+	const spacingItemTabs: TabItem[] = [
 		{
 			id: 0,
 			label: 'padding',
@@ -215,7 +215,7 @@ const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value
 		<div className="inline-flex flex-col gap-2">
 			<Header level={2}>{name}</Header>
 			<Header level={3}>Attributes</Header>
-			<TabButton className="inline-flex flex-col" items={borderItemTabs}/>
+			<TabButton className="inline-flex flex-col" items={spacingItemTabs}/>
 			<PropsDisplay attributes={attributes}/>
 		</div>
 	)

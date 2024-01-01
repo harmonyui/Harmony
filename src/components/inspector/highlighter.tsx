@@ -31,7 +31,7 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container}
 		container?.addEventListener('click', onMouseEvent, false)
 		container?.addEventListener('mousedown', onMouseEvent, false)
 		container?.addEventListener('mouseover', onMouseEvent, false)
-		container?.addEventListener('mouseup', onMouseEvent, false)
+		//container?.addEventListener('mouseup', onMouseEvent, false)
 		container?.addEventListener('pointerdown', onMouseEvent, false)
 	});
 
@@ -41,7 +41,7 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container}
 		container?.removeEventListener('click', onMouseEvent, false)
 		container?.removeEventListener('mousedown', onMouseEvent, false)
 		container?.removeEventListener('mouseover', onMouseEvent, false)
-		container?.removeEventListener('mouseup', onMouseEvent, false)
+		//container?.removeEventListener('mouseup', onMouseEvent, false)
 		container?.removeEventListener('pointerdown', onMouseEvent, false)
 	})
 

@@ -10,17 +10,72 @@ import { SelectMode } from "../panel/harmony-panel";
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
+interface ResizeProps {
+	resizable: HTMLElement | undefined;
+	onIsDragging?: (rect: Pick<Box, 'height' | 'width'>) => void;
+	onDragFinish?: (rect: Pick<Box, 'height' | 'width'>) => void;
+}
+const useResize = ({resizable, onIsDragging, onDragFinish}: ResizeProps) => {
+	const [rect, setRect] = useState<Box>();
+	const [isDragging, setIsDragging] = useState(false);
+
+	const doDrag = useEffectEvent((e: MouseEvent) => {
+		if (!rect || !resizable) return;
+
+		setIsDragging(true);
+		if (rect.width > -1) {
+			resizable.style.width = (rect.width + e.clientX - rect.x) + 'px';
+		}
+		if (rect.height > -1) {
+			resizable.style.height = (rect.height + e.clientY - rect.y) + 'px';
+		}
+		onIsDragging && onIsDragging({width: rect.width, height: rect.height});
+	});
+
+	const stopDrag = useEffectEvent((e: MouseEvent) => {
+		setIsDragging(false);
+		document.documentElement.removeEventListener('mousemove', doDrag, false);    
+    document.documentElement.removeEventListener('mouseup', stopDrag, false);
+		onDragFinish && onDragFinish({width: rect?.width || 0, height: rect?.height || 0});
+	});
+
+	const onDrag = useEffectEvent((rect: Box): void => {
+		setRect(rect);
+		document.documentElement.addEventListener('mousemove', doDrag, false);
+		document.documentElement.addEventListener('mouseup', stopDrag, false);
+	});
+	
+	return {onDrag, isDragging};
+}
+
 export interface InspectorProps {
 	hoveredComponent: ComponentElement | undefined;
 	selectedComponent: ComponentElement | undefined;
 	onHover: (component: ComponentElement | undefined) => void;
 	onSelect: (component: ComponentElement | undefined) => void;
+	onResize: (component: ComponentElement, rect: Pick<Box, 'width' | 'height'>) => void;
 	rootElement: HTMLElement | undefined;
 	mode: SelectMode;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement, mode}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onResize, rootElement, mode}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
+	const {onDrag, isDragging} = useResize({resizable: selectedComponent?.element, onIsDragging() {
+		const container = containerRef.current;
+		if (container === null) return;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container);
+		}
+
+		if (selectedComponent) {
+			overlayRef.current.select(selectedComponent.element, onDrag);
+		} else {
+			overlayRef.current.remove('select');
+		}
+	}, onDragFinish(rect) {
+		selectedComponent && onResize(selectedComponent, rect)
+	}});
 
 	useEffect(() => {
 		const onEscape = () => {
@@ -41,11 +96,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent.element);
+			overlayRef.current.select(selectedComponent.element, onDrag);
 		} else {
 			overlayRef.current.remove('select');
 		}
-	}, [selectedComponent])
+	}, [selectedComponent, onDrag])
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -80,7 +135,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
-		if (!isInteractableComponent(component)) {
+		if (isDragging || !isInteractableComponent(component)) {
 			onHoverProps(undefined);
 			return false;
 		}
@@ -91,7 +146,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	});
 	const onClick = useEffectEvent((element: HTMLElement) => {
 		const container = containerRef.current;
-		if (container === null) return false;
+		if (container === null || isDragging) return false;
 		if (rootElement && !rootElement.contains(element)) return true;
 		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
@@ -120,6 +175,13 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		createPortal(<div ref={containerRef} className="z-[10000000]">
 		</div>, document.body)
 	)
+}
+
+interface Box {
+	x: number;
+	y: number;
+	height: number;
+	width: number;
 }
 
 export interface Rect {
@@ -199,11 +261,11 @@ class Overlay {
 		this.inspect(element, 'hover');
 	}
 
-	select(element: HTMLElement) {
-		this.inspect(element, 'select');
+	select(element: HTMLElement, onDrag: (rect: Box) => void) {
+		this.inspect(element, 'select', onDrag);
 	}
 
-	inspect(element: HTMLElement, method: 'select' | 'hover') {
+	inspect(element: HTMLElement, method: 'select' | 'hover', onDrag?: (rect: Box) => void) {
 		// We can't get the size of text nodes or comment nodes. React as of v15
     // heavily uses comment nodes to delimit text.
 		if (element.nodeType !== Node.ELEMENT_NODE) {
@@ -211,7 +273,7 @@ class Overlay {
 		}
 
 		const [box, dims] = this.getSizing(element);
-		const rect = new OverlayRect(this.window.document, this.container);
+		const rect = new OverlayRect(this.window.document, this.container, onDrag);
 		rect[method](box, dims);
 
 		if (this.rects.has(method)) {
@@ -247,6 +309,7 @@ class Overlay {
 
 const overlayStyles = {
   background: 'rgba(120, 170, 210, 0.7)',
+	resize: 'rgba(120, 170, 210, 1)',
   padding: 'rgba(77, 200, 0, 0.3)',
   margin: 'rgba(255, 155, 0, 0.3)',
   border: 'rgba(255, 200, 50, 0.3)',
@@ -257,17 +320,21 @@ export class OverlayRect {
   border: HTMLElement
   padding: HTMLElement
   content: HTMLElement
+	resizeHandles: HTMLElement[] = []
 
-  constructor(doc: Document, container: HTMLElement) {
+  constructor(doc: Document, container: HTMLElement, private onDrag?: (rect: Box) => void) {
     this.node = doc.createElement('div')
     this.border = doc.createElement('div')
     this.padding = doc.createElement('div')
     this.content = doc.createElement('div')
+		for (let i = 0; i < 8; i++) {
+			this.resizeHandles.push(doc.createElement('div'));
+			this.resizeHandles[i].style.backgroundColor = overlayStyles.resize;
+		}
 
     this.border.style.borderColor = overlayStyles.background
     this.padding.style.borderColor = overlayStyles.padding
-    //this.content.style.backgroundColor = overlayStyles.background
-
+		
     Object.assign(this.node.style, {
       borderColor: overlayStyles.margin,
       pointerEvents: 'none',
@@ -279,6 +346,9 @@ export class OverlayRect {
     this.node.appendChild(this.border)
     this.border.appendChild(this.padding)
     this.padding.appendChild(this.content)
+		for (const handle of this.resizeHandles) {
+			this.content.appendChild(handle);
+		}
 
     // ensure OverlayRect dom always before OverlayTip dom rather than cover OverlayTip
     container.prepend(this.node)
@@ -306,6 +376,106 @@ export class OverlayRect {
 		boxWrap(dims, 'border', this.border)
 		boxWrap(dims, 'margin', this.node)
 		boxWrap(dims, 'padding', this.padding);
+
+		const initFullDrag = (dragWidth: boolean, dragHeight: boolean) => (e: MouseEvent) => {
+			const x = e.clientX;
+			const y = e.clientY;
+			const width = dragWidth ? box.width : -1;
+			const height = dragHeight ? box.height : -1;
+
+			this.onDrag && this.onDrag({x, y, height, width});
+		}
+
+
+		if (this.onDrag) {
+			Object.assign(this.resizeHandles[0].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'se-resize',
+				position: 'absolute',
+				top: `${-dims.borderTop}px`,
+				left: `${-dims.borderLeft}px`,
+			})
+			this.resizeHandles[0].addEventListener('mousedown', initFullDrag(true, true), false);
+
+			Object.assign(this.resizeHandles[1].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'ne-resize',
+				position: 'absolute',
+				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
+				left: `${-dims.borderLeft}px`,
+			})
+			this.resizeHandles[1].addEventListener('mousedown', initFullDrag(true, true), false);
+
+			Object.assign(this.resizeHandles[2].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'nw-resize',
+				position: 'absolute',
+				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
+				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
+			})
+			this.resizeHandles[2].addEventListener('mousedown', initFullDrag(true, true), false);
+
+			Object.assign(this.resizeHandles[3].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'sw-resize',
+				position: 'absolute',
+				top: `${-dims.borderTop}px`,
+				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
+			})
+			this.resizeHandles[3].addEventListener('mousedown', initFullDrag(true, true), false);
+
+			Object.assign(this.resizeHandles[4].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'e-resize',
+				position: 'absolute',
+				top: `${box.height / 2 - dims.borderTop}px`,
+				left: `${-dims.borderLeft}px`,
+			})
+			this.resizeHandles[4].addEventListener('mousedown', initFullDrag(true, false), false);
+
+			Object.assign(this.resizeHandles[5].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 's-resize',
+				position: 'absolute',
+				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
+				left: `${box.width / 2 - dims.borderLeft}px`,
+			})
+			this.resizeHandles[5].addEventListener('mousedown', initFullDrag(false, true), false);
+
+			Object.assign(this.resizeHandles[6].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'w-resize',
+				position: 'absolute',
+				top: `${box.height / 2 - dims.borderTop}px`,
+				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
+			})
+			this.resizeHandles[6].addEventListener('mousedown', initFullDrag(true, false), false);
+
+			Object.assign(this.resizeHandles[7].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'n-resize',
+				position: 'absolute',
+				top: `${-dims.borderTop}px`,
+				left: `${box.width / 2 - dims.borderLeft}px`,
+			})
+			this.resizeHandles[7].addEventListener('mousedown', initFullDrag(false, true), false);
+		}
 
 		this.border.style.borderColor = overlayStyles.background
     this.padding.style.borderColor = overlayStyles.padding
