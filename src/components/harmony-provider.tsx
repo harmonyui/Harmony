@@ -97,18 +97,33 @@ class ComponentUpdator {
 	}
 
 	private change({component, oldValue}: HarmonyCommandChange, save: boolean): void {
-		const replaceClassName = (className: string, oldClassName: string, newClassName: string) => {
-			oldClassName.split(' ').forEach(name => {
-				className = className.replaceAll(name, '');
-			})
+		// const replaceClassName = (className: string, oldClassName: string, newClassName: string) => {
+		// 	oldClassName.split(' ').forEach(name => {
+		// 		className = className.replaceAll(name, '');
+		// 	})
 
-			return `${className} ${newClassName}`;
+		// 	return `${className} ${newClassName}`;
+		// }
+
+		// const newClassName = this.attributeTranslator.translateCSSClass(component.attributes);
+		// const oldClassName = this.attributeTranslator.translateCSSClass(oldValue);
+
+		// component.element.className = replaceClassName(component.element.className, oldClassName, newClassName);
+		
+		for (const attribute of component.attributes) {
+			const [attrName, indexName] = attribute.id.split('-');
+			const index = Number(indexName);
+			if (isNaN(index)) throw new Error('Invalid index ' + indexName);
+
+			if (attrName === 'text') {
+				const node = component.element.childNodes[index] as HTMLElement;
+				if (node === undefined) {
+					throw new Error('Invalid node');
+				}
+
+				node.textContent = attribute.value.replaceAll(' ', '\u00A0');
+			}
 		}
-
-		const newClassName = this.attributeTranslator.translateCSSClass(component.attributes);
-		const oldClassName = this.attributeTranslator.translateCSSClass(oldValue);
-
-		component.element.className = replaceClassName(component.element.className, oldClassName, newClassName);
 		if (save) {
 			fetch('/api/update', {
 				method: 'POST',
@@ -116,7 +131,7 @@ class ComponentUpdator {
 					'Accept': 'application/json',
 					'Content-Type': 'application/json'
 				},
-				body: JSON.stringify({sourceFile: component.sourceFile, lineNumber: component.lineNumber, newClassName, oldClassName})
+				body: JSON.stringify({sourceFile: component.sourceFile, lineNumber: component.lineNumber, oldValue, newValue: component.attributes})
 			});
 		}
 	}
@@ -156,10 +171,10 @@ export const TailwindAttributeTranslator: AttributeTranslator = {
 		}
 
 		const condensed = left.reduce<Attribute[]>((prev, curr) => {
-			const [type, direction] = curr.name.split('-');
-			const sameType = prev.find(d => d.name.includes(type) && d.value === curr.value);
+			const [type, direction] = curr.id.split('-');
+			const sameType = prev.find(d => d.id.includes(type) && d.value === curr.value);
 			if (sameType) {
-				sameType.name += `-${direction}`;
+				sameType.id += `-${direction}`;
 			} else {
 				prev.push({...curr});
 			}
@@ -167,7 +182,7 @@ export const TailwindAttributeTranslator: AttributeTranslator = {
 			return prev;
 		}, [])
 		for (const attribute of condensed) {
-			const [spacingType, ...directions] = attribute.name.split('-');
+			const [spacingType, ...directions] = attribute.id.split('-');
 
 			if (directions.length === 4) {
 				classes.add(`${spacingMapping[spacingType]}-${attribute.value}`)
@@ -205,9 +220,9 @@ export const TailwindAttributeTranslator: AttributeTranslator = {
 					const type = spacingReverse[key];
 
 					if (directionName) {
-						attributes.push({name: `${type}-${directionName}`, value: String(numValue), className: name});
+						attributes.push({id: `${type}-${directionName}`, name: `${type} ${directionName}`, value: String(numValue), className: name});
 					} else {
-						attributes.push(...spacingDirections.map(direction => ({name: `${type}-${direction}`, value: String(numValue), className: name})));
+						attributes.push(...spacingDirections.map(direction => ({id: `${type}-${direction}`, name: `${type} ${direction}`, value: String(numValue), className: name})));
 					}
 				}
 			})

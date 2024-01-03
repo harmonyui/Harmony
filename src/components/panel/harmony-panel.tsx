@@ -119,20 +119,20 @@ const spacingConvesions = {
 	getSpacingValues: (attributes: Attribute[]): Record<SpacingType, SpacingValue[]> => {
 		const values: Record<SpacingType, SpacingValue[]> = {'border': [], 'padding': [], 'margin': []};
 		for (const attribute of attributes) {
-			const {name, value: attributeValue} = attribute;
-			const [type, direction] = name.split('-');
+			const {id, value: attributeValue} = attribute;
+			const [type, direction] = id.split('-');
 
 			const spacingType = spacingTypes.find(sType => type === sType);
 			const spacingDirection = spacingDirections.find(sDirection => sDirection === direction);
-			if (!spacingType || !spacingDirection) throw new Error('Invalid attribute name ' + name);
+			if (!spacingType || !spacingDirection) continue;
 
 			const value = Number(attributeValue);
 			if (isNaN(value)) {
-				throw new Error(`Invalid attribute value for ${name}: ${attributeValue}`);
+				throw new Error(`Invalid attribute value for ${id}: ${attributeValue}`);
 			}
 
 			values[spacingType].push({direction: spacingDirection, value});
-			// const spacingType = spacingTypes.find(type => name.includes(type));
+			// const spacingType = spacingTypes.find(type => id.includes(type));
 			// if (spacingType) {
 			// 	const directions = spacingDirections.filter(type => name.includes(type));
 			// 	const value = Number(attributeValue);
@@ -157,7 +157,7 @@ const spacingConvesions = {
 		const attributes: Attribute[] = [];
 		for (const type in spacingValues) {
 			const values = spacingValues[type as SpacingType];
-			attributes.push(...values.map(value => ({name: `${type}-${value.direction}`, value: String(value.value), className: undefined})));
+			attributes.push(...values.map(value => ({id: `${type}-${value.direction}`, name: `${type} ${value.direction}`, value: String(value.value), className: undefined})));
 			// const sameValues = groupBy(values, 'value');
 			// for (const value in sameValues) {
 			// 	const sameDirection = groupBy(sameValues[Number(value)], 'direction');
@@ -181,6 +181,22 @@ interface ComponentDisplayProps {
 }
 const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value, onAttributesChange}) => {
 	const {name, attributes} = value;
+	
+	return (
+		<div className="inline-flex flex-col gap-2">
+			<Header level={2}>{name}</Header>
+			<Header level={3}>Attributes</Header>
+			{/* <SpacingDisplay attributes={attributes} onChange={onAttributesChange}/> */}
+			<PropsDisplay attributes={attributes} onChange={onAttributesChange}/>
+		</div>
+	)
+}
+
+interface SpacingDisplayProps {
+	attributes: Attribute[],
+	onChange: (value: Attribute[]) => void;
+}
+const SpacingDisplay: React.FunctionComponent<SpacingDisplayProps> = ({attributes, onChange}) => {
 	const {getSpacingValues, getAttributes} = useSpacingAttributeConverter();
 	
 	const spacingValues = getSpacingValues(attributes);
@@ -191,7 +207,7 @@ const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value
 		copy[type] = values;
 
 		const newAttributes = getAttributes(copy);
-		onAttributesChange(newAttributes);
+		onChange(newAttributes);
 	}
 	
 	const borderItemTabs: TabItem[] = [
@@ -212,22 +228,27 @@ const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value
 		}
 	]
 	return (
-		<div className="inline-flex flex-col gap-2">
-			<Header level={2}>{name}</Header>
-			<Header level={3}>Attributes</Header>
-			<TabButton className="inline-flex flex-col" items={borderItemTabs}/>
-			<PropsDisplay attributes={attributes}/>
-		</div>
+		<TabButton className="inline-flex flex-col" items={borderItemTabs}/>
 	)
 }
 
 interface PropsDisplayProps {
 	attributes: Attribute[]
+	onChange: (attributes: Attribute[]) => void;
 }
-const PropsDisplay: React.FunctionComponent<PropsDisplayProps> = ({attributes}) => {
+const PropsDisplay: React.FunctionComponent<PropsDisplayProps> = ({attributes, onChange}) => {
+	const onAttributeChange = (attribute: Attribute) => (value: string) => {
+		const copy = attributes.slice();
+		const index = copy.indexOf(attribute);
+		if (index < 0) throw new Error("Cannot find attribute " + attribute.id);
+
+		copy[index] = {...attribute, value};
+
+		onChange(copy);
+	}
 	return (
-		attributes.map(attribute => <Label label={attribute.name} key={attribute.name}>
-			<Input value={attribute.value} onChange={() => undefined}/>
+		attributes.map(attribute => <Label label={attribute.name} key={attribute.id}>
+			<Input value={attribute.value} onChange={onAttributeChange(attribute)}/>
 		</Label>)
 	)
 }

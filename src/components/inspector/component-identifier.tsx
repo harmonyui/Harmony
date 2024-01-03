@@ -51,8 +51,7 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		const sourceFile = codeInfo?.absolutePath || '';
 		const lineNumber = !isNaN(Number(codeInfo?.lineNumber)) ? Number(codeInfo?.lineNumber) : -1;
 		const isComponent = !Boolean(fiber?.stateNode);
-		const className = typeof element.className === 'string' ? element.className : ''//typeof props === 'object' && 'className' in props && typeof props.className === 'string' ? props.className as string : '';
-		const attributes: Attribute[] = className ? TailwindAttributeTranslator.translateCSSAttributes(className) : [];
+		const attributes: Attribute[] = this.getComponentAttributes(element);
 		
 		//const parent = element.parentElement ? this.getComponentFromElement(element.parentElement) : undefined;
 		const getParent = () => {
@@ -69,6 +68,20 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 			attributes,
 			isComponent
 		}
+	}
+
+	private getComponentAttributes(element: HTMLElement): Attribute[] {
+		const attributes: Attribute[] = [];
+		let currText = 0;
+		for (let i = 0; i < element.childNodes.length; i++) {
+			const node = element.childNodes[i];
+			if (node.nodeType === Node.TEXT_NODE) {
+				attributes.push({id: `text-${i}`, name: `Text ${++currText}`, value: node.textContent ?? '', className: ''});
+			}
+		}
+		
+
+		return attributes;
 	}
 
 	private getComponentChildren(element: HTMLElement): ComponentElement[] {

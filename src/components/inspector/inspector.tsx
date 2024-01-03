@@ -1,7 +1,7 @@
 'use client';
 import { createPortal } from "react-dom"
 import { useHighlighter } from "./highlighter"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useRef } from "react"
 import { useEffectEvent } from "../../hooks/effect-event";
 import { ReactComponentIdentifier } from "./component-identifier";
 import { ComponentElement } from "../../types/component";
@@ -211,8 +211,8 @@ class Overlay {
 		}
 
 		const [box, dims] = this.getSizing(element);
-		const rect = new OverlayRect(this.window.document, this.container);
-		rect[method](box, dims);
+		const rect = new OverlayRect(this.window.document, element, this.container);
+		rect[method](box, dims, false);
 
 		if (this.rects.has(method)) {
 			this.rects.get(method)?.remove();
@@ -257,8 +257,11 @@ export class OverlayRect {
   border: HTMLElement
   padding: HTMLElement
   content: HTMLElement
+	// parentElement: HTMLElement | undefined | null;
+	// nextSiblingElement: Element | undefined | null;
+	elementVisibleValue: string | undefined;
 
-  constructor(doc: Document, container: HTMLElement) {
+  constructor(doc: Document, private element: HTMLElement, container: HTMLElement) {
     this.node = doc.createElement('div')
     this.border = doc.createElement('div')
     this.padding = doc.createElement('div')
@@ -288,24 +291,102 @@ export class OverlayRect {
     if (this.node.parentNode) {
       this.node.parentNode.removeChild(this.node)
     }
+
+		// if (this.parentElement) {
+		// 	if (this.nextSiblingElement) {
+		// 		this.parentElement.insertBefore(this.element, this.nextSiblingElement);
+		// 	} else {
+		// 		this.parentElement.appendChild(this.element);
+		// 	}
+		// }
+		if (this.elementVisibleValue !== undefined) {
+			this.element.style.visibility = this.elementVisibleValue;
+		}
   }
 
-	public hover(box: Rect, dims: BoxSizing) {
-		this.update(box, dims, 1, false);
+	public hover(box: Rect, dims: BoxSizing, editText: boolean) {
+		this.update(box, dims, 1, false, editText);
 	}
 
-	public select(box: Rect, dims: BoxSizing) {
-		this.update(box, dims, 2, true);
+	public select(box: Rect, dims: BoxSizing, editText: boolean) {
+		if (editText) {
+			const onBlur = (e: FocusEvent) => {
+				const target = e.target as HTMLElement;
+				for (let i = 0; i < target.childNodes.length; i++) {
+					const node = target.childNodes[i];
+					if (node.nodeType === Node.TEXT_NODE) {
+						this.element.childNodes[i].textContent = node.textContent;
+					}
+				}
+				//this.element.textContent = target.textContent;
+			}
+			const clonedElement = this.cloneElement(this.element, ['-webkit-user-modify']);
+			clonedElement.contentEditable = "true";
+			clonedElement.addEventListener('blur', onBlur);
+
+			this.content.appendChild(clonedElement);
+			// this.parentElement = this.element.parentElement;
+			// this.nextSiblingElement = this.element.nextElementSibling;
+			this.elementVisibleValue = this.element.style.visibility;
+			this.element.style.visibility = 'hidden';
+		}
+
+		this.update(box, dims, 2, true, editText);
 	}
 
-  private update(box: Rect, dims: BoxSizing, borderSize: number, showPadding: boolean) {
+	private cloneElement(element: HTMLElement, propertiesToSkip: string[] = []): HTMLElement {
+		const clonedElement = element.cloneNode(true) as HTMLElement;//document.createElement(element.tagName);
+		for (let i = 0; i < clonedElement.childNodes.length; i++) {
+			const node = clonedElement.childNodes[i];
+			if (node.nodeType !== Node.TEXT_NODE) {
+				(node as HTMLElement).contentEditable = "false";
+			}
+		}
+		// Copy text content
+		//clonedElement.textContent = element.textContent;
+
+		// Copy computed styles
+		var computedStyles = window.getComputedStyle(element);
+		for (var i = 0; i < computedStyles.length; i++) {
+			var propertyName = computedStyles[i];
+			if (propertiesToSkip.includes(propertyName)) continue;
+
+			clonedElement.style[propertyName] = computedStyles.getPropertyValue(propertyName);
+		}
+		
+		return clonedElement as HTMLElement;
+	}
+
+  private update(box: Rect, dims: BoxSizing, borderSize: number, showPadding: boolean, editText: boolean) {
 		dims.borderBottom = borderSize;
 		dims.borderLeft = borderSize;
 		dims.borderRight = borderSize;
 		dims.borderTop = borderSize;
 		boxWrap(dims, 'border', this.border)
-		boxWrap(dims, 'margin', this.node)
-		boxWrap(dims, 'padding', this.padding);
+
+		if (!editText) {
+			boxWrap(dims, 'margin', this.node)
+			boxWrap(dims, 'padding', this.padding);
+
+			Object.assign(this.content.style, {
+				height:
+					`${
+						box.height
+						- dims.borderTop
+						- dims.borderBottom
+						- dims.paddingTop
+						- dims.paddingBottom
+					}px`,
+				width:
+					`${
+						box.width
+						- dims.borderLeft
+						- dims.borderRight
+						- dims.paddingLeft
+						- dims.paddingRight
+					}px`,
+			})
+		}
 
 		this.border.style.borderColor = overlayStyles.background
     this.padding.style.borderColor = overlayStyles.padding
@@ -315,28 +396,9 @@ export class OverlayRect {
 			this.padding.style.borderColor = 'transparent';
 		}
 
-    Object.assign(this.content.style, {
-      height:
-        `${
-          box.height
-          - dims.borderTop
-          - dims.borderBottom
-          - dims.paddingTop
-          - dims.paddingBottom
-        }px`,
-      width:
-        `${
-          box.width
-          - dims.borderLeft
-          - dims.borderRight
-          - dims.paddingLeft
-          - dims.paddingRight
-        }px`,
-    })
-
     Object.assign(this.node.style, {
-      top: `${box.top - dims.marginTop}px`,
-      left: `${box.left - dims.marginLeft}px`,
+      top: `${box.top - dims.marginTop - borderSize}px`,
+      left: `${box.left - dims.marginLeft - borderSize}px`,
     })
   }
 }
