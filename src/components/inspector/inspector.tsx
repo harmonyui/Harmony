@@ -11,10 +11,10 @@ import { SelectMode } from "../panel/harmony-panel";
 export const componentIdentifier = new ReactComponentIdentifier();
 
 export interface InspectorProps {
-	hoveredComponent: ComponentElement | undefined;
-	selectedComponent: ComponentElement | undefined;
-	onHover: (component: ComponentElement | undefined) => void;
-	onSelect: (component: ComponentElement | undefined) => void;
+	hoveredComponent: HTMLElement | undefined;
+	selectedComponent: HTMLElement | undefined;
+	onHover: (component: HTMLElement | undefined) => void;
+	onSelect: (component: HTMLElement | undefined) => void;
 	rootElement: HTMLElement | undefined;
 	mode: SelectMode;
 }
@@ -24,8 +24,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	useEffect(() => {
 		const onEscape = () => {
-			const parent = selectedComponent?.getParent();
-			onSelect(rootElement?.contains(parent?.element ?? null) ? parent : undefined);
+			const parent = selectedComponent?.parentElement;
+			onSelect(rootElement?.contains(parent ?? null) ? parent ?? undefined : undefined);
 		}
 		hotkeys('esc', onEscape);
 
@@ -41,7 +41,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent.element);
+			overlayRef.current.select(selectedComponent);
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -55,20 +55,23 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			overlayRef.current = new Overlay(container);
 		}
 		if (hoveredComponent) {
-			overlayRef.current.hover(hoveredComponent.element);
+			overlayRef.current.hover(hoveredComponent);
 		} else {
 			overlayRef.current.remove('hover');
 		}
 	}, [hoveredComponent])
 
-	const isInteractableComponent = useCallback((component: ComponentElement) => {
+	const isInteractableComponent = useCallback((component: HTMLElement) => {
+		if (!Boolean(component.dataset.harmonyId)) {
+			return false;
+		}
 		if (mode === 'tweezer') return true;
 
 		// The current component scope is determined by either the currently selected component or 
 		// the parent of the root element (this is because we want the root element to be selectable) 
-		const startingComponent = selectedComponent || (rootElement && rootElement.parentElement ? componentIdentifier.getComponentFromElement(rootElement.parentElement) : undefined);
+		const startingComponent = selectedComponent || (rootElement?.parentElement);
 		if (startingComponent) {
-			return startingComponent.children.map(comp => comp.element).includes(component.element);
+			return Array.from(startingComponent.children).includes(component);
 		}
 		return true;
 	}, [selectedComponent, rootElement, mode]);
@@ -78,14 +81,14 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		if (container === null) return false;
 		if (rootElement && !rootElement.contains(element)) return true;
 
-		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
+		//const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
-		if (!isInteractableComponent(component)) {
+		if (!isInteractableComponent(element)) {
 			onHoverProps(undefined);
 			return false;
 		}
 
-		onHoverProps(component);
+		onHoverProps(element);
 
 		return true;
 	});
@@ -93,15 +96,15 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		const container = containerRef.current;
 		if (container === null) return false;
 		if (rootElement && !rootElement.contains(element)) return true;
-		const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
+		//const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
-		if (!isInteractableComponent(component)) {
+		if (!isInteractableComponent(element)) {
 			//If we get here, that means we have clicked outside of the parent, which means we should deselect
 			onSelect(undefined);
 			return false;
 		}
 
-		onSelect(component);
+		onSelect(element);
 		
 		return true;
 	})

@@ -19,7 +19,7 @@
       }
     ],
     "paths": {
-      "@harmony/*": ["src/*"]
+      "@harmony/*": ["./src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],

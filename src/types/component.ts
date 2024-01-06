@@ -5,18 +5,26 @@ export interface Attribute {
 	className: string | undefined;
 }
 
-export interface ComponentElement {
+interface ComponentElementBase {
 	id: string;
 	name: string;
 	children: ComponentElement[];
-	getParent: () => ComponentElement | undefined;
-	sourceFile: string;
-	lineNumber: number;
+	location: {
+		file: string;
+		start: number;
+		end: number;
+	},
 	attributes: Attribute[];
 	isComponent: boolean;
-	element: HTMLElement;
 }
 
-export interface HarmonyComponent extends ComponentElement {
+export interface ComponentElement extends ComponentElementBase {
+	getParent: () => ComponentElement | undefined;
+	element?: HTMLElement;
+	containingComponent: HarmonyComponent;
+}
+
+export interface HarmonyComponent extends ComponentElementBase {
 	isComponent: true;
+
 }

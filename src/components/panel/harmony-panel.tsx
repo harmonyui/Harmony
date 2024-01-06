@@ -8,28 +8,32 @@ import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3
 import { getClass, groupBy } from "@harmony/utils/util";
 import { useState } from "react";
 import { Button } from "../core/button";
+import { componentIdentifier } from "../inspector/inspector";
 
 export type SelectMode = 'scope' | 'tweezer';
 
 export interface HarmonyPanelProps {
-	root: ComponentElement | undefined;
-	selectedComponent: ComponentElement | undefined;
-	onAttributesChange: (attributes: Attribute[]) => void;
+	root: HTMLElement | undefined;
+	selectedComponent: HTMLElement | undefined;
+	onAttributesChange: (component: ComponentElement, attributes: Attribute[]) => void;
 	onAttributesSave: () => void;
 	onAttributesCancel: () => void;
-	onComponentSelect: (component: ComponentElement) => void;
-	onComponentHover: (component: ComponentElement) => void;
+	onComponentSelect: (component: HTMLElement) => void;
+	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root, selectedComponent, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel}) => {
+	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
+	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
+
 	return (<>
 		{createPortal(<div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[10000000]">
 			<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
 			<div className="text-center">
 				
 			</div>
-			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={onComponentHover} onComponentSelect={onComponentSelect} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/>
+			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/>
 		</div>, document.body)}
 		</>
 	)
@@ -54,7 +58,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({mode, onModeC
 
 interface AttributePanelProps {
 	selectedComponent: ComponentElement | undefined;
-	onAttributesChange: (attributes: Attribute[]) => void;
+	onAttributesChange: (component: ComponentElement, attributes: Attribute[]) => void;
 	onAttributesSave: () => void;
 	onAttributesCancel: () => void;
 	root: ComponentElement | undefined;
@@ -68,14 +72,14 @@ const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, sel
 			id: child,
 			content: child.name,
 			items: getTreeItems(child.children),
-			selected: selectedComponent?.element === child.element
+			selected: selectedComponent === child.element
 		}))
 	}
 	const treeItems: TreeViewItem<ComponentElement>[] = root ? getTreeItems([root]) : [];
 
 	const onAttributesChange = (attributes: Attribute[]): void => {
 		setIsDirty(true);
-		onAttributesChangeProps(attributes);
+		selectedComponent && onAttributesChangeProps(selectedComponent, attributes);
 	}
 
 	const onSave = (): void => {
@@ -403,7 +407,7 @@ const TreeViewItem = <T,>({item, onClick, onHover}: {item: TreeViewItem<T>, onCl
 						xmlns="http://www.w3.org/2000/svg"
 						fill="none"
 						viewBox="0 0 24 24"
-						stroke-width="2.5"
+						strokeWidth="2.5"
 						stroke="currentColor"
 						className={getClass('h-4 w-4', expand ? 'rotate-90' : '')}>
 						<path

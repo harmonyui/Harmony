@@ -4,7 +4,7 @@ import { TailwindAttributeTranslator } from "../harmony-provider";
 import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementFiberUpward, getElementInspect, getFiberName, getNamedFiber, getReferenceFiber } from "./inspector-dev";
 
 export interface ComponentIdentifier {
-	getComponentFromElement: (element: HTMLElement) => ComponentElement;
+	getComponentFromElement: (element: HTMLElement) => ComponentElement | undefined;
 	//getComponentTree: (rootElement: HTMLElement) => ComponentElement | undefined
 }
 
@@ -41,11 +41,15 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 	// 	return items;
 	// }
 
-	public getComponentFromElement(element: HTMLElement): ComponentElement {
+	public getComponentFromElement(element: HTMLElement): ComponentElement| undefined {
 		const fiber = getComponentElementFiber(element);
 		const elementFiber = getElementFiber(element as FiberHTMLElement);
 		
-		const id = fiber?.key || nextId();
+		const id = element.dataset.harmonyId;//fiber?.key || nextId();
+		if (id === undefined) {
+			return undefined;
+		}
+
 		const name = getFiberName(fiber) || '';
 		const codeInfo = getCodeInfoFromFiber(elementFiber);
 		const sourceFile = codeInfo?.absolutePath || '';
@@ -62,11 +66,14 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 			element,
 			name,
 			getParent,
-			sourceFile,
-			lineNumber,
+			location: {
+				file: sourceFile,
+				start: 0,
+				end: 0
+			},
 			children: this.getComponentChildren(element),
 			attributes,
-			isComponent
+			isComponent,
 		}
 	}
 
@@ -88,7 +95,10 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		const children: ComponentElement[] = [];
 		for (let i = 0; i < element.children.length; i++) {
 			const child = element.children[i] as HTMLElement;
-			children.push(this.getComponentFromElement(child))
+			const childComponent = this.getComponentFromElement(child);
+			if (childComponent) { 
+				children.push(childComponent);
+			}
 		}
 
 		return children;
