@@ -5,15 +5,17 @@ export interface Attribute {
 	className: string | undefined;
 }
 
-interface ComponentElementBase {
+export interface ComponentLocation {
+	file: string;
+	start: number;
+	end: number;
+}
+
+export interface ComponentElementBase {
 	id: string;
 	name: string;
 	children: ComponentElement[];
-	location: {
-		file: string;
-		start: number;
-		end: number;
-	},
+	location: ComponentLocation,
 	attributes: Attribute[];
 	isComponent: boolean;
 }

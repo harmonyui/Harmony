@@ -26,13 +26,15 @@ if (process.env.NODE_ENV === 'production') {
 }
 
 export async function GET(req: Request): Promise<Response> {
-	const dirname = process.cwd();
+	if (info.elementInstances.length === 0) {
+		const dirname = process.cwd();
 
-	const files: string[] = [];
-	fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename) => files.push(filename));
+		const files: string[] = [];
+		fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename) => files.push(filename));
 
-	for (const file of files) {
-		updateReactCode(file, info.componentDefinitions, info.elementInstances);
+		for (const file of files) {
+			updateReactCode(file, info.componentDefinitions, info.elementInstances);
+		}
 	}
 
 	return new Response(JSON.stringify(info.elementInstances.map(el => Number(el.id))), {
