@@ -26,6 +26,7 @@
     "dayjs": "^1.11.10",
     "hotkeys-js": "^3.13.2",
     "next": "14.0.3",
+    "octokit": "^3.1.2",
     "openai": "^4.24.1",
     "react": "^18",
     "react-aria": "^3.27.0",
