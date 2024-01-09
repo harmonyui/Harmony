@@ -1,56 +1,33 @@
-import { requireAuth } from "@harmony/utils/protected-routes-hoc";
 import { redirect } from "next/navigation";
-import Image from 'next/image'
-
-const getServerSideProps = requireAuth();
 
 export default async function Home() {
-	const response = await getServerSideProps();
-	
-	if (response.redirect) {
-		redirect('/setup')
-	}
   return (
-		<main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
-        </div>
-      </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <LinkSection/>
-    </main>
+		<div className="hero-content">
+			<HeroHeading heading="Investment fund infrastructure, {built for anyone}"/>
+			<div className="block-40h"></div>
+			<div className="hero-desc">Thousands of investors and managers, from multi-billion dollar hedge funds to fresh syndicate leads, use Canopy’s software to set up funds, manage capital, and report performances online.</div>
+			<a id="popup-open" href="/request-demo" className="btn is--request w-inline-block">
+				<div className="text-14">Request Demo</div>
+			</a>
+			<div className="logos-row marg-top-80 hide-mobile">
+				<div className="text-15">Invest alongside top funds</div>
+				<div className="h-logos-div marg-top-15">
+					<img src="https://uploads-ssl.webflow.com/61c1c0b4e368108c5ab02f30/61c36b514f434b488b62b9a6_h-logo-1.svg" loading="lazy" width="160" height="40" alt="" className="h-logo-img"/>
+					<img src="https://uploads-ssl.webflow.com/61c1c0b4e368108c5ab02f30/61c36b5166241f19cd2345ae_h-logo-2.svg" loading="lazy" width="160" height="40" alt="" className="h-logo-img"/>
+					<img src="https://uploads-ssl.webflow.com/61c1c0b4e368108c5ab02f30/61c36b514f434bd96f62b9a7_h-logo-3.svg" loading="lazy" width="160" height="40" alt="" className="h-logo-img"/>
+				</div>
+			</div>
+		</div>
   )
+}
+
+interface HeroHeadingProps {
+	heading: string
+}
+const HeroHeading: React.FunctionComponent<HeroHeadingProps> = ({heading}) => {
+	const match = /(.*)\{(.*)}/.exec(heading);
+	const [_, h1, h2] = match ?? ['', 'Test', 'Heading'];
+	return <h1 className="hero-heading">{h1}<br/><span className="span-hero-h">{h2}</span></h1>
 }
 
 interface LinkCardProps {
