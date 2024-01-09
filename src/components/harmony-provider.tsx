@@ -28,8 +28,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					'Content-Type': 'application/json'
 				},
 			});
-			
-			setAvailableIds(await response.json());
+
+			const ids = await response.json();
+			if (Array.isArray(ids)) {
+				setAvailableIds(await response.json());
+			}
 		}
 
 		initialize();

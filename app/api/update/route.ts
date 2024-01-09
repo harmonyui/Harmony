@@ -3,8 +3,8 @@ import fs from 'node:fs';
 import { info } from '../load/route';
 import OpenAI from 'openai';
 import { z } from 'zod';
-import { changesSchema } from '@harmony/api/updator/local';
-import { makeChanges } from '@harmony/api/updator/github';
+import { changesSchema } from '@harmony/server/api/services/updator/local';
+import { makeChanges } from '@harmony/server/api/services/updator/github';
 
 const openai = new OpenAI();
 
