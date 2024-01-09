@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 export default async function Home() {
   return (
 		<div className="hero-content">
-			<HeroHeading heading="Investment fund infrastructure, {built for anyone}"/>
+			<HeroHeading heading="Investment fund infrastructure, {built for VCs}"/>
 			<div className="block-40h"></div>
 			<div className="hero-desc">Thousands of investors and managers, from multi-billion dollar hedge funds to fresh syndicate leads, use Canopy’s software to set up funds, manage capital, and report performances online.</div>
 			<a id="popup-open" href="/request-demo" className="btn is--request w-inline-block">
