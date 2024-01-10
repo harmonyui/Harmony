@@ -31,7 +31,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 			const ids = await response.json();
 			if (Array.isArray(ids)) {
-				setAvailableIds(await response.json());
+				setAvailableIds(ids);
 			}
 		}
 

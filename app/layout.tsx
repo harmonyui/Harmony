@@ -20,8 +20,8 @@ export default function RootLayout({
   return (
 		<ClerkProvider>
 			<TrpcProvider>
-				<html lang="en">
-					<body className={inter.className}>
+				<html className="h-full bg-white" lang="en">
+					<body className={`${inter.className} h-full`}>
 						<HarmonyProvider>
 							
 							{children}
