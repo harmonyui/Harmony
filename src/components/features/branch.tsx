@@ -22,7 +22,7 @@ export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({it
 				<span>{label}</span>
 			</button>
 			{isOpen ? <div className="flex flex-col gap-2 border-t py-2 px-4">
-				<div className="flex flex-col border-2 h-32">
+				<div className="flex flex-col border-2 h-32 px-2 text-sm">
 					{commits.map(commit => <div key={commit}>{commit}</div>)}
 				</div>
 				<div className="flex justify-around">

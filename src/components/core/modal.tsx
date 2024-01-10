@@ -1,6 +1,7 @@
-import type { ReplaceWithName } from "model/src/core/utils";
+'use client';
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { usePrevious } from "../../hooks/previous";
+import { ReplaceWithName } from "@harmony/types/utils";
 
 interface ModalContextType {
 	addModal: (newModal: React.ReactNode) => void,

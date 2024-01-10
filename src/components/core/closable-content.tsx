@@ -1,9 +1,10 @@
+import { getClass } from "@harmony/utils/util";
 import { XMarkIcon } from "./icons";
 
 export interface ClosableContentProps {
   onClose: () => void;
   children: React.ReactNode;
-	className: string | undefined;
+	className?: string;
 }
 export const ClosableContent: React.FunctionComponent<ClosableContentProps> = ({
   onClose,
@@ -11,7 +12,7 @@ export const ClosableContent: React.FunctionComponent<ClosableContentProps> = ({
 	className
 }) => {
   return (
-    <div className={`relative ${className}`}>
+    <div className={getClass('relative',className)}>
       <div className="absolute top-0 right-0">
         <button className="hover:opacity-50" onClick={onClose} type="button">
           <XMarkIcon className="w-6 h-6" />
