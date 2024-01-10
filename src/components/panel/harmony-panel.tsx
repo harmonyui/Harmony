@@ -28,13 +28,13 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
 
 	return (<>
-		{createPortal(<div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[10000000]">
+		<div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[10000000]">
 			<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
 			<div className="text-center">
 				
 			</div>
 			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/>
-		</div>, document.body)}
+		</div>
 		</>
 	)
 }

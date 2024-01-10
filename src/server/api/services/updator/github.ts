@@ -7,7 +7,7 @@ const octokit = new Octokit({
 });
 
 // Function to create a new branch in the repository
-async function createBranch(owner: string, repo: string, baseBranch: string, newBranch: string): Promise<void> {
+export async function createBranch(owner: string, repo: string, baseBranch: string, newBranch: string): Promise<void> {
   try {
     // Get the latest commit SHA from the base branch
     const { data: baseBranchInfo } = await octokit.rest.repos.getBranch({
@@ -105,10 +105,9 @@ async function updateFileAndCommit(owner: string, repo: string, branch: string, 
   }
 }
 
-export async function makeChanges(location: ComponentLocation, newSnippet: string): Promise<void> {
+export async function makeChanges(location: ComponentLocation, newSnippet: string, branch: string): Promise<void> {
 	const owner = 'bradofrado';
 	const repo = 'Harmony';
-	const branch = 'test-change';
 	//await createBranch(owner, repo, 'master', branch);
 	await updateFileAndCommit(owner, repo, branch, location.file, newSnippet, location.start, location.end);
 }

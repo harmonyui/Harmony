@@ -23,6 +23,12 @@ model Account {
 		role							String
 }
 
+model Branch {
+	id	String @id @default(cuid())
+	name String
+	label String
+}
+
 // model Session {
 //     id           String   @id @default(cuid())
 //     sessionToken String   @unique

@@ -2,17 +2,14 @@
 import { GitBranchIcon } from "../core/icons";
 import {Button} from '../core/button';
 import { useState } from "react";
+import { BranchItem } from "@harmony/types/branch";
 
-export interface BranchItem {
-	name: string;
-	label: string;
-	commits: string[]
-}
 export interface BranchLineItemProps {
-	item: BranchItem
+	item: BranchItem;
+	onOpenHarmony: () => void;
 }
-export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({item}) => {
-	const {label, commits} = item;
+export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({item, onOpenHarmony}) => {
+	const {label} = item;
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
@@ -23,10 +20,10 @@ export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({it
 			</button>
 			{isOpen ? <div className="flex flex-col gap-2 border-t py-2 px-4">
 				<div className="flex flex-col border-2 h-32 px-2 text-sm">
-					{commits.map(commit => <div key={commit}>{commit}</div>)}
+					{/* {commits.map(commit => <div key={commit}>{commit}</div>)} */}
 				</div>
 				<div className="flex justify-around">
-					<Button>Open with Harmony</Button>
+					<Button onClick={() => onOpenHarmony()}>Open with Harmony</Button>
 					<Button>Submit Pull Request</Button>
 				</div>
 			</div> : null}

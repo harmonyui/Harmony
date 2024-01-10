@@ -3,6 +3,7 @@ import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { ComponentElement, HarmonyComponent } from '@harmony/types/component';
 import { hashComponent } from '@harmony/utils/util';
+import { NextRequest } from 'next/server';
 import fs from 'node:fs';
 import path from 'node:path';
 
@@ -25,16 +26,18 @@ if (process.env.NODE_ENV === 'production') {
   info = (global as globalInfo).info;
 }
 
-export async function GET(req: Request): Promise<Response> {
-	if (info.elementInstances.length === 0) {
-		const dirname = process.cwd();
+export async function GET(req: NextRequest, {params}: {params: {branchId: string}}): Promise<Response> {
+	const {branchId} = params;
 
-		const files: string[] = [];
-		fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename) => files.push(filename));
+	info.componentDefinitions = {};
+	info.elementInstances = [];
+	const dirname = process.cwd();
 
-		for (const file of files) {
-			updateReactCode(file, info.componentDefinitions, info.elementInstances);
-		}
+	const files: string[] = [];
+	fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename) => files.push(filename));
+
+	for (const file of files) {
+		updateReactCode(file, info.componentDefinitions, info.elementInstances);
 	}
 
 	return new Response(JSON.stringify(info.elementInstances.map(el => Number(el.id))), {

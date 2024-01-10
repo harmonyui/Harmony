@@ -2,6 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { usePrevious } from "../../hooks/previous";
 import { ReplaceWithName } from "@harmony/types/utils";
+import { createPortal } from "react-dom";
 
 interface ModalContextType {
 	addModal: (newModal: React.ReactNode) => void,
@@ -51,20 +52,24 @@ export const ModalProvider: React.FunctionComponent<React.PropsWithChildren> = (
 }
 
 export const ModalPortal: React.FunctionComponent<{children: React.ReactNode, show: boolean}> = ({children, show}) => {
-	const {addModal, removeModal} = useModal();
-	const prevShow = usePrevious(show);
+	// const {addModal, removeModal} = useModal();
+	// const prevShow = usePrevious(show);
 	
-	useEffect(() => {
-		if (prevShow !== show) {
-			if (show) {
-				addModal(children);
-			} else {
-				removeModal();
-			}
-		}
-	}, [show, prevShow]);
+	// useEffect(() => {
+	// 	if (prevShow !== show) {
+	// 		if (show) {
+	// 			addModal(children);
+	// 		} else {
+	// 			removeModal();
+	// 		}
+	// 	}
+	// }, [show, prevShow]);
 
-	return <></>
+	return <>
+	{createPortal(show ? <div className="fixed top-0 left-0 w-full z-50 bg-gray-500/90 h-screen overflow-auto">
+		{children}
+	</div> : null, document.body)}
+	</>
 }
 
 export const useModal = (): ReplaceWithName<ModalContextType, 'nextId' | 'removeModal', {removeModal: () => void}> => {

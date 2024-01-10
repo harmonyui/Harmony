@@ -16,9 +16,10 @@ export interface InspectorProps {
 	onHover: (component: HTMLElement | undefined) => void;
 	onSelect: (component: HTMLElement | undefined) => void;
 	rootElement: HTMLElement | undefined;
+	harmonyContainer: HTMLElement;
 	mode: SelectMode;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement, mode}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement, harmonyContainer, mode}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
@@ -116,12 +117,13 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				return true;
 			}
 		},
-		container: rootElement
+		container: rootElement,
+		noEvents: [harmonyContainer]
 	});
 
 	return (
-		createPortal(<div ref={containerRef} className="z-[10000000]">
-		</div>, document.body)
+		<div ref={containerRef} className="z-[10000000]">
+		</div>
 	)
 }
 
