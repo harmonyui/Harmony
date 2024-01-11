@@ -1,5 +1,6 @@
 import { GetServerSidePropsContext, type GetServerSideProps } from "next";
 import { Session, getServerAuthSession } from "@harmony/server/auth";
+import { redirect } from "next/navigation";
 
 interface RequireRouteProps {
   redirect: string;
@@ -43,6 +44,17 @@ export const requireRoute =
 export const requireAuth = requireRoute({ redirect: "/setup", check: (session) => {
 	return session.account === undefined;
 } });
+
+export const withAuth = <T,>(Component: React.FunctionComponent<T>): React.FunctionComponent<T> => 
+	async (props) => {
+		const response = await requireAuth()();
+
+		if (response.redirect) {
+			redirect('/setup')
+		}
+
+		return <Component {...props}/>
+	}
 
 // export const requireRole = (role: UserRole) =>
 //   requireRoute({

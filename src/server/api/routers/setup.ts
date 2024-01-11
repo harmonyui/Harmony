@@ -1,6 +1,9 @@
 import { z } from "zod";
 import { createTRPCRouter, registerdProcedure } from "../trpc";
 import { accountSchema } from "@harmony/server/auth";
+import { indexCodebase } from "../services/indexor/indexor";
+import { fromDir } from "../services/indexor/local";
+import { fromGithub } from "../services/indexor/github";
 
 export const setupRoute = createTRPCRouter({
 	createRoute: registerdProcedure
@@ -10,6 +13,9 @@ export const setupRoute = createTRPCRouter({
 			if (userId === undefined) {
 				throw new Error("Invalid userId")
 			}
+
+			await indexCodebase('', fromGithub('bradofrado', 'Harmony', 'master'));
+
 			const newAccount = await ctx.prisma.account.create({
 				data: {
 					firstName: input.account.firstName,

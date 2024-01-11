@@ -1,24 +1,14 @@
-import { requireAuth } from "@harmony/utils/protected-routes-hoc";
+import {  withAuth } from "@harmony/utils/protected-routes-hoc";
 import { redirect } from "next/navigation";
 import { SidePanel, SidePanelItems } from "@harmony/components/core/side-panel";
 import { GitBranchIcon, GitPullRequestIcon, ToggleIcon, UserGroupIcon } from "@harmony/components/core/icons";
 import { SideNav } from "../utils/side-nav";
 
-const getServerSideProps = requireAuth();
+const Home = withAuth(() => {
+	redirect('/branch');
+})
 
-export default async function Home() {
-	const response = await getServerSideProps();
-	
-	if (response.redirect) {
-		redirect('/setup')
-	} else {
-		redirect('/branch')
-	}
-
-	return (
-		<SideNav/>
-	)
-}
+export default Home;
 
 interface LinkCardProps {
   href: string;

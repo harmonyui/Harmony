@@ -2,7 +2,7 @@ import { Octokit } from "octokit";
 import { Changes } from "./local";
 import { ComponentElementBase, ComponentLocation } from "@harmony/types/component";
 
-const octokit = new Octokit({
+export const octokit = new Octokit({
 	auth: process.env.GITHUB_API_KEY
 });
 

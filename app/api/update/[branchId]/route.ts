@@ -1,25 +1,24 @@
 import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent } from '@harmony/types/component';
 import fs from 'node:fs';
-import { info } from '../../load/[branchId]/route';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { changesSchema } from '@harmony/server/api/services/updator/local';
 import { makeChanges } from '@harmony/server/api/services/updator/github';
 import { prisma } from '@harmony/server/db';
+import { Prisma } from '@prisma/client';
+import { getCodeSnippet } from '@harmony/server/api/services/indexor/github';
+//import {ComponentElement as ComponentElementPrisma, Prisma} from '@prisma/client';
 
 const openai = new OpenAI();
-
-const getCodeSnippet = ({file, start, end}: ComponentLocation): string => {
-	const fileContent = fs.readFileSync(file, 'utf8');
-
-	return fileContent.substring(start, end);
-}
 
 interface RequestBody {
 	id: string,
 	oldValue: Attribute[],
 	newValue: Attribute[]
 }
+
+const payload = {include: {definition: true}}
+type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof payload>
 
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
 	const {branchId} = params;
@@ -31,9 +30,14 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	if (branch === null) {
 		throw new Error("Cannot find branch with id " + branchId);
 	}
+	const elementInstances = await prisma.componentElement.findMany({
+		include: {
+			definition: true
+		}
+	});
 	const body = await req.json() as RequestBody;
 	const {location, updatedText} = //{location: {file: 'app/page.tsx', start: 64, end: 2454 },updatedText: `function Home() {\r\n  return (\r\n    <main className=\"flex min-h-screen flex-col items-center justify-between p-24\">\r\n      <div className=\"z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex\">\r\n        <p className=\"fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30\">\r\n          Get started by editing&nbsp;\r\n          <code className=\"font-mono font-bold\">app/index.tsx</code>\r\n        </p>\r\n        <div className=\"fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none\">\r\n          <a\r\n            className=\"pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0\"\r\n            href=\"https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app\"\r\n            target=\"_blank\"\r\n            rel=\"noopener noreferrer\"\r\n          >\r\n            By{' '}\r\n            <Image\r\n              src=\"/vercel.svg\"\r\n              alt=\"Vercel Logo\"\r\n              className=\"dark:invert\"\r\n              width={100}\r\n              height={24}\r\n              priority\r\n            />\r\n          </a>\r\n        </div>\r\n      </div>\r\n\r\n      <div className=\"relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]\">\r\n        <Image\r\n          className=\"relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert\"\r\n          src=\"/next.svg\"\r\n          alt=\"Next.js Logo\"\r\n          width={180}\r\n          height={37}\r\n          priority\r\n        />\r\n      </div>\r\n\r\n      <LinkSection/>\r\n    </main>\r\n  )\r\n}`,};
-	await getChangeAndLocation(body);
+	await getChangeAndLocation(body, elementInstances);
 	await makeChanges(location, updatedText, branch.name);
 
 	return new Response(JSON.stringify({}), {
@@ -41,18 +45,19 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	})
 }
 
-async function getChangeAndLocation(body: RequestBody) {
-	const possibleComponents: ComponentElementBase[] = [];
-	const component = info.elementInstances.find(el => el.id === body.id);
+async function getChangeAndLocation(body: RequestBody, elementInstances: ComponentElementPrisma[]) {
+	const possibleComponents: ComponentLocation[] = [];
+	const component = elementInstances.find(el => el.id === body.id);
 	if (component === undefined) {
 		throw new Error('Cannot find component with id ' + body.id);
 	}
+	const containingComponent = component.definition;
 	
-	possibleComponents.push(component.containingComponent);
-	possibleComponents.push(...info.elementInstances.filter(el => el.name === component.containingComponent.name));
+	possibleComponents.push({file: containingComponent.file, start: containingComponent.start, end: containingComponent.end});
+	possibleComponents.push(...elementInstances.filter(el => el.name === containingComponent.name).map(el => ({file: el.file, start: el.start, end: el.end})));
 	
-	const elementSnippet = getCodeSnippet(component.location);
-	const possibleComponentsSnippets = possibleComponents.map(({location}) => getCodeSnippet(location));
+	//const elementSnippet = getCodeSnippet(component.location);
+	const possibleComponentsSnippets = await Promise.all(possibleComponents.map((location) => getCodeSnippet('bradofrado', 'Harmony', 'master')(location)));
 
 	const response = await openai.chat.completions.create({
 		model: 'gpt-3.5-turbo',
@@ -82,7 +87,7 @@ Provide the old code, the updated code, and the index of which code snippet the 
 		}
 
 		const newSnippet = referencedSnippet.replace(oldCode, newCode);
-		return {location: referencedComponent.location, updatedText: newSnippet};
+		return {location: referencedComponent, updatedText: newSnippet};
 	} else {
 		throw new Error('Invalid response from openai');
 	}

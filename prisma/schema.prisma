@@ -29,6 +29,28 @@ model Branch {
 	label String
 }
 
+model ComponentElement {
+	id String @id @default(cuid())
+	name String
+	children ComponentElement[] @relation("children")
+	file String
+	start Int
+	end Int
+	parent_id String?
+	parent ComponentElement? @relation(name: "children", fields: [parent_id], references: [id])
+	definition_id String
+	definition ComponentDefinition @relation(name: "definition", fields: [definition_id], references: [id])
+}
+
+model ComponentDefinition {
+	id String @id @default(cuid())
+	name String @unique
+	children ComponentElement[] @relation("definition")
+	file String
+	start Int
+	end Int
+}
+
 // model Session {
 //     id           String   @id @default(cuid())
 //     sessionToken String   @unique
