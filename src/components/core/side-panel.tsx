@@ -17,7 +17,11 @@ export interface SidePanelItems {
 export interface ProfileItem {
 	img: string,
 	name: string,
-	href: string
+	navigation: ({name: string} & ({
+    href?: undefined;
+    onClick: () => void;
+  } | {href: string, onClick?: undefined}))[]
+
 }
 export type SidePanelProps = {
   className?: string;
@@ -35,10 +39,6 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 	profileItem
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
-	const userNavigation = [
-		{ name: 'Your profile', href: '#' },
-		{ name: 'Sign out', href: '#' },
-	]
   return (
     <>
       {/*
@@ -162,14 +162,6 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 							<span className="sr-only">Open sidebar</span>
 							<Bars3Icon aria-hidden="true" className="h-6 w-6"/>
 						</button>
-						{profileItem ? <a href={profileItem.href}>
-							<span className="sr-only">Your profile</span>
-							<img
-								alt=""
-								className="h-8 w-8 rounded-full bg-gray-50"
-								src={profileItem.img}
-							/>
-						</a> : null}
 						{/* Separator */}
 						<div className="h-6 w-px bg-gray-200 lg:hidden" aria-hidden="true" />
 
@@ -185,17 +177,17 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 								{/* <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" /> */}
 
 								{/* Profile dropdown */}
-								<Menu as="div" className="relative">
+								{profileItem ? <Menu as="div" className="relative">
 									<Menu.Button className="-m-1.5 flex items-center p-1.5">
 										<span className="sr-only">Open user menu</span>
 										<img
 											className="h-8 w-8 rounded-full bg-gray-50"
-											src="https://images.unsplash.com/photo-1472099645785-5658abf4ff4e?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=2&w=256&h=256&q=80"
+											src={profileItem.img}
 											alt=""
 										/>
 										<span className="hidden lg:flex lg:items-center">
 											<span className="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">
-												Tom Cook
+												{profileItem.name}
 											</span>
 											<ChevronDownIcon className="ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
 										</span>
@@ -210,25 +202,33 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 										leaveTo="transform opacity-0 scale-95"
 									>
 										<Menu.Items className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
-											{userNavigation.map((item) => (
+											{profileItem.navigation.map((item) => (
 												<Menu.Item key={item.name}>
 													{({ active }) => (
-														<a
+														item.href ? <a
 															href={item.href}
-															className={getClass(
+                              className={getClass(
 																active ? 'bg-gray-50' : '',
 																'block px-3 py-1 text-sm leading-6 text-gray-900'
 															)}
 														>
 															{item.name}
-														</a>
+														</a> :  <button
+															onClick={item.onClick}
+                              className={getClass(
+																active ? 'bg-gray-50' : '',
+																'block px-3 py-1 text-sm leading-6 text-gray-900'
+															)}
+														>
+															{item.name}
+														</button>
 													)}
 												</Menu.Item>
 											))}
 										</Menu.Items>
 									</Transition>
-								</Menu>
-							</div>
+								</Menu> : null}
+							</div> 
 						</div>
 					</div>
 					<main className="py-10">

@@ -63,7 +63,8 @@ const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> =
 	const changeProperty = useChangeProperty<BranchItem>(setBranch);
 
 	const onNewBranch = () => {
-		mutate({branch}, {
+		const name = branch.label.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
+		mutate({branch: {...branch, name}}, {
 			onSuccess(data) {
 				onSuccessfulCreation(data);
 				onClose();
@@ -83,9 +84,9 @@ const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> =
 				<Label className="sm:col-span-3" label="Branch Label:">
 					<Input value={branch.label} onChange={changeProperty.formFunc('label', branch)}/>
 				</Label>
-				<Label className="sm:col-span-3" label="Branch Name:">
+				{/* <Label className="sm:col-span-3" label="Branch Name:">
 					<Input value={branch.name} onChange={changeProperty.formFunc('name', branch)}/>
-				</Label>
+				</Label> */}
 				{/* <Label className="sm:col-span-3" label="Default URL:">
 					<Input />
 				</Label> */}
