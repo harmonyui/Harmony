@@ -18,9 +18,12 @@ datasource db {
 model Account {
     id                String  @id @default(cuid())
     userId            String
-		firstName					String
-		lastName					String
-		role							String
+	firstName		  String
+	lastName		  String
+	role			  String
+	oauthToken		  String @unique
+	repository_id     String @unique
+	repository        Repository @relation(fields: [repository_id], references: [id])
 }
 
 model Branch {
@@ -49,6 +52,14 @@ model ComponentDefinition {
 	file String
 	start Int
 	end Int
+}
+
+model Repository {
+	id String @id @default(cuid())
+	name String
+	owner String
+	branch String
+	account Account?
 }
 
 // model Session {

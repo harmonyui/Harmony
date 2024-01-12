@@ -1,33 +1,23 @@
 import { ComponentLocation } from "@harmony/types/component";
-import { octokit } from "../updator/github";
 import { ReadFiles } from "./indexor";
+import { GithubRepository } from "../../repository/github";
 
-export const fromGithub: (owner: string, repo: string, branch: string) => ReadFiles = (owner, repo, branch) => async (startPath, filter, callback) => {
-	const { data: fileInfo } = await octokit.rest.repos.getContent({
-		owner,
-		repo,
-		path: startPath,
-		ref: branch,
-	});
+export const fromGithub: (githubRepository: GithubRepository) => ReadFiles = (githubRepository) => async (startPath, filter, callback) => {
+	const files = await githubRepository.getContent(startPath);
 
-	if (Array.isArray(fileInfo)) {
-		for (const info of fileInfo) {
+	if (Array.isArray(files)) {
+		for (const info of files) {
 			if (info.type === 'dir' || filter.test(info.path)) {
-				await fromGithub(owner, repo, branch)(info.path, filter, callback);
+				await fromGithub(githubRepository)(info.path, filter, callback);
 			}
 		}
-	} else if ('content' in fileInfo && filter.test(fileInfo.path)) {
-		callback(fileInfo.path, atob(fileInfo.content));
+	} else if ('content' in files && filter.test(files.path)) {
+		callback(files.path, atob(files.content));
 	}
 }
 
-export const getCodeSnippet = (owner: string, repo: string, branch: string) => async ({file, start, end}: ComponentLocation): Promise<string> => {
-	const { data: fileInfo } = await octokit.rest.repos.getContent({
-		owner,
-		repo,
-		path: file,
-		ref: branch,
-	});
+export const getCodeSnippet = (githubRepository: GithubRepository) => async ({file, start, end}: ComponentLocation): Promise<string> => {
+	const fileInfo = await githubRepository.getContent(file);
 
 	if (Array.isArray(fileInfo) || !('content' in fileInfo)) {
 		throw new Error("Invalid path name");
