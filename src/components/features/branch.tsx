@@ -11,6 +11,7 @@ import { ClosableContent } from "../core/closable-content";
 import { Header } from "../core/header";
 import { Label } from "../core/label";
 import { ModalPortal } from "../core/modal";
+import { displayDate, displayTime } from "@harmony/utils/util";
 
 
 export const BranchDisplay: React.FunctionComponent<{branches: BranchItem[]}> = ({branches}) => {
@@ -59,7 +60,7 @@ interface CreateNewBranchModalProps {
 }
 const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> = ({show, onClose, onSuccessfulCreation}) => {
 	const {mutate, ...createUtils} = api.branch.createBranch.useMutation()
-	const [branch, setBranch] = useState<BranchItem>({id: '', name: '', label: ''});
+	const [branch, setBranch] = useState<BranchItem>({id: '', name: '', label: '', commits: []});
 	const changeProperty = useChangeProperty<BranchItem>(setBranch);
 
 	const onNewBranch = () => {
@@ -107,7 +108,7 @@ export interface BranchLineItemProps {
 	onOpenHarmony: () => void;
 }
 export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({item, onOpenHarmony}) => {
-	const {label} = item;
+	const {label, commits} = item;
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
@@ -117,8 +118,12 @@ export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({it
 				<span>{label}</span>
 			</button>
 			{isOpen ? <div className="flex flex-col gap-2 border-t py-2 px-4">
-				<div className="flex flex-col border-2 h-32 px-2 text-sm">
-					{/* {commits.map(commit => <div key={commit}>{commit}</div>)} */}
+				<div className="flex flex-col border-2 h-32 text-sm divide-y overflow-auto">
+					{commits.map(commit => <div key={commit.date.toString()} className="flex justify-between text-sm px-4 py-2">
+						<span>{commit.author}</span>
+						<span>{displayDate(commit.date)} at {displayTime(commit.date)}</span>
+						<span>{commit.message}</span>
+					</div>)}
 				</div>
 				<div className="flex justify-around">
 					<Button onClick={() => onOpenHarmony()}>Open with Harmony</Button>

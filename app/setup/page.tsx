@@ -27,8 +27,8 @@ const SetupPage: NextPage = () => {
 		return <>{createAccountUtils.error.message}</>
 	}
 
-	const onFinish = (repository: Repository, oauthToken: string): void => {
-		mutate({account, repository, oauthToken}, {
+	const onFinish = (repository: Repository): void => {
+		mutate({account, repository}, {
 			onSuccess: () => {
 				router.push('/');
 		}})
@@ -84,7 +84,7 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({data, onConti
 }
 
 interface GitRepositorySetupProps {
-	onContinue: (repo: Repository, oauthToken: string) => void;
+	onContinue: (repo: Repository) => void;
 }
 const GitRepositorySetup: React.FunctionComponent<GitRepositorySetupProps> = ({onContinue}) => {
 	return (
@@ -95,7 +95,7 @@ const GitRepositorySetup: React.FunctionComponent<GitRepositorySetupProps> = ({o
 }
 
 interface GitImportRepositoryProps {
-	onImport: (repo: Repository, oauthToken: string) => void;
+	onImport: (repo: Repository) => void;
 }
 const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = ({onImport}) => {
 	const query = api.setup.getRepositories.useQuery();
@@ -110,7 +110,7 @@ const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = (
 			<div className="flex flex-col">
 				{repos.map(repo => <div className="flex justify-between items-center border rounded-md p-3">
 					<span className="text-sm">{repo.name}</span>
-					<Button onClick={() => onImport(repo, repo.oauthToken)}>Import</Button>
+					<Button onClick={() => onImport(repo)}>Import</Button>
 				</div>)}
 			</div>
 		</> : null}

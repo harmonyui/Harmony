@@ -1,19 +1,18 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { branchItemSchema } from "@harmony/types/branch";
+import { BranchItem, branchItemSchema } from "@harmony/types/branch";
 import { GithubRepository } from "../repository/github";
+import { Db } from "@harmony/server/db";
 
 export const branchRoute = createTRPCRouter({
 	getBranches: protectedProcedure
 		.query(async ({ctx}) => {
-			const branches = await ctx.prisma.branch.findMany();
-
-			return branches;
+			return getBranches({...ctx, githubRepository: new GithubRepository(ctx.session.account.repository)})
 		}),
 	createBranch: protectedProcedure
 		.input(z.object({branch: branchItemSchema}))
 		.mutation(async ({ctx, input}) => {
-			const githubRepository = new GithubRepository(ctx.session.account.oauthToken, ctx.session.account.repository);
+			const githubRepository = new GithubRepository(ctx.session.account.repository);
 			await githubRepository.createBranch(input.branch.name);
 			
 			const newBranch = await ctx.prisma.branch.create({
@@ -23,6 +22,15 @@ export const branchRoute = createTRPCRouter({
 				}
 			});
 
-			return newBranch;
+			return {...newBranch, commits: []} satisfies BranchItem;
 		})
 })
+
+export const getBranches = async (ctx: {prisma: Db, githubRepository: GithubRepository}): Promise<BranchItem[]> => {
+	const branches = await ctx.prisma.branch.findMany();
+
+	return await Promise.all(branches.map(async (branch) => ({
+		...branch,
+		commits: await ctx.githubRepository.getCommits(branch.name)
+	}))) satisfies BranchItem[];
+}

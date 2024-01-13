@@ -10,7 +10,6 @@ import { Repository, repositorySchema } from "@harmony/types/branch";
 const createSetupSchema = z.object({
 	account: z.object({firstName: z.string(), lastName: z.string(), role: z.string()}), 
 	repository: repositorySchema, 
-	oauthToken: z.string()
 })
 
 export const setupRoute = createTRPCRouter({
@@ -19,7 +18,7 @@ export const setupRoute = createTRPCRouter({
 		.mutation(async ({ctx, input}) => {
 			const userId = ctx.session.auth.userId;
 		
-			const githubRepository = new GithubRepository(input.oauthToken, input.repository);
+			const githubRepository = new GithubRepository(input.repository);
 			//await indexCodebase('', fromGithub(githubRepository));
 
 			const newAccount = await ctx.prisma.account.create({
@@ -28,12 +27,12 @@ export const setupRoute = createTRPCRouter({
 					lastName: input.account.lastName,
 					role: input.account.role,
 					userId,
-					oauthToken: input.oauthToken,
 					repository: {
 						create: {
 							branch: input.repository.branch,
 							name: input.repository.name,
-							owner: input.repository.owner
+							owner: input.repository.owner,
+							installationId: input.repository.installationId
 						}
 					} 
 				}
@@ -56,7 +55,7 @@ export const setupRoute = createTRPCRouter({
 				return [];
 			}
 
-			const accessTokens = await Promise.all(currentInstallations.map(inst => appOctokit.request('POST /app/installations/{installation_id}/access_tokens', {installation_id: inst.id})))
+			const accessTokens = await Promise.all(currentInstallations.map(inst => appOctokit.request('POST /app/installations/{installation_id}/access_tokens', {installation_id: inst.id}).then(value => ({...value, data: {...value.data, installation_id: inst.id}}))))
 
 			const repositories = await Promise.all(accessTokens.map(accessToken =>fetch('https://api.github.com/installation/repositories', {
 				method: "GET",
@@ -64,10 +63,10 @@ export const setupRoute = createTRPCRouter({
 				headers: {
 					Authorization: `token ${accessToken.data.token}`
 				}
-			}).then(response => response.json().then(json => ({...octokitRepositorySchema.parse(json), auth_token: accessToken.data.token})))));
+			}).then(response => response.json().then(json => ({...octokitRepositorySchema.parse(json), auth_token: accessToken.data.token, installation_id: accessToken.data.installation_id})))));
 			
 			console.log(repositories);
-			return repositories.reduce<(Repository & {oauthToken: string})[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: '', name: repo.name, owner: repo.owner.login, branch: repo.default_branch, oauthToken: curr.auth_token})))]), []);
+			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: '', name: repo.name, owner: repo.owner.login, branch: repo.default_branch, oauthToken: curr.auth_token, installationId: curr.installation_id})))]), []);
 		})
 });
 
@@ -80,3 +79,7 @@ const octokitRepositorySchema = z.object({
 		default_branch: z.string()
 	}))
 })
+
+function getOauthToken() {
+	
+}

@@ -17,7 +17,6 @@ export const accountSchema = z.object({
 	firstName: z.string(),
 	lastName: z.string(),
 	role: z.string(),
-	oauthToken: z.string(),
 	repository: repositorySchema
 })
 
@@ -29,13 +28,15 @@ export type AuthContext = {
 	user: User
 };
 
-export type Session = {
-    auth: AuthContext,
-	account: Account | undefined
-} | {
+export type FullSession = {
 	auth: AuthContext,
 	account: Account
 }
+
+export type Session = {
+    auth: AuthContext,
+	account: Account | undefined
+} | FullSession;
 
 const getAccount = async (userId: string): Promise<Account | undefined> => {
 	const account = await prisma.account.findFirst({
@@ -54,7 +55,6 @@ const getAccount = async (userId: string): Promise<Account | undefined> => {
 		lastName: account.lastName,
 		repository: account.repository,
 		role: account.role,
-		oauthToken: account.oauthToken,
 	}
 }
 

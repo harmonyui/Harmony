@@ -1,5 +1,5 @@
 import { GetServerSidePropsContext, type GetServerSideProps } from "next";
-import { Session, getServerAuthSession } from "@harmony/server/auth";
+import { FullSession, Session, getServerAuthSession } from "@harmony/server/auth";
 import { redirect } from "next/navigation";
 
 interface RequireRouteProps {
@@ -12,18 +12,11 @@ export const requireRoute =
   async () => {
     const session = await getServerAuthSession();
 
-    if (!session?.auth || (check && check(session))) {
-      return {
-        redirect: {
-          destination: redirect, // login path
-          permanent: false,
-        },
-      };
+    if (!session?.auth || !session.account || (check && check(session))) {
+      return {redirect, session: undefined}
     }
 
-		return {
-			redirect: undefined
-		}
+		return {session: session as FullSession, redirect: undefined};
   };
 
 // export const isNotRole =
@@ -45,15 +38,16 @@ export const requireAuth = requireRoute({ redirect: "/setup", check: (session) =
 	return session.account === undefined;
 } });
 
-export const withAuth = <T,>(Component: React.FunctionComponent<T>): React.FunctionComponent<T> => 
+type AuthProps = {session: FullSession}
+export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.FunctionComponent<AuthProps> => 
 	async (props) => {
 		const response = await requireAuth()();
 
 		if (response.redirect) {
-			redirect('/setup')
+			redirect('/setup');
 		}
 
-		return <Component {...props}/>
+		return <Component session={response.session as FullSession}/>
 	}
 
 // export const requireRole = (role: UserRole) =>

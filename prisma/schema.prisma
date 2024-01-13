@@ -21,7 +21,6 @@ model Account {
 	firstName		  String
 	lastName		  String
 	role			  String
-	oauthToken		  String @unique
 	repository_id     String @unique
 	repository        Repository @relation(fields: [repository_id], references: [id])
 }
@@ -59,6 +58,7 @@ model Repository {
 	name String
 	owner String
 	branch String
+	installationId Int
 	account Account?
 }
 
