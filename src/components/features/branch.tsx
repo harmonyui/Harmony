@@ -12,6 +12,7 @@ import { Header } from "../core/header";
 import { Label } from "../core/label";
 import { ModalPortal } from "../core/modal";
 import { displayDate, displayTime } from "@harmony/utils/util";
+import { CreateNewPullRequestModal } from "./pull-request";
 
 
 export const BranchDisplay: React.FunctionComponent<{branches: BranchItem[]}> = ({branches}) => {
@@ -37,7 +38,7 @@ interface HarmonyModalProps {
 	show: boolean,
 	onClose: () => void,
 }
-const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({children, show, onClose}) => {
+export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({children, show, onClose}) => {
 	return (
 		<ModalPortal show={show}>
 			<div className="flex justify-center items-center h-full w-full">
@@ -108,8 +109,9 @@ export interface BranchLineItemProps {
 	onOpenHarmony: () => void;
 }
 export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({item, onOpenHarmony}) => {
-	const {label, commits} = item;
+	const {label, commits, pullRequestUrl} = item;
 	const [isOpen, setIsOpen] = useState(false);
+	const [showPRModal, setShowPRModal] = useState(false);
 
 	return (
 		<div className="w-full border rounded-md">
@@ -127,9 +129,10 @@ export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({it
 				</div>
 				<div className="flex justify-around">
 					<Button onClick={() => onOpenHarmony()}>Open with Harmony</Button>
-					<Button>Submit Pull Request</Button>
+					{pullRequestUrl ? <Button as='a' href={pullRequestUrl} target="_blank">Open Pull Request</Button> : <Button onClick={() => setShowPRModal(true)}>Submit Pull Request</Button>}
 				</div>
 			</div> : null}
+			<CreateNewPullRequestModal show={showPRModal} onClose={() => setShowPRModal(false)} branch={item}/>
 		</div>
 	)
 }

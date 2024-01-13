@@ -163,4 +163,18 @@ export class GithubRepository {
 
         return aheadCommits;
     }
+
+    public async createPullRequest(branch: string, title: string, body: string) {
+        const octokit = await this.getOctokit();
+        const response = await octokit.rest.pulls.create({
+            owner: this.repository.owner,
+            repo: this.repository.name,
+            title,
+            body,
+            base: this.repository.branch,
+            head: branch,
+        });
+
+        return response.data.html_url;
+    }
 }

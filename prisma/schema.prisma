@@ -29,6 +29,16 @@ model Branch {
 	id	String @id @default(cuid())
 	name String
 	label String
+	pullRequest PullRequest?
+}
+
+model PullRequest {
+	id String @id @default(cuid())
+	title String
+	body String
+	url String
+	branch_id String @unique
+	branch Branch @relation(fields: [branch_id], references: [id])
 }
 
 model ComponentElement {

@@ -1,4 +1,5 @@
 import { branchRoute } from "./routers/branch";
+import { pullRequestRouter } from "./routers/pull-request";
 import { setupRoute } from "./routers/setup";
 import { createTRPCRouter } from "./trpc";
 
@@ -9,7 +10,8 @@ import { createTRPCRouter } from "./trpc";
  */
 export const appRouter = createTRPCRouter({
   setup: setupRoute,
-	branch: branchRoute
+	branch: branchRoute,
+  pullRequest: pullRequestRouter,
 });
 
 // export type definition of API

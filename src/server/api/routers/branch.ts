@@ -27,10 +27,17 @@ export const branchRoute = createTRPCRouter({
 })
 
 export const getBranches = async (ctx: {prisma: Db, githubRepository: GithubRepository}): Promise<BranchItem[]> => {
-	const branches = await ctx.prisma.branch.findMany();
+	const branches = await ctx.prisma.branch.findMany({
+		include: {
+			pullRequest: true
+		}
+	});
 
 	return await Promise.all(branches.map(async (branch) => ({
-		...branch,
+		id: branch.id,
+		name: branch.name,
+		label: branch.label,
+		pullRequestUrl: branch.pullRequest?.url ?? undefined,
 		commits: await ctx.githubRepository.getCommits(branch.name)
 	}))) satisfies BranchItem[];
 }
