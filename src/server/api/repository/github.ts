@@ -3,10 +3,11 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { CommitItem, Repository } from "@harmony/types/branch";
 
-const privateKeyPath = process.env.PRIVATE_KEY_PATH || '';
+const privateKeyPath = process.env.PRIVATE_KEY_PATH;
+const privateKeyRaw = privateKeyPath ? fs.readFileSync(privateKeyPath) : process.env.PRIVATE_KEY;
 const appId = process.env.GITHUB_APP_ID || '';
 
-const privateKey = crypto.createPrivateKey(fs.readFileSync(privateKeyPath)).export({
+const privateKey = crypto.createPrivateKey(privateKeyRaw || '').export({
     type: "pkcs8",
     format: "pem"
 }) as string;
