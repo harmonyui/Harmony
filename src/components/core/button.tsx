@@ -1,9 +1,12 @@
 import React from "react";
 import type { PolymorphicComponentProps } from "../../types/polymorphics";
+import { Spinner } from "./spinner";
 
 export type ButtonType = "primary" | "secondary" | "other" | "none";
-type ButtonProps =
-  | {
+type ButtonProps = {
+  loading?: boolean
+}
+  & ({
       mode?: Exclude<ButtonType, "other">;
       className?: string;
       backgroundColor?: string;
@@ -12,7 +15,7 @@ type ButtonProps =
       mode: "other";
       backgroundColor: string;
       className?: string;
-    };
+    })
 type TextProps<C extends React.ElementType> = PolymorphicComponentProps<
   C,
   ButtonProps
@@ -23,6 +26,7 @@ export const Button = <T extends React.ElementType>({
   mode = "primary",
   backgroundColor,
   className,
+  loading,
   ...rest
 }: TextProps<T>): JSX.Element => {
   const Component = as || "button";
@@ -39,7 +43,8 @@ export const Button = <T extends React.ElementType>({
 	: `${buttonClasses[mode]} ${className}`;
   return (
     <Component className={_class} style={style} type="button" {...rest}>
-      {children}
+      {loading ? <Spinner className="relative left-1/2 -translate-x-1/2" sizeClass="w-5 h-5"/> : null}
+      {loading ? <div className="invisible">{children}</div> : children}
     </Component>
   );
 };

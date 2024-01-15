@@ -12,6 +12,7 @@ export const branchItemSchema = z.object({
 	id: z.string(),
 	name: z.string(),
 	label: z.string(),
+	url: z.string(),
 	commits: z.array(commitSchema),
 	pullRequestUrl: z.optional(z.string())
 })

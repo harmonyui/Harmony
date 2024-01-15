@@ -3,6 +3,7 @@ import { Button } from "@harmony/components/core/button";
 import { Header } from "@harmony/components/core/header";
 import { Input } from "@harmony/components/core/input";
 import { Label } from "@harmony/components/core/label";
+import { LoadingScreen } from "@harmony/components/features/loading-screen";
 import { useChangeProperty } from "@harmony/hooks/change-property";
 import { Account as AccountServer } from "@harmony/server/auth";
 import { Repository } from "@harmony/types/branch";
@@ -20,11 +21,9 @@ const SetupPage: NextPage = () => {
 	const router = useRouter();
 
 	if (createAccountUtils.isLoading) {
-		return <>loading</>;
-	}
-
-	if (createAccountUtils.isError) {
-		return <>{createAccountUtils.error.message}</>
+		return <LoadingScreen>
+			Creating account. This could take a few minutes.
+		</LoadingScreen>;
 	}
 
 	const onFinish = (repository: Repository): void => {
@@ -44,6 +43,7 @@ const SetupPage: NextPage = () => {
 			<Header level={1}>Welcome to Harmony</Header>
 			{page === 0 ? <WelcomeSetup data={account} onContinue={onWelcomeContinue}/> :
 				<GitRepositorySetup onContinue={onFinish}/>}
+			{createAccountUtils.isError ? <p className="text-sm text-red-400">There was an error, please contact support if this problem persists</p> : null}
 		</div>
 	</main>)
 }

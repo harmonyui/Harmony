@@ -1,6 +1,8 @@
 import { GetServerSidePropsContext, type GetServerSideProps } from "next";
 import { FullSession, Session, getServerAuthSession } from "@harmony/server/auth";
 import { redirect } from "next/navigation";
+import { AuthContext } from "@harmony/server/api/trpc";
+import { prisma } from "@harmony/server/db";
 
 interface RequireRouteProps {
   redirect: string;
@@ -38,7 +40,7 @@ export const requireAuth = requireRoute({ redirect: "/setup", check: (session) =
 	return session.account === undefined;
 } });
 
-type AuthProps = {session: FullSession}
+type AuthProps = {ctx: AuthContext}
 export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.FunctionComponent<AuthProps> => 
 	async (props) => {
 		const response = await requireAuth()();
@@ -47,7 +49,7 @@ export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.F
 			redirect('/setup');
 		}
 
-		return <Component session={response.session as FullSession}/>
+		return <Component ctx={{prisma, session: response.session as FullSession}}/>
 	}
 
 // export const requireRole = (role: UserRole) =>

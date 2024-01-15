@@ -14,6 +14,7 @@ export interface User {
 }
 
 export const accountSchema = z.object({
+	id: z.string(),
 	firstName: z.string(),
 	lastName: z.string(),
 	role: z.string(),
@@ -51,9 +52,10 @@ const getAccount = async (userId: string): Promise<Account | undefined> => {
 	if (account === null) return undefined;
 
 	return {
+		id: account.id,
 		firstName: account.firstName,
 		lastName: account.lastName,
-		repository: account.repository,
+		repository: account.repository[0],
 		role: account.role,
 	}
 }
@@ -67,7 +69,6 @@ export const getServerAuthSession = async (): Promise<Session | undefined> => {
 		if (user.username === null) {
 			throw new Error("User does not have username");
 		}
-		//const oauthToken = await clerkClient.users.getUserOauthAccessToken(userId, 'oauth_github');
 		ourAuth = {
 			user: {
 				id: user.id,
@@ -76,7 +77,6 @@ export const getServerAuthSession = async (): Promise<Session | undefined> => {
 				username: user.username
 			},
 			userId,
-			//oauthToken: oauthToken[0].token
 		}
 	}
 	

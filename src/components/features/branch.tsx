@@ -19,7 +19,9 @@ export const BranchDisplay: React.FunctionComponent<{branches: BranchItem[]}> = 
 	const [showNewBranch, setShowNewBranch] = useState(false);
 	
 	const openBranch = (item: BranchItem) => {
-		window.open(`http://localhost:3000/branch?branch-id=${item.id}`, '_blank');
+		const url = new URL(item.url);
+		url.searchParams.append('branch-id', item.id);
+		window.open(url.href, '_blank');
 	}
 
 	return <ModalProvider>
@@ -61,15 +63,18 @@ interface CreateNewBranchModalProps {
 }
 const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> = ({show, onClose, onSuccessfulCreation}) => {
 	const {mutate, ...createUtils} = api.branch.createBranch.useMutation()
-	const [branch, setBranch] = useState<BranchItem>({id: '', name: '', label: '', commits: []});
+	const [branch, setBranch] = useState<BranchItem>({id: '', name: '', label: '', url: '', commits: []});
 	const changeProperty = useChangeProperty<BranchItem>(setBranch);
+	const [loading, setLoading] = useState(false);
 
 	const onNewBranch = () => {
 		const name = branch.label.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
+		setLoading(true);
 		mutate({branch: {...branch, name}}, {
 			onSuccess(data) {
 				onSuccessfulCreation(data);
 				onClose();
+				setLoading(false);
 			}
 		})
 	}
@@ -83,12 +88,12 @@ const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> =
 				<p>Fill out the following fields to create a new branch through Harmony</p>
 			</div>
 			<div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 my-2">
-				<Label className="sm:col-span-3" label="Branch Label:">
+				<Label className="sm:col-span-full" label="Branch Label:">
 					<Input value={branch.label} onChange={changeProperty.formFunc('label', branch)}/>
 				</Label>
-				{/* <Label className="sm:col-span-3" label="Branch Name:">
-					<Input value={branch.name} onChange={changeProperty.formFunc('name', branch)}/>
-				</Label> */}
+				<Label className="sm:col-span-full" label="Url:">
+					<Input value={branch.url} onChange={changeProperty.formFunc('url', branch)}/>
+				</Label>
 				{/* <Label className="sm:col-span-3" label="Default URL:">
 					<Input />
 				</Label> */}
@@ -97,7 +102,7 @@ const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> =
 				</Label> */}
 			</div>
 			<div className="flex">
-				<Button className="ml-auto" onClick={onNewBranch}>Open in Harmony</Button>
+				<Button className="ml-auto" onClick={onNewBranch} loading={loading}>Open in Harmony</Button>
 			</div>
 		</HarmonyModal>
 	)

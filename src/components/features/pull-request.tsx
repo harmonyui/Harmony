@@ -41,15 +41,18 @@ export const CreateNewPullRequestModal: React.FunctionComponent<CreateNewBranchM
 	const [pullRequest, setPullRequest] = useState<PullRequest>({id: '', title: '', body: '', url: ''});
 	const changeProperty = useChangeProperty<PullRequest>(setPullRequest);
     const [branchItem, setBranchItem] = useState<BranchItem | undefined>(branch);
+	const [loading, setLoading] = useState(false);
 
     const branches = query.data || [];
 
 	const onNewPullRequest = () => {
         if (branchItem === undefined) return;
+		setLoading(true);
 
 		mutate({pullRequest: {...pullRequest}, branch: branchItem}, {
 			onSuccess(data) {
 				onClose();
+				setLoading(false);
 			}
 		})
 	}
@@ -80,7 +83,7 @@ export const CreateNewPullRequestModal: React.FunctionComponent<CreateNewBranchM
                 </Label> : null}
 			</div>
 			<div className="flex">
-				{branchItem !== undefined ? <Button className="ml-auto" onClick={onNewPullRequest}>Create Pull Request</Button> : null}
+				{branchItem !== undefined ? <Button className="ml-auto" onClick={onNewPullRequest} loading={loading}>Create Pull Request</Button> : null}
 			</div>
 		</HarmonyModal>
 	)

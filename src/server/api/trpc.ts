@@ -11,8 +11,8 @@ import { initTRPC, TRPCError } from "@trpc/server";
 import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import { prisma } from "../db";
-import { getServerAuthSession, Session } from "../auth";
+import { Db, prisma } from "../db";
+import { FullSession, getServerAuthSession, Session } from "../auth";
 
 
 /**
@@ -27,6 +27,18 @@ interface CreateContextOptions {
   session: Session | undefined;
 }
 
+interface AuthContextOptions {
+  session: FullSession
+}
+
+export interface CreateContext extends CreateContextOptions {
+  prisma: Db
+}
+
+export interface AuthContext extends AuthContextOptions {
+  prisma: Db
+}
+
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export
  * it from here.
@@ -37,12 +49,18 @@ interface CreateContextOptions {
  *
  * @see https://create.t3.gg/en/usage/trpc#-serverapitrpcts
  */
-const createInnerTRPCContext = (opts: CreateContextOptions) => {
+const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
   return {
     session: opts.session,
     prisma,
   };
 };
+
+export const createAuthContext = (session: Session) => {
+  return createInnerTRPCContext({
+    session
+  })
+}
 
 /**
  * This is the actual context you will use in your router. It will be used to process every request

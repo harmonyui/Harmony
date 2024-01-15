@@ -7,7 +7,7 @@ import fs from 'node:fs';
 import * as t from '@babel/types';
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
-export const indexCodebase = async (dirname: string, fromDir: ReadFiles) => {
+export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const elementInstances: ComponentElement[] = [];
 
@@ -32,6 +32,7 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles) => {
 		if (definition === null) {
 			definition = await prisma.componentDefinition.create({
 				data: {
+					repository_id: repoId,
 					name: instance.containingComponent.name,
 					file: instance.containingComponent.location.file,
 					start: instance.containingComponent.location.start,
@@ -44,6 +45,7 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles) => {
 			const newElement = await prisma.componentElement.create({
 				data: {
 					id: instance.id,
+					repository_id: repoId,
 					name: instance.name,
 					file: instance.location.file,
 					start: instance.location.start,

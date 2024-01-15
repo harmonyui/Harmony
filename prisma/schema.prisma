@@ -21,19 +21,21 @@ model Account {
 	firstName		  String
 	lastName		  String
 	role			  String
-	repository_id     String @unique
-	repository        Repository @relation(fields: [repository_id], references: [id])
+	repository Repository[]
 }
 
 model Branch {
 	id	String @id @default(cuid())
+	repository_id String
 	name String
 	label String
+	url String
 	pullRequest PullRequest?
 }
 
 model PullRequest {
 	id String @id @default(cuid())
+	repository_id String
 	title String
 	body String
 	url String
@@ -43,6 +45,7 @@ model PullRequest {
 
 model ComponentElement {
 	id String @id @default(cuid())
+	repository_id String
 	name String
 	children ComponentElement[] @relation("children")
 	file String
@@ -56,6 +59,7 @@ model ComponentElement {
 
 model ComponentDefinition {
 	id String @id @default(cuid())
+	repository_id String
 	name String @unique
 	children ComponentElement[] @relation("definition")
 	file String
@@ -65,11 +69,12 @@ model ComponentDefinition {
 
 model Repository {
 	id String @id @default(cuid())
+	account_id String
 	name String
 	owner String
 	branch String
 	installationId Int
-	account Account?
+	account Account @relation(fields: [account_id], references: [id])
 }
 
 // model Session {

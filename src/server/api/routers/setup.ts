@@ -17,9 +17,6 @@ export const setupRoute = createTRPCRouter({
 		.input(createSetupSchema)
 		.mutation(async ({ctx, input}) => {
 			const userId = ctx.session.auth.userId;
-		
-			const githubRepository = new GithubRepository(input.repository);
-			//await indexCodebase('', fromGithub(githubRepository));
 
 			const newAccount = await ctx.prisma.account.create({
 				data: {
@@ -35,8 +32,14 @@ export const setupRoute = createTRPCRouter({
 							installationId: input.repository.installationId
 						}
 					} 
+				},
+				include: {
+					repository: true
 				}
 			});
+		
+			const githubRepository = new GithubRepository(input.repository);
+			await indexCodebase('', fromGithub(githubRepository), newAccount.repository[0].id);
 
 			return {
 				firstName: newAccount.firstName,

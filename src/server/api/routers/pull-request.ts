@@ -14,6 +14,7 @@ export const pullRequestRouter = createTRPCRouter({
 
             const newPullRequest = await ctx.prisma.pullRequest.create({
                 data: {
+                    repository_id: ctx.session.account.repository.id,
                     title: input.pullRequest.title,
                     body: input.pullRequest.body,
                     url,

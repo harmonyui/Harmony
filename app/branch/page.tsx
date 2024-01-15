@@ -7,9 +7,10 @@ import { withAuth } from "@harmony/utils/protected-routes-hoc";
 import { prisma } from "@harmony/server/db";
 import { getBranches } from "@harmony/server/api/routers/branch";
 import { GithubRepository } from "@harmony/server/api/repository/github";
+import { createTRPCContext } from "@harmony/server/api/trpc";
 
-const BranchPage = withAuth(async ({session}) => {
-	const branches = await getBranches({prisma, githubRepository: new GithubRepository(session.account.repository)})
+const BranchPage = withAuth(async ({ctx}) => {
+	const branches = await getBranches(ctx, new GithubRepository(ctx.session.account.repository));
 
 	return (
 		<ModalProvider>
