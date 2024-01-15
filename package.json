@@ -4,7 +4,7 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "next build",
+    "build": "npx prisma generate && next build",
     "start": "next start",
     "lint": "next lint",
     "compose": "docker compose -f devops/docker-compose.yml -p my-app up --build -d",
