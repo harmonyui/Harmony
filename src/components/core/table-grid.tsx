@@ -1,11 +1,11 @@
 import { useState } from "react";
-import { compare } from "model/src/utils";
 import { ChevronSwitch } from "./chevron-switch";
 import { Input } from "./input";
 import type { FilterChildren, FilterItem } from "./filter-button";
 import { FilterButton } from "./filter-button";
 import { Dropdown } from "./dropdown";
 import { BarsArrowDownIcon } from "./icons";
+import { compare } from "@harmony/utils/util";
 
 export type TableGridItemValue =
   | string

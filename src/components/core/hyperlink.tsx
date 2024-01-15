@@ -1,4 +1,4 @@
-import { getClass } from "model/src/utils";
+import { getClass } from "@harmony/utils/util";
 
 type HyperlinkComponentProps = React.ComponentPropsWithoutRef<"a">;
 export const Hyperlink = ({

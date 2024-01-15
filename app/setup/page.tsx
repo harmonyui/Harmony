@@ -108,7 +108,7 @@ const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = (
 		<Header level={4}>Import Git Repository</Header>
 		{repos ? repos.length === 0 ? <Button onClick={() => window.open("https://github.com/apps/harmony-ai-app/installations/new", 'MyWindow', 'width=600,height=300')}>Install</Button> : <>
 			<div className="flex flex-col">
-				{repos.map(repo => <div className="flex justify-between items-center border rounded-md p-3">
+				{repos.map(repo => <div key={repo.id} className="flex justify-between items-center border rounded-md p-3">
 					<span className="text-sm">{repo.name}</span>
 					<Button onClick={() => onImport(repo)}>Import</Button>
 				</div>)}

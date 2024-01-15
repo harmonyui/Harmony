@@ -1,4 +1,4 @@
-import type { AllOrNothing } from "model/src/core/utils";
+import { AllOrNothing } from "@harmony/types/utils";
 import { DropdownIcon, type DropdownItem, type ItemAction } from "./dropdown";
 import { EllipsisHorizontalIcon } from "./icons";
 

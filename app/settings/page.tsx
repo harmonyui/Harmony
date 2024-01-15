@@ -3,7 +3,7 @@ import { NextPage } from "next";
 import { SideNav } from "../../utils/side-nav";
 import { withAuth } from "@harmony/utils/protected-routes-hoc";
 
-const SettingsPage: NextPage = withAuth(() => {
+const SettingsPage = withAuth(() => {
 	return (
 		<SideNav>
 			<Header level={2}>Settings Page Coming Soon!</Header>

@@ -44,7 +44,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 			definition: true
 		}
 	});
-	const githubRepository = new GithubRepository(session.account.oauthToken, session.account.repository);
+	const githubRepository = new GithubRepository(session.account.repository);
 
 	const body = await req.json() as RequestBody;
 	const {location, updatedText} = await getChangeAndLocation(body, githubRepository, elementInstances);

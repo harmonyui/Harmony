@@ -209,7 +209,7 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 				// Check if the function is assigned to a variable or exported
 				if (t.isVariableDeclarator(path.parent) && t.isIdentifier(path.parent.id)) {
 					componentName = path.parent.id.name;
-				} else if (t.isExportDeclaration(path.parent) && path.parent.type !== 'ExportAllDeclaration' && t.isIdentifier(path.parent.declaration?.id)) {
+				} else if (t.isExportDeclaration(path.parent) && path.parent.type !== 'ExportAllDeclaration' && path.parent.declaration && 'id' in path.parent.declaration && t.isIdentifier(path.parent.declaration?.id)) {
 					componentName = path.parent.declaration.id.name;
 				} else if (t.isFunctionDeclaration(path.node) && t.isIdentifier(path.node.id)) {
 					componentName = path.node.id.name;

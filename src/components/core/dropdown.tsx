@@ -1,10 +1,10 @@
 import React, { useEffect, useState, type PropsWithChildren } from "react";
-import type { AllOrNothing } from "model/src/core/utils";
 import { Button } from "./button";
 import { ChevronDownIcon, type IconComponent } from "./icons";
 import { CheckboxInput } from "./input";
 import { Popover } from "./popover";
 import { PolymorphicComponentProps } from "../../types/polymorphics";
+import { AllOrNothing } from "@harmony/types/utils";
 
 export type ListBoxPopoverProps<T> = {
   items: DropdownItem<T>[];

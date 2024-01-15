@@ -1,4 +1,4 @@
-import { useColorVariant } from "model/src/core/colors";
+import { useColorVariant } from "@harmony/types/colors";
 
 type ColorVariant = "primary" | "blue";
 

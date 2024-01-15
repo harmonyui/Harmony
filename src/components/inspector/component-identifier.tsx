@@ -74,6 +74,18 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 			children: this.getComponentChildren(element),
 			attributes,
 			isComponent,
+			containingComponent: {
+				id: '',
+				attributes: [],
+				name: '',
+				isComponent: true,
+				location: {
+					file: '',
+					start: 0,
+					end: 0,
+				},
+				children: []
+			}
 		}
 	}
 

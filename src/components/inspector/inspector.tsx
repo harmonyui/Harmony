@@ -356,7 +356,7 @@ export class OverlayRect {
 			var propertyName = computedStyles[i];
 			if (propertiesToSkip.includes(propertyName)) continue;
 
-			clonedElement.style[propertyName] = computedStyles.getPropertyValue(propertyName);
+			clonedElement.style[propertyName as unknown as number] = computedStyles.getPropertyValue(propertyName);
 		}
 		
 		return clonedElement as HTMLElement;
