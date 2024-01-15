@@ -83,7 +83,7 @@ const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> =
 				<p>Fill out the following fields to create a new branch through Harmony</p>
 			</div>
 			<div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 my-2">
-				<Label className="sm:col-span-3" label="Branch Label:">
+				<Label className="sm:col-span-3" label="Label:">
 					<Input value={branch.label} onChange={changeProperty.formFunc('label', branch)}/>
 				</Label>
 				{/* <Label className="sm:col-span-3" label="Branch Name:">
