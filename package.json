@@ -4,8 +4,9 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "build": "npx prisma generate && next build",
+    "build": "next build",
     "start": "next start",
+    "postinstall": "prisma generate",
     "lint": "next lint",
     "compose": "docker compose -f devops/docker-compose.yml -p my-app up --build -d",
     "typecheck": "tsc --noEmit"
