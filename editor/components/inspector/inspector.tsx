@@ -1,10 +1,8 @@
 'use client';
-import { createPortal } from "react-dom"
 import { useHighlighter } from "./highlighter"
 import { useCallback, useEffect, useRef } from "react"
-import { useEffectEvent } from "../../hooks/effect-event";
+import { useEffectEvent } from "../../../src/hooks/effect-event";
 import { ReactComponentIdentifier } from "./component-identifier";
-import { ComponentElement } from "../../types/component";
 import hotkeys from 'hotkeys-js';
 import { SelectMode } from "../panel/harmony-panel";
 

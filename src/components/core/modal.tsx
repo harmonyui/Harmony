@@ -1,7 +1,7 @@
 'use client';
 import { createContext, useCallback, useContext, useEffect, useState } from "react"
 import { usePrevious } from "../../hooks/previous";
-import { ReplaceWithName } from "@harmony/types/utils";
+import { ReplaceWithName } from "../../../src/types/utils";
 import { createPortal } from "react-dom";
 
 interface ModalContextType {

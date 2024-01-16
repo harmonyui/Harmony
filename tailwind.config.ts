@@ -6,6 +6,7 @@ const config: Config = {
     './utils/**/*.{js,ts,jsx,tsx,mdx}',
     './src/**/*.{js,ts,jsx,tsx,mdx}',
     './app/**/*.{js,ts,jsx,tsx,mdx}',
+    './editor/**/*.{js,ts,jsx,tsx,mdx}'
   ],
   theme: {
     extend: {

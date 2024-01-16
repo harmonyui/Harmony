@@ -1,6 +1,5 @@
 import { Fiber } from "react-reconciler";
-import { Attribute, ComponentElement } from "../../types/component";
-import { TailwindAttributeTranslator } from "../harmony-provider";
+import { Attribute, ComponentElement } from "../../../src/types/component";
 import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementFiberUpward, getElementInspect, getFiberName, getNamedFiber, getReferenceFiber } from "./inspector-dev";
 
 export interface ComponentIdentifier {

@@ -1,6 +1,6 @@
 'use client';
 
-import { useEffectEvent } from "@harmony/hooks/effect-event";
+import { useEffectEvent } from "../../../src/hooks/effect-event";
 import { getEventListeners } from "events";
 import { useCallback, useEffect } from "react";
 

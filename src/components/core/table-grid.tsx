@@ -5,7 +5,7 @@ import type { FilterChildren, FilterItem } from "./filter-button";
 import { FilterButton } from "./filter-button";
 import { Dropdown } from "./dropdown";
 import { BarsArrowDownIcon } from "./icons";
-import { compare } from "@harmony/utils/util";
+import { compare } from "../../../src/utils/util";
 
 export type TableGridItemValue =
   | string

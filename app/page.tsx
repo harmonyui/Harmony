@@ -1,8 +1,5 @@
-import {  withAuth } from "@harmony/utils/protected-routes-hoc";
+import {  withAuth } from "../utils/protected-routes-hoc";
 import { redirect } from "next/navigation";
-import { SidePanel, SidePanelItems } from "@harmony/components/core/side-panel";
-import { GitBranchIcon, GitPullRequestIcon, ToggleIcon, UserGroupIcon } from "@harmony/components/core/icons";
-import { SideNav } from "../utils/side-nav";
 
 const Home = withAuth(() => {
 	redirect('/branch');

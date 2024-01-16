@@ -1,13 +1,12 @@
-import { Attribute, ComponentElement } from "@harmony/types/component"
-import { createPortal } from "react-dom"
-import { Header } from "@harmony/components/core/header";
-import { Label } from "@harmony/components/core/label";
-import { Input, InputBlur } from "../core/input";
-import { TabButton, TabItem } from "../core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, CursorArrowRaysIcon, EyeDropperIcon, IconComponent } from "../core/icons";
-import { getClass, groupBy } from "@harmony/utils/util";
+import { Attribute, ComponentElement } from "../../../src/types/component"
+import { Header } from "../../../src/components/core/header";
+import { Label } from "../../../src/components/core/label";
+import { Input, InputBlur } from "../../../src/components/core/input";
+import { TabButton, TabItem } from "../../../src/components/core/tab";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, CursorArrowRaysIcon, EyeDropperIcon, IconComponent } from "../../../src/components/core/icons";
+import { getClass, groupBy } from "../../../src/utils/util";
 import { useState } from "react";
-import { Button } from "../core/button";
+import { Button } from "../../../src/components/core/button";
 import { componentIdentifier } from "../inspector/inspector";
 
 export type SelectMode = 'scope' | 'tweezer';

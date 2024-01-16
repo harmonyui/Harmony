@@ -1,9 +1,9 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { HarmonyProvider } from '@harmony/components/harmony-provider'
+import { HarmonyProvider } from '@harmony-editor/index'
 import { ClerkProvider } from '@clerk/nextjs'
-import { TrpcProvider } from '@harmony/utils/trpc-provider'
+import { TrpcProvider } from '../utils/trpc-provider'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -22,9 +22,8 @@ export default function RootLayout({
 			<TrpcProvider>
 				<html className="h-full bg-white" lang="en">
 					<body className={`${inter.className} h-full`}>
-						<HarmonyProvider>
-							{children}
-						</HarmonyProvider>
+						{children}
+						<HarmonyProvider/>
 					</body>
 				</html>
 			</TrpcProvider>

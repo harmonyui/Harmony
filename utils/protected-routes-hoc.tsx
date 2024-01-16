@@ -1,8 +1,8 @@
 import { GetServerSidePropsContext, type GetServerSideProps } from "next";
-import { FullSession, Session, getServerAuthSession } from "@harmony/server/auth";
+import { FullSession, Session, getServerAuthSession } from "../src/server/auth";
 import { redirect } from "next/navigation";
-import { AuthContext } from "@harmony/server/api/trpc";
-import { prisma } from "@harmony/server/db";
+import { AuthContext } from "../src/server/api/trpc";
+import { prisma } from "../src/server/db";
 
 interface RequireRouteProps {
   redirect: string;

@@ -1,8 +1,8 @@
 import { z } from "zod";
 import { AuthContext, CreateContext, createTRPCRouter, protectedProcedure } from "../trpc";
-import { BranchItem, branchItemSchema } from "@harmony/types/branch";
+import { BranchItem, branchItemSchema } from "../../../../src/types/branch";
 import { GithubRepository } from "../repository/github";
-import { Db } from "@harmony/server/db";
+import { Db } from "../../../../src/server/db";
 
 export const branchRoute = createTRPCRouter({
 	getBranches: protectedProcedure

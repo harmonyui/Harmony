@@ -1,7 +1,7 @@
-import { Header } from "@harmony/components/core/header";
+import { Header } from "../../src/components/core/header";
 import { NextPage } from "next";
 import { SideNav } from "../../utils/side-nav";
-import { withAuth } from "@harmony/utils/protected-routes-hoc";
+import { withAuth } from "../../utils/protected-routes-hoc";
 
 const TeamPage = withAuth(() => {
 	return (

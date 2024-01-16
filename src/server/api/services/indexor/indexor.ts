@@ -1,6 +1,6 @@
-import { prisma } from "@harmony/server/db";
-import { HarmonyComponent, ComponentElement } from "@harmony/types/component";
-import { hashComponent } from "@harmony/utils/util";
+import { prisma } from "../../../../../src/server/db";
+import { HarmonyComponent, ComponentElement } from "../../../../../src/types/component";
+import { hashComponent } from "../../../../../src/utils/util";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import fs from 'node:fs';

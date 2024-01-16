@@ -5,6 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
+    "build:css": "tailwindcss -o editor/dist/cjs/global.css --minify && cp editor/dist/cjs/global.css editor/dist/esm/global.css",
     "start": "next start",
     "postinstall": "prisma generate",
     "lint": "next lint",

@@ -2,16 +2,16 @@
 import { GitBranchIcon } from "../core/icons";
 import {Button} from '../core/button';
 import { useState } from "react";
-import { BranchItem } from "@harmony/types/branch";
+import { BranchItem } from "../../../src/types/branch";
 import { ModalProvider } from "react-aria";
-import { useChangeProperty } from "@harmony/hooks/change-property";
-import { api } from "@harmony/utils/api";
-import { Input } from "@harmony/components/core/input";
+import { useChangeProperty } from "../../../src/hooks/change-property";
+import { api } from "../../../utils/api";
+import { Input } from "../../../src/components/core/input";
 import { ClosableContent } from "../core/closable-content";
 import { Header } from "../core/header";
 import { Label } from "../core/label";
 import { ModalPortal } from "../core/modal";
-import { displayDate, displayTime } from "@harmony/utils/util";
+import { displayDate, displayTime } from "../../../src/utils/util";
 import { CreateNewPullRequestModal } from "./pull-request";
 
 

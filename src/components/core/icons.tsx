@@ -1,4 +1,4 @@
-import { getClass } from "@harmony/utils/util";
+import { getClass } from "../../../src/utils/util";
 import React from "react";
 
 export type IconComponent = (

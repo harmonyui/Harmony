@@ -5,7 +5,7 @@ import React, { Fragment, useState } from 'react'
 import { type IconComponent, ToggleIcon } from './icons';
 import { Bars3Icon, ChevronDownIcon, Cog6ToothIcon, XMarkIcon } from './icons';
 import {Transition, Dialog, Menu} from '@headlessui/react';
-import { getClass } from '@harmony/utils/util';
+import { getClass } from '../../../src/utils/util';
 import { Header } from './header';
 
 export interface SidePanelItems {
