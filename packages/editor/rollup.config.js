@@ -2,6 +2,8 @@ import resolve from 'rollup-plugin-node-resolve';
 import commonjs from 'rollup-plugin-commonjs';
 import babel from 'rollup-plugin-babel';
 import typescript from '@rollup/plugin-typescript';
+import alias from '@rollup/plugin-alias'
+import path from 'node:path';
 
 export default {
   input: 'src/index.ts', // Entry point of your library
@@ -12,17 +14,23 @@ export default {
     sourcemap: true,
   },
   plugins: [
-    resolve({
-        extensions: ['.js', '.jsx', '.ts', '.tsx']
-    }),
-    commonjs({
-        include: '@harmony/**'
-    }),
+    resolve(),
+    commonjs(),
     typescript(),
+    alias({
+        entries: [
+            {find: '@harmony/ui', replacement: path.join(__dirname, '../ui')},
+            {find: '@harmony/util', replacement: path.join(__dirname, '../util')}
+        ],
+        customResolver: resolve({
+            extensions: ['.js', '.jsx', '.ts', '.tsx'],
+        })
+    }),
     babel({
       exclude: 'node_modules/**', // only transpile our source code
       presets: ['@babel/preset-env', '@babel/preset-react'],
     }),
+    
   ],
   external: ['react', 'react-dom', 'react/jsx-runtime'], // Specify dependencies that shouldn't be bundled
 //   external: (id) => {

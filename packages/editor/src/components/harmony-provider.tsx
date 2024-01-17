@@ -4,7 +4,7 @@ import { Inspector, componentIdentifier } from "./inspector/inspector";
 import { Attribute, ComponentElement } from "@harmony/ui/src/types/component";
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
-import { hashComponent } from "@harmony/util/src//index";
+import { hashComponent } from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 
 export interface HarmonyProviderProps {
@@ -79,7 +79,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ()
 		hotkeys('ctrl+shift+h', onToggle);
 
 		return () => hotkeys.unbind('esc', onToggle);
-	}, [isToggled, rootComponent, assignIds]);
+	}, []);
 
 	// useEffect(() => {
 	// 	if (ref.current) {
