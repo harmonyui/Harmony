@@ -5,7 +5,7 @@ import { indexCodebase } from "../services/indexor/indexor";
 import { fromDir } from "../services/indexor/local";
 import { fromGithub } from "../services/indexor/github";
 import { GithubRepository, appOctokit } from "../repository/github";
-import { Repository, repositorySchema } from "../../../../src/types/branch";
+import { Repository, repositorySchema } from "../../../../packages/ui/src/types/branch";
 
 const createSetupSchema = z.object({
 	account: z.object({firstName: z.string(), lastName: z.string(), role: z.string()}), 

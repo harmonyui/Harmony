@@ -1,4 +1,4 @@
-import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent } from '../../../../src/types/component';
+import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent } from '../../../../packages/ui/src/types/component';
 import fs from 'node:fs';
 import OpenAI from 'openai';
 import { z } from 'zod';
@@ -8,7 +8,7 @@ import { Prisma } from '@prisma/client';
 import { getCodeSnippet } from '../../../../src/server/api/services/indexor/github';
 import { GithubRepository } from '../../../../src/server/api/repository/github';
 import { getServerAuthSession } from '../../../../src/server/auth';
-import { Repository } from '../../../../src/types/branch';
+import { Repository } from '../../../../packages/ui/src/types/branch';
 //import {ComponentElement as ComponentElementPrisma, Prisma} from '@prisma/client';
 
 const openai = new OpenAI();

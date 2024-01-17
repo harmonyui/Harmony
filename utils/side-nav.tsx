@@ -1,7 +1,7 @@
 'use client'
 import { useClerk } from "@clerk/nextjs";
-import { ToggleIcon, GitBranchIcon, GitPullRequestIcon, UserGroupIcon } from "../src/components/core/icons"
-import { SidePanelItems, SidePanel, ProfileItem } from "../src/components/core/side-panel"
+import { ToggleIcon, GitBranchIcon, GitPullRequestIcon, UserGroupIcon } from "../packages/ui/src/components/core/icons"
+import { SidePanelItems, SidePanel, ProfileItem } from "../packages/ui/src/components/core/side-panel"
 import { useRouter } from "next/navigation";
 
 interface SideNavProps {

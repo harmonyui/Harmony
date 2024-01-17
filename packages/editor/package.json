@@ -1,0 +1,41 @@
+{
+  "name": "@harmony/editor",
+  "description": "Front-end overlay ontop of your webapp",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "types": "./dist/esm/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "build": "npm run build:esm && npm run build:cjs",
+    "build:rollup": "rollup -c",
+    "build:esm": "tsc && tsc-alias",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs && tsc-alias"
+  },
+  "peerDependencies": {
+    "dayjs": "^1.11.10",
+    "hotkeys-js": "^3.13.2",
+    "react": "^18",
+    "react-reconciler": "^0.29.0",
+    "tsc-alias": "^1.8.8",
+    "zod": "^3.22.4"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "@harmony/ui": "^1.0.0",
+    "@harmony/util": "^1.0.0"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/preset-env": "^7.23.8",
+    "@babel/preset-react": "^7.23.3",
+    "@rollup/plugin-typescript": "^11.1.6",
+    "rollup": "^2.79.1",
+    "rollup-plugin-babel": "^4.4.0",
+    "rollup-plugin-commonjs": "^10.1.0",
+    "rollup-plugin-node-resolve": "^5.2.0"
+  }
+}

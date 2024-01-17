@@ -1,7 +1,7 @@
 import { NextPage } from "next";
 import { SideNav } from "../../utils/side-nav";
-import { BranchDisplay, BranchLineItem } from "../../src/components/features/branch";
-import {  ModalProvider } from "../../src/components/core/modal";
+import { BranchDisplay, BranchLineItem } from "../../packages/ui/src/components/features/branch";
+import {  ModalProvider } from "../../packages/ui/src/components/core/modal";
 import React from "react";
 import { withAuth } from "../../utils/protected-routes-hoc";
 import { prisma } from "../../src/server/db";

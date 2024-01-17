@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { HarmonyProvider } from '@harmony-editor/index'
+import { HarmonyProvider } from '../packages/editor/src/index'
 import { ClerkProvider } from '@clerk/nextjs'
 import { TrpcProvider } from '../utils/trpc-provider'
 

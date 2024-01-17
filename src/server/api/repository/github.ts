@@ -1,7 +1,7 @@
 import { Octokit, App } from "octokit";
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import { CommitItem, Repository } from "../../../../src/types/branch";
+import { CommitItem, Repository } from "../../../../packages/ui/src/types/branch";
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const privateKeyRaw = privateKeyPath ? fs.readFileSync(privateKeyPath) : atob(process.env.PRIVATE_KEY || '');

@@ -1,0 +1,20 @@
+{
+    "compilerOptions": {
+      "target": "es5",
+      "lib": ["dom", "dom.iterable", "esnext"],
+      "allowJs": true,
+      "skipLibCheck": true,
+      "esModuleInterop": true,
+      "strict": true,
+      "forceConsistentCasingInFileNames": true,
+      "module": "esnext",
+      "moduleResolution": "node",
+      "jsx": "react-jsx",
+      "declaration": true,
+      "outDir": "./dist/esm",
+      "composite": true
+    },
+    // "references": [
+    //   {"path": "../ui"}
+    // ]
+}

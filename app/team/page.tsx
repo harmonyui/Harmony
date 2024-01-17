@@ -1,4 +1,4 @@
-import { Header } from "../../src/components/core/header";
+import { Header } from "../../packages/ui/src/components/core/header";
 import { NextPage } from "next";
 import { SideNav } from "../../utils/side-nav";
 import { withAuth } from "../../utils/protected-routes-hoc";

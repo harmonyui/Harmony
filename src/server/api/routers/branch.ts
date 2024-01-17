@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AuthContext, CreateContext, createTRPCRouter, protectedProcedure } from "../trpc";
-import { BranchItem, branchItemSchema } from "../../../../src/types/branch";
+import { BranchItem, branchItemSchema } from "../../../../packages/ui/src/types/branch";
 import { GithubRepository } from "../repository/github";
 import { Db } from "../../../../src/server/db";
 
