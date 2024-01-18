@@ -23,7 +23,7 @@ export default function RootLayout({
 				<html className="h-full bg-white" lang="en">
 					<body className={`${inter.className} h-full`}>
 						{children}
-						<HarmonyProvider/>
+						<HarmonyProvider repositoryId="clrf5dxjg000169tj4bwcrjj0"/>
 					</body>
 				</html>
 			</TrpcProvider>

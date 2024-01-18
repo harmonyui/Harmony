@@ -7,9 +7,12 @@ import hotkeys from 'hotkeys-js';
 import { hashComponent } from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 
+const WEB_URL = process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : ''
+
 export interface HarmonyProviderProps {
+	repositoryId: string
 }
-export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = () => {
+export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId}) => {
 	const [isToggled, setIsToggled] = useState(false);
 	const [selectedComponent, setSelectedComponent] = useState<HTMLElement>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
@@ -48,7 +51,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ()
 
 			if (branchId) {
 				setBranchId(branchId);
-				const response = await fetch(`/api/load/${branchId}`, {
+				const response = await fetch(`${WEB_URL}/api/load/${repositoryId}?branchId=${branchId}`, {
 					method: 'GET',
 					headers: {
 						'Accept': 'application/json',
