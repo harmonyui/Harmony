@@ -4,7 +4,7 @@ import { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
 import { prisma } from "./db";
 import { GithubRepository } from "./api/repository/github";
-import { Repository, repositorySchema } from "@harmony/types/branch";
+import { Repository, repositorySchema } from "../../packages/ui/src/types/branch";
 
 export interface User {
   id: string;

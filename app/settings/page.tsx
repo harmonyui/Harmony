@@ -1,7 +1,7 @@
-import { Header } from "@harmony/components/core/header";
 import { NextPage } from "next";
 import { SideNav } from "../../utils/side-nav";
-import { withAuth } from "@harmony/utils/protected-routes-hoc";
+import { withAuth } from "../../utils/protected-routes-hoc";
+import { Header } from "../../packages/ui/src/components/core/header";
 
 const SettingsPage = withAuth(() => {
 	return (

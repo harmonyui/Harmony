@@ -1,4 +1,4 @@
-import { ComponentElementBase } from "@harmony/types/component";
+import { ComponentElementBase } from "../../../../../packages/ui/src/types/component";
 import { z } from "zod";
 import fs from 'node:fs';
 

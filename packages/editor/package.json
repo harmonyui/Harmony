@@ -1,0 +1,43 @@
+{
+  "name": "harmony-ai-editor",
+  "description": "Front-end overlay ontop of your webapp",
+  "main": "./dist/umd/bundle.js",
+  "types": "./dist/esm/packages/editor/index.d.ts",
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "prepublish": "npm run build",
+    "build": "NODE_ENV=production webpack --mode=production",
+    "build:rollup": "rollup -c",
+    "build:esm": "tsc && tsc-alias",
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs && tsc-alias"
+  },
+  "peerDependencies": {
+    "dayjs": "^1.11.10",
+    "hotkeys-js": "^3.13.2",
+    "react": "^18",
+    "react-reconciler": "^0.29.0",
+    "tsc-alias": "^1.8.8",
+    "zod": "^3.22.4"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/preset-env": "^7.23.8",
+    "@babel/preset-react": "^7.23.3",
+    "css-loader": "^6.9.0",
+    "postcss-loader": "^8.0.0",
+    "style-loader": "^3.3.4",
+    "ts-loader": "^9.5.1",
+    "webpack": "^5.89.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "dependencies": {
+    "@harmony/ui": "^1.0.0",
+    "@harmony/util": "^1.0.0"
+  },
+  "version": "0.1.5"
+}

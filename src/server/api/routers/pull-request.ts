@@ -1,8 +1,8 @@
-import { branchItemSchema, pullRequestSchema } from "@harmony/types/branch";
+import { branchItemSchema, pullRequestSchema } from "../../../../packages/ui/src/types/branch";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { GithubRepository } from "../repository/github";
 import { z } from "zod";
-import { PullRequest } from "@harmony/types/branch";
+import { PullRequest } from "../../../../packages/ui/src/types/branch";
 
 export const pullRequestRouter = createTRPCRouter({
     createPullRequest: protectedProcedure

@@ -1,0 +1,17 @@
+{
+  "name": "@harmony/util",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "devDependencies": {},
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "peerDependencies": {
+    "dayjs": "^1.11.10",
+    "zod": "^3.22.4"
+  }
+}

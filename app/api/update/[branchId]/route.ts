@@ -1,14 +1,14 @@
-import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent } from '@harmony/types/component';
+import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent } from '../../../../packages/ui/src/types/component';
 import fs from 'node:fs';
 import OpenAI from 'openai';
 import { z } from 'zod';
-import { changesSchema } from '@harmony/server/api/services/updator/local';
-import { prisma } from '@harmony/server/db';
+import { changesSchema } from '../../../../src/server/api/services/updator/local';
+import { prisma } from '../../../../src/server/db';
 import { Prisma } from '@prisma/client';
-import { getCodeSnippet } from '@harmony/server/api/services/indexor/github';
-import { GithubRepository } from '@harmony/server/api/repository/github';
-import { getServerAuthSession } from '@harmony/server/auth';
-import { Repository } from '@harmony/types/branch';
+import { getCodeSnippet } from '../../../../src/server/api/services/indexor/github';
+import { GithubRepository } from '../../../../src/server/api/repository/github';
+import { getServerAuthSession } from '../../../../src/server/auth';
+import { Repository } from '../../../../packages/ui/src/types/branch';
 //import {ComponentElement as ComponentElementPrisma, Prisma} from '@prisma/client';
 
 const openai = new OpenAI();
