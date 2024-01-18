@@ -51,9 +51,9 @@ const SetupPage: NextPage = () => {
 	}
 
 	const pages = [
-		<WelcomeSetup data={account} onContinue={onWelcomeContinue}/>, 
-		<GitRepositorySetup onContinue={onGithubContinue}/>,
-		repository ? <InstallEditor onContinue={onFinish} repositoryId={repository.id}/> : null
+		<WelcomeSetup key={0} data={account} onContinue={onWelcomeContinue}/>, 
+		<GitRepositorySetup key={1} onContinue={onGithubContinue}/>,
+		repository ? <InstallEditor key={2} onContinue={onFinish} repositoryId={repository.id}/> : null
 		,
 	]
 	
