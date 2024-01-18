@@ -1,9 +1,12 @@
-export interface Attribute {
-	id: string;
-	name: string;
-	value: string;
-	className: string | undefined;
-}
+import { z } from "zod";
+
+export const attributeSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	value: z.string(),
+	className: z.union([z.string(), z.undefined()])
+})
+export type Attribute = z.infer<typeof attributeSchema>;
 
 export interface ComponentLocation {
 	file: string;

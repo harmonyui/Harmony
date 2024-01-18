@@ -1,4 +1,4 @@
-import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent } from '../../../../packages/ui/src/types/component';
+import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent, attributeSchema } from '../../../../packages/ui/src/types/component';
 import fs from 'node:fs';
 import OpenAI from 'openai';
 import { z } from 'zod';
@@ -13,23 +13,19 @@ import { Repository } from '../../../../packages/ui/src/types/branch';
 
 const openai = new OpenAI();
 
-interface RequestBody {
-	id: string,
-	oldValue: Attribute[],
-	newValue: Attribute[]
-}
+const requestBodySchema = z.object({
+	id: z.string(),
+	oldValue: z.array(attributeSchema),
+	newValue: z.array(attributeSchema),
+	repositoryId: z.string()
+})
+type RequestBody = z.infer<typeof requestBodySchema>;
 
 const payload = {include: {definition: true}}
 type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof payload>
 
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
 	const {branchId} = params;
-	const session = await getServerAuthSession();
-	if (session === undefined || session.account === undefined) {
-		return new Response(null, {
-			status: 401
-		});
-	}
 
 	const branch = await prisma.branch.findUnique({
 		where: {
@@ -39,14 +35,30 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	if (branch === null) {
 		throw new Error("Cannot find branch with id " + branchId);
 	}
+	const body = requestBodySchema.parse(await req.json());
+	
 	const elementInstances = await prisma.componentElement.findMany({
+		where: {
+			repository_id: body.repositoryId 
+		},
 		include: {
 			definition: true
 		}
 	});
-	const githubRepository = new GithubRepository(session.account.repository);
+	const repository = await prisma.repository.findUnique({
+		where: {
+			id: body.repositoryId
+		}
+	});
 
-	const body = await req.json() as RequestBody;
+	if (repository === null) {
+		return new Response(null, {
+			status: 400
+		})
+	}
+	
+	const githubRepository = new GithubRepository(repository);
+
 	const {location, updatedText} = await getChangeAndLocation(body, githubRepository, elementInstances);
 
 	

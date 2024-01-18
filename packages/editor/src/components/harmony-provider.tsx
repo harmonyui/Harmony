@@ -156,7 +156,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			commands.push({name: 'change', component: newValue, oldValue: oldValue.attributes })
 		})
 		
-		componentUpdator.executeCommands(commands, {branchId});
+		componentUpdator.executeCommands(commands, {branchId, repositoryId});
 		setCurrEdits(new Map());
 	}
 
@@ -194,15 +194,15 @@ type HarmonyCommand = HarmonyCommandChange;
 class ComponentUpdator {
 	constructor(private attributeTranslator: AttributeTranslator) {}
 
-	public executeCommand(command: HarmonyCommand, save: false | {branchId: string}=false): void {
+	public executeCommand(command: HarmonyCommand, save: false | {branchId: string, repositoryId: string}=false): void {
 		this[command.name](command, save);
 	}
 
-	public executeCommands(commands: HarmonyCommand[], save: false | {branchId: string}=false): void {
+	public executeCommands(commands: HarmonyCommand[], save: false | {branchId: string, repositoryId: string}=false): void {
 		commands.forEach(command => this.executeCommand(command, save));
 	}
 
-	private change({component, oldValue}: HarmonyCommandChange, save: false | {branchId: string}=false): void {
+	private change({component, oldValue}: HarmonyCommandChange, save: false | {branchId: string, repositoryId: string}=false): void {
 		// const replaceClassName = (className: string, oldClassName: string, newClassName: string) => {
 		// 	oldClassName.split(' ').forEach(name => {
 		// 		className = className.replaceAll(name, '');
@@ -231,13 +231,13 @@ class ComponentUpdator {
 			}
 		}
 		if (save) {
-			fetch(`/api/update/${save.branchId}`, {
+			fetch(`${WEB_URL}/api/update/${save.branchId}`, {
 				method: 'POST',
-				headers: {
-					'Accept': 'application/json',
-					'Content-Type': 'application/json'
-				},
-				body: JSON.stringify({id: component.id, oldValue, newValue: component.attributes})
+				// headers: {
+				// 	'Accept': 'application/json',
+				// 	'Content-Type': 'application/json'
+				// },
+				body: JSON.stringify({id: component.id, oldValue, newValue: component.attributes, repositoryId: save.repositoryId})
 			});
 		}
 	}
