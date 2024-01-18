@@ -1,6 +1,7 @@
 import { ComponentElementBase } from "../../../../../packages/ui/src/types/component";
 import { z } from "zod";
 import fs from 'node:fs';
+import { replaceByIndex } from "@harmony/util/src";
 
 export const changesSchema = z.object({
 	oldCode: z.string(),
@@ -12,6 +13,6 @@ export type Changes = z.infer<typeof changesSchema>;
 
 export async function makeChanges(referencedComponent: ComponentElementBase, newSnippet: string): Promise<void> {
 	const file = fs.readFileSync(referencedComponent.location.file, 'utf-8');
-	const updatedFile = file.replaceByIndex(newSnippet, referencedComponent.location.start, referencedComponent.location.end);
+	const updatedFile = replaceByIndex(file, newSnippet, referencedComponent.location.start, referencedComponent.location.end);
 	fs.writeFileSync(referencedComponent.location.file, updatedFile);
 }

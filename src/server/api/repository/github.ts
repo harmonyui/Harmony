@@ -2,6 +2,7 @@ import { Octokit, App } from "octokit";
 import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { CommitItem, Repository } from "../../../../packages/ui/src/types/branch";
+import { replaceByIndex } from "@harmony/util/src";
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const privateKeyRaw = privateKeyPath ? fs.readFileSync(privateKeyPath) : atob(process.env.PRIVATE_KEY || '');
@@ -95,7 +96,7 @@ export class GithubRepository {
           }
   
           const contentText = atob(fileInfo.content);
-          const newContent = contentText.replaceByIndex(snippet, start, end);
+          const newContent = replaceByIndex(contentText, snippet, start, end);
   
       // Update the content of the existing file
       const {data: updatedFileInfo} = await octokit.rest.repos.createOrUpdateFileContents({

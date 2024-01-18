@@ -187,7 +187,6 @@ export const stringUnionSchema = <T extends readonly string[]>(array: T) => z.cu
 declare global {
 	interface String {
 			hashCode(seed?: number) : number;
-			replaceByIndex(text: string, start: number, end?: number): string;
 	}
 }
 
@@ -207,10 +206,8 @@ String.prototype.hashCode = function(seed = 0): number {
 	return 4294967296 * (2097151 & h2) + (h1 >>> 0);
 }
 
-String.prototype.replaceByIndex = function(replaceText: string, start: number, end?: number): string {
-	const s = this;
-
-	if (start < 0 || start >= s.length) return s.toString();
+export function replaceByIndex(s: string, replaceText: string, start: number, end?: number): string {
+  if (start < 0 || start >= s.length) return s.toString();
 
 	let ret = `${s.substring(0, start)}${replaceText}`;
 	if (end !== undefined) {
