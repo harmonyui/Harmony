@@ -11,7 +11,8 @@
       "moduleResolution": "node",
       "jsx": "react-jsx",
       "declaration": true,
-      "outDir": "./build",
-      "composite": true
+      "composite": true,
+      "rootDir": "../..",
+      "outDir": "../editor/dist/esm"
     }
 }
