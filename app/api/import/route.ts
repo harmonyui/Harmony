@@ -7,6 +7,7 @@ import { indexCodebase } from "../../../src/server/api/services/indexor/indexor"
 
 //export const runtime = 'edge'; // 'nodejs' is the default
 //export const dynamic = 'force-dynamic'; // static by default, unless reading the request
+export const maxDuration = 300;
 
 export async function POST(req: Request): Promise<Response> {
     const session = await getServerAuthSession();
