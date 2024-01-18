@@ -1,14 +1,14 @@
 {
-  "name": "@harmony/editor",
+  "name": "harmony-ai-editor",
   "description": "Front-end overlay ontop of your webapp",
-  "main": "./dist/cjs/index.js",
-  "module": "./dist/esm/index.js",
-  "types": "./dist/esm/index.d.ts",
+  "main": "./dist/umd/bundle.js",
+  "types": "./dist/esm/packages/editor/index.d.ts",
   "files": [
     "dist"
   ],
   "scripts": {
-    "build": "npm run build:esm && npm run build:cjs",
+    "prepublish": "npm run build",
+    "build": "NODE_ENV=production webpack --mode=production",
     "build:rollup": "rollup -c",
     "build:esm": "tsc && tsc-alias",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs && tsc-alias"
@@ -28,12 +28,9 @@
     "@babel/core": "^7.23.7",
     "@babel/preset-env": "^7.23.8",
     "@babel/preset-react": "^7.23.3",
-    "@rollup/plugin-typescript": "^11.1.6",
-    "rollup": "^2.79.1",
-    "rollup-plugin-babel": "^4.4.0",
-    "rollup-plugin-commonjs": "^10.1.0",
-    "rollup-plugin-node-resolve": "^5.2.0",
-    "@rollup/plugin-alias": "^5.1.0",
+    "css-loader": "^6.9.0",
+    "postcss-loader": "^8.0.0",
+    "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
     "webpack": "^5.89.0",
     "webpack-cli": "^5.1.4"
@@ -41,5 +38,6 @@
   "dependencies": {
     "@harmony/ui": "^1.0.0",
     "@harmony/util": "^1.0.0"
-  }
+  },
+  "version": "0.1.4"
 }

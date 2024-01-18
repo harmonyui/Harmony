@@ -23,12 +23,12 @@ export const Header = ({
   ...rest
 }: HeaderProps): JSX.Element => {
   const size: Record<Headers, string> = {
-    h1: "text-5xl font-semibold",
-    h2: "text-3xl",
-    h3: "text-xl",
+    h1: "hw-text-5xl hw-font-semibold",
+    h2: "hw-text-3xl",
+    h3: "hw-text-xl",
     h4: "text-m",
     h5: "text-s",
-    h6: "text-xs",
+    h6: "hw-text-xs",
   };
   const headerMapping: Record<HeaderLevels, Headers> = {
     1: "h1",
@@ -43,7 +43,7 @@ export const Header = ({
     <Component
       className={`${
         size[Component]
-      } font-semibold leading-9 tracking-tight text-gray-900 dark:text-gray-200 ${
+      } hw-font-semibold hw-leading-9 hw-tracking-tight hw-text-gray-900 dark:hw-text-gray-200 ${
         className || ""
       }`}
       {...rest}

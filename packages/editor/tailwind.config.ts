@@ -1,16 +1,9 @@
 import type { Config } from 'tailwindcss'
 import forms from '@tailwindcss/forms';
 
-export const files = [
-  './utils/**/*.{js,ts,jsx,tsx,mdx}',
-  './src/**/*.{js,ts,jsx,tsx,mdx}',
-  './app/**/*.{js,ts,jsx,tsx,mdx}',
-  './packages/**/*.{js,ts,jsx,tsx,mdx}'
-]
-
 const config: Config = {
   prefix: 'hw-',
-  content: files,
+  content: ['./**/*.{ts,tsx,mdx}', '../ui/**/*.{ts,tsx,mdx}'],
   theme: {
     extend: {
       backgroundImage: {

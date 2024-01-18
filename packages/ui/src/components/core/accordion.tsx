@@ -50,7 +50,7 @@ export const ExpandableComponent: React.FunctionComponent<
   ExpandableComponentProps
 > = ({ value, onChange, label, children }) => {
   return (
-    <div className="flex flex-col gap-2">
+    <div className="hw-flex hw-flex-col hw-gap-2">
       <button
         onClick={() => {
           onChange && onChange(!value);
@@ -70,7 +70,7 @@ const LabelContent = (item: AccordionItem): React.ReactNode =>
   ) : (
     <>
       <span>{item.label}</span>
-      <PlusIcon className="w-4 h-4 group-[.accordion-1]:hidden" />
-      <MinusIcon className="w-4 h-4 hidden group-[.accordion-1]:block" />
+      <PlusIcon className="hw-w-4 hw-h-4 group-[.accordion-1]:hw-hidden" />
+      <MinusIcon className="hw-w-4 hw-h-4 hw-hidden group-[.accordion-1]:hw-block" />
     </>
   );

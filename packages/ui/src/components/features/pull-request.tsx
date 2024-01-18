@@ -7,11 +7,8 @@ import { ModalProvider } from "react-aria";
 import { useChangeProperty } from "../../hooks/change-property";
 import { api } from "../../../../../utils/api";
 import { Input } from "../core/input";
-import { ClosableContent } from "../core/closable-content";
 import { Header } from "../core/header";
 import { Label } from "../core/label";
-import { ModalPortal } from "../core/modal";
-import { displayDate, displayTime } from "../../../../../src/utils/util";
 import { HarmonyModal } from "./branch";
 import { Dropdown, DropdownItem } from "../core/dropdown";
 
@@ -20,9 +17,9 @@ export const PullRequestDisplay: React.FunctionComponent<{items: PullRequest[]}>
 	const [showNewPullRequest, setShowNewPullRequest] = useState(false);
 
 	return <ModalProvider>
-		<div className="flex flex-col gap-4">
+		<div className="hw-flex hw-flex-col hw-gap-4">
 			{items ? <>
-				<Button className="w-fit ml-auto" onClick={() => setShowNewPullRequest(true)}>Create New Pull Request</Button>
+				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewPullRequest(true)}>Create New Pull Request</Button>
 				{items.map(item => <PullRequestLineItem key={item.title} item={item}/>)}
 				<CreateNewPullRequestModal show={showNewPullRequest} onClose={() => setShowNewPullRequest(false)}/>
 			</> : null}
@@ -62,28 +59,28 @@ export const CreateNewPullRequestModal: React.FunctionComponent<CreateNewBranchM
     
     return (
 		<HarmonyModal show={show} onClose={onClose}>
-			<div className="flex gap-2 items-center">
-				<GitBranchIcon className="w-6 h-6"/>
+			<div className="hw-flex hw-gap-2 hw-items-center">
+				<GitBranchIcon className="hw-w-6 hw-h-6"/>
 				<Header level={3}>Create a Pull Request</Header>
 			</div>
-			<div className="mt-2 max-w-xl text-sm text-gray-500">
+			<div className="hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500">
 				<p>Fill out the following fields to create a new pull request through Harmony</p>
 			</div>
-			<div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 my-2">
-				<Label className="sm:col-span-full" label="Title:">
+			<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2">
+				<Label className="sm:hw-col-span-full" label="Title:">
 					<Input value={pullRequest.title} onChange={changeProperty.formFunc('title', pullRequest)}/>
 				</Label>
-                <Label className="sm:col-span-full" label="Body:">
+                <Label className="sm:hw-col-span-full" label="Body:">
 					<Input type="textarea" value={pullRequest.body} onChange={changeProperty.formFunc('body', pullRequest)}/>
 				</Label>
-                {branch === undefined ? <Label className="sm:col-span-3" label="Branch:">
+                {branch === undefined ? <Label className="sm:hw-col-span-3" label="Branch:">
                     <Dropdown items={branchItems} initialValue={branchId} onChange={({id}) => setBranchItem(branches[id])}>
                         Select
                     </Dropdown>
                 </Label> : null}
 			</div>
-			<div className="flex">
-				{branchItem !== undefined ? <Button className="ml-auto" onClick={onNewPullRequest} loading={loading}>Create Pull Request</Button> : null}
+			<div className="hw-flex">
+				{branchItem !== undefined ? <Button className="hw-ml-auto" onClick={onNewPullRequest} loading={loading}>Create Pull Request</Button> : null}
 			</div>
 		</HarmonyModal>
 	)
@@ -98,16 +95,16 @@ export const PullRequestLineItem: React.FunctionComponent<PullRequestLineItemPro
 	const [isOpen, setIsOpen] = useState(false);
 
 	return (
-		<div className="w-full border rounded-md">
-			<a className="flex px-2 py-3 w-full rounded-md hover:bg-gray-50 hover:cursor-pointer" href={url} target="_blank">
-				<GitPullRequestIcon className="w-6 h-6"/>
+		<div className="hw-w-full hw-border hw-rounded-md">
+			<a className="hw-flex hw-px-2 hw-py-3 hw-w-full hw-rounded-md hover:hw-bg-gray-50 hover:hw-cursor-pointer" href={url} target="_blank">
+				<GitPullRequestIcon className="hw-w-6 hw-h-6"/>
 				<span>{title}</span>
 			</a>
-			{/* {isOpen ? <div className="flex flex-col gap-2 border-t py-2 px-4">
-				<div className="flex flex-col border-2 h-32 text-sm divide-y overflow-auto">
+			{/* {isOpen ? <div className="hw-flex hw-flex-col hw-gap-2 hw-border-t hw-py-2 hw-px-4">
+				<div className="hw-flex hw-flex-col hw-border-2 hw-h-32 hw-text-sm hw-divide-y hw-overflow-auto">
 				</div>
-				<div className="flex">
-					<Button as='a' className="ml-auto" target="_blank" href={url}>Open Pull Request</Button>
+				<div className="hw-flex">
+					<Button as='a' className="hw-ml-auto" target="_blank" href={url}>Open Pull Request</Button>
 				</div>
 			</div> : null} */}
 		</div>

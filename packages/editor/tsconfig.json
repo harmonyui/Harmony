@@ -15,6 +15,9 @@
       "outDir": "./dist/esm",
       "composite": true
     },
+    "exclude": [
+      "webpack.config.js", "tailwind.config.ts", "postcss.config.js", "dist"
+    ]
     // "references": [
     //   {"path": "../ui"}
     // ]

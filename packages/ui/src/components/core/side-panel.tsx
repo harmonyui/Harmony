@@ -5,7 +5,7 @@ import React, { Fragment, useState } from 'react'
 import { type IconComponent, ToggleIcon } from './icons';
 import { Bars3Icon, ChevronDownIcon, Cog6ToothIcon, XMarkIcon } from './icons';
 import {Transition, Dialog, Menu} from '@headlessui/react';
-import { getClass } from '../../../../../src/utils/util';
+import { getClass } from '../../../../util/src/index';
 import { Header } from './header';
 
 export interface SidePanelItems {
@@ -45,72 +45,72 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         This example requires updating your template:
 
         ```
-        <html class="h-full bg-gray-50">
-        <body class="h-full">
+        <html class="hw-h-full hw-bg-gray-50">
+        <body class="hw-h-full">
         ```
       */}
       <div>
         <Transition.Root as={Fragment} show={sidebarOpen}>
-          <Dialog as="div" className="relative z-50 lg:hidden" onClose={setSidebarOpen}>
+          <Dialog as="div" className="hw-relative hw-z-50 lg:hw-hidden" onClose={setSidebarOpen}>
             <Transition.Child
               as={Fragment}
-              enter="transition-opacity ease-linear duration-300"
-              enterFrom="opacity-0"
-              enterTo="opacity-100"
-              leave="transition-opacity ease-linear duration-300"
-              leaveFrom="opacity-100"
-              leaveTo="opacity-0"
+              enter="hw-transition-opacity hw-ease-linear hw-duration-300"
+              enterFrom="hw-opacity-0"
+              enterTo="hw-opacity-100"
+              leave="hw-transition-opacity hw-ease-linear hw-duration-300"
+              leaveFrom="hw-opacity-100"
+              leaveTo="hw-opacity-0"
             >
-              <div className="fixed inset-0 bg-gray-900/80" />
+              <div className="hw-fixed hw-inset-0 hw-bg-gray-900/80" />
             </Transition.Child>
 
-            <div className="fixed inset-0 flex">
+            <div className="hw-fixed hw-inset-0 hw-flex">
               <Transition.Child
                 as={Fragment}
-                enter="transition ease-in-out duration-300 transform"
-                enterFrom="-translate-x-full"
-                enterTo="translate-x-0"
-                leave="transition ease-in-out duration-300 transform"
-                leaveFrom="translate-x-0"
-                leaveTo="-translate-x-full"
+                enter="hw-transition hw-ease-in-out hw-duration-300 hw-transform"
+                enterFrom="-hw-translate-x-full"
+                enterTo="hw-translate-x-0"
+                leave="hw-transition hw-ease-in-out hw-duration-300 hw-transform"
+                leaveFrom="hw-translate-x-0"
+                leaveTo="-hw-translate-x-full"
               >
-                <Dialog.Panel className="relative mr-16 flex w-full max-w-xs flex-1">
+                <Dialog.Panel className="hw-relative hw-mr-16 hw-flex hw-w-full hw-max-w-xs hw-flex-1">
                   <Transition.Child
                     as={Fragment}
-                    enter="ease-in-out duration-300"
-                    enterFrom="opacity-0"
-                    enterTo="opacity-100"
-                    leave="ease-in-out duration-300"
-                    leaveFrom="opacity-100"
-                    leaveTo="opacity-0"
+                    enter="hw-ease-in-out hw-duration-300"
+                    enterFrom="hw-opacity-0"
+                    enterTo="hw-opacity-100"
+                    leave="hw-ease-in-out hw-duration-300"
+                    leaveFrom="hw-opacity-100"
+                    leaveTo="hw-opacity-0"
                   >
-                    <div className="absolute left-full top-0 flex w-16 justify-center pt-5">
-                      <button className="-m-2.5 p-2.5" onClick={() => { setSidebarOpen(false); }} type="button">
-                        <span className="sr-only">Close sidebar</span>
-                        <XMarkIcon aria-hidden="true" className="h-6 w-6 text-white" />
+                    <div className="hw-absolute hw-left-full hw-top-0 hw-flex hw-w-16 hw-justify-center hw-pt-5">
+                      <button className="-hw-m-2.5 hw-p-2.5" onClick={() => { setSidebarOpen(false); }} type="button">
+                        <span className="hw-sr-only">Close sidebar</span>
+                        <XMarkIcon aria-hidden="true" className="hw-h-6 hw-w-6 hw-text-white" />
                       </button>
                     </div>
                   </Transition.Child>
                   {/* Sidebar component, swap this element with another sidebar if you like */}
-                  <div className="flex grow flex-col gap-y-5 overflow-y-auto bg-white px-6 py-2">
-                    {title ? <div className="flex h-16 shrink-0 items-center">
+                  <div className="hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-bg-white hw-px-6 hw-py-2">
+                    {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center">
                       {/* <img
                         alt="Your Company"
-                        className="h-8 w-auto"
+                        className="hw-h-8 hw-w-auto"
                         src="/logo.png"
                       /> */}
 											<Header className="" level={2}>{title}</Header>
                     </div> : null}
-                    <nav className="flex flex-1 flex-col">
-                      <ul className="flex flex-1 flex-col gap-y-7">
+                    <nav className="hw-flex hw-flex-1 hw-flex-col">
+                      <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
                         <li>
-                          <ul className="-mx-2 space-y-1">
+                          <ul className="-hw-mx-2 hw-space-y-1">
                             {items.map((item) => (
                               <SidePanelItem item={item} key={item.label}/>
                             ))}
                           </ul>
                         </li>
-												<SidePanelItem className="mt-auto" item={{current: false, href: '/settings', icon: Cog6ToothIcon, label: 'Settings'}}/>
+												<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/settings', icon: Cog6ToothIcon, label: 'Settings'}}/>
                       </ul>
                     </nav>
                   </div>
@@ -121,33 +121,33 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         </Transition.Root>
 
         {/* Static sidebar for desktop */}
-        <div className="hidden lg:fixed lg:inset-y-0 lg:z-50 lg:flex lg:w-72 lg:flex-col">
+        <div className="hw-hidden lg:hw-fixed lg:hw-inset-y-0 lg:hw-z-50 lg:hw-flex lg:hw-w-72 lg:hw-flex-col">
           {/* Sidebar component, swap this element with another sidebar if you like */}
-          <div className="flex grow flex-col gap-y-5 overflow-y-auto border-r border-gray-200 bg-white px-6 py-2">
-            {title ? <div className="flex h-16 shrink-0 items-center">
+          <div className="hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2">
+            {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center">
               {/* <img
                 alt="Your Company"
-                className="h-8 w-auto"
+                className="hw-h-8 hw-w-auto"
                 src="/logo.png"
               /> */}
 							<Header level={2}>{title}</Header>
             </div> : null}
-            <nav className="flex flex-1 flex-col">
-              <ul className="flex flex-1 flex-col gap-y-7">
+            <nav className="hw-flex hw-flex-1 hw-flex-col">
+              <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
                 <li>
-                  <ul className="-mx-2 space-y-1">
+                  <ul className="-hw-mx-2 hw-space-y-1">
                     {items.map((item) => (
                       <SidePanelItem item={item} key={item.label}/>
                     ))}
                   </ul>
                 </li>
-								<SidePanelItem className="mt-auto" item={{current: false, href: '/settings', icon: Cog6ToothIcon, label: 'Settings'}}/>
-                {/* <li className="mt-auto">
+								<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/settings', icon: Cog6ToothIcon, label: 'Settings'}}/>
+                {/* <li className="hw-mt-auto">
                   <a
                     href="#"
-                    className="group -mx-2 flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6 text-gray-400 hover:bg-gray-800 hover:text-white"
+                    className="group hw--mx-2 hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-font-semibold hw-leading-6 hw-text-gray-400 hover:hw-bg-gray-800 hover:hw-text-white"
                   >
-                    <Cog6ToothIcon className="h-6 w-6 shrink-0" aria-hidden="true" />
+                    <Cog6ToothIcon className="hw-h-6 hw-w-6 shrink-0" aria-hidden="true" />
                     Settings
                   </a>
                 </li> */}
@@ -156,68 +156,68 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
           </div>
         </div>
 
-				<div className="lg:pl-72">
-					<div className="sticky top-0 z-40 flex h-16 shrink-0 items-center gap-x-4 border-b border-gray-200 bg-white px-4 shadow-sm sm:gap-x-6 sm:px-6 lg:px-8">
-						<button className="-m-2.5 p-2.5 text-gray-700 lg:hidden" onClick={() => { setSidebarOpen(true); }} type="button">
-							<span className="sr-only">Open sidebar</span>
-							<Bars3Icon aria-hidden="true" className="h-6 w-6"/>
+				<div className="lg:hw-pl-72">
+					<div className="hw-sticky hw-top-0 hw-z-40 hw-flex hw-h-16 shrink-0 hw-items-center hw-gap-x-4 hw-border-b hw-border-gray-200 hw-bg-white hw-px-4 hw-shadow-sm sm:hw-gap-x-6 sm:hw-px-6 lg:hw-px-8">
+						<button className="-hw-m-2.5 hw-p-2.5 hw-text-gray-700 lg:hw-hidden" onClick={() => { setSidebarOpen(true); }} type="button">
+							<span className="hw-sr-only">Open sidebar</span>
+							<Bars3Icon aria-hidden="true" className="hw-h-6 hw-w-6"/>
 						</button>
 						{/* Separator */}
-						<div className="h-6 w-px bg-gray-200 lg:hidden" aria-hidden="true" />
+						<div className="hw-h-6 hw-w-px hw-bg-gray-200 lg:hw-hidden" aria-hidden="true" />
 
-						<div className="flex flex-1 gap-x-4 self-stretch lg:gap-x-6">
-							<div className="flex flex-1"/>
-							<div className="flex items-center gap-x-4 lg:gap-x-6">
-								{/* <button type="button" className="-m-2.5 p-2.5 text-gray-400 hover:text-gray-500">
-									<span className="sr-only">View notifications</span>
-									<BellIcon className="h-6 w-6" aria-hidden="true" />
+						<div className="hw-flex hw-flex-1 hw-gap-x-4 hw-self-stretch lg:hw-gap-x-6">
+							<div className="hw-flex hw-flex-1"/>
+							<div className="hw-flex hw-items-center hw-gap-x-4 lg:hw-gap-x-6">
+								{/* <button type="button" className="hw--m-2.5 hw-p-2.5 hw-text-gray-400 hover:hw-text-gray-500">
+									<span className="hw-sr-only">View notifications</span>
+									<BellIcon className="hw-h-6 hw-w-6" aria-hidden="true" />
 								</button> */}
 
 								{/* Separator */}
-								{/* <div className="hidden lg:block lg:h-6 lg:w-px lg:bg-gray-200" aria-hidden="true" /> */}
+								{/* <div className="hw-hidden lg:hw-block lg:hw-h-6 lg:hw-w-px lg:hw-bg-gray-200" aria-hidden="true" /> */}
 
 								{/* Profile dropdown */}
-								{profileItem ? <Menu as="div" className="relative">
-									<Menu.Button className="-m-1.5 flex items-center p-1.5">
-										<span className="sr-only">Open user menu</span>
+								{profileItem ? <Menu as="div" className="hw-relative">
+									<Menu.Button className="-hw-m-1.5 hw-flex hw-items-center hw-p-1.5">
+										<span className="hw-sr-only">Open user menu</span>
 										<img
-											className="h-8 w-8 rounded-full bg-gray-50"
+											className="hw-h-8 hw-w-8 hw-rounded-full hw-bg-gray-50"
 											src={profileItem.img}
 											alt=""
 										/>
-										<span className="hidden lg:flex lg:items-center">
-											<span className="ml-4 text-sm font-semibold leading-6 text-gray-900" aria-hidden="true">
+										<span className="hw-hidden lg:hw-flex lg:hw-items-center">
+											<span className="hw-ml-4 hw-text-sm hw-font-semibold hw-leading-6 hw-text-gray-900" aria-hidden="true">
 												{profileItem.name}
 											</span>
-											<ChevronDownIcon className="ml-2 h-5 w-5 text-gray-400" aria-hidden="true" />
+											<ChevronDownIcon className="hw-ml-2 hw-h-5 hw-w-5 hw-text-gray-400" aria-hidden="true" />
 										</span>
 									</Menu.Button>
 									<Transition
 										as={Fragment}
-										enter="transition ease-out duration-100"
-										enterFrom="transform opacity-0 scale-95"
-										enterTo="transform opacity-100 scale-100"
-										leave="transition ease-in duration-75"
-										leaveFrom="transform opacity-100 scale-100"
-										leaveTo="transform opacity-0 scale-95"
+										enter="hw-transition hw-ease-out hw-duration-100"
+										enterFrom="hw-transform hw-opacity-0 hw-scale-95"
+										enterTo="hw-transform hw-opacity-100 hw-scale-100"
+										leave="hw-transition hw-ease-in hw-duration-75"
+										leaveFrom="hw-transform hw-opacity-100 hw-scale-100"
+										leaveTo="hw-transform hw-opacity-0 hw-scale-95"
 									>
-										<Menu.Items className="absolute right-0 z-10 mt-2.5 w-32 origin-top-right rounded-md bg-white py-2 shadow-lg ring-1 ring-gray-900/5 focus:outline-none">
+										<Menu.Items className="hw-absolute hw-right-0 hw-z-10 hw-mt-2.5 hw-w-32 hw-origin-top-right hw-rounded-md hw-bg-white hw-py-2 hw-shadow-lg hw-ring-1 hw-ring-gray-900/5 focus:hw-outline-none">
 											{profileItem.navigation.map((item) => (
 												<Menu.Item key={item.name}>
 													{({ active }) => (
 														item.href ? <a
 															href={item.href}
                               className={getClass(
-																active ? 'bg-gray-50' : '',
-																'block px-3 py-1 text-sm leading-6 text-gray-900'
+																active ? 'hw-bg-gray-50' : '',
+																'hw-block hw-px-3 hw-py-1 hw-text-sm hw-leading-6 hw-text-gray-900'
 															)}
 														>
 															{item.name}
 														</a> :  <button
 															onClick={item.onClick}
                               className={getClass(
-																active ? 'bg-gray-50' : '',
-																'block px-3 py-1 text-sm leading-6 text-gray-900 w-full'
+																active ? 'hw-bg-gray-50' : '',
+																'hw-block hw-px-3 hw-py-1 hw-text-sm hw-leading-6 hw-text-gray-900 hw-w-full'
 															)}
 														>
 															{item.name}
@@ -231,8 +231,8 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 							</div> 
 						</div>
 					</div>
-					<main className="py-10">
-						<div className="px-4 sm:px-6 lg:px-8" onClick={onBodyClick}>{children}</div>
+					<main className="hw-py-10">
+						<div className="hw-px-4 sm:hw-px-6 lg:hw-px-8" onClick={onBodyClick}>{children}</div>
 					</main>
 				</div>
       </div>
@@ -246,9 +246,9 @@ const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: 
 			<a
 				className={getClass(
 					item.current
-						? 'bg-gray-50 text-primary'
-						: 'text-gray-700 hover:text-primary hover:bg-gray-50',
-					'group flex gap-x-3 rounded-md p-2 text-sm leading-6 font-semibold'
+						? 'hw-bg-gray-50 hw-text-primary'
+						: 'hw-text-gray-700 hover:hw-text-primary hover:hw-bg-gray-50',
+					'group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-leading-6 hw-font-semibold'
 				)}
 				href={item.href}
 			>

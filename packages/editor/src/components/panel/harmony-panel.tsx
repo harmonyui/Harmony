@@ -27,9 +27,9 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
 
 	return (<>
-		<div className="fixed top-0 left-0 w-full h-full pointer-events-none z-[10000000]">
+		<div className="hw-fixed hw-top-0 hw-left-0 hw-w-full hw-h-full hw-pointer-events-none hw-z-[10000000]">
 			<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
-			<div className="text-center">
+			<div className="hw-text-center">
 				
 			</div>
 			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/>
@@ -44,12 +44,12 @@ interface ToolbarPanelProps {
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({mode, onModeChange}) => {
 	return (
-		<div className="absolute left-0 inline-flex flex-col gap-2 h-full border border-gray-200 p-4 bg-white pointer-events-auto overflow-auto">
-			<Button className="p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
-				<CursorArrowRaysIcon className="w-5 h-5"/>
+		<div className="hw-absolute hw-left-0 hw-inline-flex hw-flex-col hw-gap-2 hw-h-full hw-border hw-border-gray-200 hw-p-4 hw-bg-white hw-pointer-events-auto hw-overflow-auto">
+			<Button className="hw-p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
+				<CursorArrowRaysIcon className="hw-w-5 hw-h-5"/>
 			</Button>
-			<Button className="p-1" mode={mode === 'tweezer' ? 'primary' : 'secondary'} onClick={() => onModeChange('tweezer')}>
-				<EyeDropperIcon className="w-5 h-5"/>
+			<Button className="hw-p-1" mode={mode === 'tweezer' ? 'primary' : 'secondary'} onClick={() => onModeChange('tweezer')}>
+				<EyeDropperIcon className="hw-w-5 hw-h-5"/>
 			</Button>
 		</div>
 	)
@@ -92,9 +92,9 @@ const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, sel
 	}
 	
 	return (
-		<div className="absolute right-0 flex flex-col h-full border border-gray-200 p-4 bg-white pointer-events-auto min-w-[400px] overflow-auto">
-			<div className="flex-1">
-				{isDirty ? <div className="flex gap-2">
+		<div className="hw-absolute hw-right-0 hw-flex hw-flex-col hw-h-full hw-border hw-border-gray-200 hw-p-4 hw-bg-white hw-pointer-events-auto hw-overflow-auto" style={{minWidth: '400px'}}>
+			<div className="hw-flex-1">
+				{isDirty ? <div className="hw-flex hw-gap-2">
 					<Button onClick={onSave}>Save</Button>
 					<Button onClick={onCancel} mode='secondary'>Cancel</Button>
 				</div> : null}
@@ -102,7 +102,7 @@ const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, sel
 					<ComponentDisplay value={selectedComponent} onAttributesChange={onAttributesChange}/>
 				</> : null}
 			</div>
-			<div className="flex-1">
+			<div className="hw-flex-1">
 				<TreeView items={treeItems} expand={true} onClick={(item) => onComponentSelect(item.id)} onHover={(item) => onComponentHover(item.id)}/>
 				{/* {rootFiber ? <ComponentTree node={rootFiber} expand={true} onHover={onFiberHover} onClick={onFiberClick}/> : null} */}
 			</div>
@@ -186,7 +186,7 @@ const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value
 	const {name, attributes} = value;
 	
 	return (
-		<div className="inline-flex flex-col gap-2">
+		<div className="hw-inline-flex hw-flex-col hw-gap-2">
 			<Header level={2}>{name}</Header>
 			<Header level={3}>Attributes</Header>
 			{/* <SpacingDisplay attributes={attributes} onChange={onAttributesChange}/> */}
@@ -231,7 +231,7 @@ const SpacingDisplay: React.FunctionComponent<SpacingDisplayProps> = ({attribute
 		}
 	]
 	return (
-		<TabButton className="inline-flex flex-col" items={borderItemTabs}/>
+		<TabButton className="hw-inline-flex hw-flex-col" items={borderItemTabs}/>
 	)
 }
 
@@ -284,24 +284,24 @@ const SpacingInput: React.FunctionComponent<SpacingInputProps> = ({values, onCha
 
 	
 	return (
-		<div className="flex flex-col gap-2">
-			<div className="flex flex-col gap-2">
-				<div className="mx-auto">
+		<div className="hw-flex hw-flex-col hw-gap-2">
+			<div className="hw-flex hw-flex-col hw-gap-2">
+				<div className="hw-mx-auto">
 					<Button mode={selectedDirection === 'top' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('top')}>
-						<ArrowUpIcon className="w-5 h-5"/>
+						<ArrowUpIcon className="hw-w-5 hw-h-5"/>
 					</Button>
 				</div>
-				<div className="flex justify-between">
+				<div className="hw-flex hw-justify-between">
 					<Button mode={selectedDirection === 'left' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('left')}>
-						<ArrowLeftIcon className="w-5 h-5"/>
+						<ArrowLeftIcon className="hw-w-5 hw-h-5"/>
 					</Button>
 					<Button mode={selectedDirection === 'right' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('right')}>
-						<ArrowRightIcon className="w-5 h-5"/>
+						<ArrowRightIcon className="hw-w-5 hw-h-5"/>
 					</Button>
 				</div>
-				<div className="mx-auto">
+				<div className="hw-mx-auto">
 					<Button mode={selectedDirection === 'bottom' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('bottom')}>
-						<ArrowDownIcon className="w-5 h-5"/>
+						<ArrowDownIcon className="hw-w-5 hw-h-5"/>
 					</Button>
 				</div>
 			</div>
@@ -361,10 +361,10 @@ const AlignmentSelector: React.FunctionComponent<AlignmentSelectorProps> = ({val
 		},]
 	]
 	return (
-		<div className={getClass('inline-flex flex-col gap-2', className)}>
-			{alignmentButtons.map((row, i) => <div key={i} className="flex gap-2">
-				{row.map(button => <button key={button.alignment} onClick={() => onChange(button.alignment)} className={getClass('p-1 bg-white rounded-md', value === button.alignment ? 'border shadow-sm hover:bg-gray-50' : 'hover:bg-gray-100')}>
-					<button.icon className={getClass('w-5 h-5', button.attr)}/>
+		<div className={getClass('hw-inline-flex hw-flex-col hw-gap-2', className)}>
+			{alignmentButtons.map((row, i) => <div key={i} className="hw-flex hw-gap-2">
+				{row.map(button => <button key={button.alignment} onClick={() => onChange(button.alignment)} className={getClass('p-1 hw-bg-white rounded-md', value === button.alignment ? 'border shadow-sm hover:hw-bg-gray-50' : 'hover:hw-bg-gray-100')}>
+					<button.icon className={getClass('hw-w-5 hw-h-5', button.attr)}/>
 				</button>)}
 			</div>)}
 		</div>
@@ -392,30 +392,30 @@ const TreeViewItem = <T,>({item, onClick, onHover}: {item: TreeViewItem<T>, onCl
 	}
 
 	return (<>
-		{item.items.length === 0 ? <li className={getClass("px-2 hover:bg-gray-100", item.selected ? 'bg-gray-200' : '')}>
+		{item.items.length === 0 ? <li className={getClass("hw-px-2 hover:hw-bg-gray-100", item.selected ? 'hw-bg-gray-200' : '')}>
 			<button onClick={() => onClick(item)} onMouseOver={() => onHover(item)}>{item.content}</button></li> : null}
 			{item.items.length > 0 ? <li >
-				<div className={getClass("flex", item.selected ? "bg-gray-200" : "")}>
+				<div className={getClass("hw-flex", item.selected ? "hw-bg-gray-200" : "")}>
 				<button
 					onClick={onExpand}
 					role="button"
 					aria-expanded="false"
 					aria-controls="collapseThree"
-					className="flex items-center px-1 hover:bg-gray-100 rounded-md focus:text-primary active:text-primary">
+					className="hw-flex hw-items-center hw-px-1 hover:hw-bg-gray-100 hw-rounded-md focus:hw-text-primary active:hw-text-primary">
 					<svg
 						xmlns="http://www.w3.org/2000/svg"
 						fill="none"
 						viewBox="0 0 24 24"
 						strokeWidth="2.5"
 						stroke="currentColor"
-						className={getClass('h-4 w-4', expand ? 'rotate-90' : '')}>
+						className={getClass('hw-h-4 hw-w-4', expand ? 'rotate-90' : '')}>
 						<path
 							stroke-linecap="round"
 							stroke-linejoin="round"
 							d="M8.25 4.5l7.5 7.5-7.5 7.5" />
 					</svg>
 				</button>
-				<button className="px-1 hover:bg-gray-100 rounded-md" onClick={() => onClick(item)} onMouseOver={() => onHover(item)}>
+				<button className="hw-px-1 hover:hw-bg-gray-100 hw-rounded-md" onClick={() => onClick(item)} onMouseOver={() => onHover(item)}>
 					{item.content}
 				</button>
 				</div>
@@ -427,7 +427,7 @@ const TreeViewItem = <T,>({item, onClick, onHover}: {item: TreeViewItem<T>, onCl
 
 const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeViewItem<T>[], expand?: boolean, onClick: (item: TreeViewItem<T>) => void, onHover: (item: TreeViewItem<T>) => void}) => {
 	return <>
-		<ul className={getClass('!visible ml-4', expand ? '' : 'hidden')}>
+		<ul className={getClass('!hw-visible hw-ml-4', expand ? '' : 'hw-hidden')}>
 			{items.map(item => <>
 				<TreeViewItem key={String(item.selected)} item={item} onClick={onClick} onHover={onHover}/>
 			</>)}

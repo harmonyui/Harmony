@@ -27,7 +27,7 @@ export const Input: React.FunctionComponent<InputProps> = ({
   const props = {
     className: `${
       className || ""
-    } w-full border focus:outline-0 focus:border-gray-300 border-gray-300 shadow-sm rounded-md px-3  py-1.5 text-sm text-gray-900 focus:ring-primary focus:ring-1 transition-[box-shadow] focus-visible:outline-none placeholder:text-gray-400`,
+    } hw-w-full hw-border focus:hw-outline-0 focus:hw-border-gray-300 hw-border-gray-300 hw-shadow-sm hw-rounded-md hw-px-3 hw-py-1.5 hw-text-sm hw-text-gray-900 focus:hw-ring-primary focus:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none placeholder:hw-text-gray-400`,
     onChange: (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
@@ -46,10 +46,10 @@ export const Input: React.FunctionComponent<InputProps> = ({
       <input {...props} type={type} value={value} />
     );
 	if (inlineLabel !== undefined) {
-		input = <div className="flex border border-gray-300 rounded-md shadow-sm focus-within:ring-primary focus-within:ring-1 transition-[box-shadow] focus-visible:outline-none sm:max-w-md">
-			<span className="flex select-none items-center pl-3 text-gray-500 sm:text-sm">{inlineLabel}</span>
+		input = <div className="hw-flex hw-border hw-border-gray-300 hw-rounded-md hw-shadow-sm focus-within:hw-ring-primary focus-within:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none sm:hw-max-w-md">
+			<span className="hw-flex hw-select-none hw-items-center hw-pl-3 hw-text-gray-500 sm:hw-text-sm">{inlineLabel}</span>
 			<input
-				className="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6"
+				className="hw-block hw-flex-1 hw-border-0 hw-bg-transparent hw-py-1.5 hw-pl-1 hw-text-gray-900 placeholder:hw-text-gray-400 focus:hw-ring-0 sm:hw-text-sm sm:hw-leading-6"
 				placeholder={placeholder}
 				type="text"
 			/>
@@ -89,17 +89,17 @@ export const CheckboxInput: React.FunctionComponent<CheckboxInputProps> = ({
   const input = (
     <div
       className={`${
-        value ? "bg-primary" : "bg-gray-100"
-      } ${className} text-blue-600 border-gray-300 rounded focus:ring-primary-light dark:focus:ring-primary dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer relative`}
+        value ? "hw-bg-primary" : "hw-bg-gray-100"
+      } ${className} hw-text-blue-600 hw-border-gray-300 hw-rounded focus:hw-ring-primary-light dark:focus:hw-ring-primary dark:hw-ring-offset-gray-800 focus:hw-ring-2 dark:hw-bg-gray-700 dark:hw-border-gray-600 hw-cursor-pointer hw-relative`}
     >
       <input
         checked={value}
-        className="absolute top-0 left-0 opacity-0"
+        className="hw-absolute hw-top-0 hw-left-0 hw-opacity-0"
         onChange={onInputChange}
         type="checkbox"
       />
       <CheckmarkIcon
-        className={`w-4 h-4 fill-white ${value ? "visible" : "invisible"}`}
+        className={`hw-w-4 hw-h-4 hw-fill-white ${value ? "hw-visible" : "hw-invisible"}`}
       />
     </div>
   );

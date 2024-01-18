@@ -1,6 +1,6 @@
 import { useRef, useState } from "react";
 import type { AllOrNothing } from "../../types/utils";
-import { getClass } from "../../../../../src/utils/util";
+import {getClass} from "../../../../util/src/index"
 
 import { Popover as ReactPopover } from "./date-picker";
 

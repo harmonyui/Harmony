@@ -11,7 +11,7 @@ import { ClosableContent } from "../core/closable-content";
 import { Header } from "../core/header";
 import { Label } from "../core/label";
 import { ModalPortal } from "../core/modal";
-import { displayDate, displayTime } from "../../../../../src/utils/util";
+import { displayDate, displayTime } from "../../../../util/src/index";
 import { CreateNewPullRequestModal } from "./pull-request";
 
 
@@ -25,9 +25,9 @@ export const BranchDisplay: React.FunctionComponent<{branches: BranchItem[]}> = 
 	}
 
 	return <ModalProvider>
-		<div className="flex flex-col gap-4">
+		<div className="hw-flex hw-flex-col hw-gap-4">
 			{branches ? <>
-				<Button className="w-fit ml-auto" onClick={() => setShowNewBranch(true)}>Create New Branch</Button>
+				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewBranch(true)}>Create New Branch</Button>
 				{branches.map(item => <BranchLineItem key={item.name} item={item} onOpenHarmony={() => openBranch(item)}/>)}
 				<CreateNewBranchModal show={showNewBranch} onClose={() => setShowNewBranch(false)} onSuccessfulCreation={openBranch}/>
 			</> : null}
@@ -43,10 +43,10 @@ interface HarmonyModalProps {
 export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({children, show, onClose}) => {
 	return (
 		<ModalPortal show={show}>
-			<div className="flex justify-center items-center h-full w-full">
-				<ClosableContent className="mx-auto max-w-3xl w-full" onClose={onClose}>
-					<div className="bg-white shadow sm:rounded-lg">
-						<div className="px-4 py-5 sm:p-6">
+			<div className="hw-flex hw-justify-center hw-items-center hw-h-full hw-w-full">
+				<ClosableContent className="hw-mx-auto hw-max-w-3xl hw-w-full" onClose={onClose}>
+					<div className="hw-bg-white hw-shadow sm:hw-rounded-lg">
+						<div className="hw-px-4 hw-py-5 sm:hw-p-6">
 							{children}
 						</div>
 					</div>	
@@ -80,29 +80,29 @@ const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> =
 	}
 	return (
 		<HarmonyModal show={show} onClose={onClose}>
-			<div className="flex gap-2 items-center">
-				<GitBranchIcon className="w-6 h-6"/>
+			<div className="hw-flex hw-gap-2 hw-items-center">
+				<GitBranchIcon className="hw-w-6 hw-h-6"/>
 				<Header level={3}>Create a Branch</Header>
 			</div>
-			<div className="mt-2 max-w-xl text-sm text-gray-500">
+			<div className="hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500">
 				<p>Fill out the following fields to create a new branch through Harmony</p>
 			</div>
-			<div className="grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 my-2">
-				<Label className="sm:col-span-full" label="Branch Label:">
+			<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2">
+				<Label className="sm:hw-col-span-full" label="Branch Label:">
 					<Input value={branch.label} onChange={changeProperty.formFunc('label', branch)}/>
 				</Label>
-				<Label className="sm:col-span-full" label="Url:">
+				<Label className="sm:hw-col-span-full" label="Url:">
 					<Input value={branch.url} onChange={changeProperty.formFunc('url', branch)}/>
 				</Label>
-				{/* <Label className="sm:col-span-3" label="Default URL:">
+				{/* <Label className="sm:hw-col-span-3" label="Default URL:">
 					<Input />
 				</Label> */}
-				{/* <Label className="sm:col-span-full" label="Branch Details:">
+				{/* <Label className="sm:hw-col-span-full" label="Branch Details:">
 					<Input type="textarea"/>
 				</Label> */}
 			</div>
-			<div className="flex">
-				<Button className="ml-auto" onClick={onNewBranch} loading={loading}>Open in Harmony</Button>
+			<div className="hw-flex">
+				<Button className="hw-ml-auto" onClick={onNewBranch} loading={loading}>Open in Harmony</Button>
 			</div>
 		</HarmonyModal>
 	)
@@ -119,20 +119,20 @@ export const BranchLineItem: React.FunctionComponent<BranchLineItemProps> = ({it
 	const [showPRModal, setShowPRModal] = useState(false);
 
 	return (
-		<div className="w-full border rounded-md">
-			<button className="flex px-2 py-3 w-full rounded-md hover:bg-gray-50 hover:cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
-				<GitBranchIcon className="w-6 h-6"/>
+		<div className="hw-w-full hw-border hw-rounded-md">
+			<button className="hw-flex hw-px-2 hw-py-3 hw-w-full hw-rounded-md hover:hw-bg-gray-50 hover:hw-cursor-pointer" onClick={() => setIsOpen(!isOpen)}>
+				<GitBranchIcon className="hw-w-6 hw-h-6"/>
 				<span>{label}</span>
 			</button>
-			{isOpen ? <div className="flex flex-col gap-2 border-t py-2 px-4">
-				<div className="flex flex-col border-2 h-32 text-sm divide-y overflow-auto">
-					{commits.map(commit => <div key={commit.date.toString()} className="flex justify-between text-sm px-4 py-2">
+			{isOpen ? <div className="hw-flex hw-flex-col hw-gap-2 hw-border-t hw-py-2 hw-px-4">
+				<div className="hw-flex hw-flex-col hw-border-2 hw-h-32 hw-text-sm hw-divide-y hw-overflow-auto">
+					{commits.map(commit => <div key={commit.date.toString()} className="hw-flex hw-justify-between hw-text-sm hw-px-4 hw-py-2">
 						<span>{commit.author}</span>
 						<span>{displayDate(commit.date)} at {displayTime(commit.date)}</span>
 						<span>{commit.message}</span>
 					</div>)}
 				</div>
-				<div className="flex justify-around">
+				<div className="hw-flex hw-justify-around">
 					<Button onClick={() => onOpenHarmony()}>Open with Harmony</Button>
 					{pullRequestUrl ? <Button as='a' href={pullRequestUrl} target="_blank">Open Pull Request</Button> : <Button onClick={() => setShowPRModal(true)}>Submit Pull Request</Button>}
 				</div>

@@ -44,7 +44,7 @@ export const ModalProvider: React.FunctionComponent<React.PropsWithChildren> = (
 	return (
 		<ModalContext.Provider value={{addModal, removeModal, nextId: modals.length, container}}>
 			{children}
-			{modals.length > 0 ? <div className="fixed top-0 left-0 w-full z-50 bg-gray-500/90 h-screen overflow-auto">
+			{modals.length > 0 ? <div className="hw-fixed hw-top-0 hw-left-0 hw-w-full hw-z-50 hw-bg-gray-500/90 hw-h-screen hw-overflow-auto">
 				{modals}
 			</div> : null}
 		</ModalContext.Provider>
@@ -66,7 +66,7 @@ export const ModalPortal: React.FunctionComponent<{children: React.ReactNode, sh
 	// }, [show, prevShow]);
 
 	return <>
-	{createPortal(show ? <div className="fixed top-0 left-0 w-full z-50 bg-gray-500/90 h-screen overflow-auto">
+	{createPortal(show ? <div className="hw-fixed hw-top-0 hw-left-0 hw-w-full hw-z-50 hw-bg-gray-500/90 hw-h-screen hw-overflow-auto">
 		{children}
 	</div> : null, document.body)}
 	</>

@@ -1,4 +1,4 @@
-import { getClass } from "../../../../../src/utils/util";
+import { getClass } from "../../../../util/src/index";
 import { XMarkIcon } from "./icons";
 
 export interface ClosableContentProps {
@@ -12,10 +12,10 @@ export const ClosableContent: React.FunctionComponent<ClosableContentProps> = ({
 	className
 }) => {
   return (
-    <div className={getClass('relative',className)}>
-      <div className="absolute top-0 right-0">
-        <button className="hover:opacity-50" onClick={onClose} type="button">
-          <XMarkIcon className="w-6 h-6" />
+    <div className={getClass('hw-relative',className)}>
+      <div className="hw-absolute hw-top-0 hw-right-0">
+        <button className="hover:hw-opacity-50" onClick={onClose} type="button">
+          <XMarkIcon className="hw-w-6 hw-h-6" />
         </button>
       </div>
       {children}

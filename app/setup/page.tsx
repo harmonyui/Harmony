@@ -38,12 +38,12 @@ const SetupPage: NextPage = () => {
 		setPage(1);
 	}
 	
-	return (<main className="flex min-h-screen flex-col items-center justify-between p-24 bg-[url('/harmony.ai.svg')]">
-		<div className="flex flex-col gap-4 bg-white rounded-md py-10 px-20">
+	return (<main className="hw-flex hw-min-h-screen hw-flex-col hw-items-center hw-justify-between hw-p-24 hw-bg-[url('/harmony.ai.svg')]">
+		<div className="hw-flex hw-flex-col hw-gap-4 hw-bg-white hw-rounded-md hw-py-10 hw-px-20">
 			<Header level={1}>Welcome to Harmony</Header>
 			{page === 0 ? <WelcomeSetup data={account} onContinue={onWelcomeContinue}/> :
 				<GitRepositorySetup onContinue={onFinish}/>}
-			{createAccountUtils.isError ? <p className="text-sm text-red-400">There was an error, please contact support if this problem persists</p> : null}
+			{createAccountUtils.isError ? <p className="hw-text-sm hw-text-red-400">There was an error, please contact support if this problem persists</p> : null}
 		</div>
 	</main>)
 }
@@ -67,18 +67,18 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({data, onConti
 	return (
 		<>
 			<Header level={4}>Please enter your account details:</Header>
-			<div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
-				<Label className="sm:col-span-3" label="First Name:">
-					<Input className="w-full" value={account.firstName} onChange={onChange('firstName')}/>
+			<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-8 sm:hw-grid-cols-6">
+				<Label className="sm:hw-col-span-3" label="First Name:">
+					<Input className="hw-w-full" value={account.firstName} onChange={onChange('firstName')}/>
 				</Label>
-				<Label className="sm:col-span-3" label="Last Name:">
-					<Input className="w-full" value={account.lastName} onChange={onChange('lastName')}/>
+				<Label className="sm:hw-col-span-3" label="Last Name:">
+					<Input className="hw-w-full" value={account.lastName} onChange={onChange('lastName')}/>
 				</Label>
-				<Label className="sm:col-span-full" label="What best describes your role?">
-					<Input className="w-full" value={account.role} onChange={onChange('role')}/>
+				<Label className="sm:hw-col-span-full" label="What best describes your role?">
+					<Input className="hw-w-full" value={account.role} onChange={onChange('role')}/>
 				</Label>
 			</div>
-			<Button className="w-fit ml-auto" onClick={onContinueClick}>Continue</Button>
+			<Button className="hw-w-fit hw-ml-auto" onClick={onContinueClick}>Continue</Button>
 		</>
 	)
 }
@@ -107,9 +107,9 @@ const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = (
 	return (<>
 		<Header level={4}>Import Git Repository</Header>
 		{repos ? repos.length === 0 ? <Button onClick={() => window.open("https://github.com/apps/harmony-ai-app/installations/new", 'MyWindow', 'width=600,height=300')}>Install</Button> : <>
-			<div className="flex flex-col">
-				{repos.map(repo => <div key={repo.id} className="flex justify-between items-center border rounded-md p-3">
-					<span className="text-sm">{repo.name}</span>
+			<div className="hw-flex hw-flex-col">
+				{repos.map(repo => <div key={repo.id} className="hw-flex hw-justify-between hw-items-center hw-border hw-rounded-md hw-p-3">
+					<span className="hw-text-sm">{repo.name}</span>
 					<Button onClick={() => onImport(repo)}>Import</Button>
 				</div>)}
 			</div>
