@@ -18,7 +18,7 @@ import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 type Account = Pick<AccountServer, 'firstName' | 'lastName' | 'role'>
 
 const SetupPage: NextPage = () => {
-	const {mutate, ...createAccountUtils} = api.setup.createRoute.useMutation();
+	const {mutate, ...createAccountUtils} = api.setup.createAccount.useMutation();
 	const [account, setAccount] = useState<Account>({firstName: '', lastName: '', role: ''});
 	const [repository, setRepository] = useState<Repository>();
 	const [page, setPage] = useState(0);
@@ -26,18 +26,13 @@ const SetupPage: NextPage = () => {
 
 	if (createAccountUtils.isLoading) {
 		return <LoadingScreen>
-			Creating account. This could take a few minutes.
+			Importing repository. This could take a few minutes.
 		</LoadingScreen>;
 	}
 
 	
 	const onFinish = (): void => {
-		if (repository === undefined) return;
-
-		mutate({account, repository}, {
-			onSuccess: () => {
-				router.push('/');
-		}})
+		router.push('/');
 	}
 
 	const onWelcomeContinue = (data: Account) => {
@@ -47,7 +42,10 @@ const SetupPage: NextPage = () => {
 
 	const onGithubContinue = (repository: Repository): void => {
 		setRepository(repository);
-		setPage(page+1);
+		mutate({account, repository}, {
+			onSuccess: () => {
+				setPage(page+1);
+		}})
 	}
 
 	const pages = [

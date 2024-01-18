@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { createTRPCRouter, registerdProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, registerdProcedure } from "../trpc";
 import { accountSchema, getServerAuthSession } from "../../../../src/server/auth";
 import { indexCodebase } from "../services/indexor/indexor";
 import { fromDir } from "../services/indexor/local";
@@ -13,7 +13,7 @@ const createSetupSchema = z.object({
 })
 
 export const setupRoute = createTRPCRouter({
-	createRoute: registerdProcedure
+	createAccount: registerdProcedure
 		.input(createSetupSchema)
 		.mutation(async ({ctx, input}) => {
 			const userId = ctx.session.auth.userId;
@@ -47,6 +47,25 @@ export const setupRoute = createTRPCRouter({
 				lastName: newAccount.lastName,
 				role: newAccount.role,
 			}
+		}),
+	importRepository: protectedProcedure
+		.input(z.object({repository: repositorySchema}))
+		.mutation(async ({ctx, input}) => {
+			const accountId = ctx.session.account.id;
+
+			const newRepository = await ctx.prisma.repository.create({
+				data: {
+					id: input.repository.id ?? undefined,
+					branch: input.repository.branch,
+					name: input.repository.name,
+					owner: input.repository.owner,
+					installationId: input.repository.installationId,
+					account_id: accountId
+				}
+			});
+
+			const githubRepository = new GithubRepository(input.repository);
+			await indexCodebase('', fromGithub(githubRepository), newRepository.id);
 		}),
 	getRepositories: registerdProcedure
 		.query(async ({ctx}) => {
