@@ -3,6 +3,8 @@ import { NextResponse } from "next/server";
  
 const allowedOrigins: string[] = [];
 
+const loadRegex = /\/api\/load/;
+
 // This example protects all routes including api/trpc routes
 // Please edit this to allow other routes to be public as needed.
 // See https://clerk.com/docs/references/nextjs/auth-middleware for more information about configuring your Middleware
@@ -10,6 +12,10 @@ export default authMiddleware({
   beforeAuth(req) {
     // retrieve the current response
     const res = NextResponse.next()
+
+    if (!loadRegex.test(req.url)) {
+      return res;
+    }
 
     // retrieve the HTTP "Origin" header 
     // from the incoming request
@@ -26,8 +32,15 @@ export default authMiddleware({
     )
 
     return res
-  }
-	//publicRoutes: ['/']
+  },
+  apiRoutes(req) {
+    if (loadRegex.test(req.url)) {
+      return false;
+    }
+
+    return ['/api/(.*)', '/trpc/(.*)'].some(matcher => new RegExp(matcher).test(req.url));
+  },
+	publicRoutes: [loadRegex]
 });
  
 export const config = {
