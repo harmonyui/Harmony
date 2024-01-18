@@ -11,12 +11,16 @@ import { api } from "../../utils/api";
 import { NextPage } from "next";
 import { useRouter } from "next/navigation";
 import { useState } from "react";
+import CodeSnippet from "@harmony/ui/src/components/core/code-snippet";
+import ReactSyntaxHighlighter from "react-syntax-highlighter";
+import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 type Account = Pick<AccountServer, 'firstName' | 'lastName' | 'role'>
 
 const SetupPage: NextPage = () => {
 	const {mutate, ...createAccountUtils} = api.setup.createRoute.useMutation();
 	const [account, setAccount] = useState<Account>({firstName: '', lastName: '', role: ''});
+	const [repository, setRepository] = useState<Repository>();
 	const [page, setPage] = useState(0);
 	const router = useRouter();
 
@@ -26,7 +30,10 @@ const SetupPage: NextPage = () => {
 		</LoadingScreen>;
 	}
 
-	const onFinish = (repository: Repository): void => {
+	
+	const onFinish = (): void => {
+		if (repository === undefined) return;
+
 		mutate({account, repository}, {
 			onSuccess: () => {
 				router.push('/');
@@ -35,14 +42,25 @@ const SetupPage: NextPage = () => {
 
 	const onWelcomeContinue = (data: Account) => {
 		setAccount(data);
-		setPage(1);
+		setPage(page + 1);
 	}
+
+	const onGithubContinue = (repository: Repository): void => {
+		setRepository(repository);
+		setPage(page+1);
+	}
+
+	const pages = [
+		<WelcomeSetup data={account} onContinue={onWelcomeContinue}/>, 
+		<GitRepositorySetup onContinue={onGithubContinue}/>,
+		repository ? <InstallEditor onContinue={onFinish} repositoryId={repository.id}/> : null
+		,
+	]
 	
 	return (<main className="hw-flex hw-min-h-screen hw-flex-col hw-items-center hw-justify-between hw-p-24 hw-bg-[url('/harmony.ai.svg')]">
-		<div className="hw-flex hw-flex-col hw-gap-4 hw-bg-white hw-rounded-md hw-py-10 hw-px-20">
+		<div className="hw-flex hw-flex-col hw-gap-4 hw-bg-white hw-rounded-md hw-py-10 hw-px-20 hw-max-w-[800px]">
 			<Header level={1}>Welcome to Harmony</Header>
-			{page === 0 ? <WelcomeSetup data={account} onContinue={onWelcomeContinue}/> :
-				<GitRepositorySetup onContinue={onFinish}/>}
+			{pages[page]}
 			{createAccountUtils.isError ? <p className="hw-text-sm hw-text-red-400">There was an error, please contact support if this problem persists</p> : null}
 		</div>
 	</main>)
@@ -117,13 +135,23 @@ const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = (
 	</>)
 }
 
-interface GitImportRepositoryLineItemProps {
-
+interface InstallEditorProps {
+	repositoryId: string;
+	onContinue: () => void;
 }
-const GitImportRepositoryLineItem: React.FunctionComponent<GitImportRepositoryLineItemProps> = ({}) => {
-	return (
-		<div>Hello</div>
-	)
+const InstallEditor: React.FunctionComponent<InstallEditorProps> = ({onContinue, repositoryId}) => {
+	const code = `<script id="harmony-id">
+    harmony={load:function(e){const r=document.createElement("script");r.src="https://unpkg.com/harmony-ai-editor";r.addEventListener('load',function(){window.HarmonyProvider({repositoryId:e});});document.body.appendChild(r);}}
+    harmony.load('${repositoryId}');
+</script>`
+	return (<>
+		<Header level={4}>Install Design Suite</Header>
+		<p className="hw-text-sm">Copy and paste the snippet below before your website’s closing <span className="hw-p-0.5 hw-rounded-lg" style={{background: "rgb(29, 31, 33)"}}><span style={{color: "rgb(197, 200, 198)"}}>&lt;/</span><span style={{color: "rgb(150, 203, 254)"}}>body</span><span style={{color: "rgb(197, 200, 198)"}}>&gt;</span></span> tag. Once installed, you can begin editing on your site.</p>
+		<CodeSnippet language="html" code={code}/>
+		<div className="hw-flex">
+			<Button className="hw-ml-auto" onClick={onContinue}>Continue</Button>
+		</div>
+	</>)
 }
 
 

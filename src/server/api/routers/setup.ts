@@ -26,6 +26,7 @@ export const setupRoute = createTRPCRouter({
 					userId,
 					repository: {
 						create: {
+							id: input.repository.id,
 							branch: input.repository.branch,
 							name: input.repository.name,
 							owner: input.repository.owner,
@@ -68,8 +69,7 @@ export const setupRoute = createTRPCRouter({
 				}
 			}).then(response => response.json().then(json => ({...octokitRepositorySchema.parse(json), auth_token: accessToken.data.token, installation_id: accessToken.data.installation_id})))));
 			
-			console.log(repositories);
-			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: '', name: repo.name, owner: repo.owner.login, branch: repo.default_branch, oauthToken: curr.auth_token, installationId: curr.installation_id})))]), []);
+			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: crypto.randomUUID(), name: repo.name, owner: repo.owner.login, branch: repo.default_branch, oauthToken: curr.auth_token, installationId: curr.installation_id})))]), []);
 		})
 });
 
