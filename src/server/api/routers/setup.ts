@@ -39,34 +39,30 @@ export const setupRoute = createTRPCRouter({
 				}
 			});
 		
-			const githubRepository = new GithubRepository(input.repository);
-			await indexCodebase('', fromGithub(githubRepository), newAccount.repository[0].id);
-
 			return {
 				firstName: newAccount.firstName,
 				lastName: newAccount.lastName,
 				role: newAccount.role,
 			}
 		}),
-	importRepository: protectedProcedure
-		.input(z.object({repository: repositorySchema}))
-		.mutation(async ({ctx, input}) => {
-			const accountId = ctx.session.account.id;
+	// importRepository: protectedProcedure
+	// 	.input(z.object({repository: repositorySchema}))
+	// 	.mutation(async ({ctx, input}) => {
+	// 		const accountId = ctx.session.account.id;
 
-			const newRepository = await ctx.prisma.repository.create({
-				data: {
-					id: input.repository.id ?? undefined,
-					branch: input.repository.branch,
-					name: input.repository.name,
-					owner: input.repository.owner,
-					installationId: input.repository.installationId,
-					account_id: accountId
-				}
-			});
+	// 		const newRepository = await ctx.prisma.repository.create({
+	// 			data: {
+	// 				id: input.repository.id ?? undefined,
+	// 				branch: input.repository.branch,
+	// 				name: input.repository.name,
+	// 				owner: input.repository.owner,
+	// 				installationId: input.repository.installationId,
+	// 				account_id: accountId
+	// 			}
+	// 		});
 
-			const githubRepository = new GithubRepository(input.repository);
-			await indexCodebase('', fromGithub(githubRepository), newRepository.id);
-		}),
+			
+	// 	}),
 	getRepositories: registerdProcedure
 		.query(async ({ctx}) => {
 			const {data} = await appOctokit.request('GET /app/installations');

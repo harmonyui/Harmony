@@ -18,26 +18,60 @@ import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 type Account = Pick<AccountServer, 'firstName' | 'lastName' | 'role'>
 
 const SetupPage: NextPage = () => {
-	const {mutate, ...createAccountUtils} = api.setup.createAccount.useMutation();
+	const {mutate} = api.setup.createAccount.useMutation();
 	const [account, setAccount] = useState<Account>({firstName: '', lastName: '', role: ''});
 	const [repository, setRepository] = useState<Repository>();
 	const [page, setPage] = useState(0);
 	const router = useRouter();
+	const [loading, setLoading] = useState(false);
+	const [error, setError] = useState<string>();
 
-	if (createAccountUtils.isLoading) {
+	if (loading) {
 		return <LoadingScreen>
 			Importing repository. This could take a few minutes.
 		</LoadingScreen>;
 	}
 
+	const readData = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
+		let done = false;
+		const decoder = new TextDecoder();
+
+		while (!done) {
+			const { value, done: doneReading } = await reader.read();
+			done = doneReading;
+			const data = decoder.decode(value);
+		}
+	}
 	
 	const onFinish = (): void => {
-		router.push('/');
+		setLoading(true);
+		fetch('/api/import', {
+			method: 'POST',
+			body: JSON.stringify({repository})
+		}).then(response => {
+			if (!response.ok) {
+				setLoading(false);
+				setError("There was an error, please contact support if this problem persists")
+				return;
+			}
+
+			const reader = response.body?.getReader();
+			if (!reader) {
+				setLoading(false);
+				setError("There was an error, please contact support if this problem persists")
+				return;
+			}
+
+			readData(reader).then(() => {
+				setLoading(false);
+				router.push('/');
+			})
+		})
 	}
 
 	const onWelcomeContinue = (data: Account) => {
 		setAccount(data);
-		setPage(page + 1);
+		setPage(page+1);
 	}
 
 	const onGithubContinue = (repository: Repository): void => {
@@ -59,7 +93,7 @@ const SetupPage: NextPage = () => {
 		<div className="hw-flex hw-flex-col hw-gap-4 hw-bg-white hw-rounded-md hw-py-10 hw-px-20 hw-max-w-[800px]">
 			<Header level={1}>Welcome to Harmony</Header>
 			{pages[page]}
-			{createAccountUtils.isError ? <p className="hw-text-sm hw-text-red-400">There was an error, please contact support if this problem persists</p> : null}
+			{error ? <p className="hw-text-sm hw-text-red-400">{error}</p> : null}
 		</div>
 	</main>)
 }

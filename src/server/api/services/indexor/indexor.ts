@@ -3,11 +3,10 @@ import { HarmonyComponent, ComponentElement } from "../../../../../packages/ui/s
 import { hashComponent } from "../../../../../packages/util/src/index";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
-import fs from 'node:fs';
 import * as t from '@babel/types';
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
-export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string) => {
+export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress: (progress: number) => void) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const elementInstances: ComponentElement[] = [];
 
@@ -15,7 +14,8 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 		updateReactCode(filename, content, componentDefinitions, elementInstances);
 	});
 
-	for (const instance of elementInstances) {
+	for (let i = 0; i < elementInstances.length; i++) {
+		const instance = elementInstances[i];
 		const parent = instance.getParent();
 
 		const currComponent = await prisma.componentElement.findUnique({
@@ -70,6 +70,7 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 				}
 			})
 		}
+		onProgress(i/elementInstances.length)
 	}
 }
 
