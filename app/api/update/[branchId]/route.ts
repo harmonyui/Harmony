@@ -111,6 +111,9 @@ Provide the old code, the updated code, and the index of which code snippet the 
 		}
 
 		const newSnippet = referencedSnippet.replace(oldCode, newCode);
+		if (newSnippet === referencedSnippet) {
+			throw new Error("Invalid response from openai. Can't update code snippet");
+		}
 		return {location: referencedComponent, updatedText: newSnippet};
 	} else {
 		throw new Error('Invalid response from openai');
