@@ -1,7 +1,9 @@
 use std::sync::Arc;
 use base64::prelude::*;
 
-use swc_common::{Mark,SourceMapper};
+use std::path::{PathBuf,Path};
+use serde_json::Value;
+use swc_common::{Mark,SourceMapper, plugin::metadata::TransformPluginMetadataContextKind};
 use swc_core::{
     ecma::{
         ast::{Program, JSXElement, JSXAttrName, Str, Lit, Ident, JSXAttrValue, JSXAttr}, 
@@ -15,11 +17,12 @@ use swc_core::{
 pub struct TransformVisitor {
     // Add a field to store file path
     data: Option<Arc<PluginSourceMapProxy>>,
+    path: String
 }
 
 impl TransformVisitor {
-    pub fn new(data: Option<Arc<PluginSourceMapProxy>>) -> Self {
-        Self { data }
+    pub fn new(data: Option<Arc<PluginSourceMapProxy>>, path: String) -> Self {
+        Self { data, path }
     }
 }
 
@@ -30,14 +33,14 @@ impl VisitMut for TransformVisitor {
             let high = source_map.lookup_char_pos(node.span.hi);
 
             //Extract file attribute, line, and column information
-            let file = &low.file.name.clone();
+            //let file = self.path.unwrap_or_default();//&low.file.name.clone();
             let start_line = low.line;
             let start_col = low.col.0;
             let end_line = high.line;
             let end_col = high.col.0;
 
             // Create a unique identifier based on file, line, and column information
-            let _harmony_id = format!("{}:{}:{}:{}:{}", file, start_line, start_col, end_line, end_col);
+            let _harmony_id = format!("{}:{}:{}:{}:{}", self.path, start_line, start_col, end_line, end_col);
             let harmony_id = format!("{}", BASE64_STANDARD.encode(_harmony_id));
 
             // // Add your logic to customize the data attribute
@@ -62,7 +65,30 @@ impl VisitMut for TransformVisitor {
 
 #[plugin_transform]
 fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata) -> Program {
+    let filename = if let Some(filename) =
+        data.get_context(&TransformPluginMetadataContextKind::Filename)
+    {
+        filename
+    } else {
+        "default".to_string()
+    };
+    let plugin_config: Value = serde_json::from_str(
+        &data
+            .get_transform_plugin_config()
+            .expect("failed to get plugin config for relay"),
+    )
+    .expect("Should provide plugin config");
+
+    let root_dir = Path::new(
+        plugin_config["rootDir"]
+            .as_str()
+            .expect("rootDir is expected"),
+    );
+    let result = Path::new(filename.as_str()).strip_prefix(root_dir);
+    let path = format!("{}", result.ok().expect("Expect valid path").display());
+    println!("{}", path);
+
     let source_map = std::sync::Arc::new(data.source_map);
     
-    program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map))))
+    program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), path)))
 }

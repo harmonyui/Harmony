@@ -43,3 +43,5 @@ next-env.d.ts
 ^target/
 target
 .cargo
+
+bundle.js

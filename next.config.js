@@ -2,7 +2,7 @@
 const nextConfig = {
     experimental: {
         swcPlugins: [
-            [require.resolve("./harmony-plugin/target/wasm32-wasi/release/harmony_plugin.wasm")],
+            [require.resolve("./packages/swc-plugin/target/wasm32-wasi/release/harmony_plugin.wasm"), {rootDir: __dirname}],
         ],
     },
 }

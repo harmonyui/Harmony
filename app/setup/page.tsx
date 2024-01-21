@@ -21,7 +21,7 @@ const SetupPage: NextPage = () => {
 	const {mutate} = api.setup.createAccount.useMutation();
 	const [account, setAccount] = useState<Account>({firstName: '', lastName: '', role: ''});
 	const [repository, setRepository] = useState<Repository>();
-	const [page, setPage] = useState(0);
+	const [page, setPage] = useState(2);
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string>();
@@ -85,7 +85,7 @@ const SetupPage: NextPage = () => {
 	const pages = [
 		<WelcomeSetup key={0} data={account} onContinue={onWelcomeContinue}/>, 
 		<GitRepositorySetup key={1} onContinue={onGithubContinue}/>,
-		repository ? <InstallEditor key={2} onContinue={onFinish} repositoryId={repository.id}/> : null
+		true ? <InstallEditor key={2} onContinue={onFinish} repositoryId={'asdf'}/> : null
 		,
 	]
 	
@@ -172,14 +172,32 @@ interface InstallEditorProps {
 	onContinue: () => void;
 }
 const InstallEditor: React.FunctionComponent<InstallEditorProps> = ({onContinue, repositoryId}) => {
-	const code = `<script id="harmony-id">
+	const designSuiteCode = `<script id="harmony-id">
     harmony={load:function(e){const r=document.createElement("script");r.src="https://unpkg.com/harmony-ai-editor";r.addEventListener('load',function(){window.HarmonyProvider({repositoryId:e});});document.body.appendChild(r);}}
     harmony.load('${repositoryId}');
 </script>`
+	const swcPluginCode = `/** @type {import('next').NextConfig} */
+const nextConfig = {
+	//...Other config properties
+	experimental: {
+		// Only run the plugin in development mode
+		swcPlugins: process.env.NODE_ENV !== 'production' ? [
+			['harmony-ai-plugin', {rootDir: __dirname}]
+		] : []
+	},
+}
+	
+module.exports = nextConfig`
 	return (<>
 		<Header level={4}>Install Design Suite</Header>
-		<p className="hw-text-sm">Copy and paste the snippet below before your website’s closing <span className="hw-p-0.5 hw-rounded-lg" style={{background: "rgb(29, 31, 33)"}}><span style={{color: "rgb(197, 200, 198)"}}>&lt;/</span><span style={{color: "rgb(150, 203, 254)"}}>body</span><span style={{color: "rgb(197, 200, 198)"}}>&gt;</span></span> tag. Once installed, you can begin editing on your site.</p>
-		<CodeSnippet language="html" code={code}/>
+		<p className="hw-text-sm">Copy and paste the snippet below before your website’s closing <span className="hw-p-0.5" style={{background: "rgb(29, 31, 33)"}}><span style={{color: "rgb(197, 200, 198)"}}>&lt;/</span><span style={{color: "rgb(150, 203, 254)"}}>body</span><span style={{color: "rgb(197, 200, 198)"}}>&gt;</span></span> tag. Once installed, you can begin editing on your site.</p>
+		<CodeSnippet language="html" code={designSuiteCode}/>
+
+		<Header level={4}>Configure Data Tagging (NextJS Only)</Header>
+		<p className="hw-text-sm">In order for the front-end to communicate with the code base, you need to install the harmony-ai-plugin npm package by running <code style={{background: "rgb(29, 31, 33)"}} className="hw-text-white hw-p-0.5">npm|yarn|pnpm install harmony-ai-plugin</code>.</p>
+		<p className="hw-text-sm">Next, create a next.config.js file in the root (if it doesn't exist) and insert the following code:</p>
+		<CodeSnippet language="javascript" code={swcPluginCode}/>
+		
 		<div className="hw-flex">
 			<Button className="hw-ml-auto" onClick={onContinue}>Continue</Button>
 		</div>

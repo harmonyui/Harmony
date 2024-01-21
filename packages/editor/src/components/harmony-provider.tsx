@@ -7,7 +7,7 @@ import hotkeys from 'hotkeys-js';
 import { hashComponent } from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 
-const WEB_URL = process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : ''
+const WEB_URL = false && process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : 'http://localhost:3001'
 
 export interface HarmonyProviderProps {
 	repositoryId: string
@@ -51,18 +51,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 			if (branchId) {
 				setBranchId(branchId);
-				const response = await fetch(`${WEB_URL}/api/load/${repositoryId}?branchId=${branchId}`, {
-					method: 'GET',
-					headers: {
-						'Accept': 'application/json',
-						'Content-Type': 'application/json'
-					},
-				});
+				// const response = await fetch(`${WEB_URL}/api/load/${repositoryId}?branchId=${branchId}`, {
+				// 	method: 'GET',
+				// 	headers: {
+				// 		'Accept': 'application/json',
+				// 		'Content-Type': 'application/json'
+				// 	},
+				// });
 
-				const ids = await response.json();
-				if (Array.isArray(ids)) {
-					setAvailableIds(ids);
-				}
+				// const ids = await response.json();
+				// if (Array.isArray(ids)) {
+				// 	setAvailableIds(ids);
+				// }
 			}
 		}
 
@@ -72,9 +72,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const onToggle = useEffectEvent(() => {
 		setIsToggled(!isToggled);
 
-		if (!isToggled && rootComponent) {
-			assignIds(rootComponent);
-		}
+		// if (!isToggled && rootComponent) {
+		// 	assignIds(rootComponent);
+		// }
 	});
 
 	useEffect(() => {

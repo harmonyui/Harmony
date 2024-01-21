@@ -4,6 +4,7 @@ import './globals.css'
 import { HarmonyProvider } from '../packages/editor/src/components/harmony-provider'
 import { ClerkProvider } from '@clerk/nextjs'
 import { TrpcProvider } from '../utils/trpc-provider'
+import Script from 'next/script'
 
 const inter = Inter({ subsets: ['latin'] })
 
@@ -23,7 +24,16 @@ export default function RootLayout({
 				<html className="h-full bg-white" lang="en">
 					<body className={`${inter.className} h-full`}>
 						{children}
-						<HarmonyProvider repositoryId="clrf5dxjg000169tj4bwcrjj0"/>
+						{/* <HarmonyProvider repositoryId="clrf5dxjg000169tj4bwcrjj0"/> */}
+							<Script id="harmony-tag" src="bundle.js"></Script>
+							<Script>
+							{`(function() {
+								const script = document.getElementById('harmony-tag');
+								script.addEventListener('load', function() {
+									window.HarmonyProvider({repositoryId:'clrf5dxjg000169tj4bwcrjj0'});
+								});
+								})()`}
+							</Script>
 					</body>
 				</html>
 			</TrpcProvider>
