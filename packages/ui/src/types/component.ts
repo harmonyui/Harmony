@@ -24,6 +24,7 @@ export interface ComponentElementBase {
 }
 
 export interface ComponentElement extends ComponentElementBase {
+	parentId: string;
 	getParent: () => ComponentElement | undefined;
 	element?: HTMLElement;
 	containingComponent: HarmonyComponent;

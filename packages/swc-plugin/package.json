@@ -1,6 +1,6 @@
 {
     "name": "harmony-ai-plugin",
-    "version": "0.1.2",
+    "version": "0.1.4",
     "description": "",
     "author": "",
     "license": "ISC",
@@ -10,7 +10,7 @@
     "main": "harmony_plugin.wasm",
     "scripts": {
         "prepack": "cp target/wasm32-wasi/release/harmony_plugin.wasm .",
-        "build": "cargo build-wasi --release"
+        "build": "~/.cargo/bin/cargo build-wasi --release"
     },
     "files": [
         "harmony-plugin.wasm"

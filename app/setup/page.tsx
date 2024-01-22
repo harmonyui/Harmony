@@ -17,7 +17,7 @@ import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 
 type Account = Pick<AccountServer, 'firstName' | 'lastName' | 'role'>
 
-const SetupPage: NextPage = () => {
+export default function SetupPage() {
 	const {mutate} = api.setup.createAccount.useMutation();
 	const [account, setAccount] = useState<Account>({firstName: '', lastName: '', role: ''});
 	const [repository, setRepository] = useState<Repository>();
@@ -203,6 +203,3 @@ module.exports = nextConfig`
 		</div>
 	</>)
 }
-
-
-export default SetupPage;

@@ -9,12 +9,12 @@ import { getCodeSnippet } from '../../../../src/server/api/services/indexor/gith
 import { GithubRepository } from '../../../../src/server/api/repository/github';
 import { getServerAuthSession } from '../../../../src/server/auth';
 import { Repository } from '../../../../packages/ui/src/types/branch';
-//import {ComponentElement as ComponentElementPrisma, Prisma} from '@prisma/client';
 
 const openai = new OpenAI();
 
 const requestBodySchema = z.object({
 	id: z.string(),
+	parentId: z.string(),
 	oldValue: z.array(attributeSchema),
 	newValue: z.array(attributeSchema),
 	repositoryId: z.string()
@@ -72,13 +72,18 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 async function getChangeAndLocation(body: RequestBody, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[]) {
 	const possibleComponents: ComponentLocation[] = [];
 	const component = elementInstances.find(el => el.id === body.id);
-	if (component === undefined) {
+	const parentComponent = elementInstances.find(el => el.id === body.parentId);
+
+	if (component === undefined ) {
 		throw new Error('Cannot find component with id ' + body.id);
 	}
+	if (parentComponent === undefined ) {
+		throw new Error('Cannot find component with id ' + body.parentId);
+	}
+
 	const containingComponent = component.definition;
 	
-	possibleComponents.push({file: containingComponent.file, start: containingComponent.start, end: containingComponent.end});
-	possibleComponents.push(...elementInstances.filter(el => el.name === containingComponent.name).map(el => ({file: el.file, start: el.start, end: el.end})));
+	possibleComponents.push(...[containingComponent, parentComponent].map(el => ({file: el.file, start: el.start, end: el.end})));
 	
 	//const elementSnippet = getCodeSnippet(component.location);
 	const possibleComponentsSnippets = await Promise.all(possibleComponents.map((location) => getCodeSnippet(githubRepository)(location)));
@@ -119,8 +124,3 @@ Provide the old code, the updated code, and the index of which code snippet the 
 		throw new Error('Invalid response from openai');
 	}
 }
-
-//start: 64, 2454
-/*
-"function Home() {\r\n  return (\r\n    <main className=\"flex min-h-screen flex-col items-center justify-between p-24\">\r\n      <div className=\"z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex\">\r\n        <p className=\"fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30\">\r\n          Get started by editing&nbsp;\r\n          <code className=\"font-mono font-bold\">app/index.tsx</code>\r\n        </p>\r\n        <div className=\"fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none\">\r\n          <a\r\n            className=\"pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0\"\r\n            href=\"https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app\"\r\n            target=\"_blank\"\r\n            rel=\"noopener noreferrer\"\r\n          >\r\n            By{' '}\r\n            <Image\r\n              src=\"/vercel.svg\"\r\n              alt=\"Vercel Logo\"\r\n              className=\"dark:invert\"\r\n              width={100}\r\n              height={24}\r\n              priority\r\n            />\r\n          </a>\r\n        </div>\r\n      </div>\r\n\r\n      <div className=\"relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]\">\r\n        <Image\r\n          className=\"relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert\"\r\n          src=\"/next.svg\"\r\n          alt=\"Next.js Logo\"\r\n          width={180}\r\n          height={37}\r\n          priority\r\n        />\r\n      </div>\r\n\r\n      <LinkSection/>\r\n    </main>\r\n  )\r\n}"
-*/

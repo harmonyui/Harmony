@@ -164,6 +164,7 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 
 		return {
 			id,
+			parentId: parentElement?.id || "",
 			name,
 			getParent() {
 				return parentElement

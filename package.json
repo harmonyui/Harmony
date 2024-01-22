@@ -7,6 +7,7 @@
     "build": "next build",
     "build:css": "tailwindcss -o packages/editor/src/global.css --minify",
     "build:editor": "npm run build --workspace ./packages/editor",
+    "build:plugin": "npm run build --workspace ./packages/swc-plugin",
     "publish:editor": "npm run publish --workspace ./packages/editor",
     "start": "next start",
     "postinstall": "prisma generate",

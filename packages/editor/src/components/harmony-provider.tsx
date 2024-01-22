@@ -237,7 +237,7 @@ class ComponentUpdator {
 				// 	'Accept': 'application/json',
 				// 	'Content-Type': 'application/json'
 				// },
-				body: JSON.stringify({id: component.id, oldValue, newValue: component.attributes, repositoryId: save.repositoryId})
+				body: JSON.stringify({id: component.id, parentId: component.parentId, oldValue, newValue: component.attributes, repositoryId: save.repositoryId})
 			});
 		}
 	}
