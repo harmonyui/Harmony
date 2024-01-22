@@ -1,6 +1,6 @@
 import { prisma } from "../../../../../src/server/db";
-import { HarmonyComponent, ComponentElement } from "../../../../../packages/ui/src/types/component";
-import { hashComponent } from "../../../../../packages/util/src/index";
+import { HarmonyComponent, ComponentElement, ComponentLocation } from "../../../../../packages/ui/src/types/component";
+import { getLineAndColumn, hashComponent } from "../../../../../packages/util/src/index";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
@@ -92,6 +92,14 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 		}
 
 		return `${getNameFromNode(name.namespace)}.${getNameFromNode(name.name)}`
+	}  
+
+	const getHashFromLocation = (location: ComponentLocation, codeSnippet: string): string => {
+		const {file, start, end} = location;
+		const {line: startLine, column: startColumn} = getLineAndColumn(codeSnippet, start);
+		const {line: endLine, column: endColumn} = getLineAndColumn(codeSnippet, end);
+
+		return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
 	}
 
 	const getHashFromElement = (node: t.JSXElement, parentElement: ComponentElement | undefined, isComponent: boolean): string | undefined => {
@@ -142,15 +150,15 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 		}
 	}
 
-	function createJSXElementDefinition(node: t.JSXElement, parentElement: ComponentElement | undefined, containingComponent: HarmonyComponent, file: string): ComponentElement | undefined {
+	function createJSXElementDefinition(node: t.JSXElement, parentElement: ComponentElement | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): ComponentElement | undefined {
 		const name = getNameFromNode(node.openingElement.name);
 		const isComponent = name[0].toLowerCase() !== name[0];
-		const id = getHashFromElement(node, parentElement, isComponent);
-		if (id === undefined) {
-			return undefined;
-		}
 		const location = getLocation(node, file);
 		if (location === undefined) {
+			return undefined;
+		}
+		const id = getHashFromLocation(location, snippet);
+		if (id === undefined) {
 			return undefined;
 		}
 
@@ -188,10 +196,13 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 	
 			// Visitor for extracting JSX elements within the function body
 			path.traverse({
+				JSXIdentifier(jsPath) {
+
+				},
 				JSXElement: {
 					enter(jsPath) {
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
-						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file);
+						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
 						const parentComponent = parentElement ?? containingComponent;
 						if (jsxElementDefinition) {
 							jsxElements.push(jsxElementDefinition);

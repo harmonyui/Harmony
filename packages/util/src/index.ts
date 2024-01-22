@@ -225,3 +225,41 @@ export interface HashComponentProps {
 export function hashComponent({elementName, className, childPosition}: HashComponentProps) {
 	return `className:${className}${elementName}${childPosition}`.hashCode();
 }
+
+export function getLineAndColumn(text: string, index: number): { line: number; column: number } {
+  const lines = text.split("\n");
+  let currentLine = 0;
+  let currentColumn = index;
+  
+  for (let i = 0; i < lines.length; i++) {
+    const lineLength = lines[i].length + 1; // Include the newline character
+    if (currentColumn <= lineLength) {
+    break;
+    } else {
+    currentLine++;
+    currentColumn -= lineLength;
+    }
+  }
+  
+  return { line: currentLine + 1, column: currentColumn };
+}
+
+export function getIndexFromLineAndColumn(text: string, line: number, column: number): number | undefined {
+  const lines = text.split("\n");
+  let currentIndex = 0;
+
+  for (let i = 0; i < line; i++) {
+    if (i < lines.length) {
+      currentIndex += lines[i].length + 1; // Add 1 for the newline character
+    } else {
+      return undefined; // Line number out of range
+    }
+  }
+
+  if (column < lines[line].length) {
+    currentIndex += column;
+    return currentIndex;
+  }
+
+  return undefined; // Column number out of range
+}

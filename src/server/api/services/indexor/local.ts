@@ -4,8 +4,8 @@ import { ReadFiles } from "./indexor";
 
 export const fromDir: ReadFiles = async (startPath: string, filter: RegExp, callback: (filename: string, content: string) => void) => {
 	if (!fs.existsSync(startPath)) {
-			console.log("no dir ", startPath);
-			return;
+		console.log("no dir ", startPath);
+		return;
 	}
 
 	var files = fs.readdirSync(startPath);
@@ -14,7 +14,7 @@ export const fromDir: ReadFiles = async (startPath: string, filter: RegExp, call
 			var stat = fs.lstatSync(filename);
 			if (stat.isDirectory()) {
 					fromDir(filename, filter, callback); 
-			} else if (filter.test(filename)) {
+			} else if (filter.test(filename.substring(1))) {
 				callback(filename, fs.readFileSync(filename, 'utf-8'));
 			}
 	};

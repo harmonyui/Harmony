@@ -21,7 +21,7 @@ const SetupPage: NextPage = () => {
 	const {mutate} = api.setup.createAccount.useMutation();
 	const [account, setAccount] = useState<Account>({firstName: '', lastName: '', role: ''});
 	const [repository, setRepository] = useState<Repository>();
-	const [page, setPage] = useState(2);
+	const [page, setPage] = useState(0);
 	const router = useRouter();
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string>();
@@ -85,7 +85,7 @@ const SetupPage: NextPage = () => {
 	const pages = [
 		<WelcomeSetup key={0} data={account} onContinue={onWelcomeContinue}/>, 
 		<GitRepositorySetup key={1} onContinue={onGithubContinue}/>,
-		true ? <InstallEditor key={2} onContinue={onFinish} repositoryId={'asdf'}/> : null
+		repository ? <InstallEditor key={2} onContinue={onFinish} repositoryId={repository.id}/> : null
 		,
 	]
 	
