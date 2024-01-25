@@ -14,10 +14,10 @@ export interface InspectorProps {
 	onHover: (component: HTMLElement | undefined) => void;
 	onSelect: (component: HTMLElement | undefined) => void;
 	rootElement: HTMLElement | undefined;
-	harmonyContainer: HTMLElement;
+	//harmonyContainer: HTMLElement;
 	mode: SelectMode;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement, harmonyContainer, mode}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement, mode}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
@@ -116,7 +116,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			}
 		},
 		container: rootElement,
-		noEvents: [harmonyContainer]
+		noEvents: []
 	});
 
 	return (

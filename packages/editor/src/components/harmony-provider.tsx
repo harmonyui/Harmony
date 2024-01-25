@@ -6,17 +6,22 @@ import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
 import { hashComponent } from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
+import {SidePanel} from "@harmony/ui/src/components/core/side-panel";
 
 const WEB_URL = false && process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : 'http://localhost:3001'
 
 export interface HarmonyProviderProps {
 	repositoryId: string
+	rootComponent: HTMLElement | undefined,
+	scale: number,
+	onScaleChange: (scale: number) => void,
+	children: React.ReactNode
 }
-export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId}) => {
-	const [isToggled, setIsToggled] = useState(false);
+export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, rootComponent, scale, onScaleChange, children}) => {
+	const [isToggled, setIsToggled] = useState(true);
 	const [selectedComponent, setSelectedComponent] = useState<HTMLElement>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
-	const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
+	//const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
 	const ref = useRef<HTMLDivElement>(null);
 	const harmonyContainerRef = useRef<HTMLDivElement>(null);
 	const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
@@ -97,9 +102,20 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 	}, [harmonyContainerRef]);
 
-	useEffect(() => {
-		setRootComponent(document.body);
-	}, [])
+	// useEffect(() => {
+	// 	if (document.body.firstElementChild) {
+
+	// 		let child = document.body.firstElementChild;
+	// 		let i = 0;
+	// 		while (i < document.body.children.length && child.tagName.toLowerCase() !== 'div' && child.id !== 'harmony-container') {
+	// 			child = document.body.children[++i];
+	// 		}
+	// 		if (child.tagName.toLowerCase() !== 'div' || child.id === 'harmony-container') {
+	// 			return;//throw new Error("Invalid children of body");
+	// 		}
+	// 		setRootComponent(child as HTMLElement);
+	// 	}
+	// }, [document.body.children.length])
 
 	// useEffect(() => {
 	// 	const assignIds = (element: HTMLElement): void => {
@@ -174,12 +190,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	return (
 		<>
-			<div ref={harmonyContainerRef}>
-				{isToggled && harmonyContainer ? <>
-					<Inspector rootElement={rootComponent} harmonyContainer={harmonyContainer} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} mode={mode}/>
-					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode}/>
+			{/* <div ref={harmonyContainerRef}> */}
+				{isToggled ? <>
+					<Inspector rootElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} mode={mode}/>
+					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={onScaleChange} onModeChange={setMode}>
+						{children}
+					</HarmonyPanel>
 				</> : null}
-			</div>
+			{/* </div> */}
 		</>
 	)
 }

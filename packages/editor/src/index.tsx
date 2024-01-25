@@ -10,6 +10,7 @@ declare global {
 
 window.HarmonyProvider = (options: HarmonyProviderProps) => {
     const container = document.createElement('div');
+    container.id = 'harmony-container';
     document.body.appendChild(container);
     ReactDOM.render(<HarmonyProvider {...options} />, container);
  }

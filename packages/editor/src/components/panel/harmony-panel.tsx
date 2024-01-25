@@ -8,6 +8,7 @@ import { getClass, groupBy } from "@harmony/util/src/index";
 import { useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { componentIdentifier } from "../inspector/inspector";
+import { Slider } from "@harmony/ui/src/components/core/slider";
 
 export type SelectMode = 'scope' | 'tweezer';
 
@@ -21,20 +22,39 @@ export interface HarmonyPanelProps {
 	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
+	scale: number;
+	onScaleChange: (scale: number) => void;
+	children: React.ReactNode;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel, scale, onScaleChange, children}) => {
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
 	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
 
-	return (<>
-		<div className="hw-fixed hw-top-0 hw-left-0 hw-w-full hw-h-full hw-pointer-events-none hw-z-[10000000]">
-			<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
+
+	return (
+		<div className="hw-flex hw-h-full">
+			<div>
+				Components
+			</div>
+			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
+				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
+					<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
+				</div>
+				<div className="hw-flex hw-items-center hw-justify-center hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
+					{children}
+				</div>
+				<div className="hw-px-4 hw-py-4 sm:hw-px-6">
+					<Slider value={scale} onChange={onScaleChange}/>
+				</div>
+			</div>
+		
+			{/* <ToolbarPanel mode={mode} onModeChange={onModeChange}/>
 			<div className="hw-text-center">
 				
 			</div>
-			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/>
+			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/> */}
+
 		</div>
-		</>
 	)
 }
 
@@ -44,7 +64,7 @@ interface ToolbarPanelProps {
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({mode, onModeChange}) => {
 	return (
-		<div className="hw-absolute hw-left-0 hw-inline-flex hw-flex-col hw-gap-2 hw-h-full hw-border hw-border-gray-200 hw-p-4 hw-bg-white hw-pointer-events-auto hw-overflow-auto">
+		<div className="hw-inline-flex hw-gap-2 hw-h-full hw-bg-white hw-pointer-events-auto hw-overflow-auto">
 			<Button className="hw-p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
 				<CursorArrowRaysIcon className="hw-w-5 hw-h-5"/>
 			</Button>
