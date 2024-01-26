@@ -1,10 +1,24 @@
 'use client';
 import { useCallback, useEffect, useRef, useState } from "react"
 import { HarmonyProvider } from "../../packages/editor/src/components/harmony-provider";
+import { load } from 'cheerio';
 
 const WIDTH = 1960;
 const HEIGHT = 1080;
-const PAGE_URL = 'https://setl-staging.vercel.app';
+const PAGE_URL = 'https://sandbox-project-livid.vercel.app';
+
+const transformURL = function(origUrl: string | URL, pageUrl: string): string {
+    const url = typeof origUrl === 'string' ? origUrl : origUrl.href;
+    if (!url.startsWith('http')) {
+        const newUrl = new URL(`http://localhost:3001/api/proxy`);
+        const proxyUrl = new URL(pageUrl);
+        proxyUrl.pathname = url;
+        newUrl.searchParams.append('url', proxyUrl.href);
+        return proxyUrl.href;//newUrl.href;
+    }
+
+    return url;
+}
 
 export default function EditorPage() {
     const ref = useRef<HTMLDivElement>(null);
@@ -20,22 +34,17 @@ export default function EditorPage() {
         _setScale(scale);
     }, [ref]);
     useEffect(() => {
-        const transformURL = function(origUrl: string | URL): URL | string {
-            const url = typeof origUrl === 'string' ? origUrl : origUrl.href;
-            if (!url.startsWith('http')) {
-                const newUrl = new URL(`http://localhost:3001/api/proxy`);
-                newUrl.searchParams.append('url', `${PAGE_URL}${url}`);
-                return newUrl;
-            }
-
-            return origUrl;
-        }
+        return;
         
         if (ref.current) {
             const iframe = document.createElement('iframe');
             iframe.src = `http://localhost:3001/api/proxy?url=${PAGE_URL}`;
             iframe.style.height = '100%';
             iframe.style.width = '100%';
+            // iframe.sandbox.add('allow-forms')
+            // iframe.sandbox.add('allow-navigation');
+            // iframe.sandbox.add('allow-scripts');
+            // iframe.sandbox.add('allow-same-origin');
             iframe.addEventListener('load', function() {
                 if (!iframe.contentWindow || !iframe.contentDocument) return;
 
@@ -95,8 +104,63 @@ export default function EditorPage() {
     return (
         <HarmonyProvider repositoryId="clrf5dxjg000169tj4bwcrjj0" rootComponent={rootComponent} scale={scale} onScaleChange={setScale}>
            <div style={{width: `${WIDTH}px`, height: `${HEIGHT}px`}}>
-                <div ref={ref} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0"}}></div>
+                <div ref={ref} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0"}}>
+                    {/* <embedded-webview src={PAGE_URL}></embedded-webview> */}
+                    {/* <iframe src={PAGE_URL}/> */}
+                </div>
             </div>
         </HarmonyProvider>
     )
 }
+
+class EmbeddedWebview extends HTMLElement {
+    connectedCallback() {
+        const mutationObserver = new MutationObserver((mutations) => {
+
+        });
+      fetch(`/api/proxy?url=${this.getAttribute('src')}`)
+        .then(response => response.text())
+        .then(html => {
+          const shadow = this//.attachShadow({ mode: 'open' });
+        //   const allMatches = Array.from(html.matchAll(/"(\/([^"<>\s\\,]+)([^\/<>\s\\,"]+\.[^\/<>\s\\,"]+))/g));
+        //     for (const match of allMatches) {
+        //         if (!match[0].includes('clerk')) {
+        //             html = html.replace(match[0], `"http://localhost:3001/api/proxy?url=${PAGE_URL}${match[1]}`);
+        //         }
+        //     }
+          const $ = load(html);
+          const scripts = $('script,link,meta');
+
+          scripts.remove();
+          shadow.innerHTML = $.html();
+          const head = document.getElementsByTagName('head')[0];
+          for (const script of Array.from(scripts)) {
+            const element = document.createElement(script.tagName);
+            for (const attr of script.attributes) {
+                let value = attr.value;
+                if (attr.name === 'src' || attr.name === 'href') {
+                    value = transformURL(attr.value, 'https://immense-lobster-38.accounts.dev');
+                }
+                element.setAttribute(attr.name, value);
+            }
+            if (script.children.length > 0) {
+                element.textContent = script.childNodes[0].nodeType === Node.TEXT_NODE ? script.childNodes[0].data : '';
+            }
+            head.appendChild(element);
+          }
+          mutationObserver.observe(shadow, {
+            attributeOldValue: true,
+            attributes: true,
+            characterData: true,
+            characterDataOldValue: true,
+            childList: true,
+            subtree: true,
+          });
+        });
+    }
+  }
+   
+  window.customElements.define(
+    'embedded-webview',
+    EmbeddedWebview
+  );

@@ -3,7 +3,7 @@ import forms from '@tailwindcss/forms';
 
 const config: Config = {
   prefix: 'hw-',
-  content: ['./**/*.{ts,tsx,mdx}', '../ui/**/*.{ts,tsx,mdx}'],
+  content: ['./**/*.{ts,tsx,mdx}', '../ui/src/components/core/**/*.{ts,tsx,mdx}'],
   theme: {
     extend: {
       backgroundImage: {

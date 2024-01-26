@@ -1,4 +1,4 @@
-'use client';
+"use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Inspector, componentIdentifier } from "./inspector/inspector";
 import { Attribute, ComponentElement } from "@harmony/ui/src/types/component";
@@ -7,28 +7,125 @@ import hotkeys from 'hotkeys-js';
 import { hashComponent } from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import {SidePanel} from "@harmony/ui/src/components/core/side-panel";
+import ReactDOM from "react-dom";
+import React from "react";
+import '../global.css';
 
 const WEB_URL = false && process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : 'http://localhost:3001'
+const WIDTH = 1960;
+const HEIGHT = 1080;
+
+function isNativeElement(element: Element): boolean {
+    return element.tagName.toLowerCase() !== 'script' && element.id !== 'harmony-container';
+}
+
+function setupHarmonyMode(container: Element, body: HTMLBodyElement) {
+    for (let i = 0; i < body.children.length; i++) {
+        const child = body.children[i];
+        if (isNativeElement(child)) {
+            container.appendChild(child);
+			i--;
+        }
+    }
+}
+
+function setupNormalMode(container: Element, body: HTMLBodyElement) {
+    for (let i = 0; i < container.children.length; i++) {
+        const child = container.children[i];
+        if (isNativeElement(child)) {
+            body.appendChild(child);
+			i--;
+        }
+    }
+}
+
+export function setupHarmonyProvider(setupHarmonyContainer=true) {
+    // let harmonyContainer: HTMLElement;
+	// if (setupHarmonyContainer) {
+	// 	harmonyContainer = document.createElement('div');
+	// 	harmonyContainer.id = 'harmony-container';
+	// 	document.body.appendChild(harmonyContainer);
+	// }
+	if (document.getElementById('harmony-container')) return undefined;
+
+	const harmonyContainer = document.createElement('div');
+	harmonyContainer.id = 'harmony-container';
+	document.body.appendChild(harmonyContainer);
+
+	const documentBody = document.body as HTMLBodyElement;
+
+    const container = document.createElement('body');
+    container.className = documentBody.className;
+
+	//TODO: Probably need to do this for all styles;
+	container.style.backgroundColor = 'white';
+	setupHarmonyMode(container, documentBody);
+	
+	const createPortal = ReactDOM.createPortal;
+	ReactDOM.createPortal = function(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
+		if (_container === documentBody) {
+			_container = container;
+		}
+		
+		return createPortal(children, _container, key);
+	}
+
+    const mutationObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+            mutation.addedNodes.forEach(node => {
+                if (node.parentElement === documentBody && isNativeElement(node as Element)) {
+					container.appendChild(node);
+                }
+            })
+        }
+    });
+    mutationObserver.observe(documentBody, {
+        'attributeOldValue': true,
+        attributes: true,
+        characterData: true,
+        characterDataOldValue: true,
+        childList: true,
+        subtree: true
+    });
+
+    return {container, harmonyContainer};
+}
+
+export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId'>> = (options) => {
+	const [rootElement, setRootElement] = useState<HTMLElement | undefined>();
+	useEffect(() => {
+		const result = setupHarmonyProvider();
+		if (result) {
+			const {container, harmonyContainer} = result;
+			ReactDOM.render(React.createElement(HarmonyProvider, {...options, rootElement: container}), harmonyContainer);
+			//setRootElement(container)
+		}
+		
+	}, []);
+	return (<>
+		{/* {rootElement ? <div id="harmony-container">
+			<HarmonyProvider repositoryId={repositoryId} rootElement={rootElement}/>
+		</div> : null} */}
+	</>)
+}
 
 export interface HarmonyProviderProps {
-	repositoryId: string
-	rootComponent: HTMLElement | undefined,
-	scale: number,
-	onScaleChange: (scale: number) => void,
-	children: React.ReactNode
+	repositoryId: string;
+	rootElement: HTMLElement;
 }
-export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, rootComponent, scale, onScaleChange, children}) => {
-	const [isToggled, setIsToggled] = useState(true);
+export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, rootElement}) => {
+	const [isToggled, setIsToggled] = useState(false);
 	const [selectedComponent, setSelectedComponent] = useState<HTMLElement>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
-	//const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
+	const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
 	const ref = useRef<HTMLDivElement>(null);
 	const harmonyContainerRef = useRef<HTMLDivElement>(null);
-	const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
+	//const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
 	const [mode, setMode] = useState<SelectMode>('tweezer');
 	const [currEdits, setCurrEdits] = useState<Map<HTMLElement, {oldValue: ComponentElement, newValue: ComponentElement}>>(new Map());
 	const [availableIds, setAvailableIds] = useState<number[]>([]);
 	const [branchId, setBranchId] = useState<string>();
+	const [scale, _setScale] = useState(.38);
 
 	const assignIds = useCallback((element: HTMLElement): void => {
 		const elementName = element.tagName.toLowerCase();
@@ -98,7 +195,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	useEffect(() => {
 		if (harmonyContainerRef.current) {
-			setHarmonyContainer(harmonyContainerRef.current);
+			setRootComponent(harmonyContainerRef.current);
+			harmonyContainerRef.current.appendChild(rootElement);
+			//document.body = rootElement;
 		}
 	}, [harmonyContainerRef]);
 
@@ -141,6 +240,16 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	// 		assignIds(rootComponent);
 	// 	}
 	// }, [rootComponent, availableIds])
+
+	const setScale = useCallback((scale: number) => {
+        if (harmonyContainerRef.current && harmonyContainerRef.current.parentElement) {
+            harmonyContainerRef.current.style.transform = `scale(${scale})`;
+            harmonyContainerRef.current.parentElement.style.width = `${WIDTH*scale}px`;
+            harmonyContainerRef.current.parentElement.style.height = `${HEIGHT*scale}px`;
+        }
+        _setScale(scale);
+    }, [harmonyContainerRef]);
+
 	const onAttributesChange = (component: ComponentElement, attributes: Attribute[]) => {
 		if (selectedComponent === undefined) return;
 		const copy = {...component};
@@ -191,12 +300,16 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	return (
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
-				{isToggled ? <>
-					<Inspector rootElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} mode={mode}/>
-					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={onScaleChange} onModeChange={setMode}>
-						{children}
+				{<>
+					{isToggled ? <Inspector rootElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} mode={mode}/> : null}
+					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode}>
+					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
+						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
+							
+						</div>
+					</div>
 					</HarmonyPanel>
-				</> : null}
+				</>}
 			{/* </div> */}
 		</>
 	)
