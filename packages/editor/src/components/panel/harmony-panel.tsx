@@ -40,7 +40,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
 					<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
 				</div>
-				<div className="hw-flex hw-items-center hw-justify-center hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
+				<div className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
 					{children}
 				</div>
 				<div className="hw-px-4 hw-py-4 sm:hw-px-6">

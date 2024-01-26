@@ -1,3 +1,4 @@
+'use client';
 import ReactDOM from 'react-dom';
 import {HarmonyProvider, HarmonyProviderProps, HarmonySetup, setupHarmonyProvider} from './components/harmony-provider';
 

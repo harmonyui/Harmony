@@ -50,6 +50,7 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
 
 	const harmonyContainer = document.createElement('div');
 	harmonyContainer.id = 'harmony-container';
+	harmonyContainer.className = "hw-h-full";
 	document.body.appendChild(harmonyContainer);
 
 	const documentBody = document.body as HTMLBodyElement;
