@@ -55,6 +55,7 @@ import {
   ChevronRightIcon,
   ExclamationIcon,
 } from "./icons";
+import { createPortal } from "react-dom";
 
 const dateToCalendarDate = (date: Date): CalendarDate =>
   new CalendarDate(date.getFullYear(), date.getMonth() + 1, date.getDate());
@@ -480,7 +481,7 @@ export const Popover = (props: PopoverProps): JSX.Element => {
   );
 
   return (
-    <Overlay>
+    createPortal(<>
       <div {...underlayProps} className="fixed inset-0" />
       <div
         {...popoverProps}
@@ -493,7 +494,7 @@ export const Popover = (props: PopoverProps): JSX.Element => {
         {children}
         <DismissButton onDismiss={state.close.bind(state)} />
       </div>
-    </Overlay>
+    </>, document.getElementById('harmony-container') as HTMLElement)
   );
 };
 

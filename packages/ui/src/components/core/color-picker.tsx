@@ -106,13 +106,13 @@ function ColorSwatch<T extends Color | HexColor>(props: ColorSwatchProps<T>) {
   return (
     <div
       role="img"
-      className="inline-block rounded-sm relative w-10 h-10 overflow-hidden"
+      className="hw-inline-block hw-rounded-sm hw-relative hw-w-7 hw-h-7 hw-overflow-hidden"
       aria-label={valueString}
       {...otherProps}
     >
-      <div className="absolute w-full h-full bg-white" />
+      <div className="hw-absolute hw-w-full hw-h-full hw-bg-white" />
       <div
-        className="absolute w-full h-full"
+        className="hw-absolute hw-w-full hw-h-full"
         style={{
           backgroundColor: valueString,
         }}
@@ -162,7 +162,7 @@ function ColorSlider(props: ColorSliderProps) {
       </div>
       {/* The track element holds the visible track line and the thumb. */}
       <div
-        className="w-full rounded-sm relative"
+        className="hw-w-full hw-rounded-sm hw-relative"
         {...trackProps}
         ref={trackRef}
         style={{
@@ -186,25 +186,25 @@ function ColorSlider(props: ColorSliderProps) {
             linear-gradient(45deg, rgb(188, 188, 188) 25.5%, transparent 25.5%);
         }`}
         </style>
-        <div className="w-full rounded-sm absolute h-full color-slider-track-background"></div>
+        <div className="hw-w-full hw-rounded-sm hw-absolute hw-h-full hw-color-slider-track-background"></div>
         <div
-          className="w-full rounded-sm absolute h-full"
+          className="hw-w-full hw-rounded-sm hw-absolute hw-h-full"
           style={{
             ...trackProps.style,
           }}
         ></div>
         <div
-          className={`absolute top-[14px] box-border rounded-[50%] border-white border-2 w-5 h-5${
-            isFocusVisible ? " w-6 h-6" : ""
+          className={`hw-absolute hw-top-[14px] hw-box-border hw-rounded-[50%] hw-border-white hw-border-2 hw-w-5 hw-h-5${
+            isFocusVisible ? " hw-w-6 hw-h-6" : ""
           }`}
           {...thumbProps}
           style={{
             ...thumbProps.style,
           }}
         >
-          <div className="color-slider-thumb-background w-full h-full absolute rounded-[50%]"></div>
+          <div className="hw-color-slider-thumb-background hw-w-full hw-h-full hw-absolute hw-rounded-[50%]"></div>
           <div
-            className="absolute rounded-[50%] w-full h-full"
+            className="hw-absolute hw-rounded-[50%] hw-w-full hw-h-full"
             style={{
               background: state.getDisplayColor().toString("css"),
             }}
@@ -309,6 +309,7 @@ const ColorPicker = <T extends Color | HexColor>({
       <Popover
         button={
           <ColorSwatch
+
             value={value}
             aria-label={`current color swatch: ${value.toString("rgb")}`}
           />

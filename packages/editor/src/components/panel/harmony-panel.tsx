@@ -3,12 +3,17 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, CursorArrowRaysIcon, EyeDropperIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
-import { getClass, groupBy } from "@harmony/util/src/index";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, EyeDropperIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
+import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
 import { useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { componentIdentifier } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
+import {Dropdown, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
+import ColorPicker from '@harmony/ui/src/components/core/color-picker';
+import { HexColorSchema } from "@harmony/ui/src/types/colors";
+import {useChangeArray} from '@harmony/ui/src/hooks/change-property';
+import { Popover } from "@harmony/ui/src/components/core/popover";
 
 export type SelectMode = 'scope' | 'tweezer';
 
@@ -38,13 +43,13 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 			</div>
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
 				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
-					<ToolbarPanel mode={mode} onModeChange={onModeChange}/>
+					<ToolbarPanel mode={mode} onModeChange={onModeChange} selectedComponent={selectedComponent} onChange={onAttributesChange} onCancel={onAttributesCancel} onSave={onAttributesSave}/>
 				</div>
 				<div className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
 					{children}
 				</div>
 				<div className="hw-px-4 hw-py-4 sm:hw-px-6">
-					<Slider value={scale} onChange={onScaleChange}/>
+					<Slider value={scale * 100} onChange={(value) => onScaleChange(value/100)} max={500}/>
 				</div>
 			</div>
 		
@@ -58,21 +63,195 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 	)
 }
 
+const getTextToolsFromAttributes = (element: ComponentElement) => {
+	if (!element.element) {
+		throw new Error("Component must have an element");
+	}
+
+	const computed = getComputedStyle(element.element);
+	const getAttr = (name: keyof CSSStyleDeclaration) => {
+		return computed[name] as string;
+	}
+	return arrayOfAll<ComponentToolData<typeof textTools>>()([
+		{
+			name: 'font',
+			value: getAttr('font'),
+		},
+		{
+			name: 'fontSize',
+			value: getAttr('fontSize'),
+		},
+		{
+			name: 'color',
+			value: convertRgbToHex(getAttr('color')),
+		},
+		{
+			name: 'textAlign',
+			value: getAttr('textAlign'),
+		},
+		{
+			name: 'spacing',
+			value: `${getAttr('lineHeight')}-${getAttr('letterSpacing')}`
+		}
+	]);
+}
+
 interface ToolbarPanelProps {
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
+	selectedComponent: ComponentElement | undefined;
+	onChange: (component: ComponentElement, attributes: Attribute[]) => void;
+	onSave: () => void;
+	onCancel: () => void;
 }
-const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({mode, onModeChange}) => {
+const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps}) => {
+	const [isDirty, setIsDirty] = useState(false);
+	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
+	const changeData = (values: ComponentToolData<typeof textTools>[]) => {
+		if (selectedComponent === undefined || data === undefined) return;
+
+		const attributes: Attribute[] = values.map(({name, value}) => ({id: 'className', name, value}));
+		setIsDirty(true);
+		selectedComponent.attributes = data.map(({name, value}) => ({id: 'className', name, value}));
+		onChange(selectedComponent, attributes);
+	}
+
+	const onCancel = () => {
+		setIsDirty(false);
+		onCancelProps();
+	}
+
+	const onSave = () => {
+		setIsDirty(false);
+		onSaveProps();
+	}
+
 	return (
-		<div className="hw-inline-flex hw-gap-2 hw-h-full hw-bg-white hw-pointer-events-auto hw-overflow-auto">
-			<Button className="hw-p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
+		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
+			<div>
+				<Header level={4}>Landing Page Changes</Header>
+			</div>
+			{data ? <>
+				<div className="hw-px-4">
+					<ComponentTools tools={textTools} components={textToolsComponents} data={data} onChange={changeData}/>
+				</div>
+				<div className="hw-px-4">
+					<Button mode="secondary">Behavior</Button>
+				</div>
+			</> : null}
+			{isDirty ? <div className="hw-flex hw-gap-2 hw-px-4">
+				<Button onClick={onCancel} mode="secondary">Cancel</Button>
+				<Button onClick={onSave}>Save</Button>
+			</div> : null}
+			{/* <Button className="hw-p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
 				<CursorArrowRaysIcon className="hw-w-5 hw-h-5"/>
 			</Button>
 			<Button className="hw-p-1" mode={mode === 'tweezer' ? 'primary' : 'secondary'} onClick={() => onModeChange('tweezer')}>
 				<EyeDropperIcon className="hw-w-5 hw-h-5"/>
-			</Button>
+			</Button> */}
 		</div>
 	)
+}
+
+const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
+type TextTools = typeof textTools[number];
+type ComponentTool = React.FunctionComponent<{data: string, onChange: (data: string) => void}>;
+
+const textToolsComponents: Record<TextTools, ComponentTool> = {
+	'font': ({data, onChange}) => {
+		const items: DropdownItem<string>[] = [
+			{
+				id: 'times',
+				name: 'Times New Roman'
+			}
+		]
+		return (
+			<Dropdown className="hw-w-[170px]" items={items} initialValue={data} onChange={(item) => onChange(item.id)}/>
+		)
+	},
+	'fontSize': ({data, onChange}) => {
+		return (
+			<Input className="hw-w-fit" value={data} onChange={onChange}/>
+		)
+	},
+	'color': ({data, onChange}) => {
+		return (
+			<ColorPicker value={HexColorSchema.parse(data)} onChange={onChange}/>
+		)
+	},
+	'textAlign': ({data, onChange}) => {
+		const icons: Record<string, React.ReactNode> = {
+			'left': <Bars3CenterLeft className="hw-h-5 hw-w-5"/>,
+			'center': <Bars3 className="hw-h-5 hw-w-5"/>,
+			'right': <Bars3CenterLeft className="hw-h-5 hw-w-5 hw-rotate-180"/>,
+			'justify': <Bars4Icon className="hw-h-5 hw-w-5"/>,
+		};
+		const options = Object.keys(icons);
+
+		const onClick = () => {
+			const index = options.indexOf(data);
+			if (index < 0) throw new Error("Invalid alignment");
+			const nextIndex = index < options.length - 1 ? index + 1 : 0;
+			onChange(options[nextIndex]);
+		}
+		const icon = icons[data];
+		if (!icon) {
+			<></>
+		}
+
+		return (
+			<Button mode='none' onClick={onClick}>{icon}</Button>
+		)
+	},
+	'spacing': ({data, onChange}) => {
+		const split = data.split('-');
+		const lineStr = split[0].replace('px', '');
+		const letterStr = split[1].replace('px', '');
+		const line = Number(lineStr);
+		let letter = Number(letterStr);
+		if (isNaN(letter)) {
+			letter = 0;
+		}
+		
+		return (
+			<Popover button={<Button mode='none'><BarsArrowDownIcon className="hw-h-5 hw-w-5"/></Button>} container>
+				<div className="hw-flex hw-flex-col hw-gap-2 hw-font-normal">
+					<div className="hw-flex hw-gap-2 hw-text-sm">
+						<span className="hw-w-full">Line Spacing</span>
+						<Slider value={line} max={50} onChange={(value) => onChange(`${value}px-${letter}px`)}/>
+						<span>{line}</span>
+					</div>
+					<div className="hw-flex hw-gap-2 hw-text-sm">
+						<span className="hw-w-full">Line Spacing</span>
+						<Slider value={letter} max={50} onChange={(value) => onChange(`${line}px-${value}px`)}/>
+						<span>{letter}</span>
+					</div>
+				</div>
+			</Popover>
+		)
+	}
+}
+
+type ComponentToolData<T extends readonly string[]> = {name: T[number], value: string};
+interface ComponentToolsProps<T extends readonly string[]> {
+	tools: T,
+	components: Record<T[number], ComponentTool>,
+	data: ComponentToolData<T>[],
+	onChange: (data: ComponentToolData<T>[]) => void
+}
+const ComponentTools = <T extends readonly string[]>({tools, components, data, onChange}: ComponentToolsProps<T>) => {
+	const changeProperty = useChangeArray<ComponentToolData<T>>(onChange);
+	return (<div className="hw-flex hw-gap-4">
+		{tools.map((tool: T[number]) => {
+			const Component = components[tool] as ComponentTool;
+			const index = data.findIndex(d => d.name === tool);
+
+			const onComponentChange = (value: string): void => {
+				changeProperty(data, index, 'value', value);
+			}
+			return <Component data={data[index].value} onChange={onComponentChange}/>
+		})}
+	</div>)
 }
 
 interface AttributePanelProps {

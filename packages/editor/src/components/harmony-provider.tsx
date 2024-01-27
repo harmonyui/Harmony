@@ -115,7 +115,7 @@ export interface HarmonyProviderProps {
 	rootElement: HTMLElement;
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, rootElement}) => {
-	const [isToggled, setIsToggled] = useState(false);
+	const [isToggled, setIsToggled] = useState(true);
 	const [selectedComponent, setSelectedComponent] = useState<HTMLElement>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
 	const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
@@ -126,7 +126,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [currEdits, setCurrEdits] = useState<Map<HTMLElement, {oldValue: ComponentElement, newValue: ComponentElement}>>(new Map());
 	const [availableIds, setAvailableIds] = useState<number[]>([]);
 	const [branchId, setBranchId] = useState<string>();
-	const [scale, _setScale] = useState(.38);
+	const [scale, _setScale] = useState(1);
 
 	const assignIds = useCallback((element: HTMLElement): void => {
 		const elementName = element.tagName.toLowerCase();
@@ -294,8 +294,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		
 		componentUpdator.executeCommands(commands);
 		setCurrEdits(new Map());
-		setSelectedComponent(undefined);
-		setHoveredComponent(undefined);
+		// setSelectedComponent(undefined);
+		// setHoveredComponent(undefined);
 	}
 
 	return (
@@ -323,6 +323,7 @@ interface HarmonyCommandChange {
 }
 type HarmonyCommand = HarmonyCommandChange;
 
+
 class ComponentUpdator {
 	constructor(private attributeTranslator: AttributeTranslator) {}
 
@@ -347,14 +348,28 @@ class ComponentUpdator {
 		// const oldClassName = this.attributeTranslator.translateCSSClass(oldValue);
 
 		// component.element.className = replaceClassName(component.element.className, oldClassName, newClassName);
+		const element = component.element;
+		if (element === undefined) return;
 		
 		for (const attribute of component.attributes) {
-			const [attrName, indexName] = attribute.id.split('-');
-			const index = Number(indexName);
-			if (isNaN(index)) throw new Error('Invalid index ' + indexName);
+			// const [attrName, indexName] = attribute.id.split('-');
+			// const index = Number(indexName);
+			// if (isNaN(index)) throw new Error('Invalid index ' + indexName);
 
-			if (attrName === 'text') {
-				const node = component.element?.childNodes[index] as HTMLElement;
+			if (attribute.id === 'className') {
+				
+				if (attribute.name === 'spacing') {
+					const [line, letter] = attribute.value.split('-');
+					element.style.lineHeight = line;
+					element.style.letterSpacing = letter;
+				} else {
+					element.style[attribute.name]= attribute.value;
+				}
+			}
+
+			if (attribute.id === 'text') {
+				const index = Number(attribute.name);
+				const node = element?.childNodes[index] as HTMLElement;
 				if (node === undefined) {
 					throw new Error('Invalid node');
 				}

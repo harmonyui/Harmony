@@ -27,7 +27,7 @@ export const Input: React.FunctionComponent<InputProps> = ({
   const props = {
     className: `${
       className || ""
-    } hw-w-full hw-border focus:hw-outline-0 focus:hw-border-gray-300 hw-border-gray-300 hw-shadow-sm hw-rounded-md hw-px-3 hw-py-1.5 hw-text-sm hw-text-gray-900 focus:hw-ring-primary focus:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none placeholder:hw-text-gray-400`,
+    } hw-border focus:hw-outline-0 focus:hw-border-gray-300 hw-border-gray-300 hw-shadow-sm hw-rounded-md hw-px-3 hw-py-1.5 hw-text-sm hw-text-gray-900 focus:hw-ring-primary focus:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none placeholder:hw-text-gray-400`,
     onChange: (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
