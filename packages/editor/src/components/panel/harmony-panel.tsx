@@ -15,6 +15,7 @@ import { HexColorSchema } from "@harmony/ui/src/types/colors";
 import {useChangeArray} from '@harmony/ui/src/hooks/change-property';
 import { Popover } from "@harmony/ui/src/components/core/popover";
 import { Transition } from "@headlessui/react";
+import {ToggleSwitch} from '@harmony/ui/src/components/core/toggle-switch';
 
 export type SelectMode = 'scope' | 'tweezer';
 
@@ -31,8 +32,10 @@ export interface HarmonyPanelProps {
 	scale: number;
 	onScaleChange: (scale: number) => void;
 	children: React.ReactNode;
+	toggle: boolean;
+	onToggleChange: (toggle: boolean) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel, scale, onScaleChange, children}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel, scale, onScaleChange, toggle, onToggleChange, children}) => {
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
 	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
 
@@ -45,7 +48,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 			</div>
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
 				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
-					<ToolbarPanel mode={mode} onModeChange={onModeChange} selectedComponent={selectedComponent} onChange={onAttributesChange} onCancel={onAttributesCancel} onSave={onAttributesSave}/>
+					<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} onCancel={onAttributesCancel} onSave={onAttributesSave}/>
 				</div>
 				<div className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
 					{children}
@@ -157,12 +160,14 @@ const getTextToolsFromAttributes = (element: ComponentElement) => {
 interface ToolbarPanelProps {
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
+	toggle: boolean;
+	onToggleChange: (toggle: boolean) => void;
 	selectedComponent: ComponentElement | undefined;
 	onChange: (component: ComponentElement, attributes: Attribute[]) => void;
 	onSave: () => void;
 	onCancel: () => void;
 }
-const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps}) => {
+const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps}) => {
 	const [isDirty, setIsDirty] = useState(false);
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
 	const changeData = (values: ComponentToolData<typeof textTools>[]) => {
@@ -185,7 +190,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({selectedCompo
 	}
 
 	return (
-		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
+		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
 			<div>
 				<Header level={4}>Landing Page Changes</Header>
 			</div>
@@ -201,6 +206,9 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({selectedCompo
 				<Button onClick={onCancel} mode="secondary">Cancel</Button>
 				<Button onClick={onSave}>Save</Button>
 			</div> : null}
+			<div className="hw-ml-auto" style={{borderLeft: '0px'}}>
+				<ToggleSwitch value={toggle} onChange={onToggleChange} label="Designer Mode"/>
+			</div>
 			{/* <Button className="hw-p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
 				<CursorArrowRaysIcon className="hw-w-5 hw-h-5"/>
 			</Button>
