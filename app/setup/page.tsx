@@ -190,12 +190,12 @@ const nextConfig = {
 module.exports = nextConfig`
 	return (<>
 		<Header level={4}>Install Design Suite</Header>
-		<p className="hw-text-sm">Copy and paste the snippet below before your website’s closing <span className="hw-p-0.5" style={{background: "rgb(29, 31, 33)"}}><span style={{color: "rgb(197, 200, 198)"}}>&lt;/</span><span style={{color: "rgb(150, 203, 254)"}}>body</span><span style={{color: "rgb(197, 200, 198)"}}>&gt;</span></span> tag. Once installed, you can begin editing on your site.</p>
+		<p className="hw-text-sm">Copy and paste the snippet below before your website&#39;s closing <span className="hw-p-0.5" style={{background: "rgb(29, 31, 33)"}}><span style={{color: "rgb(197, 200, 198)"}}>&lt;/</span><span style={{color: "rgb(150, 203, 254)"}}>body</span><span style={{color: "rgb(197, 200, 198)"}}>&gt;</span></span> tag. Once installed, you can begin editing on your site.</p>
 		<CodeSnippet language="html" code={designSuiteCode}/>
 
 		<Header level={4}>Configure Data Tagging (NextJS Only)</Header>
 		<p className="hw-text-sm">In order for the front-end to communicate with the code base, you need to install the harmony-ai-plugin npm package by running <code style={{background: "rgb(29, 31, 33)"}} className="hw-text-white hw-p-0.5">npm|yarn|pnpm install harmony-ai-plugin</code>.</p>
-		<p className="hw-text-sm">Next, create a next.config.js file in the root (if it doesn't exist) and insert the following code:</p>
+		<p className="hw-text-sm">Next, create a next.config.js file in the root (if it doesn&#39;t exist) and insert the following code:</p>
 		<CodeSnippet language="javascript" code={swcPluginCode}/>
 		
 		<div className="hw-flex">

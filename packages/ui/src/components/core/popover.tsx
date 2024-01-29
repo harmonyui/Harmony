@@ -8,6 +8,7 @@ type PopoverProps = React.PropsWithChildren<
   {
     button: React.ReactNode;
     className?: string;
+    container?: boolean;
   } & AllOrNothing<{ isOpen: boolean; setIsOpen: (value: boolean) => void }>
 >;
 export const Popover: React.FunctionComponent<PopoverProps> = ({
@@ -15,6 +16,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
   button,
   isOpen,
   setIsOpen,
+  container=false,
   className = "p-2",
 }) => {
   const [isOpenState, setIsOpenState] = useState<boolean | undefined>(
@@ -52,6 +54,8 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
         ref={ref}
         role="button"
         tabIndex={0}
+        //className="hw-w-full"
+        style={{width: '100%'}}
       >
         {button}
       </div>
@@ -61,9 +65,17 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
           state={state}
           triggerRef={ref}
         >
-          {children}
+          {container ? <PopoverContainer>{children}</PopoverContainer> : children}
         </ReactPopover>
       ) : null}
     </>
   );
 };
+
+export const PopoverContainer: React.FunctionComponent<{children: React.ReactNode}> = ({children}) => {
+  return (
+    <div className="hw-bg-white hw-border hw-rounded-md hw-p-4">
+      {children}
+    </div>
+  )
+}

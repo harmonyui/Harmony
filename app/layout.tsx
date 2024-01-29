@@ -1,7 +1,7 @@
 import type { Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import './globals.css'
-import { HarmonyProvider } from '../packages/editor/src/components/harmony-provider'
+import {HarmonySetup} from '../packages/editor/src/index';
 import { ClerkProvider } from '@clerk/nextjs'
 import { TrpcProvider } from '../utils/trpc-provider'
 import Script from 'next/script'
@@ -21,11 +21,11 @@ export default function RootLayout({
   return (
 		<ClerkProvider>
 			<TrpcProvider>
-				<html className="h-full bg-white" lang="en">
-					<body className={`${inter.className} h-full`}>
+				<html className="hw-h-full hw-bg-white" lang="en">
+					<body className={`${inter.className} hw-h-full hw-bg-white`}>
 						{children}
-						{/* <HarmonyProvider repositoryId="clrf5dxjg000169tj4bwcrjj0"/> */}
-							<Script id="harmony-tag" src="bundle.js"></Script>
+						<HarmonySetup repositoryId='clrf5dxjg000169tj4bwcrjj0'/>
+							{/* <Script id="harmony-tag" src="bundle.js"></Script>
 							<Script>
 							{`(function() {
 								const script = document.getElementById('harmony-tag');
@@ -33,7 +33,7 @@ export default function RootLayout({
 									window.HarmonyProvider({repositoryId:'clrf5dxjg000169tj4bwcrjj0'});
 								});
 								})()`}
-							</Script>
+							</Script> */}
 					</body>
 				</html>
 			</TrpcProvider>

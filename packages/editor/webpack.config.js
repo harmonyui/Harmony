@@ -3,14 +3,20 @@ const path = require('path');
 module.exports = {
     entry: './src/index.tsx',
     output: {
-        path: path.resolve(__dirname, 'dist/umd'),
+        path: path.resolve(__dirname, 'dist'),
         filename: 'bundle.js',
+        library: 'HarmonySetup',
         libraryTarget: 'umd',
+        // publicPath: '/dist',
+        globalObject: 'this',
+        //libraryTarget: 'umd',
     },
+    target: 'node',
     resolve: {
         extensions: ['.tsx', '.ts', '.js', '.jsx'],
         alias: {
-            '@harmony': path.resolve(__dirname, '../')
+            '@harmony': path.resolve(__dirname, '../'),
+            'react': path.resolve(path.join(__dirname, '../..'), './node_modules/react'),
         }
     },
     module: {
@@ -34,5 +40,26 @@ module.exports = {
                 ],
             },
         ],
-    }
+    },
+    externals: {
+        react: {
+          commonjs: "react",
+          commonjs2: "react",
+          amd: "React",
+          root: "React"
+        },
+        "react-dom": {
+          commonjs: "react-dom",
+          commonjs2: "react-dom",
+          amd: "ReactDOM",
+          root: "ReactDOM"
+        },
+        url: 'url'
+      },
+    // externals: {
+    //     'react-dom': 'ReactDOM'
+    // }
+    // output: {
+    //     globalObject: 'this'
+    // }
 }

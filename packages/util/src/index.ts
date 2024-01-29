@@ -184,6 +184,20 @@ export const arrayOfAll = <T,>() => <U extends T[]>(
 
 export const stringUnionSchema = <T extends readonly string[]>(array: T) => z.custom<T[number]>((data) => typeof data === 'string' && array.includes(data));
 
+
+export function convertRgbToHex(rgb: string) { 
+  const match = rgb.match(/^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/); 
+  if (match === null) throw new Error('Invalid rgb ' + rgb);
+  function hexCode(i: string) { 
+        
+      // Take the last 2 characters and convert 
+      // them to Hexadecimal. 
+      return ("0" + parseInt(i).toString(16)).slice(-2); 
+  } 
+  return "#" + hexCode(match[1]) + hexCode(match[2]) 
+                  + hexCode(match[3]); 
+}
+
 declare global {
 	interface String {
 			hashCode(seed?: number) : number;
