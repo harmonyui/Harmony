@@ -363,7 +363,7 @@ class ComponentUpdator {
 					element.style.lineHeight = line;
 					element.style.letterSpacing = letter;
 				} else {
-					element.style[attribute.name]= attribute.value;
+					element.style[attribute.name as unknown as number]= attribute.value;
 				}
 			}
 

@@ -34,8 +34,6 @@ export default function EditorPage() {
         _setScale(scale);
     }, [ref]);
     useEffect(() => {
-        return;
-        
         if (ref.current) {
             const iframe = document.createElement('iframe');
             iframe.src = `http://localhost:3001/api/proxy?url=${PAGE_URL}`;
@@ -56,7 +54,7 @@ export default function EditorPage() {
                     if (isRequest(input)) {
                         return originalFetch(input, init);
                     }
-                    return originalFetch(transformURL(input), init);
+                    return originalFetch(transformURL(input, PAGE_URL), init);
                 }
 
                 iframe.contentWindow.window.fetch = myFetch;
@@ -76,7 +74,7 @@ export default function EditorPage() {
                         // Add your custom logic here before opening the connection
         
                         // Call the original open method
-                        originalOpen.call(xhr, method, transformURL(url), async || false, user, password);
+                        originalOpen.call(xhr, method, transformURL(url, PAGE_URL), async || false, user, password);
                     };
                 
                     // Add your custom logic here after the request is sent
@@ -101,15 +99,14 @@ export default function EditorPage() {
             }
         }
     }, [])
-    return (
-        <HarmonyProvider repositoryId="clrf5dxjg000169tj4bwcrjj0" rootComponent={rootComponent} scale={scale} onScaleChange={setScale}>
-           <div style={{width: `${WIDTH}px`, height: `${HEIGHT}px`}}>
-                <div ref={ref} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0"}}>
-                    {/* <embedded-webview src={PAGE_URL}></embedded-webview> */}
-                    {/* <iframe src={PAGE_URL}/> */}
-                </div>
-            </div>
-        </HarmonyProvider>
+    return (<></>
+        // <HarmonyProvider repositoryId="clrf5dxjg000169tj4bwcrjj0" rootComponent={rootComponent} scale={scale} onScaleChange={setScale}>
+        //    <div style={{width: `${WIDTH}px`, height: `${HEIGHT}px`}}>
+        //         <div ref={ref} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0"}}>
+                    
+        //         </div>
+        //     </div>
+        // </HarmonyProvider>
     )
 }
 

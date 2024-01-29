@@ -50,7 +50,7 @@ export async function GET(req: NextRequest): Promise<Response> {
     // }
 
     let content;
-    if (false && (response.headers.get('Content-Type')?.includes('text') || response.headers.get('Content-Type')?.includes('application'))) {
+    if ((response.headers.get('Content-Type')?.includes('text') || response.headers.get('Content-Type')?.includes('application'))) {
         content = await response.text();
         let match: RegExpExecArray | null;
         let index = 0;
