@@ -3,9 +3,9 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, EyeDropperIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EyeDropperIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
-import { useState } from "react";
+import { Fragment, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { componentIdentifier } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
@@ -14,6 +14,7 @@ import ColorPicker from '@harmony/ui/src/components/core/color-picker';
 import { HexColorSchema } from "@harmony/ui/src/types/colors";
 import {useChangeArray} from '@harmony/ui/src/hooks/change-property';
 import { Popover } from "@harmony/ui/src/components/core/popover";
+import { Transition } from "@headlessui/react";
 
 export type SelectMode = 'scope' | 'tweezer';
 
@@ -38,8 +39,9 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 
 	return (
 		<div className="hw-flex hw-h-full">
-			<div>
-				Components
+			<div className="hw-flex hw-flex-col">
+				<img src="/harmony.ai.svg"/>
+				<SidePanelToolbar/>
 			</div>
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
 				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
@@ -59,6 +61,62 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 			</div>
 			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/> */}
 
+		</div>
+	)
+}
+
+interface SidePanelToolbarItem {
+	id: string,
+	label: string,
+	icon: IconComponent,
+	panel: React.ReactNode
+}
+const SidePanelToolbar: React.FunctionComponent = () => {
+	const [show, setShow] = useState<SidePanelToolbarItem | undefined>();
+	const items: SidePanelToolbarItem[] = [
+		{
+			id: 'component',
+			label: 'Components',
+			icon: DocumentTextIcon,
+			panel: 'Components coming soon!'
+		},
+		{
+			id: 'element',
+			label: 'Elements',
+			icon: DocumentTextIcon,
+			panel: 'Elements coming soon!'
+		},
+		{
+			id: 'text',
+			label: 'Text',
+			icon: DocumentTextIcon,
+			panel: 'Text coming soon!'
+		},
+	]
+	return (
+		<div className="hw-relative hw-flex hw-flex-col hw-h-full hw-text-sm hw-bg-slate-800 hw-text-white/75">
+			{items.map(item => 
+				<button key={item.id} className="hw-flex hw-flex-col hw-items-center hw-gap-1 hw-p-4 hover:hw-bg-slate-700 hover:hw-text-white" onClick={() => setShow(show?.id !== item.id ? item : undefined)}>
+					<item.icon className="hw-h-8 hw-w-8"/>
+					<span>{item.label}</span>
+				</button>
+			)}
+			<Transition
+				as={Fragment}
+				enter="hw-transition hw-ease-out hw-duration-200"
+				enterFrom="hw-opacity-0 -hw-translate-x-1"
+				enterTo="hw-opacity-100 hw-translate-x-0"
+				leave="hw-transition hw-ease-in hw-duration-150"
+				leaveFrom="hw-opacity-100 hw-translate-x-0"
+				leaveTo="hw-opacity-0 -hw-translate-x-1"
+				show={show !== undefined}
+			>
+				<div className="hw-absolute hw-left-[116px] hw-right-0 hw-z-10 hw-bg-slate-800 hw-min-w-[400px] hw-h-full hw-top-0 hw-shadow-lg hw-ring-1 hw-ring-gray-900/5">
+					<div className="hw-p-4">
+						{show?.panel}
+					</div>
+				</div>
+			</Transition>
 		</div>
 	)
 }

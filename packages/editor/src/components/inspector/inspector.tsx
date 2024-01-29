@@ -120,7 +120,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	});
 
 	return (
-		<div ref={containerRef} className="z-[10000000]">
+		<div ref={containerRef} className="z-10">
 		</div>
 	)
 }
@@ -249,7 +249,7 @@ class Overlay {
 }
 
 const overlayStyles = {
-  background: 'rgba(120, 170, 210, 0.7)',
+  background: '#0094FF',
   padding: 'rgba(77, 200, 0, 0.3)',
   margin: 'rgba(255, 155, 0, 0.3)',
   border: 'rgba(255, 200, 50, 0.3)',
@@ -280,7 +280,7 @@ export class OverlayRect {
       position: 'fixed',
     })
 
-    this.node.style.zIndex = '10000000'
+    this.node.style.zIndex = '10'
 
     this.node.appendChild(this.border)
     this.border.appendChild(this.padding)
@@ -308,7 +308,7 @@ export class OverlayRect {
   }
 
 	public hover(box: Rect, dims: BoxSizing, editText: boolean) {
-		this.update(box, dims, 1, false, editText);
+		this.update(box, dims, 2, false, editText);
 	}
 
 	public select(box: Rect, dims: BoxSizing, editText: boolean) {
@@ -334,7 +334,7 @@ export class OverlayRect {
 			this.element.style.visibility = 'hidden';
 		}
 
-		this.update(box, dims, 2, true, editText);
+		this.update(box, dims, 2, false, editText);
 	}
 
 	private cloneElement(element: HTMLElement, propertiesToSkip: string[] = []): HTMLElement {
