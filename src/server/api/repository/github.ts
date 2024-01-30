@@ -33,13 +33,13 @@ export class GithubRepository {
     constructor(private repository: Repository) {
     }
 
-    public async getContent(filePath: string) {
+    public async getContent(filePath: string, branchName?: string) {
         const octokit = await this.getOctokit();
         const { data: fileInfo } = await octokit.rest.repos.getContent({
             owner: this.repository.owner,
             repo: this.repository.name,
             path: filePath,
-            ref: this.repository.branch,
+            ref: branchName || this.repository.branch,
         });
 
         return fileInfo;

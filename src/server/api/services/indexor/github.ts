@@ -16,8 +16,8 @@ export const fromGithub: (githubRepository: GithubRepository) => ReadFiles = (gi
 	}
 }
 
-export const getCodeSnippet = (githubRepository: GithubRepository) => async ({file, start, end}: ComponentLocation): Promise<string> => {
-	const fileInfo = await githubRepository.getContent(file);
+export const getCodeSnippet = (githubRepository: GithubRepository) => async ({file, start, end}: ComponentLocation, branch: string): Promise<string> => {
+	const fileInfo = await githubRepository.getContent(file, branch);
 
 	if (Array.isArray(fileInfo) || !('content' in fileInfo)) {
 		throw new Error("Invalid path name");

@@ -14,10 +14,10 @@ export interface InspectorProps {
 	onHover: (component: HTMLElement | undefined) => void;
 	onSelect: (component: HTMLElement | undefined) => void;
 	rootElement: HTMLElement | undefined;
-	//harmonyContainer: HTMLElement;
+	onElementTextChange: (value: string) => void;
 	mode: SelectMode;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, rootElement, mode}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, rootElement, mode}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
@@ -40,7 +40,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent);
+			overlayRef.current.select(selectedComponent, onElementTextChange);
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -202,11 +202,11 @@ class Overlay {
 		this.inspect(element, 'hover');
 	}
 
-	select(element: HTMLElement) {
-		this.inspect(element, 'select');
+	select(element: HTMLElement, onTextChange: (value: string) => void) {
+		this.inspect(element, 'select', onTextChange);
 	}
 
-	inspect(element: HTMLElement, method: 'select' | 'hover') {
+	inspect(element: HTMLElement, method: 'select' | 'hover', onTextChange?: (value: string) => void) {
 		// We can't get the size of text nodes or comment nodes. React as of v15
     // heavily uses comment nodes to delimit text.
 		if (element.nodeType !== Node.ELEMENT_NODE) {
@@ -215,7 +215,7 @@ class Overlay {
 
 		const [box, dims] = this.getSizing(element);
 		const rect = new OverlayRect(this.window.document, element, this.container);
-		rect[method](box, dims, false);
+		rect[method](box, dims, onTextChange);
 
 		if (this.rects.has(method)) {
 			this.rects.get(method)?.remove();
@@ -307,20 +307,26 @@ export class OverlayRect {
 		}
   }
 
-	public hover(box: Rect, dims: BoxSizing, editText: boolean) {
-		this.update(box, dims, 2, false, editText);
+	public hover(box: Rect, dims: BoxSizing, onTextChange?: (value: string) => void) {
+		this.update(box, dims, 2, false, false);
 	}
 
-	public select(box: Rect, dims: BoxSizing, editText: boolean) {
-		if (editText) {
+	public select(box: Rect, dims: BoxSizing, onTextChange?: (value: string) => void) {
+		if (onTextChange && Array.from(this.element.childNodes).some(n => n.nodeType === Node.TEXT_NODE)) {
 			const onBlur = (e: FocusEvent) => {
+				//if (!this.elementVisibleValue) return;
+
 				const target = e.target as HTMLElement;
+				let content = '';
 				for (let i = 0; i < target.childNodes.length; i++) {
 					const node = target.childNodes[i];
 					if (node.nodeType === Node.TEXT_NODE) {
-						this.element.childNodes[i].textContent = node.textContent;
+						//this.element.childNodes[i].textContent = node.textContent;
+						content = node.textContent || '';
 					}
 				}
+				this.element.style.visibility = 'visible';
+				onTextChange(content);
 				//this.element.textContent = target.textContent;
 			}
 			const clonedElement = this.cloneElement(this.element, ['-webkit-user-modify']);
@@ -334,7 +340,7 @@ export class OverlayRect {
 			this.element.style.visibility = 'hidden';
 		}
 
-		this.update(box, dims, 2, false, editText);
+		this.update(box, dims, 2, false, false);
 	}
 
 	private cloneElement(element: HTMLElement, propertiesToSkip: string[] = []): HTMLElement {

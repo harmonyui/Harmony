@@ -9,6 +9,7 @@ import { getCodeSnippet } from '../../../../src/server/api/services/indexor/gith
 import { GithubRepository } from '../../../../src/server/api/repository/github';
 import { getServerAuthSession } from '../../../../src/server/auth';
 import { Repository } from '../../../../packages/ui/src/types/branch';
+import { load } from 'cheerio';
 
 const openai = new OpenAI();
 
@@ -21,7 +22,16 @@ const requestBodySchema = z.object({
 })
 type RequestBody = z.infer<typeof requestBodySchema>;
 
-const payload = {include: {definition: true}}
+const payload = {
+	include: {
+		definition: {
+			include: {
+				location: true
+			}
+		}, 
+		location: true
+	}
+}
 type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof payload>
 
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
@@ -41,10 +51,8 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 		where: {
 			repository_id: body.repositoryId 
 		},
-		include: {
-			definition: true
-		}
-	});
+		...payload
+	})
 	const repository = await prisma.repository.findUnique({
 		where: {
 			id: body.repositoryId
@@ -59,17 +67,20 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	
 	const githubRepository = new GithubRepository(repository);
 
-	const {location, updatedText} = await getChangeAndLocation(body, githubRepository, elementInstances);
+	const {location, updatedCode} = await getChangeAndLocation(body, githubRepository, elementInstances, branch.name);
 
 	
-	await githubRepository.updateFileAndCommit(branch.name, location.file, updatedText, location.start, location.end);
+	await githubRepository.updateFileAndCommit(branch.name, location.file, updatedCode, location.start, location.end);
 
 	return new Response(JSON.stringify({}), {
 		status: 200,
 	})
 }
 
-async function getChangeAndLocation(body: RequestBody, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[]) {
+async function getChangeAndLocation(body: RequestBody, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branch: string): Promise<{
+	location: ComponentLocation,
+	updatedCode: string
+}> {
 	const possibleComponents: ComponentLocation[] = [];
 	const component = elementInstances.find(el => el.id === body.id);
 	const parentComponent = elementInstances.find(el => el.id === body.parentId);
@@ -81,12 +92,24 @@ async function getChangeAndLocation(body: RequestBody, githubRepository: GithubR
 		throw new Error('Cannot find component with id ' + body.parentId);
 	}
 
-	const containingComponent = component.definition;
+	//const containingComponent = component.definition;
 	
-	possibleComponents.push(...[containingComponent, parentComponent].map(el => ({file: el.file, start: el.start, end: el.end})));
+	//possibleComponents.push(...[containingComponent, parentComponent].map(el => ({file: el.location.file, start: el.location.start, end: el.location.end})));
+	const [file, startLine, startCol, endLine, endCol] = atob(body.id).split(':');
+	const location = component.location;//{file, start: 4761, end: 4781}
 	
-	//const elementSnippet = getCodeSnippet(component.location);
-	const possibleComponentsSnippets = await Promise.all(possibleComponents.map((location) => getCodeSnippet(githubRepository)(location)));
+	const elementSnippet = await getCodeSnippet(githubRepository)(location, branch);
+	const $ = load(elementSnippet, {xmlMode: true}, false);
+	$(':first').text(body.newValue[0].value)
+
+	return {
+		location: location,
+		updatedCode: $.html({xmlMode: false})
+	}
+}
+
+const getResponseFromGPT = async (body: RequestBody, githubRepository: GithubRepository, possibleComponents: ComponentLocation[], branch: string) => {
+	const possibleComponentsSnippets = await Promise.all(possibleComponents.map((location) => getCodeSnippet(githubRepository)(location, branch)));
 
 	const response = await openai.chat.completions.create({
 		model: 'gpt-3.5-turbo',
@@ -119,7 +142,7 @@ Provide the old code, the updated code, and the index of which code snippet the 
 		if (newSnippet === referencedSnippet) {
 			throw new Error("Invalid response from openai. Can't update code snippet");
 		}
-		return {location: referencedComponent, updatedText: newSnippet};
+		return {location: referencedComponent, updatedCode: newSnippet};
 	} else {
 		throw new Error('Invalid response from openai');
 	}

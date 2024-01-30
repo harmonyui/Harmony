@@ -2,6 +2,7 @@ import { z } from "zod";
 
 export const attributeSchema = z.object({
 	id: z.string(),
+	type: z.string(),
 	name: z.string(),
 	value: z.string(),
 	className: z.union([z.string(), z.undefined()])

@@ -13,7 +13,8 @@
     "postinstall": "prisma generate",
     "lint": "next lint",
     "compose": "docker compose -f devops/docker-compose.yml -p my-app up --build -d",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "vercel-build": "prisma migrate deploy && next build"
   },
   "dependencies": {
     "@babel/core": "^7.23.7",

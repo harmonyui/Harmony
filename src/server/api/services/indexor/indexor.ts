@@ -4,6 +4,7 @@ import { getLineAndColumn, hashComponent } from "../../../../../packages/util/sr
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
+import tailwindcss from 'tailwindcss';
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress: (progress: number) => void) => {
@@ -34,9 +35,13 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 				data: {
 					repository_id: repoId,
 					name: instance.containingComponent.name,
-					file: instance.containingComponent.location.file,
-					start: instance.containingComponent.location.start,
-					end: instance.containingComponent.location.end,
+					location: {
+						create: {
+							file: instance.containingComponent.location.file,
+							start: instance.containingComponent.location.start,
+							end: instance.containingComponent.location.end,
+						}
+					}
 				}
 			})
 		}
@@ -47,12 +52,34 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 					id: instance.id,
 					repository_id: repoId,
 					name: instance.name,
-					file: instance.location.file,
-					start: instance.location.start,
-					end: instance.location.end,
-					parent_id: parent?.id,
-					definition_id: definition.id
+					parent: parent ? {
+						connect: {
+							id: parent.id
+						}
+					} : undefined,
+					location: {
+						create: {
+							file: instance.location.file,
+							start: instance.location.start,
+							end: instance.location.end,
+						}
+					},
+					definition: {
+						connect: {
+							id: definition.id
+						}
+					}
 				}
+			});
+
+			await prisma.componentAttribute.createMany({
+				data: instance.attributes.map(attr => ({
+					name: attr.name,
+					type: attr.type,
+					value: attr.value,
+					component_id: newElement.id, 
+					location_id: newElement.location_id
+				}))
 			})
 		} else {
 			await prisma.componentElement.update({
@@ -62,11 +89,28 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 				data: {
 					id: instance.id,
 					name: instance.name,
-					file: instance.location.file,
-					start: instance.location.start,
-					end: instance.location.end,
-					parent_id: parent?.id,
-					definition_id: definition.id
+					parent: parent ? {
+						connect: {
+							id: parent.id
+						}
+					} : undefined,
+					definition: {
+						connect: {
+							id: definition.id
+						}
+					},
+					location: {
+						update: {
+							data: {
+								file: instance.location.file,
+								start: instance.location.start,
+								end: instance.location.end,
+							},
+							where: {
+								id: currComponent.location_id
+							}
+						}
+					}
 				}
 			})
 		}
@@ -204,8 +248,23 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 					enter(jsPath) {
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
 						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
+			
 						const parentComponent = parentElement ?? containingComponent;
 						if (jsxElementDefinition) {
+							const node = jsPath.node;
+							if (node.children.length === 1 && t.isJSXText(node.children[0])) {
+								const child = node.children[0] as t.JSXText;
+								jsxElementDefinition.attributes.push({id: '', type: 'text', name: '0', value: child.value})
+							}	
+							const classNameAttr = node.openingElement.attributes.find(attr => t.isJSXAttribute(attr) && attr.name.name === 'className') as t.JSXAttribute;
+							if (classNameAttr && t.isStringLiteral(classNameAttr.value)) {
+								console.log(tailwindcss)
+								// const tailwindMapping = {
+								// 	'font-sm': {name: 'font', value: 'small'}
+								// }
+								// const classNames = classNameAttr.value.value.split(' ');
+								
+							}
 							jsxElements.push(jsxElementDefinition);
 							elementInstances.push(jsxElementDefinition);
 							parentComponent.children.push(jsxElementDefinition);

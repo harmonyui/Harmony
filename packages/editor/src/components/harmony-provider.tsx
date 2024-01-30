@@ -11,7 +11,7 @@ import ReactDOM from "react-dom";
 import React from "react";
 import '../global.css';
 
-const WEB_URL = false && process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : 'http://localhost:3001'
+const WEB_URL = false && process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : 'http://localhost:3000'
 const WIDTH = 1960;
 const HEIGHT = 1080;
 
@@ -127,6 +127,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [availableIds, setAvailableIds] = useState<number[]>([]);
 	const [branchId, setBranchId] = useState<string>();
 	const [scale, _setScale] = useState(1);
+	const [isDirty, setIsDirty] = useState(false);
 
 	const assignIds = useCallback((element: HTMLElement): void => {
 		const elementName = element.tagName.toLowerCase();
@@ -251,6 +252,21 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         _setScale(scale);
     }, [harmonyContainerRef]);
 
+	const onTextChange = (value: string) => {
+		if (!selectedComponent) return;
+
+		const component = componentIdentifier.getComponentFromElement(selectedComponent);
+		if (!component) throw new Error("Error when getting component");
+
+		const textIndex = component.attributes.findIndex(attr => attr.id === 'text-0');
+		const attr = component.attributes[textIndex];
+		const copyAttrs = [...component.attributes];
+		copyAttrs.splice(textIndex);
+
+
+		onAttributesChange(component, [...copyAttrs, {...attr, value}]);
+	}
+
 	const onAttributesChange = (component: ComponentElement, attributes: Attribute[]) => {
 		if (selectedComponent === undefined) return;
 		const copy = {...component};
@@ -272,6 +288,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			newEdits.set(component.element, {oldValue: component, newValue: copy})
 		}
 		setCurrEdits(newEdits);
+		setIsDirty(true);
 	}
 
 	const onAttributesSave = (): void => {
@@ -284,6 +301,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		
 		componentUpdator.executeCommands(commands, {branchId, repositoryId});
 		setCurrEdits(new Map());
+		setIsDirty(false);
 	}
 
 	const onAttributesCancel = (): void => {
@@ -294,6 +312,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		
 		componentUpdator.executeCommands(commands);
 		setCurrEdits(new Map());
+		setIsDirty(false);
 		// setSelectedComponent(undefined);
 		// setHoveredComponent(undefined);
 	}
@@ -302,8 +321,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
 				{<>
-					{isToggled ? <Inspector rootElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} mode={mode}/> : null}
-					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled}>
+					{isToggled ? <Inspector rootElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} mode={mode}/> : null}
+					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
 							
@@ -356,7 +375,7 @@ class ComponentUpdator {
 			// const index = Number(indexName);
 			// if (isNaN(index)) throw new Error('Invalid index ' + indexName);
 
-			if (attribute.id === 'className') {
+			if (attribute.type === 'className') {
 				
 				if (attribute.name === 'spacing') {
 					const [line, letter] = attribute.value.split('-');
@@ -367,7 +386,7 @@ class ComponentUpdator {
 				}
 			}
 
-			if (attribute.id === 'text') {
+			if (attribute.type === 'text') {
 				const index = Number(attribute.name);
 				const node = element?.childNodes[index] as HTMLElement;
 				if (node === undefined) {
@@ -473,9 +492,9 @@ export const TailwindAttributeTranslator: AttributeTranslator = {
 					const type = spacingReverse[key];
 
 					if (directionName) {
-						attributes.push({id: `${type}-${directionName}`, name: `${type} ${directionName}`, value: String(numValue), className: name});
+						attributes.push({id: `${type}-${directionName}`, type: 'className', name: `${type} ${directionName}`, value: String(numValue), className: name});
 					} else {
-						attributes.push(...spacingDirections.map(direction => ({id: `${type}-${direction}`, name: `${type} ${direction}`, value: String(numValue), className: name})));
+						attributes.push(...spacingDirections.map(direction => ({id: `${type}-${direction}`, type: 'className', name: `${type} ${direction}`, value: String(numValue), className: name})));
 					}
 				}
 			})

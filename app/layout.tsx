@@ -24,7 +24,7 @@ export default function RootLayout({
 				<html className="hw-h-full hw-bg-white" lang="en">
 					<body className={`${inter.className} hw-h-full hw-bg-white`}>
 						{children}
-						<HarmonySetup repositoryId='clrf5dxjg000169tj4bwcrjj0'/>
+						{process.env.ENV !== 'production' ? <HarmonySetup repositoryId='a119bc6b-c088-4e66-80b6-ee71e5c590dc'/> : null}
 							{/* <Script id="harmony-tag" src="bundle.js"></Script>
 							<Script>
 							{`(function() {

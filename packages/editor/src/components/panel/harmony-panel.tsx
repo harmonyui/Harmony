@@ -34,8 +34,10 @@ export interface HarmonyPanelProps {
 	children: React.ReactNode;
 	toggle: boolean;
 	onToggleChange: (toggle: boolean) => void;
+	isDirty: boolean;
+	setIsDirty: (value: boolean) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel, scale, onScaleChange, toggle, onToggleChange, children}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty}) => {
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
 	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
 
@@ -48,7 +50,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 			</div>
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
 				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
-					<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} onCancel={onAttributesCancel} onSave={onAttributesSave}/>
+					<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} onCancel={onAttributesCancel} onSave={onAttributesSave} isDirty={isDirty}/>
 				</div>
 				<div className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
 					{children}
@@ -166,26 +168,23 @@ interface ToolbarPanelProps {
 	onChange: (component: ComponentElement, attributes: Attribute[]) => void;
 	onSave: () => void;
 	onCancel: () => void;
+	isDirty: boolean
 }
-const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps}) => {
-	const [isDirty, setIsDirty] = useState(false);
+const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps, isDirty}) => {
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
 	const changeData = (values: ComponentToolData<typeof textTools>[]) => {
 		if (selectedComponent === undefined || data === undefined) return;
 
-		const attributes: Attribute[] = values.map(({name, value}) => ({id: 'className', name, value}));
-		setIsDirty(true);
-		selectedComponent.attributes = data.map(({name, value}) => ({id: 'className', name, value}));
+		const attributes: Attribute[] = values.map(({name, value}) => ({id: '', type: 'className', name, value}));
+		selectedComponent.attributes = data.map(({name, value}) => ({id: '', type: 'className', name, value}));
 		onChange(selectedComponent, attributes);
 	}
 
 	const onCancel = () => {
-		setIsDirty(false);
 		onCancelProps();
 	}
 
 	const onSave = () => {
-		setIsDirty(false);
 		onSaveProps();
 	}
 
@@ -425,7 +424,7 @@ const spacingConvesions = {
 		const attributes: Attribute[] = [];
 		for (const type in spacingValues) {
 			const values = spacingValues[type as SpacingType];
-			attributes.push(...values.map(value => ({id: `${type}-${value.direction}`, name: `${type} ${value.direction}`, value: String(value.value), className: undefined})));
+			attributes.push(...values.map(value => ({id: `${type}-${value.direction}`, type: 'className', name: `${type} ${value.direction}`, value: String(value.value), className: undefined})));
 			// const sameValues = groupBy(values, 'value');
 			// for (const value in sameValues) {
 			// 	const sameDirection = groupBy(sameValues[Number(value)], 'direction');
