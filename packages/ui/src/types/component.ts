@@ -45,14 +45,3 @@ export interface HarmonyComponent extends ComponentElementBase {
 	isComponent: true;
 
 }
-
-export const updateRequestBodySchema = z.object({
-	commands: z.array(z.object({
-		id: z.string(),
-		parentId: z.string(),
-		old: z.array(updateSchema),
-		updates: z.array(updateSchema),
-	})),
-	repositoryId: z.string()
-})
-export type RequestBody = z.infer<typeof updateRequestBodySchema>;

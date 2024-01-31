@@ -74,7 +74,7 @@
     "postcss": "^8",
     "postcss-obfuscator": "^1.6.0",
     "prisma": "^5.8.0",
-    "tailwindcss": "^3.3.0",
+    "tailwindcss": "^3.4.1",
     "typescript": "^5"
   },
   "workspaces": [

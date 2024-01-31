@@ -485,7 +485,7 @@ export const Popover = (props: PopoverProps): JSX.Element => {
       <div {...underlayProps} className="fixed inset-0" />
       <div
         {...popoverProps}
-        className={`absolute top-full bg-white border border-gray-300 rounded-md shadow-lg mt-2 z-10 ${
+        className={`hw-absolute hw-top-full hw-bg-white hw-border hw-border-gray-300 hw-rounded-md hw-shadow-lg hw-mt-2 hw-z-10 ${
           props.className || ""
         }`}
         ref={ref}

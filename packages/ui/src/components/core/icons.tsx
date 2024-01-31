@@ -113,7 +113,7 @@ export const EditIcon: IconComponent = ({ className, ...props }) => {
   return (
     <svg
       {...props}
-      className={`${className || ""} fill-primary stroke-primary-light`}
+      className={`${className || ""} hw-fill-primary hw-stroke-primary-light`}
       fill="none"
       viewBox="0 0 20 20"
       xmlns="http://www.w3.org/2000/svg"
@@ -827,7 +827,7 @@ export const ToggleIcon: React.FunctionComponent<{icon: IconComponent, selected:
 		<Icon
 			aria-hidden="true"
 			className={getClass(
-				selected ? 'hw-text-primary' : 'hw-text-gray-400 group-hover:text-primary',
+				selected ? 'hw-text-primary' : 'hw-text-gray-400 group-hover:hw-text-primary',
 				'hw-h-6 hw-w-6 hw-shrink-0'
 			)}
 		/>

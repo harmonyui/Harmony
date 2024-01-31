@@ -71,6 +71,7 @@ interface DropdownProps<T> extends PropsWithChildren {
   chevron?: boolean;
   onChange?: ItemAction<T>;
 	beforeIcon?: IconComponent;
+  showValue?: boolean
 }
 
 export const Dropdown = <T,>({
@@ -80,7 +81,8 @@ export const Dropdown = <T,>({
   items,
   chevron = true,
   className,
-	beforeIcon
+	beforeIcon,
+  showValue=true
 }: DropdownProps<T>): JSX.Element => {
   const [value, setValue] = useState<DropdownItem<T> | undefined>(
     items.find((x) => x.id === initialValue),
@@ -121,7 +123,7 @@ export const Dropdown = <T,>({
       setIsOpen={setIsOpen}
     >
 			{BeforeIcon ? <BeforeIcon className="hw-w-4 hw-h-4 hw-mr-1"/> : null}
-      <div className="hw-flex hw-w-full hw-justify-between hw-items-center">{value === undefined ? children : value.name}{" "}
+      <div className="hw-flex hw-w-full hw-justify-between hw-items-center">{value === undefined || !showValue ? children : value.name}{" "}
       {chevron ? <ChevronDownIcon className="hw-w-4 hw-h-4 hw-ml-1" /> : null}</div>
     </ListBox>
   );
@@ -222,6 +224,7 @@ export const DropdownIcon = <T,>({
       }`}
       {...rest}
       chevron={false}
+      showValue={false}
     >
       <Icon className="hw-h-5 hw-w-5" />
     </Dropdown>

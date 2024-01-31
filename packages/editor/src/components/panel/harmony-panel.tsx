@@ -3,13 +3,13 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EyeDropperIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, EyeDropperIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
 import { Fragment, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { componentIdentifier } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
-import {Dropdown, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
+import {Dropdown, DropdownIcon, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import ColorPicker from '@harmony/ui/src/components/core/color-picker';
 import { HexColorSchema } from "@harmony/ui/src/types/colors";
 import {useChangeArray} from '@harmony/ui/src/hooks/change-property';
@@ -36,8 +36,11 @@ export interface HarmonyPanelProps {
 	onToggleChange: (toggle: boolean) => void;
 	isDirty: boolean;
 	setIsDirty: (value: boolean) => void;
+	branchId: string | undefined;
+	branches: {id: string, name: string}[];
+	onBranchChange: (id: string) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches, onBranchChange}) => {
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
 	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
 
@@ -50,7 +53,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 			</div>
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
 				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
-					<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} onCancel={onAttributesCancel} onSave={onAttributesSave} isDirty={isDirty}/>
+					<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} onCancel={onAttributesCancel} onSave={onAttributesSave} isDirty={isDirty} branchId={branchId} branches={branches} onBranchChange={onBranchChange}/>
 				</div>
 				<div className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
 					{children}
@@ -168,10 +171,14 @@ interface ToolbarPanelProps {
 	onChange: (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => void;
 	onSave: () => void;
 	onCancel: () => void;
-	isDirty: boolean
+	isDirty: boolean;
+	branchId: string | undefined;
+	branches: {id: string, name: string}[];
+	onBranchChange: (id: string) => void;
 }
-const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps, isDirty}) => {
+const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps, isDirty, branchId, branches, onBranchChange}) => {
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
+	const currBranch = branches.find(b => b.id === branchId);
 	const changeData = (values: ComponentToolData<typeof textTools>) => {
 		if (selectedComponent === undefined || data === undefined) return;
 		const componentId = selectedComponent.id;
@@ -196,9 +203,10 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
-			<div>
-				<Header level={4}>Landing Page Changes</Header>
-			</div>
+			{branchId ? <div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2">
+				<Header level={4}>{currBranch ? currBranch.name : 'Invalid Branch'}</Header>
+				<DropdownIcon className="hw-border-none !hw-px-2" icon={EditIcon} items={branches} onChange={(item) => onBranchChange(item.id)}/>
+			</div> : <Dropdown items={branches} onChange={(item) => onBranchChange(item.id)}>Select Branch</Dropdown>}
 			{data ? <>
 				<div className="hw-px-4">
 					<ComponentTools tools={textTools} components={textToolsComponents} data={data} onChange={changeData}/>

@@ -17,7 +17,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
   isOpen,
   setIsOpen,
   container=false,
-  className = "p-2",
+  className = "hw-p-2",
 }) => {
   const [isOpenState, setIsOpenState] = useState<boolean | undefined>(
     isOpen === undefined ? false : undefined,
@@ -55,17 +55,17 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
         role="button"
         tabIndex={0}
         //className="hw-w-full"
-        style={{width: '100%'}}
+        //style={{width: '100%'}}
       >
         {button}
       </div>
       {isOpenActual ? (
         <ReactPopover
-          className={getClass(className, "overflow-hidden")}
+          className={getClass(className, "hw-overflow-hidden")}
           state={state}
           triggerRef={ref}
         >
-          {container ? <PopoverContainer>{children}</PopoverContainer> : children}
+          {false ? <PopoverContainer>{children}</PopoverContainer> : children}
         </ReactPopover>
       ) : null}
     </>

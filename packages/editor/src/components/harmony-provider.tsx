@@ -1,7 +1,9 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Inspector, componentIdentifier } from "./inspector/inspector";
-import { Attribute, ComponentElement, ComponentUpdate, RequestBody } from "@harmony/ui/src/types/component";
+import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
+import {loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
+
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
 import { groupBy, hashComponent } from "@harmony/util/src/index";
@@ -126,7 +128,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [mode, setMode] = useState<SelectMode>('tweezer');
 	const [currEdits, setCurrEdits] = useState<Map<HTMLElement, HarmonyCommandChange>>(new Map());
 	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>([]);
-	const [branchId, setBranchId] = useState<string>();
+	const [branches, setBranches] = useState<{id: string, name: string}[]>([]);
+	const [branchId, _setBranchId] = useState<string>();
 	const [scale, _setScale] = useState(1);
 	const [isDirty, setIsDirty] = useState(false);
 
@@ -148,27 +151,35 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	// 	Array.from(element.children).forEach(child => assignIds(child as HTMLElement));
 	// }, [availableIds]);
+
+	const setBranchId = (branchId: string | undefined) => {
+		const url = new URL(window.location.href);
+		if (branchId && !url.searchParams.has('branch-id')) {
+			url.searchParams.set('branch-id', branchId);
+			window.history.replaceState(null, '', url.href);
+		}
+
+		_setBranchId(branchId);
+	}
 	
 	useEffect(() => {
 		const initialize = async () => {
 			const urlParams = new URLSearchParams(window.location.search);
 			const branchId = urlParams.get('branch-id');
 
-			if (branchId) {
-				setBranchId(branchId);
-				const response = await fetch(`${WEB_URL}/api/load/${repositoryId}?branchId=${branchId}`, {
-					method: 'GET',
-					headers: {
-						'Accept': 'application/json',
-						'Content-Type': 'application/json'
-					},
-				});
+			setBranchId(branchId || undefined);
 
-				const ids = await response.json();
-				if (Array.isArray(ids)) {
-					setAvailableIds(ids);
-				}
-			}
+			const response = await fetch(`${WEB_URL}/api/load/${repositoryId}${branchId ? `?branchId=${branchId}` : ''}`, {
+				method: 'GET',
+				headers: {
+					'Accept': 'application/json',
+					'Content-Type': 'application/json'
+				},
+			});
+
+			const {updates, branches} = loadResponseSchema.parse(await response.json());
+			setAvailableIds(updates);
+			setBranches(branches);
 		}
 
 		initialize();
@@ -300,7 +311,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}
 
 	const onAttributesSave = (): void => {
-		if (branchId === undefined) return;
+		if (branchId === undefined) {
+			alert('Please select a branch before saving');
+			return;
+		};
 		
 		const commands: HarmonyCommand[] = [];
 		currEdits.forEach((command) => {
@@ -330,7 +344,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			{/* <div ref={harmonyContainerRef}> */}
 				{<>
 					{isToggled ? <Inspector rootElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} mode={mode}/> : null}
-					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty}>
+					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
 							
@@ -375,7 +389,7 @@ class ComponentUpdator {
 
 	private saveCommand(commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}): void {
 		const cmds = commands.map(cmd => ({id: cmd.component.id, parentId: cmd.component.parentId, updates: cmd.updates, old: cmd.old}))
-		const data: RequestBody = {commands: cmds, repositoryId: save.repositoryId};
+		const data: UpdateRequest = {commands: cmds, repositoryId: save.repositoryId};
 		fetch(`${WEB_URL}/api/update/${save.branchId}`, {
 			method: 'POST',
 			// headers: {
