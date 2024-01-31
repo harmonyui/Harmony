@@ -7,19 +7,46 @@ import * as t from '@babel/types';
 import tailwindcss from 'tailwindcss';
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
-export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress: (progress: number) => void) => {
+export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
-	const elementInstances: ComponentElement[] = [];
+	const instances: ComponentElement[] = [];
 
 	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename, content) => {
-		updateReactCode(filename, content, componentDefinitions, elementInstances);
+		updateReactCode(filename, content, componentDefinitions, instances);
 	});
 
-	for (let i = 0; i < elementInstances.length; i++) {
-		const instance = elementInstances[i];
+	const isComponentInstance = (instance: ComponentElement): boolean => {
+		return instance.name[0] === instance.name[0].toUpperCase();
+	}
+
+	const elementInstances: ComponentElement[] = [];
+	const calledComponent: string[] = [];
+	for (const instance of instances) {
+		if (isComponentInstance(instance)) {
+			const definition = componentDefinitions[instance.name];
+			if (!definition) continue;
+
+			for (const definitionInstance of definition.children) {
+				elementInstances.push({...definitionInstance, parentId: instance.id, getParent: () => instance});
+			}
+			calledComponent.push(definition.name);
+		}
+	}
+
+	//If a component has not been called, then that means it has no parent, so add that in
+	for (const name in componentDefinitions) {
+		if (!calledComponent.includes(name)) {
+			elementInstances.push(...componentDefinitions[name].children);
+		}
+	}
+
+	const alreadyCreated: string[] = [];
+	const createElement = async (instance: ComponentElement) => {
+		if (alreadyCreated.includes(`${instance.id}${instance.parentId}`)) return;
+
 		const parent = instance.getParent();
 
-		const currComponent = await prisma.componentElement.findUnique({
+		const currComponent = await prisma.componentElement.findFirst({
 			where: {
 				id: instance.id
 			}
@@ -45,76 +72,85 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 				}
 			})
 		}
-
-		if (!currComponent) {
-			const newElement = await prisma.componentElement.create({
-				data: {
-					id: instance.id,
-					repository_id: repoId,
-					name: instance.name,
-					parent: parent ? {
-						connect: {
-							id: parent.id
-						}
-					} : undefined,
-					location: {
-						create: {
-							file: instance.location.file,
-							start: instance.location.start,
-							end: instance.location.end,
-						}
-					},
-					definition: {
-						connect: {
-							id: definition.id
-						}
-					}
+		if (parent) {
+			const prismaParent = await prisma.componentElement.findFirst({
+				where: {
+					id: parent.id,
+					parent_id: parent.parentId
 				}
 			});
-
-			await prisma.componentAttribute.createMany({
-				data: instance.attributes.map(attr => ({
-					name: attr.name,
-					type: attr.type,
-					value: attr.value,
-					component_id: newElement.id, 
-					location_id: newElement.location_id
-				}))
-			})
-		} else {
-			await prisma.componentElement.update({
-				where: {
-					id: instance.id
-				},
-				data: {
-					id: instance.id,
-					name: instance.name,
-					parent: parent ? {
-						connect: {
-							id: parent.id
-						}
-					} : undefined,
-					definition: {
-						connect: {
-							id: definition.id
-						}
-					},
-					location: {
-						update: {
-							data: {
-								file: instance.location.file,
-								start: instance.location.start,
-								end: instance.location.end,
-							},
-							where: {
-								id: currComponent.location_id
-							}
-						}
-					}
-				}
-			})
+			if (!prismaParent) {
+				await createElement(parent);
+			}
 		}
-		onProgress(i/elementInstances.length)
+		let locationId = currComponent?.location_id;
+		if (!locationId) {
+			const location = await prisma.location.create({
+				data: {
+					file: instance.location.file,
+					start: instance.location.start,
+					end: instance.location.end,
+				}
+			});
+			locationId = location.id;
+		}
+
+		try {
+			
+		const newElement = await prisma.componentElement.create({
+			data: {
+				id: instance.id,
+				repository_id: repoId,
+				name: instance.name,
+				parent_id: parent?.id || '',
+				parent_parent_id: parent?.parentId || null,
+				location_id: locationId,
+				definition_id: definition.id
+				// parent: parent ? {
+				// 	connect: {
+				// 		id_parent_id: {
+				// 			id: parent.id,
+				// 			parent_id: parent.parentId
+				// 		}
+				// 	}
+				// } : undefined,
+				// location: currComponent ? {
+				// 	connect: {
+				// 		id: currComponent.location_id
+				// 	}
+				// }: {
+				// 	create: {
+				// 		file: instance.location.file,
+				// 		start: instance.location.start,
+				// 		end: instance.location.end,
+				// 	}
+				// },
+				// definition: {
+				// 	connect: {
+				// 		id: definition.id
+				// 	}
+				// }
+			}
+		});
+
+		await prisma.componentAttribute.createMany({
+			data: instance.attributes.map(attr => ({
+				name: attr.name,
+				type: attr.type,
+				value: attr.value,
+				component_id: newElement.id, 
+				component_parent_id: newElement.parent_id,
+				location_id: newElement.location_id
+			}))
+		});
+	} catch(err) {
+		console.log(instance);
+	}
+		alreadyCreated.push(`${instance.id}${instance.parentId}`);
+	}
+	for (let i = 0; i < elementInstances.length; i++) {
+		await createElement(elementInstances[i]);
+		onProgress && onProgress(i/elementInstances.length)
 	}
 }
 
@@ -208,10 +244,10 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 
 		return {
 			id,
-			parentId: parentElement?.id || "",
+			parentId: '',
 			name,
 			getParent() {
-				return parentElement
+				return undefined
 			},
 			children: [],
 			isComponent,
@@ -249,7 +285,7 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
 						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
 			
-						const parentComponent = parentElement ?? containingComponent;
+						const parentComponent = containingComponent;
 						if (jsxElementDefinition) {
 							const node = jsPath.node;
 							if (node.children.length === 1 && t.isJSXText(node.children[0])) {

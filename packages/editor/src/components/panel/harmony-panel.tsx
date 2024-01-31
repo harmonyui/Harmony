@@ -1,4 +1,4 @@
-import { Attribute, ComponentElement } from "@harmony/ui/src/types/component"
+import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
@@ -22,7 +22,7 @@ export type SelectMode = 'scope' | 'tweezer';
 export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
-	onAttributesChange: (component: ComponentElement, attributes: Attribute[]) => void;
+	onAttributesChange: (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => void;
 	onAttributesSave: () => void;
 	onAttributesCancel: () => void;
 	onComponentSelect: (component: HTMLElement) => void;
@@ -165,19 +165,25 @@ interface ToolbarPanelProps {
 	toggle: boolean;
 	onToggleChange: (toggle: boolean) => void;
 	selectedComponent: ComponentElement | undefined;
-	onChange: (component: ComponentElement, attributes: Attribute[]) => void;
+	onChange: (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => void;
 	onSave: () => void;
 	onCancel: () => void;
 	isDirty: boolean
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps, isDirty}) => {
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
-	const changeData = (values: ComponentToolData<typeof textTools>[]) => {
+	const changeData = (values: ComponentToolData<typeof textTools>) => {
 		if (selectedComponent === undefined || data === undefined) return;
+		const componentId = selectedComponent.id;
+		const parentId = selectedComponent.parentId;
 
-		const attributes: Attribute[] = values.map(({name, value}) => ({id: '', type: 'className', name, value}));
-		selectedComponent.attributes = data.map(({name, value}) => ({id: '', type: 'className', name, value}));
-		onChange(selectedComponent, attributes);
+		const updates: ComponentUpdate[] = [values].map(({name, value}) => ({componentId, parentId, type: 'className', action: 'add', name, value}));
+		const old = data.find(t => t.name === values.name);
+		if (!old) throw new Error("Cannot find old property");
+		const olds: ComponentUpdate[] = [old].map(({name, value}) => ({componentId, parentId, type: 'className', action: 'add', name, value}));
+		//selectedComponent.attributes = data.map(({name, value}) => ({type: 'className', action: 'add', name, value}));
+		
+		onChange(selectedComponent, updates, olds);
 	}
 
 	const onCancel = () => {
@@ -302,17 +308,18 @@ interface ComponentToolsProps<T extends readonly string[]> {
 	tools: T,
 	components: Record<T[number], ComponentTool>,
 	data: ComponentToolData<T>[],
-	onChange: (data: ComponentToolData<T>[]) => void
+	onChange: (data: ComponentToolData<T>) => void
 }
 const ComponentTools = <T extends readonly string[]>({tools, components, data, onChange}: ComponentToolsProps<T>) => {
-	const changeProperty = useChangeArray<ComponentToolData<T>>(onChange);
 	return (<div className="hw-flex hw-gap-4">
 		{tools.map((tool: T[number]) => {
 			const Component = components[tool] as ComponentTool;
 			const index = data.findIndex(d => d.name === tool);
 
 			const onComponentChange = (value: string): void => {
-				changeProperty(data, index, 'value', value);
+				const update = data[index];
+
+				onChange({...update, value});
 			}
 			return <Component data={data[index].value} onChange={onComponentChange}/>
 		})}

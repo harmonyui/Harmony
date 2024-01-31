@@ -68,10 +68,10 @@ export const CreateNewPullRequestModal: React.FunctionComponent<CreateNewBranchM
 			</div>
 			<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2">
 				<Label className="sm:hw-col-span-full" label="Title:">
-					<Input value={pullRequest.title} onChange={changeProperty.formFunc('title', pullRequest)}/>
+					<Input className="hw-w-full" value={pullRequest.title} onChange={changeProperty.formFunc('title', pullRequest)}/>
 				</Label>
                 <Label className="sm:hw-col-span-full" label="Body:">
-					<Input type="textarea" value={pullRequest.body} onChange={changeProperty.formFunc('body', pullRequest)}/>
+					<Input className="hw-w-full" type="textarea" value={pullRequest.body} onChange={changeProperty.formFunc('body', pullRequest)}/>
 				</Label>
                 {branch === undefined ? <Label className="sm:hw-col-span-3" label="Branch:">
                     <Dropdown items={branchItems} initialValue={branchId} onChange={({id}) => setBranchItem(branches[id])}>

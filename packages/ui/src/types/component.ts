@@ -9,6 +9,16 @@ export const attributeSchema = z.object({
 })
 export type Attribute = z.infer<typeof attributeSchema>;
 
+export const updateSchema = z.object({
+	componentId: z.string(),
+	parentId: z.string(),
+	type: z.union([z.literal('className'), z.literal('text'), z.literal('change')]),
+	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]),
+	name: z.string(),
+	value: z.string()
+})
+export type ComponentUpdate = z.infer<typeof updateSchema>;
+
 export interface ComponentLocation {
 	file: string;
 	start: number;
@@ -35,3 +45,14 @@ export interface HarmonyComponent extends ComponentElementBase {
 	isComponent: true;
 
 }
+
+export const updateRequestBodySchema = z.object({
+	commands: z.array(z.object({
+		id: z.string(),
+		parentId: z.string(),
+		old: z.array(updateSchema),
+		updates: z.array(updateSchema),
+	})),
+	repositoryId: z.string()
+})
+export type RequestBody = z.infer<typeof updateRequestBodySchema>;

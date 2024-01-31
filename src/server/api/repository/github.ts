@@ -63,8 +63,9 @@ export class GithubRepository {
         });
     }
 
-    public async updateFileAndCommit(branch: string, filePath: string, snippet: string, start: number, end: number) {
+    public async updateFilesAndCommit(branch: string, changes: { filePath: string, snippet: string, start: number, end: number }[]) {
         const octokit = await this.getOctokit();
+    
         // Get the latest commit SHA from the branch
         const { data: branchInfo } = await octokit.rest.repos.getBranch({
             owner: this.repository.owner,
@@ -79,58 +80,87 @@ export class GithubRepository {
             commit_sha: branchInfo.commit.sha,
         });
     
-        // Get the content SHA of the existing file
-        const { data: fileInfo } = await octokit.rest.repos.getContent({
+        // Create an array to store changes
+        const treeChanges: { path: string; mode: '100644'; type: 'blob'; sha: string }[] = [];
+    
+        // Iterate through each change and update the files
+        for (const change of changes) {
+            // Get the content SHA of the existing file
+            const { data: fileInfo } = await octokit.rest.repos.getContent({
+                owner: this.repository.owner,
+                repo: this.repository.name,
+                path: change.filePath,
+                ref: branch,
+            });
+    
+            if (Array.isArray(fileInfo)) {
+                throw new Error('The given file path is a directory');
+            }
+    
+            if (!('content' in fileInfo)) {
+                throw new Error('File info does not have content');
+            }
+    
+            const contentText = atob(fileInfo.content);
+            const newContent = replaceByIndex(contentText, change.snippet, change.start, change.end);
+            const {data: updatedFileInfo } = await octokit.rest.git.createBlob({
+                owner: this.repository.owner,
+                repo: this.repository.name,
+                content: newContent,//Buffer.from(newContent).toString('base64'),
+                encoding: 'utf-8'
+            })
+    
+            // Update the content of the existing file
+            // const { data: updatedFileInfo } = await octokit.rest.repos.createOrUpdateFileContents({
+            //     owner: this.repository.owner,
+            //     repo: this.repository.name,
+            //     path: change.filePath,
+            //     message: 'Update file content',
+            //     content: Buffer.from(newContent).toString('base64'),
+            //     branch,
+            //     sha: fileInfo.sha,
+            // });
+    
+            // Push changes to the array
+            treeChanges.push({
+                path: change.filePath,
+                mode: '100644', // File mode
+                type: 'blob',
+                sha: updatedFileInfo.sha,
+            });
+        }
+    
+        // Create a new tree with all the changes
+        const { data: newTree } = await octokit.rest.git.createTree({
             owner: this.repository.owner,
             repo: this.repository.name,
-            path: filePath,
-            ref: branch,
+            base_tree: commitInfo.tree.sha,
+            tree: treeChanges,
         });
-  
-          if (Array.isArray(fileInfo)) {
-              throw new Error('The given file path is a directory');
-          }
-  
-          if (!('content' in fileInfo)) {
-              throw new Error('File info does not have content');
-          }
-  
-          const contentText = atob(fileInfo.content);
-          const newContent = replaceByIndex(contentText, snippet, start, end);
-  
-      // Update the content of the existing file
-      const {data: updatedFileInfo} = await octokit.rest.repos.createOrUpdateFileContents({
-        owner: this.repository.owner,
-        repo: this.repository.name,
-        path: filePath,
-        message: 'Update file content',
-        content: Buffer.from(newContent).toString('base64'),
-        branch,
-        sha: fileInfo.sha,
-      });
-          
-      // Create a new commit with the updated file
-      await octokit.rest.git.createCommit({
-        owner: this.repository.owner,
-        repo: this.repository.name,
-        message: 'Update file content',
-        tree: commitInfo.tree.sha,
-        parents: [commitInfo.sha],
-        committer: {
-          name: 'Your Name',
-          email: 'your.email@example.com',
-        },
-        author: { ...commitInfo.author },
-      });
-  
-      // Update the branch reference to point to the new commit
-      await octokit.rest.git.updateRef({
-        owner: this.repository.owner,
-        repo: this.repository.name,
-        ref: `heads/${branch}`,
-        sha: updatedFileInfo.commit.sha || ''
-      });
+    
+        // Create a new commit with the updated files
+        const commit = await octokit.rest.git.createCommit({
+            owner: this.repository.owner,
+            repo: this.repository.name,
+            message: 'Update files content',
+            tree: newTree.sha,
+            parents: [commitInfo.sha],
+            committer: {
+                name: 'Your Name',
+                email: 'your.email@example.com',
+            },
+            author: { ...commitInfo.author },
+        });
+    
+        // Update the branch reference to point to the new commit
+        await octokit.rest.git.updateRef({
+            owner: this.repository.owner,
+            repo: this.repository.name,
+            ref: `heads/${branch}`,
+            sha: commit.data.sha,
+        });
     }
+    
 
     public async getCommits(branch: string): Promise<CommitItem[]> {
         const octokit = await this.getOctokit();

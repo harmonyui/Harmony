@@ -89,10 +89,10 @@ const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> =
 			</div>
 			<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2">
 				<Label className="sm:hw-col-span-full" label="Branch Label:">
-					<Input value={branch.label} onChange={changeProperty.formFunc('label', branch)}/>
+					<Input className="hw-w-full" value={branch.label} onChange={changeProperty.formFunc('label', branch)}/>
 				</Label>
 				<Label className="sm:hw-col-span-full" label="Url:">
-					<Input value={branch.url} onChange={changeProperty.formFunc('url', branch)}/>
+					<Input className="hw-w-full" value={branch.url} onChange={changeProperty.formFunc('url', branch)}/>
 				</Label>
 				{/* <Label className="sm:hw-col-span-3" label="Default URL:">
 					<Input />

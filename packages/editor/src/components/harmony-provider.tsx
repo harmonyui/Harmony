@@ -1,12 +1,11 @@
 "use client";
 import { useCallback, useEffect, useRef, useState } from "react";
 import { Inspector, componentIdentifier } from "./inspector/inspector";
-import { Attribute, ComponentElement } from "@harmony/ui/src/types/component";
+import { Attribute, ComponentElement, ComponentUpdate, RequestBody } from "@harmony/ui/src/types/component";
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
-import { hashComponent } from "@harmony/util/src/index";
+import { groupBy, hashComponent } from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import {SidePanel} from "@harmony/ui/src/components/core/side-panel";
 import ReactDOM from "react-dom";
 import React from "react";
 import '../global.css';
@@ -54,9 +53,11 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
 	document.body.appendChild(harmonyContainer);
 
 	const documentBody = document.body as HTMLBodyElement;
-
+	
     const container = document.createElement('body');
     container.className = documentBody.className;
+	documentBody.classList.add('hw-h-full');
+	document.documentElement.classList.add('hw-h-full');
 
 	//TODO: Probably need to do this for all styles;
 	container.style.backgroundColor = 'white';
@@ -123,30 +124,30 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const harmonyContainerRef = useRef<HTMLDivElement>(null);
 	//const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
 	const [mode, setMode] = useState<SelectMode>('tweezer');
-	const [currEdits, setCurrEdits] = useState<Map<HTMLElement, {oldValue: ComponentElement, newValue: ComponentElement}>>(new Map());
-	const [availableIds, setAvailableIds] = useState<number[]>([]);
+	const [currEdits, setCurrEdits] = useState<Map<HTMLElement, HarmonyCommandChange>>(new Map());
+	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>([]);
 	const [branchId, setBranchId] = useState<string>();
 	const [scale, _setScale] = useState(1);
 	const [isDirty, setIsDirty] = useState(false);
 
-	const assignIds = useCallback((element: HTMLElement): void => {
-		const elementName = element.tagName.toLowerCase();
-		const className = element.className;
-		const childPosition = Array.from(element.parentNode?.children ?? []).indexOf(element)
-		let hash = hashComponent({elementName, className, childPosition});
+	// const assignIds = useCallback((element: HTMLElement): void => {
+	// 	const elementName = element.tagName.toLowerCase();
+	// 	const className = element.className;
+	// 	const childPosition = Array.from(element.parentNode?.children ?? []).indexOf(element)
+	// 	let hash = hashComponent({elementName, className, childPosition});
 
-		let idIndex = availableIds.indexOf(hash);
-		if (idIndex < 0) {
-			hash = hashComponent({elementName, className, childPosition: 1});
-			idIndex = availableIds.indexOf(hash);
-		}
+	// 	let idIndex = availableIds.indexOf(hash);
+	// 	if (idIndex < 0) {
+	// 		hash = hashComponent({elementName, className, childPosition: 1});
+	// 		idIndex = availableIds.indexOf(hash);
+	// 	}
 
-		if (idIndex > -1) {
-			element.dataset.harmonyId = String(hash);
-		}
+	// 	if (idIndex > -1) {
+	// 		element.dataset.harmonyId = String(hash);
+	// 	}
 
-		Array.from(element.children).forEach(child => assignIds(child as HTMLElement));
-	}, [availableIds]);
+	// 	Array.from(element.children).forEach(child => assignIds(child as HTMLElement));
+	// }, [availableIds]);
 	
 	useEffect(() => {
 		const initialize = async () => {
@@ -155,18 +156,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 			if (branchId) {
 				setBranchId(branchId);
-				// const response = await fetch(`${WEB_URL}/api/load/${repositoryId}?branchId=${branchId}`, {
-				// 	method: 'GET',
-				// 	headers: {
-				// 		'Accept': 'application/json',
-				// 		'Content-Type': 'application/json'
-				// 	},
-				// });
+				const response = await fetch(`${WEB_URL}/api/load/${repositoryId}?branchId=${branchId}`, {
+					method: 'GET',
+					headers: {
+						'Accept': 'application/json',
+						'Content-Type': 'application/json'
+					},
+				});
 
-				// const ids = await response.json();
-				// if (Array.isArray(ids)) {
-				// 	setAvailableIds(ids);
-				// }
+				const ids = await response.json();
+				if (Array.isArray(ids)) {
+					setAvailableIds(ids);
+				}
 			}
 		}
 
@@ -218,30 +219,30 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	// 	}
 	// }, [document.body.children.length])
 
-	// useEffect(() => {
-	// 	const assignIds = (element: HTMLElement): void => {
-	// 		const elementName = element.tagName.toLowerCase();
-	// 		const className = element.className;
-	// 		const childPosition = Array.from(element.parentNode?.children ?? []).indexOf(element)
-	// 		let hash = hashComponent({elementName, className, childPosition});
+	useEffect(() => {
+		const updateElements = (element: HTMLElement): void => {
+			const id = element.dataset.harmonyId;
+			const parentId = element.dataset.harmonyParentId || null;
+			if (id !== undefined) {
+				const update = availableIds.find(up => up.componentId === id && up.parentId === parentId);
+				if (update) {
+					switch (update.type) {
+						case 'text':
+							element.textContent = update.value;
+							break;
+						default:
+							throw new Error('Type not yet supported');
+					}
+				}
+			}
 
-	// 		let idIndex = availableIds.indexOf(hash);
-	// 		if (idIndex < 0) {
-	// 			hash = hashComponent({elementName, className, childPosition: 1});
-	// 			idIndex = availableIds.indexOf(hash);
-	// 		}
+			Array.from(element.children).forEach(child => updateElements(child as HTMLElement));
+		}
 
-	// 		if (idIndex > -1) {
-	// 			element.dataset.harmonyId = String(hash);
-	// 		}
-
-	// 		Array.from(element.children).forEach(child => assignIds(child as HTMLElement));
-	// 	}
-
-	// 	if (rootComponent && availableIds.length > 0) {
-	// 		assignIds(rootComponent);
-	// 	}
-	// }, [rootComponent, availableIds])
+		if (rootComponent && availableIds.length > 0) {
+			updateElements(rootComponent);
+		}
+	}, [rootComponent, availableIds])
 
 	const setScale = useCallback((scale: number) => {
         if (harmonyContainerRef.current && harmonyContainerRef.current.parentElement) {
@@ -258,23 +259,30 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const component = componentIdentifier.getComponentFromElement(selectedComponent);
 		if (!component) throw new Error("Error when getting component");
 
-		const textIndex = component.attributes.findIndex(attr => attr.id === 'text-0');
-		const attr = component.attributes[textIndex];
-		const copyAttrs = [...component.attributes];
-		copyAttrs.splice(textIndex);
+		// const textIndex = component.attributes.findIndex(attr => attr.id === 'text-0');
+		// const attr = component.attributes[textIndex];
+		// const copyAttrs = [...component.attributes];
+		// copyAttrs.splice(textIndex);
 
 
-		onAttributesChange(component, [...copyAttrs, {...attr, value}]);
+		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value: selectedComponent.textContent || ''}]);
 	}
 
-	const onAttributesChange = (component: ComponentElement, attributes: Attribute[]) => {
+	const onAttributesChange = (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => {
 		if (selectedComponent === undefined) return;
-		const copy = {...component};
-		copy.attributes = attributes;
+		// const copy = {...component};
+		// copy.attributes = attributes;
+		// const reverseUpdates = (_updates: ComponentUpdate[]): ComponentUpdate[] => {
+		// 	return _updates;
+		// }
+		// const old = reverseUpdates(updates);
 		const newCommand: HarmonyCommand = {
 			name: 'change',
-			component: copy,
-			oldValue: component.attributes
+			component,
+			updates,
+			old
+			//oldValue: component.attributes
+
 		}
 		componentUpdator.executeCommand(newCommand);
 
@@ -283,9 +291,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const newEdits = new Map(currEdits);
 		const curr = newEdits.get(component.element);
 		if (curr) {
-			newEdits.set(component.element, {...curr, newValue: copy});
+			newEdits.set(component.element, {...curr, updates});
 		} else {
-			newEdits.set(component.element, {oldValue: component, newValue: copy})
+			newEdits.set(component.element, {component, name: 'change', old, updates})
 		}
 		setCurrEdits(newEdits);
 		setIsDirty(true);
@@ -295,8 +303,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (branchId === undefined) return;
 		
 		const commands: HarmonyCommand[] = [];
-		currEdits.forEach(({newValue, oldValue}) => {
-			commands.push({name: 'change', component: newValue, oldValue: oldValue.attributes })
+		currEdits.forEach((command) => {
+			commands.push(command)
 		})
 		
 		componentUpdator.executeCommands(commands, {branchId, repositoryId});
@@ -306,8 +314,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const onAttributesCancel = (): void => {
 		const commands: HarmonyCommand[] = [];
-		currEdits.forEach(({newValue, oldValue}) => {
-			commands.push({name: 'change', component: oldValue, oldValue: newValue.attributes })
+		currEdits.forEach((command) => {
+			commands.push({name: 'change', component: command.component, updates: command.old, old: command.updates })
 		})
 		
 		componentUpdator.executeCommands(commands);
@@ -338,7 +346,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 interface HarmonyCommandChange {
 	name: 'change',
 	component: ComponentElement,
-	oldValue: Attribute[]
+	updates: ComponentUpdate[],
+	old: ComponentUpdate[]
+	//oldValue: Attribute[]
 }
 type HarmonyCommand = HarmonyCommandChange;
 
@@ -347,14 +357,36 @@ class ComponentUpdator {
 	constructor(private attributeTranslator: AttributeTranslator) {}
 
 	public executeCommand(command: HarmonyCommand, save: false | {branchId: string, repositoryId: string}=false): void {
-		this[command.name](command, save);
+		if (save) {
+			this.saveCommand([command], save);
+		} else {
+			this[command.name](command);
+		}
 	}
 
 	public executeCommands(commands: HarmonyCommand[], save: false | {branchId: string, repositoryId: string}=false): void {
-		commands.forEach(command => this.executeCommand(command, save));
+		if (save) {
+			this.saveCommand(commands, save);
+		} else {
+			commands.forEach(command => this.executeCommand(command, save));
+		}
+		
 	}
 
-	private change({component, oldValue}: HarmonyCommandChange, save: false | {branchId: string, repositoryId: string}=false): void {
+	private saveCommand(commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}): void {
+		const cmds = commands.map(cmd => ({id: cmd.component.id, parentId: cmd.component.parentId, updates: cmd.updates, old: cmd.old}))
+		const data: RequestBody = {commands: cmds, repositoryId: save.repositoryId};
+		fetch(`${WEB_URL}/api/update/${save.branchId}`, {
+			method: 'POST',
+			// headers: {
+			// 	'Accept': 'application/json',
+			// 	'Content-Type': 'application/json'
+			// },
+			body: JSON.stringify(data)
+		});
+	}
+
+	private change({component, updates, old}: HarmonyCommandChange): void {
 		// const replaceClassName = (className: string, oldClassName: string, newClassName: string) => {
 		// 	oldClassName.split(' ').forEach(name => {
 		// 		className = className.replaceAll(name, '');
@@ -370,41 +402,31 @@ class ComponentUpdator {
 		const element = component.element;
 		if (element === undefined) return;
 		
-		for (const attribute of component.attributes) {
+		for (const update of updates) {
 			// const [attrName, indexName] = attribute.id.split('-');
 			// const index = Number(indexName);
 			// if (isNaN(index)) throw new Error('Invalid index ' + indexName);
 
-			if (attribute.type === 'className') {
+			if (update.type === 'className') {
 				
-				if (attribute.name === 'spacing') {
-					const [line, letter] = attribute.value.split('-');
+				if (update.name === 'spacing') {
+					const [line, letter] = update.value.split('-');
 					element.style.lineHeight = line;
 					element.style.letterSpacing = letter;
 				} else {
-					element.style[attribute.name as unknown as number]= attribute.value;
+					element.style[update.name as unknown as number]= update.value;
 				}
 			}
 
-			if (attribute.type === 'text') {
-				const index = Number(attribute.name);
+			if (update.type === 'text') {
+				const index = Number(update.name);
 				const node = element?.childNodes[index] as HTMLElement;
 				if (node === undefined) {
 					throw new Error('Invalid node');
 				}
 
-				node.textContent = attribute.value;
+				node.textContent = update.value;
 			}
-		}
-		if (save) {
-			fetch(`${WEB_URL}/api/update/${save.branchId}`, {
-				method: 'POST',
-				// headers: {
-				// 	'Accept': 'application/json',
-				// 	'Content-Type': 'application/json'
-				// },
-				body: JSON.stringify({id: component.id, parentId: component.parentId, oldValue, newValue: component.attributes, repositoryId: save.repositoryId})
-			});
 		}
 	}
 }
