@@ -1,31 +1,51 @@
-import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent, updateSchema, updateRequestBodySchema, RequestBody, ComponentUpdate } from '../../../../packages/ui/src/types/component';
+import { Attribute, ComponentElement, ComponentElementBase, ComponentLocation, HarmonyComponent, updateSchema, ComponentUpdate } from '../../../../packages/ui/src/types/component';
 import fs from 'node:fs';
 import OpenAI from 'openai';
 import { z } from 'zod';
 import { changesSchema } from '../../../../src/server/api/services/updator/local';
 import { prisma } from '../../../../src/server/db';
-import { Prisma } from '@prisma/client';
+import { Branch, ComponentAttribute, Prisma } from '@prisma/client';
 import { getCodeSnippet } from '../../../../src/server/api/services/indexor/github';
 import { GithubRepository } from '../../../../src/server/api/repository/github';
 import { getServerAuthSession } from '../../../../src/server/auth';
 import { Repository } from '../../../../packages/ui/src/types/branch';
 import { load } from 'cheerio';
+import { UpdateRequest, updateRequestBodySchema } from '@harmony/ui/src/types/network';
+import { compare, replaceByIndex } from '@harmony/util/src';
 
 const openai = new OpenAI();
 
 
-
-const payload = {
+const updatePayload = {
+	include: {
+		commit: true,
+		location: true
+	}
+}
+const elementPayload = {
 	include: {
 		definition: {
 			include: {
 				location: true
 			}
 		}, 
-		location: true
+		location: true,
+		updates: {
+			...updatePayload
+		}
 	}
 }
-type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof payload>
+const attributePayload = {
+	include: {
+		updates: {
+			...updatePayload
+		}
+	}
+}
+type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof elementPayload>
+type ComponentAttributePrisma = Prisma.ComponentAttributeGetPayload<typeof attributePayload>
+type ComponentUpdatePrisma = Prisma.ComponentUpdateGetPayload<typeof updatePayload>;
+type FileUpdate = {update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & {updatedTo: number}), updatedCode: string, attribute?: ComponentAttributePrisma};
 
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
 	const {branchId} = params;
@@ -40,11 +60,12 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	}
 	const body = updateRequestBodySchema.parse(await req.json());
 	
+	//TODO: optimize this with a join statement to include just the updates in the current branch
 	const elementInstances = await prisma.componentElement.findMany({
 		where: {
-			repository_id: body.repositoryId 
+			repository_id: body.repositoryId,
 		},
-		...payload
+		...elementPayload
 	})
 	const repository = await prisma.repository.findUnique({
 		where: {
@@ -59,29 +80,74 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	}
 	
 	const githubRepository = new GithubRepository(repository);
-	const fileUpdates: {componentId: string, parentId: string, location: ComponentLocation, updatedCode: string, updates: ComponentUpdate[]}[] = [];
+	let fileUpdates: FileUpdate[] = [];
 
 	for (const command of body.commands) {
-		const {location, updatedCode} = await getChangeAndLocation(command, githubRepository, elementInstances, branch.name);
+		const results = await getChangeAndLocation(command, githubRepository, elementInstances, branch);
 
-		fileUpdates.push({componentId: command.id, parentId: command.parentId, location, updatedCode, updates: command.updates});
+		fileUpdates.push(...results);
 	}
-	await githubRepository.updateFilesAndCommit(branch.name, fileUpdates.map(f => ({filePath: f.location.file, start: f.location.start, end: f.location.end, snippet: f.updatedCode})));
 
-	const updates = fileUpdates.map(f => f.updates.map(up => ({
-		component_id: f.componentId,
-		parent_id: f.parentId,
-		action: up.action,
-		type: up.type,
-		name: up.name,
-		value: up.value,
+	fileUpdates = fileUpdates.sort((a, b) => a.location.start - b.location.start);
+
+	const commitChanges: Record<string, {filePath: string, locations: {snippet: string, start: number, end: number, updatedTo: number, diff: number}[]}> = {};
+	for (const update of fileUpdates) {
+		let change = commitChanges[update.location.file];
+		if (!change) {
+			change = {filePath: update.location.file, locations: []}
+			commitChanges[update.location.file] = change;	
+		}
+		const newLocation = {snippet: update.updatedCode, start: update.location.start, end: update.location.end, updatedTo: update.location.updatedTo, diff: 0};
+		const last = change.locations[change.locations.length - 1];
+		if (last) {
+			if (last.end > newLocation.start) {
+				throw new Error("Conflict in changes")
+			}
+
+			const diff = last.updatedTo - last.end + last.diff;
+
+			newLocation.start += diff;
+			newLocation.end += diff;
+			newLocation.updatedTo += diff;
+			newLocation.diff = diff;
+			// update.dbLocation.start += diff;
+			// update.dbLocation.end += diff + update.location.updatedTo;
+		}
+		// const starts = fileUpdates.filter(f => f.dbLocation.start > newLocation.start);
+		// starts.forEach(start => {
+		// 	start.dbLocation.start += (newLocation.updatedTo - newLocation.end);
+		// })
+		const diff = (newLocation.updatedTo - newLocation.end);
+
+		const ends = fileUpdates.filter(f => f.dbLocation.end >= update.location.end);
+		ends.forEach(end => {
+			
+			end.dbLocation.end += diff;
+			if (end.dbLocation.start >= newLocation.start) {
+				end.dbLocation.start += diff;
+			}
+		});
+
+		change.locations.push(newLocation);
+	}
+
+	await githubRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
+
+	const updates = fileUpdates.map(f => ({
+		component_id: f.update.componentId,
+		parent_id: f.update.parentId,
+		action: f.update.action,
+		type: f.update.type,
+		name: f.update.name,
+		value: f.update.value,
 		location: {
-			file: f.location.file,
-			start: f.location.start,
-			end: f.updatedCode.length + f.location.start
+			file: f.dbLocation.file,
+			start: f.dbLocation.start,
+			end: f.dbLocation.end
 		},
+		attribute_id: f.attribute?.id,
 		location_id: ''
-	}))).flat();
+	}));
 	for (const update of updates) {
 		const location = await prisma.location.create({
 			data: update.location
@@ -101,7 +167,8 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 						type: up.type,
 						name: up.name,
 						value: up.value,
-						location_id: up.location_id
+						location_id: up.location_id,
+						attribute_id: up.attribute_id
 					}))
 				}
 			}
@@ -113,34 +180,65 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	})
 }
 
-async function getChangeAndLocation({id, parentId, updates, old}: RequestBody['commands'][number], githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branch: string): Promise<{
-	location: ComponentLocation,
-	updatedCode: string
-}> {
-	const component = elementInstances.find(el => el.id === id);
-	const parentComponent = elementInstances.find(el => el.id === parentId);
+async function getChangeAndLocation({id, parentId, updates, old}: UpdateRequest['commands'][number], githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branch: Branch): Promise<FileUpdate[]> {
+	const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
+	//const parentComponent = elementInstances.find(el => el.id === parentId);
 
 	if (component === undefined ) {
 		throw new Error('Cannot find component with id ' + id);
 	}
-	if (parentComponent === undefined ) {
-		throw new Error('Cannot find component with id ' + parentId);
-	}
+	// if (parentComponent === undefined ) {
+	// 	throw new Error('Cannot find component with id ' + parentId);
+	// }
 
 	//const containingComponent = component.definition;
 	
 	//possibleComponents.push(...[containingComponent, parentComponent].map(el => ({file: el.location.file, start: el.location.start, end: el.location.end})));
 	//const [file, startLine, startCol, endLine, endCol] = atob(body.id).split(':');
-	const location = component.location;//{file, start: 4761, end: 4781}
-	
-	let elementSnippet = await getCodeSnippet(githubRepository)(location, branch);
+	const attributes = await prisma.componentAttribute.findMany({
+		where: {
+			component_id: component.id,
+			component_parent_id: component.parent_id
+		},
+		...attributePayload
+	});
 
-	for (const update of updates) {
+	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined): {location: ComponentLocation, value: string | undefined} => {
+		const filterUpdates = (updates: ComponentUpdatePrisma[]) => updates.filter(up => up.commit.branch_id === branch.id).sort((a, b) => compare(b.date_modified, a.date_modified));
+		if (attribute === undefined) {
+			const updates = filterUpdates(component.updates);
+			const location = updates.length > 0 ? updates[0].location : component.location;
+
+			return {location, value: undefined};
+		}
+
+		const updates = filterUpdates(attribute.updates);
+		const update = updates.length > 0 ? updates[0] : undefined
+		const value = attribute.name === 'string' ? update?.value || attribute.value : undefined;
+		const location = update ? update.location : component.location;
+		return {location, value};
+	}
+
+	const results: FileUpdate[] = [];
+
+	for (let i = 0; i < updates.length; i++) {
+		const update = updates[i];
+		const _old = old[i];
 		switch(update.type) {
 			case 'text':
-				const $ = load(elementSnippet, {xmlMode: true}, false);
-				$(':first').text(update.value)
-				elementSnippet = $.html({xmlMode: false});
+				const textAttribute = attributes.find(attr => attr.type === 'text');
+				const {location, value} = getLocationAndValue(textAttribute);
+				
+				const elementSnippet = await getCodeSnippet(githubRepository)(location, branch.name);
+				const oldValue = value || _old.value;
+				const start = elementSnippet.indexOf(oldValue);
+				const end = oldValue.length + start;
+				const updatedTo = update.value.length + start;
+				if (start < 0) {
+					throw new Error('There was no update');
+				}
+				
+				results.push({location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update, dbLocation: location, attribute: textAttribute});
 				break;
 			default:
 				throw new Error("Invalid use case");
@@ -148,11 +246,7 @@ async function getChangeAndLocation({id, parentId, updates, old}: RequestBody['c
 		}
 	}
 
-	return {
-		updatedCode: elementSnippet,
-		location
-	}
-	
+	return results;
 }
 
 // const getResponseFromGPT = async (body: RequestBody, githubRepository: GithubRepository, possibleComponents: ComponentLocation[], branch: string) => {

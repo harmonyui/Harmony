@@ -1,14 +1,5 @@
 import { z } from "zod";
 
-export const attributeSchema = z.object({
-	id: z.string(),
-	type: z.string(),
-	name: z.string(),
-	value: z.string(),
-	className: z.union([z.string(), z.undefined()])
-})
-export type Attribute = z.infer<typeof attributeSchema>;
-
 export const updateSchema = z.object({
 	componentId: z.string(),
 	parentId: z.string(),
@@ -19,11 +10,21 @@ export const updateSchema = z.object({
 })
 export type ComponentUpdate = z.infer<typeof updateSchema>;
 
-export interface ComponentLocation {
-	file: string;
-	start: number;
-	end: number;
-}
+export const locationSchema = z.object({
+	file: z.string(),
+	start: z.number(),
+	end: z.number()
+})
+export type ComponentLocation = z.infer<typeof locationSchema>;
+
+export const attributeSchema = z.object({
+	id: z.string(),
+	type: z.string(),
+	name: z.string(),
+	value: z.string(),
+	reference: z.union([z.object({name: z.string(), isComponent: z.literal(true)}), z.object({id: z.string(), isComponent: z.boolean(), parentId: z.string()})]),
+})
+export type Attribute = z.infer<typeof attributeSchema>;
 
 export interface ComponentElementBase {
 	id: string;

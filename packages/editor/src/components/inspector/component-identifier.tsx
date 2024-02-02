@@ -95,7 +95,7 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		for (let i = 0; i < element.childNodes.length; i++) {
 			const node = element.childNodes[i];
 			if (node.nodeType === Node.TEXT_NODE) {
-				attributes.push({id: `text-${i}`, type: 'text', name: `${i}`, value: node.textContent ?? '', className: ''});
+				//attributes.push({id: `text-${i}`, type: 'text', name: `${i}`, value: node.textContent ?? ''});
 			}
 		}
 		

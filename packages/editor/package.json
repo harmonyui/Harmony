@@ -37,5 +37,5 @@
     "webpack": "^5.90.0",
     "webpack-cli": "^5.1.4"
   },
-  "version": "0.2.3"
+  "version": "0.3.0"
 }

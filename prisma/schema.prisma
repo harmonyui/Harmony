@@ -46,6 +46,8 @@ model ComponentUpdate {
 	component_id String
 	component_parent_id String
 	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id])
+	attribute_id String?
+	attribute ComponentAttribute? @relation(fields: [attribute_id], references: [id])
 	location_id String @unique
 	location Location @relation(fields: [location_id], references: [id])
 	type String //text, className, component
@@ -72,7 +74,7 @@ model Location {
 	end Int
 
 	component ComponentElement[]
-	attribute ComponentAttribute?
+	attribute ComponentAttribute[]
 	definition ComponentDefinition?
 	update ComponentUpdate?
 }
@@ -103,10 +105,9 @@ model ComponentAttribute {
 	component_id String
 	component_parent_id String
 	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id])
-	location_id String @unique
+	location_id String
 	location Location @relation(fields: [location_id], references: [id])
-
-	@@unique([component_id, component_parent_id])
+	updates ComponentUpdate[]
 }
 
 model ComponentDefinition {

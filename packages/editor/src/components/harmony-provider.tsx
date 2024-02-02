@@ -468,38 +468,38 @@ export const TailwindAttributeTranslator: AttributeTranslator = {
 	translateCSSClass(attributes: Attribute[]): string {
 		const classes: Set<string> = new Set();
 		
-		//Any class that is available, let's use that and leave what is left
-		const left: Attribute[] = [];
-		for (const attr of attributes) {
-			if (attr.className === undefined) {
-				left.push(attr);
-			} else {
-				classes.add(attr.className);
-			}
-		}
+		// //Any class that is available, let's use that and leave what is left
+		// const left: Attribute[] = [];
+		// for (const attr of attributes) {
+		// 	if (attr.className === undefined) {
+		// 		left.push(attr);
+		// 	} else {
+		// 		classes.add(attr.className);
+		// 	}
+		// }
 
-		const condensed = left.reduce<Attribute[]>((prev, curr) => {
-			const [type, direction] = curr.id.split('-');
-			const sameType = prev.find(d => d.id.includes(type) && d.value === curr.value);
-			if (sameType) {
-				sameType.id += `-${direction}`;
-			} else {
-				prev.push({...curr});
-			}
+		// const condensed = left.reduce<Attribute[]>((prev, curr) => {
+		// 	const [type, direction] = curr.id.split('-');
+		// 	const sameType = prev.find(d => d.id.includes(type) && d.value === curr.value);
+		// 	if (sameType) {
+		// 		sameType.id += `-${direction}`;
+		// 	} else {
+		// 		prev.push({...curr});
+		// 	}
 
-			return prev;
-		}, [])
-		for (const attribute of condensed) {
-			const [spacingType, ...directions] = attribute.id.split('-');
+		// 	return prev;
+		// }, [])
+		// for (const attribute of condensed) {
+		// 	const [spacingType, ...directions] = attribute.id.split('-');
 
-			if (directions.length === 4) {
-				classes.add(`${spacingMapping[spacingType]}-${attribute.value}`)
-			} else {
-				for (const direction of directions) {
-					classes.add(`${spacingMapping[spacingType] === 'border' ? 'border-' : spacingMapping[spacingType]}${directionMapping[direction]}-${attribute.value}`);
-				}
-			}
-		}
+		// 	if (directions.length === 4) {
+		// 		classes.add(`${spacingMapping[spacingType]}-${attribute.value}`)
+		// 	} else {
+		// 		for (const direction of directions) {
+		// 			classes.add(`${spacingMapping[spacingType] === 'border' ? 'border-' : spacingMapping[spacingType]}${directionMapping[direction]}-${attribute.value}`);
+		// 		}
+		// 	}
+		// }
 
 		const classNames: string[] = [];
 		classes.forEach(klass => classNames.push(klass));
@@ -511,30 +511,30 @@ export const TailwindAttributeTranslator: AttributeTranslator = {
 		const directionReverse = reverse(directionMapping);
 
 		const attributes: Attribute[] = [];
-		className.split(' ').forEach(name => {
-			Object.keys(spacingReverse).forEach(key => {
-				const keySplit = key === 'border' ? 'border-' : key;
-				const [type, next] = name.split(keySplit);
-				if (!type && next) {
-					const [direction, value] = next.split('-');
-					const directionName = directionReverse[direction];
-					//This is a false positive (like min-h-screen)
-					if ((direction && !directionName)) {
-						return;
-					}
+		// className.split(' ').forEach(name => {
+		// 	Object.keys(spacingReverse).forEach(key => {
+		// 		const keySplit = key === 'border' ? 'border-' : key;
+		// 		const [type, next] = name.split(keySplit);
+		// 		if (!type && next) {
+		// 			const [direction, value] = next.split('-');
+		// 			const directionName = directionReverse[direction];
+		// 			//This is a false positive (like min-h-screen)
+		// 			if ((direction && !directionName)) {
+		// 				return;
+		// 			}
 
-					const numValue = Number(value ?? (key === 'border' ? 1 : ''));
-					if (isNaN(numValue)) throw new Error('Invalid value for class ' + name);
-					const type = spacingReverse[key];
+		// 			const numValue = Number(value ?? (key === 'border' ? 1 : ''));
+		// 			if (isNaN(numValue)) throw new Error('Invalid value for class ' + name);
+		// 			const type = spacingReverse[key];
 
-					if (directionName) {
-						attributes.push({id: `${type}-${directionName}`, type: 'className', name: `${type} ${directionName}`, value: String(numValue), className: name});
-					} else {
-						attributes.push(...spacingDirections.map(direction => ({id: `${type}-${direction}`, type: 'className', name: `${type} ${direction}`, value: String(numValue), className: name})));
-					}
-				}
-			})
-		})
+		// 			if (directionName) {
+		// 				attributes.push({id: `${type}-${directionName}`, type: 'className', name: `${type} ${directionName}`, value: String(numValue), className: name});
+		// 			} else {
+		// 				attributes.push(...spacingDirections.map(direction => ({id: `${type}-${direction}`, type: 'className', name: `${type} ${direction}`, value: String(numValue), className: name})));
+		// 			}
+		// 		}
+		// 	})
+		// })
 
 		return attributes;
 	},

@@ -439,7 +439,7 @@ const spacingConvesions = {
 		const attributes: Attribute[] = [];
 		for (const type in spacingValues) {
 			const values = spacingValues[type as SpacingType];
-			attributes.push(...values.map(value => ({id: `${type}-${value.direction}`, type: 'className', name: `${type} ${value.direction}`, value: String(value.value), className: undefined})));
+			attributes.push(...values.map(value => ({id: `${type}-${value.direction}`, type: 'className', name: `${type} ${value.direction}`, value: String(value.value), reference: {id: '', isComponent: false, parentId: ''}})));
 			// const sameValues = groupBy(values, 'value');
 			// for (const value in sameValues) {
 			// 	const sameDirection = groupBy(sameValues[Number(value)], 'direction');

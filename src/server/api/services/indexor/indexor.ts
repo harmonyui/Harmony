@@ -1,5 +1,5 @@
 import { prisma } from "../../../../../src/server/db";
-import { HarmonyComponent, ComponentElement, ComponentLocation } from "../../../../../packages/ui/src/types/component";
+import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "../../../../../packages/ui/src/types/component";
 import { getLineAndColumn, hashComponent } from "../../../../../packages/util/src/index";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
@@ -27,7 +27,10 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 			if (!definition) continue;
 
 			for (const definitionInstance of definition.children) {
-				elementInstances.push({...definitionInstance, parentId: instance.id, getParent: () => instance});
+				const newInstance = {...definitionInstance, parentId: instance.id, getParent: () => instance};
+				newInstance.attributes = definitionInstance.attributes.map(atr => ({...atr, reference: newInstance}))
+
+				elementInstances.push(newInstance);
 			}
 			calledComponent.push(definition.name);
 		}
@@ -94,9 +97,7 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 			});
 			locationId = location.id;
 		}
-
-		try {
-			
+try {
 		const newElement = await prisma.componentElement.create({
 			data: {
 				id: instance.id,
@@ -106,50 +107,102 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 				parent_parent_id: parent?.parentId || null,
 				location_id: locationId,
 				definition_id: definition.id
-				// parent: parent ? {
-				// 	connect: {
-				// 		id_parent_id: {
-				// 			id: parent.id,
-				// 			parent_id: parent.parentId
-				// 		}
-				// 	}
-				// } : undefined,
-				// location: currComponent ? {
-				// 	connect: {
-				// 		id: currComponent.location_id
-				// 	}
-				// }: {
-				// 	create: {
-				// 		file: instance.location.file,
-				// 		start: instance.location.start,
-				// 		end: instance.location.end,
-				// 	}
-				// },
-				// definition: {
-				// 	connect: {
-				// 		id: definition.id
-				// 	}
-				// }
 			}
 		});
 
-		await prisma.componentAttribute.createMany({
-			data: instance.attributes.map(attr => ({
-				name: attr.name,
-				type: attr.type,
-				value: attr.value,
-				component_id: newElement.id, 
-				component_parent_id: newElement.parent_id,
-				location_id: newElement.location_id
-			}))
-		});
-	} catch(err) {
-		console.log(instance);
-	}
+		for (const attribute of instance.attributes) {
+			//if (attribute.type === 'text') {
+				let comp = !('parentId' in attribute.reference) ? await prisma.componentDefinition.findUnique({
+					where: {
+						name: attribute.reference.name
+					}
+				}) : await prisma.componentElement.findUnique({
+					where: {
+						id_parent_id: {
+							id: attribute.reference.id,
+							parent_id: attribute.reference.parentId
+						}
+					}
+				});
+				if (!comp) {
+					if (!('parentId' in attribute.reference)) {
+						const definition = attribute.reference as HarmonyComponent;
+						comp = await prisma.componentDefinition.create({
+							data: {
+								name: definition.name,
+								repository_id: repoId,
+								location: {
+									create: {
+										file: definition.location.file,
+										start: definition.location.start,
+										end: definition.location.end
+									}
+								}
+							}
+						})
+					} else {
+						throw new Error("There was an error finding the component");
+					}
+				}
+
+				await prisma.componentAttribute.create({
+					data: {
+						name: attribute.name,
+						type: attribute.type,
+						value: attribute.value,
+						component_id: newElement.id, 
+						component_parent_id: newElement.parent_id,
+						location_id: comp?.location_id
+					}
+				})
+			//}
+		}
+	} catch (err) {console.log(instance)}
+
 		alreadyCreated.push(`${instance.id}${instance.parentId}`);
 	}
+
+	const findAttributeLocation = (curr: ComponentElement, instance: ComponentElement, propertyName: string): {attribute: Attribute, reference: ComponentElement | HarmonyComponent} | undefined => {
+		const attribute = curr.attributes.find(a => a.type === 'property' && a.value.split(':')[0] === propertyName || a.type === 'text' &&  propertyName === 'children');
+		if (attribute) {
+			if (attribute.name === 'string') {
+				return {reference: curr, attribute};
+				
+			} else {
+				const parent = curr.getParent();
+				if (parent) {
+					const reference = findAttributeLocation(parent, instance, propertyName);
+					if (reference === undefined) {
+						return {reference: curr.containingComponent, attribute};
+					}
+
+					return reference;
+				}
+
+				return {reference: curr.containingComponent, attribute}
+			}
+		}  
+
+		return undefined;
+	}
 	for (let i = 0; i < elementInstances.length; i++) {
-		await createElement(elementInstances[i]);
+		const instance = elementInstances[i];
+		for (const attribute of instance.attributes) {
+			if (attribute.type === 'text' && attribute.name === 'property') {
+				const parent = instance.getParent();
+				if (parent) {
+					const results = findAttributeLocation(parent, instance, attribute.value);
+					if (results) {
+						attribute.reference = results.reference;
+						attribute.name = results.attribute.name;
+						attribute.value = results.attribute.value;
+					} else {
+						attribute.reference = instance.containingComponent;
+					}
+				}
+			}
+		}
+		await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)
 	}
 }
@@ -182,41 +235,41 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 		return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
 	}
 
-	const getHashFromElement = (node: t.JSXElement, parentElement: ComponentElement | undefined, isComponent: boolean): string | undefined => {
-		const name = getNameFromNode(node.openingElement.name);
-		let _id: string | undefined = randomId();
+	// const getHashFromElement = (node: t.JSXElement, parentElement: ComponentElement | undefined, isComponent: boolean): string | undefined => {
+	// 	const name = getNameFromNode(node.openingElement.name);
+	// 	let _id: string | undefined = randomId();
 
-		if (!isComponent) {
-			let className = '';
-			for (const attribute of node.openingElement.attributes) {
-				if (attribute.type !== 'JSXAttribute') {
-					_id = undefined;
-					break;
-					//throw new Error("Spread attributes are not yet supported on native elements");
-				}
+	// 	if (!isComponent) {
+	// 		let className = '';
+	// 		for (const attribute of node.openingElement.attributes) {
+	// 			if (attribute.type !== 'JSXAttribute') {
+	// 				_id = undefined;
+	// 				break;
+	// 				//throw new Error("Spread attributes are not yet supported on native elements");
+	// 			}
 
-				if (attribute.name.name !== 'className') {
-					continue;
-				}
+	// 			if (attribute.name.name !== 'className') {
+	// 				continue;
+	// 			}
 
-				if (attribute.value?.type !== 'StringLiteral') {
-					_id = undefined;
-					break;
-					//throw new Error("Dynamic attributes are not yet supported for className");
-				}
+	// 			if (attribute.value?.type !== 'StringLiteral') {
+	// 				_id = undefined;
+	// 				break;
+	// 				//throw new Error("Dynamic attributes are not yet supported for className");
+	// 			}
 
-				className += attribute.value.value;
-			}
+	// 			className += attribute.value.value;
+	// 		}
 
-			if (className) {
-				_id = String(hashComponent({elementName: name, className, childPosition: parentElement?.children.length ?? 1}));
-			} else {
-				_id = undefined;
-			}
-		}
+	// 		if (className) {
+	// 			_id = String(hashComponent({elementName: name, className, childPosition: parentElement?.children.length ?? 1}));
+	// 		} else {
+	// 			_id = undefined;
+	// 		}
+	// 	}
 
-		return _id;
-	}
+	// 	return _id;
+	// }
 
 	function getLocation(node: t.Node, file: string) {
 		if (!node.loc) {
@@ -282,25 +335,44 @@ function updateReactCode(file: string, originalCode: string, componentDefinition
 				},
 				JSXElement: {
 					enter(jsPath) {
+						//console.log(path);
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
 						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
 			
 						const parentComponent = containingComponent;
 						if (jsxElementDefinition) {
 							const node = jsPath.node;
-							if (node.children.length === 1 && t.isJSXText(node.children[0])) {
-								const child = node.children[0] as t.JSXText;
-								jsxElementDefinition.attributes.push({id: '', type: 'text', name: '0', value: child.value})
-							}	
-							const classNameAttr = node.openingElement.attributes.find(attr => t.isJSXAttribute(attr) && attr.name.name === 'className') as t.JSXAttribute;
-							if (classNameAttr && t.isStringLiteral(classNameAttr.value)) {
-								console.log(tailwindcss)
-								// const tailwindMapping = {
-								// 	'font-sm': {name: 'font', value: 'small'}
-								// }
-								// const classNames = classNameAttr.value.value.split(' ');
-								
+							const nonWhiteSpaceChildren = node.children.filter(n => !t.isJSXText(n) || n.value.trim().length > 0);
+							if (nonWhiteSpaceChildren.length === 1) {
+								const child = nonWhiteSpaceChildren[0];
+								if (t.isJSXText(child)) {
+									jsxElementDefinition.attributes.push({id: '', type: 'text', name: 'string', value: child.extra?.raw as string || child.value, reference: jsxElementDefinition})
+								} else if (t.isJSXExpressionContainer(child)) {
+									const value = t.isIdentifier(child.expression) ? child.expression.name : '';
+									jsxElementDefinition.attributes.push({id: '', type: 'text', name: 'property', value, reference: jsxElementDefinition});
+								}
 							}
+							for (const attr of node.openingElement.attributes) {
+								if (t.isJSXAttribute(attr)) {
+									const type = attr.name.name === 'className' ? 'className' : 'property';
+									if (t.isStringLiteral(attr.value)) {
+										jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: `${attr.name.name}:${attr.value.value}`, reference: jsxElementDefinition});
+									} else if (t.isJSXExpressionContainer(attr.value)) {
+										const value = t.isIdentifier(attr.value.expression) ? attr.value.expression.name : undefined;
+										jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
+									}
+								}
+							}
+							// const classNameAttr = node.openingElement.attributes.find(attr => t.isJSXAttribute(attr) && attr.name.name === 'className') as t.JSXAttribute;
+							// if (classNameAttr && t.isStringLiteral(classNameAttr.value)) {
+							// 	jsxElementDefinition.attributes.push({id: 'string', type: 'className', name: 'string', value: classNameAttr.value.value, reference: jsxElementDefinition});
+							// 	//console.log(tailwindcss)
+							// 	// const tailwindMapping = {
+							// 	// 	'font-sm': {name: 'font', value: 'small'}
+							// 	// }
+							// 	// const classNames = classNameAttr.value.value.split(' ');
+								
+							// }
 							jsxElements.push(jsxElementDefinition);
 							elementInstances.push(jsxElementDefinition);
 							parentComponent.children.push(jsxElementDefinition);

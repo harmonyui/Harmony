@@ -63,7 +63,7 @@ export class GithubRepository {
         });
     }
 
-    public async updateFilesAndCommit(branch: string, changes: { filePath: string, snippet: string, start: number, end: number }[]) {
+    public async updateFilesAndCommit(branch: string, changes: { filePath: string, locations: {snippet: string, start: number, end: number }[]}[]) {
         const octokit = await this.getOctokit();
     
         // Get the latest commit SHA from the branch
@@ -101,12 +101,15 @@ export class GithubRepository {
                 throw new Error('File info does not have content');
             }
     
-            const contentText = atob(fileInfo.content);
-            const newContent = replaceByIndex(contentText, change.snippet, change.start, change.end);
+            let contentText = atob(fileInfo.content);
+            for (const location of change.locations) {
+                contentText = replaceByIndex(contentText, location.snippet, location.start, location.end);
+            }
+            
             const {data: updatedFileInfo } = await octokit.rest.git.createBlob({
                 owner: this.repository.owner,
                 repo: this.repository.name,
-                content: newContent,//Buffer.from(newContent).toString('base64'),
+                content: contentText,//Buffer.from(newContent).toString('base64'),
                 encoding: 'utf-8'
             })
     
