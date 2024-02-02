@@ -14,7 +14,7 @@ export interface InspectorProps {
 	onHover: (component: HTMLElement | undefined) => void;
 	onSelect: (component: HTMLElement | undefined) => void;
 	rootElement: HTMLElement | undefined;
-	parentElement: HTMLElement;
+	parentElement: HTMLElement | undefined;
 	onElementTextChange: (value: string) => void;
 	mode: SelectMode;
 }
@@ -34,7 +34,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	useEffect(() => {
 		const container = containerRef.current;
-		if (container === null || rootElement === undefined) return;
+		if (container === null || rootElement === undefined || parentElement === undefined) return;
 
 		if (overlayRef.current === undefined) {
 			overlayRef.current = new Overlay(container, parentElement);
@@ -49,7 +49,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	useEffect(() => {
 		const container = containerRef.current;
-		if (container === null || rootElement === undefined) return;
+		if (container === null || rootElement === undefined || parentElement === undefined) return;
 
 		if (overlayRef.current === undefined) {
 			overlayRef.current = new Overlay(container, parentElement);
@@ -75,6 +75,23 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 		return true;
 	}, [selectedComponent, rootElement, mode]);
+
+	useEffect(() => {
+		if (rootElement) {
+			// const mutationObserver = new MutationObserver((mutations) => {
+			// 	for (const mutation of mutations) {
+			// 		if (mutation.type === 'characterData') {
+			// 			onElementTextChange(mutation.target.textContent || '')
+			// 		}
+			// 	}
+			// })
+
+			// mutationObserver.observe(rootElement, {
+			// 	characterData: true,
+    		// 	subtree: true,
+			// })
+		}
+	}, [rootElement])
 
 	const onHover = useEffectEvent((element: HTMLElement) => {
 		const container = containerRef.current;
@@ -153,7 +170,7 @@ export interface BoxSizing {
 class Overlay {
 	window: Window
   	tipBoundsWindow: Window
-	rects: Map<'select' | 'hover', {rect: OverlayRect, element: HTMLElement}>
+	rects: Map<'select' | 'hover', {rect: OverlayRect, element: HTMLElement, observer: ResizeObserver | undefined}>
   
 	constructor(private container: HTMLElement, private parent: HTMLElement) {
 		// Find the root window, because overlays are positioned relative to it.
@@ -173,7 +190,8 @@ class Overlay {
 		if (stuff) {
 			stuff.rect.remove();
 			this.rects.delete(method);
-			stuff.element.contentEditable = 'inherit';
+			if (method === 'select') stuff.element.contentEditable = 'inherit';
+			stuff.observer?.disconnect();
 		}
 	}
 
@@ -209,8 +227,11 @@ class Overlay {
 
 		if (Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE)) {
 			element.contentEditable = 'true';
+			element.addEventListener('input', (e) => {
+				const target = e.target as HTMLElement;
+				onTextChange(target.textContent || '');
+			})
 		}
-		
 	}
 
 	inspect(element: HTMLElement, method: 'select' | 'hover', onTextChange?: (value: string) => void) {
@@ -224,12 +245,24 @@ class Overlay {
 		const rect = new OverlayRect(this.window.document, element, this.container);
 		rect[method](box, dims, onTextChange);
 
-		const stuff = this.rects.get(method); 
-		if (stuff) {
-			stuff.rect.remove();
-			if (method === 'select') stuff.element.contentEditable = 'inherit';
+		this.remove(method);
+		let mutationObserver: ResizeObserver | undefined;
+		if (true) {
+			const size = element.getBoundingClientRect();
+			mutationObserver = new ResizeObserver((mutations) => {
+				const newSize = element.getBoundingClientRect();
+				const stuff = this.rects.get(method);
+				for (const mutation of mutations) {
+					if ((size.width !== newSize.width || size.height !== newSize.height) && stuff) {
+						const [box, dims] = this.getSizing(element);
+						stuff.rect.updateSize(box, dims);
+					}
+				}
+			});
+	
+			mutationObserver.observe(element);
 		}
-		this.rects.set(method, {rect, element});
+		this.rects.set(method, {rect, element, observer: mutationObserver});
 	}
 
 	getSizing(element: HTMLElement): [Rect, BoxSizing] {
@@ -307,6 +340,10 @@ export class OverlayRect {
 	if (this.elementVisibleValue !== undefined) {
 		this.element.style.visibility = this.elementVisibleValue;
 	}
+  }
+
+  public updateSize(box: Rect, dims: BoxSizing) {
+	this.update(box, dims, 2, false, false);
   }
 
 	public hover(box: Rect, dims: BoxSizing, onTextChange?: (value: string) => void) {

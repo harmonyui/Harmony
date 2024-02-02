@@ -1,5 +1,5 @@
 "use client";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { Component, useCallback, useEffect, useRef, useState } from "react";
 import { Inspector, componentIdentifier } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
@@ -120,7 +120,8 @@ export interface HarmonyProviderProps {
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, rootElement}) => {
 	const [isToggled, setIsToggled] = useState(true);
-	const [selectedComponent, setSelectedComponent] = useState<HTMLElement>();
+	const [selectedComponent, _setSelectedComponent] = useState<HTMLElement>();
+	const [selectedComponentText, setSelectedComponentText] = useState<string>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
 	const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
 	const ref = useRef<HTMLDivElement>(null);
@@ -265,11 +266,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         _setScale(scale);
     }, [harmonyContainerRef]);
 
-	const onTextChange = (value: string) => {
+	const onTextChange = useEffectEvent((value: string) => {
 		if (!selectedComponent) return;
 
 		const component = componentIdentifier.getComponentFromElement(selectedComponent);
 		if (!component) throw new Error("Error when getting component");
+
+		const oldValue = currEdits.get(selectedComponent)?.old.find(d => d.type === 'text')?.value || selectedComponentText;
 
 		// const textIndex = component.attributes.findIndex(attr => attr.id === 'text-0');
 		// const attr = component.attributes[textIndex];
@@ -277,8 +280,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		// copyAttrs.splice(textIndex);
 
 
-		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value: selectedComponent.textContent || ''}]);
-	}
+		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value: oldValue || ''}]);
+	});
 
 	const onAttributesChange = (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => {
 		if (selectedComponent === undefined) return;
@@ -338,6 +341,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		setIsDirty(false);
 		// setSelectedComponent(undefined);
 		// setHoveredComponent(undefined);
+	}
+
+	const setSelectedComponent = (component: HTMLElement | undefined): void => {
+		_setSelectedComponent(component);
+		selectedComponent !== component && setSelectedComponentText(component?.textContent || '');
 	}
 
 	return (
@@ -433,13 +441,14 @@ class ComponentUpdator {
 			}
 
 			if (update.type === 'text') {
-				const index = Number(update.name);
-				const node = element?.childNodes[index] as HTMLElement;
-				if (node === undefined) {
-					throw new Error('Invalid node');
-				}
+				// const index = Number(update.name);
+				// const node = element?.childNodes[index] as HTMLElement;
+				// if (node === undefined) {
+				// 	throw new Error('Invalid node');
+				// }
 
-				node.textContent = update.value;
+				if (element.textContent !== update.value)
+					element.textContent = update.value;
 			}
 		}
 	}

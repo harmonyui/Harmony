@@ -10,12 +10,12 @@ declare global {
 
 export {HarmonySetup};
 
-// window.HarmonyProvider = (options: Pick<HarmonyProviderProps, 'repositoryId'>) => {
-//     const result = setupHarmonyProvider();
-//     if (result === undefined) {
-//         throw new Error("An error occured when running the Harmony editor")
-//     }
-//     const {container, harmonyContainer} = result;
+window.HarmonyProvider = (options: Pick<HarmonyProviderProps, 'repositoryId'>) => {
+    const result = setupHarmonyProvider();
+    if (result === undefined) {
+        throw new Error("An error occured when running the Harmony editor")
+    }
+    const {container, harmonyContainer} = result;
 
-//     ReactDOM.render(<HarmonyProvider {...options} rootElement={container}/>, harmonyContainer);
-//  }
+    ReactDOM.render(<HarmonyProvider {...options} rootElement={container}/>, harmonyContainer);
+ }
