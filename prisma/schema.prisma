@@ -30,30 +30,22 @@ model Branch {
 	name String
 	label String
 	url String
-	pullRequest PullRequest?
-}
-
-model Commit {
-	id String @id @default(cuid())
-	branch_id String
 	updates ComponentUpdate[]
+	pullRequest PullRequest?
 }
 
 model ComponentUpdate {
 	id String @id @default(cuid())
-	commit_id String
-	commit Commit @relation(fields: [commit_id], references: [id])
+	branch_id String
+	branch Branch @relation(fields: [branch_id], references: [id])
 	component_id String
 	component_parent_id String
 	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id])
-	attribute_id String?
-	attribute ComponentAttribute? @relation(fields: [attribute_id], references: [id])
-	location_id String @unique
-	location Location @relation(fields: [location_id], references: [id])
 	type String //text, className, component
 	action String //change, add, remove
 	name String
 	value String
+	old_value String
 	date_modified DateTime @default(now())
 }
 
@@ -76,7 +68,6 @@ model Location {
 	component ComponentElement[]
 	attribute ComponentAttribute[]
 	definition ComponentDefinition?
-	update ComponentUpdate?
 }
 
 model ComponentElement {
@@ -107,7 +98,6 @@ model ComponentAttribute {
 	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id])
 	location_id String
 	location Location @relation(fields: [location_id], references: [id])
-	updates ComponentUpdate[]
 }
 
 model ComponentDefinition {

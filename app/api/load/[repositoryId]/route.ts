@@ -27,9 +27,8 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 	if (branchId) {
 		const query = await prisma.$queryRaw<{action: string, type: string, name: string, value: string, id: string, parentId: string}[]>`
 			SELECT u.action, u.type, u.name, u.value, e.id, e.parent_id as "parentId" FROM "ComponentUpdate" u
-			INNER JOIN "Commit" c ON c.id = commit_id 
 			INNER JOIN "ComponentElement" e on e.id = component_id AND e.parent_id = component_parent_id
-			WHERE c.branch_id = ${branchId}
+			WHERE u.branch_id = ${branchId}
 			ORDER BY u.date_modified DESC`
 
 
