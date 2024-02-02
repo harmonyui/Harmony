@@ -60,6 +60,7 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
     container.className = documentBody.className;
 	documentBody.classList.add('hw-h-full');
 	document.documentElement.classList.add('hw-h-full');
+	//documentBody.contentEditable = 'true';
 
 	//TODO: Probably need to do this for all styles;
 	container.style.backgroundColor = 'white';
@@ -343,11 +344,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
 				{<>
-					{isToggled ? <Inspector rootElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} mode={mode}/> : null}
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
-							
+						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} mode={mode}/> : null}	
 						</div>
 					</div>
 					</HarmonyPanel>

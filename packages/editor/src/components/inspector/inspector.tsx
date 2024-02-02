@@ -14,10 +14,11 @@ export interface InspectorProps {
 	onHover: (component: HTMLElement | undefined) => void;
 	onSelect: (component: HTMLElement | undefined) => void;
 	rootElement: HTMLElement | undefined;
+	parentElement: HTMLElement;
 	onElementTextChange: (value: string) => void;
 	mode: SelectMode;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, rootElement, mode}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, rootElement, parentElement, mode}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
@@ -33,10 +34,10 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	useEffect(() => {
 		const container = containerRef.current;
-		if (container === null) return;
+		if (container === null || rootElement === undefined) return;
 
 		if (overlayRef.current === undefined) {
-			overlayRef.current = new Overlay(container);
+			overlayRef.current = new Overlay(container, parentElement);
 		}
 
 		if (selectedComponent) {
@@ -48,10 +49,10 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	useEffect(() => {
 		const container = containerRef.current;
-		if (container === null) return;
+		if (container === null || rootElement === undefined) return;
 
 		if (overlayRef.current === undefined) {
-			overlayRef.current = new Overlay(container);
+			overlayRef.current = new Overlay(container, parentElement);
 		}
 		if (hoveredComponent) {
 			overlayRef.current.hover(hoveredComponent);
@@ -120,7 +121,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	});
 
 	return (
-		<div ref={containerRef} className="z-10">
+		<div ref={containerRef} className="z-100">
 		</div>
 	)
 }
@@ -151,27 +152,28 @@ export interface BoxSizing {
 
 class Overlay {
 	window: Window
-  tipBoundsWindow: Window
-	rects: Map<'select' | 'hover', OverlayRect>
+  	tipBoundsWindow: Window
+	rects: Map<'select' | 'hover', {rect: OverlayRect, element: HTMLElement}>
   
-	constructor(private container: HTMLElement) {
+	constructor(private container: HTMLElement, private parent: HTMLElement) {
 		// Find the root window, because overlays are positioned relative to it.
-    const currentWindow = (window as unknown as (Window & typeof globalThis & {__REACT_DEVTOOLS_TARGET_WINDOW__: Window | undefined})).__REACT_DEVTOOLS_TARGET_WINDOW__ || window
-    this.window = currentWindow
+		const currentWindow = (window as unknown as (Window & typeof globalThis & {__REACT_DEVTOOLS_TARGET_WINDOW__: Window | undefined})).__REACT_DEVTOOLS_TARGET_WINDOW__ || window
+		this.window = currentWindow
 
-    // When opened in shells/dev,
-    // the tooltip should be bound by the app iframe, not by the topmost window.
-    const tipBoundsWindow = (window as unknown as (Window & typeof globalThis & {__REACT_DEVTOOLS_TARGET_WINDOW__: Window | undefined})).__REACT_DEVTOOLS_TARGET_WINDOW__ || window
-    this.tipBoundsWindow = tipBoundsWindow
+		// When opened in shells/dev,
+		// the tooltip should be bound by the app iframe, not by the topmost window.
+		const tipBoundsWindow = (window as unknown as (Window & typeof globalThis & {__REACT_DEVTOOLS_TARGET_WINDOW__: Window | undefined})).__REACT_DEVTOOLS_TARGET_WINDOW__ || window
+		this.tipBoundsWindow = tipBoundsWindow
 
 		this.rects = new Map();
 	}
 
 	remove(method: 'select' | 'hover') {
-		const rect = this.rects.get(method);
-		if (rect) {
-			rect.remove();
+		const stuff = this.rects.get(method);
+		if (stuff) {
+			stuff.rect.remove();
 			this.rects.delete(method);
+			stuff.element.contentEditable = 'inherit';
 		}
 	}
 
@@ -203,7 +205,12 @@ class Overlay {
 	}
 
 	select(element: HTMLElement, onTextChange: (value: string) => void) {
-		this.inspect(element, 'select', onTextChange);
+		this.inspect(element, 'select');
+
+		if (Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE)) {
+			element.contentEditable = 'true';
+		}
+		
 	}
 
 	inspect(element: HTMLElement, method: 'select' | 'hover', onTextChange?: (value: string) => void) {
@@ -217,10 +224,12 @@ class Overlay {
 		const rect = new OverlayRect(this.window.document, element, this.container);
 		rect[method](box, dims, onTextChange);
 
-		if (this.rects.has(method)) {
-			this.rects.get(method)?.remove();
+		const stuff = this.rects.get(method); 
+		if (stuff) {
+			stuff.rect.remove();
+			if (method === 'select') stuff.element.contentEditable = 'inherit';
 		}
-		this.rects.set(method, rect);
+		this.rects.set(method, {rect, element});
 	}
 
 	getSizing(element: HTMLElement): [Rect, BoxSizing] {
@@ -230,7 +239,7 @@ class Overlay {
       bottom: Number.NEGATIVE_INFINITY,
       left: Number.POSITIVE_INFINITY,
     }
-    const box = getNestedBoundingClientRect(element, this.window)
+    const box = getNestedBoundingClientRect(element, this.parent)
 		const dims = getElementDimensions(element)
 
 		outerBox.top = Math.min(outerBox.top, box.top - dims.marginTop)
@@ -280,7 +289,7 @@ export class OverlayRect {
       position: 'fixed',
     })
 
-    this.node.style.zIndex = '10'
+    this.node.style.zIndex = '100'
 
     this.node.appendChild(this.border)
     this.border.appendChild(this.padding)
@@ -291,20 +300,13 @@ export class OverlayRect {
   }
 
   remove() {
-    if (this.node.parentNode) {
-      this.node.parentNode.removeChild(this.node)
-    }
-
-		// if (this.parentElement) {
-		// 	if (this.nextSiblingElement) {
-		// 		this.parentElement.insertBefore(this.element, this.nextSiblingElement);
-		// 	} else {
-		// 		this.parentElement.appendChild(this.element);
-		// 	}
-		// }
-		if (this.elementVisibleValue !== undefined) {
-			this.element.style.visibility = this.elementVisibleValue;
-		}
+	if (this.node.parentNode) {
+		this.node.parentNode.removeChild(this.node)
+	}
+	
+	if (this.elementVisibleValue !== undefined) {
+		this.element.style.visibility = this.elementVisibleValue;
+	}
   }
 
 	public hover(box: Rect, dims: BoxSizing, onTextChange?: (value: string) => void) {
@@ -371,8 +373,8 @@ export class OverlayRect {
 		dims.borderLeft = borderSize;
 		dims.borderRight = borderSize;
 		dims.borderTop = borderSize;
-		boxWrap(dims, 'border', this.border)
-
+	    boxWrap(dims, 'border', this.border)
+		
 		if (!editText) {
 			boxWrap(dims, 'margin', this.node)
 			boxWrap(dims, 'padding', this.padding);
@@ -424,9 +426,49 @@ function boxWrap(dims: BoxSizing, what: 'margin' | 'padding' | 'border', node: H
 
 // Calculate a boundingClientRect for a node relative to boundaryWindow,
 // taking into account any offsets caused by intermediate iframes.
-export function getNestedBoundingClientRect(node: HTMLElement, boundaryWindow: Window | HTMLElement): Rect
-export function getNestedBoundingClientRect(node: HTMLElement): Rect {
-  return node.getBoundingClientRect()
+export function getNestedBoundingClientRect(node: HTMLElement, boundaryWindow?: HTMLElement): Rect {
+	const targetRect = node.getBoundingClientRect();
+
+	if (boundaryWindow) {
+		const boundaryRect = boundaryWindow.getBoundingClientRect();
+
+		// let scalingAncestor: HTMLElement | null = boundaryWindow;
+		// let scaleX = 1;
+		// let scaleY = 1;
+		// while (scalingAncestor !== null && scalingAncestor !== document.body) {
+		// 	const style = window.getComputedStyle(scalingAncestor);
+		// 	const transformMatrix = new DOMMatrix(style.transform);
+			
+		// 	// Check if the ancestor has a scaling transformation
+		// 	if (transformMatrix.a !== 1 || transformMatrix.d !== 1) {
+		// 		scaleX = transformMatrix.a;
+		// 		scaleY = transformMatrix.b;
+		// 		break;
+		// 	}
+
+		// 	scalingAncestor = scalingAncestor.parentElement;
+		// }
+		const boundaryStyle = window.getComputedStyle(boundaryWindow);
+		const transformMatrix = new DOMMatrix(boundaryStyle.transform);
+
+		// Extract the scaling factors from the transform matrix
+		const scaleX = transformMatrix.a;
+		const scaleY = transformMatrix.d;
+	
+		// Calculate the relative position
+		const relativePosition = {
+			top: (targetRect.top - boundaryRect.top) / scaleY,
+			left: (targetRect.left - boundaryRect.left) / scaleX,
+			right: (targetRect.right - boundaryRect.left) / scaleX,
+			bottom: (targetRect.bottom - boundaryRect.top) / scaleY,
+			width: targetRect.width / scaleX,
+			height: targetRect.height / scaleY,
+		};
+	
+		return relativePosition;
+	}
+
+	return targetRect;
 }
 
 export function getElementDimensions(domElement: Element) {
