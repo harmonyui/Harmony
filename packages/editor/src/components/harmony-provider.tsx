@@ -237,16 +237,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			const id = element.dataset.harmonyId;
 			const parentId = element.dataset.harmonyParentId || null;
 			if (id !== undefined) {
-				const update = availableIds.find(up => up.componentId === id && up.parentId === parentId);
-				if (update) {
-					switch (update.type) {
-						case 'text':
-							element.textContent = update.value;
-							break;
-						default:
-							throw new Error('Type not yet supported');
-					}
-				}
+				const updates = availableIds.filter(up => up.componentId === id && up.parentId === parentId);
+				makeUpdates(element, updates);
 			}
 
 			Array.from(element.children).forEach(child => updateElements(child as HTMLElement));
@@ -339,8 +331,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		componentUpdator.executeCommands(commands);
 		setCurrEdits(new Map());
 		setIsDirty(false);
-		// setSelectedComponent(undefined);
-		// setHoveredComponent(undefined);
+		setSelectedComponent(undefined);
+		setHoveredComponent(undefined);
 	}
 
 	const setSelectedComponent = (component: HTMLElement | undefined): void => {
@@ -408,47 +400,32 @@ class ComponentUpdator {
 		});
 	}
 
-	private change({component, updates, old}: HarmonyCommandChange): void {
-		// const replaceClassName = (className: string, oldClassName: string, newClassName: string) => {
-		// 	oldClassName.split(' ').forEach(name => {
-		// 		className = className.replaceAll(name, '');
-		// 	})
-
-		// 	return `${className} ${newClassName}`;
-		// }
-
-		// const newClassName = this.attributeTranslator.translateCSSClass(component.attributes);
-		// const oldClassName = this.attributeTranslator.translateCSSClass(oldValue);
-
-		// component.element.className = replaceClassName(component.element.className, oldClassName, newClassName);
+	private change({component, updates}: HarmonyCommandChange): void {
 		const element = component.element;
 		if (element === undefined) return;
 		
-		for (const update of updates) {
-			// const [attrName, indexName] = attribute.id.split('-');
-			// const index = Number(indexName);
-			// if (isNaN(index)) throw new Error('Invalid index ' + indexName);
+		makeUpdates(element, updates);
+	}
+}
 
-			if (update.type === 'className') {
-				
-				if (update.name === 'spacing') {
-					const [line, letter] = update.value.split('-');
-					element.style.lineHeight = line;
-					element.style.letterSpacing = letter;
-				} else {
-					element.style[update.name as unknown as number]= update.value;
-				}
+function makeUpdates(element: HTMLElement, updates: ComponentUpdate[]) {
+	let alreadyDoneText = false;
+	for (const update of updates) {
+		if (update.type === 'className') {
+			
+			if (update.name === 'spacing') {
+				const [line, letter] = update.value.split('-');
+				element.style.lineHeight = line;
+				element.style.letterSpacing = letter;
+			} else {
+				element.style[update.name as unknown as number]= update.value;
 			}
+		}
 
-			if (update.type === 'text') {
-				// const index = Number(update.name);
-				// const node = element?.childNodes[index] as HTMLElement;
-				// if (node === undefined) {
-				// 	throw new Error('Invalid node');
-				// }
-
-				if (element.textContent !== update.value)
-					element.textContent = update.value;
+		if (update.type === 'text') {
+			if (element.textContent !== update.value && !alreadyDoneText) {
+				element.textContent = update.value;
+				alreadyDoneText = true;
 			}
 		}
 	}
