@@ -114,6 +114,18 @@ export const getClass = (...strings: (string | undefined)[]) => {
   return strings.filter((x) => !!x).join(" ");
 };
 
+export const getNumberFromString = (str: string): number => {
+  // const match = /^(\d+)\D*$/.exec(str);
+
+  // if (match === null) {
+  //   throw new Error("There is no error in string " + str);
+  // }
+
+  // return Number(match[1]);
+
+  return parseFloat(str);
+}
+
 export const groupBy = function <T extends Pick<T, K>, K extends keyof T>(
   arr: T[],
   key: K,

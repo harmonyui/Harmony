@@ -1,12 +1,12 @@
 "use client";
 import { Component, useCallback, useEffect, useRef, useState } from "react";
-import { Inspector, componentIdentifier } from "./inspector/inspector";
+import { Inspector, ResizeCoords, ResizeDirection, ResizeValue, componentIdentifier } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
-import { groupBy, hashComponent } from "@harmony/util/src/index";
+import { getNumberFromString, groupBy, hashComponent } from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import ReactDOM from "react-dom";
 import React from "react";
@@ -275,14 +275,25 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value: oldValue || ''}]);
 	});
 
-	const onResize = useEffectEvent(({width, height}: {width: number, height: number}, {width: oldWidth, height: oldHeight}: {width: number, height: number}) => {
+	const onResize = useEffectEvent((size: ResizeValue) => {
 		if (!selectedComponent) return;
 
 		const component = componentIdentifier.getComponentFromElement(selectedComponent);
 		if (!component) throw new Error("Error when getting component");
 
-		const value = `width=${width}:height=${height}`;
-		const oldValue = currEdits.get(selectedComponent)?.old.find(d => d.type === 'className' && d.name === 'size')?.value || `width=${oldWidth}:height=${oldHeight}`;
+		const styles = getComputedStyle(selectedComponent);
+
+		const oldSize = {
+			n: getNumberFromString(styles.paddingTop),
+			e: getNumberFromString(styles.paddingRight),
+			s: getNumberFromString(styles.paddingBottom),
+			w: getNumberFromString(styles.paddingLeft),
+		}
+
+		const convertSizeToString = (size: ResizeValue): string => Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}:${direction}=${value}` : `${direction}=${value}`, '')
+
+		const value = convertSizeToString(size);//`width=${width}:height=${height}`;
+		const oldValue = currEdits.get(selectedComponent)?.old.find(d => d.type === 'className' && d.name === 'size')?.value || convertSizeToString(oldSize);
 
 		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value: oldValue}]);
 	})
@@ -420,31 +431,49 @@ class ComponentUpdator {
 	}
 }
 
-function makeUpdates(element: HTMLElement, updates: ComponentUpdate[]) {
+function makeUpdates(el: HTMLElement, updates: ComponentUpdate[]) {
 	let alreadyDoneText = false;
-	for (const update of updates) {
-		if (update.type === 'className') {
-			
-			if (update.name === 'spacing') {
-				const [line, letter] = update.value.split('-');
-				element.style.lineHeight = line;
-				element.style.letterSpacing = letter;
-			} else if (update.name === 'size') {
-				const [widthStr, heightStr] = update.value.split(':');
-				const [_, width] = widthStr.split('=');
-				const [_2, height] = heightStr.split('=');
+	const id = el.dataset.harmonyId;
+	if (!id) {
+		return;
+	}
+	const sameElements = document.querySelectorAll(`[data-harmony-id="${id}"]`);
 
-				element.style.width = `${width}px`;
-				element.style.height = `${height}px`;
-			} else {
-				element.style[update.name as unknown as number]= update.value;
+	for (const element of sameElements) {
+		const htmlElement = element as HTMLElement;
+		for (const update of updates) {
+			if (update.type === 'className') {
+				
+				if (update.name === 'spacing') {
+					const [line, letter] = update.value.split('-');
+					htmlElement.style.lineHeight = line;
+					htmlElement.style.letterSpacing = letter;
+				} else if (update.name === 'size') {
+					const directionsStr = update.value.split(':');
+					const mapping: Record<ResizeCoords, 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight'> = {
+						n: 'paddingTop',
+						e: 'paddingRight',
+						s: 'paddingBottom',
+						w: 'paddingLeft'
+					}
+					for (const directionStr of directionsStr) {
+						const [direction, value] = directionStr.split('=');
+						if (isNaN(Number(value))) throw new Error("Value must be a number: " + value);
+						if (direction.length !== 1 || !'nesw'.includes(direction)) throw new Error("Invalid direction " + direction);
+
+						const valueStyle = `${value}px`;
+						htmlElement.style[mapping[direction as ResizeCoords]] = valueStyle;
+					}
+				} else {
+					htmlElement.style[update.name as unknown as number]= update.value;
+				}
 			}
-		}
 
-		if (update.type === 'text') {
-			if (element.textContent !== update.value && !alreadyDoneText) {
-				element.textContent = update.value;
-				alreadyDoneText = true;
+			if (update.type === 'text') {
+				if (htmlElement.textContent !== update.value && !alreadyDoneText) {
+					htmlElement.textContent = update.value;
+					alreadyDoneText = true;
+				}
 			}
 		}
 	}
