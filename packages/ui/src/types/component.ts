@@ -1,10 +1,11 @@
 import { z } from "zod";
 
+//type: className, name: size
 export const updateSchema = z.object({
 	componentId: z.string(),
 	parentId: z.string(),
-	type: z.union([z.literal('className'), z.literal('text'), z.literal('change')]),
-	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]),
+	type: z.union([z.literal('className'), z.literal('text'), z.literal('component')]),
+	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]), 
 	name: z.string(),
 	value: z.string()
 })

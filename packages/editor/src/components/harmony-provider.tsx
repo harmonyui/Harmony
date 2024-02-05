@@ -275,6 +275,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value: oldValue || ''}]);
 	});
 
+	const onResize = useEffectEvent(({width, height}: {width: number, height: number}, {width: oldWidth, height: oldHeight}: {width: number, height: number}) => {
+		if (!selectedComponent) return;
+
+		const component = componentIdentifier.getComponentFromElement(selectedComponent);
+		if (!component) throw new Error("Error when getting component");
+
+		const value = `width=${width}:height=${height}`;
+		const oldValue = currEdits.get(selectedComponent)?.old.find(d => d.type === 'className' && d.name === 'size')?.value || `width=${oldWidth}:height=${oldHeight}`;
+
+		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value: oldValue}]);
+	})
+
 	const onAttributesChange = (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => {
 		if (selectedComponent === undefined) return;
 		// const copy = {...component};
@@ -347,7 +359,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
-						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} mode={mode}/> : null}	
+						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onResize={onResize} mode={mode}/> : null}	
 						</div>
 					</div>
 					</HarmonyPanel>
@@ -417,6 +429,13 @@ function makeUpdates(element: HTMLElement, updates: ComponentUpdate[]) {
 				const [line, letter] = update.value.split('-');
 				element.style.lineHeight = line;
 				element.style.letterSpacing = letter;
+			} else if (update.name === 'size') {
+				const [widthStr, heightStr] = update.value.split(':');
+				const [_, width] = widthStr.split('=');
+				const [_2, height] = heightStr.split('=');
+
+				element.style.width = `${width}px`;
+				element.style.height = `${height}px`;
 			} else {
 				element.style[update.name as unknown as number]= update.value;
 			}

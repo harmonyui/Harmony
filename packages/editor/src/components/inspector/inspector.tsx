@@ -1,12 +1,68 @@
 'use client';
 import { useHighlighter } from "./highlighter"
-import { useCallback, useEffect, useRef } from "react"
+import { useCallback, useEffect, useRef, useState } from "react"
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import { ReactComponentIdentifier } from "./component-identifier";
 import hotkeys from 'hotkeys-js';
 import { SelectMode } from "../panel/harmony-panel";
 
 export const componentIdentifier = new ReactComponentIdentifier();
+
+type SizeUpdates = {oldWidth: number, oldHeight: number, newWidth: number, newHeight: number}
+interface ResizeProps {
+	resizable: HTMLElement | undefined;
+	onIsDragging?: (updates: SizeUpdates) => void;
+	onDragFinish?: (updates: SizeUpdates) => void;
+}
+const useResize = ({resizable, onIsDragging, onDragFinish}: ResizeProps) => {
+	const [rect, setRect] = useState<Box>();
+	const [updates, setUpdates] = useState<SizeUpdates>();
+	const [isDragging, setIsDragging] = useState(false);
+
+	const doDrag = useEffectEvent((e: MouseEvent) => {
+		if (!rect || !resizable) return;
+
+		setIsDragging(true);
+		const oldWidth = resizable.clientWidth;
+		const oldHeight = resizable.clientHeight;
+		let width = oldWidth;
+		let height = oldHeight;
+		if (rect.width > -1) {
+			width = (rect.width + rect.lx * (e.clientX - rect.x));
+		}
+		if (rect.height > -1) {
+			height = (rect.height + rect.ly * (e.clientY - rect.y));
+		}
+
+		resizable.style.width = `${width}px`;
+		resizable.style.height = `${height}px`;
+
+		const updates: SizeUpdates = {oldWidth: rect.width > -1 ? rect.width : oldWidth, oldHeight: rect.height > -1 ? rect.height : oldHeight, newHeight: height, newWidth: width};
+		onIsDragging && onIsDragging(updates);
+		setUpdates(updates);
+	});
+
+	const stopDrag = useEffectEvent((e: MouseEvent) => {
+		if (!updates) {
+			throw new Error("There are no updates");
+		}
+		
+		setIsDragging(false);
+		document.documentElement.removeEventListener('mousemove', doDrag, false);    
+    	document.documentElement.removeEventListener('mouseup', stopDrag, false);
+		onDragFinish && onDragFinish(updates);
+	});
+
+	const onDrag = useEffectEvent((rect: Box): void => {
+		if (!resizable) return;
+
+		setRect(rect);
+		document.documentElement.addEventListener('mousemove', doDrag, false);
+		document.documentElement.addEventListener('mouseup', stopDrag, false);
+	});
+
+	return {onDrag, isDragging};
+}
 
 export interface InspectorProps {
 	hoveredComponent: HTMLElement | undefined;
@@ -17,10 +73,28 @@ export interface InspectorProps {
 	parentElement: HTMLElement | undefined;
 	onElementTextChange: (value: string) => void;
 	mode: SelectMode;
+	onResize: (size: {width: number, height: number}, oldSize: {width: number, height: number}) => void;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, rootElement, parentElement, mode}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onResize, rootElement, parentElement, mode}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
+
+	const {onDrag, isDragging} = useResize({resizable: selectedComponent, onIsDragging() {
+		const container = containerRef.current;
+		if (container === null || parentElement === undefined) return;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container, parentElement);
+		}
+
+		if (selectedComponent) {
+			overlayRef.current.select(selectedComponent, {onDrag});
+		} else {
+			overlayRef.current.remove('select');
+		}
+	}, onDragFinish(rect) {
+		onResize({width: rect.newWidth, height: rect.newHeight}, {width: rect.oldWidth, height: rect.oldHeight});
+	}});
 
 	useEffect(() => {
 		const onEscape = () => {
@@ -41,7 +115,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, onElementTextChange);
+			overlayRef.current.select(selectedComponent, {onTextChange: onElementTextChange, onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -100,7 +174,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		//const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
-		if (!isInteractableComponent(element)) {
+		if (isDragging || !isInteractableComponent(element)) {
 			onHoverProps(undefined);
 			return false;
 		}
@@ -111,7 +185,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	});
 	const onClick = useEffectEvent((element: HTMLElement) => {
 		const container = containerRef.current;
-		if (container === null) return false;
+		if (container === null || isDragging) return false;
 		if (rootElement && !rootElement.contains(element)) return true;
 		//const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
@@ -141,6 +215,15 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		<div ref={containerRef} className="z-100">
 		</div>
 	)
+}
+
+interface Box {
+	x: number;
+	y: number;
+	height: number;
+	width: number;
+	lx: number; //The direction
+	ly: number; //The direction
 }
 
 export interface Rect {
@@ -222,19 +305,19 @@ class Overlay {
 		this.inspect(element, 'hover');
 	}
 
-	select(element: HTMLElement, onTextChange: (value: string) => void) {
-		this.inspect(element, 'select');
+	select(element: HTMLElement, listeners: {onTextChange?: (value: string) => void, onDrag?: (box: Box) => void}) {
+		this.inspect(element, 'select', listeners.onDrag);
 
-		if (Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE)) {
+		if (listeners.onTextChange && Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE)) {
 			element.contentEditable = 'true';
 			element.addEventListener('input', (e) => {
 				const target = e.target as HTMLElement;
-				onTextChange(target.textContent || '');
+				listeners.onTextChange && listeners.onTextChange(target.textContent || '');
 			})
 		}
 	}
 
-	inspect(element: HTMLElement, method: 'select' | 'hover', onTextChange?: (value: string) => void) {
+	inspect(element: HTMLElement, method: 'select' | 'hover', onDrag?: (rect: Box) => void) {
 		// We can't get the size of text nodes or comment nodes. React as of v15
     // heavily uses comment nodes to delimit text.
 		if (element.nodeType !== Node.ELEMENT_NODE) {
@@ -242,8 +325,8 @@ class Overlay {
 		}
 
 		const [box, dims] = this.getSizing(element);
-		const rect = new OverlayRect(this.window.document, element, this.container);
-		rect[method](box, dims, onTextChange);
+		const rect = new OverlayRect(this.window.document, element, this.container, onDrag);
+		rect[method](box, dims);
 
 		this.remove(method);
 		let mutationObserver: ResizeObserver | undefined;
@@ -292,120 +375,77 @@ class Overlay {
 
 const overlayStyles = {
   background: '#0094FF',
+  resize: 'rgba(120, 170, 210, 1)',
   padding: 'rgba(77, 200, 0, 0.3)',
   margin: 'rgba(255, 155, 0, 0.3)',
   border: 'rgba(255, 200, 50, 0.3)',
 }
 
 export class OverlayRect {
-  node: HTMLElement
-  border: HTMLElement
-  padding: HTMLElement
-  content: HTMLElement
-	// parentElement: HTMLElement | undefined | null;
-	// nextSiblingElement: Element | undefined | null;
+	node: HTMLElement
+	border: HTMLElement
+	padding: HTMLElement
+	content: HTMLElement
 	elementVisibleValue: string | undefined;
+	resizeHandles: HTMLElement[] = []
 
-  constructor(doc: Document, private element: HTMLElement, container: HTMLElement) {
-    this.node = doc.createElement('div')
-    this.border = doc.createElement('div')
-    this.padding = doc.createElement('div')
-    this.content = doc.createElement('div')
-
-    this.border.style.borderColor = overlayStyles.background
-    this.padding.style.borderColor = overlayStyles.padding
-    //this.content.style.backgroundColor = overlayStyles.background
-
-    Object.assign(this.node.style, {
-      borderColor: overlayStyles.margin,
-      pointerEvents: 'none',
-      position: 'fixed',
-    })
-
-    this.node.style.zIndex = '100'
-
-    this.node.appendChild(this.border)
-    this.border.appendChild(this.padding)
-    this.padding.appendChild(this.content)
-
-    // ensure OverlayRect dom always before OverlayTip dom rather than cover OverlayTip
-    container.prepend(this.node)
-  }
-
-  remove() {
-	if (this.node.parentNode) {
-		this.node.parentNode.removeChild(this.node)
-	}
-	
-	if (this.elementVisibleValue !== undefined) {
-		this.element.style.visibility = this.elementVisibleValue;
-	}
-  }
-
-  public updateSize(box: Rect, dims: BoxSizing) {
-	this.update(box, dims, 2, false, false);
-  }
-
-	public hover(box: Rect, dims: BoxSizing, onTextChange?: (value: string) => void) {
-		this.update(box, dims, 2, false, false);
-	}
-
-	public select(box: Rect, dims: BoxSizing, onTextChange?: (value: string) => void) {
-		if (onTextChange && Array.from(this.element.childNodes).some(n => n.nodeType === Node.TEXT_NODE)) {
-			const onBlur = (e: FocusEvent) => {
-				//if (!this.elementVisibleValue) return;
-
-				const target = e.target as HTMLElement;
-				let content = '';
-				for (let i = 0; i < target.childNodes.length; i++) {
-					const node = target.childNodes[i];
-					if (node.nodeType === Node.TEXT_NODE) {
-						//this.element.childNodes[i].textContent = node.textContent;
-						content = node.textContent || '';
-					}
-				}
-				this.element.style.visibility = 'visible';
-				onTextChange(content);
-				//this.element.textContent = target.textContent;
-			}
-			const clonedElement = this.cloneElement(this.element, ['-webkit-user-modify']);
-			clonedElement.contentEditable = "true";
-			clonedElement.addEventListener('blur', onBlur);
-
-			this.content.appendChild(clonedElement);
-			// this.parentElement = this.element.parentElement;
-			// this.nextSiblingElement = this.element.nextElementSibling;
-			this.elementVisibleValue = this.element.style.visibility;
-			this.element.style.visibility = 'hidden';
+  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, private onDrag?: (rect: Box) => void) {
+		this.node = doc.createElement('div')
+		this.border = doc.createElement('div')
+		this.padding = doc.createElement('div')
+		this.content = doc.createElement('div')
+		for (let i = 0; i < 8; i++) {
+			this.resizeHandles.push(doc.createElement('div'));
+			this.resizeHandles[i].style.backgroundColor = overlayStyles.resize;
 		}
 
-		this.update(box, dims, 2, false, false);
+		this.border.style.borderColor = overlayStyles.background
+		this.padding.style.borderColor = overlayStyles.padding
+		//this.content.style.backgroundColor = overlayStyles.background
+
+		Object.assign(this.node.style, {
+		borderColor: overlayStyles.margin,
+		pointerEvents: 'none',
+		position: 'fixed',
+		})
+
+		this.node.style.zIndex = '100'
+
+		this.node.appendChild(this.border)
+		this.border.appendChild(this.padding)
+		this.padding.appendChild(this.content)
+		for (const handle of this.resizeHandles) {
+			this.content.appendChild(handle);
+		}
+
+		// ensure OverlayRect dom always before OverlayTip dom rather than cover OverlayTip
+		container.prepend(this.node)
 	}
 
-	private cloneElement(element: HTMLElement, propertiesToSkip: string[] = []): HTMLElement {
-		const clonedElement = element.cloneNode(true) as HTMLElement;//document.createElement(element.tagName);
-		for (let i = 0; i < clonedElement.childNodes.length; i++) {
-			const node = clonedElement.childNodes[i];
-			if (node.nodeType !== Node.TEXT_NODE) {
-				(node as HTMLElement).contentEditable = "false";
-			}
-		}
-		// Copy text content
-		//clonedElement.textContent = element.textContent;
-
-		// Copy computed styles
-		var computedStyles = window.getComputedStyle(element);
-		for (var i = 0; i < computedStyles.length; i++) {
-			var propertyName = computedStyles[i];
-			if (propertiesToSkip.includes(propertyName)) continue;
-
-			clonedElement.style[propertyName as unknown as number] = computedStyles.getPropertyValue(propertyName);
+	remove() {
+		if (this.node.parentNode) {
+			this.node.parentNode.removeChild(this.node)
 		}
 		
-		return clonedElement as HTMLElement;
+		if (this.elementVisibleValue !== undefined) {
+			this.element.style.visibility = this.elementVisibleValue;
+		}
 	}
 
-  private update(box: Rect, dims: BoxSizing, borderSize: number, showPadding: boolean, editText: boolean) {
+	public updateSize(box: Rect, dims: BoxSizing) {
+		this.update(box, dims, 2, false, false);
+	}
+
+	public hover(box: Rect, dims: BoxSizing) {
+		this.update(box, dims, 2, false, false);
+	}
+
+	public select(box: Rect, dims: BoxSizing) {
+		this.update(box, dims, 2, false, false);
+	}
+
+
+  	private update(box: Rect, dims: BoxSizing, borderSize: number, showPadding: boolean, editText: boolean) {
 		dims.borderBottom = borderSize;
 		dims.borderLeft = borderSize;
 		dims.borderRight = borderSize;
@@ -436,19 +476,121 @@ export class OverlayRect {
 			})
 		}
 
+		const initFullDrag = (dragWidth: boolean, dragHeight: boolean, reverseX: boolean, reverseY: boolean) => (e: MouseEvent) => {
+			const x = e.clientX;
+			const y = e.clientY;
+			const width = dragWidth ? box.width : -1;
+			const height = dragHeight ? box.height : -1;
+
+			this.onDrag && this.onDrag({x, y, height, width, lx: reverseX ? -1 : 1, ly: reverseY ? -1 : 1});
+		}
+
+
+		//NE -> SE -> SW -> NW
+		//E -> S -> W -> N
+		if (this.onDrag) {
+			Object.assign(this.resizeHandles[0].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'se-resize',
+				position: 'absolute',
+				top: `${-dims.borderTop}px`,
+				left: `${-dims.borderLeft}px`,
+			})
+			this.resizeHandles[0].addEventListener('mousedown', initFullDrag(true, true, true, true), false);
+
+			Object.assign(this.resizeHandles[1].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'ne-resize',
+				position: 'absolute',
+				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
+				left: `${-dims.borderLeft}px`,
+			})
+			this.resizeHandles[1].addEventListener('mousedown', initFullDrag(true, true, true, false), false);
+
+			Object.assign(this.resizeHandles[2].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'nw-resize',
+				position: 'absolute',
+				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
+				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
+			})
+			this.resizeHandles[2].addEventListener('mousedown', initFullDrag(true, true, false, false), false);
+
+			Object.assign(this.resizeHandles[3].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'sw-resize',
+				position: 'absolute',
+				top: `${-dims.borderTop}px`,
+				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
+			})
+			this.resizeHandles[3].addEventListener('mousedown', initFullDrag(true, true, false, true), false);
+
+			Object.assign(this.resizeHandles[4].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'e-resize',
+				position: 'absolute',
+				top: `${box.height / 2 - dims.borderTop}px`,
+				left: `${-dims.borderLeft}px`,
+			})
+			this.resizeHandles[4].addEventListener('mousedown', initFullDrag(true, false, true, false), false);
+
+			Object.assign(this.resizeHandles[5].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 's-resize',
+				position: 'absolute',
+				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
+				left: `${box.width / 2 - dims.borderLeft}px`,
+			})
+			this.resizeHandles[5].addEventListener('mousedown', initFullDrag(false, true, false, false), false);
+
+			Object.assign(this.resizeHandles[6].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'w-resize',
+				position: 'absolute',
+				top: `${box.height / 2 - dims.borderTop}px`,
+				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
+			})
+			this.resizeHandles[6].addEventListener('mousedown', initFullDrag(true, false, false, false), false);
+
+			Object.assign(this.resizeHandles[7].style, {
+				height: '6px',
+				width: '6px',
+				'pointer-events': 'auto',
+				cursor: 'n-resize',
+				position: 'absolute',
+				top: `${-dims.borderTop}px`,
+				left: `${box.width / 2 - dims.borderLeft}px`,
+			})
+			this.resizeHandles[7].addEventListener('mousedown', initFullDrag(false, true, false, true), false);
+		}
+
 		this.border.style.borderColor = overlayStyles.background
-    this.padding.style.borderColor = overlayStyles.padding
+    	this.padding.style.borderColor = overlayStyles.padding
 		this.node.style.borderColor = overlayStyles.margin;
 		if (!showPadding) {
 			this.node.style.borderColor = 'transparent';
 			this.padding.style.borderColor = 'transparent';
 		}
 
-    Object.assign(this.node.style, {
-      top: `${box.top - dims.marginTop - borderSize}px`,
-      left: `${box.left - dims.marginLeft - borderSize}px`,
-    })
-  }
+		Object.assign(this.node.style, {
+		top: `${box.top - dims.marginTop - borderSize}px`,
+		left: `${box.left - dims.marginLeft - borderSize}px`,
+		})
+	}
 }
 
 function boxWrap(dims: BoxSizing, what: 'margin' | 'padding' | 'border', node: HTMLElement) {

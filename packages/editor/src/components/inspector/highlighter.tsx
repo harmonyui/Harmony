@@ -36,7 +36,7 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container,
 		container?.addEventListener('click', onMouseEvent, {signal: controller.signal})
 		//container?.addEventListener('mousedown', onMouseEvent, {signal: controller.signal}) //This one handels the content editable
 		container?.addEventListener('mouseover', onMouseEvent, {signal: controller.signal})
-		container?.addEventListener('mouseup', onMouseEvent, {signal: controller.signal})
+		//container?.addEventListener('mouseup', onMouseEvent, {signal: controller.signal})
 		//container?.addEventListener('pointerdown', onMouseEvent, {signal: controller.signal})
 	});
 
