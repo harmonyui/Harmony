@@ -22,7 +22,7 @@ export type SelectMode = 'scope' | 'tweezer';
 export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
-	onAttributesChange: (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => void;
+	onAttributesChange: (component: ComponentElement, updates: ComponentUpdate, oldValue: string) => void;
 	onAttributesSave: () => void;
 	onAttributesCancel: () => void;
 	onComponentSelect: (component: HTMLElement) => void;
@@ -168,7 +168,7 @@ interface ToolbarPanelProps {
 	toggle: boolean;
 	onToggleChange: (toggle: boolean) => void;
 	selectedComponent: ComponentElement | undefined;
-	onChange: (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => void;
+	onChange: (component: ComponentElement, update: ComponentUpdate, oldValue: string) => void;
 	onSave: () => void;
 	onCancel: () => void;
 	isDirty: boolean;
@@ -184,13 +184,11 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		const componentId = selectedComponent.id;
 		const parentId = selectedComponent.parentId;
 
-		const updates: ComponentUpdate[] = [values].map(({name, value}) => ({componentId, parentId, type: 'className', action: 'add', name, value}));
+		const update: ComponentUpdate = {componentId, parentId, type: 'className', action: 'add', name: values.name, value: values.value};
 		const old = data.find(t => t.name === values.name);
 		if (!old) throw new Error("Cannot find old property");
-		const olds: ComponentUpdate[] = [old].map(({name, value}) => ({componentId, parentId, type: 'className', action: 'add', name, value}));
-		//selectedComponent.attributes = data.map(({name, value}) => ({type: 'className', action: 'add', name, value}));
 		
-		onChange(selectedComponent, updates, olds);
+		onChange(selectedComponent, update, old.value);
 	}
 
 	const onCancel = () => {

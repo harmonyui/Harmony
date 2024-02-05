@@ -264,15 +264,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const component = componentIdentifier.getComponentFromElement(selectedComponent);
 		if (!component) throw new Error("Error when getting component");
 
-		const oldValue = currEdits.get(selectedComponent)?.old.find(d => d.type === 'text')?.value || selectedComponentText;
 
-		// const textIndex = component.attributes.findIndex(attr => attr.id === 'text-0');
-		// const attr = component.attributes[textIndex];
-		// const copyAttrs = [...component.attributes];
-		// copyAttrs.splice(textIndex);
-
-
-		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value: oldValue || ''}]);
+		onAttributesChange(component, {componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}, selectedComponentText || '');
 	});
 
 	const onResize = useEffectEvent((size: ResizeValue) => {
@@ -292,27 +285,23 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 		const convertSizeToString = (size: ResizeValue): string => Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}:${direction}=${value}` : `${direction}=${value}`, '')
 
-		const value = convertSizeToString(size);//`width=${width}:height=${height}`;
-		const oldValue = currEdits.get(selectedComponent)?.old.find(d => d.type === 'className' && d.name === 'size')?.value || convertSizeToString(oldSize);
-
-		onAttributesChange(component, [{componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value}], [{componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value: oldValue}]);
+		const value = convertSizeToString(size);
+		
+		onAttributesChange(component, {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value}, convertSizeToString(oldSize));
 	})
 
-	const onAttributesChange = (component: ComponentElement, updates: ComponentUpdate[], old: ComponentUpdate[]) => {
+	const onAttributesChange = (component: ComponentElement, update: ComponentUpdate, oldValue: string) => {
 		if (selectedComponent === undefined) return;
-		// const copy = {...component};
-		// copy.attributes = attributes;
-		// const reverseUpdates = (_updates: ComponentUpdate[]): ComponentUpdate[] => {
-		// 	return _updates;
-		// }
-		// const old = reverseUpdates(updates);
+
+		oldValue = currEdits.get(selectedComponent)?.old.find(d => d.type === update.type && d.name === update.name)?.value || oldValue;
+
+		const old = [{...update, value: oldValue}];
+		const updates = [update];
 		const newCommand: HarmonyCommand = {
 			name: 'change',
 			component,
 			updates,
-			old
-			//oldValue: component.attributes
-
+			old,
 		}
 		componentUpdator.executeCommand(newCommand);
 
@@ -321,7 +310,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const newEdits = new Map(currEdits);
 		const curr = newEdits.get(component.element);
 		if (curr) {
-			newEdits.set(component.element, {...curr, updates});
+			const pastIndex = curr.updates.findIndex(({name, type}) => update.name === name && update.type === type);
+			if (pastIndex > -1) {
+				curr.updates[pastIndex] = update;
+				curr.old[pastIndex] = old[0];
+			} else {
+				curr.updates.push(update);
+				curr.old.push(old[0]);
+			}
 		} else {
 			newEdits.set(component.element, {component, name: 'change', old, updates})
 		}

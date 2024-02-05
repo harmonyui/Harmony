@@ -298,7 +298,7 @@ export interface BoxSizing {
 class Overlay {
 	window: Window
   	tipBoundsWindow: Window
-	rects: Map<'select' | 'hover', {rect: OverlayRect, element: HTMLElement, observer: ResizeObserver | undefined}>
+	rects: Map<'select' | 'hover', {rect: OverlayRect, element: HTMLElement, observer: ResizeObserver | undefined, aborter: AbortController}>
   
 	constructor(private container: HTMLElement, private parent: HTMLElement) {
 		// Find the root window, because overlays are positioned relative to it.
@@ -320,6 +320,7 @@ class Overlay {
 			this.rects.delete(method);
 			if (method === 'select') stuff.element.contentEditable = 'inherit';
 			stuff.observer?.disconnect();
+			stuff.aborter.abort();
 		}
 	}
 
@@ -353,12 +354,15 @@ class Overlay {
 	select(element: HTMLElement, listeners: {onTextChange?: (value: string) => void, onDrag?: (box: ResizeRect) => void}) {
 		this.inspect(element, 'select', listeners.onDrag);
 
+		const stuff = this.rects.get('select');
+		if (!stuff) throw new Error("What happend??");
+
 		if (listeners.onTextChange && Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE)) {
 			element.contentEditable = 'true';
 			element.addEventListener('input', (e) => {
 				const target = e.target as HTMLElement;
 				listeners.onTextChange && listeners.onTextChange(target.textContent || '');
-			})
+			}, {signal: stuff.aborter.signal});
 		}
 	}
 
@@ -390,7 +394,7 @@ class Overlay {
 	
 			mutationObserver.observe(element);
 		}
-		this.rects.set(method, {rect, element, observer: mutationObserver});
+		this.rects.set(method, {rect, element, observer: mutationObserver, aborter: new AbortController()});
 	}
 
 	getSizing(element: HTMLElement): [Rect, BoxSizing] {
