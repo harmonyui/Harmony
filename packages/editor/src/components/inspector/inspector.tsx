@@ -249,6 +249,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			onClick,
 			onHover,
 			onHold(element) {
+				element.draggable = true;
+				
 				return true;
 			}
 		},
@@ -294,11 +296,16 @@ export interface BoxSizing {
   marginLeft: number;
   marginRight: number;
 }
-
+interface InteractProps {
+	rect: OverlayRect, 
+	element: HTMLElement, 
+	observer: ResizeObserver | undefined, 
+	aborter: AbortController
+}
 class Overlay {
 	window: Window
   	tipBoundsWindow: Window
-	rects: Map<'select' | 'hover', {rect: OverlayRect, element: HTMLElement, observer: ResizeObserver | undefined, aborter: AbortController}>
+	rects: Map<'select' | 'hover', InteractProps>
   
 	constructor(private container: HTMLElement, private parent: HTMLElement) {
 		// Find the root window, because overlays are positioned relative to it.
@@ -321,6 +328,9 @@ class Overlay {
 			if (method === 'select') stuff.element.contentEditable = 'inherit';
 			stuff.observer?.disconnect();
 			stuff.aborter.abort();
+			if (stuff.element.draggable) {
+				stuff.element.draggable = false;
+			}
 		}
 	}
 
@@ -364,6 +374,8 @@ class Overlay {
 				listeners.onTextChange && listeners.onTextChange(target.textContent || '');
 			}, {signal: stuff.aborter.signal});
 		}
+
+		this.makeDraggable(stuff);
 	}
 
 	inspect(element: HTMLElement, method: 'select' | 'hover', onDrag?: (rect: ResizeRect) => void) {
@@ -398,13 +410,13 @@ class Overlay {
 	}
 
 	getSizing(element: HTMLElement): [Rect, BoxSizing] {
-    const outerBox = {
-      top: Number.POSITIVE_INFINITY,
-      right: Number.NEGATIVE_INFINITY,
-      bottom: Number.NEGATIVE_INFINITY,
-      left: Number.POSITIVE_INFINITY,
-    }
-    const box = getNestedBoundingClientRect(element, this.parent)
+		const outerBox = {
+		top: Number.POSITIVE_INFINITY,
+		right: Number.NEGATIVE_INFINITY,
+		bottom: Number.NEGATIVE_INFINITY,
+		left: Number.POSITIVE_INFINITY,
+		}
+		const box = getNestedBoundingClientRect(element, this.parent)
 		const dims = getElementDimensions(element)
 
 		outerBox.top = Math.min(outerBox.top, box.top - dims.marginTop)
@@ -419,7 +431,64 @@ class Overlay {
 		outerBox.left = Math.min(outerBox.left, box.left - dims.marginLeft)
 
 		return [box, dims];
-  }
+  	}
+
+  	private makeDraggable({element, aborter, rect}: InteractProps): void {
+		//element.draggable = true;
+
+		const onDragOver = (event: DragEvent) => {
+			event.preventDefault();
+		}
+
+		const onDragEnter = (event: DragEvent) => {
+			const draggedElement = document.querySelector('.dragging');
+			if (draggedElement && event.target instanceof HTMLElement && event.target.parentElement === draggedElement.parentElement) {
+				const boundingRect = event.target.getBoundingClientRect();
+				const midY = boundingRect.top + boundingRect.height / 2;
+
+				if (event.clientY < midY) {
+					// Place dragged element before the current target
+					event.target.parentElement!.insertBefore(draggedElement, event.target);
+				} else {
+					// Place dragged element after the current target
+					event.target.parentElement!.insertBefore(draggedElement, event.target.nextSibling);
+				}
+				console.log("drag!");
+				const [box, dims] = this.getSizing(element);
+				rect.updateSize(box, dims);
+				this.remove('hover');
+			} else {
+				console.log("No drag");
+			}
+		}
+
+		element.addEventListener('dragstart', (event) => {
+			event.dataTransfer!.setData('text/plain', ''); // Required for Firefox
+      		event.target!.classList.add('dragging');
+
+			const parent = event.target instanceof HTMLElement ? event.target.parentElement : null;
+
+			if (!parent) return;
+
+			for (const sibling of parent.children) {
+				if (sibling !== element) {
+					(sibling as HTMLElement).addEventListener('dragover', onDragEnter, {signal: aborter.signal});
+					(sibling as HTMLElement).addEventListener('dragenter', onDragEnter, {signal: aborter.signal});
+				}
+			}
+		}, {signal: aborter.signal});
+
+		element.addEventListener('dragover', onDragOver, {signal: aborter.signal});
+
+		element.addEventListener('dragenter', onDragEnter, {signal: aborter.signal});
+
+		element.addEventListener('dragend', () => {
+			const draggedElement = document.querySelector('.dragging');
+			if (draggedElement) {
+				draggedElement.classList.remove('dragging');
+			}
+		}, {signal: aborter.signal});
+	}
 }
 
 const overlayStyles = {
@@ -429,6 +498,7 @@ const overlayStyles = {
   margin: 'rgba(255, 155, 0, 0.3)',
   border: 'rgba(255, 200, 50, 0.3)',
 }
+type DraggableElement = HTMLElement & { originalIndex: number };
 
 export class OverlayRect {
 	node: HTMLElement
@@ -464,6 +534,7 @@ export class OverlayRect {
 		this.border.appendChild(this.padding)
 		this.padding.appendChild(this.content)
 		for (const handle of this.resizeHandles) {
+			handle.dataset.nonSelectable = 'true'; //TODO: find a better way to have this pass the isInteractable method so that the element does not deselect when we select a handle.
 			this.content.appendChild(handle);
 		}
 
@@ -492,7 +563,6 @@ export class OverlayRect {
 	public select(box: Rect, dims: BoxSizing) {
 		this.update(box, dims, 2, false, false);
 	}
-
 
   	private update(box: Rect, dims: BoxSizing, borderSize: number, showPadding: boolean, editText: boolean) {
 		dims.borderBottom = borderSize;
@@ -720,3 +790,66 @@ export function getElementDimensions(domElement: Element) {
     paddingBottom: Number.parseInt(calculatedStyle.paddingBottom, 10),
   }
 }
+
+const useDraggable = ({ elementId }: DraggableProps) => {
+	const [isDragging, setIsDragging] = useState(false);
+  
+	useEffect(() => {
+	  const element = document.getElementById(elementId);
+  
+	  if (!element) {
+		console.error(`Element with ID ${elementId} not found.`);
+		return;
+	  }
+  
+	  const handleDragStart = (e: DragEvent) => {
+		setIsDragging(true);
+		e.dataTransfer!.setData('text/plain', ''); // Required for Firefox
+		e.target!.classList.add('dragging');
+	  };
+  
+	  const handleDragOver = (e: DragEvent) => {
+		e.preventDefault();
+	  };
+  
+	  const handleDragEnter = (e: DragEvent) => {
+		if (isDragging) {
+		  const draggedElement = document.querySelector('.dragging');
+		  if (draggedElement && e.target instanceof HTMLElement && !e.target.contains(draggedElement)) {
+			const rect = e.target.getBoundingClientRect();
+			const midY = rect.top + rect.height / 2;
+  
+			if (e.clientY < midY) {
+			  // Place dragged element before the current target
+			  e.target.parentElement!.insertBefore(draggedElement, e.target);
+			} else {
+			  // Place dragged element after the current target
+			  e.target.parentElement!.insertBefore(draggedElement, e.target.nextSibling);
+			}
+		  }
+		}
+	  };
+  
+	  const handleDragEnd = () => {
+		setIsDragging(false);
+		const draggedElement = document.querySelector('.dragging');
+		if (draggedElement) {
+		  draggedElement.classList.remove('dragging');
+		}
+	  };
+  
+	  element.addEventListener('dragstart', handleDragStart);
+	  element.addEventListener('dragover', handleDragOver);
+	  element.addEventListener('dragenter', handleDragEnter);
+	  element.addEventListener('dragend', handleDragEnd);
+  
+	  return () => {
+		element.removeEventListener('dragstart', handleDragStart);
+		element.removeEventListener('dragover', handleDragOver);
+		element.removeEventListener('dragenter', handleDragEnter);
+		element.removeEventListener('dragend', handleDragEnd);
+	  };
+	}, [elementId, isDragging]);
+  
+	return { isDragging };
+  };

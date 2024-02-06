@@ -2,7 +2,7 @@
 
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import { getEventListeners } from "events";
-import { useCallback, useEffect } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 let controller = new AbortController();
 
@@ -18,6 +18,9 @@ export interface HighlighterProps {
 	noEvents: HTMLElement[];
 }
 export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container, noEvents}: HighlighterProps) => {
+	const timeoutRef = useRef<NodeJS.Timeout>();
+	//const [isHolding, setIsHolding] = useState(false);
+	const isHoldingRef = useRef(false);
 	const registerListeners = useEffectEvent((): void => {
 		controller = new AbortController();
 		// const elements = window.document.body.querySelectorAll('*');
@@ -37,7 +40,7 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container,
 		//container?.addEventListener('mousedown', onMouseEvent, {signal: controller.signal}) //This one handels the content editable
 		container?.addEventListener('mouseover', onMouseEvent, {signal: controller.signal})
 		//container?.addEventListener('mouseup', onMouseEvent, {signal: controller.signal})
-		//container?.addEventListener('pointerdown', onMouseEvent, {signal: controller.signal})
+		container?.addEventListener('pointerdown', onPointerDown, {signal: controller.signal})
 	});
 
 	const removeListeners = useEffectEvent((): void => {
@@ -54,18 +57,31 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container,
 	useEffect(() => {
 		registerListeners();
 
-		return () => removeListeners();
+		return () => {
+			removeListeners();
+			clearTimeout(timeoutRef.current);
+			//setIsHolding(false);
+			isHoldingRef.current = false;
+		}
 	}, [registerListeners, removeListeners, container]);
 
-	const highligherDispatcher = (dispatch: HighlighterDispatch) => (event: MouseEvent) => {
+	const highligherDispatcher = (dispatch: HighlighterDispatch, finish?: HighlighterDispatch) => useEffectEvent((event: MouseEvent) => {
 		let target = event.target as HTMLElement | null;
-		if (noEvents.some(no => no.contains(target))) return;
-		event.preventDefault();
-		event.stopPropagation();
+		if (noEvents.some(no => no.contains(target)) || target?.dataset.nonSelectable === 'true') return;
+		if (!isHoldingRef.current) {
+			// event.preventDefault();
+			// event.stopPropagation();
+			// console.log('Not holding');
+		} else {
+			//console.log('Holding');
+		}
 		while (target !== null && !dispatch(target)) {
 			target = target.parentElement;
 		}
-	}
+
+		finish && target !== null && finish(target);
+	
+	});
 
 	//Disables the event
 	const onMouseEvent = (event: MouseEvent): void => {
@@ -75,6 +91,20 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container,
 		event.stopPropagation();
 	}
 
-	const onPointerUp = highligherDispatcher(onClick);
+	//const onPointerUp = highligherDispatcher(onClick);
+	const onPointerUp = () => {
+		clearTimeout(timeoutRef.current);
+		//setIsHolding(false);
+		isHoldingRef.current = false;
+	}
 	const onPointerOver = highligherDispatcher(onHover);
+	const onPointerDown = highligherDispatcher(onClick, useEffectEvent((element: HTMLElement) => {
+		timeoutRef.current = setTimeout(() => {
+			//setIsHolding(true);
+			isHoldingRef.current = true;
+			onHold(element);
+		}, 500);
+
+		return false;
+	}));
 }
