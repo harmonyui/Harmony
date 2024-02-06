@@ -133,8 +133,9 @@ export interface InspectorProps {
 	mode: SelectMode;
 	onResize: (size: ResizeValue) => void;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
+	updateOverlay: number;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onResize, onReorder, rootElement, parentElement, mode}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onResize, onReorder, rootElement, parentElement, mode, updateOverlay}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
@@ -176,6 +177,22 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		
 		onReorder({from, to, element})
 	}});
+
+	useEffect(() => {
+		const container = containerRef.current;
+		if (container === null || parentElement === undefined) return;
+		
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container, parentElement);
+		}
+
+		if (selectedComponent) {
+			overlayRef.current.select(selectedComponent, {onDrag});
+		} else {
+			overlayRef.current.remove('select');
+		}
+		overlayRef.current.remove('hover');
+	}, [updateOverlay]);
 
 	useEffect(() => {
 		const onEscape = () => {

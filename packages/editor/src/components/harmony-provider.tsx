@@ -132,13 +132,16 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const harmonyContainerRef = useRef<HTMLDivElement>(null);
 	//const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
 	const [mode, setMode] = useState<SelectMode>('tweezer');
-	const [currEdits, setCurrEdits] = useState<HarmonyCommandChange[]>([]);
 	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>([]);
 	const [branches, setBranches] = useState<{id: string, name: string}[]>([]);
 	const [branchId, _setBranchId] = useState<string>();
 	const [scale, _setScale] = useState(1);
 	const [isDirty, setIsDirty] = useState(false);
-	const [editTimeout, setEditTimeout] = useState<number>(new Date().getTime());
+	const [updateOverlay, setUpdateOverlay] = useState(0);
+	
+	const executeCommand = useComponentUpdator({onChange() {
+		setUpdateOverlay(updateOverlay + 1);
+	}});
 
 	// const assignIds = useCallback((element: HTMLElement): void => {
 	// 	const elementName = element.tagName.toLowerCase();
@@ -201,9 +204,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	});
 
 	useEffect(() => {
-		
 		hotkeys('ctrl+option+h,command+option+h', onToggle);
-
+		
 		return () => hotkeys.unbind('esc', onToggle);
 	}, []);
 
@@ -302,24 +304,117 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const value = `from=${from}:to=${to}`
 		const oldValue = `from=${to}:to=${from}`;
 		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value};
-		// const old = currEdits.get(element)?.old.find(d => d.type === update.type && d.name === update.name);
-		// if (old) {
-		// 	const match = /^from=(\d+):to=(\d+)$/.exec(old.value);
-		// 	if (!match) throw new Error("Invalid reorder value regex");
-
-		// 	old.value = `from=${}`
-		// }
-
+		
 		onAttributesChange(component, update, oldValue, false);
 	})
 
 	const onAttributesChange = (component: ComponentElement, update: ComponentUpdate, oldValue: string, execute=true) => {
-		if (selectedComponent === undefined) return;
+		executeCommand(component, update, oldValue, execute);
+		
+		//if (selectedComponent === undefined) return;
 
-		//oldValue = currEdits.get(selectedComponent)?.old.find(d => d.type === update.type && d.name === update.name)?.value || oldValue;
+		// const old = {...update, value: oldValue};
+		// const newCommand: HarmonyCommand = {
+		// 	name: 'change',
+		// 	update,
+		// 	old,
+		// }
+		// //TODO: find a better way to do this
+		// if (execute)
+		// 	componentUpdator.executeCommand(newCommand);
 
+		// if (component.element === undefined) return;
+
+		// const newEdits = undoStack.slice();
+		// const lastEdit = newEdits[newEdits.length - 1];
+		// const isSameCommandType = newCommand.update.type === lastEdit?.update.type && newCommand.update.name === lastEdit?.update.name && newCommand.update.componentId === lastEdit?.update.componentId && newCommand.update.parentId === lastEdit?.update.parentId;
+
+		// const currTime = new Date().getTime();
+		// if (editTimeout < currTime || !isSameCommandType) {
+		// 	newEdits.push(newCommand);
+		// 	const newTime = currTime + 1000;
+		// 	setEditTimeout(newTime);
+		// 	console.log(`curr: ${currTime}, timeout: ${editTimeout}, new: ${newTime}`);
+		// } else {
+		// 	//TODO: Get rid of type = 'component' dependency
+		// 	if (newEdits.length && newCommand.update.type !== 'component') {
+		// 		newCommand.old.value = lastEdit.old.value;
+		// 		newEdits[newEdits.length - 1] = newCommand;
+		// 	} else {
+		// 		newEdits.push(newCommand);
+		// 	}
+		// }
+		
+		// setUndoStack(newEdits);
+		// setIsDirty(true);
+	}
+
+	// const onAttributesSave = (): void => {
+	// 	if (branchId === undefined) {
+	// 		alert('Please select a branch before saving');
+	// 		return;
+	// 	};
+		
+	// 	componentUpdator.executeCommands(currEdits, {branchId, repositoryId});
+	// 	setCurrEdits([]);
+	// 	setIsDirty(false);
+	// }
+
+	// const onAttributesCancel = (): void => {
+	// 	const commands: HarmonyCommand[] = [];
+	// 	//TODO: Make this into a stack
+	// 	for (let i = currEdits.length - 1; i >= 0; i--) {
+	// 		const command = currEdits[i];
+	// 		commands.push({name: 'change', update: command.old, old: command.update })
+	// 	}
+		
+	// 	componentUpdator.executeCommands(commands);
+	// 	setCurrEdits([]);
+	// 	setIsDirty(false);
+	// 	setSelectedComponent(undefined);
+	// 	setHoveredComponent(undefined);
+	// }
+
+	const setSelectedComponent = (component: HTMLElement | undefined): void => {
+		_setSelectedComponent(component);
+		selectedComponent !== component && setSelectedComponentText(component?.textContent || '');
+	}
+
+	return (
+		<>
+			{/* <div ref={harmonyContainerRef}> */}
+				{<>
+					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
+					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
+						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
+						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onResize={onResize} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay}/> : null}	
+						</div>
+					</div>
+					</HarmonyPanel>
+				</>}
+			{/* </div> */}
+		</>
+	)
+}
+
+interface HarmonyCommandChange {
+	name: 'change',
+	update: ComponentUpdate,
+	old: ComponentUpdate
+	//oldValue: Attribute[]
+}
+type HarmonyCommand = HarmonyCommandChange;
+
+interface ComponentUpdatorProps {
+	onChange?: () => void;
+}
+const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
+	const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([]);
+	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
+	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
+
+	const executeCommand = (component: ComponentElement, update: ComponentUpdate, oldValue: string, execute=true): void => {
 		const old = {...update, value: oldValue};
-		//const updates = [update];
 		const newCommand: HarmonyCommand = {
 			name: 'change',
 			update,
@@ -327,28 +422,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 		//TODO: find a better way to do this
 		if (execute)
-			componentUpdator.executeCommand(newCommand);
+			change(newCommand);
 
 		if (component.element === undefined) return;
 
-		// const newEdits = new Map(currEdits);
-		// const curr = newEdits.get(component.element);
-		// if (curr) {
-		// 	const pastIndex = curr.updates.findIndex(({name, type}) => update.name === name && update.type === type);
-		// 	//Replace the old value unless this is a component update, we need all the logs to make the reverse
-		// 	//TODO: don't do it this way, just keep track of everything and reverse in the right order
-		// 	if (pastIndex > -1 && update.type !== 'component') {
-		// 		curr.updates[pastIndex] = update;
-		// 		curr.old[pastIndex] = old;
-		// 	} else {
-		// 		curr.updates.push(update);
-		// 		curr.old.push(old);
-		// 	}
-		// } else {
-		// 	newEdits.set(component.element, {component, name: 'change', old: [old], updates})
-		// }
-
-		const newEdits = currEdits.slice();
+		const newEdits = undoStack.slice();
 		const lastEdit = newEdits[newEdits.length - 1];
 		const isSameCommandType = newCommand.update.type === lastEdit?.update.type && newCommand.update.name === lastEdit?.update.name && newCommand.update.componentId === lastEdit?.update.componentId && newCommand.update.parentId === lastEdit?.update.parentId;
 
@@ -367,107 +445,56 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				newEdits.push(newCommand);
 			}
 		}
-		
-		setCurrEdits(newEdits);
-		setIsDirty(true);
+		setUndoStack(newEdits);
+		setRedoStack([]);
 	}
 
-	const onAttributesSave = (): void => {
-		if (branchId === undefined) {
-			alert('Please select a branch before saving');
-			return;
-		};
-		
-		componentUpdator.executeCommands(currEdits, {branchId, repositoryId});
-		setCurrEdits([]);
-		setIsDirty(false);
-	}
-
-	const onAttributesCancel = (): void => {
-		const commands: HarmonyCommand[] = [];
-		//TODO: Make this into a stack
-		for (let i = currEdits.length - 1; i >= 0; i--) {
-			const command = currEdits[i];
-			commands.push({name: 'change', update: command.old, old: command.update })
-		}
-		
-		componentUpdator.executeCommands(commands);
-		setCurrEdits([]);
-		setIsDirty(false);
-		setSelectedComponent(undefined);
-		setHoveredComponent(undefined);
-	}
-
-	const setSelectedComponent = (component: HTMLElement | undefined): void => {
-		_setSelectedComponent(component);
-		selectedComponent !== component && setSelectedComponentText(component?.textContent || '');
-	}
-
-	return (
-		<>
-			{/* <div ref={harmonyContainerRef}> */}
-				{<>
-					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
-					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
-						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
-						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onResize={onResize} onReorder={onReorder} mode={mode}/> : null}	
-						</div>
-					</div>
-					</HarmonyPanel>
-				</>}
-			{/* </div> */}
-		</>
-	)
-}
-
-interface HarmonyCommandChange {
-	name: 'change',
-	update: ComponentUpdate,
-	old: ComponentUpdate
-	//oldValue: Attribute[]
-}
-type HarmonyCommand = HarmonyCommandChange;
-
-
-class ComponentUpdator {
-	constructor(private attributeTranslator: AttributeTranslator) {}
-
-	public executeCommand(command: HarmonyCommand, save: false | {branchId: string, repositoryId: string}=false): void {
-		if (save) {
-			this.saveCommand([command], save);
-		} else {
-			this[command.name](command);
-		}
-	}
-
-	public executeCommands(commands: HarmonyCommand[], save: false | {branchId: string, repositoryId: string}=false): void {
-		if (save) {
-			this.saveCommand(commands, save);
-		} else {
-			commands.forEach(command => this.executeCommand(command, save));
-		}
-		
-	}
-
-	private saveCommand(commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}): void {
-		const cmds = commands.map(cmd => ({update: cmd.update, old: cmd.old}))
-		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId};
-		fetch(`${WEB_URL}/api/update/${save.branchId}`, {
-			method: 'POST',
-			// headers: {
-			// 	'Accept': 'application/json',
-			// 	'Content-Type': 'application/json'
-			// },
-			body: JSON.stringify(data)
-		});
-	}
-
-	private change({update, old}: HarmonyCommandChange): void {
+	const change = ({update, old}: HarmonyCommandChange): void => {
 		const element = findElementFromId(update.componentId, update.parentId);
 		if (element === undefined) return;
 		
 		makeUpdates(element, [update]);
+		onChange && onChange();
 	}
+
+	const changeStack = (from: [HarmonyCommandChange[], React.Dispatch<React.SetStateAction<HarmonyCommandChange[]>>], to: [HarmonyCommandChange[], React.Dispatch<React.SetStateAction<HarmonyCommandChange[]>>]) => {
+		const [fromValue, fromSet] = from;
+		const [toValue, toSet] = to;
+
+		if (fromValue.length === 0) return;
+		const lastEdit = fromValue[fromValue.length - 1];
+		const newEdit: HarmonyCommand = {name: 'change', update: lastEdit.old, old: lastEdit.update};
+		change(newEdit);
+		const newFrom = fromValue.slice();
+		newFrom.splice(newFrom.length - 1);
+
+		const newTo = toValue.slice();
+		newTo.push(newEdit);
+		fromSet(newFrom);
+		toSet(newTo);
+	}
+
+	const onUndo = useEffectEvent(() => {
+		changeStack([undoStack, setUndoStack], [redoStack, setRedoStack]);
+	});
+
+	const onRedo = useEffectEvent(() => {
+		changeStack([redoStack, setRedoStack], [undoStack, setUndoStack]);
+	});
+
+	useEffect(() => {
+		
+		hotkeys('ctrl+z, command+z', onUndo);
+		hotkeys('ctrl+shift+z, command+shift+z', onRedo);
+
+		return () => {
+			hotkeys.unbind('ctrl+z, command+z', onUndo);
+			hotkeys.unbind('ctrl+shift+z, command+shift+z', onRedo);
+		}
+	}, []);
+
+
+	return executeCommand;
 }
 
 function makeUpdates(el: HTMLElement, updates: ComponentUpdate[]) {
@@ -649,7 +676,7 @@ const reverse = (records: Record<string, string>): Record<string, string> => {
 	return Object.entries(records).reduce((prev, [key, value]) => ({...prev, [value]: key}), {});
 }
 
-const componentUpdator = new ComponentUpdator(TailwindAttributeTranslator);
+//const componentUpdator = new ComponentUpdator(TailwindAttributeTranslator);
 
 
 class Stack<T> {

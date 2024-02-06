@@ -23,8 +23,6 @@ export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
 	onAttributesChange: (component: ComponentElement, updates: ComponentUpdate, oldValue: string) => void;
-	onAttributesSave: () => void;
-	onAttributesCancel: () => void;
 	onComponentSelect: (component: HTMLElement) => void;
 	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
@@ -40,7 +38,7 @@ export interface HarmonyPanelProps {
 	branches: {id: string, name: string}[];
 	onBranchChange: (id: string) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, onAttributesSave, onAttributesCancel, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches, onBranchChange}) => {
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches, onBranchChange}) => {
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
 	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
 
@@ -53,7 +51,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 			</div>
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
 				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
-					<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} onCancel={onAttributesCancel} onSave={onAttributesSave} isDirty={isDirty} branchId={branchId} branches={branches} onBranchChange={onBranchChange}/>
+					<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches} onBranchChange={onBranchChange}/>
 				</div>
 				<div className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
 					{children}
@@ -169,14 +167,12 @@ interface ToolbarPanelProps {
 	onToggleChange: (toggle: boolean) => void;
 	selectedComponent: ComponentElement | undefined;
 	onChange: (component: ComponentElement, update: ComponentUpdate, oldValue: string) => void;
-	onSave: () => void;
-	onCancel: () => void;
 	isDirty: boolean;
 	branchId: string | undefined;
 	branches: {id: string, name: string}[];
 	onBranchChange: (id: string) => void;
 }
-const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, onSave: onSaveProps, onCancel: onCancelProps, isDirty, branchId, branches, onBranchChange}) => {
+const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, isDirty, branchId, branches, onBranchChange}) => {
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
 	const currBranch = branches.find(b => b.id === branchId);
 	const changeData = (values: ComponentToolData<typeof textTools>) => {
@@ -189,14 +185,6 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		if (!old) throw new Error("Cannot find old property");
 		
 		onChange(selectedComponent, update, old.value);
-	}
-
-	const onCancel = () => {
-		onCancelProps();
-	}
-
-	const onSave = () => {
-		onSaveProps();
 	}
 
 	return (
@@ -213,10 +201,10 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 					<Button mode="secondary">Behavior</Button>
 				</div>
 			</> : null}
-			{isDirty ? <div className="hw-flex hw-gap-2 hw-px-4">
+			{/* {isDirty ? <div className="hw-flex hw-gap-2 hw-px-4">
 				<Button onClick={onCancel} mode="secondary">Cancel</Button>
 				<Button onClick={onSave}>Save</Button>
-			</div> : null}
+			</div> : null} */}
 			<div className="hw-ml-auto" style={{borderLeft: '0px'}}>
 				<ToggleSwitch value={toggle} onChange={onToggleChange} label="Designer Mode"/>
 			</div>
