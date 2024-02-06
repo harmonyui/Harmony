@@ -103,7 +103,7 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container,
 			//setIsHolding(true);
 			isHoldingRef.current = true;
 			onHold(element);
-		}, 500);
+		}, 100);
 
 		return false;
 	}));

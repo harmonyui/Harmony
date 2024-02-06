@@ -107,6 +107,21 @@ const useResize = ({onIsDragging, onDragFinish}: ResizeProps) => {
 	return {onDrag, isDragging};
 }
 
+function selectDraggableElement(element: HTMLElement) {
+	let target = element;
+	const isSelectable = (element: HTMLElement | null): element is HTMLElement => {
+		if (!element) return false;
+	
+		return element.children.length === 1 && ['Bottom', 'Top', 'Left', 'Right'].every(d => parseFloat($(element).css(`padding${d}`)) === 0);
+	}
+
+	while(isSelectable(target.parentElement)) {
+		target = target.parentElement;
+	}
+
+	return target;
+}
+
 export interface InspectorProps {
 	hoveredComponent: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
@@ -137,8 +152,24 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		onResize(rect);
-	}, onDragFinish(rect) {
-		
+	}});
+
+	const {makeDraggable} = useDraggable({onIsDragging() {
+		const container = containerRef.current;
+		if (container === null || parentElement === undefined) return;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container, parentElement);
+		}
+
+		if (selectedComponent) {
+			overlayRef.current.select(selectedComponent, {onDrag});
+		} else {
+			overlayRef.current.remove('select');
+		}
+	}, onDragEnd(element, aborter) {
+		aborter.abort();
+		element.draggable = false;
 	}});
 
 	useEffect(() => {
@@ -243,16 +274,23 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		onSelect(element);
 		
 		return true;
-	})
+	});
+
+	const onHold = useEffectEvent((element: HTMLElement) => {
+		const target = selectDraggableElement(element);
+
+		target.draggable = true;
+		makeDraggable(target, new AbortController());
+		overlayRef.current?.remove('hover');
+
+		return true;
+	});
+
 	useHighlighter({
 		handlers: {
 			onClick,
 			onHover,
-			onHold(element) {
-				element.draggable = true;
-				
-				return true;
-			}
+			onHold,
 		},
 		container: rootElement,
 		noEvents: []
@@ -375,7 +413,7 @@ class Overlay {
 			}, {signal: stuff.aborter.signal});
 		}
 
-		this.makeDraggable(stuff);
+		//this.makeDraggable(stuff);
 	}
 
 	inspect(element: HTMLElement, method: 'select' | 'hover', onDrag?: (rect: ResizeRect) => void) {
@@ -432,63 +470,6 @@ class Overlay {
 
 		return [box, dims];
   	}
-
-  	private makeDraggable({element, aborter, rect}: InteractProps): void {
-		//element.draggable = true;
-
-		const onDragOver = (event: DragEvent) => {
-			event.preventDefault();
-		}
-
-		const onDragEnter = (event: DragEvent) => {
-			const draggedElement = document.querySelector('.dragging');
-			if (draggedElement && event.target instanceof HTMLElement && event.target.parentElement === draggedElement.parentElement) {
-				const boundingRect = event.target.getBoundingClientRect();
-				const midY = boundingRect.top + boundingRect.height / 2;
-
-				if (event.clientY < midY) {
-					// Place dragged element before the current target
-					event.target.parentElement!.insertBefore(draggedElement, event.target);
-				} else {
-					// Place dragged element after the current target
-					event.target.parentElement!.insertBefore(draggedElement, event.target.nextSibling);
-				}
-				console.log("drag!");
-				const [box, dims] = this.getSizing(element);
-				rect.updateSize(box, dims);
-				this.remove('hover');
-			} else {
-				console.log("No drag");
-			}
-		}
-
-		element.addEventListener('dragstart', (event) => {
-			event.dataTransfer!.setData('text/plain', ''); // Required for Firefox
-      		event.target!.classList.add('dragging');
-
-			const parent = event.target instanceof HTMLElement ? event.target.parentElement : null;
-
-			if (!parent) return;
-
-			for (const sibling of parent.children) {
-				if (sibling !== element) {
-					(sibling as HTMLElement).addEventListener('dragover', onDragEnter, {signal: aborter.signal});
-					(sibling as HTMLElement).addEventListener('dragenter', onDragEnter, {signal: aborter.signal});
-				}
-			}
-		}, {signal: aborter.signal});
-
-		element.addEventListener('dragover', onDragOver, {signal: aborter.signal});
-
-		element.addEventListener('dragenter', onDragEnter, {signal: aborter.signal});
-
-		element.addEventListener('dragend', () => {
-			const draggedElement = document.querySelector('.dragging');
-			if (draggedElement) {
-				draggedElement.classList.remove('dragging');
-			}
-		}, {signal: aborter.signal});
-	}
 }
 
 const overlayStyles = {
@@ -791,65 +772,71 @@ export function getElementDimensions(domElement: Element) {
   }
 }
 
-const useDraggable = ({ elementId }: DraggableProps) => {
+interface DraggableProps {
+	onDragEnd?: (element: HTMLElement, aborter: AbortController) => void;
+	onIsDragging?: () => void;
+}
+const useDraggable = ({ onDragEnd, onIsDragging }: DraggableProps) => {
 	const [isDragging, setIsDragging] = useState(false);
   
-	useEffect(() => {
-	  const element = document.getElementById(elementId);
-  
-	  if (!element) {
-		console.error(`Element with ID ${elementId} not found.`);
-		return;
-	  }
-  
-	  const handleDragStart = (e: DragEvent) => {
-		setIsDragging(true);
-		e.dataTransfer!.setData('text/plain', ''); // Required for Firefox
-		e.target!.classList.add('dragging');
-	  };
-  
-	  const handleDragOver = (e: DragEvent) => {
-		e.preventDefault();
-	  };
-  
-	  const handleDragEnter = (e: DragEvent) => {
-		if (isDragging) {
-		  const draggedElement = document.querySelector('.dragging');
-		  if (draggedElement && e.target instanceof HTMLElement && !e.target.contains(draggedElement)) {
-			const rect = e.target.getBoundingClientRect();
-			const midY = rect.top + rect.height / 2;
-  
-			if (e.clientY < midY) {
-			  // Place dragged element before the current target
-			  e.target.parentElement!.insertBefore(draggedElement, e.target);
+	const makeDraggable = (element: HTMLElement, aborter: AbortController): void => {
+		//element.draggable = true;
+	
+		const onDragOver = (event: DragEvent) => {
+			//event.preventDefault();
+			onDragEnter(event);
+		}
+	
+		const onDragEnter = (event: DragEvent) => {
+			const draggedElement = document.querySelector('.dragging');
+			const target = selectDraggableElement(event.target as HTMLElement);
+			if (draggedElement && target.parentElement === draggedElement.parentElement) {
+				const boundingRect = target.getBoundingClientRect();
+				const midY = boundingRect.top + boundingRect.height / 2;
+	
+				if (event.clientY < midY) {
+					// Place dragged element before the current target
+					target.parentElement!.insertBefore(draggedElement, target);
+				} else {
+					// Place dragged element after the current target
+					target.parentElement!.insertBefore(draggedElement, target.nextSibling);
+				}
+				onIsDragging && onIsDragging();
 			} else {
-			  // Place dragged element after the current target
-			  e.target.parentElement!.insertBefore(draggedElement, e.target.nextSibling);
 			}
-		  }
 		}
-	  };
+	
+		element.addEventListener('dragstart', (event) => {
+			event.dataTransfer!.setData('text/plain', ''); // Required for Firefox
+			event.target!.classList.add('dragging');
+	
+			const parent = event.target instanceof HTMLElement ? event.target.parentElement : null;
+	
+			if (!parent) return;
+	
+			for (const sibling of parent.children) {
+				if (sibling !== element) {
+					(sibling as HTMLElement).addEventListener('dragover', onDragOver, {signal: aborter.signal});
+					(sibling as HTMLElement).addEventListener('dragenter', onDragEnter, {signal: aborter.signal});
+				}
+			}
+
+			setIsDragging(true);
+		}, {signal: aborter.signal});
+	
+		element.addEventListener('dragover', onDragOver, {signal: aborter.signal});
+	
+		element.addEventListener('dragenter', onDragEnter, {signal: aborter.signal});
+	
+		element.addEventListener('dragend', () => {
+			const draggedElement = document.querySelector('.dragging');
+			if (draggedElement) {
+				draggedElement.classList.remove('dragging');
+				setIsDragging(false);
+				onDragEnd && onDragEnd(element, aborter);
+			}
+		}, {signal: aborter.signal});
+	}
   
-	  const handleDragEnd = () => {
-		setIsDragging(false);
-		const draggedElement = document.querySelector('.dragging');
-		if (draggedElement) {
-		  draggedElement.classList.remove('dragging');
-		}
-	  };
-  
-	  element.addEventListener('dragstart', handleDragStart);
-	  element.addEventListener('dragover', handleDragOver);
-	  element.addEventListener('dragenter', handleDragEnter);
-	  element.addEventListener('dragend', handleDragEnd);
-  
-	  return () => {
-		element.removeEventListener('dragstart', handleDragStart);
-		element.removeEventListener('dragover', handleDragOver);
-		element.removeEventListener('dragenter', handleDragEnter);
-		element.removeEventListener('dragend', handleDragEnd);
-	  };
-	}, [elementId, isDragging]);
-  
-	return { isDragging };
+	return { isDragging, makeDraggable };
   };
