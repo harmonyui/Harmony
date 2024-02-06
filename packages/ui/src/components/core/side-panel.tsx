@@ -258,13 +258,3 @@ const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: 
 		</li>
 	)
 }
-
-
-{/* <ul>
-  <li>
-    <a>An element</a>
-  </li>
-  <li>
-    <a>Another element</a>
-  </li>
-</ul> */}

@@ -39,7 +39,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	}
 	const body = updateRequestBodySchema.parse(await req.json());
 
-	const updates = body.commands.map(f => f.updates.map((update, j) => ({
+	const updates = body.values.map(({update, old}) => ({
 		component_id: update.componentId,
 		parent_id: update.parentId,
 		action: update.action,
@@ -47,8 +47,8 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 		name: update.name,
 		value: update.value,
 		branch_id: branchId,
-		old_value: f.old[j].value
-	}))).flat();
+		old_value: old.value
+	}));
 
 	await prisma.componentUpdate.createMany({
 		data: updates.map(up => ({

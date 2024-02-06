@@ -2,11 +2,9 @@ import { z } from "zod";
 import { updateSchema } from "./component";
 
 export const updateRequestBodySchema = z.object({
-	commands: z.array(z.object({
-		id: z.string(),
-		parentId: z.string(),
-		old: z.array(updateSchema),
-		updates: z.array(updateSchema),
+	values: z.array(z.object({
+		update: updateSchema,
+		old: updateSchema
 	})),
 	repositoryId: z.string()
 })
