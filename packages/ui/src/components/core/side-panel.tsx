@@ -134,8 +134,8 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
             </div> : null}
             <nav className="hw-flex hw-flex-1 hw-flex-col">
               <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
-                <li>
-                  <ul className="-hw-mx-2 hw-space-y-1">
+                <li className="hw-h-full">
+                  <ul className="-hw-mx-2 hw-space-y-1 hw-h-1/2 hw-flex hw-flex-col">
                     {items.map((item) => (
                       <SidePanelItem item={item} key={item.label}/>
                     ))}

@@ -310,70 +310,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const onAttributesChange = (component: ComponentElement, update: ComponentUpdate, oldValue: string, execute=true) => {
 		executeCommand(component, update, oldValue, execute);
-		
-		//if (selectedComponent === undefined) return;
-
-		// const old = {...update, value: oldValue};
-		// const newCommand: HarmonyCommand = {
-		// 	name: 'change',
-		// 	update,
-		// 	old,
-		// }
-		// //TODO: find a better way to do this
-		// if (execute)
-		// 	componentUpdator.executeCommand(newCommand);
-
-		// if (component.element === undefined) return;
-
-		// const newEdits = undoStack.slice();
-		// const lastEdit = newEdits[newEdits.length - 1];
-		// const isSameCommandType = newCommand.update.type === lastEdit?.update.type && newCommand.update.name === lastEdit?.update.name && newCommand.update.componentId === lastEdit?.update.componentId && newCommand.update.parentId === lastEdit?.update.parentId;
-
-		// const currTime = new Date().getTime();
-		// if (editTimeout < currTime || !isSameCommandType) {
-		// 	newEdits.push(newCommand);
-		// 	const newTime = currTime + 1000;
-		// 	setEditTimeout(newTime);
-		// 	console.log(`curr: ${currTime}, timeout: ${editTimeout}, new: ${newTime}`);
-		// } else {
-		// 	//TODO: Get rid of type = 'component' dependency
-		// 	if (newEdits.length && newCommand.update.type !== 'component') {
-		// 		newCommand.old.value = lastEdit.old.value;
-		// 		newEdits[newEdits.length - 1] = newCommand;
-		// 	} else {
-		// 		newEdits.push(newCommand);
-		// 	}
-		// }
-		
-		// setUndoStack(newEdits);
-		// setIsDirty(true);
 	}
-
-	// const onAttributesSave = (): void => {
-	// 	if (branchId === undefined) {
-	// 		alert('Please select a branch before saving');
-	// 		return;
-	// 	};
-		
-	// 	componentUpdator.executeCommands(currEdits, {branchId, repositoryId});
-	// 	setCurrEdits([]);
-	// 	setIsDirty(false);
-	// }
-
-	// const onAttributesCancel = (): void => {
-	// 	const commands: HarmonyCommand[] = [];
-	// 	//TODO: Make this into a stack
-	// 	for (let i = currEdits.length - 1; i >= 0; i--) {
-	// 		const command = currEdits[i];
-	// 		commands.push({name: 'change', update: command.old, old: command.update })
-	// 	}
-		
-	// 	componentUpdator.executeCommands(commands);
-	// 	setCurrEdits([]);
-	// 	setIsDirty(false);
-	// 	setSelectedComponent(undefined);
-	// 	setHoveredComponent(undefined);
-	// }
 
 	const setSelectedComponent = (component: HTMLElement | undefined): void => {
 		_setSelectedComponent(component);

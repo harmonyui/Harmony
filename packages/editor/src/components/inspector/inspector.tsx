@@ -1,12 +1,16 @@
 'use client';
 import { useHighlighter } from "./highlighter"
-import { useCallback, useEffect, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef, useState } from "react"
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import { ReactComponentIdentifier } from "./component-identifier";
 import hotkeys from 'hotkeys-js';
 import { SelectMode } from "../panel/harmony-panel";
-import { getNumberFromString } from "@harmony/util/src";
+import { getNumberFromString, round } from "@harmony/util/src";
 import $ from 'jquery';
+import interact from 'interactjs';
+import {InteractEvent, Point} from '@interactjs/types'
+import {Modifier} from '@interactjs/modifiers/types'
+import {SnapTarget} from '@interactjs/modifiers/snap/pointer'
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -107,7 +111,8 @@ const useResize = ({onIsDragging, onDragFinish}: ResizeProps) => {
 	return {onDrag, isDragging};
 }
 
-function selectDraggableElement(element: HTMLElement) {
+//Returns the element as understood from a designer (no nested containers with one child and no padding)
+function selectDesignerElement(element: HTMLElement): HTMLElement {
 	let target = element;
 	const isSelectable = (element: HTMLElement | null): element is HTMLElement => {
 		if (!element) return false;
@@ -120,6 +125,10 @@ function selectDraggableElement(element: HTMLElement) {
 	}
 
 	return target;
+}
+
+function isTextElement(element: HTMLElement): boolean {
+	return Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE);
 }
 
 export interface InspectorProps {
@@ -139,7 +148,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
-	const {onDrag, isDragging} = useResize({onIsDragging(rect) {
+	const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -156,7 +165,29 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		onResize(rect);
 	}});
 
-	const {makeDraggable} = useDraggable({onIsDragging() {
+	// const {makeDraggable, isDragging: isDraggingReal} = useDraggableList({onIsDragging() {
+	// 	const container = containerRef.current;
+	// 	if (container === null || parentElement === undefined) return;
+
+	// 	if (overlayRef.current === undefined) {
+	// 		overlayRef.current = new Overlay(container, parentElement);
+	// 	}
+
+	// 	if (selectedComponent) {
+	// 		overlayRef.current.select(selectedComponent, {onDrag});
+	// 	} else {
+	// 		overlayRef.current.remove('select');
+	// 	}
+	// }, onDragFinish({element, aborter, from, to}) {
+	// 	aborter.abort();
+	// 	element.draggable = false;
+
+	// 	if (from === to) return;
+		
+	// 	onReorder({from, to, element})
+	// }});
+
+	const {isDragging: isDraggingReal} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging() {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -169,14 +200,9 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		} else {
 			overlayRef.current.remove('select');
 		}
-	}, onDragFinish({element, aborter, from, to}) {
-		aborter.abort();
-		element.draggable = false;
-
-		if (from === to) return;
-		
-		onReorder({from, to, element})
 	}});
+
+	const isDragging = isResizing || isDraggingReal;
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -299,11 +325,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	});
 
 	const onHold = useEffectEvent((element: HTMLElement) => {
-		const target = selectDraggableElement(element);
-
-		target.draggable = true;
-		makeDraggable(target, new AbortController());
-		overlayRef.current?.remove('hover');
+		// const target = selectDesignerElement(element);
+		
+		// target.draggable = true;
+		// makeDraggable(target, new AbortController());
+		// overlayRef.current?.remove('hover');
 
 		return true;
 	});
@@ -313,6 +339,33 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			onClick,
 			onHover,
 			onHold,
+			onPointerUp(_, clientX, clientY) {
+				if (selectedComponent) {
+					if (!selectedComponent.dataset.selected) {
+						selectedComponent.dataset.selected = 'true';
+					} else if (!isDragging && isTextElement(selectedComponent) && selectedComponent.contentEditable !== 'true') {
+						selectedComponent.contentEditable = "true";
+
+						// Focus the selectedComponent
+						selectedComponent.focus();
+
+						// Insert the cursor at the end of the text
+						const range = document.caretRangeFromPoint(clientX, clientY);
+
+						if (range) {
+							// Collapse the range to the start
+							range.collapse(true);
+
+							// Set the selection to the collapsed range
+							const selection = window.getSelection();
+							selection?.removeAllRanges();
+							selection?.addRange(range);
+						}
+					}
+				}
+
+				return true;
+			}
 		},
 		container: rootElement,
 		noEvents: []
@@ -357,8 +410,10 @@ export interface BoxSizing {
   marginRight: number;
 }
 interface InteractProps {
-	rect: OverlayRect, 
-	element: HTMLElement, 
+	values: {
+		rect: OverlayRect,
+		element: HTMLElement
+	}[]
 	observer: ResizeObserver | undefined, 
 	aborter: AbortController
 }
@@ -383,13 +438,14 @@ class Overlay {
 	remove(method: 'select' | 'hover') {
 		const stuff = this.rects.get(method);
 		if (stuff) {
-			stuff.rect.remove();
+			stuff.values.forEach(({rect}) => rect.remove());
 			this.rects.delete(method);
-			if (method === 'select') stuff.element.contentEditable = 'inherit';
+			if (method === 'select') stuff.values[0].element.contentEditable = 'inherit';
+			stuff.values[0].element.removeAttribute('data-selected')
 			stuff.observer?.disconnect();
 			stuff.aborter.abort();
-			if (stuff.element.draggable) {
-				stuff.element.draggable = false;
+			if (stuff.values[0].element.draggable) {
+				stuff.values[0].element.draggable = false;
 			}
 		}
 	}
@@ -428,19 +484,26 @@ class Overlay {
 		if (!stuff) throw new Error("What happend??");
 
 		if (listeners.onTextChange && Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE)) {
-			element.contentEditable = 'true';
 			element.addEventListener('input', (e) => {
 				const target = e.target as HTMLElement;
 				listeners.onTextChange && listeners.onTextChange(target.textContent || '');
 			}, {signal: stuff.aborter.signal});
 		}
 
-		//this.makeDraggable(stuff);
+		//Select the parent too
+		const designerElement = selectDesignerElement(element);
+		const parent = designerElement.parentElement;
+		if (parent) {
+			const [box, dims] = this.getSizing(parent);
+			const rect = new OverlayRect(this.window.document, parent, this.container);
+			rect.update({box, dims, borderSize: 2, borderStyle: 'dashed', opacity: .5});
+			stuff.values.push({rect, element: parent});
+		}
 	}
 
 	inspect(element: HTMLElement, method: 'select' | 'hover', onDrag?: (rect: ResizeRect) => void) {
 		// We can't get the size of text nodes or comment nodes. React as of v15
-    // heavily uses comment nodes to delimit text.
+    	// heavily uses comment nodes to delimit text.
 		if (element.nodeType !== Node.ELEMENT_NODE) {
 			return;
 		}
@@ -450,23 +513,20 @@ class Overlay {
 		rect[method](box, dims);
 
 		this.remove(method);
+
 		let mutationObserver: ResizeObserver | undefined;
-		if (true) {
-			const size = element.getBoundingClientRect();
-			mutationObserver = new ResizeObserver((mutations) => {
-				const newSize = element.getBoundingClientRect();
-				const stuff = this.rects.get(method);
-				for (const mutation of mutations) {
-					if ((size.width !== newSize.width || size.height !== newSize.height) && stuff) {
-						const [box, dims] = this.getSizing(element);
-						stuff.rect.updateSize(box, dims);
-					}
-				}
-			});
-	
-			mutationObserver.observe(element);
-		}
-		this.rects.set(method, {rect, element, observer: mutationObserver, aborter: new AbortController()});
+		const size = element.getBoundingClientRect();
+		mutationObserver = new ResizeObserver((mutations) => {
+			const newSize = element.getBoundingClientRect();
+			const stuff = this.rects.get(method);
+			if ((size.width !== newSize.width || size.height !== newSize.height) && stuff) {
+				const [box, dims] = this.getSizing(element);
+				stuff.values[0].rect.updateSize(box, dims);
+			}
+		});
+
+		mutationObserver.observe(element);
+		this.rects.set(method, {values: [{rect, element}], observer: mutationObserver, aborter: new AbortController()});
 	}
 
 	getSizing(element: HTMLElement): [Rect, BoxSizing] {
@@ -501,8 +561,22 @@ const overlayStyles = {
   margin: 'rgba(255, 155, 0, 0.3)',
   border: 'rgba(255, 200, 50, 0.3)',
 }
-type DraggableElement = HTMLElement & { originalIndex: number };
 
+function addAlpha(color: string, opacity: number): string {
+    // coerce values so ti is between 0 and 1.
+    const _opacity = Math.round(Math.min(Math.max(opacity || 1, 0), 1) * 255);
+    return color + _opacity.toString(16).toUpperCase();
+}
+
+
+interface OverlayProps {
+	box: Rect,
+	dims: BoxSizing,
+	borderSize: number,
+	opacity?: number,
+	padding?: boolean,
+	borderStyle?: 'dotted' | 'dashed'
+}
 export class OverlayRect {
 	node: HTMLElement
 	border: HTMLElement
@@ -556,47 +630,45 @@ export class OverlayRect {
 	}
 
 	public updateSize(box: Rect, dims: BoxSizing) {
-		this.update(box, dims, 2, false, false);
+		this.update({box, dims, borderSize: 2});
 	}
 
 	public hover(box: Rect, dims: BoxSizing) {
-		this.update(box, dims, 2, false, false);
+		this.update({box, dims, borderSize: 2});
 	}
 
 	public select(box: Rect, dims: BoxSizing) {
-		this.update(box, dims, 2, false, false);
+		this.update({box, dims, borderSize: 2});
 	}
 
-  	private update(box: Rect, dims: BoxSizing, borderSize: number, showPadding: boolean, editText: boolean) {
+  	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle}: OverlayProps) {
 		dims.borderBottom = borderSize;
 		dims.borderLeft = borderSize;
 		dims.borderRight = borderSize;
 		dims.borderTop = borderSize;
 	    boxWrap(dims, 'border', this.border)
 		
-		if (!editText) {
-			boxWrap(dims, 'margin', this.node)
-			boxWrap(dims, 'padding', this.padding);
+		boxWrap(dims, 'margin', this.node)
+		boxWrap(dims, 'padding', this.padding);
 
-			Object.assign(this.content.style, {
-				height:
-					`${
-						box.height
-						- dims.borderTop
-						- dims.borderBottom
-						- dims.paddingTop
-						- dims.paddingBottom
-					}px`,
-				width:
-					`${
-						box.width
-						- dims.borderLeft
-						- dims.borderRight
-						- dims.paddingLeft
-						- dims.paddingRight
-					}px`,
-			})
-		}
+		Object.assign(this.content.style, {
+			height:
+				`${
+					box.height
+					- dims.borderTop
+					- dims.borderBottom
+					- dims.paddingTop
+					- dims.paddingBottom
+				}px`,
+			width:
+				`${
+					box.width
+					- dims.borderLeft
+					- dims.borderRight
+					- dims.paddingLeft
+					- dims.paddingRight
+				}px`,
+		})
 
 		const initFullDrag = (direction: ResizeDirection) => (e: MouseEvent) => {
 			const x = e.clientX;
@@ -704,12 +776,16 @@ export class OverlayRect {
 			this.resizeHandles[7].addEventListener('mousedown', initFullDrag('n'), false);
 		}
 
-		this.border.style.borderColor = overlayStyles.background
+		this.border.style.borderColor = addAlpha(overlayStyles.background, opacity);
     	this.padding.style.borderColor = overlayStyles.padding
 		this.node.style.borderColor = overlayStyles.margin;
-		if (!showPadding) {
+		if (!padding) {
 			this.node.style.borderColor = 'transparent';
 			this.padding.style.borderColor = 'transparent';
+		}
+
+		if (borderStyle) {
+			this.border.style.borderStyle = borderStyle;
 		}
 
 		Object.assign(this.node.style, {
@@ -794,11 +870,247 @@ export function getElementDimensions(domElement: Element) {
   }
 }
 
+interface OffsetHelper {
+	getOffset: (element: HTMLElement) => {offsetX: number, offsetY: number} | undefined;
+	setOffset: (element: HTMLElement, props: {offsetX: number, offsetY: number, dx: number, dy: number, rect: Rect}) => void;
+}
+
+const offsetTranslate: OffsetHelper = {
+	getOffset(element) {
+		const translate = element!.style.transform;
+		const match = /translate\((-?\d+(?:\.\d+)?)px, (-?\d+(?:\.\d+)?)px\)/.exec(translate);
+
+		if (!match) return undefined;
+
+		return {offsetX: parseFloat(match[1]), offsetY: parseFloat(match[2])}
+	},
+	setOffset(element, {offsetX, offsetY, dx, dy}) {
+		const x = offsetX + dx;
+		const y = offsetY + dy;
+		element!.style.transform = `translate(${x}px, ${y}px)`
+	}
+}
+
+const offsetProperty = (property: 'margin' | 'padding'): OffsetHelper => ({
+	getOffset(element) {
+		const propertyLeft = parseFloat($(element).css(`${property}Left`) || '0');
+		const propertyTop = parseFloat($(element).css(`${property}Top`) || '0');
+		const propertyRight = parseFloat($(element).css(`${property}Right`) || '0');
+		const propertyBottom = parseFloat($(element).css(`${property}Bottom`) || '0');
+
+		return {offsetX: propertyLeft, offsetY: propertyTop}
+	},
+	setOffset(element, {offsetX, offsetY, dx, dy}) {
+		const x = offsetX + dx//round(offsetX + dx, 0);
+		const y = offsetY + dy//round(offsetY + dy, 0);
+		element!.style[`${property}Left`] = `${x}px`;
+		element!.style[`${property}Top`] = `${y}px`;
+		// if (y < 0) {
+		// 	element.style[`${property}Bottom`] = `${-1 * y}px`;
+		// } else {
+			
+		//  }
+	}
+});
+
+const offsetPadding = offsetProperty('padding');
+
+const close = (a: number, b: number, threshold: number): boolean => {
+	return Math.abs(a-b) <= threshold;
+}
+
+const getFlexAnchorPoints = (element: HTMLElement): {start: number, center: number, evenly: number, around: number, between: number, remainingSpace: number} => {
+	const parentElement = element.parentElement!;
+	const prevSibiling = element.previousElementSibling!;
+	const siblingHeight = $(prevSibiling).outerHeight(true) || prevSibiling.clientHeight
+	const parentHeight = parentElement.clientHeight;
+	const childrenHeight = Array.from(parentElement.children).reduce((prev, curr) => prev + ($(curr).outerHeight(true) || curr.clientHeight), 0)
+	const remainingSpace = parentHeight - childrenHeight;
+	const selfIndex = Array.from(parentElement.children).indexOf(element)
+
+	const start = Array.from(parentElement.children).slice(0, selfIndex).reduce((prev, curr) => prev + ($(curr).outerHeight(true) || curr.clientHeight), 0);
+	const center = parentHeight / 2 + siblingHeight / 2;
+	const calculteSpace = (index: number, numSpaces: number, startingFrac: number): number => {
+		const spaceBetween = remainingSpace / numSpaces;
+		let height = startingFrac * spaceBetween;
+		for (let i = 0; i < index; i++) {
+			height += spaceBetween;
+			height += $(parentElement.children[i]).outerHeight(true) || parentElement.children[i].clientHeight;
+		}
+
+		return height;
+	}
+
+	return {start, center, evenly: calculteSpace(selfIndex, parentElement.children.length + 1, 1), around: calculteSpace(selfIndex, parentElement.children.length, .5), between: calculteSpace(selfIndex, parentElement.children.length - 1, 0), remainingSpace};
+}
+
+const useFlexHelper = (): OffsetHelper => {
+	return {
+		getOffset(element) {
+			return offsetTranslate.getOffset(element!);
+		},
+		setOffset(element, props) {
+			const {start, center, evenly, around, between} = getFlexAnchorPoints(element);
+			const posY = props.rect.top - element.parentElement!.getBoundingClientRect().top;
+			const parent = element.parentElement as HTMLElement;
+			const numChildren = parent.children.length;
+
+			if (posY < center) {
+				parent.style.justifyContent = '';
+				parent.style.gap = '';
+				
+				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: posY - start, dx: 0, dy: 0, rect: props.rect});
+			} else if (posY >= center && posY < evenly) {
+				parent.style.justifyContent = 'center';
+				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
+		 		parent.style.gap = `${(posY - center)}px`;
+			} else if (posY >= evenly && posY < around) {
+				parent.style.justifyContent = 'space-evenly';
+				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
+		 		parent.style.gap = `${(posY - evenly)}px`;
+			} else if (posY >= around && posY < between) {
+				parent.style.justifyContent = 'space-around';
+				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
+				const gap = numChildren * (posY - around);
+		 		parent.style.gap = `${gap}px`;
+			} else if (posY >= between) {
+				parent.style.justifyContent = 'space-between';
+				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
+				parent.style.gap = '';
+			}
+			//N = SR / C
+			//N - SA = dy
+			//SA = NSR / C
+			//SR = NSR + SAG
+			//SAG = C(dy + SA) - NSR
+			//SAG = C(dy + NSR / C) - NSR
+			//SAG = Cdy
+		},
+	};
+}
+
+type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging'>;
+const useSnapping = ({element, onIsDragging}: SnappableProps) => {
+	const [shiftPressed, setShiftPressed] = useState(false);
+	const snappings = useMemo<DraggableProps['snappings']>(() => {
+		
+		const targets: SnapTarget[] = [];
+		let relativePoints: Point[] = [{x: 0, y: 0}];
+		if (element) {
+			const {start, center, evenly, around, between} = getFlexAnchorPoints(element);
+			targets.push({y: start, range: 10});
+			targets.push({y: center, range: 10});
+			targets.push({y: evenly, range: 10});
+			targets.push({y: around, range: 10});
+			targets.push({y: between, range: 10});
+		}
+		return {
+			parent: {
+				targets,
+				relativePoints
+			},
+			self: {
+				targets: !shiftPressed ? [] : [
+					interact.createSnapGrid({x: 2, y: 2, limits: {top: 0, bottom: 0, left: -Infinity, right: Infinity}}), 
+					interact.createSnapGrid({x: 2, y: 2, limits: {top: -Infinity, bottom: Infinity, left: 0, right: 0}})
+				]
+			}
+		}
+	}, [element, shiftPressed]);
+	const offsetHelper = useFlexHelper();
+
+	const result = useDraggable({element, onIsDragging, restrictToParent: true, snappings, offsetHelper});
+
+	// const onShift = useEffectEvent(() => {
+	// 	console.log("Setting shift...");
+	// 	setShiftPressed(true);
+	// })
+
+	// useEffect(() => {
+	// 	hotkeys('shift+a', onShift)
+	// }, []);
+
+	return result;
+}
+
 interface DraggableProps {
+	element: HTMLElement | undefined;
+	onIsDragging?: () => void;
+	snappings?: {
+		parent: {targets: SnapTarget[], relativePoints?: Point[]},
+		self: {targets: SnapTarget[], relativePoints?: Point[]}
+	},
+	restrictToParent?: boolean;
+	offsetHelper: OffsetHelper
+}
+const useDraggable = ({element, onIsDragging, offsetHelper, snappings={parent: {targets: [], relativePoints: [{x: 0, y: 0}]}, self: {targets: [], relativePoints: [{x: 0, y: 0}]}}, restrictToParent=false}: DraggableProps) => {
+	const [isDragging, setIsDragging] = useState(false);
+	const [offsetX, setOffsetX] = useState<number | null>(null);
+	const [offsetY, setOffsetY] = useState<number | null>(null);
+	useEffect(() => {
+		const modifiers: Modifier[] = [
+			interact.modifiers.snap({
+				targets: snappings.parent.targets,
+				// Control the snapping behavior
+				range: Infinity, // Snap to the closest target within the entire range
+				relativePoints: [{ x: 0, y: 0 }], // Snap relative to the top-left corner of the draggable element
+				offset: 'parent'
+			}),
+			interact.modifiers.snap({
+				targets: snappings.self.targets,
+				// Control the snapping behavior
+				range: Infinity, // Snap to the closest target within the entire range
+				relativePoints: snappings.self.relativePoints,
+				offset: 'self',
+			})
+		];
+		if (restrictToParent) {
+			modifiers.push(interact.modifiers.restrict({
+				restriction: 'parent',
+				elementRect: { top: 0, left: 0, bottom: 1, right: 1 }, // Restrict to the parent element
+				//endOnly: true, // Only snap when dragging ends
+			}))
+		}
+		if (element) {
+			interact(element).draggable({
+				listeners: {
+					start: startDragging,
+					move: drag,
+					end: stopDragging
+				},
+				modifiers,
+				inertia: true
+			})
+		}
+	}, [element, snappings]);
+
+	const startDragging = useEffectEvent((event: InteractEvent<'drag', 'start'>) => {
+		setOffsetX(event.clientX0);
+		setOffsetY(event.clientY0);
+	});
+	  
+	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
+		!isDragging && setIsDragging(true);
+		
+		const offset = offsetHelper.getOffset(element!);
+		const offsetX = offset ? offset.offsetX : 0;
+		const offsetY = offset ? offset.offsetY : 0;
+		offsetHelper.setOffset(element!, {offsetX, offsetY: event.clientY - event.clientY0, dx: event.dx, dy: event.dy, rect: event.rect});
+		onIsDragging && onIsDragging();
+	});
+	
+	const stopDragging = useEffectEvent(() => {
+		setIsDragging(false);
+	});
+
+	return {isDragging};
+}
+
+interface DraggableListProps {
 	onDragFinish?: (props: {element: HTMLElement, aborter: AbortController, from: number, to: number}) => void;
 	onIsDragging?: () => void;
 }
-const useDraggable = ({ onDragFinish, onIsDragging }: DraggableProps) => {
+const useDraggableList = ({ onDragFinish, onIsDragging }: DraggableListProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const fromRef = useRef(-1);
 	const toRef = useRef(-1);
@@ -813,7 +1125,7 @@ const useDraggable = ({ onDragFinish, onIsDragging }: DraggableProps) => {
 	
 		const onDragEnter = (event: DragEvent) => {
 			const draggedElement = document.querySelector('.dragging');
-			const target = selectDraggableElement(event.target as HTMLElement);
+			const target = selectDesignerElement(event.target as HTMLElement);
 			if (draggedElement && target.parentElement === draggedElement.parentElement) {
 				const boundingRect = target.getBoundingClientRect();
 				const midY = boundingRect.top + boundingRect.height / 2;

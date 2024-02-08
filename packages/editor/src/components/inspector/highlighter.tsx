@@ -7,17 +7,18 @@ import { useCallback, useEffect, useRef, useState } from "react";
 let controller = new AbortController();
 
 //The event function emitted. Return whether or not this is the desired element (should stop propagation)
-export type HighlighterDispatch = (element: HTMLElement) => boolean
+export type HighlighterDispatch = (element: HTMLElement, clientX: number, clientY: number) => boolean
 export interface HighlighterProps {
 	handlers: {
 		onClick: HighlighterDispatch,
 		onHover: HighlighterDispatch,
-		onHold: HighlighterDispatch
+		onHold: HighlighterDispatch,
+		onPointerUp: HighlighterDispatch,
 	},
 	container: HTMLElement | undefined;
 	noEvents: HTMLElement[];
 }
-export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container, noEvents}: HighlighterProps) => {
+export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPointerUpProps, onHold}, container, noEvents}: HighlighterProps) => {
 	const timeoutRef = useRef<NodeJS.Timeout>();
 	//const [isHolding, setIsHolding] = useState(false);
 	const isHoldingRef = useRef(false);
@@ -75,11 +76,11 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container,
 		} else {
 			//console.log('Holding');
 		}
-		while (target !== null && !dispatch(target)) {
+		while (target !== null && !dispatch(target, event.clientX, event.clientY)) {
 			target = target.parentElement;
 		}
 
-		finish && target !== null && finish(target);
+		finish && target !== null && finish(target, event.clientX, event.clientY);
 	
 	});
 
@@ -91,20 +92,21 @@ export const useHighlighter = ({handlers: {onClick, onHover, onHold}, container,
 		event.stopPropagation();
 	}
 
-	//const onPointerUp = highligherDispatcher(onClick);
-	const onPointerUp = () => {
-		clearTimeout(timeoutRef.current);
-		//setIsHolding(false);
-		isHoldingRef.current = false;
-	}
+	const onPointerUp = highligherDispatcher(onPointerUpProps);
+	// const onPointerUp = () => {
+	// 	clearTimeout(timeoutRef.current);
+	// 	//setIsHolding(false);
+	// 	isHoldingRef.current = false;
+	// }
 	const onPointerOver = highligherDispatcher(onHover);
-	const onPointerDown = highligherDispatcher(onClick, useEffectEvent((element: HTMLElement) => {
-		timeoutRef.current = setTimeout(() => {
-			//setIsHolding(true);
-			isHoldingRef.current = true;
-			onHold(element);
-		}, 100);
+	const onPointerDown = highligherDispatcher(onClick);
+	// const onPointerDown = highligherDispatcher(onClick, useEffectEvent((element: HTMLElement) => {
+	// 	timeoutRef.current = setTimeout(() => {
+	// 		//setIsHolding(true);
+	// 		isHoldingRef.current = true;
+	// 		onHold(element);
+	// 	}, 100);
 
-		return false;
-	}));
+	// 	return false;
+	// }));
 }
