@@ -10,7 +10,7 @@ import $ from 'jquery';
 import interact from 'interactjs';
 import {InteractEvent, Point} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
-import {SnapTarget} from '@interactjs/modifiers/snap/pointer'
+import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -372,7 +372,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	});
 
 	return (
-		<div ref={containerRef} className="z-100">
+		<div ref={containerRef} className="hw-z-100" id="harmonyInspector">
+			<div id="harmony-snap-guides"></div>
 		</div>
 	)
 }
@@ -944,6 +945,14 @@ const getFlexAnchorPoints = (element: HTMLElement): {start: number, center: numb
 	return {start, center, evenly: calculteSpace(selfIndex, parentElement.children.length + 1, 1), around: calculteSpace(selfIndex, parentElement.children.length, .5), between: calculteSpace(selfIndex, parentElement.children.length - 1, 0), remainingSpace};
 }
 
+type SnapPoint = {
+	point: SnapPosition;
+	offset: HTMLElement,
+	guides?: {
+		x0: number, y0: number, x1: number, y1: number, text?: number | string, relative: ('x0' | 'x1' | 'y0' | 'y1')[]
+	}[]
+}
+
 const useFlexHelper = (): OffsetHelper => {
 	return {
 		getOffset(element) {
@@ -955,25 +964,27 @@ const useFlexHelper = (): OffsetHelper => {
 			const parent = element.parentElement as HTMLElement;
 			const numChildren = parent.children.length;
 
-			if (posY < center) {
+
+			const checkY = round(posY, 10);
+			if (checkY < round(center, 10)) {
 				parent.style.justifyContent = '';
 				parent.style.gap = '';
 				
 				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: posY - start, dx: 0, dy: 0, rect: props.rect});
-			} else if (posY >= center && posY < evenly) {
+			} else if (checkY >= round(center, 10) && checkY < round(evenly, 10)) {
 				parent.style.justifyContent = 'center';
 				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
 		 		parent.style.gap = `${(posY - center)}px`;
-			} else if (posY >= evenly && posY < around) {
+			} else if (checkY >= round(evenly, 10) && checkY < round(around, 10)) {
 				parent.style.justifyContent = 'space-evenly';
 				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
 		 		parent.style.gap = `${(posY - evenly)}px`;
-			} else if (posY >= around && posY < between) {
+			} else if (checkY >= round(around, 10) && checkY < round(between, 10)) {
 				parent.style.justifyContent = 'space-around';
 				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
-				const gap = numChildren * (posY - around);
+				const gap = numChildren * (checkY - round(around, 10));
 		 		parent.style.gap = `${gap}px`;
-			} else if (posY >= between) {
+			} else if (checkY >= round(between, 10)) {
 				parent.style.justifyContent = 'space-between';
 				offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
 				parent.style.gap = '';
@@ -992,34 +1003,65 @@ const useFlexHelper = (): OffsetHelper => {
 type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging'>;
 const useSnapping = ({element, onIsDragging}: SnappableProps) => {
 	const [shiftPressed, setShiftPressed] = useState(false);
-	const snappings = useMemo<DraggableProps['snappings']>(() => {
+	const snappings = useMemo<DraggableProps['snapPoints']>(() => {
 		
-		const targets: SnapTarget[] = [];
+		const targets: SnapPoint[] = [];
 		let relativePoints: Point[] = [{x: 0, y: 0}];
 		if (element) {
-			const {start, center, evenly, around, between} = getFlexAnchorPoints(element);
-			targets.push({y: start, range: 10});
-			targets.push({y: center, range: 10});
-			targets.push({y: evenly, range: 10});
-			targets.push({y: around, range: 10});
-			targets.push({y: between, range: 10});
+			const {start, center, evenly, around, between, remainingSpace} = getFlexAnchorPoints(element);
+			const parent = element.parentElement!;
+			const childCount = parent.children.length;
+			const dcenter = remainingSpace / (childCount - 1);
+			const devenly = remainingSpace / (childCount + 1);
+			const daround = remainingSpace / childCount;
+			const dbetween = dcenter;
+
+			const snapGuides: SnapPoint[] = [
+				{
+					point: {y: center, range: 10},
+					offset: parent,
+					guides: [
+						{y0: 0, x0: .5, y1: dcenter, x1: .5, text: dcenter, relative: ['x0', 'x1']}, 
+						{y0: parent.clientHeight - (dcenter), x0: .5, y1: 1, x1: .5, text: dcenter, relative: ['x0', 'x1', 'y1']}
+					]
+				},
+				{
+					point: {y: evenly, range: 10},
+					offset: parent,
+					guides: [
+						{y0: 0, x0: .5, y1: devenly, x1: .5, text: devenly, relative: ['x0', 'x1']},
+						{y0: 40 + devenly, x0: .5, y1: 2 * devenly + 40, x1: .5, text: devenly, relative: ['x0', 'x1']},
+						{y0: 84 + devenly * 2, x0: .5, y1: 84 + devenly * 3, x1: .5, text: devenly, relative: ['x0', 'x1']},
+						{y0: parent.clientHeight - devenly, x0: .5, y1: 1, x1: .5, text: devenly, relative: ['x0', 'x1', 'y1']},
+					]
+				},
+				{
+					point: {y: around, range: 10},
+					offset: parent,
+					guides: [
+						{y0: 0, x0: .5, y1: daround / 2, x1: .5, text: daround/2, relative: ['x0', 'x1']},
+						{y0: 40 + daround/2, x0: .5, y1: 1.5 * daround + 40, x1: .5, text: daround, relative: ['x0', 'x1']},
+						{y0: 84 + 1.5*daround, x0: .5, y1: 84 + 2.5*daround, x1: .5, text: daround, relative: ['x0', 'x1']},
+						{y0: parent.clientHeight - (daround / 2), x0: .5, y1: 1, x1: .5, text: daround/2, relative: ['x0', 'x1', 'y1']},
+					]
+				},
+				{
+					point: {y: between, range: 10},
+					offset: parent,
+					guides: [
+						{y0: 40, x0: .5, y1: dbetween + 40, x1: .5, text: dbetween, relative: ['x0', 'x1']},
+						{y0: 84 + dbetween, x0: .5, y1: 84 + dbetween * 2, x1: .5, text: dbetween, relative: ['x0', 'x1']},
+					]
+				},
+			];
+			targets.push({point: {y: start, range: 10}, offset: parent});
+			targets.push(...snapGuides);
 		}
-		return {
-			parent: {
-				targets,
-				relativePoints
-			},
-			self: {
-				targets: !shiftPressed ? [] : [
-					interact.createSnapGrid({x: 2, y: 2, limits: {top: 0, bottom: 0, left: -Infinity, right: Infinity}}), 
-					interact.createSnapGrid({x: 2, y: 2, limits: {top: -Infinity, bottom: Infinity, left: 0, right: 0}})
-				]
-			}
-		}
+		return targets;
 	}, [element, shiftPressed]);
 	const offsetHelper = useFlexHelper();
 
-	const result = useDraggable({element, onIsDragging, restrictToParent: true, snappings, offsetHelper});
+	const result = useDraggable({element, onIsDragging, restrictToParent: true, snapPoints: snappings, offsetHelper});
 
 	// const onShift = useEffectEvent(() => {
 	// 	console.log("Setting shift...");
@@ -1036,42 +1078,46 @@ const useSnapping = ({element, onIsDragging}: SnappableProps) => {
 interface DraggableProps {
 	element: HTMLElement | undefined;
 	onIsDragging?: () => void;
-	snappings?: {
-		parent: {targets: SnapTarget[], relativePoints?: Point[]},
-		self: {targets: SnapTarget[], relativePoints?: Point[]}
-	},
+	snapPoints?: SnapPoint[],
+	// snappings?: {
+	// 	parent: {targets: SnapTarget[], relativePoints?: Point[]},
+	// 	self: {targets: SnapTarget[], relativePoints?: Point[]}
+	// },
 	restrictToParent?: boolean;
 	offsetHelper: OffsetHelper
 }
-const useDraggable = ({element, onIsDragging, offsetHelper, snappings={parent: {targets: [], relativePoints: [{x: 0, y: 0}]}, self: {targets: [], relativePoints: [{x: 0, y: 0}]}}, restrictToParent=false}: DraggableProps) => {
+const useDraggable = ({element, onIsDragging, offsetHelper, snapPoints=[], restrictToParent=false}: DraggableProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [offsetX, setOffsetX] = useState<number | null>(null);
 	const [offsetY, setOffsetY] = useState<number | null>(null);
+	const $parent = $('#harmony-snap-guides');
+		
 	useEffect(() => {
-		const modifiers: Modifier[] = [
-			interact.modifiers.snap({
-				targets: snappings.parent.targets,
-				// Control the snapping behavior
-				range: Infinity, // Snap to the closest target within the entire range
-				relativePoints: [{ x: 0, y: 0 }], // Snap relative to the top-left corner of the draggable element
-				offset: 'parent'
-			}),
-			interact.modifiers.snap({
-				targets: snappings.self.targets,
-				// Control the snapping behavior
-				range: Infinity, // Snap to the closest target within the entire range
-				relativePoints: snappings.self.relativePoints,
-				offset: 'self',
-			})
-		];
-		if (restrictToParent) {
-			modifiers.push(interact.modifiers.restrict({
-				restriction: 'parent',
-				elementRect: { top: 0, left: 0, bottom: 1, right: 1 }, // Restrict to the parent element
-				//endOnly: true, // Only snap when dragging ends
-			}))
-		}
 		if (element) {
+			const parentSnappings = snapPoints.filter(point => point.offset === element.parentElement);
+			const modifiers: Modifier[] = [
+				interact.modifiers.snap({
+					targets: parentSnappings.map(snapping => snapping.point),
+					// Control the snapping behavior
+					range: Infinity, // Snap to the closest target within the entire range
+					relativePoints: [{ x: 0, y: 0 }], // Snap relative to the top-left corner of the draggable element
+					offset: 'parent'
+				}),
+				// interact.modifiers.snap({
+				// 	targets: snappings.self.targets,
+				// 	// Control the snapping behavior
+				// 	range: Infinity, // Snap to the closest target within the entire range
+				// 	relativePoints: snappings.self.relativePoints,
+				// 	offset: 'self',
+				// })
+			];
+			if (restrictToParent) {
+				modifiers.push(interact.modifiers.restrict({
+					restriction: 'parent',
+					elementRect: { top: 0, left: 0, bottom: 1, right: 1 }, // Restrict to the parent element
+					//endOnly: true, // Only snap when dragging ends
+				}))
+			}
 			interact(element).draggable({
 				listeners: {
 					start: startDragging,
@@ -1082,7 +1128,54 @@ const useDraggable = ({element, onIsDragging, offsetHelper, snappings={parent: {
 				inertia: true
 			})
 		}
-	}, [element, snappings]);
+	}, [element, snapPoints]);
+
+	const handleGuides = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
+		const createGuide = (rect: {x0: number, y0: number, y1: number, x1: number, text?: string | number}) => {
+			const lineTemplate = `<div name="harmony-guide-0" class="hw-bg-primary hw-w-[1px] hw-absolute hw-z-[100]" style="top: ${rect.y0}px; left: ${rect.x0}px; height: ${rect.y1 - rect.y0}px;">
+				${rect.text ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-top-1/2 -hw-translate-y-1/2 hw-left-1">
+					${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
+				</div>` : ''}
+			</div>`
+			
+			const $line = $(lineTemplate);
+			$line.appendTo($parent);
+			return $line;
+		}
+
+		$parent.children().remove();
+		snapPoints.forEach(snapPoint => {
+			const {point, guides} = snapPoint;
+			const offset = {x: 0, y: 0, w: 0, h: 0};
+			if ('offset' in snapPoint) {
+				//TODO: Figure out how to use getboundingclientrect
+				//const box = snapPoint.offset.getBoundingClientRect();
+
+				offset.x = snapPoint.offset.offsetLeft;
+				offset.y = snapPoint.offset.offsetTop;
+				offset.w = snapPoint.offset.clientWidth;
+				offset.h = snapPoint.offset.clientHeight;
+			}
+
+			const top = (point.y as number) + (element!.parentElement?.getBoundingClientRect().top as number);
+			if (top === event.rect.top) {
+				guides && guides.forEach((guide) => {
+					const copy = {...guide};
+					'relative' in copy && copy.relative.forEach(p => {
+						const sizeOffset = p.includes('y') ? offset.h : offset.w;
+						copy[p] *= sizeOffset;
+					});
+
+					copy.x0 += offset.x;
+					copy.y0 += offset.y;
+					copy.y1 += offset.y;
+					copy.x1 += offset.x;
+
+					createGuide(copy);
+				});
+			}
+		})
+	})
 
 	const startDragging = useEffectEvent((event: InteractEvent<'drag', 'start'>) => {
 		setOffsetX(event.clientX0);
@@ -1095,12 +1188,16 @@ const useDraggable = ({element, onIsDragging, offsetHelper, snappings={parent: {
 		const offset = offsetHelper.getOffset(element!);
 		const offsetX = offset ? offset.offsetX : 0;
 		const offsetY = offset ? offset.offsetY : 0;
+
+		handleGuides(event);
+
 		offsetHelper.setOffset(element!, {offsetX, offsetY: event.clientY - event.clientY0, dx: event.dx, dy: event.dy, rect: event.rect});
 		onIsDragging && onIsDragging();
 	});
 	
 	const stopDragging = useEffectEvent(() => {
 		setIsDragging(false);
+		$parent.children().remove();
 	});
 
 	return {isDragging};
