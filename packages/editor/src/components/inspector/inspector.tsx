@@ -516,9 +516,9 @@ class Overlay {
 		this.remove(method);
 
 		let mutationObserver: ResizeObserver | undefined;
-		const size = getBoundingClientRect(element);
+		const size = element.getBoundingClientRect();
 		mutationObserver = new ResizeObserver((mutations) => {
-			const newSize = getBoundingClientRect(element);
+			const newSize = element.getBoundingClientRect();
 			const stuff = this.rects.get(method);
 			if ((size.width !== newSize.width || size.height !== newSize.height) && stuff) {
 				const [box, dims] = this.getSizing(element);
@@ -920,7 +920,25 @@ const close = (a: number, b: number, threshold: number): boolean => {
 	return Math.abs(a-b) <= threshold;
 }
 
-const getExtra = (element: HTMLElement, type: 'top' | 'bottom' | 'left' | 'right') => {
+const getExtra = (element: HTMLElement, axis: Axis, type: Exclude<BoundingType, 'size' | 'size-full'>) => {
+	if (axis === 'x') {
+		switch (type) {
+			case 'close':
+				return getExtraD(element, 'left');
+			case 'far':
+				return getExtraD(element, 'right');
+		}
+	} else {
+		switch (type) {
+			case 'close':
+				return getExtraD(element, 'top');
+			case 'far':
+				return getExtraD(element, 'bottom');
+		}
+	}
+}
+
+const getExtraD = (element: HTMLElement, type: 'top' | 'bottom' | 'left' | 'right') => {
 	const upper = `${type[0].toUpperCase()}${type.slice(1)}`;
 	return parseFloat($(element).css(`margin${upper}`) || '0')// + parseFloat($(element).css(`border${upper}`) || '0');
 }
@@ -931,7 +949,8 @@ type SnapPoint = {
 	offset?: HTMLElement,
 	guides?: {
 		x0: number, y0: number, x1: number, y1: number, text?: number | string, offset?: HTMLElement, 
-		relative: ('x0' | 'x1' | 'y0' | 'y1')[]
+		relative: ('x0' | 'x1' | 'y0' | 'y1')[],
+		rotate?: boolean
 	}[]
 }
 
@@ -939,9 +958,35 @@ function getElementHeight(element: HTMLElement): number {
 	return $(element).outerHeight(true) || element.clientHeight;
 }
 
-function getBoundingClientRect(element: HTMLElement) {
+type BoundingType = 'close' | 'far' | 'size' | 'size-full';
+
+function getBoundingClientRect(element: HTMLElement, axis: Axis, type: BoundingType): number {
 	const rect = element.getBoundingClientRect();
-	return rect;
+
+	if (axis === 'y') {
+		switch (type) {
+			case 'close':
+				return rect.top;
+			case 'far':
+				return rect.bottom;
+			case 'size':
+				return rect.height;
+			case 'size-full':
+				return $(element).outerHeight(true) || rect.height;
+		}
+	} else {
+		switch (type) {
+			case 'close':
+				return rect.left;
+			case 'far':
+				return rect.right;
+			case 'size':
+				return rect.width;
+			case 'size-full':
+				return $(element).outerWidth(true) || rect.width;
+		}
+	}
+	throw new Error("Invalid params");
 	// return {
 	// 	top: rect.top + getExtra(element, 'top'),
 	// 	bottom: rect.bottom + getExtra(element, 'bottom'),
@@ -950,23 +995,44 @@ function getBoundingClientRect(element: HTMLElement) {
 	// }
 }
 
-function getBoundingClientRectParent(parent: HTMLElement) {
+function getBoundingClientRectParent(parent: HTMLElement, axis: Axis, type: BoundingType) {
 	const rect = parent.getBoundingClientRect();
-	const newRect = {
-		top: rect.top + parseFloat($(parent).css('borderTop') || '0'),
-		bottom: rect.bottom - parseFloat($(parent).css('borderBottom') || '0'),
-		left: rect.left + parseFloat($(parent).css('borderLeft') || '0'),
-		right: rect.right - parseFloat($(parent).css('borderRight') || '0'),
-		width: 0,
-		height: 0,
-	} 
-	newRect.width = newRect.right - newRect.left;
-	newRect.height = newRect.bottom - newRect.top;
 
-	return newRect;
+	if (axis === 'y') {
+		const top = rect.top + parseFloat($(parent).css('borderTop') || '0')
+		const bottom = rect.bottom - parseFloat($(parent).css('borderBottom') || '0')
+		const height = bottom - top;
+		switch (type) {
+			case 'close':
+				return top;
+			case 'far':
+				return bottom;
+			case 'size':
+				return height;
+			case 'size-full':
+				return height + getExtra(parent, axis, 'close') + getExtra(parent, axis, 'far');
+		}
+	} else {
+		const left = rect.left + parseFloat($(parent).css('borderLeft') || '0')
+		const right = rect.right - parseFloat($(parent).css('borderRight') || '0')
+		const height = right - left;
+		switch (type) {
+			case 'close':
+				return left;
+			case 'far':
+				return right;
+			case 'size':
+				return height;
+			case 'size-full':
+				return height + getExtra(parent, axis, 'close') + getExtra(parent, axis, 'far');
+		}
+	}
+	throw new Error("Invalid params");
 }
 
-function calculateFlexInfo(parent: HTMLElement): FlexInfo {
+type Axis = 'x' | 'y';
+
+function calculateFlexInfo(parent: HTMLElement, axis: Axis): FlexInfo {
 	const numChildren = parent.children.length;
 	const firstChild = parent.children[0] as HTMLElement;
 	const lastChild = parent.children[parent.children.length - 1] as HTMLElement;
@@ -978,10 +1044,10 @@ function calculateFlexInfo(parent: HTMLElement): FlexInfo {
 		const child = parent.children[i] as HTMLElement;
 
 		if (i === 0) {
-			gapStart = getBoundingClientRect(child).top - getBoundingClientRectParent(parent).top;
+			gapStart = getBoundingClientRect(child, axis, 'close') - getBoundingClientRectParent(parent, axis, 'close');
 		}
 		if (i === numChildren - 1) {
-			gapEnd = getBoundingClientRectParent(parent).bottom - (getBoundingClientRect(child).bottom);
+			gapEnd = getBoundingClientRectParent(parent, axis, 'far') - (getBoundingClientRect(child, axis, 'far'));
 			continue;
 		}
 		const nextChild = parent.children[i + 1] as HTMLElement;
@@ -989,16 +1055,16 @@ function calculateFlexInfo(parent: HTMLElement): FlexInfo {
 		// gap += nextChild.getBoundingClientRect().top - (child.getBoundingClientRect().bottom);
 		//gap += nextChild.getBoundingClientRect().top - (child.getBoundingClientRect().top + getElementHeight(child));
 		//gap += nextChild.getBoundingClientRect().top - (child.getBoundingClientRect().top + child.clientHeight);
-		gap += getBoundingClientRect(nextChild).top - parseFloat($(nextChild).css('marginTop')) - (getBoundingClientRect(child).bottom);
+		gap += getBoundingClientRect(nextChild, axis, 'close') - getExtra(nextChild, axis, 'close') - (getBoundingClientRect(child, axis, 'far'));
 	}
 
 	// const childrenMidpoint = getBoundingClientRect(firstChild).top + (getBoundingClientRect(lastChild).bottom - getBoundingClientRect(firstChild).top) / 2;
-	const childrenMidpoint = (getBoundingClientRect(lastChild).bottom + getBoundingClientRect(firstChild).top) / 2;
-	const parentMidpoint = (getBoundingClientRectParent(parent).top + getBoundingClientRectParent(parent).height / 2);
+	const childrenMidpoint = (getBoundingClientRect(lastChild, axis, 'far') + getBoundingClientRect(firstChild, axis, 'close')) / 2;
+	const parentMidpoint = (getBoundingClientRectParent(parent, axis, 'close') + getBoundingClientRectParent(parent, axis, 'size') / 2);
 	//console.log(getBoundingClientRect(parent));
 
-	const childrenHeight = Array.from(parent.children).reduce((prev, curr) => prev + ($(curr).outerHeight(true) || curr.clientHeight), 0)
-	const remainingSpace = parent.clientHeight - childrenHeight;
+	const childrenHeight = Array.from(parent.children).reduce((prev, curr) => prev + getBoundingClientRect(curr as HTMLElement, axis, 'size-full'), 0)
+	const remainingSpace = getBoundingClientRectParent(parent, axis, 'size') - childrenHeight;
 	const evenlySpace = remainingSpace / (numChildren + 1);
 	const aroundSpace = remainingSpace / numChildren;
 	const betweenSpace = remainingSpace / (numChildren - 1);
@@ -1057,313 +1123,124 @@ interface TransitionCondition {
 		func: (element: HTMLElement, info: FlexConditionInfo) => void;
 	}
 }
-const conditions: TransitionCondition[] = [
-	{
-		name: 'center',
-		in: {
-			condition: (_, {parentMidpoint, childrenMidpoint}: FlexConditionInfo): boolean => parentMidpoint === childrenMidpoint,
-			func: (element: HTMLElement, info: FlexConditionInfo) => {
-				const parent = element.parentElement!;
-				parent.style.paddingTop = '';
-				parent.style.paddingBottom = '';
-				parent.style.justifyContent = 'center';
-			}
-		},
-		out: {
-			condition: (element) => element.parentElement?.style.justifyContent === 'center',
-			func: (element: HTMLElement, {y, dy, gapStart, gapEnd}) => {
-				if (dy < 0) {
-					element.parentElement!.style.justifyContent = 'flex-start';
-					element.parentElement!.style.paddingTop = `${y - gapStart}px`;
-					element.parentElement!.style.paddingBottom = '';
-				} else if (dy > 0) {
-					element.parentElement!.style.paddingTop = '';
-					element.parentElement!.style.paddingBottom = `${gapEnd}px`;
-					element.parentElement!.style.justifyContent = 'flex-end';
-				} else {
-					throw new Error("Children and parent midpoints should not equal");
-				}
-			}
-		}
+
+function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, rect: Rect}, axis: Axis) {
+	const parent = element.parentElement as HTMLElement;
+	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
+	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close');
+	const closePadding = axis === 'y' ? 'paddingTop' : 'paddingLeft';
+	const farPadding = axis === 'y' ? 'paddingBottom' : 'paddingRight';
+
+	const {
+		childrenMidpoint,
+		gapBetween,
+	} = calculateFlexInfo(parent, axis);
+	const numChildren = parent.children.length;
+	const selfIndex = Array.from(parent.children).indexOf(element);
+	if (selfIndex < 0) {
+		throw new Error("Invalid self index");
 	}
-]
+	const firstChild = parent.children[0] as HTMLElement;
+	const lastChild = parent.children[parent.children.length - 1] as HTMLElement;
+	const ds = axis === 'y' ? props.dy : props.dx;
+	const axisGap = axis === 'y' ? 'gap' : 'gap';
 
-const useFlexHelper = (): OffsetHelper => {
-	return {
-		getOffset(element) {
-			return offsetTranslate.getOffset(element!);
-		},
-		setOffset(element, props) {
-			//const {start, center, evenly, around, between, remainingSpace} = getFlexAnchorPoints(element);
-			const parent = element.parentElement as HTMLElement;
-			const posY = props.rect.top - getBoundingClientRectParent(parent).top;
-			
-			const {
-				parentMidpoint,
-				childrenCount,
-				childrenMidpoint,
-				childrenHeight,
-				gapBetween,
-				gapStart,
-				gapEnd,
-				remainingSpace,
-			} = calculateFlexInfo(parent);
-			//const end = parent.offsetTop + getElementHeight(parent);
-			const numChildren = parent.children.length;
-			const selfIndex = Array.from(parent.children).indexOf(element);
-			if (selfIndex < 0) {
-				throw new Error("Invalid self index");
-			}
-			const firstChild = parent.children[0] as HTMLElement;
-			const lastChild = parent.children[parent.children.length - 1] as HTMLElement;
-
-			// const start = Array.from(parent.children).slice(0, selfIndex).reduce((prev, curr) => prev + ($(curr).outerHeight(true) || curr.clientHeight), 0)
-
-			const position = selfIndex === 0 || selfIndex === numChildren - 1 ? 'edge' : 'middle';
-			// const isExpanding = selfIndex === 0 && (props.dy < 0 || gapEnd === 0) || selfIndex === numChildren - 1 && (props.dy > 0 || gapStart === 0);
-
-			const isExpanding = position === 'edge' && (gapBetween > 5 || (selfIndex === 0 && props.dy < 0 || selfIndex === numChildren - 1 && props.dy > 0));
+	const position = selfIndex === 0 || selfIndex === numChildren - 1 ? 'edge' : 'middle';
 	
-			if (isExpanding) {
-				// const direction = selfIndex === 0 ? 1 : -1;
-				// const gap = parseFloat(parent.style.gap || '0') - direction * props.dy;
-				// const padding = parseFloat(parent.style.paddingTop || '0') + direction * props.dy;
-				// const p0 = getBoundingClientRect(element).top;
-				// const p1s = parent.children[1].getBoundingClientRect().top;
-				// console.log(`start p0: ${p0}`);
-				// console.log(`diff p0: ${props.rect.top}`);
-				// console.log(`start p1: ${p1s}`);
-				
-				const p0o = getBoundingClientRect(firstChild).top - getBoundingClientRectParent(parent).top;
-				const p1o = getBoundingClientRect(lastChild).top - (getBoundingClientRectParent(parent).top);
-				const p0 = p1o + p0o - posY;
-				//const p1 = parent.children[1].getBoundingClientRect().top - getBoundingClientRect(parent).top;
-				// const p1b = parent.children[1].getBoundingClientRect().bottom - getBoundingClientRect(parent).top;
-				// let gap = selfIndex === 0 ? p1 - (props.rect.bottom - getBoundingClientRect(parent).top) : posY - p1b;
-				// if (parentMidpoint !== childrenMidpoint) {
-				// 	gap -= 4;
-				// }
-				const childrenBeforeHeight = Array.from(parent.children).slice(0, parent.children.length - 1).reduce((prev, curr) => prev + getElementHeight(curr as HTMLElement), 0);
-				// const gap = selfIndex === 0 ? p1 - (props.rect.bottom - getBoundingClientRect(parent).top) : posY - p1b - parseFloat($(element).css('marginTop') || '0');
-				const gap1 = selfIndex === 0 ? (2*(childrenMidpoint - getBoundingClientRectParent(parent).top) - (2 * posY + getElementHeight(lastChild) + childrenBeforeHeight)) / (numChildren - 1) : (posY - (p0 + childrenBeforeHeight + getExtra(lastChild, 'top'))) / (numChildren - 1);
-				// console.log(`p0: ${getBoundingClientRect(firstChild).top}, ${gapStart + getBoundingClientRect(parent).top}`);
-				// console.log(`p1: ${getBoundingClientRect(lastChild).top}, ${gapStart + childrenBeforeHeight + gapBetween * (numChildren - 1) + getBoundingClientRect(parent).top + getMargin(lastChild, 'top')}`)
-				//console.log(`gap: ${gap}, ${gap1}, ${gap1 - gap}`)
+	const isExpanding = position === 'edge' && (gapBetween > 5 || (selfIndex === 0 && ds < 0 || selfIndex === numChildren - 1 && ds > 0));
 
-				const padding = selfIndex === 0 ? posY : p0;
+	if (isExpanding) {
+		const p0o = getBoundingClientRect(firstChild, axis, 'close') - getBoundingClientRectParent(parent, axis, 'close');
+		const p1o = getBoundingClientRect(lastChild, axis, 'close') - (getBoundingClientRectParent(parent, axis, 'close'));
+		const p0 = p1o + p0o - posY;
+		const childrenBeforeHeight = Array.from(parent.children).slice(0, parent.children.length - 1).reduce((prev, curr) => prev + getBoundingClientRect(curr as HTMLElement, axis, 'size-full'), 0);
+		const gap1 = selfIndex === 0 ? (2*(childrenMidpoint - getBoundingClientRectParent(parent, axis, 'close')) - (2 * posY + getBoundingClientRect(lastChild, axis, 'size-full') + childrenBeforeHeight)) / (numChildren - 1) : (posY - (p0 + childrenBeforeHeight + getExtra(lastChild, axis, 'close'))) / (numChildren - 1);
+		
+		const padding = selfIndex === 0 ? posY : p0;
 
-				
-				parent.style.gap = `${gap1}px`;
+		
+		parent.style[axisGap] = `${gap1}px`;
 
-				if (!['center', 'space-evenly', 'space-around', 'space-between'].includes(parent.style.justifyContent)) {
-					parent.style.paddingTop = `${padding}px`
-					parent.style.justifyContent = '';
-					parent.style.paddingBottom = '';
-				}
-				
-				//TODO: Figure out why the middle item moves here
-				// const gp0 = gap * 2 + 80 + padding + 8 + getBoundingClientRect(parent).top
-				// const gp1 = gap + 40 + padding + getBoundingClientRect(parent).top + 4;
-				// console.log(`guess p0: ${gp0}`)
-				// console.log(`guess p1: ${gp1}`);
-				// console.log(`end p0: ${getBoundingClientRect(element).top}`)
-				// console.log(`end p1: ${parent.children[1].getBoundingClientRect().top}, ${parent.children[1].getBoundingClientRect().top - p1s}`)
-			} else {
-				parent.style.paddingTop = `${props.rect.top - (getBoundingClientRect(element).top - getBoundingClientRect(firstChild).top) - getBoundingClientRectParent(parent).top}px`
-				parent.style.justifyContent = '';
-				parent.style.paddingBottom = '';
-			}
-			
+		if (!['center', 'space-evenly', 'space-around', 'space-between'].includes(parent.style.justifyContent)) {
+			parent.style[closePadding] = `${padding}px`
+			parent.style.justifyContent = '';
+			parent.style[farPadding] = '';
+		}
+	} else {
+		parent.style[closePadding] = `${startPos - (getBoundingClientRect(element, axis, 'close') - getBoundingClientRect(firstChild, axis, 'close')) - getBoundingClientRectParent(parent, axis, 'close')}px`
+		parent.style.justifyContent = '';
+		parent.style.gap = `${gapBetween}px`;
+		parent.style[farPadding] = '';
+	}
+	
 
-			let info = calculateFlexInfo(parent);
+	let info = calculateFlexInfo(parent, axis);
 
 
-			if (close(info.parentMidpoint, info.childrenMidpoint, .1)) {
-				parent.style.justifyContent = 'center';
-				parent.style.paddingTop = '';
-				parent.style.paddingBottom = '';
+	if (close(info.parentMidpoint, info.childrenMidpoint, .1)) {
+		parent.style.justifyContent = 'center';
+		parent.style[closePadding] = '';
+		parent.style[farPadding] = '';
 
-				info = calculateFlexInfo(parent);
-				//console.log(info.gapBetween);
-				if (info.gapBetween === info.evenlySpace) {
-					parent.style.justifyContent = 'space-evenly';
-					parent.style.gap = '';
-				} else if (info.gapBetween === info.aroundSpace) {
-					parent.style.justifyContent = 'space-around';
-					parent.style.gap = '';
-				} else if (info.gapBetween === info.betweenSpace) {
-					parent.style.justifyContent = 'space-between';
-					parent.style.gap = '';
-				}
-			} else if (info.childrenMidpoint > info.parentMidpoint) {
-				parent.style.paddingTop = '';
-				parent.style.paddingBottom = `${info.gapEnd}px`;
-				parent.style.justifyContent = 'flex-end';
-			} else {
-				parent.style.justifyContent = '';
-			}
+		info = calculateFlexInfo(parent, axis);
+		if (info.gapBetween === info.evenlySpace) {
+			parent.style.justifyContent = 'space-evenly';
+			parent.style[axisGap] = '';
+		} else if (info.gapBetween === info.aroundSpace) {
+			parent.style.justifyContent = 'space-around';
+			parent.style[axisGap] = '';
+		} else if (info.gapBetween === info.betweenSpace) {
+			parent.style.justifyContent = 'space-between';
+			parent.style[axisGap] = '';
+		}
+	} else if (info.childrenMidpoint > info.parentMidpoint) {
+		parent.style[closePadding] = '';
+		parent.style[farPadding] = `${info.gapEnd}px`;
+		parent.style.justifyContent = 'flex-end';
+	} else {
+		parent.style.justifyContent = '';
+	}
+}
 
-			// if (selfIndex === numChildren - 1) {
-			// 	//If it is exanding
-			// 	if (gapBetween > 5 || props.dy > 0) {
-			// 		// const pos = posY - (gapStart + start + parseFloat($(element).css('marginTop')));
-			// 		// parent.style.gap = `${pos / (numChildren - 1)}px`//`${props.rect.top - parent.children[1].getBoundingClientRect().bottom}px`;//(childrenMidpoint + parent.children[1].clientHeight / 2)}px`;//`${pos / (numChildren - 1)}px`;
-			// 		// const padding = //props.rect.bottom - childrenHeight - getBoundingClientRect(parent).top;
-			// 		// parseFloat(parent.style.paddingTop || '0') - props.dy;
-			// 		// parent.style.paddingTop = `${padding}px`
-			// 		const gap = parseFloat(parent.style.gap || '0') + props.dy;
-			// 		const padding = parseFloat(parent.style.paddingTop || '0') - props.dy;
+function setDragPositionOtherAxis(element: HTMLElement, props: {dx: number, dy: number, rect: Rect}, axis: Axis) {
+	const parent = element.parentElement as HTMLElement;
+	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
+	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close');
+	const closePadding = axis === 'y' ? 'paddingTop' : 'paddingLeft';
+	const farPadding = axis === 'y' ? 'paddingBottom' : 'paddingRight';
 
-			// 		parent.style.gap = `${gap}px`;
-			// 		parent.style.paddingTop = `${padding}px`
-			// 	} else {
-			// 		parent.style.paddingTop = `${props.rect.top - (getBoundingClientRect(element).top - getBoundingClientRect(firstChild).top) - getBoundingClientRect(parent).top}px`
-			// 	}
-			// } else if (selfIndex === 0) {
-			// 	//Is expanding
-			// 	if (gapBetween > 5 || props.dy < 0) {
-			// 		// const pos = posY - (gapStart + start + parseFloat($(element).css('marginTop')));
-			// 		// const gap = parseFloat(parent.style.gap || '0');
-			// 		// parent.style.gap = `${props.rect.top - (childrenMidpoint + parent.children[1].clientHeight / 2)}px`;//`${gap - props.dy}px`;
-			// 		// parent.style.paddingTop = `${posY}px`;
-			// 		const gap = parseFloat(parent.style.gap || '0') - props.dy;
-			// 		const padding = parseFloat(parent.style.paddingTop || '0') + props.dy;
+	const selfIndex = Array.from(parent.children).indexOf(element);
+	if (selfIndex < 0) {
+		throw new Error("Invalid self index");
+	}
+	const firstChild = parent.children[0] as HTMLElement;
+	
+	parent.style[closePadding] = `${startPos - (getBoundingClientRect(element, axis, 'close') - getBoundingClientRect(firstChild, axis, 'close')) - getBoundingClientRectParent(parent, axis, 'close')}px`
+		parent.style.alignItems = '';
+		parent.style[farPadding] = '';
+	
 
-			// 		parent.style.gap = `${gap}px`;
-			// 		parent.style.paddingTop = `${padding}px`
-			// 	} else {
-			// 		parent.style.paddingTop = `${props.rect.top - (getBoundingClientRect(element).top - getBoundingClientRect(firstChild).top) - getBoundingClientRect(parent).top}px`
-			// 	}
-			// } else {
-			// 	parent.style.paddingTop = `${props.rect.top - (getBoundingClientRect(element).top - getBoundingClientRect(firstChild).top) - getBoundingClientRect(parent).top}px`
-			// }
-			// if (isExpanding && selfIndex === numChildren - 1) { //&& childrenMidpoint < parentMidpoint) {
-			// 	const prevHeights = Array.from(parent.children).slice(0, selfIndex).reduce((prev, curr) => prev + curr.clientHeight, 0);
-			// 	const pos = posY - (gapStart + start + parseFloat($(element).css('marginTop')));
-			// 	parent.style.gap = `${pos / (numChildren - 1)}px`;
-			// } else if (false && selfIndex !== 0) {
-			// 	parent.style.paddingBottom = `${(posY - end)}px`
-			// } else if (isExpanding && selfIndex === 0) {
-			// 	const pos = posY - (gapStart + start + parseFloat($(element).css('marginTop')));
-			// 	const gap = parseFloat(parent.style.gap);
-			// 	parent.style.gap = `${gap + Math.abs(props.dy) / (numChildren - 1)}px`;
-			// 	parent.style.paddingTop = `${posY}px`;
-			// } else if (!isExpanding && (childrenMidpoint < parentMidpoint || childrenMidpoint === parentMidpoint && props.dy < 0)) {
-			// 	parent.style.paddingTop = `${props.rect.top - (getBoundingClientRect(element).top - getBoundingClientRect(firstChild).top) - getBoundingClientRect(parent).top}px`
-			// } else if (!isExpanding && (childrenMidpoint > parentMidpoint || childrenMidpoint === parentMidpoint && props.dy > 0)) {
-			// 	parent.style.paddingBottom = `${getBoundingClientRect(parent).bottom - props.rect.bottom - (getBoundingClientRect(lastChild).bottom - getBoundingClientRect(element).bottom)}px`
-			// }
+	let info = calculateFlexInfo(parent, axis);
 
 
-
-			// const info = {...calculateFlexInfo(parent), dy: props.dy, y: posY};
-			// conditions.forEach(transition => {
-			// 	if (transition.in.condition(element, info)) {
-			// 		console.log(`Transition in: ${transition.name}`);
-			// 		transition.in.func(element, info);
-			// 	} else if (transition.out.condition(element, info)) {
-			// 		console.log(`Transition out: ${transition.name}`);
-			// 		transition.out.func(element, info);
-			// 	}
-			// })
-			
-			// const checkY = round(posY, 10);
-			// if (checkY < round(center, 10)) {
-			// 	parent.style.justifyContent = '';
-			// 	parent.style.gap = '';
-				
-			// 	offsetPadding.setOffset(parent, {offsetX: 0, offsetY: posY - start, dx: 0, dy: 0, rect: props.rect});
-			// } else if (checkY >= round(center, 10) && checkY < round(evenly, 10)) {
-			// 	parent.style.justifyContent = 'center';
-			// 	offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
-		 	// 	parent.style.gap = `${(posY - center)}px`;
-			// } else if (checkY >= round(evenly, 10) && checkY < round(around, 10)) {
-			// 	parent.style.justifyContent = 'space-evenly';
-			// 	offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
-		 	// 	parent.style.gap = `${(posY - evenly)}px`;
-			// } else if (checkY >= round(around, 10) && checkY < round(between, 10)) {
-			// 	parent.style.justifyContent = 'space-around';
-			// 	offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
-			// 	const gap = numChildren * (checkY - round(around, 10));
-		 	// 	parent.style.gap = `${gap}px`;
-			// } else if (checkY >= round(between, 10)) {
-			// 	parent.style.justifyContent = 'space-between';
-			// 	offsetPadding.setOffset(parent, {offsetX: 0, offsetY: 0, dx: 0, dy: 0, rect: props.rect});
-			// 	parent.style.gap = '';
-			// }
-			//N = SR / C
-			//N - SA = dy
-			//SA = NSR / C
-			//SR = NSR + SAG
-			//SAG = C(dy + SA) - NSR
-			//SAG = C(dy + NSR / C) - NSR
-			//SAG = Cdy
-		},
-	};
+	if (close(info.parentMidpoint, info.childrenMidpoint, .1)) {
+		parent.style.alignItems = 'center';
+		parent.style[closePadding] = '';
+		parent.style[farPadding] = '';
+	} else if (info.childrenMidpoint > info.parentMidpoint) {
+		parent.style[closePadding] = '';
+		parent.style[farPadding] = `${info.gapEnd}px`;
+		parent.style.alignItems = 'flex-end';
+	} else {
+		parent.style.alignItems = '';
+	}
 }
 
 type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging'>;
 const useSnapping = ({element, onIsDragging}: SnappableProps) => {
 	const [shiftPressed, setShiftPressed] = useState(false);
-	const snappings = useMemo<DraggableProps['snapPoints']>(() => {
-		
-		const targets: SnapPoint[] = [];
-		let relativePoints: Point[] = [{x: 0, y: 0}];
-		if (element) {
-			//const {start, center, evenly, around, between, remainingSpace} = getFlexAnchorPoints(element);
-			// const parent = element.parentElement!;
-			// const childCount = parent.children.length;
-			// const dcenter = remainingSpace / (childCount - 1);
-			// const devenly = remainingSpace / (childCount + 1);
-			// const daround = remainingSpace / childCount;
-			// const dbetween = dcenter;
 
-			// const snapGuides: SnapPoint[] = [
-			// 	{
-			// 		point: {y: center, range: 10},
-			// 		offset: parent,
-			// 		// guides: [
-			// 		// 	{y0: 0, x0: .5, y1: dcenter, x1: .5, text: dcenter, relative: ['x0', 'x1']}, 
-			// 		// 	{y0: parent.clientHeight - (dcenter), x0: .5, y1: 1, x1: .5, text: dcenter, relative: ['x0', 'x1', 'y1']}
-			// 		// ]
-			// 	},
-			// 	{
-			// 		point: {y: evenly, range: 10},
-			// 		offset: parent,
-			// 		guides: [
-			// 			{y0: 0, x0: .5, y1: devenly, x1: .5, text: devenly, relative: ['x0', 'x1']},
-			// 			{y0: 40 + devenly, x0: .5, y1: 2 * devenly + 40, x1: .5, text: devenly, relative: ['x0', 'x1']},
-			// 			{y0: 84 + devenly * 2, x0: .5, y1: 84 + devenly * 3, x1: .5, text: devenly, relative: ['x0', 'x1']},
-			// 			{y0: parent.clientHeight - devenly, x0: .5, y1: 1, x1: .5, text: devenly, relative: ['x0', 'x1', 'y1']},
-			// 		]
-			// 	},
-			// 	{
-			// 		point: {y: around, range: 10},
-			// 		offset: parent,
-			// 		guides: [
-			// 			{y0: 0, x0: .5, y1: daround / 2, x1: .5, text: daround/2, relative: ['x0', 'x1']},
-			// 			{y0: 40 + daround/2, x0: .5, y1: 1.5 * daround + 40, x1: .5, text: daround, relative: ['x0', 'x1']},
-			// 			{y0: 84 + 1.5*daround, x0: .5, y1: 84 + 2.5*daround, x1: .5, text: daround, relative: ['x0', 'x1']},
-			// 			{y0: parent.clientHeight - (daround / 2), x0: .5, y1: 1, x1: .5, text: daround/2, relative: ['x0', 'x1', 'y1']},
-			// 		]
-			// 	},
-			// 	{
-			// 		point: {y: between, range: 10},
-			// 		offset: parent,
-			// 		guides: [
-			// 			{y0: 40, x0: .5, y1: dbetween + 40, x1: .5, text: dbetween, relative: ['x0', 'x1']},
-			// 			{y0: 84 + dbetween, x0: .5, y1: 84 + dbetween * 2, x1: .5, text: dbetween, relative: ['x0', 'x1']},
-			// 		]
-			// 	},
-			// ];
-			// targets.push({point: {y: start, range: 10}, offset: parent});
-			// targets.push(...snapGuides);
-		}
-		return targets;
-	}, [element, shiftPressed]);
-	const offsetHelper = useFlexHelper();
-
-	const result = useDraggable({element, onIsDragging, restrictToParent: true, snapPoints: snappings, offsetHelper});
+	const result = useDraggable({element, onIsDragging, restrictToParent: true});
 
 	// const onShift = useEffectEvent(() => {
 	// 	console.log("Setting shift...");
@@ -1377,284 +1254,273 @@ const useSnapping = ({element, onIsDragging}: SnappableProps) => {
 	return result;
 }
 
+
+
+function createSnapGuides(element: HTMLElement, pos: number, current: number, type: 'x' | 'y') {
+	const parent = element.parentElement!;
+	const {childrenMidpoint, parentMidpoint, gapEnd, gapStart, gapBetween, evenlySpace, aroundSpace, betweenSpace, centerSpace} = calculateFlexInfo(parent, type);
+	const _ = getBoundingClientRect(element, type, 'close') - getBoundingClientRect(parent, type, 'close');
+	const posY = _;
+	const dy = pos + getBoundingClientRect(parent, type, 'close') - current;
+
+	const selfIndex = Array.from(parent.children).indexOf(element);
+	const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= 5;
+	const direction = selfIndex === 0 ? -1 : 1;
+	const threshold = 15;
+	const range = 15;
+
+	const centerDiff = parentMidpoint - childrenMidpoint;
+	//console.log(centerDiff);
+	if (Math.abs(centerDiff) <= threshold && isMoving) {
+		const firstChild = parent.children[0] as HTMLElement;
+		const lastChild = parent.children[parent.children.length - 1] as HTMLElement || firstChild;
+
+		const snapPoints: SnapPoint[] = [{
+			point: {y: posY + centerDiff, range},
+			offset: parent,
+			guides: [
+				{rotate: type === 'x', y0: .5, x0: 0, y1: .5, x1: 1, relative: ['x0', 'x1', 'y0', 'y1']}, 
+				// {rotate: type === 'x', y0: 1, x0: .5, y1: lastChild.clientHeight + getExtra(lastChild, type, 'far') + centerSpace, x1: .5, text: centerSpace, relative: ['x0', 'x1', 'y0'], offset: lastChild}
+			]
+		},]
+		return {y: posY + centerDiff, range, snapPoints};
+	}
+
+	const evenlyDiff = evenlySpace - gapBetween;
+	if (centerDiff === 0 && !isMoving && Math.abs(evenlyDiff) <= threshold) {
+		const guides: SnapPoint['guides'] = [];
+		for (let i = 0; i < parent.children.length; i++) {
+			const child = parent.children[i] as HTMLElement;
+			if (i === parent.children.length - 1) {
+				const marginBottom = getExtra(child, type, 'far')
+				guides.push({rotate: type === 'x', y0: 1, x0: .5, y1: evenlySpace + child.clientHeight + marginBottom, x1: .5, text: evenlySpace, relative: ['x0', 'x1', 'y0'], offset: child})
+			}
+
+			const marginTop = getExtra(child, type, 'close');
+			guides.push({rotate: type === 'x', y0: -(evenlySpace + marginTop), x0: .5, y1: 0, x1: .5, text: evenlySpace, relative: ['x0', 'x1'], offset: child})
+		}
+		const snapPoints: SnapPoint[] = [{
+			point: {y: posY + evenlyDiff * direction, range},
+			offset: parent,
+			guides
+		},];
+		console.log(`evenly: ${posY + evenlyDiff * direction}`)
+		return {y: posY + evenlyDiff * direction, range, snapPoints}
+	}
+
+	const aroundDiff = aroundSpace - gapBetween;
+	if (centerDiff === 0 && !isMoving && Math.abs(aroundDiff) <= threshold) {
+		const guides: SnapPoint['guides'] = [];
+		for (let i = 0; i < parent.children.length; i++) {
+			const child = parent.children[i] as HTMLElement;
+			if (i === parent.children.length - 1) {
+				const marginBottom = getExtra(child, type, 'far')
+				guides.push({rotate: type === 'x', y0: 1, x0: .5, y1: aroundSpace / 2 + child.clientHeight + marginBottom, x1: .5, text: aroundSpace / 2, relative: ['x0', 'x1', 'y0'], offset: child})
+			}
+
+			const marginTop = getExtra(child, type, 'close');
+			const amount = i === 0 ? aroundSpace / 2 : aroundSpace;
+			guides.push({rotate: type === 'x', y0: -(amount + marginTop), x0: .5, y1: 0, x1: .5, text: amount, relative: ['x0', 'x1'], offset: child})
+		}
+		const snapPoints: SnapPoint[] = [{
+			point: {y: posY + aroundDiff * direction, range},
+			offset: parent,
+			guides
+		},]
+		console.log(`around: ${posY + aroundDiff * direction}`)
+		return {y: posY + aroundDiff * direction, range, snapPoints}
+	}
+
+	const betweenDiff = betweenSpace - gapBetween;
+	if (centerDiff === 0 && !isMoving && Math.abs(betweenDiff) <= threshold) {
+		const guides: SnapPoint['guides'] = [];
+		for (let i = 1; i < parent.children.length; i++) {
+			const child = parent.children[i] as HTMLElement;
+			const marginTop = getExtra(child, type, 'close');
+			guides.push({rotate: type === 'x', y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
+		}
+		const snapPoints: SnapPoint[] = [{
+			point: {y: posY + betweenDiff * direction, range},
+			offset: parent,
+			guides
+		},]
+		console.log(`between: ${posY + betweenDiff * direction}`)
+		return {y: posY + betweenDiff * direction, range, snapPoints}
+	}
+
+	if (Math.abs(gapEnd) <= threshold && (selfIndex === parent.children.length - 1 || isMoving)) {
+		let snapPoints: SnapPoint[] = [];
+		if (gapStart === 0) {
+			const guides: SnapPoint['guides'] = [];
+			for (let i = 1; i < parent.children.length; i++) {
+				const child = parent.children[i] as HTMLElement;
+				const marginTop = getExtra(child, type, 'close');
+				guides.push({rotate: type === 'x', y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
+			}
+			snapPoints = [{
+				point: {y: posY + betweenDiff * direction, range},
+				offset: parent,
+				guides
+			},]
+		}
+		return {y: posY + gapEnd, range: dy > 0 ? undefined : 10, snapPoints};
+	}
+
+	
+	if (Math.abs(gapStart) <= threshold && (selfIndex === 0 || isMoving)) {
+		let snapPoints: SnapPoint[] = [];
+		if (gapEnd === 0) {
+			const guides: SnapPoint['guides'] = [];
+			for (let i = 1; i < parent.children.length; i++) {
+				const child = parent.children[i] as HTMLElement;
+				const marginTop = getExtra(child, type, 'close');
+				guides.push({rotate: type === 'x', y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
+			}
+			snapPoints = [{
+				point: {y: posY + betweenDiff * direction, range},
+				offset: parent,
+				guides
+			},]
+		}
+		return {y: posY - gapStart, range: dy < 0 ? undefined : 10, snapPoints};
+	}
+
+	return undefined;
+}
+
+function createSnapGuidesOtherAxis(element: HTMLElement, pos: number, current: number, type: 'x' | 'y') {
+	const parent = element.parentElement!;
+	const {childrenMidpoint, parentMidpoint, gapEnd, gapStart, gapBetween, evenlySpace, aroundSpace, betweenSpace, centerSpace} = calculateFlexInfo(parent, type);
+	const _ = getBoundingClientRect(element, type, 'close') - getBoundingClientRect(parent, type, 'close');
+	const posY = _;
+	const dy = pos + getBoundingClientRect(parent, type, 'close') - current;
+
+	const selfIndex = Array.from(parent.children).indexOf(element);
+	const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= 5;
+	const direction = selfIndex === 0 ? -1 : 1;
+	const threshold = 15;
+	const range = 15;
+
+	const centerDiff = parentMidpoint - childrenMidpoint;
+	//console.log(centerDiff);
+	if (Math.abs(centerDiff) <= threshold && isMoving) {
+		const firstChild = parent.children[0] as HTMLElement;
+		const lastChild = parent.children[parent.children.length - 1] as HTMLElement || firstChild;
+
+		const snapPoints: SnapPoint[] = [{
+			point: {y: posY + centerDiff, range},
+			offset: parent,
+			guides: [
+				{rotate: type === 'x', y0: .5, x0: 0, y1: .5, x1: 1, relative: ['x0', 'x1', 'y0', 'y1']}, 
+			]
+		},]
+		return {y: posY + centerDiff, range, snapPoints};
+	}
+
+	
+
+	// if (Math.abs(gapEnd) <= threshold && (selfIndex === parent.children.length - 1 || isMoving)) {
+	// 	let snapPoints: SnapPoint[] = [];
+	// 	if (gapStart === 0) {
+	// 		const guides: SnapPoint['guides'] = [];
+	// 		for (let i = 1; i < parent.children.length; i++) {
+	// 			const child = parent.children[i] as HTMLElement;
+	// 			const marginTop = getExtra(child, type, 'close');
+	// 			guides.push({rotate: type === 'x', y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
+	// 		}
+	// 		snapPoints = [{
+	// 			point: {y: posY + betweenDiff * direction, range},
+	// 			offset: parent,
+	// 			guides
+	// 		},]
+	// 	}
+	// 	return {y: posY + gapEnd, range: dy > 0 ? undefined : 10, snapPoints};
+	// }
+
+	
+	// if (Math.abs(gapStart) <= threshold && (selfIndex === 0 || isMoving)) {
+	// 	let snapPoints: SnapPoint[] = [];
+	// 	if (gapEnd === 0) {
+	// 		const guides: SnapPoint['guides'] = [];
+	// 		for (let i = 1; i < parent.children.length; i++) {
+	// 			const child = parent.children[i] as HTMLElement;
+	// 			const marginTop = getExtra(child, type, 'close');
+	// 			guides.push({rotate: type === 'x', y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
+	// 		}
+	// 		snapPoints = [{
+	// 			point: {y: posY + betweenDiff * direction, range},
+	// 			offset: parent,
+	// 			guides
+	// 		},]
+	// 	}
+	// 	return {y: posY - gapStart, range: dy < 0 ? undefined : 10, snapPoints};
+	// }
+
+	return undefined;
+}
+
 interface DraggableProps {
 	element: HTMLElement | undefined;
 	onIsDragging?: () => void;
 	snapPoints?: SnapPoint[],
-	// snappings?: {
-	// 	parent: {targets: SnapTarget[], relativePoints?: Point[]},
-	// 	self: {targets: SnapTarget[], relativePoints?: Point[]}
-	// },
 	restrictToParent?: boolean;
-	offsetHelper: OffsetHelper
 }
-const useDraggable = ({element, onIsDragging, offsetHelper, snapPoints=[], restrictToParent=false}: DraggableProps) => {
+const useDraggable = ({element, onIsDragging, restrictToParent=false}: DraggableProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [offsetX, setOffsetX] = useState<number | null>(null);
 	const [offsetY, setOffsetY] = useState<number | null>(null);
-	const ref = useRef(0);
-	const snapGuides = useRef<SnapPoint[]>([]);
+	const refX = useRef(0);
+	const refY = useRef(0);
+	const snapGuidesX = useRef<SnapPoint[]>([]);
+	const snapGuidesY = useRef<SnapPoint[]>([]);
 	const $parent = $('#harmony-snap-guides');
 		
 	useEffect(() => {
 		if (element) {
-			ref.current = getBoundingClientRect(element).top - getBoundingClientRect(element.parentElement!).top;
-			const parentSnappings = snapPoints.filter(point => point.offset === element.parentElement);
+			refY.current = getBoundingClientRect(element, 'y', 'close') - getBoundingClientRect(element.parentElement!, 'y', 'close');
+			refX.current = getBoundingClientRect(element, 'x', 'close') - getBoundingClientRect(element.parentElement!, 'x', 'close');
 			const modifiers: Modifier[] = [
 				interact.modifiers.snap({
+					targets: [interact.createSnapGrid({x: 2, y: 2})],
+					// Control the snapping behavior
+					range: Infinity, // Snap to the closest target within the entire range
+					relativePoints: [{x: 0, y: 0}],
+					offset: 'self',
+				}),
+				interact.modifiers.snap({
 					targets: [function(x, y, interaction, offset, index) {
-						const parent = element.parentElement!;
-						const {childrenMidpoint, parentMidpoint, gapEnd, gapStart, gapBetween, evenlySpace, aroundSpace, betweenSpace, centerSpace} = calculateFlexInfo(parent);
-						const _ = getBoundingClientRect(element).top - getBoundingClientRect(parent).top;
-						const posY = _;
-						const dy = y + getBoundingClientRect(parent).top - ref.current;
-					
-						const selfIndex = Array.from(parent.children).indexOf(element);
-						const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= 5;
-						const direction = selfIndex === 0 ? -1 : 1;
+						const style = getComputedStyle(element.parentElement!);
 
-						const centerDiff = parentMidpoint - childrenMidpoint;
-						//console.log(centerDiff);
-						if (Math.abs(centerDiff) <= 5 && isMoving) {
-							const guides: SnapPoint['guides'] = [];
-							const firstChild = parent.children[0] as HTMLElement;
-							const lastChild = parent.children[parent.children.length - 1] as HTMLElement || firstChild;
-
-							snapGuides.current = [{
-								point: {y: posY + centerDiff, range: 10},
-								offset: parent,
-								guides: [
-									{y0: -(centerSpace + getExtra(firstChild, 'top')), x0: .5, y1: 0, x1: .5, text: centerSpace, relative: ['x0', 'x1', 'y1'], offset: firstChild}, 
-									{y0: 1, x0: .5, y1: lastChild.clientHeight + getExtra(lastChild, 'bottom') + centerSpace, x1: .5, text: centerSpace, relative: ['x0', 'x1', 'y0'], offset: lastChild}
-								]
-							},]
-							return {y: posY + centerDiff, range: 10};
+						const res = style.flexDirection === 'column' ? createSnapGuidesOtherAxis(element, x, refX.current, 'x') : createSnapGuides(element, x, refX.current, 'x');
+						if (!res) {
+							snapGuidesX.current = [];
+							return //interact.createSnapGrid({x: 2, y: 2})(x, y, interaction, offset, index);
 						}
 
-						const evenlyDiff = evenlySpace - gapBetween;
-						if (centerDiff === 0 && !isMoving && Math.abs(evenlyDiff) <= 5) {
-							const guides: SnapPoint['guides'] = [];
-							for (let i = 0; i < parent.children.length; i++) {
-								const child = parent.children[i] as HTMLElement;
-								if (i === parent.children.length - 1) {
-									const marginBottom = parseFloat($(child).css('marginBottom') || '0');
-									guides.push({y0: 1, x0: .5, y1: evenlySpace + child.clientHeight + marginBottom, x1: .5, text: evenlySpace, relative: ['x0', 'x1', 'y0'], offset: child})
-								}
+						const {y: point, range, snapPoints} = res;
+						snapGuidesX.current = snapPoints;
 
-								const marginTop = parseFloat($(child).css('marginTop') || '0');
-								guides.push({y0: -(evenlySpace + marginTop), x0: .5, y1: 0, x1: .5, text: evenlySpace, relative: ['x0', 'x1'], offset: child})
-							}
-							snapGuides.current = [{
-								point: {y: posY + evenlyDiff * direction, range: 10},
-								offset: parent,
-								guides
-							},];
-							console.log(`evenly: ${posY + evenlyDiff * direction}`)
-							return {y: posY + evenlyDiff * direction, range: 10}
-						}
-
-						const aroundDiff = aroundSpace - gapBetween;
-						if (centerDiff === 0 && !isMoving && Math.abs(aroundDiff) <= 5) {
-							const guides: SnapPoint['guides'] = [];
-							for (let i = 0; i < parent.children.length; i++) {
-								const child = parent.children[i] as HTMLElement;
-								if (i === parent.children.length - 1) {
-									const marginBottom = parseFloat($(child).css('marginBottom') || '0');
-									guides.push({y0: 1, x0: .5, y1: aroundSpace / 2 + child.clientHeight + marginBottom, x1: .5, text: aroundSpace / 2, relative: ['x0', 'x1', 'y0'], offset: child})
-								}
-
-								const marginTop = parseFloat($(child).css('marginTop') || '0');
-								const amount = i === 0 ? aroundSpace / 2 : aroundSpace;
-								guides.push({y0: -(amount + marginTop), x0: .5, y1: 0, x1: .5, text: amount, relative: ['x0', 'x1'], offset: child})
-							}
-							snapGuides.current = [{
-								point: {y: posY + aroundDiff * direction, range: 10},
-								offset: parent,
-								guides
-							},]
-							console.log(`around: ${posY + aroundDiff * direction}`)
-							return {y: posY + aroundDiff * direction, range: 10}
-						}
-
-						const betweenDiff = betweenSpace - gapBetween;
-						if (centerDiff === 0 && !isMoving && Math.abs(betweenDiff) <= 5) {
-							const guides: SnapPoint['guides'] = [];
-							for (let i = 1; i < parent.children.length; i++) {
-								const child = parent.children[i] as HTMLElement;
-								const marginTop = parseFloat($(child).css('marginTop') || '0');
-								guides.push({y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
-							}
-							snapGuides.current = [{
-								point: {y: posY + betweenDiff * direction, range: 10},
-								offset: parent,
-								guides
-							},]
-							console.log(`between: ${posY + betweenDiff * direction}`)
-							return {y: posY + betweenDiff * direction, range: 10}
-						}
-
-						if (Math.abs(gapEnd) <= 5 && (selfIndex === parent.children.length - 1 || isMoving)) {
-							if (gapStart === 0) {
-								snapGuides.current = [{
-									point: {y: posY + gapEnd, range: 10},
-									offset: parent,
-									guides: [
-										{y0: 40, x0: .5, y1: betweenSpace + 40, x1: .5, text: betweenSpace, relative: ['x0', 'x1']},
-										{y0: 84 + betweenSpace, x0: .5, y1: 84 + betweenSpace * 2, x1: .5, text: betweenSpace, relative: ['x0', 'x1']},
-									]
-								},]
-							}
-							return {y: posY + gapEnd, range: 10};
-						}
-
+						return {x: point, range};
+					}, function(x, y, interaction, offset, index) {
 						
-						if (Math.abs(gapStart) <= 5 && (selfIndex === 0 || isMoving)) {
-							if (gapEnd === 0) {
-								snapGuides.current = [{
-									point: {y: posY - gapStart, range: 10},
-									offset: parent,
-									guides: [
-										{y0: 40, x0: .5, y1: betweenSpace + 40, x1: .5, text: betweenSpace, relative: ['x0', 'x1']},
-										{y0: 84 + betweenSpace, x0: .5, y1: 84 + betweenSpace * 2, x1: .5, text: betweenSpace, relative: ['x0', 'x1']},
-									]
-								},]
-							}
-							return {y: posY - gapStart, range: dy < 0 ? undefined : 10};
+						const style = getComputedStyle(element.parentElement!);
+
+						const res = style.flexDirection === 'column' ? createSnapGuidesOtherAxis(element, y, refY.current, 'y') : createSnapGuides(element, y, refY.current, 'y');
+						if (!res) {
+							snapGuidesY.current = [];
+							return //interact.createSnapGrid({x: 2, y: 2})(x, y, interaction, offset, index);
 						}
 
-						snapGuides.current = [];
+						const {y: point, range, snapPoints} = res;
+						snapGuidesY.current = snapPoints;
 
-						return interact.createSnapGrid({x: 2, y: 2})(x, y, interaction, offset, index);
-						
-						// const parent = element.parentElement as HTMLElement;
-						// const selfIndex = Array.from(parent.children).indexOf(element);
-						// if (selfIndex < 0) {
-						// 	throw new Error("Invalid self index");
-						// }
-						// const dy = y - ref.current;
-						// const numChildren = parent.children.length;
-						// const gapStart = parent.children[0].getBoundingClientRect().top - getBoundingClientRect(parent).top;
-						// const gapEnd = getBoundingClientRect(parent).top + getElementHeight(parent) - (parent.children[parent.children.length - 1].getBoundingClientRect().top + getElementHeight(parent.children[parent.children.length - 1] as HTMLElement));
-						
-						// const isExpanding = selfIndex === 0 && (dy < 0 || gapEnd === 0) || selfIndex === numChildren - 1 && (dy > 0 || gapStart === 0)
-						// const {start, end, center, evenly, around, between, remainingSpace} = getFlexAnchorPoints(element, isExpanding);
-						
-						// const posY = y - element.parentElement!.getBoundingClientRect().top;
-						// //const end = parent.offsetTop + getElementHeight(parent);
-						
-
-						// const firstChild = parent.children[0] as HTMLElement;
-						// const lastChild = parent.children[parent.children.length - 1] as HTMLElement;
-
-						// const childrenMidpoint = getBoundingClientRect(firstChild).top + (getBoundingClientRect(lastChild).bottom - getBoundingClientRect(firstChild).top) / 2;
-						// const parentMidpoint = (getBoundingClientRect(parent).top + getElementHeight(parent) / 2);
-						// let gap = 0;
-						// //let gapEnd = 0;
-						// for (let i = 0; i < numChildren; i++) {
-						// 	const child = parent.children[i] as HTMLElement;
-
-						// 	// if (i === 0) {
-						// 	// 	gapStart = child.getBoundingClientRect().top - getBoundingClientRect(parent).top;
-						// 	// }
-						// 	if (i === numChildren - 1) {
-						// 		// gapEnd = getBoundingClientRect(parent).top + getElementHeight(parent) - (child.getBoundingClientRect().top + getElementHeight(child));
-						// 		continue;
-						// 	}
-						// 	const nextChild = parent.children[i + 1] as HTMLElement;
-
-						// 	gap += nextChild.getBoundingClientRect().top - (child.getBoundingClientRect().top + getElementHeight(child));
-						// }
-
-						// const gapBetween = gap / (numChildren - 1)
-						// // const info: FlexConditionInfo = {
-						// // 	parentMidpoint,
-						// // 	childrenCount: numChildren,
-						// // 	childrenMidpoint,
-						// // 	gapBetween,
-						// // 	gapStart,
-						// // 	gapEnd,
-						// // 	remainingSpace,
-						// // 	y: posY,
-						// // 	dy
-						// // }
-
-						// const direction = (num: number): 1 | -1 => {
-						// 	return num > 0 ? 1 : -1;
-						// }
-						// const distances: number[] = [(center - y), (end - y)];
-						// const points: number[] = [center, end];
-						// // if (evenly) {
-						// // 	distances.push(Math.abs(y - evenly));
-						// // 	points.push(evenly);
-						// // }
-						// // if (around) {
-						// // 	distances.push(Math.abs(y - around));
-						// // 	points.push(around);
-						// // }
-						// // if (between) {
-						// // 	distances.push(Math.abs(y - between));
-						// // 	points.push(between);
-						// // }
-						// const min = Math.min(...distances.filter(dist => direction(dist) === direction(dy)).map(d => Math.abs(d)));
-						// const index = distances.findIndex(d => Math.abs(d) === min);
-						// if (index < 0 && min !== Infinity) throw new Error("Something went wrong")
-
-						// console.log(index > -1 ? points[index] : 'none');
-						// return index > -1 ? {y: points[index], range: 10} : undefined;
-						//return {y: 90, range: 10};
-					// 	const snapGuides: SnapPoint[] = [
-					// 	{
-					// 		point: {y: center, range: 10},
-					// 		offset: parent,
-					// 		// guides: [
-					// 		// 	{y0: 0, x0: .5, y1: dcenter, x1: .5, text: dcenter, relative: ['x0', 'x1']}, 
-					// 		// 	{y0: parent.clientHeight - (dcenter), x0: .5, y1: 1, x1: .5, text: dcenter, relative: ['x0', 'x1', 'y1']}
-					// 		// ]
-					// 	},
-					// 	{
-					// 		point: {y: evenly, range: 10},
-					// 		offset: parent,
-					// 		guides: [
-					// 			{y0: 0, x0: .5, y1: devenly, x1: .5, text: devenly, relative: ['x0', 'x1']},
-					// 			{y0: 40 + devenly, x0: .5, y1: 2 * devenly + 40, x1: .5, text: devenly, relative: ['x0', 'x1']},
-					// 			{y0: 84 + devenly * 2, x0: .5, y1: 84 + devenly * 3, x1: .5, text: devenly, relative: ['x0', 'x1']},
-					// 			{y0: parent.clientHeight - devenly, x0: .5, y1: 1, x1: .5, text: devenly, relative: ['x0', 'x1', 'y1']},
-					// 		]
-					// 	},
-					// 	{
-					// 		point: {y: around, range: 10},
-					// 		offset: parent,
-					// 		guides: [
-					// 			{y0: 0, x0: .5, y1: daround / 2, x1: .5, text: daround/2, relative: ['x0', 'x1']},
-					// 			{y0: 40 + daround/2, x0: .5, y1: 1.5 * daround + 40, x1: .5, text: daround, relative: ['x0', 'x1']},
-					// 			{y0: 84 + 1.5*daround, x0: .5, y1: 84 + 2.5*daround, x1: .5, text: daround, relative: ['x0', 'x1']},
-					// 			{y0: parent.clientHeight - (daround / 2), x0: .5, y1: 1, x1: .5, text: daround/2, relative: ['x0', 'x1', 'y1']},
-					// 		]
-					// 	},
-					// 	{
-					// 		point: {y: between, range: 10},
-					// 		offset: parent,
-					// 		guides: [
-					// 			{y0: 40, x0: .5, y1: dbetween + 40, x1: .5, text: dbetween, relative: ['x0', 'x1']},
-					// 			{y0: 84 + dbetween, x0: .5, y1: 84 + dbetween * 2, x1: .5, text: dbetween, relative: ['x0', 'x1']},
-					// 		]
-					// 	},
-					// ];
-					// targets.push({point: {y: start, range: 10}, offset: parent});
-					// targets.push(...snapGuides);
+						return {y: point, range};
 					}],//parentSnappings.map(snapping => snapping.point),
 					// Control the snapping behavior
 					range: Infinity, // Snap to the closest target within the entire range
 					relativePoints: [{ x: 0, y: 0 }], // Snap relative to the top-left corner of the draggable element
 					offset: 'parent'
 				}),
-				// interact.modifiers.snap({
-				// 	targets: [interact.createSnapGrid({x: 2, y: 2})],
-				// 	// Control the snapping behavior
-				// 	range: Infinity, // Snap to the closest target within the entire range
-				// 	relativePoints: [{x: 0, y: 0}],
-				// 	offset: 'self',
-				// })
 			];
 			if (restrictToParent) {
 				modifiers.push(interact.modifiers.restrict({
@@ -1673,14 +1539,19 @@ const useDraggable = ({element, onIsDragging, offsetHelper, snapPoints=[], restr
 				//inertia: true
 			})
 		}
-	}, [element, snapPoints]);
+	}, [element]);
 
-	const handleGuides = useEffectEvent((posY: number, snapPoints: SnapPoint[]) => {
+	const handleGuides = useEffectEvent((posY: number, snapPoints: SnapPoint[], axis: Axis) => {
 		const createGuide = (rect: {x0: number, y0: number, y1: number, x1: number, text?: string | number}) => {
-			const lineTemplate = `<div name="harmony-guide-0" class="hw-bg-primary hw-w-[1px] hw-absolute hw-z-[100]" style="top: ${rect.y0}px; left: ${rect.x0}px; height: ${rect.y1 - rect.y0}px;">
-				${rect.text ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-top-1/2 -hw-translate-y-1/2 hw-left-1">
+			const height = rect.y1 - rect.y0 || 1;
+			const width = rect.x1 - rect.x0 || 1;
+
+			const lineTemplate = `<div name="harmony-guide-0" class="hw-bg-primary hw-absolute hw-z-[100]" style="top: ${rect.y0}px; left: ${rect.x0}px; height: ${height}px; width: ${width}px">
+				${rect.text && height > 1 ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-top-1/2 -hw-translate-y-1/2 hw-left-1">
 					${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
-				</div>` : ''}
+				</div>` : rect.text && width > 1 ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-left-1/2 -hw-translate-x-1/2 hw-top-1">
+				${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
+			</div>` : ''}
 			</div>`
 			
 			const $line = $(lineTemplate);
@@ -1697,20 +1568,30 @@ const useDraggable = ({element, onIsDragging, offsetHelper, snapPoints=[], restr
 			}
 		}
 
-		$parent.children().remove();
 		snapPoints.forEach(snapPoint => {
 			const {point, guides} = snapPoint;
 			const offsetParent = snapPoint.offset ? setOffset(snapPoint.offset) : undefined;
 
-			const top = (point.y as number) + (getBoundingClientRect(element!.parentElement!).top as number);
+			const top = (point.y as number) + (getBoundingClientRect(element!.parentElement!, axis, 'close') as number);
 			if (top === posY) {
 				guides && guides.forEach((guide) => {
 					const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
 					const copy = {...guide};
 					copy.relative.forEach(p => {
-						const sizeOffset = p.includes('y') ? offset.h : offset.w;
+						const sizeY = guide.rotate ? offset.w : offset.h;
+						const sizeX = guide.rotate ? offset.h : offset.w;
+						const sizeOffset = p.includes('y') ? sizeY : sizeX;
 						copy[p] *= sizeOffset;
 					});
+
+					if (guide.rotate) {
+						const temp0 = copy.x0;
+						copy.x0 = copy.y0;
+						copy.y0 = temp0;
+						const temp1 = copy.x1;
+						copy.x1 = copy.y1;
+						copy.y1 = temp1;
+					}
 
 					copy.x0 += offset.x;
 					copy.y0 += offset.y;
@@ -1731,14 +1612,24 @@ const useDraggable = ({element, onIsDragging, offsetHelper, snapPoints=[], restr
 	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
 		!isDragging && setIsDragging(true);
 		
-		const offset = offsetHelper.getOffset(element!);
-		const offsetX = offset ? offset.offsetX : 0;
-		const offsetY = offset ? offset.offsetY : 0;
-		ref.current = event.rect.top;
+		refY.current = event.rect.top;
+		refX.current = event.rect.left;
 
-		handleGuides(event.rect.top, snapGuides.current);
+		const style = getComputedStyle(element!.parentElement!);
 
-		offsetHelper.setOffset(element!, {offsetX, offsetY: event.clientY - event.clientY0, dx: event.dx, dy: event.dy, rect: event.rect});
+		if (style.flexDirection === 'column') {
+			setDragPosition(element!, {dx: event.dx, dy: event.dy, rect: event.rect}, 'y');
+			setDragPositionOtherAxis(element!, {dx: event.dx, dy: event.dy, rect: event.rect}, 'x');
+		} else {
+			setDragPosition(element!, {dx: event.dx, dy: event.dy, rect: event.rect}, 'x');
+			setDragPositionOtherAxis(element!, {dx: event.dx, dy: event.dy, rect: event.rect}, 'y');
+		}
+
+		$parent.children().remove();
+		handleGuides(event.rect.top, snapGuidesY.current, 'y');
+		handleGuides(event.rect.left, snapGuidesX.current, 'x');
+
+		
 		onIsDragging && onIsDragging();
 	});
 	
