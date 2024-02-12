@@ -987,12 +987,6 @@ function getBoundingClientRect(element: HTMLElement, axis: Axis, type: BoundingT
 		}
 	}
 	throw new Error("Invalid params");
-	// return {
-	// 	top: rect.top + getExtra(element, 'top'),
-	// 	bottom: rect.bottom + getExtra(element, 'bottom'),
-	// 	left: rect.left + getExtra(element, 'left'),
-	// 	right: rect.right + getExtra(element, 'right')
-	// }
 }
 
 function getBoundingClientRectParent(parent: HTMLElement, axis: Axis, type: BoundingType) {
@@ -1052,9 +1046,6 @@ function calculateFlexInfo(parent: HTMLElement, axis: Axis): FlexInfo {
 		}
 		const nextChild = parent.children[i + 1] as HTMLElement;
 
-		// gap += nextChild.getBoundingClientRect().top - (child.getBoundingClientRect().bottom);
-		//gap += nextChild.getBoundingClientRect().top - (child.getBoundingClientRect().top + getElementHeight(child));
-		//gap += nextChild.getBoundingClientRect().top - (child.getBoundingClientRect().top + child.clientHeight);
 		gap += getBoundingClientRect(nextChild, axis, 'close') - getExtra(nextChild, axis, 'close') - (getBoundingClientRect(child, axis, 'far'));
 	}
 
@@ -1070,10 +1061,10 @@ function calculateFlexInfo(parent: HTMLElement, axis: Axis): FlexInfo {
 	const betweenSpace = remainingSpace / (numChildren - 1);
 	const gapBetween = gap / (numChildren - 1);
 	const centerSpace = remainingSpace / 2;
-
+	
 	// const gapStart = getBoundingClientRect(firstChild).top - getBoundingClientRect(parent).top - 4;
 	// const gapEnd = getBoundingClientRect(parent).bottom - getBoundingClientRect(lastChild).bottom;
-	// const gapBetween = (remainingSpace - gapStart - gapEnd) / (numChildren - 1);
+	//console.log(`potential: ${(remainingSpace - gapStart - gapEnd) / (numChildren - 1)}`);
 
 	//console.log(`${remainingSpace}, ${childrenMidpoint}, ${parentMidpoint}`)
 	
@@ -1124,6 +1115,8 @@ interface TransitionCondition {
 	}
 }
 
+const minGap = 5;
+
 function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, rect: Rect}, axis: Axis) {
 	const parent = element.parentElement as HTMLElement;
 	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
@@ -1147,19 +1140,20 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 
 	const position = selfIndex === 0 || selfIndex === numChildren - 1 ? 'edge' : 'middle';
 	
-	const isExpanding = position === 'edge' && (gapBetween > 5 || (selfIndex === 0 && ds < 0 || selfIndex === numChildren - 1 && ds > 0));
+	const isExpanding = position === 'edge' && (gapBetween > minGap || (selfIndex === 0 && ds < 0 || selfIndex === numChildren - 1 && ds > 0));
 
 	if (isExpanding) {
 		const p0o = getBoundingClientRect(firstChild, axis, 'close') - getBoundingClientRectParent(parent, axis, 'close');
 		const p1o = getBoundingClientRect(lastChild, axis, 'close') - (getBoundingClientRectParent(parent, axis, 'close'));
 		const p0 = p1o + p0o - posY;
 		const childrenBeforeHeight = Array.from(parent.children).slice(0, parent.children.length - 1).reduce((prev, curr) => prev + getBoundingClientRect(curr as HTMLElement, axis, 'size-full'), 0);
-		const gap1 = selfIndex === 0 ? (2*(childrenMidpoint - getBoundingClientRectParent(parent, axis, 'close')) - (2 * posY + getBoundingClientRect(lastChild, axis, 'size-full') + childrenBeforeHeight)) / (numChildren - 1) : (posY - (p0 + childrenBeforeHeight + getExtra(lastChild, axis, 'close'))) / (numChildren - 1);
+		const gap = selfIndex === 0 ? (2*(childrenMidpoint - getBoundingClientRectParent(parent, axis, 'close')) - (2 * posY + getBoundingClientRect(lastChild, axis, 'size-full') + childrenBeforeHeight)) / (numChildren - 1) : (posY - (p0 + childrenBeforeHeight + getExtra(lastChild, axis, 'close'))) / (numChildren - 1);
 		
 		const padding = selfIndex === 0 ? posY : p0;
 
 		
-		parent.style[axisGap] = `${gap1}px`;
+		parent.style[axisGap] = `${gap}px`;
+		//console.log(`gap: ${gap}`)
 
 		if (!['center', 'space-evenly', 'space-around', 'space-between'].includes(parent.style.justifyContent)) {
 			parent.style[closePadding] = `${padding}px`
@@ -1177,19 +1171,23 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 	let info = calculateFlexInfo(parent, axis);
 
 
-	if (close(info.parentMidpoint, info.childrenMidpoint, .1)) {
+	//console.log(`positionBefore: ${getBoundingClientRect(element, axis, 'close') - getBoundingClientRectParent(parent, axis, 'close')}`)
+	if (close(info.parentMidpoint, info.childrenMidpoint, 0.1)) {
 		parent.style.justifyContent = 'center';
 		parent.style[closePadding] = '';
 		parent.style[farPadding] = '';
 
 		info = calculateFlexInfo(parent, axis);
-		if (info.gapBetween === info.evenlySpace) {
+		//console.log(`posY: ${posY}`);
+		//console.log(`aroundSpace: ${info.aroundSpace}`)
+		if (close(info.gapBetween, info.evenlySpace, 0.1)) {
 			parent.style.justifyContent = 'space-evenly';
 			parent.style[axisGap] = '';
-		} else if (info.gapBetween === info.aroundSpace) {
+		} else if (close(info.gapBetween, info.aroundSpace, 0.1)) {
 			parent.style.justifyContent = 'space-around';
 			parent.style[axisGap] = '';
-		} else if (info.gapBetween === info.betweenSpace) {
+			//console.log(`positionAfter: ${getBoundingClientRect(element, axis, 'close') - getBoundingClientRectParent(parent, axis, 'close')}`)
+		} else if (close(info.gapBetween, info.betweenSpace, 0.1)) {
 			parent.style.justifyContent = 'space-between';
 			parent.style[axisGap] = '';
 		}
@@ -1199,6 +1197,10 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 		parent.style.justifyContent = 'flex-end';
 	} else {
 		parent.style.justifyContent = '';
+	}
+
+	if (close(info.gapBetween, minGap, 1)) {
+		parent.style.gap = `${minGap}px`;
 	}
 }
 
@@ -1264,10 +1266,10 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 	const dy = pos + getBoundingClientRect(parent, type, 'close') - current;
 
 	const selfIndex = Array.from(parent.children).indexOf(element);
-	const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= 5;
+	const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= minGap;
 	const direction = selfIndex === 0 ? -1 : 1;
-	const threshold = 15;
-	const range = 15;
+	const threshold = 5;
+	const range = 10;
 
 	const centerDiff = parentMidpoint - childrenMidpoint;
 	//console.log(centerDiff);
@@ -1287,7 +1289,7 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 	}
 
 	const evenlyDiff = evenlySpace - gapBetween;
-	if (centerDiff === 0 && !isMoving && Math.abs(evenlyDiff) <= threshold) {
+	if (close(centerDiff, 0, 0.1) && !isMoving && Math.abs(evenlyDiff) <= threshold) {
 		const guides: SnapPoint['guides'] = [];
 		for (let i = 0; i < parent.children.length; i++) {
 			const child = parent.children[i] as HTMLElement;
@@ -1309,8 +1311,10 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 	}
 
 	const aroundDiff = aroundSpace - gapBetween;
-	if (centerDiff === 0 && !isMoving && Math.abs(aroundDiff) <= threshold) {
+	if (false || (close(centerDiff, 0, 0.1) && !isMoving && Math.abs(aroundDiff) <= threshold)) {
 		const guides: SnapPoint['guides'] = [];
+		const newPos = //644.3203125//644.3203125
+		posY + aroundDiff * direction;
 		for (let i = 0; i < parent.children.length; i++) {
 			const child = parent.children[i] as HTMLElement;
 			if (i === parent.children.length - 1) {
@@ -1323,16 +1327,15 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 			guides.push({rotate: type === 'x', y0: -(amount + marginTop), x0: .5, y1: 0, x1: .5, text: amount, relative: ['x0', 'x1'], offset: child})
 		}
 		const snapPoints: SnapPoint[] = [{
-			point: {y: posY + aroundDiff * direction, range},
+			point: {y: newPos, range},
 			offset: parent,
 			guides
 		},]
-		console.log(`around: ${posY + aroundDiff * direction}`)
-		return {y: posY + aroundDiff * direction, range, snapPoints}
+		return {y: newPos, range, snapPoints}
 	}
 
 	const betweenDiff = betweenSpace - gapBetween;
-	if (centerDiff === 0 && !isMoving && Math.abs(betweenDiff) <= threshold) {
+	if (close(centerDiff, 0, 0.1) && !isMoving && Math.abs(betweenDiff) <= threshold) {
 		const guides: SnapPoint['guides'] = [];
 		for (let i = 1; i < parent.children.length; i++) {
 			const child = parent.children[i] as HTMLElement;
@@ -1382,8 +1385,17 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 				guides
 			},]
 		}
+		console.log(`current: ${current}`)
 		return {y: posY - gapStart, range: dy < 0 ? undefined : 10, snapPoints};
+	} else {
+		console.log(`no current: ${current}`)
 	}
+
+	// const gapDiff = minGap - gapBetween;
+	// if (Math.abs(gapDiff) <= 10 && (!isMoving)) {
+	// 	console.log(posY + gapDiff * direction);
+	// 	return {y: posY + (gapDiff * direction * (parent.children.length - 1)), range, snapPoints: []};
+	// }
 
 	return undefined;
 }
@@ -1396,9 +1408,9 @@ function createSnapGuidesOtherAxis(element: HTMLElement, pos: number, current: n
 	const dy = pos + getBoundingClientRect(parent, type, 'close') - current;
 
 	const selfIndex = Array.from(parent.children).indexOf(element);
-	const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= 5;
+	const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= minGap;
 	const direction = selfIndex === 0 ? -1 : 1;
-	const threshold = 15;
+	const threshold = 10;
 	const range = 15;
 
 	const centerDiff = parentMidpoint - childrenMidpoint;
@@ -1417,7 +1429,42 @@ function createSnapGuidesOtherAxis(element: HTMLElement, pos: number, current: n
 		return {y: posY + centerDiff, range, snapPoints};
 	}
 
+	if (Math.abs(gapEnd) <= threshold && (selfIndex === parent.children.length - 1 || isMoving)) {
+		let snapPoints: SnapPoint[] = [];
+		// if (gapStart === 0) {
+		// 	const guides: SnapPoint['guides'] = [];
+		// 	for (let i = 1; i < parent.children.length; i++) {
+		// 		const child = parent.children[i] as HTMLElement;
+		// 		const marginTop = getExtra(child, type, 'close');
+		// 		guides.push({rotate: type === 'x', y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
+		// 	}
+		// 	snapPoints = [{
+		// 		point: {y: posY + betweenDiff * direction, range},
+		// 		offset: parent,
+		// 		guides
+		// 	},]
+		// }
+		return {y: posY + gapEnd, range: dy > 0 ? undefined : 10, snapPoints};
+	}
+
 	
+	if (Math.abs(gapStart) <= threshold && (selfIndex === 0 || isMoving)) {
+		let snapPoints: SnapPoint[] = [];
+		// if (gapEnd === 0) {
+		// 	const guides: SnapPoint['guides'] = [];
+		// 	for (let i = 1; i < parent.children.length; i++) {
+		// 		const child = parent.children[i] as HTMLElement;
+		// 		const marginTop = getExtra(child, type, 'close');
+		// 		guides.push({rotate: type === 'x', y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
+		// 	}
+		// 	snapPoints = [{
+		// 		point: {y: posY + betweenDiff * direction, range},
+		// 		offset: parent,
+		// 		guides
+		// 	},]
+		// }
+		return {y: posY - gapStart, range: dy < 0 ? undefined : 10, snapPoints};
+	}
 
 	// if (Math.abs(gapEnd) <= threshold && (selfIndex === parent.children.length - 1 || isMoving)) {
 	// 	let snapPoints: SnapPoint[] = [];
@@ -1477,8 +1524,8 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 		
 	useEffect(() => {
 		if (element) {
-			refY.current = getBoundingClientRect(element, 'y', 'close') - getBoundingClientRect(element.parentElement!, 'y', 'close');
-			refX.current = getBoundingClientRect(element, 'x', 'close') - getBoundingClientRect(element.parentElement!, 'x', 'close');
+			refY.current = getBoundingClientRect(element, 'y', 'close')
+			refX.current = getBoundingClientRect(element, 'x', 'close');
 			const modifiers: Modifier[] = [
 				interact.modifiers.snap({
 					targets: [interact.createSnapGrid({x: 2, y: 2})],
@@ -1491,31 +1538,33 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 					targets: [function(x, y, interaction, offset, index) {
 						const style = getComputedStyle(element.parentElement!);
 
-						const res = style.flexDirection === 'column' ? createSnapGuidesOtherAxis(element, x, refX.current, 'x') : createSnapGuides(element, x, refX.current, 'x');
-						if (!res) {
+						const resX = style.flexDirection === 'column' ? createSnapGuidesOtherAxis(element, x, refX.current, 'x') : createSnapGuides(element, x, refX.current, 'x');
+						const resY = style.flexDirection === 'column' ? createSnapGuides(element, y, refY.current, 'y') : createSnapGuidesOtherAxis(element, y, refY.current, 'y');
+						if (!resX) {
 							snapGuidesX.current = [];
-							return //interact.createSnapGrid({x: 2, y: 2})(x, y, interaction, offset, index);
 						}
-
-						const {y: point, range, snapPoints} = res;
-						snapGuidesX.current = snapPoints;
-
-						return {x: point, range};
-					}, function(x, y, interaction, offset, index) {
-						
-						const style = getComputedStyle(element.parentElement!);
-
-						const res = style.flexDirection === 'column' ? createSnapGuidesOtherAxis(element, y, refY.current, 'y') : createSnapGuides(element, y, refY.current, 'y');
-						if (!res) {
+						if (!resY) {
 							snapGuidesY.current = [];
-							return //interact.createSnapGrid({x: 2, y: 2})(x, y, interaction, offset, index);
 						}
 
-						const {y: point, range, snapPoints} = res;
-						snapGuidesY.current = snapPoints;
+						let result: {x?: number, y?: number, range?: number} | undefined;
 
-						return {y: point, range};
-					}],//parentSnappings.map(snapping => snapping.point),
+						if (resX) {
+							result = {};
+							result.x = resX.y;
+							result.range = resX.range;
+							snapGuidesX.current = resX.snapPoints;
+						}
+
+						if (resY) {
+							result = result || {};
+							result.y = resY.y;
+							result.range = resY.range;
+							snapGuidesY.current = resY.snapPoints;
+						}
+
+						return result;
+					}],
 					// Control the snapping behavior
 					range: Infinity, // Snap to the closest target within the entire range
 					relativePoints: [{ x: 0, y: 0 }], // Snap relative to the top-left corner of the draggable element
@@ -1614,6 +1663,7 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 		
 		refY.current = event.rect.top;
 		refX.current = event.rect.left;
+		console.log(`setting current: ${refX.current}, ${event.dx}`)
 
 		const style = getComputedStyle(element!.parentElement!);
 
