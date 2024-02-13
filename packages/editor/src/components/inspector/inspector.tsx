@@ -1115,7 +1115,7 @@ interface TransitionCondition {
 	}
 }
 
-const minGap = 5;
+const minGap = 8;
 
 function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, rect: Rect}, axis: Axis) {
 	const parent = element.parentElement as HTMLElement;
@@ -1601,7 +1601,7 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 		if (!element) return;
 
 		let axis: Axis | undefined = undefined;
-		let amount = 2;
+		let amount = 5;
 		switch (e.key) {
 			case 'ArrowLeft':
 				amount *= -1;
@@ -1629,23 +1629,8 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 			top: axis === 'y' ? offsetY + amount : offsetY, 
 			width: rect.width, 
 			height: rect.height,
-		});
+		}, setIsDragging);
 	});
-
-	const changeByAmount = (element: HTMLElement, eventRect: Omit<Rect, 'bottom' | 'right'>) => {
-		const rect = element.getBoundingClientRect();
-		
-		const start = new PointerEvent('pointermove', {clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, pointerType: 'mouse', bubbles: true});;
-		const down = new PointerEvent('pointerdown', {clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, pointerType: 'mouse', bubbles: true});
-		const move = new PointerEvent('pointermove', {clientX: eventRect.left + eventRect.width / 2, clientY: eventRect.top + eventRect.height / 2, pointerType: 'mouse', bubbles: true});
-		const up = new PointerEvent('pointerup', {clientX: eventRect.left + eventRect.width / 2, clientY: eventRect.top + eventRect.height / 2, pointerType: 'mouse', bubbles: true});
-		setIsDragging(true);
-		element.dispatchEvent(start);
-		element.dispatchEvent(down);
-		element.dispatchEvent(move);
-		//element.dispatchEvent(up);
-		setIsDragging(false);
-	}
 
 	const handleGuides = useEffectEvent((posY: number, snapPoints: SnapPoint[], axis: Axis) => {
 		const createGuide = (rect: {x0: number, y0: number, y1: number, x1: number, text?: string | number}) => {
@@ -1745,9 +1730,9 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 	
 	const stopDragging = useEffectEvent((e: InteractEvent<'drag', 'move'>) => {
 		setIsDragging(false);
-		setOffsetX(refX.current);
-		setOffsetY(refY.current);
-		$parent.children().remove();
+		// setOffsetX(refX.current);
+		// setOffsetY(refY.current);
+		//$parent.children().remove();
 	});
 
 	return {isDragging};
@@ -1832,3 +1817,18 @@ const useDraggableList = ({ onDragFinish, onIsDragging }: DraggableListProps) =>
   
 	return { isDragging, makeDraggable };
   };
+
+  export const changeByAmount = (element: HTMLElement, eventRect: Omit<Rect, 'bottom' | 'right'>, setIsDragging?: (isDragging: boolean) => void) => {
+	const rect = element.getBoundingClientRect();
+	
+	const start = new PointerEvent('pointermove', {clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, pointerType: 'mouse', bubbles: true});;
+	const down = new PointerEvent('pointerdown', {clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, pointerType: 'mouse', bubbles: true});
+	const move = new PointerEvent('pointermove', {clientX: eventRect.left + eventRect.width / 2, clientY: eventRect.top + eventRect.height / 2, pointerType: 'mouse', bubbles: true});
+	const up = new PointerEvent('pointerup', {clientX: eventRect.left + eventRect.width / 2, clientY: eventRect.top + eventRect.height / 2, pointerType: 'mouse', bubbles: true});
+	setIsDragging && setIsDragging(true);
+	element.dispatchEvent(start);
+	element.dispatchEvent(down);
+	element.dispatchEvent(move);
+	element.dispatchEvent(up);
+	setIsDragging && setIsDragging(false);
+}
