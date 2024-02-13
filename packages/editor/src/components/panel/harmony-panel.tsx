@@ -22,7 +22,7 @@ export type SelectMode = 'scope' | 'tweezer';
 export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
-	onAttributesChange: (component: ComponentElement, updates: ComponentUpdate, oldValue: string) => void;
+	onAttributesChange: (component: ComponentElement, updates: ComponentUpdate[], oldValue: string[]) => void;
 	onComponentSelect: (component: HTMLElement) => void;
 	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
@@ -166,7 +166,7 @@ interface ToolbarPanelProps {
 	toggle: boolean;
 	onToggleChange: (toggle: boolean) => void;
 	selectedComponent: ComponentElement | undefined;
-	onChange: (component: ComponentElement, update: ComponentUpdate, oldValue: string) => void;
+	onChange: (component: ComponentElement, update: ComponentUpdate[], oldValue: string[]) => void;
 	isDirty: boolean;
 	branchId: string | undefined;
 	branches: {id: string, name: string}[];
@@ -184,7 +184,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		const old = data.find(t => t.name === values.name);
 		if (!old) throw new Error("Cannot find old property");
 		
-		onChange(selectedComponent, update, old.value);
+		onChange(selectedComponent, [update], [old.value]);
 	}
 
 	return (

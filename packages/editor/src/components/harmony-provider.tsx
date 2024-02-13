@@ -271,8 +271,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const component = componentIdentifier.getComponentFromElement(selectedComponent);
 		if (!component) throw new Error("Error when getting component");
 
-
-		onAttributesChange(component, {componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}, selectedComponentText || '');
+		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}
+		const oldValue = selectedComponentText || '';
+		onAttributesChange(component, [update], [oldValue]);
 	});
 
 	const onResize = useEffectEvent((size: ResizeValue) => {
@@ -293,8 +294,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const convertSizeToString = (size: ResizeValue): string => Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}:${direction}=${value}` : `${direction}=${value}`, '')
 
 		const value = convertSizeToString(size);
-		
-		onAttributesChange(component, {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value}, convertSizeToString(oldSize));
+		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value}
+		const oldValue = convertSizeToString(oldSize);
+		onAttributesChange(component, [update], [oldValue]);
 	});
 
 	const onReorder = useEffectEvent(({from, to, element}: {from: number, to: number, element: HTMLElement}) => {
@@ -305,11 +307,20 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const oldValue = `from=${to}:to=${from}`;
 		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value};
 		
-		onAttributesChange(component, update, oldValue, false);
+		onAttributesChange(component, [update], [oldValue], false);
 	})
 
-	const onAttributesChange = (component: ComponentElement, update: ComponentUpdate, oldValue: string, execute=true) => {
+	const onAttributesChange = (component: ComponentElement, update: ComponentUpdate[], oldValue: string[], execute=true) => {
 		executeCommand(component, update, oldValue, execute);
+	}
+
+	const onElementChange = (element: HTMLElement, update: ComponentUpdate[], oldValue: string[], execute=true) => {
+		const component = componentIdentifier.getComponentFromElement(element);
+		if (!component) {
+			throw new Error("Error when getting component");
+		}
+
+		onAttributesChange(component, update, oldValue, execute);
 	}
 
 	const setSelectedComponent = (component: HTMLElement | undefined): void => {
@@ -324,7 +335,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
-						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onResize={onResize} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay}/> : null}	
+						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onResize={onResize} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
 						</div>
 					</div>
 					</HarmonyPanel>
@@ -336,8 +347,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 interface HarmonyCommandChange {
 	name: 'change',
-	update: ComponentUpdate,
-	old: ComponentUpdate
+	update: ComponentUpdate[],
+	old: ComponentUpdate[]
 	//oldValue: Attribute[]
 }
 type HarmonyCommand = HarmonyCommandChange;
@@ -350,8 +361,8 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
 
-	const executeCommand = (component: ComponentElement, update: ComponentUpdate, oldValue: string, execute=true): void => {
-		const old = {...update, value: oldValue};
+	const executeCommand = (component: ComponentElement, update: ComponentUpdate[], oldValues: string[], execute=true): void => {
+		const old = oldValues.map((oldValue, i) => ({...update[i], value: oldValue}));
 		const newCommand: HarmonyCommand = {
 			name: 'change',
 			update,
@@ -364,8 +375,10 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 		if (component.element === undefined) return;
 
 		const newEdits = undoStack.slice();
-		const lastEdit = newEdits[newEdits.length - 1];
-		const isSameCommandType = newCommand.update.type === lastEdit?.update.type && newCommand.update.name === lastEdit?.update.name && newCommand.update.componentId === lastEdit?.update.componentId && newCommand.update.parentId === lastEdit?.update.parentId;
+		const lastEdits = newEdits[newEdits.length - 1];
+		const lastEdit = lastEdits?.update.length === 1 ? lastEdits.update[0] : undefined;
+		const newEdit = newCommand.update.length === 1 ? newCommand.update[0] : undefined;
+		const isSameCommandType = newEdit && lastEdit && newEdit.type === lastEdit.type && newEdit.name === lastEdit.name && newEdit.componentId === lastEdit.componentId && newEdit.parentId === lastEdit.parentId;
 
 		const currTime = new Date().getTime();
 		if (editTimeout < currTime || !isSameCommandType) {
@@ -375,8 +388,8 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 			console.log(`curr: ${currTime}, timeout: ${editTimeout}, new: ${newTime}`);
 		} else {
 			//TODO: Get rid of type = 'component' dependency
-			if (newEdits.length && newCommand.update.type !== 'component') {
-				newCommand.old.value = lastEdit.old.value;
+			if (newEdits.length && newCommand.update.length === 1 && newCommand.update[0].type !== 'component') {
+				newCommand.old[0].value = lastEdits.old[0].value;
 				newEdits[newEdits.length - 1] = newCommand;
 			} else {
 				newEdits.push(newCommand);
@@ -387,10 +400,13 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 	}
 
 	const change = ({update, old}: HarmonyCommandChange): void => {
-		const element = findElementFromId(update.componentId, update.parentId);
-		if (element === undefined) return;
-		
-		makeUpdates(element, [update]);
+		for (let i = 0; i < update.length; i++) {
+			const element = findElementFromId(update[i].componentId, update[i].parentId);
+			if (element === undefined) return;
+			
+			makeUpdates(element, [update[i]]);
+		}
+
 		onChange && onChange();
 	}
 

@@ -11,6 +11,7 @@ import interact from 'interactjs';
 import {InteractEvent, Point} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
 import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
+import { ComponentUpdate } from "@harmony/ui/src/types/component";
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -142,10 +143,11 @@ export interface InspectorProps {
 	mode: SelectMode;
 	onResize: (size: ResizeValue) => void;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
+	onChange: (component: HTMLElement, update: ComponentUpdate[], oldValue: string[], execute?: boolean) => void;
 	updateOverlay: number;
 	scale: number;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onResize, onReorder, rootElement, parentElement, mode, updateOverlay, scale}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onResize, onReorder, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
@@ -201,6 +203,42 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		} else {
 			overlayRef.current.remove('select');
 		}
+	}, onDragFinish(parent, oldProperties) {
+		if (!selectedComponent) return;
+
+		//Round all of the values;
+		['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap'].forEach(property => {
+			const propValue = parent.style[property as unknown as number];
+			if (!propValue) return;
+
+			const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
+			if (!match) throw new Error("Invalid property value " + propValue);
+			const num = round(parseFloat(match[1]));
+			const unit = match[2];
+			const value = `${num}${unit}`;
+
+			parent.style[property as unknown as number] = value;
+		});
+
+		const updates: ComponentUpdate[] = [];
+		const oldValues: string[] = [];
+		const keys: (keyof FlexValues)[] = ['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems'];
+		(keys).forEach(property => {
+			const value = parent.style[property as unknown as number];
+			if (!value) return;
+
+			const componentId = parent.dataset.harmonyId || '';
+			const parentId = parent.dataset.harmonyParentId || '';
+			const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value};
+
+			const oldValue = oldProperties[property];
+
+			updates.push(update);
+			oldValues.push(oldValue);
+		});
+
+		onChange(parent, updates, oldValues, true);
+		onSelect(undefined);
 	}, scale});
 
 	const isDragging = isResizing || isDraggingReal;
@@ -994,8 +1032,7 @@ function getBoundingClientRectParent(parent: HTMLElement, axis: Axis, type: Boun
 	const rect = parent.getBoundingClientRect();
 
 	if (axis === 'y') {
-		//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
-		const top = rect.top / scale //+ parseFloat($(parent).css('borderTop') || '0')
+		const top = rect.top / scale + parseFloat($(parent).css('borderTop') || '0')
 		const bottom = rect.bottom / scale - parseFloat($(parent).css('borderBottom') || '0')
 		const height = (rect.bottom - rect.top) / scale - (parseFloat($(parent).css('borderBottom') || '0') + parseFloat($(parent).css('borderTop') || '0'));
 		switch (type) {
@@ -1142,7 +1179,12 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 		const childrenBeforeHeight = Array.from(parent.children).slice(0, parent.children.length - 1).reduce((prev, curr) => prev + getBoundingClientRect(curr as HTMLElement, axis, 'size-full', scale), 0);
 		const gap = selfIndex === 0 ? (2*(childrenMidpoint - getBoundingClientRectParent(parent, axis, 'close', scale)) - (2 * posY + getBoundingClientRect(lastChild, axis, 'size-full', scale) + childrenBeforeHeight)) / (numChildren - 1) : (posY - (p0 + childrenBeforeHeight + getExtra(lastChild, axis, 'close'))) / (numChildren - 1);
 		
-		const padding = selfIndex === 0 ? posY : p0;
+		let padding = selfIndex === 0 ? posY : p0;
+
+		//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
+		if (padding < 0) {
+			padding = 0;
+		}
 
 		
 		parent.style[axisGap] = `${gap}px`;
@@ -1153,7 +1195,12 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 			parent.style[farPadding] = '';
 		}
 	} else {
-		parent.style[closePadding] = `${startPos - (getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(firstChild, axis, 'close', scale)) - getBoundingClientRectParent(parent, axis, 'close', scale)}px`
+		//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
+		let padding = startPos - (getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(firstChild, axis, 'close', scale)) - getBoundingClientRectParent(parent, axis, 'close', scale);
+		if (padding < 0) {
+			padding = 0;
+		}
+		parent.style[closePadding] = `${padding}px`
 		parent.style.justifyContent = '';
 		parent.style.gap = `${gapBetween}px`;
 		parent.style[farPadding] = '';
@@ -1204,8 +1251,13 @@ function setDragPositionOtherAxis(element: HTMLElement, props: {dx: number, dy: 
 		throw new Error("Invalid self index");
 	}
 	const firstChild = parent.children[0] as HTMLElement;
+	//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
+	let padding = startPos - (getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(firstChild, axis, 'close', scale)) - getBoundingClientRectParent(parent, axis, 'close', scale)
+	if (padding < 0) {
+		padding = 0;
+	}
 	
-	parent.style[closePadding] = `${startPos - (getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(firstChild, axis, 'close', scale)) - getBoundingClientRectParent(parent, axis, 'close', scale)}px`
+	parent.style[closePadding] = `${padding}px`
 		parent.style.alignItems = '';
 		parent.style[farPadding] = '';
 	
@@ -1226,11 +1278,11 @@ function setDragPositionOtherAxis(element: HTMLElement, props: {dx: number, dy: 
 	}
 }
 
-type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'>;
-const useSnapping = ({element, onIsDragging, scale}: SnappableProps) => {
+type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale' | 'onDragFinish'>;
+const useSnapping = ({element, onIsDragging, onDragFinish, scale}: SnappableProps) => {
 	const [shiftPressed, setShiftPressed] = useState(false);
 
-	const result = useDraggable({element, onIsDragging, restrictToParent: true, scale});
+	const result = useDraggable({element, onIsDragging, onDragFinish, restrictToParent: true, scale});
 
 	// const onShift = useEffectEvent(() => {
 	// 	console.log("Setting shift...");
@@ -1426,14 +1478,25 @@ function createSnapGuidesOtherAxis(element: HTMLElement, pos: number, current: n
 	return undefined;
 }
 
+interface FlexValues {
+	paddingLeft: string;
+	paddingRight: string;
+	paddingTop: string;
+	paddingBottom: string;
+	justifyContent: string;
+	alignItems: string;
+	gap: string;
+}
 interface DraggableProps {
 	element: HTMLElement | undefined;
 	onIsDragging?: () => void;
+	//TODO: Do something better to not have a dependency on FlexValues
+	onDragFinish?: (parent: HTMLElement, oldValues: FlexValues) => void;
 	snapPoints?: SnapPoint[],
 	restrictToParent?: boolean;
 	scale: number;
 }
-const useDraggable = ({element, onIsDragging, restrictToParent=false, scale}: DraggableProps) => {
+const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=false, scale}: DraggableProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [offsetX, setOffsetX] = useState<number>(0);
 	const [offsetY, setOffsetY] = useState<number>(0);
@@ -1442,6 +1505,7 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false, scale}: Dr
 	const snapGuidesX = useRef<SnapPoint[]>([]);
 	const snapGuidesY = useRef<SnapPoint[]>([]);
 	const $parent = $('#harmony-snap-guides');
+	const [oldValues, setOldValues] = useState<FlexValues>({paddingLeft: '', paddingRight: '', paddingTop: '', paddingBottom: '', justifyContent: '', alignItems: '', gap: ''});
 		
 	useEffect(() => {
 		if (element) {
@@ -1449,6 +1513,17 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false, scale}: Dr
 			refX.current = getBoundingClientRect(element, 'x', 'close', scale);
 			setOffsetX(refX.current);
 			setOffsetY(refY.current);
+
+			//TODO: This is breaking all dependencies. Bad
+			setOldValues({
+				paddingLeft: element.parentElement!.style.paddingLeft || '', 
+				paddingRight: element.parentElement!.style.paddingRight || '', 
+				paddingTop: element.parentElement!.style.paddingTop || '', 
+				paddingBottom: element.parentElement!.style.paddingBottom || '', 
+				justifyContent: element.parentElement!.style.justifyContent || '', 
+				alignItems: element.parentElement!.style.alignItems || '',
+				gap: element.parentElement!.style.gap || '',
+			});
 			const modifiers: Modifier[] = [
 				interact.modifiers.snap({
 					targets: [interact.createSnapGrid({x: 2, y: 2})],
@@ -1609,11 +1684,6 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false, scale}: Dr
 					copy.y1 += offset.y;
 					copy.x1 += offset.x;
 
-					// copy.x0 /= scale;
-					// copy.y0 /= scale;
-					// copy.y1 /= scale;
-					// copy.x1 /= scale;
-
 					createGuide(copy);
 				});
 			}
@@ -1666,6 +1736,7 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false, scale}: Dr
 		// setOffsetX(refX.current);
 		// setOffsetY(refY.current);
 		$parent.children().remove();
+		onDragFinish && onDragFinish(element!.parentElement!, oldValues);
 	});
 
 	return {isDragging};
