@@ -1302,19 +1302,19 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 			guides.push({rotate: type === 'x', y0: -(evenlySpace + marginTop), x0: .5, y1: 0, x1: .5, text: evenlySpace, relative: ['x0', 'x1'], offset: child})
 		}
 		const snapPoints: SnapPoint[] = [{
-			point: {y: posY + evenlyDiff * direction, range},
+			point: {y: posY + (evenlyDiff * direction * (parent.children.length - 1) / 2), range},
 			offset: parent,
 			guides
 		},];
-		console.log(`evenly: ${posY + evenlyDiff * direction}`)
-		return {y: posY + evenlyDiff * direction, range, snapPoints}
+		console.log(`evenly: ${posY + (evenlyDiff * direction * (parent.children.length - 1) / 2)}`)
+		return {y: posY + (evenlyDiff * direction * (parent.children.length - 1) / 2), range, snapPoints}
 	}
 
 	const aroundDiff = aroundSpace - gapBetween;
 	if (false || (close(centerDiff, 0, 0.1) && !isMoving && Math.abs(aroundDiff) <= threshold)) {
 		const guides: SnapPoint['guides'] = [];
 		const newPos = //644.3203125//644.3203125
-		posY + aroundDiff * direction;
+		posY + aroundDiff * direction * (parent.children.length - 1) / 2;
 		for (let i = 0; i < parent.children.length; i++) {
 			const child = parent.children[i] as HTMLElement;
 			if (i === parent.children.length - 1) {
@@ -1343,12 +1343,12 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 			guides.push({rotate: type === 'x', y0: -(betweenSpace + marginTop), x0: .5, y1: 0, x1: .5, text: betweenSpace, relative: ['x0', 'x1'], offset: child})
 		}
 		const snapPoints: SnapPoint[] = [{
-			point: {y: posY + betweenDiff * direction, range},
+			point: {y: posY + betweenDiff * direction * (parent.children.length - 1) / 2, range},
 			offset: parent,
 			guides
 		},]
-		console.log(`between: ${posY + betweenDiff * direction}`)
-		return {y: posY + betweenDiff * direction, range, snapPoints}
+		console.log(`between: ${posY + betweenDiff * direction * (parent.children.length - 1) / 2}`)
+		return {y: posY + betweenDiff * direction * (parent.children.length - 1) / 2, range, snapPoints}
 	}
 
 	if (Math.abs(gapEnd) <= threshold && (selfIndex === parent.children.length - 1 || isMoving)) {
@@ -1514,8 +1514,8 @@ interface DraggableProps {
 }
 const useDraggable = ({element, onIsDragging, restrictToParent=false}: DraggableProps) => {
 	const [isDragging, setIsDragging] = useState(false);
-	const [offsetX, setOffsetX] = useState<number | null>(null);
-	const [offsetY, setOffsetY] = useState<number | null>(null);
+	const [offsetX, setOffsetX] = useState<number>(0);
+	const [offsetY, setOffsetY] = useState<number>(0);
 	const refX = useRef(0);
 	const refY = useRef(0);
 	const snapGuidesX = useRef<SnapPoint[]>([]);
@@ -1526,6 +1526,8 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 		if (element) {
 			refY.current = getBoundingClientRect(element, 'y', 'close')
 			refX.current = getBoundingClientRect(element, 'x', 'close');
+			setOffsetX(refX.current);
+			setOffsetY(refY.current);
 			const modifiers: Modifier[] = [
 				interact.modifiers.snap({
 					targets: [interact.createSnapGrid({x: 2, y: 2})],
@@ -1586,9 +1588,64 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 				},
 				modifiers,
 				//inertia: true
-			})
+			});
+
+			document.addEventListener('keydown', onKeyDown);
 		}
+
+		return () => document.removeEventListener('keydown', onKeyDown)
 	}, [element]);
+
+	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
+		e.preventDefault();
+		if (!element) return;
+
+		let axis: Axis | undefined = undefined;
+		let amount = 2;
+		switch (e.key) {
+			case 'ArrowLeft':
+				amount *= -1;
+				axis = 'x';
+				break;
+			case 'ArrowRight':
+				axis = 'x';
+				break;
+			case 'ArrowUp':
+				amount *= -1;
+				axis = 'y';
+				break;
+			case 'ArrowDown':
+				axis = 'y';
+				break;
+		}
+		if (axis === undefined) return;
+		
+
+		setOffsetX(axis === 'x' ? offsetX + amount : offsetX);
+		setOffsetY(axis === 'y' ? offsetY + amount : offsetY);
+		const rect = element.getBoundingClientRect();
+		changeByAmount(element, {
+			left: axis === 'x' ? offsetX + amount : offsetX, 
+			top: axis === 'y' ? offsetY + amount : offsetY, 
+			width: rect.width, 
+			height: rect.height,
+		});
+	});
+
+	const changeByAmount = (element: HTMLElement, eventRect: Omit<Rect, 'bottom' | 'right'>) => {
+		const rect = element.getBoundingClientRect();
+		
+		const start = new PointerEvent('pointermove', {clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, pointerType: 'mouse', bubbles: true});;
+		const down = new PointerEvent('pointerdown', {clientX: rect.left + rect.width / 2, clientY: rect.top + rect.height / 2, pointerType: 'mouse', bubbles: true});
+		const move = new PointerEvent('pointermove', {clientX: eventRect.left + eventRect.width / 2, clientY: eventRect.top + eventRect.height / 2, pointerType: 'mouse', bubbles: true});
+		const up = new PointerEvent('pointerup', {clientX: eventRect.left + eventRect.width / 2, clientY: eventRect.top + eventRect.height / 2, pointerType: 'mouse', bubbles: true});
+		setIsDragging(true);
+		element.dispatchEvent(start);
+		element.dispatchEvent(down);
+		element.dispatchEvent(move);
+		//element.dispatchEvent(up);
+		setIsDragging(false);
+	}
 
 	const handleGuides = useEffectEvent((posY: number, snapPoints: SnapPoint[], axis: Axis) => {
 		const createGuide = (rect: {x0: number, y0: number, y1: number, x1: number, text?: string | number}) => {
@@ -1654,25 +1711,24 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 	})
 
 	const startDragging = useEffectEvent((event: InteractEvent<'drag', 'start'>) => {
-		setOffsetX(event.clientX0);
-		setOffsetY(event.clientY0);
+		// setOffsetX(event.clientX0);
+		// setOffsetY(event.clientY0);
 	});
-	  
-	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
+
+	const handleTheDragging = (event: {dx: number, dy: number, rect: Rect}) => {
 		!isDragging && setIsDragging(true);
 		
 		refY.current = event.rect.top;
 		refX.current = event.rect.left;
-		console.log(`setting current: ${refX.current}, ${event.dx}`)
-
+		
 		const style = getComputedStyle(element!.parentElement!);
 
 		if (style.flexDirection === 'column') {
-			setDragPosition(element!, {dx: event.dx, dy: event.dy, rect: event.rect}, 'y');
-			setDragPositionOtherAxis(element!, {dx: event.dx, dy: event.dy, rect: event.rect}, 'x');
+			setDragPosition(element!, event, 'y');
+			setDragPositionOtherAxis(element!, event, 'x');
 		} else {
-			setDragPosition(element!, {dx: event.dx, dy: event.dy, rect: event.rect}, 'x');
-			setDragPositionOtherAxis(element!, {dx: event.dx, dy: event.dy, rect: event.rect}, 'y');
+			setDragPosition(element!, event, 'x');
+			setDragPositionOtherAxis(element!, event, 'y');
 		}
 
 		$parent.children().remove();
@@ -1681,10 +1737,16 @@ const useDraggable = ({element, onIsDragging, restrictToParent=false}: Draggable
 
 		
 		onIsDragging && onIsDragging();
+	}
+	  
+	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
+		handleTheDragging({dx: event.dx, dy: event.dy, rect: event.rect});
 	});
 	
-	const stopDragging = useEffectEvent(() => {
+	const stopDragging = useEffectEvent((e: InteractEvent<'drag', 'move'>) => {
 		setIsDragging(false);
+		setOffsetX(refX.current);
+		setOffsetY(refY.current);
 		$parent.children().remove();
 	});
 
