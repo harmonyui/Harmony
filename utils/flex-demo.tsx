@@ -185,7 +185,7 @@ style="${style}">
 		<div className="hw-flex">
 			<div>
                 <div className="hw-flex hw-w-[400px] hw-h-[240px] hw-border hw-space-x-1 hw-gap-2" ref={ref}>
-				    {[1, 2].map((i) => <div key={i} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>)}
+				    {[1, 2, 3].map((i) => <div key={i} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>)}
                 </div>
                 <Button onClick={() => setIsLooping(!isLooping)}>Try Me</Button>
 			</div>
