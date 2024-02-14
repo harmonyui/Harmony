@@ -39,16 +39,21 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	}
 	const body = updateRequestBodySchema.parse(await req.json());
 
-	const updates = body.values.map(({update, old}) => ({
-		component_id: update.componentId,
-		parent_id: update.parentId,
-		action: update.action,
-		type: update.type,
-		name: update.name,
-		value: update.value,
-		branch_id: branchId,
-		old_value: old.value
-	}));
+
+	const updates = body.values.map(({update: updates, old}) => {
+		if (updates.length !== old.length) throw new Error("Invalid update and old parameters");
+		
+		return updates.map((update, i) => ({
+			component_id: update.componentId,
+			parent_id: update.parentId,
+			action: update.action,
+			type: update.type,
+			name: update.name,
+			value: update.value,
+			branch_id: branchId,
+			old_value: old[i].value
+		}));
+	}).flat();
 
 	await prisma.componentUpdate.createMany({
 		data: updates.map(up => ({

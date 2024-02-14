@@ -3,8 +3,8 @@ import { updateSchema } from "./component";
 
 export const updateRequestBodySchema = z.object({
 	values: z.array(z.object({
-		update: updateSchema,
-		old: updateSchema
+		update: z.array(updateSchema),
+		old: z.array(updateSchema)
 	})),
 	repositoryId: z.string()
 })

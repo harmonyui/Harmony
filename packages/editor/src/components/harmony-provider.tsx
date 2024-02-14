@@ -139,7 +139,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [isDirty, setIsDirty] = useState(false);
 	const [updateOverlay, setUpdateOverlay] = useState(0);
 	
-	const executeCommand = useComponentUpdator({onChange() {
+	const executeCommand = useComponentUpdator({branchId: branchId || '', repositoryId, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}});
 
@@ -355,11 +355,19 @@ type HarmonyCommand = HarmonyCommandChange;
 
 interface ComponentUpdatorProps {
 	onChange?: () => void;
+	branchId: string;
+	repositoryId: string;
 }
-const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
+const useComponentUpdator = ({onChange, branchId, repositoryId}: ComponentUpdatorProps) => {
 	const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([]);
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
+	const [saveStack, setSaveStack] = useState<HarmonyCommand[]>([]);
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
+	
+	useBackgroundLoop(() => {
+		saveStack.length && saveCommand(saveStack, {branchId, repositoryId});
+		setSaveStack([]);
+	}, 10)
 
 	const executeCommand = (component: ComponentElement, update: ComponentUpdate[], oldValues: string[], execute=true): void => {
 		const old = oldValues.map((oldValue, i) => ({...update[i], value: oldValue}));
@@ -375,6 +383,7 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 		if (component.element === undefined) return;
 
 		const newEdits = undoStack.slice();
+		const newSaves = saveStack.slice();
 		const lastEdits = newEdits[newEdits.length - 1];
 		const lastEdit = lastEdits?.update.length === 1 ? lastEdits.update[0] : undefined;
 		const newEdit = newCommand.update.length === 1 ? newCommand.update[0] : undefined;
@@ -383,19 +392,23 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 		const currTime = new Date().getTime();
 		if (editTimeout < currTime || !isSameCommandType) {
 			newEdits.push(newCommand);
+			newSaves.push(newCommand);
 			const newTime = currTime + 1000;
 			setEditTimeout(newTime);
-			console.log(`curr: ${currTime}, timeout: ${editTimeout}, new: ${newTime}`);
 		} else {
 			//TODO: Get rid of type = 'component' dependency
 			if (newEdits.length && newCommand.update.length === 1 && newCommand.update[0].type !== 'component') {
 				newCommand.old[0].value = lastEdits.old[0].value;
 				newEdits[newEdits.length - 1] = newCommand;
+				//TODO: test this to make sure this works
+				newSaves[newSaves.length - 1] = newCommand;
 			} else {
 				newEdits.push(newCommand);
+				newSaves.push(newCommand);
 			}
 		}
 		setUndoStack(newEdits);
+		setSaveStack(newSaves);
 		setRedoStack([]);
 	}
 
@@ -425,6 +438,11 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 		newTo.push(newEdit);
 		fromSet(newFrom);
 		toSet(newTo);
+
+		//TODO: Test this
+		const newSaves = saveStack.slice();
+		newSaves.push(newEdit);
+		setSaveStack(newSaves);
 	}
 
 	const onUndo = useEffectEvent(() => {
@@ -434,6 +452,19 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 	const onRedo = useEffectEvent(() => {
 		changeStack([redoStack, setRedoStack], [undoStack, setUndoStack]);
 	});
+
+	const saveCommand = (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}): void => {
+		const cmds = commands.map(cmd => ({update: cmd.update, old: cmd.old}))
+		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId};
+		fetch(`${WEB_URL}/api/update/${save.branchId}`, {
+			method: 'POST',
+			// headers: {
+			// 	'Accept': 'application/json',
+			// 	'Content-Type': 'application/json'
+			// },
+			body: JSON.stringify(data)
+		});
+	}
 
 	useEffect(() => {
 		
@@ -446,9 +477,48 @@ const useComponentUpdator = ({onChange}: ComponentUpdatorProps) => {
 		}
 	}, []);
 
+	useEffect(() => {
+
+	}, []);
+
 
 	return executeCommand;
 }
+
+const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
+	const callbackRef = useRef(callback);
+	const intervalRef = useRef<NodeJS.Timeout>();
+	
+	// Update the callback function if it changes
+	useEffect(() => {
+	  callbackRef.current = callback;
+	}, [callback]);
+  
+	// Start the background loop when the component mounts
+	useEffect(() => {
+	  const handle = () => {
+		callbackRef.current();
+	  };
+  
+	  // Call the callback immediately when the component mounts
+	  handle();
+  
+	  // Start the interval
+	  intervalRef.current = setInterval(handle, intervalInSeconds * 1000);
+  
+	  // Clear the interval when the component unmounts
+	  return () => {
+		clearInterval(intervalRef.current);
+	  };
+	}, [intervalInSeconds]);
+  
+	// Function to manually stop the background loop
+	const stopBackgroundLoop = () => {
+	  clearInterval(intervalRef.current);
+	};
+  
+	return stopBackgroundLoop;
+  };
 
 function makeUpdates(el: HTMLElement, updates: ComponentUpdate[]) {
 	let alreadyDoneText = false;
