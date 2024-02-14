@@ -3,14 +3,28 @@ import ReactDOM from "react-dom";
 import { HarmonyProvider, HarmonyProviderProps } from "./harmony-provider";
 
 export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId'> & {local?: boolean}> = ({local=false, ...options}) => {
-	useEffect(() => {
+	const setBranchId = (branchId: string | undefined) => {
+		const url = new URL(window.location.href);
+		if (branchId && !url.searchParams.has('branch-id')) {
+			url.searchParams.set('branch-id', branchId);
+			window.history.replaceState(null, '', url.href);
+		}
+	}
+    
+    useEffect(() => {
+        const urlParams = new URLSearchParams(window.location.search);
+        const branchId = urlParams.get('branch-id');
+        if (!branchId) return;
+        
 		const result = setupHarmonyProvider();
 		if (result) {
+			setBranchId(branchId);
+
 			const {container, harmonyContainer} = result;
 			if (!local) {
-                createProductionScript(options, container, harmonyContainer);
+                createProductionScript(options, branchId, container, harmonyContainer);
             } else {
-                ReactDOM.render(React.createElement(HarmonyProvider, {...options, rootElement: container}), harmonyContainer);
+                ReactDOM.render(React.createElement(HarmonyProvider, {...options, rootElement: container, branchId}), harmonyContainer);
             }
 		}
 		
@@ -18,11 +32,11 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 	return (<></>)
 }
 
-function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, container: HTMLElement, harmonyContainer: HTMLDivElement) {
+function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, branchId: string, container: HTMLElement, harmonyContainer: HTMLDivElement) {
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/harmony-ai-editor@latest/dist/editor/bundle.js';
     script.addEventListener('load', function() {
-        window.HarmonyProvider({...options, rootElement: container}, harmonyContainer);
+        window.HarmonyProvider({...options, rootElement: container, branchId}, harmonyContainer);
     });
 
     document.body.appendChild(script);

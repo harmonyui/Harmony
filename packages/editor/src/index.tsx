@@ -11,7 +11,7 @@ declare global {
 
 export {HarmonySetup};
 
-if (window) {
+if (typeof window !== 'undefined') {
     window.HarmonyProvider = (options: HarmonyProviderProps, harmonyContainer: HTMLDivElement) => {
         ReactDOM.render(<HarmonyProvider {...options}/>, harmonyContainer);
     }

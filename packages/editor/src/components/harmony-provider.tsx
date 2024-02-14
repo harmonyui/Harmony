@@ -21,9 +21,10 @@ export function findElementFromId(componentId: string, parentId: string): HTMLEl
 
 export interface HarmonyProviderProps {
 	repositoryId: string;
+	branchId: string;
 	rootElement: HTMLElement;
 }
-export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, rootElement}) => {
+export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, rootElement, branchId: branchIdProps}) => {
 	const [isToggled, setIsToggled] = useState(true);
 	const [selectedComponent, _setSelectedComponent] = useState<HTMLElement>();
 	const [selectedComponentText, setSelectedComponentText] = useState<string>();
@@ -35,10 +36,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [mode, setMode] = useState<SelectMode>('tweezer');
 	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>([]);
 	const [branches, setBranches] = useState<{id: string, name: string}[]>([]);
-	const [branchId, _setBranchId] = useState<string>();
 	const [scale, _setScale] = useState(1);
 	const [isDirty, setIsDirty] = useState(false);
 	const [updateOverlay, setUpdateOverlay] = useState(0);
+	const [branchId, _setBranchId] = useState<string | undefined>(branchIdProps);
 	
 	const executeCommand = useComponentUpdator({branchId: branchId || '', repositoryId, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
@@ -75,11 +76,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	
 	useEffect(() => {
 		const initialize = async () => {
-			const urlParams = new URLSearchParams(window.location.search);
-			const branchId = urlParams.get('branch-id');
-
-			setBranchId(branchId || undefined);
-
 			const response = await fetch(`${WEB_URL}/api/load/${repositoryId}${branchId ? `?branchId=${branchId}` : ''}`, {
 				method: 'GET',
 				headers: {
