@@ -1,21 +1,18 @@
 'use client';
 import ReactDOM from 'react-dom';
-import {HarmonyProvider, HarmonyProviderProps, HarmonySetup, setupHarmonyProvider} from './components/harmony-provider';
+import {HarmonyProvider, HarmonyProviderProps} from './components/harmony-provider';
+import { HarmonySetup } from './components/harmony-setup';
 
 declare global {
     interface Window {
-        HarmonyProvider: (options: HarmonyProviderProps) => void;
+        HarmonyProvider: (options: HarmonyProviderProps, harmonyContainer: HTMLDivElement) => void;
     }
 }
 
 export {HarmonySetup};
 
-// window.HarmonyProvider = (options: Pick<HarmonyProviderProps, 'repositoryId'>) => {
-//     const result = setupHarmonyProvider();
-//     if (result === undefined) {
-//         throw new Error("An error occured when running the Harmony editor")
-//     }
-//     const {container, harmonyContainer} = result;
-
-//     ReactDOM.render(<HarmonyProvider {...options} rootElement={container}/>, harmonyContainer);
-//  }
+if (window) {
+    window.HarmonyProvider = (options: HarmonyProviderProps, harmonyContainer: HTMLDivElement) => {
+        ReactDOM.render(<HarmonyProvider {...options}/>, harmonyContainer);
+    }
+}

@@ -29,7 +29,7 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 			SELECT u.action, u.type, u.name, u.value, e.id, e.parent_id as "parentId" FROM "ComponentUpdate" u
 			INNER JOIN "ComponentElement" e on e.id = component_id AND e.parent_id = component_parent_id
 			WHERE u.branch_id = ${branchId}
-			ORDER BY u.date_modified DESC`
+			ORDER BY u.date_modified ASC`
 
 
 		updates = query.map(up => ({

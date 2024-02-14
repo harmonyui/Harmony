@@ -16,7 +16,7 @@
       "composite": true
     },
     "exclude": [
-      "webpack.config.js", "tailwind.config.ts", "postcss.config.js", "dist"
+      "webpack.config.setup.js","webpack.config.editor.js", "tailwind.config.ts", "postcss.config.js", "dist"
     ]
     // "references": [
     //   {"path": "../ui"}

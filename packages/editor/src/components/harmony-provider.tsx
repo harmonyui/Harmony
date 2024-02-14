@@ -6,9 +6,8 @@ import {loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/netw
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
-import { getNumberFromString, groupBy, hashComponent } from "@harmony/util/src/index";
+import { getNumberFromString} from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import ReactDOM from "react-dom";
 import React from "react";
 import '../global.css';
 
@@ -16,106 +15,8 @@ const WEB_URL = false && process.env.NODE_ENV === 'production' ? 'https://harmon
 const WIDTH = 1960;
 const HEIGHT = 1080;
 
-function isNativeElement(element: Element): boolean {
-    return element.tagName.toLowerCase() !== 'script' && element.id !== 'harmony-container';
-}
-
-function setupHarmonyMode(container: Element, body: HTMLBodyElement) {
-    for (let i = 0; i < body.children.length; i++) {
-        const child = body.children[i];
-        if (isNativeElement(child)) {
-            container.appendChild(child);
-			i--;
-        }
-    }
-}
-
-function setupNormalMode(container: Element, body: HTMLBodyElement) {
-    for (let i = 0; i < container.children.length; i++) {
-        const child = container.children[i];
-        if (isNativeElement(child)) {
-            body.appendChild(child);
-			i--;
-        }
-    }
-}
-
-export function setupHarmonyProvider(setupHarmonyContainer=true) {
-    // let harmonyContainer: HTMLElement;
-	// if (setupHarmonyContainer) {
-	// 	harmonyContainer = document.createElement('div');
-	// 	harmonyContainer.id = 'harmony-container';
-	// 	document.body.appendChild(harmonyContainer);
-	// }
-	if (document.getElementById('harmony-container')) return undefined;
-
-	const harmonyContainer = document.createElement('div');
-	harmonyContainer.id = 'harmony-container';
-	harmonyContainer.className = "hw-h-full";
-	document.body.appendChild(harmonyContainer);
-
-	const documentBody = document.body as HTMLBodyElement;
-	
-    const container = document.createElement('body');
-    container.className = documentBody.className;
-	documentBody.classList.add('hw-h-full');
-	document.documentElement.classList.add('hw-h-full');
-	//documentBody.contentEditable = 'true';
-
-	//TODO: Probably need to do this for all styles;
-	container.style.backgroundColor = 'white';
-	setupHarmonyMode(container, documentBody);
-	
-	const createPortal = ReactDOM.createPortal;
-	ReactDOM.createPortal = function(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
-		if (_container === documentBody) {
-			_container = container;
-		}
-		
-		return createPortal(children, _container, key);
-	}
-
-    const mutationObserver = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            mutation.addedNodes.forEach(node => {
-                if (node.parentElement === documentBody && isNativeElement(node as Element)) {
-					container.appendChild(node);
-                }
-            })
-        }
-    });
-    mutationObserver.observe(documentBody, {
-        'attributeOldValue': true,
-        attributes: true,
-        characterData: true,
-        characterDataOldValue: true,
-        childList: true,
-        subtree: true
-    });
-
-    return {container, harmonyContainer};
-}
-
 export function findElementFromId(componentId: string, parentId: string): HTMLElement | undefined {
 	return (document.querySelector(`[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]`) as HTMLElement || null) || undefined;
-}
-
-export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId'>> = (options) => {
-	const [rootElement, setRootElement] = useState<HTMLElement | undefined>();
-	useEffect(() => {
-		const result = setupHarmonyProvider();
-		if (result) {
-			const {container, harmonyContainer} = result;
-			ReactDOM.render(React.createElement(HarmonyProvider, {...options, rootElement: container}), harmonyContainer);
-			//setRootElement(container)
-		}
-		
-	}, []);
-	return (<>
-		{/* {rootElement ? <div id="harmony-container">
-			<HarmonyProvider repositoryId={repositoryId} rootElement={rootElement}/>
-		</div> : null} */}
-	</>)
 }
 
 export interface HarmonyProviderProps {
