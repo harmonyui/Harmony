@@ -15,39 +15,39 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({children}) => {
 
 	const items: SidePanelItems[] = [
 		{
-			label: 'My Branches',
-			href: '/branch',
-			current: true,
+			label: 'Projects',
+			href: '/projects',
+			current: window.location.href.includes('projects'),
 			icon: <ToggleIcon icon={GitBranchIcon} selected={true}/>
 		},
 		{
 			label: 'Pull Requests',
 			href: '/pull-requests',
-			current: false,
+			current: window.location.href.includes('pull-requests'),
 			icon: <ToggleIcon icon={GitPullRequestIcon} selected={true}/>
 		},
 		{
 			label: 'My Team',
 			href: '/team',
-			current: false,
+			current: window.location.href.includes('team'),
 			icon: <ToggleIcon icon={UserGroupIcon} selected={true}/>
 		}
 	];
-  const profileItem: ProfileItem = {
-	name: user.fullName,
-	img: user.imageUrl,
-	navigation: [
-		{
-			name: 'Sign Out',
-			onClick() {
-				signOut(() => router.push('/'))
+	const profileItem: ProfileItem = {
+		name: user.fullName,
+		img: user.imageUrl,
+		navigation: [
+			{
+				name: 'Sign Out',
+				onClick() {
+					signOut(() => router.push('/'))
+				}
 			}
-		}
-	]
-  }
-  return (
-		<SidePanel items={items} title="Harmony" profileItem={profileItem}>
-			{children}
-		</SidePanel>
-  )
+		]
+	}
+	return (
+			<SidePanel items={items} title="Harmony" profileItem={profileItem}>
+				{children}
+			</SidePanel>
+	)
 }

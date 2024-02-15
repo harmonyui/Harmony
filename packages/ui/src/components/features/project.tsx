@@ -67,10 +67,16 @@ const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps>
 	const [project, setProject] = useState<BranchItem>({id: '', name: '', label: '', url: '', commits: [], lastUpdated: new Date()});
 	const changeProperty = useChangeProperty<BranchItem>(setProject);
 	const [loading, setLoading] = useState(false);
+    const [error, setError] = useState('');
 
 	const onNewProject = () => {
+        if (!project.label || !project.url) {
+            setError('Please fill out all fields');
+            return;
+        }
 		const name = project.label.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
 		setLoading(true);
+        setError('');
 		mutate({branch: {...project, name}}, {
 			onSuccess(data) {
 				onSuccessfulCreation(data);
@@ -96,6 +102,7 @@ const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps>
 					<Input className="hw-w-full" value={project.url} onChange={changeProperty.formFunc('url', project)}/>
 				</Label>
 			</div>
+            {error ? <p className="hw-text-red-400 hw-text-sm">{error}</p> : null}
 			<div className="hw-flex">
 				<Button className="hw-ml-auto" onClick={onNewProject} loading={loading}>Open in Harmony</Button>
 			</div>
@@ -114,7 +121,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 
 	useEffect(() => {
         const fetch = async () => {
-            const url = await createWebpageThumbnail('https://heycanopy.com');
+            const url = await createWebpageThumbnail(item.url);
             setThumbnail(url);
         }
         fetch();

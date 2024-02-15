@@ -1,7 +1,7 @@
 import { NextPage } from "next";
 import { SideNav } from "../../utils/side-nav";
-import { BranchDisplay, BranchLineItem } from "../../packages/ui/src/components/features/branch";
-import {  ModalProvider } from "../../packages/ui/src/components/core/modal";
+import { BranchDisplay, BranchLineItem } from "@harmony/ui/src/components/features/branch";
+import {  ModalProvider } from "@harmony/ui/src/components/core/modal";
 import React, { useRef } from "react";
 import { withAuth } from "../../utils/protected-routes-hoc";
 import { prisma } from "../../src/server/db";
@@ -13,7 +13,7 @@ import { FlexBoxDemo } from "../../utils/flex-demo";
 import { ProjectDisplay } from "@harmony/ui/src/components/features/project";
 
 
-const BranchPage = withAuth(async ({ctx}) => {
+const ProjectsPage = withAuth(async ({ctx}) => {
 	const branches = await getBranches(ctx, new GithubRepository(ctx.session.account.repository));
 
 	return (
@@ -26,4 +26,4 @@ const BranchPage = withAuth(async ({ctx}) => {
 	)
 });
 
-export default BranchPage;
+export default ProjectsPage;
