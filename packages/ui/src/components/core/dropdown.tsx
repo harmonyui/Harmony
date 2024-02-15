@@ -5,6 +5,7 @@ import { CheckboxInput } from "./input";
 import { Popover } from "./popover";
 import { PolymorphicComponentProps } from "../../types/polymorphics";
 import { AllOrNothing } from "../../types/utils";
+import { getClass } from "@harmony/util/src";
 
 export type ListBoxPopoverProps<T> = {
   items: DropdownItem<T>[];
@@ -37,7 +38,7 @@ export const ListBoxPopover = <T,>({
 };
 
 export type ListBoxProps<T> = ListBoxPopoverProps<T> & {
-  mode?: "primary" | "secondary";
+  mode?: "primary" | "secondary" | "none";
 };
 export const ListBox = <T,>({
   items,
@@ -72,6 +73,7 @@ interface DropdownProps<T> extends PropsWithChildren {
   onChange?: ItemAction<T>;
 	beforeIcon?: IconComponent;
   showValue?: boolean
+  mode?: "primary" | "secondary" | "none";
 }
 
 export const Dropdown = <T,>({
@@ -82,7 +84,8 @@ export const Dropdown = <T,>({
   chevron = true,
   className,
 	beforeIcon,
-  showValue=true
+  showValue=true,
+  mode='secondary'
 }: DropdownProps<T>): JSX.Element => {
   const [value, setValue] = useState<DropdownItem<T> | undefined>(
     items.find((x) => x.id === initialValue),
@@ -119,7 +122,7 @@ export const Dropdown = <T,>({
       className={className}
       isOpen={isOpen}
       items={dropdownItems}
-      mode='secondary'
+      mode={mode}
       setIsOpen={setIsOpen}
     >
 			{BeforeIcon ? <BeforeIcon className="hw-w-4 hw-h-4 hw-mr-1"/> : null}
@@ -210,19 +213,21 @@ export const DropdownListItem: React.FunctionComponent<
 
 type DropdownIconProps<T> = Omit<DropdownProps<T>, "chevron"> & {
   icon: IconComponent;
+  simple?: boolean;
 };
 export const DropdownIcon = <T,>({
   icon,
   className,
+  mode,
   ...rest
 }: DropdownIconProps<T>): JSX.Element => {
   const Icon = icon;
+  const _class = mode === 'none' ? className : getClass('hover:hw-bg-gray-100 dark:hover:hw-bg-gray-700 focus:hw-ring-4 focus:hw-outline-none focus:hw-ring-gray-200 dark:focus:hw-ring-gray-700 hw-rounded-lg hw-text-sm hw-p-1.5', className);
   return (
     <Dropdown
-      className={`hover:hw-bg-gray-100 dark:hover:hw-bg-gray-700 focus:hw-ring-4 focus:hw-outline-none focus:hw-ring-gray-200 dark:focus:hw-ring-gray-700 hw-rounded-lg hw-text-sm hw-p-1.5 ${
-        className || ""
-      }`}
+      className={_class}
       {...rest}
+      mode={mode}
       chevron={false}
       showValue={false}
     >

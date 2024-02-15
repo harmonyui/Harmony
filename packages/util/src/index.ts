@@ -94,7 +94,7 @@ export const displayStorageSpace = (value: number): string => {
   return `${Math.round(value / 100000000) / 10} GB`;
 };
 
-export const compare = (f1: string | number | Date, f2: string | number | Date): number => {
+export const compare = <T extends string | number | Date>(f1: T, f2: T): number => {
   if (typeof f1 === "string" && typeof f2 === "string") {
     return f1.localeCompare(f2);
   }

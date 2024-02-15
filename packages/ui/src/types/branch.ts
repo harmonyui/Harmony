@@ -14,7 +14,8 @@ export const branchItemSchema = z.object({
 	label: z.string(),
 	url: z.string(),
 	commits: z.array(commitSchema),
-	pullRequestUrl: z.optional(z.string())
+	pullRequestUrl: z.optional(z.string()),
+	lastUpdated: z.date(),
 })
 
 export type BranchItem = z.infer<typeof branchItemSchema>;

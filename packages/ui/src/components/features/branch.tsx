@@ -63,7 +63,7 @@ interface CreateNewBranchModalProps {
 }
 const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> = ({show, onClose, onSuccessfulCreation}) => {
 	const {mutate, ...createUtils} = api.branch.createBranch.useMutation()
-	const [branch, setBranch] = useState<BranchItem>({id: '', name: '', label: '', url: '', commits: []});
+	const [branch, setBranch] = useState<BranchItem>({id: '', name: '', label: '', url: '', commits: [], lastUpdated: new Date()});
 	const changeProperty = useChangeProperty<BranchItem>(setBranch);
 	const [loading, setLoading] = useState(false);
 
