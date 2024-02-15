@@ -8,11 +8,19 @@ import { compare } from "@harmony/util/src";
 export const branchRoute = createTRPCRouter({
 	getBranches: protectedProcedure
 		.query(async ({ctx}) => {
-			return getBranches(ctx, new GithubRepository(ctx.session.account.repository))
+			if (!ctx.session.account.repository) {
+				return undefined;
+			}
+
+			return getBranches({prisma: ctx.prisma, repositoryId: ctx.session.account.repository.id}, new GithubRepository(ctx.session.account.repository))
 		}),
 	createBranch: protectedProcedure
 		.input(z.object({branch: branchItemSchema}))
 		.mutation(async ({ctx, input}) => {
+			if (!ctx.session.account.repository) {
+				throw new Error("Cannot create a branch without a repository");
+			}
+			
 			const githubRepository = new GithubRepository(ctx.session.account.repository);
 			await githubRepository.createBranch(input.branch.name);
 			
@@ -41,10 +49,10 @@ export const branchRoute = createTRPCRouter({
 		})
 })
 
-export const getBranches = async (ctx: AuthContext, githubRepository: GithubRepository): Promise<BranchItem[]> => {
-	const branches = await ctx.prisma.branch.findMany({
+export const getBranches = async ({prisma, repositoryId}: {prisma: Db, repositoryId: string}, githubRepository: GithubRepository): Promise<BranchItem[]> => {
+	const branches = await prisma.branch.findMany({
 		where: {
-			repository_id: ctx.session.account.repository.id
+			repository_id: repositoryId,
 		},
 		include: {
 			pullRequest: true,

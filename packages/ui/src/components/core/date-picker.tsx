@@ -494,7 +494,7 @@ export const Popover = (props: PopoverProps): JSX.Element => {
         {children}
         <DismissButton onDismiss={state.close.bind(state)} />
       </div>
-    </>, document.getElementById('harmony-container') as HTMLElement)
+    </>, document.body)
   );
 };
 

@@ -8,6 +8,10 @@ export const pullRequestRouter = createTRPCRouter({
     createPullRequest: protectedProcedure
         .input(z.object({pullRequest: pullRequestSchema, branch: branchItemSchema}))
         .mutation(async ({ctx, input}) => {
+            if (!ctx.session.account.repository) {
+                throw new Error("Cannot create publish request without repository");
+            }
+            
             const githubRepository = new GithubRepository(ctx.session.account.repository);
             
             const url = await githubRepository.createPullRequest(input.branch.name, input.pullRequest.title, input.pullRequest.body);

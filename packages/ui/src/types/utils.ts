@@ -1,3 +1,5 @@
+import { z } from "zod";
+
 export type AllOrNothing<T> =
   | T
   | {
@@ -12,3 +14,5 @@ export type Replace<T, K extends keyof T, Q> = ReplaceWithName<
 >;
 
 export type RecordType<T> = { [P in keyof T]: T[P] };
+
+export const emailSchema = z.custom<`${string}@${string}.${string}`>(data => typeof data === 'string' && /^[a-zA-Z0-9.!#$%&’*+\/=?^_`{|}~-]+@[a-zA-Z0-9-]+(?:\.[a-zA-Z0-9-]+)*$/.test(data))

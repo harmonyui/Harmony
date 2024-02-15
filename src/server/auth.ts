@@ -18,7 +18,8 @@ export const accountSchema = z.object({
 	firstName: z.string(),
 	lastName: z.string(),
 	role: z.string(),
-	repository: repositorySchema
+	repository: z.optional(repositorySchema),
+	teamId: z.string(),
 })
 
 export type Account = z.infer<typeof accountSchema>;
@@ -39,13 +40,17 @@ export type Session = {
 	account: Account | undefined
 } | FullSession;
 
-const getAccount = async (userId: string): Promise<Account | undefined> => {
+export const getAccount = async (userId: string): Promise<Account | undefined> => {
 	const account = await prisma.account.findFirst({
 		where: {
 			userId
 		},
 		include: {
-			repository: true
+			team: {
+				include: {
+					repository: true
+				}
+			}
 		}
 	});
 
@@ -55,8 +60,9 @@ const getAccount = async (userId: string): Promise<Account | undefined> => {
 		id: account.id,
 		firstName: account.firstName,
 		lastName: account.lastName,
-		repository: account.repository[0],
+		repository: account.team.repository[0],
 		role: account.role,
+		teamId: account.team_id
 	}
 }
 

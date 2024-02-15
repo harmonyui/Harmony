@@ -14,12 +14,14 @@ import { ProjectDisplay } from "@harmony/ui/src/components/features/project";
 
 
 const ProjectsPage = withAuth(async ({ctx}) => {
-	const branches = await getBranches(ctx, new GithubRepository(ctx.session.account.repository));
+	const branches = ctx.session.account.repository ? await getBranches({prisma: ctx.prisma, repositoryId: ctx.session.account.repository.id}, new GithubRepository(ctx.session.account.repository)) : undefined;
 
 	return (
 		<ModalProvider>
 			<SideNav>
-				<ProjectDisplay Projectes={branches}/>
+				{branches ? <ProjectDisplay Projectes={branches}/> : <div>
+					No Repositories
+				</div>}
 				{/* <FlexBoxDemo/> */}
 			</SideNav>
 		</ModalProvider>

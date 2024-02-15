@@ -14,6 +14,12 @@ datasource db {
     url      = env("DATABASE_URL")
 }
 
+model Team {
+	id String @id @default(cuid())
+	repository Repository[]
+	accounts Account[]
+}
+
 // Necessary for Next auth
 model Account {
     id                String  @id @default(cuid())
@@ -21,7 +27,8 @@ model Account {
 	firstName		  String
 	lastName		  String
 	role			  String
-	repository Repository[]
+	team_id			  String
+	team Team @relation(fields: [team_id], references: [id])
 }
 
 model Branch {
@@ -111,10 +118,10 @@ model ComponentDefinition {
 
 model Repository {
 	id String @id @default(cuid())
-	account_id String
+	team_id String
 	name String
 	owner String
 	branch String
 	installationId Int
-	account Account @relation(fields: [account_id], references: [id])
+	team Team @relation(fields: [team_id], references: [id])
 }

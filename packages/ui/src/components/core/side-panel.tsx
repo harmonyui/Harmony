@@ -157,7 +157,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         </div>
 
 				<div className="lg:hw-pl-72">
-					<div className="hw-sticky hw-top-0 hw-z-40 hw-flex hw-h-16 shrink-0 hw-items-center hw-gap-x-4 hw-border-b hw-border-gray-200 hw-bg-white hw-px-4 hw-shadow-sm sm:hw-gap-x-6 sm:hw-px-6 lg:hw-px-8">
+					<div className="hw-top-0 hw-z-40 hw-flex hw-h-16 shrink-0 hw-items-center hw-gap-x-4 hw-border-b hw-border-gray-200 hw-bg-white hw-px-4 hw-shadow-sm sm:hw-gap-x-6 sm:hw-px-6 lg:hw-px-8">
 						<button className="-hw-m-2.5 hw-p-2.5 hw-text-gray-700 lg:hw-hidden" onClick={() => { setSidebarOpen(true); }} type="button">
 							<span className="hw-sr-only">Open sidebar</span>
 							<Bars3Icon aria-hidden="true" className="hw-h-6 hw-w-6"/>
