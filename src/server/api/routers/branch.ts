@@ -20,7 +20,7 @@ export const branchRoute = createTRPCRouter({
 			if (!ctx.session.account.repository) {
 				throw new Error("Cannot create a branch without a repository");
 			}
-			
+
 			const githubRepository = new GithubRepository(ctx.session.account.repository);
 			await githubRepository.createBranch(input.branch.name);
 			
@@ -69,4 +69,30 @@ export const getBranches = async ({prisma, repositoryId}: {prisma: Db, repositor
 		commits: await githubRepository.getCommits(branch.name),
 		lastUpdated: branch.updates.sort((a, b) => compare(b.date_modified, a.date_modified))[0].date_modified
 	}))) satisfies BranchItem[];
+}
+
+export const getBranch = async({prisma, branchId}: {prisma: Db, branchId: string}) => {
+	const branch = await prisma.branch.findUnique({
+		where: {
+			id: branchId,
+		},
+		include: {
+			pullRequest: true,
+			updates: true
+		}
+	});
+
+	if (!branch) return undefined;
+
+	//TODO: Get rid of hacky repository id addition and make that global
+	return {
+		id: branch.id,
+		name: branch.name,
+		label: branch.label,
+		url: branch.url,
+		repositoryId: branch.repository_id,
+		pullRequestUrl: branch.pullRequest?.url ?? undefined,
+		commits: [],//await githubRepository.getCommits(branch.name),
+		lastUpdated: branch.updates.sort((a, b) => compare(b.date_modified, a.date_modified))[0].date_modified
+	} satisfies BranchItem & {repositoryId: string};
 }

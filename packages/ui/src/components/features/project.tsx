@@ -10,7 +10,7 @@ import { Input } from "../core/input";
 import { ClosableContent } from "../core/closable-content";
 import { Header } from "../core/header";
 import { Label } from "../core/label";
-import { ModalPortal } from "../core/modal";
+import { HarmonyModal, ModalPortal } from "../core/modal";
 import { displayDate, displayElapsedTime, displayTime } from "../../../../util/src/index";
 import { CreateNewPullRequestModal } from "./pull-request";
 import { DropdownIcon } from "../core/dropdown";
@@ -34,27 +34,6 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 			</> : null}
 		</div>
 	</ModalProvider>
-}
-
-interface HarmonyModalProps {
-	children: React.ReactNode,
-	show: boolean,
-	onClose: () => void,
-}
-export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({children, show, onClose}) => {
-	return (
-		<ModalPortal show={show}>
-			<div className="hw-flex hw-justify-center hw-items-center hw-h-full hw-w-full">
-				<ClosableContent className="hw-mx-auto hw-max-w-3xl hw-w-full" onClose={onClose}>
-					<div className="hw-bg-white hw-shadow sm:hw-rounded-lg">
-						<div className="hw-px-4 hw-py-5 sm:hw-p-6">
-							{children}
-						</div>
-					</div>	
-				</ClosableContent>
-			</div>
-		</ModalPortal>
-	)
 }
 
 interface CreateNewProjectModalProps {

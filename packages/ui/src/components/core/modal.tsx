@@ -3,6 +3,7 @@ import { createContext, useCallback, useContext, useEffect, useState } from "rea
 import { usePrevious } from "../../hooks/previous";
 import { ReplaceWithName } from "../../types/utils";
 import { createPortal } from "react-dom";
+import { ClosableContent } from "./closable-content";
 
 interface ModalContextType {
 	addModal: (newModal: React.ReactNode) => void,
@@ -51,24 +52,18 @@ export const ModalProvider: React.FunctionComponent<React.PropsWithChildren> = (
 	)
 }
 
-export const ModalPortal: React.FunctionComponent<{children: React.ReactNode, show: boolean}> = ({children, show}) => {
-	// const {addModal, removeModal} = useModal();
-	// const prevShow = usePrevious(show);
-	
-	// useEffect(() => {
-	// 	if (prevShow !== show) {
-	// 		if (show) {
-	// 			addModal(children);
-	// 		} else {
-	// 			removeModal();
-	// 		}
-	// 	}
-	// }, [show, prevShow]);
+interface ModalPortalProps {
+	container?: HTMLElement;
+	children: React.ReactNode;
+	show: boolean;
+}
+export const ModalPortal: React.FunctionComponent<ModalPortalProps> = ({children, show, container}) => {
+	const _container = container || document.body;
 
 	return <>
 	{createPortal(show ? <div className="hw-fixed hw-top-0 hw-left-0 hw-w-full hw-z-50 hw-bg-gray-500/90 hw-h-screen hw-overflow-auto">
 		{children}
-	</div> : null, document.body)}
+	</div> : null, _container)}
 	</>
 }
 
@@ -80,4 +75,26 @@ export const useModal = (): ReplaceWithName<ModalContextType, 'nextId' | 'remove
 	}
 
 	return {...rest, removeModal: remove};
+}
+
+interface HarmonyModalProps {
+	children: React.ReactNode,
+	show: boolean,
+	onClose: () => void,
+	editor?: boolean;
+}
+export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({children, show, onClose, editor=false}) => {
+	return (
+		<ModalPortal show={show} container={editor ? document.getElementById('harmony-container') || undefined : undefined}>
+			<div className="hw-flex hw-justify-center hw-items-center hw-h-full hw-w-full">
+				<ClosableContent className="hw-mx-auto hw-max-w-3xl hw-w-full" onClose={onClose}>
+					<div className="hw-bg-white hw-shadow sm:hw-rounded-lg">
+						<div className="hw-px-4 hw-py-5 sm:hw-p-6">
+							{children}
+						</div>
+					</div>	
+				</ClosableContent>
+			</div>
+		</ModalPortal>
+	)
 }

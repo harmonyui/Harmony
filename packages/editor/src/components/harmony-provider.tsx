@@ -1,8 +1,8 @@
 "use client";
-import { Component, useCallback, useEffect, useRef, useState } from "react";
+import { Component, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Inspector, ResizeCoords, ResizeDirection, ResizeValue, componentIdentifier } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
-import {loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
+import {PublishRequest, loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
@@ -17,6 +17,18 @@ const HEIGHT = 1080;
 
 export function findElementFromId(componentId: string, parentId: string): HTMLElement | undefined {
 	return (document.querySelector(`[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]`) as HTMLElement || null) || undefined;
+}
+
+interface HarmonyContextProps {
+	branchId: string;
+	publish: (request: PublishRequest) => Promise<void>;
+}
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', publish: async () => undefined});
+
+export const useHarmonyContext = () => {
+	const context = useContext(HarmonyContext);
+
+	return context;
 }
 
 export interface HarmonyProviderProps {
@@ -220,6 +232,17 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		onAttributesChange(component, update, oldValue, execute);
 	}
 
+	const onPublish = async (request: PublishRequest): Promise<void> => {
+		await fetch(`${WEB_URL}/api/publish`, {
+			method: 'POST',
+			// headers: {
+			// 	'Accept': 'application/json',
+			// 	'Content-Type': 'application/json'
+			// },
+			body: JSON.stringify(request)
+		});
+	}
+
 	const setSelectedComponent = (component: HTMLElement | undefined): void => {
 		_setSelectedComponent(component);
 		selectedComponent !== component && setSelectedComponentText(component?.textContent || '');
@@ -228,7 +251,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	return (
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
-				{<>
+				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish}}>
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
@@ -236,7 +259,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 						</div>
 					</div>
 					</HarmonyPanel>
-				</>}
+				</HarmonyContext.Provider>}
 			{/* </div> */}
 		</>
 	)

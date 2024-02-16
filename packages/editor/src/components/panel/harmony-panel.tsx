@@ -3,7 +3,7 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, EyeDropperIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, EyeDropperIcon, GitBranchIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
 import { Fragment, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
@@ -12,10 +12,14 @@ import { Slider } from "@harmony/ui/src/components/core/slider";
 import {Dropdown, DropdownIcon, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import ColorPicker from '@harmony/ui/src/components/core/color-picker';
 import { HexColorSchema } from "@harmony/ui/src/types/colors";
-import {useChangeArray} from '@harmony/ui/src/hooks/change-property';
+import {useChangeArray, useChangeProperty} from '@harmony/ui/src/hooks/change-property';
 import { Popover } from "@harmony/ui/src/components/core/popover";
 import { Transition } from "@headlessui/react";
 import {ToggleSwitch} from '@harmony/ui/src/components/core/toggle-switch';
+import {HarmonyModal} from '@harmony/ui/src/components/core/modal';
+import {PullRequest} from '@harmony/ui/src/types/branch';
+import { useHarmonyContext } from "../harmony-provider";
+import { PublishRequest } from "@harmony/ui/src/types/network";
 
 export type SelectMode = 'scope' | 'tweezer';
 
@@ -45,13 +49,18 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 
 	return (
 		<div className="hw-flex hw-h-full">
-			<div className="hw-flex hw-flex-col">
+			{/* <div className="hw-flex hw-flex-col">
 				<img src="/harmony.ai.svg"/>
 				<SidePanelToolbar/>
-			</div>
+			</div> */}
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
-				<div className="hw-px-4 hw-py-5 sm:hw-px-6">
-					<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches} onBranchChange={onBranchChange}/>
+				<div className="hw-flex hw-w-full">
+					<div>
+						<img className="hw-h-full" src="/harmony.ai.svg"/>
+					</div>
+					<div className="hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
+						<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches} onBranchChange={onBranchChange}/>
+					</div>
 				</div>
 				<div className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
 					{children}
@@ -208,6 +217,10 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			<div className="hw-ml-auto" style={{borderLeft: '0px'}}>
 				<ToggleSwitch value={toggle} onChange={onToggleChange} label="Designer Mode"/>
 			</div>
+			<div className="hw-px-4">
+				<PublishButton/>
+			</div>
+			
 			{/* <Button className="hw-p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
 				<CursorArrowRaysIcon className="hw-w-5 hw-h-5"/>
 			</Button>
@@ -216,6 +229,49 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			</Button> */}
 		</div>
 	)
+}
+
+const PublishButton = () => {
+	const [show, setShow] = useState(false);
+	const [pullRequest, setPullRequest] = useState<PullRequest>({id: '', title: '', body: '', url: ''});
+	const changeProperty = useChangeProperty<PullRequest>(setPullRequest);
+	const [loading, setLoading] = useState(false);
+	const {branchId, publish} = useHarmonyContext();
+
+	const onNewPullRequest = () => {
+        setLoading(true);
+
+		const request: PublishRequest = {
+			branchId,
+			pullRequest
+		}
+		publish(request).then(() => setLoading(false))
+	}
+
+	return <>
+		<Button onClick={() => setShow(true)}>Publish</Button>
+		<HarmonyModal show={show} onClose={() => setShow(false)} editor>
+			<div className="hw-flex hw-gap-2 hw-items-center">
+				<GitBranchIcon className="hw-w-6 hw-h-6"/>
+				<Header level={3}>Create a Publish Request</Header>
+			</div>
+			<div className="hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500">
+				<p>Fill out the following fields to create a new request to publish your changes</p>
+			</div>
+			<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2">
+				<Label className="sm:hw-col-span-full" label="Title:">
+					<Input className="hw-w-full" value={pullRequest.title} onChange={changeProperty.formFunc('title', pullRequest)}/>
+				</Label>
+                <Label className="sm:hw-col-span-full" label="Publish Details:">
+					<Input className="hw-w-full" type="textarea" value={pullRequest.body} onChange={changeProperty.formFunc('body', pullRequest)}/>
+				</Label>
+			</div>
+			<div className="hw-flex hw-justify-between">
+				{/* <Button>Preview Changes</Button> */}
+				<Button onClick={onNewPullRequest} loading={loading}>Send Request</Button>
+			</div>
+		</HarmonyModal>
+	</>
 }
 
 const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;

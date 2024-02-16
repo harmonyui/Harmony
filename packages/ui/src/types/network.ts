@@ -1,5 +1,6 @@
 import { z } from "zod";
 import { updateSchema } from "./component";
+import { pullRequestSchema } from "./branch";
 
 export const updateRequestBodySchema = z.object({
 	values: z.array(z.object({
@@ -18,3 +19,12 @@ export const loadResponseSchema = z.object({
 	}))
 });
 export type LoadResponse = z.infer<typeof loadResponseSchema>;
+
+export const publishRequestSchema = z.object({
+	pullRequest: z.object({
+		title: z.string(),
+		body: z.string()
+	}),
+	branchId: z.string(),
+})
+export type PublishRequest = z.infer<typeof publishRequestSchema>;

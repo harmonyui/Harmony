@@ -1,8 +1,9 @@
-import { branchItemSchema, pullRequestSchema } from "../../../../packages/ui/src/types/branch";
+import { BranchItem, Repository, branchItemSchema, pullRequestSchema } from "../../../../packages/ui/src/types/branch";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { GithubRepository } from "../repository/github";
 import { z } from "zod";
 import { PullRequest } from "../../../../packages/ui/src/types/branch";
+import { prisma } from "../../db";
 
 export const pullRequestRouter = createTRPCRouter({
     createPullRequest: protectedProcedure
@@ -11,26 +12,30 @@ export const pullRequestRouter = createTRPCRouter({
             if (!ctx.session.account.repository) {
                 throw new Error("Cannot create publish request without repository");
             }
-            
-            const githubRepository = new GithubRepository(ctx.session.account.repository);
-            
-            const url = await githubRepository.createPullRequest(input.branch.name, input.pullRequest.title, input.pullRequest.body);
 
-            const newPullRequest = await ctx.prisma.pullRequest.create({
-                data: {
-                    repository_id: ctx.session.account.repository.id,
-                    title: input.pullRequest.title,
-                    body: input.pullRequest.body,
-                    url,
-                    branch_id: input.branch.id
-                }
-            });
-
-            return {
-                id: newPullRequest.id,
-                title: newPullRequest.title,
-                body: newPullRequest.body,
-                url: newPullRequest.url
-            } satisfies PullRequest
+            return createPullRequest({branch: input.branch, pullRequest: input.pullRequest, repository: ctx.session.account.repository});
         })
-})
+});
+
+export async function createPullRequest({branch, pullRequest, repository}: {branch: BranchItem, pullRequest: {title: string, body: string}, repository: Repository}) {
+    const githubRepository = new GithubRepository(repository);
+            
+    const url = await githubRepository.createPullRequest(branch.name, pullRequest.title, pullRequest.body);
+
+    const newPullRequest = await prisma.pullRequest.create({
+        data: {
+            repository_id: repository.id,
+            title: pullRequest.title,
+            body: pullRequest.body,
+            url,
+            branch_id: branch.id
+        }
+    });
+
+    return {
+        id: newPullRequest.id,
+        title: newPullRequest.title,
+        body: newPullRequest.body,
+        url: newPullRequest.url
+    } satisfies PullRequest
+}
