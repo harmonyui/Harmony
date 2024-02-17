@@ -39,6 +39,7 @@ model Branch {
 	url String
 	updates ComponentUpdate[]
 	pullRequest PullRequest?
+	date_modified DateTime @default(now())
 }
 
 model ComponentUpdate {

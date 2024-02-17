@@ -4,17 +4,244 @@ import { getLineAndColumn, hashComponent } from "../../../../../packages/util/sr
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import tailwindcss from 'tailwindcss';
+import path from 'node:path';
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
+
+export const indexFileAndFollowImports = async (filepath: string, readFile: (filepath: string) => Promise<string>, repositoryId: string) => {
+	const componentDefinitions: Record<string, HarmonyComponent> = {};
+	const instances: ComponentElement[] = [];
+	const importDeclarations: Record<string, {name: string, path: string}> = {};
+	const visitedFiles: Set<string> = new Set();
+
+	const visitPaths = async (filepath: string) => {
+		if (visitedFiles.has(filepath)) return;
+
+		visitedFiles.add(filepath);
+		const content = await readFile(filepath);
+		getCodeInfoFromFile(filepath, content, componentDefinitions, instances, importDeclarations);
+		for (const componentName in importDeclarations) {
+			const {path: importPath, name} = importDeclarations[componentName];
+			const fullPath = path.join(filepath, importPath);
+			await visitPaths(fullPath);
+		}
+	}
+
+	await visitPaths(filepath);	
+
+	await normalizeCodeInfoAndUpdateDatabase(componentDefinitions, instances, repositoryId);
+}
+
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: ComponentElement[] = [];
 
 	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename, content) => {
-		updateReactCode(filename, content, componentDefinitions, instances);
+		getCodeInfoFromFile(filename, content, componentDefinitions, instances, {});
 	});
 
+	await normalizeCodeInfoAndUpdateDatabase(componentDefinitions, instances, repoId, onProgress);
+}
+
+function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
+  const ast = parse(originalCode, {
+    sourceType: 'module',
+ 		plugins: ['jsx', 'typescript'],
+  });
+
+	if (!ast) return false;
+
+	const getNameFromNode = (name: t.JSXIdentifier | t.JSXMemberExpression | t.JSXNamespacedName): string => {
+		if (name.type === 'JSXIdentifier') {
+			return name.name;
+		}
+
+		if (name.type === 'JSXMemberExpression') {
+			return `${getNameFromNode(name.object)}.${getNameFromNode(name.property)}`;
+		}
+
+		return `${getNameFromNode(name.namespace)}.${getNameFromNode(name.name)}`
+	}  
+
+	const getHashFromLocation = (location: ComponentLocation, codeSnippet: string): string => {
+		const {file, start, end} = location;
+		const {line: startLine, column: startColumn} = getLineAndColumn(codeSnippet, start);
+		const {line: endLine, column: endColumn} = getLineAndColumn(codeSnippet, end);
+
+		return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
+	}
+
+	function getLocation(node: t.Node, file: string) {
+		if (!node.loc) {
+			return undefined;
+		}
+
+		return {
+			file,
+			start: node.loc.start.index,
+			end: node.loc.end.index,
+		}
+	}
+
+	function createJSXElementDefinition(node: t.JSXElement, parentElement: ComponentElement | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): ComponentElement | undefined {
+		const name = getNameFromNode(node.openingElement.name);
+		const isComponent = name[0].toLowerCase() !== name[0];
+		const location = getLocation(node, file);
+		if (location === undefined) {
+			return undefined;
+		}
+		const id = getHashFromLocation(location, snippet);
+		if (id === undefined) {
+			return undefined;
+		}
+
+		return {
+			id,
+			parentId: '',
+			name,
+			getParent() {
+				return undefined
+			},
+			children: [],
+			isComponent,
+			location,
+			attributes: [],
+			containingComponent
+		};
+	}
+
+	traverse(ast, {
+		ImportDeclaration(path) {
+			const importPath = path.node.source.value;
+			for (const specifier of path.node.specifiers) {
+				if (specifier.type === 'ImportSpecifier') {
+					const name = specifier.imported.type === 'Identifier' ? specifier.imported.name : specifier.imported.value;
+					const localName = specifier.local.name;
+					importDeclarations[localName] = {path: importPath, name};
+				} else if (specifier.type === 'ImportDefaultSpecifier') {
+					const name = 'default';
+					const localName = specifier.local.name;
+					importDeclarations[localName] = {path: importPath, name};
+				} else {
+					//TODO: Deal with namespace import
+				}
+			}
+		},
+		['FunctionDeclaration|ArrowFunctionExpression'](path) {
+			const jsxElements: ComponentElement[] = [];
+			const location = getLocation(path.node, file);
+
+			if (location === undefined) {
+				throw new Error("Cannot find location");
+			}
+
+			const containingComponent: HarmonyComponent = {
+				id: randomId(),
+				name: '',
+				children: [],
+				attributes: [],
+				isComponent: true,
+				location
+			};
+	
+			// Visitor for extracting JSX elements within the function body
+			path.traverse({
+				JSXIdentifier(jsPath) {
+
+				},
+				JSXElement: {
+					enter(jsPath) {
+						//console.log(path);
+						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
+						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
+			
+						const parentComponent = containingComponent;
+						if (jsxElementDefinition) {
+							const node = jsPath.node;
+							const nonWhiteSpaceChildren = node.children.filter(n => !t.isJSXText(n) || n.value.trim().length > 0);
+							if (nonWhiteSpaceChildren.length === 1) {
+								const child = nonWhiteSpaceChildren[0];
+								if (t.isJSXText(child)) {
+									jsxElementDefinition.attributes.push({id: '', type: 'text', name: 'string', value: child.extra?.raw as string || child.value, reference: jsxElementDefinition})
+								} else if (t.isJSXExpressionContainer(child)) {
+									const value = t.isIdentifier(child.expression) ? child.expression.name : '';
+									jsxElementDefinition.attributes.push({id: '', type: 'text', name: 'property', value, reference: jsxElementDefinition});
+								}
+							}
+							for (const attr of node.openingElement.attributes) {
+								if (t.isJSXAttribute(attr)) {
+									const type = attr.name.name === 'className' ? 'className' : 'property';
+									if (t.isStringLiteral(attr.value)) {
+										jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: `${attr.name.name}:${attr.value.value}`, reference: jsxElementDefinition});
+									} else if (t.isJSXExpressionContainer(attr.value)) {
+										const value = t.isIdentifier(attr.value.expression) ? attr.value.expression.name : undefined;
+										jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
+									}
+								}
+							}
+							
+							jsxElements.push(jsxElementDefinition);
+							elementInstances.push(jsxElementDefinition);
+							parentComponent.children.push(jsxElementDefinition);
+						}
+					},
+					exit() {
+						jsxElements.pop();
+					}
+				}
+			});
+	
+			// Only consider functions with JSX elements as potential React components
+			if (containingComponent.children.length > 0) {
+				let componentName = 'AnonymousComponent';
+	
+				// Check if the function is assigned to a variable or exported
+				if (t.isVariableDeclarator(path.parent) && t.isIdentifier(path.parent.id)) {
+					componentName = path.parent.id.name;
+				} else if (t.isExportDeclaration(path.parent) && path.parent.type !== 'ExportAllDeclaration' && path.parent.declaration && 'id' in path.parent.declaration && t.isIdentifier(path.parent.declaration?.id)) {
+					componentName = path.parent.declaration.id.name;
+				} else if (t.isFunctionDeclaration(path.node) && t.isIdentifier(path.node.id)) {
+					componentName = path.node.id.name;
+				}
+	
+				containingComponent.name = componentName;
+				componentDefinitions[containingComponent.name] = containingComponent;
+			}
+		},
+	});
+
+	return true;
+}
+
+//For future when mapping path alias will be a need
+// function readTsConfig(tsConfigPath) {
+// 	const tsConfig = JSON.parse(fs.readFileSync(tsConfigPath, 'utf-8'));
+// 	return tsConfig.compilerOptions.paths || {};
+//   }
+  
+//   // Function to resolve path alias
+//   function resolvePathAlias(alias, pathMappings) {
+// 	// Find the alias in the pathMappings
+// 	for (const [aliasKey, paths] of Object.entries(pathMappings)) {
+// 	  if (alias.startsWith(aliasKey)) {
+// 		const resolvedPath = alias.replace(aliasKey, paths[0]); // Use the first path mapping
+// 		return path.resolve(resolvedPath);
+// 	  }
+// 	}
+// 	return alias; // Return original alias if no mapping found
+//   }
+// const tsConfigPath = '/path/to/tsconfig.json';
+// const aliasMappings = readTsConfig(tsConfigPath);
+
+// // Resolve an alias
+// const alias = '@harmony/ui/src/component';
+// const resolvedPath = resolvePathAlias(alias, aliasMappings);
+
+function randomId(): string {
+	return String(Math.random()).hashCode().toString();
+}
+
+const normalizeCodeInfoAndUpdateDatabase = async (componentDefinitions: Record<string, HarmonyComponent>, instances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) => {
 	const isComponentInstance = (instance: ComponentElement): boolean => {
 		return instance.name[0] === instance.name[0].toUpperCase();
 	}
@@ -63,7 +290,7 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 		if (definition === null) {
 			definition = await prisma.componentDefinition.create({
 				data: {
-					repository_id: repoId,
+					repository_id: repositoryId,
 					name: instance.containingComponent.name,
 					location: {
 						create: {
@@ -101,7 +328,7 @@ try {
 		const newElement = await prisma.componentElement.create({
 			data: {
 				id: instance.id,
-				repository_id: repoId,
+				repository_id: repositoryId,
 				name: instance.name,
 				parent_id: parent?.id || '',
 				parent_parent_id: parent?.parentId || null,
@@ -130,7 +357,7 @@ try {
 						comp = await prisma.componentDefinition.create({
 							data: {
 								name: definition.name,
-								repository_id: repoId,
+								repository_id: repositoryId,
 								location: {
 									create: {
 										file: definition.location.file,
@@ -205,207 +432,4 @@ try {
 		await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)
 	}
-}
-
-function updateReactCode(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[]): boolean {
-  const ast = parse(originalCode, {
-    sourceType: 'module',
- 		plugins: ['jsx', 'typescript'],
-  });
-
-	if (!ast) return false;
-
-	const getNameFromNode = (name: t.JSXIdentifier | t.JSXMemberExpression | t.JSXNamespacedName): string => {
-		if (name.type === 'JSXIdentifier') {
-			return name.name;
-		}
-
-		if (name.type === 'JSXMemberExpression') {
-			return `${getNameFromNode(name.object)}.${getNameFromNode(name.property)}`;
-		}
-
-		return `${getNameFromNode(name.namespace)}.${getNameFromNode(name.name)}`
-	}  
-
-	const getHashFromLocation = (location: ComponentLocation, codeSnippet: string): string => {
-		const {file, start, end} = location;
-		const {line: startLine, column: startColumn} = getLineAndColumn(codeSnippet, start);
-		const {line: endLine, column: endColumn} = getLineAndColumn(codeSnippet, end);
-
-		return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
-	}
-
-	// const getHashFromElement = (node: t.JSXElement, parentElement: ComponentElement | undefined, isComponent: boolean): string | undefined => {
-	// 	const name = getNameFromNode(node.openingElement.name);
-	// 	let _id: string | undefined = randomId();
-
-	// 	if (!isComponent) {
-	// 		let className = '';
-	// 		for (const attribute of node.openingElement.attributes) {
-	// 			if (attribute.type !== 'JSXAttribute') {
-	// 				_id = undefined;
-	// 				break;
-	// 				//throw new Error("Spread attributes are not yet supported on native elements");
-	// 			}
-
-	// 			if (attribute.name.name !== 'className') {
-	// 				continue;
-	// 			}
-
-	// 			if (attribute.value?.type !== 'StringLiteral') {
-	// 				_id = undefined;
-	// 				break;
-	// 				//throw new Error("Dynamic attributes are not yet supported for className");
-	// 			}
-
-	// 			className += attribute.value.value;
-	// 		}
-
-	// 		if (className) {
-	// 			_id = String(hashComponent({elementName: name, className, childPosition: parentElement?.children.length ?? 1}));
-	// 		} else {
-	// 			_id = undefined;
-	// 		}
-	// 	}
-
-	// 	return _id;
-	// }
-
-	function getLocation(node: t.Node, file: string) {
-		if (!node.loc) {
-			return undefined;
-		}
-
-		return {
-			file,
-			start: node.loc.start.index,
-			end: node.loc.end.index,
-		}
-	}
-
-	function createJSXElementDefinition(node: t.JSXElement, parentElement: ComponentElement | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): ComponentElement | undefined {
-		const name = getNameFromNode(node.openingElement.name);
-		const isComponent = name[0].toLowerCase() !== name[0];
-		const location = getLocation(node, file);
-		if (location === undefined) {
-			return undefined;
-		}
-		const id = getHashFromLocation(location, snippet);
-		if (id === undefined) {
-			return undefined;
-		}
-
-		return {
-			id,
-			parentId: '',
-			name,
-			getParent() {
-				return undefined
-			},
-			children: [],
-			isComponent,
-			location,
-			attributes: [],
-			containingComponent
-		};
-	}
-
-	traverse(ast, {
-		['FunctionDeclaration|ArrowFunctionExpression'](path) {
-			const jsxElements: ComponentElement[] = [];
-			const location = getLocation(path.node, file);
-
-			if (location === undefined) {
-				throw new Error("Cannot find location");
-			}
-
-			const containingComponent: HarmonyComponent = {
-				id: randomId(),
-				name: '',
-				children: [],
-				attributes: [],
-				isComponent: true,
-				location
-			};
-	
-			// Visitor for extracting JSX elements within the function body
-			path.traverse({
-				JSXIdentifier(jsPath) {
-
-				},
-				JSXElement: {
-					enter(jsPath) {
-						//console.log(path);
-						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
-						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
-			
-						const parentComponent = containingComponent;
-						if (jsxElementDefinition) {
-							const node = jsPath.node;
-							const nonWhiteSpaceChildren = node.children.filter(n => !t.isJSXText(n) || n.value.trim().length > 0);
-							if (nonWhiteSpaceChildren.length === 1) {
-								const child = nonWhiteSpaceChildren[0];
-								if (t.isJSXText(child)) {
-									jsxElementDefinition.attributes.push({id: '', type: 'text', name: 'string', value: child.extra?.raw as string || child.value, reference: jsxElementDefinition})
-								} else if (t.isJSXExpressionContainer(child)) {
-									const value = t.isIdentifier(child.expression) ? child.expression.name : '';
-									jsxElementDefinition.attributes.push({id: '', type: 'text', name: 'property', value, reference: jsxElementDefinition});
-								}
-							}
-							for (const attr of node.openingElement.attributes) {
-								if (t.isJSXAttribute(attr)) {
-									const type = attr.name.name === 'className' ? 'className' : 'property';
-									if (t.isStringLiteral(attr.value)) {
-										jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: `${attr.name.name}:${attr.value.value}`, reference: jsxElementDefinition});
-									} else if (t.isJSXExpressionContainer(attr.value)) {
-										const value = t.isIdentifier(attr.value.expression) ? attr.value.expression.name : undefined;
-										jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
-									}
-								}
-							}
-							// const classNameAttr = node.openingElement.attributes.find(attr => t.isJSXAttribute(attr) && attr.name.name === 'className') as t.JSXAttribute;
-							// if (classNameAttr && t.isStringLiteral(classNameAttr.value)) {
-							// 	jsxElementDefinition.attributes.push({id: 'string', type: 'className', name: 'string', value: classNameAttr.value.value, reference: jsxElementDefinition});
-							// 	//console.log(tailwindcss)
-							// 	// const tailwindMapping = {
-							// 	// 	'font-sm': {name: 'font', value: 'small'}
-							// 	// }
-							// 	// const classNames = classNameAttr.value.value.split(' ');
-								
-							// }
-							jsxElements.push(jsxElementDefinition);
-							elementInstances.push(jsxElementDefinition);
-							parentComponent.children.push(jsxElementDefinition);
-						}
-					},
-					exit() {
-						jsxElements.pop();
-					}
-				}
-			});
-	
-			// Only consider functions with JSX elements as potential React components
-			if (containingComponent.children.length > 0) {
-				let componentName = 'AnonymousComponent';
-	
-				// Check if the function is assigned to a variable or exported
-				if (t.isVariableDeclarator(path.parent) && t.isIdentifier(path.parent.id)) {
-					componentName = path.parent.id.name;
-				} else if (t.isExportDeclaration(path.parent) && path.parent.type !== 'ExportAllDeclaration' && path.parent.declaration && 'id' in path.parent.declaration && t.isIdentifier(path.parent.declaration?.id)) {
-					componentName = path.parent.declaration.id.name;
-				} else if (t.isFunctionDeclaration(path.node) && t.isIdentifier(path.node.id)) {
-					componentName = path.node.id.name;
-				}
-	
-				containingComponent.name = componentName;
-				componentDefinitions[containingComponent.name] = containingComponent;
-			}
-		},
-	});
-
-	return true;
-}
-
-function randomId(): string {
-	return String(Math.random()).hashCode().toString();
 }

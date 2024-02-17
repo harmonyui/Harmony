@@ -1,11 +1,8 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '../../../../src/server/db';
 import { ComponentUpdate, updateSchema } from '@harmony/ui/src/types/component';
-import { z } from 'zod';
 import { LoadResponse, loadResponseSchema } from '@harmony/ui/src/types/network';
-import { indexCodebase } from '../../../../src/server/api/services/indexor/indexor';
-import { fromGithub } from '../../../../src/server/api/services/indexor/github';
-import { GithubRepository } from '../../../../src/server/api/repository/github';
+
 
 export async function GET(req: NextRequest, {params}: {params: {repositoryId: string}}): Promise<Response> {
 	const {repositoryId} = params;
@@ -20,7 +17,7 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 	const url = new URL(req.url);
 	const branchId = url.searchParams.get('branchId');
 
-	//await indexCodebase('', fromGithub(new GithubRepository(repository)), repositoryId);
+	//await indexCodebase(process.cwd(), fromDir, repositoryId);
 
 	let updates: ComponentUpdate[] = [];
 

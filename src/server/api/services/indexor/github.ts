@@ -16,7 +16,7 @@ export const fromGithub: (githubRepository: GithubRepository) => ReadFiles = (gi
 	}
 }
 
-export const getCodeSnippet = (githubRepository: GithubRepository) => async ({file, start, end}: ComponentLocation, branch: string): Promise<string> => {
+export const getFileContent = async (githubRepository: GithubRepository, file: string, branch: string) => {
 	const fileInfo = await githubRepository.getContent(file, branch);
 
 	if (Array.isArray(fileInfo) || !('content' in fileInfo)) {
@@ -24,5 +24,11 @@ export const getCodeSnippet = (githubRepository: GithubRepository) => async ({fi
 	}
 
 	const fileContent = atob(fileInfo.content);
+
+	return fileContent;
+}
+
+export const getCodeSnippet = (githubRepository: GithubRepository) => async ({file, start, end}: ComponentLocation, branch: string): Promise<string> => {
+	const fileContent = await getFileContent(githubRepository, file, branch);
 	return fileContent.substring(start, end);
 }

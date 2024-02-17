@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "Branch" ADD COLUMN     "date_modified" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP;
