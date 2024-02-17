@@ -10,7 +10,7 @@
     "main": "harmony_plugin.wasm",
     "scripts": {
         "prepack": "cp target/wasm32-wasi/release/harmony_plugin.wasm .",
-        "build": "cargo build-wasi --release"
+        "build": "cargo build-wasi --release && npm run prepack"
     },
     "files": [
         "harmony-plugin.wasm"
