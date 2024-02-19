@@ -71,10 +71,10 @@ const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps>
 				<Header level={3}>Create a Project</Header>
 			</div>
 			<div className="hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500">
-				<p>Fill out the following fields to create a new Project through Harmony</p>
+				<p>Fill out the following fields to create a new project through Harmony</p>
 			</div>
 			<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2">
-				<Label className="sm:hw-col-span-full" label="Project Label:">
+				<Label className="sm:hw-col-span-full" label="Project:">
 					<Input className="hw-w-full" value={project.label} onChange={changeProperty.formFunc('label', project)}/>
 				</Label>
 				<Label className="sm:hw-col-span-full" label="Url:">
