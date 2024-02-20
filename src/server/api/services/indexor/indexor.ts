@@ -174,7 +174,7 @@ function getCodeInfoFromFile(file: string, originalCode: string, componentDefini
 								if (t.isJSXAttribute(attr)) {
 									const type = attr.name.name === 'className' ? 'className' : 'property';
 									if (t.isStringLiteral(attr.value)) {
-										jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: `${attr.name.name}:${attr.value.value}`, reference: jsxElementDefinition});
+										jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: type === 'className' ? attr.value.value : `${attr.name.name}:${attr.value.value}`, reference: jsxElementDefinition});
 									} else if (t.isJSXExpressionContainer(attr.value)) {
 										const value = t.isIdentifier(attr.value.expression) ? attr.value.expression.name : undefined;
 										jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});

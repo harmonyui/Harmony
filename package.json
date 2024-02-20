@@ -45,6 +45,7 @@
     "@trpc/react-query": "^10.45.0",
     "@trpc/server": "^10.45.0",
     "cheerio": "^1.0.0-rc.12",
+    "css-to-tailwindcss": "^1.0.5",
     "dayjs": "^1.11.10",
     "harmony-ai-editor": "^0.1.8",
     "hotkeys-js": "^3.13.2",
@@ -60,6 +61,7 @@
     "react-stately": "^3.23.0",
     "react-syntax-highlighter": "^15.5.0",
     "superjson": "^2.2.1",
+    "tailwind-merge": "^2.2.1",
     "woodpile": "^0.0.5",
     "zod": "^3.22.4"
   },
