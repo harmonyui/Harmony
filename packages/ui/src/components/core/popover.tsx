@@ -8,7 +8,7 @@ type PopoverProps = React.PropsWithChildren<
   {
     button: React.ReactNode;
     className?: string;
-    container?: boolean;
+    container?: HTMLElement;
   } & AllOrNothing<{ isOpen: boolean; setIsOpen: (value: boolean) => void }>
 >;
 export const Popover: React.FunctionComponent<PopoverProps> = ({
@@ -16,7 +16,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
   button,
   isOpen,
   setIsOpen,
-  container=false,
+  container,
   className = "hw-p-2",
 }) => {
   const [isOpenState, setIsOpenState] = useState<boolean | undefined>(
@@ -64,6 +64,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
           className={getClass(className, "hw-overflow-hidden")}
           state={state}
           triggerRef={ref}
+          container={container}
         >
           {false ? <PopoverContainer>{children}</PopoverContainer> : children}
         </ReactPopover>

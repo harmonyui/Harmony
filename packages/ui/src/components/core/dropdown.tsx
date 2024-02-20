@@ -11,6 +11,7 @@ export type ListBoxPopoverProps<T> = {
   items: DropdownItem<T>[];
   className?: string;
   header?: React.ReactNode;
+  container?: HTMLElement;
   children: React.ReactNode;
 } & AllOrNothing<{ isOpen: boolean; setIsOpen: (value: boolean) => void }>;
 export const ListBoxPopover = <T,>({
@@ -18,10 +19,11 @@ export const ListBoxPopover = <T,>({
   className = "",
   header,
   children,
+  container,
   ...isOpenStuff
 }: ListBoxPopoverProps<T>): JSX.Element => {
   return (
-    <Popover button={children} className={className} {...isOpenStuff}>
+    <Popover button={children} className={className} container={container} {...isOpenStuff}>
       {header ? <div className="hw-p-2">{header}</div> : null}
       <div className="hw-min-w-[11rem]">
         <ul
@@ -39,6 +41,7 @@ export const ListBoxPopover = <T,>({
 
 export type ListBoxProps<T> = ListBoxPopoverProps<T> & {
   mode?: "primary" | "secondary" | "none";
+  container?: HTMLElement;
 };
 export const ListBox = <T,>({
   items,
@@ -46,6 +49,7 @@ export const ListBox = <T,>({
   children,
   mode,
   header,
+  container,
   ...isOpenStuff
 }: ListBoxProps<T>): JSX.Element => {
   const button = (
@@ -54,7 +58,7 @@ export const ListBox = <T,>({
     </Button>
   );
   return (
-    <ListBoxPopover header={header} items={items} {...isOpenStuff}>
+    <ListBoxPopover header={header} items={items} container={container} {...isOpenStuff}>
       {button}
     </ListBoxPopover>
   );
@@ -74,6 +78,7 @@ interface DropdownProps<T> extends PropsWithChildren {
 	beforeIcon?: IconComponent;
   showValue?: boolean
   mode?: "primary" | "secondary" | "none";
+  container?: HTMLElement
 }
 
 export const Dropdown = <T,>({
@@ -85,6 +90,7 @@ export const Dropdown = <T,>({
   className,
 	beforeIcon,
   showValue=true,
+  container,
   mode='secondary'
 }: DropdownProps<T>): JSX.Element => {
   const [value, setValue] = useState<DropdownItem<T> | undefined>(
@@ -124,6 +130,7 @@ export const Dropdown = <T,>({
       items={dropdownItems}
       mode={mode}
       setIsOpen={setIsOpen}
+      container={container}
     >
 			{BeforeIcon ? <BeforeIcon className="hw-w-4 hw-h-4 hw-mr-1"/> : null}
       <div className="hw-flex hw-w-full hw-justify-between hw-items-center">{value === undefined || !showValue ? children : value.name}{" "}

@@ -200,8 +200,8 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
 			{branchId ? <div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2">
 				<Header level={4}>{currBranch ? currBranch.name : 'Invalid Branch'}</Header>
-				<DropdownIcon className="hw-border-none !hw-px-2" icon={EditIcon} items={branches} onChange={(item) => onBranchChange(item.id)}/>
-			</div> : <Dropdown items={branches} onChange={(item) => onBranchChange(item.id)}>Select Branch</Dropdown>}
+				<DropdownIcon className="hw-border-none !hw-px-2" icon={EditIcon} items={branches} onChange={(item) => onBranchChange(item.id)} container={document.getElementById("harmony-container") || undefined}/>
+			</div> : <Dropdown items={branches} onChange={(item) => onBranchChange(item.id)} container={document.getElementById("harmony-container") || undefined}>Select Branch</Dropdown>}
 			{data ? <>
 				<div className="hw-px-4">
 					<ComponentTools tools={textTools} components={textToolsComponents} data={data} onChange={changeData}/>
@@ -287,7 +287,7 @@ const textToolsComponents: Record<TextTools, ComponentTool> = {
 			}
 		]
 		return (
-			<Dropdown className="hw-w-[170px]" items={items} initialValue={data} onChange={(item) => onChange(item.id)}/>
+			<Dropdown className="hw-w-[170px]" items={items} initialValue={data} onChange={(item) => onChange(item.id)} container={document.getElementById("harmony-container") || undefined}/>
 		)
 	},
 	'fontSize': ({data, onChange}) => {
@@ -297,7 +297,7 @@ const textToolsComponents: Record<TextTools, ComponentTool> = {
 	},
 	'color': ({data, onChange}) => {
 		return (
-			<ColorPicker value={HexColorSchema.parse(data)} onChange={onChange}/>
+			<ColorPicker value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 		)
 	},
 	'textAlign': ({data, onChange}) => {
@@ -335,7 +335,7 @@ const textToolsComponents: Record<TextTools, ComponentTool> = {
 		}
 		
 		return (
-			<Popover button={<Button mode='none'><BarsArrowDownIcon className="hw-h-5 hw-w-5"/></Button>} container>
+			<Popover button={<Button mode='none'><BarsArrowDownIcon className="hw-h-5 hw-w-5"/></Button>} container={document.getElementById("harmony-container") || undefined}>
 				<div className="hw-flex hw-flex-col hw-gap-2 hw-font-normal">
 					<div className="hw-flex hw-gap-2 hw-text-sm">
 						<span className="hw-w-full">Line Spacing</span>

@@ -331,14 +331,16 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
 
 	const onGithubContinue = (repository: Repository): void => {
 		setRepository(repository);
-		mutate({repository}, {
-			onSuccess: () => {
-				setPage(page+1);
-		}})
+        setPage(page + 1);
 	}
     
     const onAdditionalContinue = () => {
-        setPage(page + 1);
+        if (!repository) throw new Error("Repository should be defined");
+
+        mutate({repository}, {
+			onSuccess: () => {
+				setPage(page+1);
+		}})
     }
 
 	const pages = [
@@ -391,6 +393,7 @@ const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = (
 
 	return (<>
 		<Header level={4}>Import Git Repository</Header>
+        <p className="hw-text-gray-400 hw-text-sm">Note: while in beta, this cannot be changed later.</p>
 		{repos ? repos.length === 0 ? <Button onClick={() => window.open("https://github.com/apps/harmony-ai-app/installations/new", 'MyWindow', 'width=600,height=300')}>Install</Button> : <>
 			<div className="hw-flex hw-flex-col">
 				{repos.map(repo => <div key={repo.id} className="hw-flex hw-justify-between hw-items-center hw-border hw-rounded-md hw-p-3">
@@ -409,6 +412,8 @@ interface AdditionalRepositoryInfoProps {
 }
 const AdditionalRepositoryInfo: React.FunctionComponent<AdditionalRepositoryInfoProps> = ({repository, onChange, onContinue}) => {
     const changeProperty = useChangeProperty<Repository>(onChange);
+    const [error, setError] = useState('');
+
     const items: DropdownItem<string>[] = [
         {
             id: 'tailwind',
@@ -418,11 +423,24 @@ const AdditionalRepositoryInfo: React.FunctionComponent<AdditionalRepositoryInfo
             id: 'other',
             name: 'Other'
         }
-    ]
+    ];
+    const onContinueClick = () => {
+        if (!repository.cssFramework || !repository.branch) {
+            setError("Please fill out all fields");
+            return;
+        }
+
+        onContinue();
+    }
     return (
         <>
             <Header level={4}>Additional Repository Information</Header>
             <div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-8 sm:hw-grid-cols-6">
+                {/* TODO: Should make a dropdown that pulls the available branches */}
+                <Label className="sm:hw-col-span-full" label="Branch">
+                    <p className="hw-text-sm hw-text-gray-400">Enter the name of the branch that pull requests will be merged into (probably a staging branch).</p>
+                    <Input className="hw-w-full" value={repository.branch} onChange={changeProperty.formFunc('branch', repository)}/>
+                </Label>
                 <Label className="sm:hw-col-span-3" label="CSS Framework:">
                     <Dropdown className="hw-w-full" items={items} initialValue={repository.cssFramework} onChange={(item) => {changeProperty(repository, 'cssFramework', item.id)}}>
                         Select Framework
@@ -433,7 +451,8 @@ const AdditionalRepositoryInfo: React.FunctionComponent<AdditionalRepositoryInfo
                     <Input className="hw-w-full" value={repository.tailwindPrefix} onChange={changeProperty.formFunc('tailwindPrefix', repository)}/>
                 </Label> : null}
             </div>
-            <Button className="hw-w-fit hw-ml-auto" onClick={onContinue}>Continue</Button>
+            {error ? <p className="hw-text-sm hw-text-red-400">{error}</p> : null}
+            <Button className="hw-w-fit hw-ml-auto" onClick={onContinueClick}>Continue</Button>
         </>
     )
 }

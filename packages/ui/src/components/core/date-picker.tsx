@@ -467,7 +467,7 @@ type PopoverProps = React.PropsWithChildren<
     state: OverlayTriggerState;
     className?: string;
   }
->;
+> & {container?: HTMLElement};
 export const Popover = (props: PopoverProps): JSX.Element => {
   const ref = useRef<HTMLDivElement>(null);
   const { children, state } = props;
@@ -494,7 +494,7 @@ export const Popover = (props: PopoverProps): JSX.Element => {
         {children}
         <DismissButton onDismiss={state.close.bind(state)} />
       </div>
-    </>, document.body)
+    </>, props.container || document.body)
   );
 };
 
