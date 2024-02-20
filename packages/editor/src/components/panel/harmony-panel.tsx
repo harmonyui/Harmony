@@ -55,8 +55,8 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 			</div> */}
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
 				<div className="hw-flex hw-w-full">
-					<div>
-						<img className="hw-h-full" src="/harmony.ai.svg"/>
+					<div className="hw-h-20">
+						<img className="hw-h-full" src="/harmonylogo.svg"/>
 					</div>
 					<div className="hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
 						<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches} onBranchChange={onBranchChange}/>

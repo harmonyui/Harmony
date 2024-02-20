@@ -14,6 +14,8 @@ import { HarmonyModal, ModalPortal } from "../core/modal";
 import { displayDate, displayElapsedTime, displayTime } from "../../../../util/src/index";
 import { CreateNewPullRequestModal } from "./pull-request";
 import { DropdownIcon } from "../core/dropdown";
+import {load} from 'cheerio';
+import domtoimage from 'dom-to-image';
 
 
 export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> = ({Projectes}) => {
@@ -95,16 +97,23 @@ export interface ProjectLineItemProps {
 	onOpenHarmony: () => void;
 }
 export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({item, onOpenHarmony}) => {
-
+	const thumbnailQuery = api.branch.getURLThumbnail.useQuery({url: item.url});
     const [thumbnail, setThumbnail] = useState<string>('');
 
-	useEffect(() => {
-        const fetch = async () => {
-            const url = await createWebpageThumbnail(item.url);
-            setThumbnail(url);
-        }
-        fetch();
-    }, []);
+	if (thumbnailQuery.data && !thumbnail) {
+		setThumbnail(thumbnailQuery.data);
+	}
+	// useEffect(() => {
+	// 	const fetch = async () => {
+	// 		if (thumbnailQuery.data) {
+	// 			const url = await createWebpageThumbnail(thumbnailQuery.data);
+	// 			setThumbnail(url);
+	// 		}
+	// 	}
+
+	// 	fetch();
+	// }, [thumbnailQuery])
+
 
     const moreItems = [
         {id: '0', name: 'Open', onClick: onOpenHarmony}
@@ -124,21 +133,4 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
             </div>
 		</div>
 	)
-}
-
-async function createWebpageThumbnail(url: string): Promise<string> {
-    return 'https://assets-global.website-files.com/61c1c0b4e368108c5ab02f30/62385d67c46d9a32873c39aa_canopy_dark.png'
-    const response = await fetch(url);
-    const html = await response.text();
-
-    const parser = new DOMParser();
-    const doc = parser.parseFromString(html, 'text/html');
-
-    // Extract title
-    const title = doc.querySelector('title')?.textContent;
-
-    // Extract thumbnail image (you may need to adjust this based on webpage structure)
-    const thumbnailImage = doc.querySelector('meta[property="og:image"]')?.getAttribute('content');
-
-    return thumbnailImage || '';
 }
