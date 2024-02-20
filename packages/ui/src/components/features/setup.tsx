@@ -6,21 +6,22 @@ import { Label } from "@harmony/ui/src/components/core/label";
 import { Repository } from "@harmony/ui/src/types/branch";
 import CodeSnippet from "@harmony/ui/src/components/core/code-snippet";
 import { LoadingScreen } from "@harmony/ui/src/components/features/loading-screen";
-import { useRouter } from "next/navigation";
-import React, { useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
+import React, { useEffect, useState } from "react";
 import { api } from "../../../../../utils/api";
 import { useChangeProperty } from "../../hooks/change-property";
 import { emailSchema } from "../../types/utils";
 import { Account as AccountServer } from "../../../../../src/server/auth";
 import { Dropdown, DropdownItem } from "../core/dropdown";
-type Account = AccountServer//Pick<AccountServer, 'firstName' | 'lastName' | 'role'>
+import {GITHUB_APP_CLIENT_ID, WEB_URL} from '@harmony/util/src/constants';
+
+type Account = AccountServer
 
 export const WelcomeDisplay: React.FunctionComponent<{teamId: string | undefined}> = ({teamId}) => {
     const queryAccount = api.setup.getAccount.useQuery();
 	const {mutate: createAccount} = api.setup.createAccount.useMutation();
 	const [account, setAccount] = useState<Account | undefined>();
-	const router = useRouter();
-
+	
     if (queryAccount.data && !account) {
         setAccount(queryAccount.data);
     }
@@ -33,11 +34,7 @@ export const WelcomeDisplay: React.FunctionComponent<{teamId: string | undefined
 		})
 	}
 
-    if (account?.role === 'developer') {
-        return <DeveloperSetup repository={account.repository}/>
-    }
-
-    if (account?.role === 'designer') {
+    if (account) {
         return <DesignerSetup teamId={account.teamId}/>
     }
 
@@ -63,37 +60,22 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({data, onConti
 	const [account, setAccount] = useState(data);
 	const changeProperty = useChangeProperty<Account>(setAccount);
 
-	const onChange = <Key extends keyof Account>(key: Key) => (value: Account[Key]) => {
-		changeProperty(account, key, value);
-	}
-
 	const onContinueClick = () => {
 		onContinue(account);
 	}
-
-    const items: DropdownItem<string>[] = [
-        {
-            id: 'designer',
-            name: 'Designer'
-        },
-        {
-            id: 'developer',
-            name: 'Developer'
-        }
-    ]
 
 	return (
 		<>
 			<Header level={4}>Please enter your account details:</Header>
 			<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-8 sm:hw-grid-cols-6">
 				<Label className="sm:hw-col-span-3" label="First Name:">
-					<Input className="hw-w-full" value={account.firstName} onChange={onChange('firstName')}/>
+					<Input className="hw-w-full" value={account.firstName} onChange={changeProperty.formFunc('firstName', account)}/>
 				</Label>
 				<Label className="sm:hw-col-span-3" label="Last Name:">
-					<Input className="hw-w-full" value={account.lastName} onChange={onChange('lastName')}/>
+					<Input className="hw-w-full" value={account.lastName} onChange={changeProperty.formFunc('lastName', account)}/>
 				</Label>
 				<Label className="sm:hw-col-span-3" label="What best describes your role?">
-					<Dropdown className="hw-w-full" initialValue={account.role} items={items} onChange={(item) => onChange('role')(item.id)}>Select Role</Dropdown>
+					<Input className="hw-w-full" value={account.role} onChange={changeProperty.formFunc('role', account)} />
 				</Label>
 			</div>
 			<Button className="hw-w-fit hw-ml-auto" onClick={onContinueClick}>Create Account</Button>
@@ -131,7 +113,7 @@ const DesignerSetup: React.FunctionComponent<DesignerSetupProps> = ({teamId}) =>
         router.push('/');
     }
 
-    const url = `http://localhost:3000/setup?teamId=${teamId}`
+    const url = `${WEB_URL}/setup/developer/${teamId}`
 	return (
 		<>
             <SetupLayout>
@@ -153,17 +135,49 @@ const DesignerSetup: React.FunctionComponent<DesignerSetupProps> = ({teamId}) =>
 
 const CopyText: React.FunctionComponent<{text: string}> = ({text}) => {
     const [copied, setCopied] = useState(false);
-
-    const onClick = () => {
-        void navigator.clipboard.writeText(text);
-        setCopied(true);
-    }
-    return <div className="hw-flex hw-gap-2 hw-items-center">
-        <div className="hw-text-sm hw-text-gray-500 hw-p-2">
-            {text}
+    const [copiedText, setCopiedText] = useState('');
+    useEffect(() => {
+        if (text !== copiedText) {
+            setCopied(false);
+        }
+    }, [text, copiedText]);
+    return (
+        <div>
+            <div
+                className={`hw-rounded hw-h-6 hw-leading-6 hw-cursor-pointer hw-px-1 hw-inline-block hw-transition ${
+                    copied
+                        ? 'hw-text-white hw-bg-primary'
+                        : 'hw-text-teal-900 hw-bg-gray-200 hover:hw-bg-gray-300'
+                }`}
+                onClick={() => {
+                    navigator.clipboard.writeText(text);
+                    setCopied(true);
+                    setCopiedText(text);
+                }}
+            >
+                <div className="hw-flex hw-items-center">
+                    <svg
+                        fill="none"
+                        stroke="currentColor"
+                        stroke-linecap="round"
+                        stroke-linejoin="round"
+                        stroke-width="2"
+                        viewBox="0 0 24 24"
+                        className="hw-w-5 hw-h-5 hw-mr-1"
+                    >
+                        <path
+                            d={`${
+                                copied
+                                    ? 'M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4'
+                                    : 'M8 5H6a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2v-1M8 5a2 2 0 002 2h2a2 2 0 002-2M8 5a2 2 0 012-2h2a2 2 0 012 2m0 0h2a2 2 0 012 2v3m2 4H10m0 0l3-3m-3 3l3 3'
+                            }`}
+                        ></path>
+                    </svg>
+                    {text}
+                </div>
+            </div>
         </div>
-        <Button mode='primary' onClick={onClick}>{copied ? 'Copied!' : 'Copy'}</Button>
-    </div>
+    );
 }
 
 const HarmonyToGithubThing = () => {
@@ -271,15 +285,41 @@ const HarmonyToGithubThing = () => {
 }
 
 interface DeveloperSetupProps {
-   repository: Repository | undefined
+   repository: Repository | undefined;
+   teamId: string;
+   clientId: string;
 }
-export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({repository: repositoryProp}) => {
+export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({repository: repositoryProp, teamId, clientId}) => {
     const {mutate} = api.setup.connectRepository.useMutation();
 	const [repository, setRepository] = useState<Repository | undefined>();
 	const [page, setPage] = useState(0);
 	const router = useRouter();
+    const searchParams = useSearchParams();
 	const [loading, setLoading] = useState(false);
 	const [error, setError] = useState<string>();
+    const [accessToken, setAccessToken] = useState<string>();
+
+    if (searchParams.has('access_token') && !accessToken) {
+        const access_token = searchParams.get('access_token') as string;
+        setAccessToken(access_token);
+    }  
+
+    useEffect(() => {
+        const access_token = localStorage.getItem("access_token");
+        if (access_token) {
+            setAccessToken(access_token);
+        }
+    }, []);
+
+    useEffect(() => {
+        if (accessToken) {
+            setPage(1);
+            if (!localStorage.getItem('access_token')) {
+                localStorage.setItem('access_token', accessToken);
+            }
+        }
+    }, [accessToken])
+
 
 	if (loading) {
 		return <LoadingScreen>
@@ -292,41 +332,42 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
         setPage(2);
     }
 
-	const readData = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
-		let done = false;
-		const decoder = new TextDecoder();
+	// const readData = async (reader: ReadableStreamDefaultReader<Uint8Array>) => {
+	// 	let done = false;
+	// 	const decoder = new TextDecoder();
 
-		while (!done) {
-			const { value, done: doneReading } = await reader.read();
-			done = doneReading;
-			const data = decoder.decode(value);
-		}
-	}
+	// 	while (!done) {
+	// 		const { value, done: doneReading } = await reader.read();
+	// 		done = doneReading;
+	// 		const data = decoder.decode(value);
+	// 	}
+	// }
 	
 	const onFinish = (): void => {
-		setLoading(true);
-		fetch('/api/import', {
-			method: 'POST',
-			body: JSON.stringify({repository})
-		}).then(response => {
-			if (!response.ok) {
-				setLoading(false);
-				setError("There was an error, please contact support if this problem persists")
-				return;
-			}
+		// setLoading(true);
+		// fetch('/api/import', {
+		// 	method: 'POST',
+		// 	body: JSON.stringify({repository})
+		// }).then(response => {
+		// 	if (!response.ok) {
+		// 		setLoading(false);
+		// 		setError("There was an error, please contact support if this problem persists")
+		// 		return;
+		// 	}
 
-			const reader = response.body?.getReader();
-			if (!reader) {
-				setLoading(false);
-				setError("There was an error, please contact support if this problem persists")
-				return;
-			}
+		// 	const reader = response.body?.getReader();
+		// 	if (!reader) {
+		// 		setLoading(false);
+		// 		setError("There was an error, please contact support if this problem persists")
+		// 		return;
+		// 	}
 
-			readData(reader).then(() => {
-				setLoading(false);
-				router.push('/');
-			})
-		})
+		// 	readData(reader).then(() => {
+		// 		setLoading(false);
+		// 		router.push('/');
+		// 	})
+		// })
+        router.push('/');
 	}
 
 	const onGithubContinue = (repository: Repository): void => {
@@ -337,15 +378,15 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
     const onAdditionalContinue = () => {
         if (!repository) throw new Error("Repository should be defined");
 
-        mutate({repository}, {
+        mutate({repository, teamId}, {
 			onSuccess: () => {
 				setPage(page+1);
 		}})
     }
 
 	const pages = [
-		<StartPage onContinue={() => setPage(page + 1)}/>,
-		<GitRepositorySetup key={1} onContinue={onGithubContinue}/>,
+		<StartPage clientId={clientId}/>,
+		accessToken ? <GitRepositorySetup key={1} onContinue={onGithubContinue} accessToken={accessToken}/> : null,
         repository ? <AdditionalRepositoryInfo key={3} onContinue={onAdditionalContinue} repository={repository} onChange={setRepository}/> : null,
 		repository ? <InstallEditor key={2} onContinue={onFinish} repositoryId={repository.id}/> : null
 		,
@@ -358,34 +399,52 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
 }
 
 interface StartPageProps {
-    onContinue: () => void;
+    //onContinue: () => void;
+    clientId: string;
 }
-const StartPage: React.FunctionComponent<StartPageProps> = ({onContinue}) => {
+const StartPage: React.FunctionComponent<StartPageProps> = ({clientId}) => {
+    const [href, setHref] = useState<string>();
+
+    useEffect(() => {
+        //const clientId = GITHUB_APP_CLIENT_ID;//'Iv1.cea4bda0db4286a5';
+        const callbackUrl = `${window.location.href}`;
+        const redirectUri = new URL('/api/github/callback', WEB_URL);
+        redirectUri.searchParams.append('callback', callbackUrl);
+        const authorizeUrl = new URL('https://github.com/login/oauth/authorize');
+        authorizeUrl.searchParams.append('client_id', clientId);
+        authorizeUrl.searchParams.append('redirect_uri', redirectUri.href);
+
+        setHref(authorizeUrl.href);
+    }, []);
+    
+
     return (
         <>
             <Header level={4}>To set up Harmony, we need to connect to your Github repositories.</Header>
             <HarmonyToGithubThing/>
-            <Button className="hw-w-fit hw-ml-auto" onClick={onContinue}>Continue</Button>
+            {href ? <Button as='a' href={href} className="hw-w-fit hw-ml-auto" >Continue</Button> : href}
         </>
     )
 }
 
 interface GitRepositorySetupProps {
 	onContinue: (repo: Repository) => void;
+    accessToken: string;
 }
-const GitRepositorySetup: React.FunctionComponent<GitRepositorySetupProps> = ({onContinue}) => {
-	return (
+const GitRepositorySetup: React.FunctionComponent<GitRepositorySetupProps> = ({onContinue, accessToken}) => {
+    return (
 		<>
-			<GitImportRepository onImport={onContinue}/>
+            <GitImportRepository onImport={onContinue} accessToken={accessToken}/>
 		</>
 	)
 }
 
 interface GitImportRepositoryProps {
 	onImport: (repo: Repository) => void;
+    accessToken: string;
 }
-const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = ({onImport}) => {
-	const query = api.setup.getRepositories.useQuery();
+const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = ({onImport, accessToken}) => {
+	const query = api.setup.getRepositories.useQuery({accessToken});
 
 	const repos = query.data;
 

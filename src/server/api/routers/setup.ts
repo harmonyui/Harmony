@@ -1,11 +1,12 @@
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, registerdProcedure } from "../trpc";
+import { createTRPCRouter, protectedProcedure, publicProcedure, registerdProcedure } from "../trpc";
 import { accountSchema, getAccount, getServerAuthSession } from "../../../../src/server/auth";
 import { indexCodebase } from "../services/indexor/indexor";
 import { fromDir } from "../services/indexor/local";
 import { fromGithub } from "../services/indexor/github";
 import { GithubRepository, appOctokit } from "../repository/github";
 import { Repository, repositorySchema } from "../../../../packages/ui/src/types/branch";
+import {components} from '@octokit/openapi-types/types'
 
 const createSetupSchema = z.object({
 	account: z.object({firstName: z.string(), lastName: z.string(), role: z.string()}),  
@@ -70,10 +71,10 @@ export const setupRoute = createTRPCRouter({
 			const email = input.email;
 
 		}),
-	connectRepository: protectedProcedure
-		.input(z.object({repository: repositorySchema}))
+	connectRepository: publicProcedure
+		.input(z.object({repository: repositorySchema, teamId: z.string()}))
 		.mutation(async ({ctx, input}) => {
-			const teamId = ctx.session.account.teamId;
+			const teamId = input.teamId;
 			const newRepository = await ctx.prisma.repository.create({
 				data: {
 					id: input.repository.id,
@@ -115,12 +116,25 @@ export const setupRoute = createTRPCRouter({
 
 			
 	// 	}),
-	getRepositories: registerdProcedure
-		.query(async ({ctx}) => {
-			const {data} = await appOctokit.request('GET /app/installations');
+	getRepositories: publicProcedure
+		.input(z.object({accessToken: z.string()}))
+		.query(async ({input}) => {
+			//const {data} = await appOctokit.request('GET /app/installations');
 
-			const username = ctx.session.auth.user.username;
-			const currentInstallations = data.filter(inst => inst.account?.login === username);
+			//const username = ctx.session.auth.user.username;
+			const accessToken = input.accessToken;
+			//const {data} = await appOctokit.request('GET /user/installations');
+			const response = await fetch('https://api.github.com/user/installations', {
+				method: "GET",
+				headers: {
+					authorization: `token ${accessToken}`
+			}});
+			if (!response.ok) {
+				const json = await response.json();
+				throw new Error(json);
+			}
+			const data = await response.json() as {installations: components["schemas"]["installation"][]}
+			const currentInstallations = data.installations//.filter(inst => inst.account?.login === '');
 
 			if (currentInstallations.length === 0) {
 				return [];
@@ -153,3 +167,5 @@ const octokitRepositorySchema = z.object({
 function getOauthToken() {
 	
 }
+
+//https://neutral-mink-38.clerk.accounts.dev/v1/oauth_callback

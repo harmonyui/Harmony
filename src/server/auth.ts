@@ -55,7 +55,7 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 	});
 
 	if (account === null) return undefined;
-	const repository = {
+	const repository = account.team.repository.length > 0 ? {
 		id: account.team.repository[0].id,
 		branch: account.team.repository[0].branch,
 		name: account.team.repository[0].name,
@@ -63,7 +63,7 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 		installationId: account.team.repository[0].installationId,
 		cssFramework: account.team.repository[0].css_framework,
 		tailwindPrefix: account.team.repository[0].tailwind_prefix || undefined
-	}
+	} : undefined
 
 	return {
 		id: account.id,

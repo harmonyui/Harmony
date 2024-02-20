@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
  
 const allowedOrigins: string[] = [];
 
-const publicApis = [/\/api\/load/, /\/api\/update/];
+const publicApis = [/\/api\/load/, /\/api\/update/, /\/api\/github\/callback/, /\/api\/trpc\/setup\.getRepositories/];
 
 // This example protects all routes including api/trpc routes
 // Please edit this to allow other routes to be public as needed.
@@ -40,7 +40,7 @@ export default authMiddleware({
 
     return ['/api/(.*)', '/trpc/(.*)'].some(matcher => new RegExp(matcher).test(req.url));
   },
-	publicRoutes: publicApis
+	publicRoutes: [...publicApis, /\/setup\/developer/]
 });
  
 export const config = {

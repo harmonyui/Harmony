@@ -9,9 +9,10 @@ import hotkeys from 'hotkeys-js';
 import { getNumberFromString} from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import React from "react";
+import {WEB_URL} from '@harmony/util/src/constants';
+
 import '../global.css';
 
-const WEB_URL = false && process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : 'http://localhost:3000'
 const WIDTH = 1960;
 const HEIGHT = 1080;
 
