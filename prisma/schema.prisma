@@ -48,7 +48,7 @@ model ComponentUpdate {
 	branch Branch @relation(fields: [branch_id], references: [id])
 	component_id String
 	component_parent_id String
-	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id])
+	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id], onDelete: Cascade)
 	type String //text, className, component
 	action String //change, add, remove
 	name String
@@ -103,7 +103,7 @@ model ComponentAttribute {
 	value String
 	component_id String
 	component_parent_id String
-	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id])
+	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id], onDelete: Cascade)
 	location_id String
 	location Location @relation(fields: [location_id], references: [id])
 }

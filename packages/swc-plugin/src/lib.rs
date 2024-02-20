@@ -258,7 +258,7 @@ impl VisitMut for TransformVisitor {
                 }))),
             };
 
-            // Create the attribute value: arguments[0].harmonyId
+            // Create the attribute value: harmonyArguments[0]["data-harmony-id"]
             let parent_attr_value = JSXAttrValue::JSXExprContainer(JSXExprContainer {
                 span: swc_common::DUMMY_SP,
                 expr: swc_ecma_ast::JSXExpr::Expr(Box::new(Expr::Member(MemberExpr {

@@ -8,7 +8,7 @@ import path from 'node:path';
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
-export const indexFileAndFollowImports = async (filepath: string, readFile: (filepath: string) => Promise<string>, repositoryId: string) => {
+export const indexFilesAndFollowImports = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: ComponentElement[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
@@ -20,14 +20,16 @@ export const indexFileAndFollowImports = async (filepath: string, readFile: (fil
 		visitedFiles.add(filepath);
 		const content = await readFile(filepath);
 		getCodeInfoFromFile(filepath, content, componentDefinitions, instances, importDeclarations);
-		for (const componentName in importDeclarations) {
-			const {path: importPath, name} = importDeclarations[componentName];
-			const fullPath = path.join(filepath, importPath);
-			await visitPaths(fullPath);
-		}
+		// for (const componentName in importDeclarations) {
+		// 	const {path: importPath, name} = importDeclarations[componentName];
+		// 	const fullPath = path.join(filepath, importPath);
+		// 	await visitPaths(fullPath);
+		// }
 	}
 
-	await visitPaths(filepath);	
+	for (const filepath of files) {
+		await visitPaths(filepath);	
+	}
 
 	await normalizeCodeInfoAndUpdateDatabase(componentDefinitions, instances, repositoryId);
 }
@@ -423,6 +425,18 @@ try {
 						attribute.reference = results.reference;
 						attribute.name = results.attribute.name;
 						attribute.value = results.attribute.value;
+						
+						//For a string text property, we need to make sure the value is just the text. 
+						//However, getting the info from a 'property' means the value is {name}:{value}. 
+						//We must get rid of this and leave just {value}
+						if (results.attribute.type === 'property' && attribute.type === 'text' && attribute.name === 'string') {
+							const splitIndex = attribute.value.indexOf(':');
+							if (splitIndex < 0) {
+								throw new Error("Invalid property " + attribute.value);
+							}
+
+							attribute.value = attribute.value.substring(splitIndex + 1);
+						}
 					} else {
 						attribute.reference = instance.containingComponent;
 					}

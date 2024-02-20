@@ -5,7 +5,7 @@ import { getCodeSnippet, getFileContent } from '../../../../src/server/api/servi
 import { GithubRepository } from '../../../../src/server/api/repository/github';
 
 import { updateRequestBodySchema } from '@harmony/ui/src/types/network';
-import { indexFileAndFollowImports } from '../../../../src/server/api/services/indexor/indexor';
+import { indexFilesAndFollowImports } from '../../../../src/server/api/services/indexor/indexor';
 
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
 	const {branchId} = params;
@@ -32,7 +32,8 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	const githubRepository = new GithubRepository(repository);
 
 	const readFile = async (filepath: string) => {
-		const content = await getFileContent(githubRepository, filepath, branch.name);
+		//TOOD: Need to deal with actual branch probably at some point
+		const content = await getFileContent(githubRepository, filepath, repository.branch);
 
 		return content;
 	}
@@ -51,9 +52,13 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 				}
 			});
 			if (!element) {
-				const {file, startLine, startColumn, endLine, endColumn} = getLocationFromComponentId(update.componentId);
-				await indexFileAndFollowImports(file, readFile, repository.id)
+				//TODO: This does not follow the file up the whole tree which means it does not know
+				// all of the possible locations an attribute can be saved. Find a better way to do this
+				const {file: elementFile} = getLocationFromComponentId(update.componentId);
+				const {file: parentFile} = getLocationFromComponentId(update.parentId);
+				await indexFilesAndFollowImports([elementFile, parentFile], readFile, repository.id)
 			}
+			
 
 			updates.push({...update, oldValue: old.value});
 		}

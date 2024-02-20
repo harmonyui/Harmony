@@ -10,9 +10,13 @@ import { Prisma } from "@prisma/client";
 const branchPayload = {
 	include: {
 		pullRequest: true,
-		updates: true
+		updates: {
+			orderBy: {
+				date_modified: 'desc'
+			}
+		}
 	}
-}
+} satisfies Prisma.BranchDefaultArgs
 type Branch = Prisma.BranchGetPayload<typeof branchPayload>;
 
 export const branchRoute = createTRPCRouter({

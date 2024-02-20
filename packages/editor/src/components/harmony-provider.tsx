@@ -133,37 +133,31 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 	}, [harmonyContainerRef]);
 
-	// useEffect(() => {
-	// 	if (document.body.firstElementChild) {
-
-	// 		let child = document.body.firstElementChild;
-	// 		let i = 0;
-	// 		while (i < document.body.children.length && child.tagName.toLowerCase() !== 'div' && child.id !== 'harmony-container') {
-	// 			child = document.body.children[++i];
-	// 		}
-	// 		if (child.tagName.toLowerCase() !== 'div' || child.id === 'harmony-container') {
-	// 			return;//throw new Error("Invalid children of body");
-	// 		}
-	// 		setRootComponent(child as HTMLElement);
-	// 	}
-	// }, [document.body.children.length])
-
 	useEffect(() => {
-		const updateElements = (element: HTMLElement): void => {
-			const id = element.dataset.harmonyId;
-			const parentId = element.dataset.harmonyParentId || null;
-			if (id !== undefined) {
-				const updates = availableIds.filter(up => up.componentId === id && up.parentId === parentId);
-				makeUpdates(element, updates);
-			}
-
-			Array.from(element.children).forEach(child => updateElements(child as HTMLElement));
-		}
-
 		if (rootComponent && availableIds.length > 0) {
+			const mutationObserver = new MutationObserver((mutations) => {
+				updateElements(rootComponent);
+			});
+			const body = rootComponent.querySelector('body');
+			mutationObserver.observe(body || rootComponent, {
+				childList: true,
+				//subtree: true,
+			});
+
 			updateElements(rootComponent);
 		}
-	}, [rootComponent, availableIds])
+	}, [rootComponent, availableIds]);
+
+	const updateElements = (element: HTMLElement): void => {
+		const id = element.dataset.harmonyId;
+		const parentId = element.dataset.harmonyParentId || null;
+		if (id !== undefined) {
+			const updates = availableIds.filter(up => up.componentId === id && up.parentId === parentId);
+			makeUpdates(element, updates);
+		}
+
+		Array.from(element.children).forEach(child => updateElements(child as HTMLElement));
+	}
 
 	const setScale = useCallback((scale: number) => {
         if (harmonyContainerRef.current && harmonyContainerRef.current.parentElement) {
@@ -511,7 +505,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[]) {
 			}
 
 			if (update.type === 'text') {
-				if (htmlElement.textContent !== update.value && !alreadyDoneText) {
+				if (htmlElement.textContent !== update.value) {
 					htmlElement.textContent = update.value;
 					alreadyDoneText = true;
 				}

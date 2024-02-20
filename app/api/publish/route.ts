@@ -33,8 +33,9 @@ export async function POST(req: Request): Promise<Response> {
         throw new Error("Cannot find repository with id " + branch.repositoryId);
     }
 
-    await createGithubBranch(repository, branch.name);
-    const updates: ComponentUpdate[] = branch.updates;
+    
+    //Get rid of same type of updates (more recent one wins)
+    const updates: ComponentUpdate[] = branch.updates.reduce<ComponentUpdate[]>((prev, curr) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([curr]), []);
     const old: string[] = branch.old;
     await findAndCommitUpdates(updates, old, repository, branch);
 
@@ -82,8 +83,11 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], r
 	let fileUpdates: FileUpdate[] = [];
 
 	for (let i = 0; i < updates.length; i++) {
-		const result = await getChangeAndLocation(updates[i], old[i], githubRepository, elementInstances, branch);
+        //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
+        // in the future we probably will use the actual branch
+		const result = await getChangeAndLocation(updates[i], old[i], githubRepository, elementInstances, repository.branch);
 
+        if (result)
 		fileUpdates.push(result);
 	}
 
@@ -125,10 +129,11 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], r
 		change.locations.push(newLocation);
 	}
 
+    await createGithubBranch(repository, branch.name);
 	await githubRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
 }
 
-async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branch: BranchItem): Promise<FileUpdate> {
+async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
 	const {componentId: id, parentId, type, value} = update;
 	const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
 	
@@ -148,14 +153,14 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 		return {location: attribute?.location || component.location, value: attribute?.name === 'string' ? attribute.value : undefined};
 	}
 
-	let result: FileUpdate;
+	let result: FileUpdate | undefined;
 
 	switch(type) {
 		case 'text':
 			const textAttribute = attributes.find(attr => attr.type === 'text');
 			const {location, value} = getLocationAndValue(textAttribute);
 			
-			const elementSnippet = await getCodeSnippet(githubRepository)(location, branch.name);
+			const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
 			const oldValue = value || _oldValue;
 			const start = elementSnippet.indexOf(oldValue);
 			const end = oldValue.length + start;
