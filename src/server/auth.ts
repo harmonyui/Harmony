@@ -55,12 +55,21 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 	});
 
 	if (account === null) return undefined;
+	const repository = {
+		id: account.team.repository[0].id,
+		branch: account.team.repository[0].branch,
+		name: account.team.repository[0].name,
+		owner: account.team.repository[0].owner,
+		installationId: account.team.repository[0].installationId,
+		cssFramework: account.team.repository[0].css_framework,
+		tailwindPrefix: account.team.repository[0].tailwind_prefix || undefined
+	}
 
 	return {
 		id: account.id,
 		firstName: account.firstName,
 		lastName: account.lastName,
-		repository: account.team.repository[0],
+		repository,
 		role: account.role,
 		teamId: account.team_id
 	}

@@ -336,10 +336,15 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
 				setPage(page+1);
 		}})
 	}
+    
+    const onAdditionalContinue = () => {
+        setPage(page + 1);
+    }
 
 	const pages = [
 		<StartPage onContinue={() => setPage(page + 1)}/>,
 		<GitRepositorySetup key={1} onContinue={onGithubContinue}/>,
+        repository ? <AdditionalRepositoryInfo key={3} onContinue={onAdditionalContinue} repository={repository} onChange={setRepository}/> : null,
 		repository ? <InstallEditor key={2} onContinue={onFinish} repositoryId={repository.id}/> : null
 		,
 	]
@@ -395,6 +400,42 @@ const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = (
 			</div>
 		</> : null}
 	</>)
+}
+
+interface AdditionalRepositoryInfoProps {
+    repository: Repository,
+    onChange: (repo: Repository) => void;
+    onContinue: () => void;
+}
+const AdditionalRepositoryInfo: React.FunctionComponent<AdditionalRepositoryInfoProps> = ({repository, onChange, onContinue}) => {
+    const changeProperty = useChangeProperty<Repository>(onChange);
+    const items: DropdownItem<string>[] = [
+        {
+            id: 'tailwind',
+            name: 'Tailwind'
+        },
+        {
+            id: 'other',
+            name: 'Other'
+        }
+    ]
+    return (
+        <>
+            <Header level={4}>Additional Repository Information</Header>
+            <div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-8 sm:hw-grid-cols-6">
+                <Label className="sm:hw-col-span-3" label="CSS Framework:">
+                    <Dropdown className="hw-w-full" items={items} initialValue={repository.cssFramework} onChange={(item) => {changeProperty(repository, 'cssFramework', item.id)}}>
+                        Select Framework
+                    </Dropdown>
+                </Label>
+                {repository.cssFramework === 'tailwind' ? <Label className="sm:hw-col-span-full" label="Tailwind Prefix (if applicable):">
+                    <p className="hw-text-sm hw-text-gray-400">Enter the <a className="hw-text-blue-600" href="https://tailwindcss.com/docs/configuration#prefix" target="_blank">prefix</a> that is used for the tailwind classes</p>
+                    <Input className="hw-w-full" value={repository.tailwindPrefix} onChange={changeProperty.formFunc('tailwindPrefix', repository)}/>
+                </Label> : null}
+            </div>
+            <Button className="hw-w-fit hw-ml-auto" onClick={onContinue}>Continue</Button>
+        </>
+    )
 }
 
 interface InstallEditorProps {

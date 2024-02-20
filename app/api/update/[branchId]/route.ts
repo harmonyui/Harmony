@@ -6,6 +6,7 @@ import { GithubRepository } from '../../../../src/server/api/repository/github';
 
 import { updateRequestBodySchema } from '@harmony/ui/src/types/network';
 import { indexFilesAndFollowImports } from '../../../../src/server/api/services/indexor/indexor';
+import { getRepository } from '../../../../src/server/api/routers/branch';
 
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
 	const {branchId} = params;
@@ -19,12 +20,8 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 		throw new Error("Cannot find branch with id " + branchId);
 	}
 
-	const repository = await prisma.repository.findUnique({
-		where: {
-			id: branch.repository_id
-		}
-	})
-	if (repository === null) {
+	const repository = await getRepository({prisma, repositoryId: branch.repository_id});
+	if (!repository) {
 		throw new Error("Cannot find repository with id " + branch.repository_id)
 	}
 	const body = updateRequestBodySchema.parse(await req.json());

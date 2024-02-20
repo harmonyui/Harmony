@@ -81,7 +81,9 @@ export const setupRoute = createTRPCRouter({
 					name: input.repository.name,
 					owner: input.repository.owner,
 					installationId: input.repository.installationId,
-					team_id: teamId
+					team_id: teamId,
+					css_framework: input.repository.cssFramework,
+					tailwind_prefix: input.repository.tailwindPrefix
 				}
 			});
 
@@ -90,7 +92,9 @@ export const setupRoute = createTRPCRouter({
 				branch: newRepository.branch,
 				installationId: newRepository.installationId,
 				name: newRepository.name,
-				owner: newRepository.owner
+				owner: newRepository.owner,
+				tailwindPrefix: newRepository.tailwind_prefix || undefined,
+				cssFramework: newRepository.css_framework,
 			} satisfies Repository
 		}),
 	// importRepository: protectedProcedure
@@ -132,7 +136,7 @@ export const setupRoute = createTRPCRouter({
 				}
 			}).then(response => response.json().then(json => ({...octokitRepositorySchema.parse(json), auth_token: accessToken.data.token, installation_id: accessToken.data.installation_id})))));
 			
-			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: crypto.randomUUID(), name: repo.name, owner: repo.owner.login, branch: repo.default_branch, oauthToken: curr.auth_token, installationId: curr.installation_id})))]), []);
+			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: crypto.randomUUID(), name: repo.name, owner: repo.owner.login, branch: repo.default_branch, oauthToken: curr.auth_token, installationId: curr.installation_id, cssFramework: 'other', tailwindPrefix: undefined})))]), []);
 		})
 });
 

@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { AuthContext, CreateContext, createTRPCRouter, protectedProcedure } from "../trpc";
-import { BranchItem, branchItemSchema } from "../../../../packages/ui/src/types/branch";
+import { BranchItem, Repository, branchItemSchema } from "../../../../packages/ui/src/types/branch";
 import { GithubRepository } from "../repository/github";
 import { Db } from "../../../../src/server/db";
 import { compare } from "@harmony/util/src";
@@ -57,6 +57,26 @@ export const branchRoute = createTRPCRouter({
 			} satisfies BranchItem;
 		})
 })
+
+export const getRepository = async ({prisma, repositoryId}: {prisma: Db, repositoryId: string}): Promise<Repository | undefined> => {
+	const repository = await prisma.repository.findUnique({
+		where: {
+			id: repositoryId
+		}
+	})
+
+	if (!repository) return undefined;
+
+	return {
+		id: repository.id,
+		branch: repository.branch,
+		name: repository.name,
+		owner: repository.owner,
+		installationId: repository.installationId,
+		cssFramework: repository.css_framework,
+		tailwindPrefix: repository.tailwind_prefix || undefined
+	}
+}
 
 export const getBranches = async ({prisma, repositoryId}: {prisma: Db, repositoryId: string}, githubRepository: GithubRepository): Promise<BranchItem[]> => {
 	const branches = await prisma.branch.findMany({

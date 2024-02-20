@@ -1,7 +1,7 @@
 import { publishRequestSchema } from "@harmony/ui/src/types/network";
 import { prisma } from "../../../src/server/db";
 import { createPullRequest } from "../../../src/server/api/routers/pull-request";
-import { getBranch } from "../../../src/server/api/routers/branch";
+import { getBranch, getRepository } from "../../../src/server/api/routers/branch";
 import { ComponentLocation, ComponentUpdate } from "@harmony/ui/src/types/component";
 import { Branch, Prisma } from "@prisma/client";
 import { GithubRepository } from "../../../src/server/api/repository/github";
@@ -12,7 +12,7 @@ import { twMerge } from 'tailwind-merge'
 
 const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
-	postCSSPlugins: [], // add any postcss plugins to this array
+	//postCSSPlugins: [], // add any postcss plugins to this array
 	tailwindConfig: {
 	  // your tailwind config here
 	  content: [],
@@ -22,6 +22,32 @@ const converter = new TailwindConverter({
 	  },
 	},
 });
+
+function addPrefixToClassName(className: string, prefix: string): string {
+	const classes = className.split(' ');
+	const list_class: [string, string][] = classes.map((classes) => {
+		if (classes.includes(":")) {
+			const [before, after] = classes.split(":");
+			return [`${before}:`, after];
+		} else if (classes.startsWith('-')) {
+			return ['-', classes.substring(1)];
+		} else {
+			return ['', classes];
+		}
+	});
+
+	const withPrefix: [string, string][] = list_class.map((classes) => {
+		if (!classes.includes(prefix)) {
+			return [classes[0], prefix + classes[1]];
+		} else {
+			return classes;
+		}
+	});
+
+	const final = withPrefix.map(str => `${str[0]}${str[1]}`).join(' ');
+
+	return final;
+}
 
 export async function POST(req: Request): Promise<Response> {
     const request = publishRequestSchema.safeParse(await req.json());
@@ -39,16 +65,11 @@ export async function POST(req: Request): Promise<Response> {
 		throw new Error("Cannot find branch with id " + branchId);
 	}
 
-    const repository = await prisma.repository.findUnique({
-        where: {
-            id: branch.repositoryId
-        }
-    });
+    const repository = await getRepository({prisma, repositoryId: branch.repositoryId});
     if (!repository) {
         throw new Error("Cannot find repository with id " + branch.repositoryId);
     }
-
-    
+	
     //Get rid of same type of updates (more recent one wins)
     const updates: ComponentUpdate[] = branch.updates.reduce<ComponentUpdate[]>((prev, curr) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([curr]), []);
     const old: string[] = branch.old;
@@ -118,7 +139,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], r
 	for (let i = 0; i < updates.length; i++) {
         //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
         // in the future we probably will use the actual branch
-		const result = await getChangeAndLocation(updates[i], old[i], githubRepository, elementInstances, repository.branch);
+		const result = await getChangeAndLocation(updates[i], old[i], repository, githubRepository, elementInstances, repository.branch);
 
         if (result)
 		fileUpdates.push(result);
@@ -166,7 +187,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], r
 	await githubRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
 }
 
-async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
+async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, repository: Repository, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
 	const {componentId: id, parentId, type, name} = update;
 	const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
 	
@@ -220,7 +241,7 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 				if (!value) break;
 
 				//TODO: Make the tailwind prefix part dynamic
-				let oldClasses = value.replaceAll('hw-', '');
+				let oldClasses = repository.tailwindPrefix ? value.replaceAll(repository.tailwindPrefix, '') : value;
 
 				//This assumes that the update values have already been merged and converted to name:value pairs
 				const converted = await converter.convertCSS(`.example {
@@ -228,7 +249,8 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 				}`);
 				const newClasses = converted.nodes.reduce((prev, curr) => prev + curr.tailwindClasses.join(' '), '')
 				
-				const mergedClasses = twMerge(oldClasses, newClasses);
+				const mergedIt = twMerge(oldClasses, newClasses);
+				const mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 
 				const oldValue = value || _oldValue;
 				const start = elementSnippet.indexOf(oldValue);

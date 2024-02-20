@@ -35,6 +35,8 @@ export const repositorySchema = z.object({
 	owner: z.string(),
 	branch: z.string(),
 	installationId: z.number(),
+	cssFramework: z.string(),
+	tailwindPrefix: z.optional(z.string())
 })
 
 export type Repository = z.infer<typeof repositorySchema>;
