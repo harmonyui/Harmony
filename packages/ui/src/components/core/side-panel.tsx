@@ -137,7 +137,12 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                 <li className="hw-h-full">
                   <ul className="-hw-mx-2 hw-space-y-1 hw-h-1/2 hw-flex hw-flex-col">
                     {items.map((item) => (
-                      <SidePanelItem item={item} key={item.label}/>
+                      <SidePanelItem item={item} key={item.label}/** padding-right:0px;
+align-items:flex-end;
+justify-content:center;
+gap:98px;
+padding-top:0px;
+ *//>
                     ))}
                   </ul>
                 </li>
@@ -251,7 +256,8 @@ const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: 
 					'group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-leading-6 hw-font-semibold'
 				)}
 				href={item.href}
-			>
+			/** text-align:center;
+ */>
 				{item.icon ? typeof item.icon === 'function' ? <ToggleIcon icon={item.icon} selected={item.current}/> : item.icon : null}
 				{item.label}
 			</a>
