@@ -69,7 +69,7 @@ export async function POST(req: Request): Promise<Response> {
     if (!repository) {
         throw new Error("Cannot find repository with id " + branch.repositoryId);
     }
-	
+
     //Get rid of same type of updates (more recent one wins)
     const updates: ComponentUpdate[] = branch.updates.reduce<ComponentUpdate[]>((prev, curr) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([curr]), []);
     const old: string[] = branch.old;
@@ -209,6 +209,17 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 
 	let result: FileUpdate | undefined;
 
+	const addCommentToJSXElement = ({location, code, commentValue, attribute}: {location: ComponentLocation, code: string, commentValue: string, attribute: ComponentAttributePrisma | undefined}) => {
+		const comment = `/** ${commentValue} */`;
+		const start = code.indexOf('>');
+		const end = start;
+		const updatedTo = comment.length + start;
+		if (start < 0) {
+			throw new Error('There was no update');
+		}
+		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: comment, update, dbLocation: location, attribute};
+	}
+
 	switch(type) {
 		case 'text':
 			{
@@ -236,31 +247,40 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 				const {location, value} = locationAndValue;
 				
 				const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
-				
-				//Only deal with string classes for now
-				if (!value) break;
 
-				//TODO: Make the tailwind prefix part dynamic
-				let oldClasses = repository.tailwindPrefix ? value.replaceAll(repository.tailwindPrefix, '') : value;
+				if (repository.cssFramework === 'tailwind') {
+					//This assumes that the update values have already been merged and converted to name:value pairs
+					const converted = await converter.convertCSS(`.example {
+						${update.value}
+					}`);
+					const newClasses = converted.nodes.reduce((prev, curr) => prev + curr.tailwindClasses.join(' '), '')
 
-				//This assumes that the update values have already been merged and converted to name:value pairs
-				const converted = await converter.convertCSS(`.example {
-					${update.value}
-				}`);
-				const newClasses = converted.nodes.reduce((prev, curr) => prev + curr.tailwindClasses.join(' '), '')
-				
-				const mergedIt = twMerge(oldClasses, newClasses);
-				const mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
+					//If this is a class property, just add a comment of the classes
+					if (!value) {
+						const withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
+						result = addCommentToJSXElement({location, commentValue: withPrefix, attribute: classNameAttribute, code: elementSnippet});
+						break;
+					};
 
-				const oldValue = value || _oldValue;
-				const start = elementSnippet.indexOf(oldValue);
-				const end = oldValue.length + start;
-				const updatedTo = mergedClasses.length + start;
-				if (start < 0) {
-					throw new Error('There was no update');
+					//TODO: Make the tailwind prefix part dynamic
+					let oldClasses = repository.tailwindPrefix ? value.replaceAll(repository.tailwindPrefix, '') : value;
+					
+					const mergedIt = twMerge(oldClasses, newClasses);
+					const mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
+
+					const oldValue = value || _oldValue;
+					const start = elementSnippet.indexOf(oldValue);
+					const end = oldValue.length + start;
+					const updatedTo = mergedClasses.length + start;
+					if (start < 0) {
+						throw new Error('There was no update');
+					}
+					
+					result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: mergedClasses, update, dbLocation: location, attribute: classNameAttribute};
+				} else {
+					const valuesNewLined = update.value.replaceAll(';', ';\n');
+					result = addCommentToJSXElement({location, commentValue: valuesNewLined, code: elementSnippet, attribute: classNameAttribute});
 				}
-				
-				result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: mergedClasses, update, dbLocation: location, attribute: classNameAttribute};
 			}
             break;
 		default:
