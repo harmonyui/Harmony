@@ -3,7 +3,7 @@ import { ReadFiles } from "./indexor";
 import { GithubRepository } from "../../repository/github";
 
 export const fromGithub: (githubRepository: GithubRepository) => ReadFiles = (githubRepository) => async (startPath, filter, callback) => {
-	const files = await githubRepository.getContent(startPath);
+	const files = await githubRepository.getContentOrDirectory(startPath);
 
 	if (Array.isArray(files)) {
 		for (const info of files) {
@@ -17,13 +17,7 @@ export const fromGithub: (githubRepository: GithubRepository) => ReadFiles = (gi
 }
 
 export const getFileContent = async (githubRepository: GithubRepository, file: string, branch: string) => {
-	const fileInfo = await githubRepository.getContent(file, branch);
-
-	if (Array.isArray(fileInfo) || !('content' in fileInfo)) {
-		throw new Error("Invalid path name");
-	}
-
-	const fileContent = atob(fileInfo.content);
+	const fileContent = await githubRepository.getContent(file, branch);
 
 	return fileContent;
 }

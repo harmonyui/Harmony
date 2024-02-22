@@ -9,6 +9,7 @@ import { getCodeSnippet } from "../../../src/server/api/services/indexor/github"
 import { BranchItem, Repository } from "@harmony/ui/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { twMerge } from 'tailwind-merge'
+import { indexForComponent } from "../update/[branchId]/route";
 
 const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
@@ -72,6 +73,10 @@ export async function POST(req: Request): Promise<Response> {
 
     //Get rid of same type of updates (more recent one wins)
     const updates: ComponentUpdate[] = branch.updates.reduce<ComponentUpdate[]>((prev, curr) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([curr]), []);
+	for (const update of updates) {
+		await indexForComponent(update.componentId, update.parentId, repository);
+	}
+	
     const old: string[] = branch.old;
     await findAndCommitUpdates(updates, old, repository, branch);
 
@@ -211,12 +216,15 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 
 	const addCommentToJSXElement = ({location, code, commentValue, attribute}: {location: ComponentLocation, code: string, commentValue: string, attribute: ComponentAttributePrisma | undefined}) => {
 		const comment = `/** ${commentValue} */`;
-		const start = code.indexOf('>');
+		const match = /<([a-zA-Z0-9]*)(\s[^\/>]*)?(\/?)>/.exec(code);
+		if (!match) {
+			throw new Error(`There was no update to add comment to jsx: snippet: ${code}, commentValue: ${commentValue}`);
+		}
+		//The start of the comment is right before the closing '>' or '/>' characters
+		const matchEnd = match.index + match[0].length;
+		const start = match[3] ? matchEnd - 2 : matchEnd - 1;
 		const end = start;
 		const updatedTo = comment.length + start;
-		if (start < 0) {
-			throw new Error('There was no update');
-		}
 		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: comment, update, dbLocation: location, attribute};
 	}
 
@@ -232,7 +240,8 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 				const end = oldValue.length + start;
 				const updatedTo = update.value.length + start;
 				if (start < 0) {
-					throw new Error('There was no update');
+					const commentValue = `Change inner text for ${component.name} tag from ${oldValue} to ${update.value}`;
+					result = addCommentToJSXElement({location, code: elementSnippet, attribute: textAttribute, commentValue})
 				}
 				
 				result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update, dbLocation: location, attribute: textAttribute};
@@ -273,7 +282,7 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 					const end = oldValue.length + start;
 					const updatedTo = mergedClasses.length + start;
 					if (start < 0) {
-						throw new Error('There was no update');
+						throw new Error(`There was no update for tailwind classes, snippet: ${elementSnippet}, oldValue: ${oldValue}`);
 					}
 					
 					result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: mergedClasses, update, dbLocation: location, attribute: classNameAttribute};

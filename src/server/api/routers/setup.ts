@@ -81,6 +81,7 @@ export const setupRoute = createTRPCRouter({
 					branch: input.repository.branch,
 					name: input.repository.name,
 					owner: input.repository.owner,
+					ref: input.repository.ref,
 					installationId: input.repository.installationId,
 					team_id: teamId,
 					css_framework: input.repository.cssFramework,
@@ -94,6 +95,7 @@ export const setupRoute = createTRPCRouter({
 				installationId: newRepository.installationId,
 				name: newRepository.name,
 				owner: newRepository.owner,
+				ref: newRepository.ref,
 				tailwindPrefix: newRepository.tailwind_prefix || undefined,
 				cssFramework: newRepository.css_framework,
 			} satisfies Repository
@@ -142,6 +144,8 @@ export const setupRoute = createTRPCRouter({
 
 			const accessTokens = await Promise.all(currentInstallations.map(inst => appOctokit.request('POST /app/installations/{installation_id}/access_tokens', {installation_id: inst.id}).then(value => ({...value, data: {...value.data, installation_id: inst.id}}))))
 
+			// const {data: d} = await appOctokit.request('GET /installation/repositories');
+			// const repos: components["schemas"]["repository"] = d.repositories
 			const repositories = await Promise.all(accessTokens.map(accessToken =>fetch('https://api.github.com/installation/repositories', {
 				method: "GET",
 				body: null,
@@ -150,7 +154,7 @@ export const setupRoute = createTRPCRouter({
 				}
 			}).then(response => response.json().then(json => ({...octokitRepositorySchema.parse(json), auth_token: accessToken.data.token, installation_id: accessToken.data.installation_id})))));
 			
-			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: crypto.randomUUID(), name: repo.name, owner: repo.owner.login, branch: repo.default_branch, oauthToken: curr.auth_token, installationId: curr.installation_id, cssFramework: 'other', tailwindPrefix: undefined})))]), []);
+			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: crypto.randomUUID(), name: repo.name, owner: repo.owner.login, branch: repo.default_branch, ref: repo.git_refs_url, oauthToken: curr.auth_token, installationId: curr.installation_id, cssFramework: 'other', tailwindPrefix: undefined})))]), []);
 		})
 });
 
@@ -160,7 +164,8 @@ const octokitRepositorySchema = z.object({
 		owner: z.object({
 			login: z.string()
 		}),
-		default_branch: z.string()
+		default_branch: z.string(),
+		git_refs_url: z.string()
 	}))
 })
 

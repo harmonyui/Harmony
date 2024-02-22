@@ -1,5 +1,7 @@
 import dayjs from "dayjs";
+import { Change } from "diff";
 import { z } from "zod";
+import { diffChars } from "diff";
 
 export const displayDate = (date: Date) => {
   return dayjs(date).format("MM/DD/YY");
@@ -243,13 +245,83 @@ export function replaceByIndex(s: string, replaceText: string, start: number, en
 	return ret;
 }
 
-export interface HashComponentProps {
-	elementName: string;
-	className: string;
-	childPosition: number;
+export function hashComponentId({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}) {
+  return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
 }
-export function hashComponent({elementName, className, childPosition}: HashComponentProps) {
-	return `className:${className}${elementName}${childPosition}`.hashCode();
+
+export function updateLocationFromDiffs({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}, diffs: Change[], diffCharsd?: Change[]) {
+  let currLine = 1;
+  let currColumn = 0;
+  let newLineStart = startLine;
+  let newLineEnd = endLine;
+  let newColumnStart = startColumn;
+  let newColumnEnd = endColumn;
+
+  for (let i = 0; i < diffs.length; i++) {
+    const diff = diffs[i];
+    if (diff.count === undefined) throw new Error("Why is there no line count?");
+    const lineCount = diff.count;
+    const columnCount = 0;
+
+    
+    if (currLine > endLine) break;
+
+    if (diff.added || diff.removed) {
+      let sign = diff.added ? 1 : -1;
+      if (currLine < startLine) {
+        newLineStart += lineCount * sign;
+      } else if (currLine === startLine) {
+        return undefined;
+        // if (diff.removed && i < diffs.length - 1 && diffs[i+1].added) {
+        //   const diffsChared = diffChars(diff.value, diffs[i+1].value);
+        //   currColumn = 0;
+        //   for (const diffChar of diffsChared) {
+        //     if (currColumn > startColumn) break;
+        //     if (diffChar.count === undefined) throw new Error("Why is there no char count?");
+        //     if (diffChar.added || diffChar.removed) {
+        //       let sign = diffChar.added ? 1 : -1;
+        //       if (currColumn <= startColumn) {
+        //         newColumnStart += diffChar.count * sign;
+        //       } 
+        //     } else {
+        //       currColumn += diffChar.count;
+        //     }
+        //   }
+        //   i++;
+        //   continue;
+        // }
+      }
+      if (currLine < endLine) {
+        newLineEnd += lineCount * sign;
+      } else if (currLine === endLine) {
+        return undefined;
+        // if (diff.removed && i < diffs.length - 1 && diffs[i+1].added) {
+        //   const diffsChared = diffChars(diff.value, diffs[i+1].value);
+        //   currColumn = 0;
+        //   for (const diffChar of diffsChared) {
+        //     if (currColumn > endColumn) break;
+        //     if (diffChar.count === undefined) throw new Error("Why is there no char count?");
+        //     if (diffChar.added || diffChar.removed) {
+        //       let sign = diffChar.added ? 1 : -1;
+        //       if (currColumn < endColumn) {
+        //         newColumnEnd += diffChar.count * sign;
+        //       } else if (currColumn === endColumn) {
+        //         throw new Error("What is this")
+        //       }
+        //     } else {
+        //       currColumn += diffChar.count;
+        //     }
+        //   }
+        // }
+      }
+    } else {
+      currLine += lineCount;
+    }
+
+    currColumn += columnCount;
+  }
+
+  return {file, startLine: newLineStart, endLine: newLineEnd, startColumn: newColumnStart, endColumn: newColumnEnd};
 }
 
 export function getLineAndColumn(text: string, index: number): { line: number; column: number } {

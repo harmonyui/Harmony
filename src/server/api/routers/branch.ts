@@ -109,6 +109,7 @@ export const getRepository = async ({prisma, repositoryId}: {prisma: Db, reposit
 		branch: repository.branch,
 		name: repository.name,
 		owner: repository.owner,
+		ref: repository.ref,
 		installationId: repository.installationId,
 		cssFramework: repository.css_framework,
 		tailwindPrefix: repository.tailwind_prefix || undefined

@@ -7,6 +7,7 @@ import { GithubRepository } from '../../../../src/server/api/repository/github';
 import { updateRequestBodySchema } from '@harmony/ui/src/types/network';
 import { indexFilesAndFollowImports } from '../../../../src/server/api/services/indexor/indexor';
 import { getRepository } from '../../../../src/server/api/routers/branch';
+import { Repository } from '@harmony/ui/src/types/branch';
 
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
 	const {branchId} = params;
@@ -26,15 +27,6 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	}
 	const body = updateRequestBodySchema.parse(await req.json());
 
-	const githubRepository = new GithubRepository(repository);
-
-	const readFile = async (filepath: string) => {
-		//TOOD: Need to deal with actual branch probably at some point
-		const content = await getFileContent(githubRepository, filepath, repository.branch);
-
-		return content;
-	}
-
 	const updates: (ComponentUpdate & {oldValue: string})[] = [];
 	for (const value of body.values) {
 		for (let i = 0; i < value.update.length; i++) {
@@ -49,11 +41,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 				}
 			});
 			if (!element) {
-				//TODO: This does not follow the file up the whole tree which means it does not know
-				// all of the possible locations an attribute can be saved. Find a better way to do this
-				const {file: elementFile} = getLocationFromComponentId(update.componentId);
-				const {file: parentFile} = getLocationFromComponentId(update.parentId);
-				await indexFilesAndFollowImports([elementFile, parentFile], readFile, repository.id)
+				indexForComponent(update.componentId, update.parentId, repository);
 			}
 			
 
@@ -79,7 +67,24 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	})
 }
 
-function getLocationFromComponentId(id: string): {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number} {
+export async function indexForComponent(componentId: string, parentId: string, repository: Repository) {
+	const githubRepository = new GithubRepository(repository);
+
+	const readFile = async (filepath: string) => {
+		//TOOD: Need to deal with actual branch probably at some point
+		const content = await getFileContent(githubRepository, filepath, repository.branch);
+
+		return content;
+	}
+
+	//TODO: This does not follow the file up the whole tree which means it does not know
+	// all of the possible locations an attribute can be saved. Find a better way to do this
+	const {file: elementFile} = getLocationFromComponentId(componentId);
+	const {file: parentFile} = getLocationFromComponentId(parentId);
+	await indexFilesAndFollowImports([elementFile, parentFile], readFile, repository.id)
+}
+
+export function getLocationFromComponentId(id: string): {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number} {
 	const stuff = atob(id);
 	const [file, startLine, startColumn, endLine, endColumn] = stuff.split(':');
 

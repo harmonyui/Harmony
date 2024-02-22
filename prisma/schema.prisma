@@ -124,6 +124,7 @@ model Repository {
 	owner String
 	branch String
 	installationId Int
+	ref String
 	team Team @relation(fields: [team_id], references: [id])
 	css_framework String
 	//TODO: We don't need this in the future hopefully

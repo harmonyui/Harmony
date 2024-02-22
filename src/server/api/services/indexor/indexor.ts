@@ -1,6 +1,6 @@
 import { prisma } from "../../../../../src/server/db";
 import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "../../../../../packages/ui/src/types/component";
-import { getLineAndColumn, hashComponent } from "../../../../../packages/util/src/index";
+import { getLineAndColumn, hashComponentId } from "../../../../../packages/util/src/index";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
@@ -70,7 +70,7 @@ function getCodeInfoFromFile(file: string, originalCode: string, componentDefini
 		const {line: startLine, column: startColumn} = getLineAndColumn(codeSnippet, start);
 		const {line: endLine, column: endColumn} = getLineAndColumn(codeSnippet, end);
 
-		return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
+		return hashComponentId({file, startColumn, startLine, endColumn, endLine});
 	}
 
 	function getLocation(node: t.Node, file: string) {

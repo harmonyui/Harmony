@@ -3,6 +3,7 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { CommitItem, Repository } from "../../../../packages/ui/src/types/branch";
 import { replaceByIndex } from "@harmony/util/src";
+import {Change, diffChars, diffLines} from 'diff';
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const privateKeyRaw = privateKeyPath ? fs.readFileSync(privateKeyPath) : atob(process.env.PRIVATE_KEY || '');
@@ -22,6 +23,8 @@ export const appOctokit = app.octokit;
 
 export class GithubRepository {
     private octokit: Octokit | undefined;
+    private diffedFiles: Record<string, Change[]> = {};
+
     private async getOctokit(): Promise<Octokit> {
         if (this.octokit === undefined) {
             this.octokit = await app.getInstallationOctokit(this.repository.installationId);
@@ -33,7 +36,7 @@ export class GithubRepository {
     constructor(private repository: Repository) {
     }
 
-    public async getContent(filePath: string, branchName?: string) {
+    public async getContentOrDirectory(filePath: string, branchName?: string) {
         const octokit = await this.getOctokit();
         const { data: fileInfo } = await octokit.rest.repos.getContent({
             owner: this.repository.owner,
@@ -61,6 +64,57 @@ export class GithubRepository {
             ref: `refs/heads/${newBranch}`,
             sha: baseBranchInfo.commit.sha,
         });
+    }
+
+    public async getBranchRef(branch: string): Promise<string> {
+        const octokit = await this.getOctokit();
+        const {data: refInfo} = await octokit.rest.git.getRef({
+            ref: `heads/${branch}`,
+            owner: this.repository.owner,
+            repo: this.repository.name
+        });
+
+        return refInfo.object.sha;
+    }
+
+    public async diffFiles(branch: string, oldRef: string, file: string) {
+        const hash = `${branch}:${oldRef}:${file}`;
+        const oldDiffs = this.diffedFiles[hash];
+        if (oldDiffs) {
+            return oldDiffs;
+        }
+
+        const oldContent = await this.getContent(file, oldRef);
+        const newContent = await this.getContent(file, branch);
+
+        const diffs = diffLines(oldContent, newContent);
+
+        this.diffedFiles[hash] = diffs;
+
+        return diffs;
+    }
+
+    public async getContent(file: string, ref?: string) {
+        const octokit = await this.getOctokit();
+
+        const { data: fileInfo } = await octokit.rest.repos.getContent({
+            owner: this.repository.owner,
+            repo: this.repository.name,
+            path: file,
+            ref: ref,
+        });
+
+        if (Array.isArray(fileInfo)) {
+            throw new Error('The given file path is a directory');
+        }
+
+        if (!('content' in fileInfo)) {
+            throw new Error('File info does not have content');
+        }
+
+        const contentText = atob(fileInfo.content);
+
+        return contentText;
     }
 
     public async updateFilesAndCommit(branch: string, changes: { filePath: string, locations: {snippet: string, start: number, end: number }[]}[]) {

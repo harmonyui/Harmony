@@ -34,6 +34,7 @@ export const repositorySchema = z.object({
 	name: z.string(),
 	owner: z.string(),
 	branch: z.string(),
+	ref: z.string(),
 	installationId: z.number(),
 	cssFramework: z.string(),
 	tailwindPrefix: z.optional(z.string())

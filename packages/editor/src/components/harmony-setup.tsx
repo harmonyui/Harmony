@@ -105,13 +105,13 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
             })
         }
     });
-    mutationObserver.observe(documentBody, {
+    mutationObserver.observe(document.body, {
         'attributeOldValue': true,
         attributes: true,
         characterData: true,
         characterDataOldValue: true,
         childList: true,
-        subtree: true
+        subtree: true,
     });
 
     return {container, harmonyContainer};
