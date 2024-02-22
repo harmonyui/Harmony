@@ -120,13 +120,13 @@ export const TableGrid = <T, S extends keyof T>({
   const sorted = paginateItems(sortItems());
 	const footer = typeof footerFunc === 'function' ? footerFunc(data) : footerFunc;
   return (
-    <div className={`${className} flex flex-col gap-2`}>
-      <div className="relative overflow-x-auto">
-        <table className="w-full text-sm text-left rounded-md shadow-md overflow-hidden">
-          <thead className="text-xs bg-gray dark:bg-gray-700 font-semibold">
+    <div className={`${className} hw-flex hw-flex-col hw-gap-2`}>
+      <div className="hw-relative hw-overflow-x-auto">
+        <table className="hw-w-full hw-text-sm hw-text-left hw-rounded-md hw-shadow-md hw-overflow-hidden">
+          <thead className="hw-text-xs hw-bg-gray dark:hw-bg-gray-700 hw-font-semibold">
             <tr>
               {columns.map(({ label, id }) => (
-                <th className="px-4 py-1 border-b" key={label} scope="col">
+                <th className="hw-px-4 hw-py-1 hw-border-b" key={label} scope="col">
                   <ChevronSwitch
                     label={label}
                     onChange={() => {
@@ -142,8 +142,8 @@ export const TableGrid = <T, S extends keyof T>({
             {sorted.map((item) => (
 							<>
 								<tr
-									className={`${item.background ?? 'bg-gray-50'} border-b dark:bg-gray-800 dark:border-gray-700 ${
-										onItemClick ? `${item.backgroundHover ?? 'hover:bg-gray-100'} cursor-pointer` : ""
+									className={`${item.background ?? 'hw-bg-gray-50'} hw-border-b dark:hw-bg-gray-800 dark:hw-border-gray-700 ${
+										onItemClick ? `${item.backgroundHover ?? 'hover:hw-bg-gray-100'} hw-cursor-pointer` : ""
 									}`}
 									key={item.id}
 									onClick={() => {
@@ -152,7 +152,7 @@ export const TableGrid = <T, S extends keyof T>({
 									}}
 								>
 									{columns.map(({ id }) => (
-										<td className="px-6 py-4" key={id.toString()}>
+										<td className="hw-px-6 hw-py-4" key={id.toString()}>
 											{getLabel(item.gridItem[id])}
 										</td>
 									))}
@@ -161,9 +161,9 @@ export const TableGrid = <T, S extends keyof T>({
 							</>	
             ))}
             {footer ? (
-              <tr className="bg-gray-50 border-b dark:bg-gray-800 dark:border-gray-700">
+              <tr className="hw-bg-gray-50 hw-border-b dark:hw-bg-gray-800 dark:hw-border-gray-700">
                 {columns.map(({ id }) => (
-                  <td className="px-6 py-4" key={id.toString()}>
+                  <td className="hw-px-6 hw-py-4" key={id.toString()}>
                     {footer[id]}
                   </td>
                 ))}
@@ -173,13 +173,13 @@ export const TableGrid = <T, S extends keyof T>({
         </table>
       </div>
       {itemsPerPage !== undefined && totalPages > 1 ? (
-        <div className="flex flex-col mx-auto text-center">
+        <div className="hw-flex hw-flex-col hw-mx-auto hw-text-center">
           <span>
             {pageNum} of {totalPages}
           </span>
           <div>
             <button
-              className="text-primary hover:text-primary-light disabled:text-primary/50"
+              className="hw-text-primary hover:hw-text-primary-light disabled:hw-text-primary/50"
               disabled={pageNum === 1}
               onClick={() => {
                 setPageNum(pageNum > 1 ? pageNum - 1 : 1);
@@ -190,7 +190,7 @@ export const TableGrid = <T, S extends keyof T>({
             </button>
             <span> | </span>
             <button
-              className="text-primary hover:text-primary-light disabled:text-primary/50"
+              className="hw-text-primary hover:hw-text-primary-light disabled:hw-text-primary/50"
               disabled={pageNum === totalPages}
               onClick={() => {
                 setPageNum(pageNum < totalPages ? pageNum + 1 : totalPages);
@@ -241,10 +241,10 @@ export const FilterTableGrid = <TFilter, TTable extends Record<string, unknown>,
 		setSortId(item.id);
 	}
 	return (
-		<div className="flex flex-col gap-2">
-			<div className="flex gap-2">
-				{search ? <div className="w-fit"><Input
-					className="h-8"
+		<div className="hw-flex hw-flex-col hw-gap-2">
+			<div className="hw-flex hw-gap-2">
+				{search ? <div className="hw-w-fit"><Input
+					className="hw-h-8"
 					onChange={setSearchKey}
 					placeholder="Search"
 					value={searchKey}

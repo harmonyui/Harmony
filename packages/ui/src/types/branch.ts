@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { emailSchema } from "./utils";
 
 export const commitSchema = z.object({
 	author: z.string(),
@@ -41,3 +42,12 @@ export const repositorySchema = z.object({
 })
 
 export type Repository = z.infer<typeof repositorySchema>;
+
+export const teamMemberSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	role: z.string(),
+	contact: emailSchema
+});
+
+export type TeamMember = z.infer<typeof teamMemberSchema>;

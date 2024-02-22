@@ -13,6 +13,7 @@ import superjson from "superjson";
 import { ZodError } from "zod";
 import { Db, prisma } from "../db";
 import { FullSession, getServerAuthSession, Session } from "../auth";
+import { EmailService, NodeMailerEmailService } from "./services/email-service";
 
 
 /**
@@ -32,12 +33,16 @@ interface AuthContextOptions {
 }
 
 export interface CreateContext extends CreateContextOptions {
-  prisma: Db
+  prisma: Db,
+  mailer: EmailService
 }
 
 export interface AuthContext extends AuthContextOptions {
-  prisma: Db
+  prisma: Db,
+  mailer: EmailService
 }
+
+export const mailer = new NodeMailerEmailService();
 
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export
@@ -50,9 +55,11 @@ export interface AuthContext extends AuthContextOptions {
  * @see https://create.t3.gg/en/usage/trpc#-serverapitrpcts
  */
 const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
+
   return {
     session: opts.session,
     prisma,
+    mailer
   };
 };
 

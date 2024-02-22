@@ -1,7 +1,7 @@
 import { GetServerSidePropsContext, type GetServerSideProps } from "next";
 import { FullSession, Session, getServerAuthSession } from "../src/server/auth";
 import { redirect } from "next/navigation";
-import { AuthContext } from "../src/server/api/trpc";
+import { AuthContext, mailer } from "../src/server/api/trpc";
 import { prisma } from "../src/server/db";
 
 interface RequireRouteProps {
@@ -49,7 +49,7 @@ export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.F
 			redirect('/setup');
 		}
 
-		return <Component ctx={{prisma, session: response.session as FullSession}}/>
+		return <Component ctx={{prisma, session: response.session as FullSession, mailer}}/>
 	}
 
 // export const requireRole = (role: UserRole) =>

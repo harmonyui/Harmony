@@ -15,14 +15,14 @@ export const ChevronSwitch: React.FunctionComponent<ChevronSwitchProps> = ({
   const Icon = value ? ChevronUpIcon : ChevronDownIcon;
   return (
     <button
-      className={`${className} flex items-center hover:bg-gray-200 rounded-md px-2 py-1 font-semibold`}
+      className={`${className} hw-flex hw-items-center hover:hw-bg-gray-200 hw-rounded-md hw-px-2 hw-py-1 hw-font-semibold`}
       onClick={() => {
         onChange(!value);
       }}
       type="button"
     >
       {label}
-      <Icon className="w-3 h-3 ml-1" />
+      <Icon className="hw-w-3 hw-h-3 hw-ml-1" />
     </button>
   );
 };

@@ -69,12 +69,12 @@ export const FilterButton = <T,>({
     ),
   }));
   const header = (
-    <div className="flex justify-between items-center">
-      <Button className="h-fit" mode="secondary" onClick={onClear}>
+    <div className="hw-flex hw-justify-between hw-items-center">
+      <Button className="hw-h-fit" mode="secondary" onClick={onClear}>
         Clear
       </Button>
       <Header level={4}>Filters</Header>
-      <Button className="h-fit" mode="primary" onClick={onDone}>
+      <Button className="hw-h-fit" mode="primary" onClick={onDone}>
         Done
       </Button>
     </div>
@@ -88,7 +88,7 @@ export const FilterButton = <T,>({
       mode={hasFilter ? "primary" : "secondary"}
       setIsOpen={onOpen}
     >
-      <FilterIcon className="w-3 h-3 mr-1" /> Filters
+      <FilterIcon className="hw-w-3 hw-h-3 hw-mr-1" /> Filters
     </ListBox>
   );
 };
@@ -108,7 +108,7 @@ const FilterButtonItem = <T,>({
   return (
     <>
       <button
-        className="p-2 w-full border-b"
+        className="hw-p-2 hw-w-full hw-border-b"
         onClick={() => {
           onChange(!isSelected);
         }}
@@ -118,10 +118,10 @@ const FilterButtonItem = <T,>({
       </button>
       <div
         className={`${
-          isSelected ? "max-h-96" : "max-h-0"
-        } overflow-hidden transition-[max-height] bg-gray-50`}
+          isSelected ? "hw-max-h-96" : "hw-max-h-0"
+        } hw-overflow-hidden hw-transition-[max-height] hw-bg-gray-50`}
       >
-        <div className="p-2">{children}</div>
+        <div className="hw-p-2">{children}</div>
       </div>
     </>
   );
