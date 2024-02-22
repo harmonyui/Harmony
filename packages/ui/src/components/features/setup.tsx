@@ -13,7 +13,7 @@ import { useChangeProperty } from "../../hooks/change-property";
 import { emailSchema } from "../../types/utils";
 import { Account as AccountServer } from "../../../../../src/server/auth";
 import { Dropdown, DropdownItem } from "../core/dropdown";
-import {GITHUB_APP_CLIENT_ID, WEB_URL} from '@harmony/util/src/constants';
+import {WEB_URL} from '@harmony/util/src/constants';
 import { CopyText } from "../core/copy-text";
 
 type Account = AccountServer
@@ -360,7 +360,6 @@ const StartPage: React.FunctionComponent<StartPageProps> = ({clientId}) => {
     const [href, setHref] = useState<string>();
 
     useEffect(() => {
-        //const clientId = GITHUB_APP_CLIENT_ID;//'Iv1.cea4bda0db4286a5';
         const callbackUrl = `${window.location.href}`;
         const redirectUri = new URL('/api/github/callback', WEB_URL);
         redirectUri.searchParams.append('callback', callbackUrl);

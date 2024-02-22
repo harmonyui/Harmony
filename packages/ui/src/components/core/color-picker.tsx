@@ -13,6 +13,7 @@ import { HexColor, HexColorSchema } from "../../types/colors";
 import { useLocale, VisuallyHidden } from "react-aria";
 
 import { Popover } from "./popover";
+import { Input, InputBlur } from "./input";
 
 const SIZE = 192;
 const FOCUSED_THUMB_SIZE = 28;
@@ -152,6 +153,7 @@ function ColorSlider(props: ColorSliderProps) {
         alignItems: "center",
         width: SIZE,
       }}
+      className="hw-text-sm"
     >
       {/* Create a flex container for the label and output element. */}
       <div style={{ display: "flex", alignSelf: "stretch" }}>
@@ -261,6 +263,7 @@ export const ColorPickerFull = <T extends Color | HexColor>({
             xChannel={sChannel}
             yChannel={lChannel}
           />
+          <InputBlur key={colorToHex(color)} value={colorToHex(color).substring(1)} onChange={(value) => onColorChange(getHslaColor(`#${value}`))}/>
           <ColorSlider
             channel={hChannel}
             value={color}
@@ -315,6 +318,7 @@ const ColorPicker = <T extends Color | HexColor>({
             aria-label={`current color swatch: ${value.toString("rgb")}`}
           />
         }
+        buttonClass="hw-h-[28px]"
         container={container}
       >
         <ColorPickerFull value={value} onChange={onChange} preview="false" />

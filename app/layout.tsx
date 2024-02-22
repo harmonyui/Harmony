@@ -1,12 +1,11 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
 import './globals.css'
 import {HarmonySetup} from '../packages/editor/src/index';
 import { ClerkProvider } from '@clerk/nextjs'
 import { TrpcProvider } from '../utils/trpc-provider'
-import Script from 'next/script'
+import {fonts, mulish} from '@harmony/util/src/fonts';
 
-const inter = Inter({ subsets: ['latin'] })
+
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -22,9 +21,9 @@ export default function RootLayout({
 		<ClerkProvider>
 			<TrpcProvider>
 				<html className="hw-h-full hw-bg-white" lang="en">
-					<body className={`${inter.className} hw-h-full hw-bg-white`}>
+					<body className={`${mulish.className} hw-h-full hw-bg-white`}>
 						{children}
-						{process.env.ENV !== 'production' ? <HarmonySetup repositoryId='d2ccbdaf-286f-49ee-ac85-0405c348c780' local/> : null}
+						{process.env.ENV !== 'production' ? <HarmonySetup repositoryId='d2ccbdaf-286f-49ee-ac85-0405c348c780' local fonts={fonts}/> : null}
 							{/* <Script id="harmony-tag" src="bundle.js"></Script>
 							<Script>
 							{`(function() {

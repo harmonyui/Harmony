@@ -200,8 +200,14 @@ export const stringUnionSchema = <T extends readonly string[]>(array: T) => z.cu
 
 
 export function convertRgbToHex(rgb: string) { 
-  const match = rgb.match(/^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/); 
-  if (match === null) throw new Error('Invalid rgb ' + rgb);
+  let match = rgb.match(/^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/); 
+  if (match === null) {
+    match = rgb.match(/^rgba\((\d+), \s*(\d+), \s*(\d+), \s*(\d+(?:\.\d+)?)\)$/)
+    if (!match)
+      throw new Error('Invalid rgb ' + rgb);
+
+    
+  }
   function hexCode(i: string) { 
         
       // Take the last 2 characters and convert 
@@ -209,7 +215,7 @@ export function convertRgbToHex(rgb: string) {
       return ("0" + parseInt(i).toString(16)).slice(-2); 
   } 
   return "#" + hexCode(match[1]) + hexCode(match[2]) 
-                  + hexCode(match[3]); 
+                  + hexCode(match[3]) + (match[4] ? hexCode(`${parseFloat(match[4]) * 255}`) : ''); 
 }
 
 declare global {

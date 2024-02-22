@@ -2,7 +2,7 @@ import React, { useEffect } from "react";
 import ReactDOM from "react-dom";
 import { HarmonyProvider, HarmonyProviderProps } from "./harmony-provider";
 
-export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId'> & {local?: boolean}> = ({local=false, ...options}) => {
+export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts'> & {local?: boolean}> = ({local=false, ...options}) => {
 	const setBranchId = (branchId: string | undefined) => {
 		const url = new URL(window.location.href);
 		if (branchId && !url.searchParams.has('branch-id')) {
@@ -22,9 +22,9 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 
 			const {container, harmonyContainer} = result;
 			if (!local) {
-                createProductionScript(options, branchId, container, harmonyContainer);
+                createProductionScript(options, branchId, container, harmonyContainer, result.bodyObserver);
             } else {
-                ReactDOM.render(React.createElement(HarmonyProvider, {...options, rootElement: container, branchId}), harmonyContainer);
+                ReactDOM.render(React.createElement(HarmonyProvider, {...options, rootElement: container, branchId, bodyObserver: result.bodyObserver}), harmonyContainer);
             }
 		}
 		
@@ -32,11 +32,11 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 	return (<></>)
 }
 
-function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, branchId: string, container: HTMLElement, harmonyContainer: HTMLDivElement) {
+function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, branchId: string, container: HTMLElement, harmonyContainer: HTMLDivElement, bodyObserver: MutationObserver) {
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/harmony-ai-editor@latest/dist/editor/bundle.js';
     script.addEventListener('load', function() {
-        window.HarmonyProvider({...options, rootElement: container, branchId}, harmonyContainer);
+        window.HarmonyProvider({...options, rootElement: container, branchId, bodyObserver}, harmonyContainer);
     });
 
     document.body.appendChild(script);
@@ -47,7 +47,6 @@ function isNativeElement(element: Element): boolean {
 }
 
 const createPortal = ReactDOM.createPortal;
-let bodyObserver: MutationObserver;
 export function setupHarmonyMode(container: Element, harmonyContainer: HTMLElement, body: HTMLBodyElement) {
     for (let i = 0; i < body.children.length; i++) {
         const child = body.children[i];
@@ -66,7 +65,7 @@ export function setupHarmonyMode(container: Element, harmonyContainer: HTMLEleme
 		return createPortal(children, _container, key);
 	}
 
-    bodyObserver = new MutationObserver((mutations) => {
+    const bodyObserver: MutationObserver = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
             mutation.addedNodes.forEach(node => {
                 if (node.parentElement === document.body && isNativeElement(node as Element)) {
@@ -83,9 +82,11 @@ export function setupHarmonyMode(container: Element, harmonyContainer: HTMLEleme
         childList: true,
         subtree: true,
     });
+
+    return {bodyObserver};
 }
 
-export function setupNormalMode(container: Element, harmonyContainer: HTMLElement, body: HTMLBodyElement) {
+export function setupNormalMode(container: Element, harmonyContainer: HTMLElement, body: HTMLBodyElement, bodyObserver: MutationObserver) {
     for (let i = 0; i < container.children.length; i++) {
         const child = container.children[i];
         if (isNativeElement(child)) {
@@ -124,7 +125,7 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
 
 	//TODO: Probably need to do this for all styles;
 	container.style.backgroundColor = 'white';
-	setupHarmonyMode(container, harmonyContainer, documentBody);
+    const {bodyObserver} = setupHarmonyMode(container, harmonyContainer, documentBody);
 
-    return {container, harmonyContainer};
+    return {container, harmonyContainer, bodyObserver};
 }

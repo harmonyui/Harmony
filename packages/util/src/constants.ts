@@ -1,2 +1,1 @@
 export const WEB_URL = false && process.env.NODE_ENV === 'production' ? 'https://harmony-xi.vercel.app' : 'http://localhost:3000'
-export const GITHUB_APP_CLIENT_ID = process.env.GITHUB_APP_CLIENT_ID || '';
