@@ -22,9 +22,11 @@ export function findElementFromId(componentId: string, parentId: string): HTMLEl
 
 interface HarmonyContextProps {
 	branchId: string;
+	isSaving: boolean;
+	setIsSaving: (isSaving: boolean) => void;
 	publish: (request: PublishRequest) => Promise<void>;
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', publish: async () => undefined});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', publish: async () => undefined, isSaving: false, setIsSaving: () => undefined});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -53,8 +55,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [isDirty, setIsDirty] = useState(false);
 	const [updateOverlay, setUpdateOverlay] = useState(0);
 	const [branchId, _setBranchId] = useState<string | undefined>(branchIdProps);
+	const [isSaving, setIsSaving] = useState(false);
 	
-	const executeCommand = useComponentUpdator({branchId: branchId || '', repositoryId, onChange() {
+	const executeCommand = useComponentUpdator({isSaving, setIsSaving, branchId: branchId || '', repositoryId, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}});
 
@@ -246,7 +249,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	return (
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
-				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish}}>
+				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving}}>
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
@@ -272,17 +275,37 @@ interface ComponentUpdatorProps {
 	onChange?: () => void;
 	branchId: string;
 	repositoryId: string;
+	isSaving: boolean;
+	setIsSaving: (value: boolean) => void;
 }
-const useComponentUpdator = ({onChange, branchId, repositoryId}: ComponentUpdatorProps) => {
+const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, setIsSaving}: ComponentUpdatorProps) => {
 	const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([]);
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
 	const [saveStack, setSaveStack] = useState<HarmonyCommand[]>([]);
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
 	
 	useBackgroundLoop(() => {
-		saveStack.length && saveCommand(saveStack, {branchId, repositoryId});
-		setSaveStack([]);
-	}, 10)
+		if (saveStack.length && !isSaving) {
+			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
+				setSaveStack([]);
+			}).catch(() => {
+				
+			});
+		}
+	}, 10);
+
+	const onLeave = useEffectEvent((e: BeforeUnloadEvent) => {
+		if (saveStack.length > 0) {
+			e.preventDefault();
+			return "Are you sure you want to leave?";
+		}
+	})
+
+	useEffect(() => {
+		window.addEventListener('beforeunload', onLeave);
+
+		return () => window.removeEventListener('beforeunload', onLeave);
+	}, []);
 
 	const executeCommand = (component: ComponentElement, update: ComponentUpdate[], oldValues: string[], execute=true): void => {
 		const old = oldValues.map((oldValue, i) => ({...update[i], value: oldValue}));
@@ -368,10 +391,11 @@ const useComponentUpdator = ({onChange, branchId, repositoryId}: ComponentUpdato
 		changeStack([redoStack, setRedoStack], [undoStack, setUndoStack]);
 	});
 
-	const saveCommand = (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}): void => {
+	const saveCommand = async (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}): Promise<void> => {
+		setIsSaving(true);
 		const cmds = commands.map(cmd => ({update: cmd.update, old: cmd.old}))
 		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId};
-		fetch(`${WEB_URL}/api/update/${save.branchId}`, {
+		const result = await fetch(`${WEB_URL}/api/update/${save.branchId}`, {
 			method: 'POST',
 			// headers: {
 			// 	'Accept': 'application/json',
@@ -379,6 +403,11 @@ const useComponentUpdator = ({onChange, branchId, repositoryId}: ComponentUpdato
 			// },
 			body: JSON.stringify(data)
 		});
+		setIsSaving(false);
+
+		if (!result.ok) {
+			throw new Error("There was an problem saving the changes");
+		}
 	}
 
 	useEffect(() => {

@@ -98,3 +98,16 @@ export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({childr
 		</ModalPortal>
 	)
 }
+
+export const HarmonyModalShow: React.FunctionComponent<{children: React.ReactNode, editor?: boolean}> = ({children, editor=false}) => {
+	const [show, setShow] = useState(true);
+	const onClose = () => {
+		setShow(false);
+	}
+
+	return (
+		<HarmonyModal show={show} onClose={onClose} editor={editor}>
+			{children}
+		</HarmonyModal>
+	)
+}

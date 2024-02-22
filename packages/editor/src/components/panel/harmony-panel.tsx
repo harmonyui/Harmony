@@ -182,6 +182,7 @@ interface ToolbarPanelProps {
 	onBranchChange: (id: string) => void;
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, isDirty, branchId, branches, onBranchChange}) => {
+	const {isSaving} = useHarmonyContext();
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
 	const currBranch = branches.find(b => b.id === branchId);
 	const changeData = (values: ComponentToolData<typeof textTools>) => {
@@ -210,6 +211,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 					<Button mode="secondary">Behavior</Button>
 				</div>
 			</> : null}
+			{isSaving ? <div className="hw-px-4">Saving...</div> : null}
 			{/* {isDirty ? <div className="hw-flex hw-gap-2 hw-px-4">
 				<Button onClick={onCancel} mode="secondary">Cancel</Button>
 				<Button onClick={onSave}>Save</Button>
