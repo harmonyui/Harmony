@@ -3,7 +3,7 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon } from "@harmony/ui/src/components/core/icons";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
 import { Fragment, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
@@ -20,6 +20,7 @@ import {HarmonyModal} from '@harmony/ui/src/components/core/modal';
 import {PullRequest} from '@harmony/ui/src/types/branch';
 import { useHarmonyContext } from "../harmony-provider";
 import { PublishRequest } from "@harmony/ui/src/types/network";
+import {CopyText} from '@harmony/ui/src/components/core/copy-text';
 
 export type SelectMode = 'scope' | 'tweezer';
 
@@ -123,6 +124,9 @@ const PreviewPanel: React.FunctionComponent = () => {
 		})
 	}
 
+	const url = new URL(window.location.href);
+	url.searchParams.set('mode', 'preview-full');
+
 	return (
 		<div className="hw-flex hw-justify-between hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
 			<div>
@@ -137,9 +141,7 @@ const PreviewPanel: React.FunctionComponent = () => {
 			</div>
 			<div>
 				<div className="hw-flex hw-gap-4">
-					<button className="hw-bg-primary hw-rounded-full hw-p-2 hover:hw-bg-primary/80">
-						<ShareArrowIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
-					</button>
+					<ShareButton />
 					{!publishState ? <PublishButton/> : <Button onClick={onSendRequest} loading={loading}>Send Request</Button>}
 				</div>
 			</div>
@@ -378,6 +380,48 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 			</div>
 		</HarmonyModal>
 	</>
+}
+
+const ShareButton = () => {
+	const [show, setShow] = useState(false);
+	const [copyText, setCopyText] = useState('Copy Link');
+
+	const url = new URL(window.location.href);
+	url.searchParams.set('mode', 'preview-full');
+	const href = url.href;
+
+	const onClose = () => {
+		setShow(false);
+	}
+
+	const onClick = () => {
+		setShow(true);
+	}
+
+	const onCopy = () => {
+		window.navigator.clipboard.writeText(href);
+		setCopyText('Copied!')
+	}
+
+	return (<>
+		<Popover button={<button className="hw-bg-primary hw-rounded-full hw-p-2 hover:hw-bg-primary/80" >
+			<ShareArrowIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
+		</button>} container={document.getElementById('harmony-container') || undefined}>
+			<button className="hw-text-sm hw-text-blue-500 hw-flex hw-items-center hw-gap-1" onClick={onCopy}>
+				<LinkIcon className="hw-h-4 hw-w-4 hw-fill-blue-500"/>
+				{copyText}
+			</button>
+		</Popover>
+		{/* <HarmonyModal show={show} onClose={onClose} editor>
+			<div className="hw-flex hw-gap-2 hw-items-center">
+				<Header level={3}>Share Project</Header>
+			</div> 
+			<button className="hw-text-sm hw-text-blue-500 hw-flex hw-items-center hw-gap-1" onClick={onCopy}>
+				<LinkIcon className="hw-h-4 hw-w-4 hw-fill-blue-500"/>
+				{copyText}
+			</button>
+		</HarmonyModal> */}
+	</>)
 }
 
 const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
