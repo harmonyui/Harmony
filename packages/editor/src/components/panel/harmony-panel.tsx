@@ -3,7 +3,7 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, EyeDropperIcon, GitBranchIcon, IconComponent } from "@harmony/ui/src/components/core/icons";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
 import { Fragment, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
@@ -42,11 +42,18 @@ export interface HarmonyPanelProps {
 	branches: {id: string, name: string}[];
 	onBranchChange: (id: string) => void;
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches, onBranchChange}) => {
-	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
-	const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) => {
+	const {displayMode} = useHarmonyContext();
+	const {children, scale, onScaleChange} = props;
 
+	//TODO: Fix bug where getting rid of these parameters gives a "cannot read 'data-harmony-id' of undefined"
+	const getPanel = (_?: string, _2?: string) => {
+		if (displayMode === 'designer') {
+			return <EditorPanel {...props}/>
+		}
 
+		return <PreviewPanel/>
+	}
 	return (
 		<div className="hw-flex hw-h-full">
 			{/* <div className="hw-flex hw-flex-col">
@@ -54,14 +61,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 				<SidePanelToolbar/>
 			</div> */}
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
-				<div className="hw-flex hw-w-full">
-					<div className="hw-h-20">
-						<img className="hw-h-full" src="/harmonylogo.svg"/>
-					</div>
-					<div className="hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
-						<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches} onBranchChange={onBranchChange}/>
-					</div>
-				</div>
+				{getPanel()}
 				<div className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-p-6 hw-bg-gray-200">
 					{children}
 				</div>
@@ -76,6 +76,73 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: 
 			</div>
 			<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/> */}
 
+		</div>
+	) 
+}
+
+const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches, onBranchChange}) => {
+	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
+	//const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
+
+	
+	return (
+		<div className="hw-flex hw-w-full">
+			<div className="hw-h-20">
+				<img className="hw-h-full" src="/harmonylogo.svg"/>
+			</div>
+			<div className="hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
+				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches} onBranchChange={onBranchChange}/>
+			</div>
+		</div>
+	)
+}
+
+const PreviewPanel: React.FunctionComponent = () => {
+	const {changeMode, publishState, setPublishState, publish, branchId} = useHarmonyContext();
+	const [loading, setLoading] = useState(false);
+	const onMaximize = () => {
+		changeMode('preview-full')
+	}
+
+	const onBack = () => {
+		changeMode('designer');
+		setPublishState(undefined);
+	}
+
+	const onSendRequest = () => {
+		if (!publishState) throw new Error("There should be a publish state");
+
+		const request: PublishRequest = {
+			branchId,
+			pullRequest: publishState
+		}
+
+		setLoading(true);
+		publish(request).then(() => {
+			setLoading(false);
+		})
+	}
+
+	return (
+		<div className="hw-flex hw-justify-between hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
+			<div>
+				<div className="hw-flex hw-gap-4">
+					<button className="hw-p-2 hw-bg-primary hover:hw-bg-primary/80 hw-rounded-md" onClick={onBack}>
+						<ArrowLeftIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-white hw-stroke-[2.5]"/>
+					</button>
+					<button className="hw-bg-primary hw-rounded-md hw-p-2 hover:hw-bg-primary/80">
+						<MaximizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none" onClick={onMaximize}/>
+					</button>
+				</div>
+			</div>
+			<div>
+				<div className="hw-flex hw-gap-4">
+					<button className="hw-bg-primary hw-rounded-full hw-p-2 hover:hw-bg-primary/80">
+						<ShareArrowIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
+					</button>
+					{!publishState ? <PublishButton/> : <Button onClick={onSendRequest} loading={loading}>Send Request</Button>}
+				</div>
+			</div>
 		</div>
 	)
 }
@@ -182,7 +249,7 @@ interface ToolbarPanelProps {
 	onBranchChange: (id: string) => void;
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, isDirty, branchId, branches, onBranchChange}) => {
-	const {isSaving, isPublished} = useHarmonyContext();
+	const {isSaving, isPublished, changeMode} = useHarmonyContext();
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
 	const currBranch = branches.find(b => b.id === branchId);
 	const changeData = (values: ComponentToolData<typeof textTools>) => {
@@ -195,6 +262,10 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		if (!old) throw new Error("Cannot find old property");
 		
 		onChange(selectedComponent, [update], [old.value]);
+	}
+
+	const onPreview = () => {
+		changeMode('preview')
 	}
 
 	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published (No saved changes)' : null;
@@ -221,8 +292,11 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			<div className="hw-ml-auto" style={{borderLeft: '0px'}}>
 				<ToggleSwitch value={toggle} onChange={onToggleChange} label="Designer Mode"/>
 			</div>
-			<div className="hw-px-4">
-				<PublishButton/>
+			<div className="hw-px-4 hw-flex hw-gap-4">
+				<PublishButton preview/>
+				<button className="hw-bg-primary hw-rounded-full hw-p-2 hover:hw-bg-primary/80" onClick={onPreview}>
+					<PlayIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
+				</button>
 			</div>
 			
 			{/* <Button className="hw-p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
@@ -235,14 +309,19 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 	)
 }
 
-const PublishButton = () => {
+const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=false}) => {
+	const {publishState, setPublishState, changeMode} = useHarmonyContext();
 	const [show, setShow] = useState(false);
-	const [pullRequest, setPullRequest] = useState<PullRequest>({id: '', title: '', body: '', url: ''});
-	const changeProperty = useChangeProperty<PullRequest>(setPullRequest);
+	const changeProperty = useChangeProperty<PullRequest>(setPublishState);
 	const [loading, setLoading] = useState(false);
 	const {branchId, publish, setIsPublished} = useHarmonyContext();
+	const [error, setError] = useState('');
+
+	const pullRequest: PullRequest = publishState || {id: '', title: '', body: '', url: ''}
 
 	const onNewPullRequest = () => {
+		if (!validate()) return;
+
         setLoading(true);
 
 		const request: PublishRequest = {
@@ -255,9 +334,28 @@ const PublishButton = () => {
 		})
 	}
 
+	const onPreview = () => {
+		if (!validate()) return;
+		changeMode('preview')
+	}
+
+	const validate = (): boolean => {
+		if (!pullRequest.body || !pullRequest.title) {
+			setError('Please fill out all fields');
+			return false;
+		}
+
+		return true;
+	}
+
+	const onClose = () => {
+		setShow(false);
+		setError('');
+	}
+
 	return <>
 		<Button onClick={() => setShow(true)}>Publish</Button>
-		<HarmonyModal show={show} onClose={() => setShow(false)} editor>
+		<HarmonyModal show={show} onClose={onClose} editor>
 			<div className="hw-flex hw-gap-2 hw-items-center">
 				<GitBranchIcon className="hw-w-6 hw-h-6"/>
 				<Header level={3}>Create a Publish Request</Header>
@@ -273,8 +371,9 @@ const PublishButton = () => {
 					<Input className="hw-w-full" type="textarea" value={pullRequest.body} onChange={changeProperty.formFunc('body', pullRequest)}/>
 				</Label>
 			</div>
+			{error ? <p className="hw-text-red-400 hw-text-sm">{error}</p> : null}
 			<div className="hw-flex hw-justify-between">
-				{/* <Button>Preview Changes</Button> */}
+				{preview ? <Button onClick={onPreview}>Preview Changes</Button> : null}
 				<Button onClick={onNewPullRequest} loading={loading}>Send Request</Button>
 			</div>
 		</HarmonyModal>

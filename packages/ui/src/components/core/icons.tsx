@@ -403,10 +403,73 @@ export const ArrowRightIcon: IconComponent = (props) => {
 
 export const ArrowLeftIcon: IconComponent = (props) => {
 	return (
-		<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor" className="hw-w-6 hw-h-6">
+		<svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
 			<path strokeLinecap="round" strokeLinejoin="round" d="M10.5 19.5L3 12m0 0l7.5-7.5M3 12h18" />
 		</svg>
 	)
+}
+
+export const ShareArrowIcon: IconComponent = (props) => {
+  return (
+    <svg width="43" height="38" viewBox="0 0 43 38" fill="none" xmlns="http://www.w3.org/2000/svg" {...props}>
+      <mask id="mask0_466_1101" style={{maskType:'luminance'}} maskUnits="userSpaceOnUse" x="2" y="1" width="38" height="36">
+      <path d="M2.91443 1.85449H39.9773V36.1976H2.91443V1.85449Z" fill="white"/>
+      </mask>
+      <g mask="url(#mask0_466_1101)">
+      <path d="M3.79408 36.2001C3.76386 36.2001 3.73281 36.1976 3.70218 36.1927C3.46373 36.1542 3.27496 35.9695 3.23108 35.7314C3.16816 35.3927 2.63289 32.308 3.18554 28.3625C3.50016 26.118 4.10622 23.9931 4.98715 22.0466C6.07837 19.636 7.59848 17.4891 9.50481 15.6656C13.7422 11.6113 18.671 10.2561 22.2299 9.85485V2.47396C22.2299 2.24499 22.3661 2.03797 22.5759 1.94729C22.7858 1.85661 23.0297 1.89967 23.1957 2.05701L39.7822 17.7297C39.8969 17.8382 39.9619 17.9889 39.9619 18.1466C39.9619 18.3044 39.8969 18.4555 39.7822 18.5636L23.1957 34.2371C23.0297 34.3944 22.7858 34.4375 22.5759 34.3468C22.3661 34.2561 22.2299 34.0491 22.2299 33.8202V25.0646C18.993 25.13 15.9193 25.8993 13.0852 27.3543C8.15113 29.8879 5.4599 33.799 4.29499 35.9045C4.19315 36.0892 3.99983 36.2001 3.79408 36.2001Z" fill="white"/>
+      </g>
+    </svg>
+
+
+  )
+}
+
+export const MaximizeIcon: IconComponent = (props) => {
+  return (
+    <svg {...props} width="42" height="43" viewBox="0 0 42 43" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="mask0_397_1719" style={{maskType:'luminance'}} maskUnits="userSpaceOnUse" x="25" y="1" width="15" height="16">
+      <path d="M25.1831 1.64648H39.2363V16.211H25.1831V1.64648Z" fill="white"/>
+      </mask>
+      <g mask="url(#mask0_397_1719)">
+      <path d="M37.8172 1.64648H26.3224C25.694 1.64648 25.1851 2.17387 25.1851 2.82497V2.84845C25.1851 3.49956 25.694 4.02694 26.3224 4.02694H35.3142L25.7655 13.9217C25.3215 14.3814 25.3215 15.1278 25.7655 15.5879L25.782 15.6046C26.2256 16.0647 26.946 16.0647 27.39 15.6046L36.9387 5.71024V15.028C36.9387 15.6786 37.4481 16.206 38.0761 16.206H38.0992C38.7271 16.206 39.2365 15.6786 39.2365 15.028V3.11711C39.2365 2.30481 38.6011 1.64648 37.8172 1.64648Z" fill="white"/>
+      </g>
+      <mask id="mask1_397_1719" style={{maskType:'luminance'}} maskUnits="userSpaceOnUse" x="3" y="24" width="15" height="16">
+      <path d="M3.0957 24.5352H17.1515V39.097H3.0957V24.5352Z" fill="white"/>
+      </mask>
+      <g mask="url(#mask1_397_1719)">
+      <path d="M16.0098 36.7162H7.01752L16.5663 26.8218C17.0107 26.3617 17.0107 25.6154 16.5663 25.1557L16.5501 25.1385C16.1061 24.6784 15.3862 24.6784 14.9422 25.1385L5.39301 35.0329V25.7151C5.39301 25.0645 4.88405 24.5371 4.25569 24.5371H4.23303C3.60467 24.5371 3.0957 25.0645 3.0957 25.7151V37.6265C3.0957 38.4388 3.73104 39.0971 4.51496 39.0971H16.0098C16.6382 39.0971 17.1471 38.5693 17.1471 37.9186V37.8947C17.1471 37.244 16.6382 36.7162 16.0098 36.7162Z" fill="white"/>
+      </g>
+    </svg>
+
+  )
+}
+
+export const MinimizeIcon: IconComponent = (props) => {
+  return (
+    <svg {...props} width="42" height="43" viewBox="0 0 42 43" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <mask id="mask0_397_1719" style={{maskType:'luminance'}} maskUnits="userSpaceOnUse" x="25" y="1" width="15" height="16">
+      <path d="M39.2363 16.2109H25.1832V1.64642L39.2363 1.64642V16.2109Z" fill="white"/>
+      </mask>
+      <g mask="url(#mask0_397_1719)">
+      <path d="M26.6022 16.2109H38.097C38.7254 16.2109 39.2344 15.6836 39.2344 15.0324V15.009C39.2344 14.3579 38.7254 13.8305 38.097 13.8305L29.1052 13.8305L38.6539 3.93567C39.098 3.47602 39.098 2.72964 38.6539 2.26953L38.6374 2.25282C38.1938 1.79272 37.4735 1.79272 37.0294 2.25282L27.4807 12.1472V2.82943C27.4807 2.17877 26.9713 1.65139 26.3434 1.65139H26.3203C25.6924 1.65139 25.183 2.17877 25.183 2.82943V14.7403C25.183 15.5526 25.8183 16.2109 26.6022 16.2109Z" fill="white"/>
+      </g>
+      <mask id="mask1_397_1719" style={{maskType:'luminance'}} maskUnits="userSpaceOnUse" x="3" y="24" width="15" height="16">
+      <path d="M17.1514 39.0957H3.09559V24.5339H17.1514V39.0957Z" fill="white"/>
+      </mask>
+      <g mask="url(#mask1_397_1719)">
+      <path d="M4.23727 26.9147H13.2296L3.68081 36.809C3.23634 37.2691 3.23634 38.0155 3.68081 38.4752L3.69693 38.4923C4.14097 38.9524 4.86084 38.9524 5.30488 38.4923L14.8541 28.598V37.9157C14.8541 38.5664 15.363 39.0938 15.9914 39.0938H16.014C16.6424 39.0938 17.1514 38.5664 17.1514 37.9157V26.0044C17.1514 25.1921 16.516 24.5337 15.7321 24.5337H4.23727C3.60891 24.5337 3.09995 25.0616 3.09995 25.7122V25.7362C3.09995 26.3868 3.60891 26.9147 4.23727 26.9147Z" fill="white"/>
+      </g>
+    </svg>
+
+  )
+}
+
+export const PaperAirplaneIcon: IconComponent = (props) => {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 12 3.269 3.125A59.769 59.769 0 0 1 21.485 12 59.768 59.768 0 0 1 3.27 20.875L5.999 12Zm0 0h7.5" />
+    </svg>
+  )
 }
 
 export const BagIcon: IconComponent = (props) => {
@@ -451,6 +514,14 @@ export const GitPullRequestIcon: IconComponent = (props) => {
 			</g>
 		</svg>
 	)
+}
+
+export const PlayIcon: IconComponent = (props) => {
+  return (
+    <svg {...props} xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={1.5} stroke="currentColor">
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 0 1 0 1.972l-11.54 6.347a1.125 1.125 0 0 1-1.667-.986V5.653Z" />
+    </svg>
+  )
 }
 
 export const SigninIcon: IconComponent = (props) => {
