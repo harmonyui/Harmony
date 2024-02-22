@@ -16,7 +16,8 @@ export const loadResponseSchema = z.object({
 	branches: z.array(z.object({
 		id: z.string(),
 		name: z.string()
-	}))
+	})),
+	isPublished: z.boolean()
 });
 export type LoadResponse = z.infer<typeof loadResponseSchema>;
 

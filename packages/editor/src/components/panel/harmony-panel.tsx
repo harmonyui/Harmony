@@ -182,7 +182,7 @@ interface ToolbarPanelProps {
 	onBranchChange: (id: string) => void;
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, isDirty, branchId, branches, onBranchChange}) => {
-	const {isSaving} = useHarmonyContext();
+	const {isSaving, isPublished} = useHarmonyContext();
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent) : undefined;
 	const currBranch = branches.find(b => b.id === branchId);
 	const changeData = (values: ComponentToolData<typeof textTools>) => {
@@ -196,6 +196,8 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		
 		onChange(selectedComponent, [update], [old.value]);
 	}
+
+	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published (No saved changes)' : null;
 
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
@@ -211,7 +213,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 					<Button mode="secondary">Behavior</Button>
 				</div>
 			</> : null}
-			{isSaving ? <div className="hw-px-4">Saving...</div> : null}
+			{savingText ? <div className="hw-px-4">{savingText}</div> : null}
 			{/* {isDirty ? <div className="hw-flex hw-gap-2 hw-px-4">
 				<Button onClick={onCancel} mode="secondary">Cancel</Button>
 				<Button onClick={onSave}>Save</Button>
@@ -238,7 +240,7 @@ const PublishButton = () => {
 	const [pullRequest, setPullRequest] = useState<PullRequest>({id: '', title: '', body: '', url: ''});
 	const changeProperty = useChangeProperty<PullRequest>(setPullRequest);
 	const [loading, setLoading] = useState(false);
-	const {branchId, publish} = useHarmonyContext();
+	const {branchId, publish, setIsPublished} = useHarmonyContext();
 
 	const onNewPullRequest = () => {
         setLoading(true);
@@ -247,7 +249,10 @@ const PublishButton = () => {
 			branchId,
 			pullRequest
 		}
-		publish(request).then(() => setLoading(false))
+		publish(request).then(() => {
+			setLoading(false);
+			setIsPublished(true);
+		})
 	}
 
 	return <>

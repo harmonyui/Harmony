@@ -25,8 +25,10 @@ interface HarmonyContextProps {
 	isSaving: boolean;
 	setIsSaving: (isSaving: boolean) => void;
 	publish: (request: PublishRequest) => Promise<void>;
+	isPublished: boolean;
+	setIsPublished: (value: boolean) => void;
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', publish: async () => undefined, isSaving: false, setIsSaving: () => undefined});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => undefined, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -56,8 +58,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [updateOverlay, setUpdateOverlay] = useState(0);
 	const [branchId, _setBranchId] = useState<string | undefined>(branchIdProps);
 	const [isSaving, setIsSaving] = useState(false);
+	const [isPublished, setIsPublished] = useState(false);
 	
-	const executeCommand = useComponentUpdator({isSaving, setIsSaving, branchId: branchId || '', repositoryId, onChange() {
+	const executeCommand = useComponentUpdator({isSaving, setIsSaving, isPublished, branchId: branchId || '', repositoryId, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}});
 
@@ -100,9 +103,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				},
 			});
 
-			const {updates, branches} = loadResponseSchema.parse(await response.json());
+			const {updates, branches, isPublished} = loadResponseSchema.parse(await response.json());
 			setAvailableIds(updates);
 			setBranches(branches);
+			setIsPublished(isPublished);
 		}
 
 		initialize();
@@ -249,7 +253,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	return (
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
-				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving}}>
+				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished}}>
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={harmonyContainerRef} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
@@ -277,15 +281,16 @@ interface ComponentUpdatorProps {
 	repositoryId: string;
 	isSaving: boolean;
 	setIsSaving: (value: boolean) => void;
+	isPublished: boolean;
 }
-const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, setIsSaving}: ComponentUpdatorProps) => {
+const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPublished, setIsSaving}: ComponentUpdatorProps) => {
 	const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([]);
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
 	const [saveStack, setSaveStack] = useState<HarmonyCommand[]>([]);
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
 	
 	useBackgroundLoop(() => {
-		if (saveStack.length && !isSaving) {
+		if (saveStack.length && !isSaving && !isPublished) {
 			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
 				setSaveStack([]);
 			}).catch(() => {
@@ -295,7 +300,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, setIsS
 	}, 10);
 
 	const onLeave = useEffectEvent((e: BeforeUnloadEvent) => {
-		if (saveStack.length > 0) {
+		if (saveStack.length > 0 && !isPublished) {
 			e.preventDefault();
 			return "Are you sure you want to leave?";
 		}

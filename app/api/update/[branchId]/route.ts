@@ -21,6 +21,16 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 		throw new Error("Cannot find branch with id " + branchId);
 	}
 
+	const pullRequest = await prisma.pullRequest.findUnique({
+		where: {
+			branch_id: branchId
+		}
+	})
+
+	if (pullRequest) {
+		throw new Error("Cannot make changes on a published branch");
+	}
+
 	const repository = await getRepository({prisma, repositoryId: branch.repository_id});
 	if (!repository) {
 		throw new Error("Cannot find repository with id " + branch.repository_id)

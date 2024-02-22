@@ -24,6 +24,14 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 		})
 	}
 
+	const pullRequest = await prisma.pullRequest.findUnique({
+		where: {
+			branch_id: branchId
+		}
+	});
+
+	const isPublished = Boolean(pullRequest);
+
 	//await indexCodebase(process.cwd(), fromDir, repositoryId);
 
 	let updates: ComponentUpdate[] = [];
@@ -148,6 +156,7 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 		branches: branches.map(branch => ({
 			id: branch.id,
 			name: branch.label
-		}))
+		})),
+		isPublished
 	} satisfies LoadResponse)));
 }
