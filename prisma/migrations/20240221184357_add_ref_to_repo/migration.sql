@@ -5,4 +5,8 @@
 
 */
 -- AlterTable
-ALTER TABLE "Repository" ADD COLUMN     "ref" TEXT NOT NULL;
+ALTER TABLE "Repository" ADD COLUMN     "ref" TEXT;
+
+UPDATE "Repository" SET "ref"='ref';
+
+ALTER TABLE "Repository" ALTER COLUMN "ref" SET NOT NULL;

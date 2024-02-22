@@ -10,13 +10,9 @@ import { Input } from "../core/input";
 import { api } from "../../../../../utils/api";
 import { useChangeProperty } from "../../hooks/change-property";
 import { emailSchema } from "../../types/utils";
+import { TeamMember as TeamMemberServer} from "../../types/branch";
 
-interface TeamMember {
-    id: string;
-    name: string;
-    role: string;
-    contact: string;
-}
+type TeamMember = Omit<TeamMemberServer, 'contact'> & {contact: string}
 
 interface TeamDisplayProps {
     members: TeamMember[]
@@ -71,7 +67,7 @@ interface CreateNewProjectModalProps {
 }
 const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps> = ({show, onClose}) => {
 	const {mutate, ...createUtils} = api.team.sendNewMemberInvite.useMutation()
-	const [teamMember, setTeamMember] = useState<TeamMember>({id: '', name: '', role: '', contact: ''});
+	const [teamMember, setTeamMember] = useState<TeamMember>({id: '', name: '', role: '', contact: 'example@gmail.com'});
 	const changeProperty = useChangeProperty<TeamMember>(setTeamMember);
 	const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

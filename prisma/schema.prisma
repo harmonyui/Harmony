@@ -27,6 +27,7 @@ model Account {
 	firstName		  String
 	lastName		  String
 	role			  String
+	contact			  String
 	team_id			  String
 	team Team @relation(fields: [team_id], references: [id])
 }

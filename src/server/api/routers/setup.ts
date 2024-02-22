@@ -1,12 +1,13 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure, registerdProcedure } from "../trpc";
-import { accountSchema, getAccount, getServerAuthSession } from "../../../../src/server/auth";
+import { Account, accountSchema, getAccount, getServerAuthSession } from "../../../../src/server/auth";
 import { indexCodebase } from "../services/indexor/indexor";
 import { fromDir } from "../services/indexor/local";
 import { fromGithub } from "../services/indexor/github";
 import { GithubRepository, appOctokit } from "../repository/github";
 import { Repository, repositorySchema } from "../../../../packages/ui/src/types/branch";
 import {components} from '@octokit/openapi-types/types'
+import { emailSchema } from "@harmony/ui/src/types/utils";
 
 const createSetupSchema = z.object({
 	account: z.object({firstName: z.string(), lastName: z.string(), role: z.string()}),  
@@ -43,6 +44,7 @@ export const setupRoute = createTRPCRouter({
 					lastName: input.account.lastName,
 					role: input.account.role,
 					userId,
+					contact: ctx.session.auth.user.email,
 					team: {
 						connectOrCreate: {
 							where: {
@@ -62,8 +64,9 @@ export const setupRoute = createTRPCRouter({
 				lastName: newAccount.lastName,
 				role: newAccount.role,
 				repository: undefined,
-				teamId: newAccount.team_id
-			}
+				teamId: newAccount.team_id,
+				contact: emailSchema.parse(newAccount.contact)
+			} satisfies Account
 		}),
 	sendDeveloperEmail: protectedProcedure
 		.input(z.object({email: z.string()}))
