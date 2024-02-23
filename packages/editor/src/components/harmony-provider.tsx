@@ -1,8 +1,10 @@
 "use client";
 import { Component, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Inspector, ResizeCoords, ResizeDirection, ResizeValue, componentIdentifier } from "./inspector/inspector";
+import { Inspector, componentIdentifier } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {PublishRequest, loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
+import {ResizeValue} from '@harmony/ui/src/hooks/resize';
+import {translateUpdatesToCss} from '@harmony/util/src/component';
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
@@ -32,7 +34,7 @@ interface HarmonyContextProps {
 	branchId: string;
 	isSaving: boolean;
 	setIsSaving: (isSaving: boolean) => void;
-	publish: (request: PublishRequest) => Promise<void>;
+	publish: (request: PublishRequest) => Promise<boolean>;
 	isPublished: boolean;
 	setIsPublished: (value: boolean) => void;
 	displayMode: DisplayMode;
@@ -41,7 +43,7 @@ interface HarmonyContextProps {
 	setPublishState: (value: PullRequest | undefined) => void;
 	fonts?: Font[];
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => undefined, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -310,15 +312,21 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		onAttributesChange(component, update, oldValue, execute);
 	}
 
-	const onPublish = async (request: PublishRequest): Promise<void> => {
-		await fetch(`${WEB_URL}/api/publish`, {
-			method: 'POST',
-			// headers: {
-			// 	'Accept': 'application/json',
-			// 	'Content-Type': 'application/json'
-			// },
-			body: JSON.stringify(request)
-		});
+	const onPublish = async (request: PublishRequest): Promise<boolean> => {
+		try {
+			await fetch(`${WEB_URL}/api/publish`, {
+				method: 'POST',
+				// headers: {
+				// 	'Accept': 'application/json',
+				// 	'Content-Type': 'application/json'
+				// },
+				body: JSON.stringify(request)
+			});
+
+			return true;
+		} catch(err) {
+			return false
+		}
 	}
 
 	const setSelectedComponent = (component: HTMLElement | undefined): void => {
@@ -605,22 +613,25 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 		return;
 	}
 
+	const translated = translateUpdatesToCss(updates);
+
 	//TODO: make the value string splitting be a regex thing with groups
 
 	//Updates that should happen just for the element (reordering)
-	for (const update of updates) {
+	for (const update of translated) {
+		const element = findElementFromId(update.componentId, update.parentId);
+		if (!element) throw new Error("Cannot find element with id " + update.componentId + " and parent id " + update.parentId);
+
+		const parent = element.parentElement;
+		if (!parent) throw new Error("Element does not have a parent");
+
 		if (update.type === 'component') {
 			if (update.name === 'reorder') {
 				const [fromStr, toStr] = update.value.split(':');
 				const [_, from] = fromStr.split('=');
 				const [_2, to] = toStr.split('=');
 
-				const element = findElementFromId(update.componentId, update.parentId);
-				if (!element) throw new Error("Cannot find element with id " + update.componentId + " and parent id " + update.parentId);
-
-				const parent = element.parentElement;
-				if (!parent) throw new Error("Element does not have a parent");
-
+				
 				const fromNum = parseInt(from);
 				const toNum = parseInt(to);
 				if (isNaN(fromNum) || isNaN(toNum) || fromNum < 0 || toNum < 0 || fromNum >= parent.children.length || toNum >= parent.children.length)
@@ -634,36 +645,23 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				parent.insertBefore(fromElement, toElement);
 			}
 		}
+
+		//TODO: Need to figure out when a text component should update everywhere and where it should update just this element
+		if (update.type === 'text') {
+			if (element.textContent !== update.value) {
+				element.textContent = update.value;
+				alreadyDoneText = true;
+			}
+		}
 	}
 
 	//Updates that should happen for every element in a component
 	const sameElements = rootComponent.querySelectorAll(`[data-harmony-id="${id}"]`);
 	for (const element of Array.from(sameElements)) {
 		const htmlElement = element as HTMLElement;
-		for (const update of updates) {
+		for (const update of translated) {
 			if (update.type === 'className') {
-				
-				if (update.name === 'spacing') {
-					const [line, letter] = update.value.split('-');
-					htmlElement.style.lineHeight = line;
-					htmlElement.style.letterSpacing = letter;
-				} else if (update.name === 'size') {
-					const directionsStr = update.value.split(':');
-					const mapping: Record<ResizeCoords, 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight'> = {
-						n: 'paddingTop',
-						e: 'paddingRight',
-						s: 'paddingBottom',
-						w: 'paddingLeft'
-					}
-					for (const directionStr of directionsStr) {
-						const [direction, value] = directionStr.split('=');
-						if (isNaN(Number(value))) throw new Error("Value must be a number: " + value);
-						if (direction.length !== 1 || !'nesw'.includes(direction)) throw new Error("Invalid direction " + direction);
-
-						const valueStyle = `${value}px`;
-						htmlElement.style[mapping[direction as ResizeCoords]] = valueStyle;
-					}
-				} else if (update.name === 'font') {
+				if (update.name === 'font') {
 					if (!fonts) {
 						console.log("No fonts are installed");
 						continue;
@@ -678,13 +676,6 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 					htmlElement.classList.add(font.font.className);
 				} else {
 					htmlElement.style[update.name as unknown as number]= update.value;
-				}
-			}
-
-			if (update.type === 'text') {
-				if (htmlElement.textContent !== update.value) {
-					htmlElement.textContent = update.value;
-					alreadyDoneText = true;
 				}
 			}
 		}

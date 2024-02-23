@@ -10,6 +10,7 @@ import { BranchItem, Repository } from "@harmony/ui/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { twMerge } from 'tailwind-merge'
 import { indexForComponent } from "../update/[branchId]/route";
+import { translateUpdatesToCss } from "@harmony/util/src/component";
 
 const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
@@ -71,14 +72,39 @@ export async function POST(req: Request): Promise<Response> {
         throw new Error("Cannot find repository with id " + branch.repositoryId);
     }
 
-    //Get rid of same type of updates (more recent one wins)
-    const updates: ComponentUpdate[] = branch.updates.reduce<ComponentUpdate[]>((prev, curr) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([curr]), []);
-	for (const update of updates) {
-		await indexForComponent(update.componentId, update.parentId, repository);
+	const alreadyPublished = await prisma.pullRequest.findUnique({
+		where: {
+			branch_id: branch.id
+		}
+	})
+
+	if (Boolean(alreadyPublished)) {
+		return new Response(JSON.stringify("This project has already been published"), {
+			status: 400
+		});
 	}
+
+	const old: string[] = branch.old;
+    //Get rid of same type of updates (more recent one wins)
+    const updates = branch.updates.reduce<(ComponentUpdate & {oldValue: string})[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([{...curr, oldValue: old[i]}]), []);
+	// const githubRepository = new GithubRepository(repository);
+	// const ref = await githubRepository.getBranchRef(repository.branch);
+	// if (ref !== repository.ref) {
+	// 	for (const update of updates) {
+	// 		await indexForComponent(update.componentId, update.parentId, repository);
+	// 	}
+
+	// 	await prisma.repository.update({
+	// 		where: {
+	// 			id: repository.id
+	// 		},
+	// 		data: {
+	// 			ref
+	// 		}
+	// 	})
+	// }
 	
-    const old: string[] = branch.old;
-    await findAndCommitUpdates(updates, old, repository, branch);
+    await findAndCommitUpdates(updates, repository, branch);
 
     const newPullRequest = await createPullRequest({branch, pullRequest, repository})
 
@@ -116,7 +142,7 @@ const camelToKebab = (camelCase: string): string => {
 	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
-async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], repository: Repository, branch: BranchItem) {
+async function findAndCommitUpdates(updates: (ComponentUpdate & {oldValue: string})[], repository: Repository, branch: BranchItem) {
 	const elementInstances = await prisma.componentElement.findMany({
 		where: {
 			repository_id: repository.id,
@@ -127,14 +153,25 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], r
 	const githubRepository = new GithubRepository(repository);
 	let fileUpdates: FileUpdate[] = [];
 
-	updates = updates.reduce<ComponentUpdate[]>((prev, curr) => {
+	//TODO: old value is not updated properly for size and spacing
+	updates = translateUpdatesToCss(updates) as (ComponentUpdate & {oldValue: string})[];
+
+	updates = updates.reduce<(ComponentUpdate & {oldValue: string})[]>((prev, curr) => {
+		//Don't combine the fonts with the styling because we are using next/fonts for now
+		if (curr.type === 'className' && curr.name === 'font') {
+			prev.push(curr);
+			return prev;
+		}
+
 		if (curr.type === 'className') {
 			const cssName = camelToKebab(curr.name);
 			curr.value = `${cssName}:${curr.value};`
+			curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`;
 		}
-		const classNameUpdate = prev.find(up => up.componentId === curr.componentId && up.parentId === curr.parentId && up.type === 'className');
+		const classNameUpdate = curr.type === 'className' && curr.name !== 'font' ? prev.find(up => up.componentId === curr.componentId && up.parentId === curr.parentId && up.type === 'className' && up.name !== 'font') : undefined;
 		if (classNameUpdate) {
 			classNameUpdate.value += curr.value;
+			classNameUpdate.oldValue += curr.oldValue;
 		} else {
 			prev.push(curr);
 		}
@@ -144,7 +181,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], r
 	for (let i = 0; i < updates.length; i++) {
         //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
         // in the future we probably will use the actual branch
-		const result = await getChangeAndLocation(updates[i], old[i], repository, githubRepository, elementInstances, repository.branch);
+		const result = await getChangeAndLocation(updates[i], repository, githubRepository, elementInstances, repository.branch);
 
         if (result)
 		fileUpdates.push(result);
@@ -162,11 +199,11 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], r
 		const newLocation = {snippet: update.updatedCode, start: update.location.start, end: update.location.end, updatedTo: update.location.updatedTo, diff: 0};
 		const last = change.locations[change.locations.length - 1];
 		if (last) {
-			if (last.end > newLocation.start) {
-				throw new Error("Conflict in changes")
-			}
-
 			const diff = last.updatedTo - last.end + last.diff;
+			if (last.end > newLocation.start + diff) {
+				throw new Error("Conflict in changes")
+				//console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`);
+			}
 
 			newLocation.start += diff;
 			newLocation.end += diff;
@@ -192,8 +229,8 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], old: string[], r
 	await githubRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
 }
 
-async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, repository: Repository, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
-	const {componentId: id, parentId, type, name} = update;
+async function getChangeAndLocation(update: (ComponentUpdate & {oldValue: string}), repository: Repository, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
+	const {componentId: id, parentId, type, oldValue: _oldValue, name} = update;
 	const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
 	
 	if (component === undefined ) {
@@ -216,16 +253,50 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 
 	const addCommentToJSXElement = ({location, code, commentValue, attribute}: {location: ComponentLocation, code: string, commentValue: string, attribute: ComponentAttributePrisma | undefined}) => {
 		const comment = `/** ${commentValue} */`;
-		const match = /<([a-zA-Z0-9]*)(\s[^\/>]*)?(\/?)>/.exec(code);
+		const match = /<([a-zA-Z0-9]+)(\s?)/.exec(code);
 		if (!match) {
 			throw new Error(`There was no update to add comment to jsx: snippet: ${code}, commentValue: ${commentValue}`);
 		}
-		//The start of the comment is right before the closing '>' or '/>' characters
+
+		//If there are no attributes in the tag, then add a space before the comment;
+		const value = match[2] ? `${comment} ` : ` ${comment} `;
+		//The start of the comment is right after the opening tag
 		const matchEnd = match.index + match[0].length;
-		const start = match[3] ? matchEnd - 2 : matchEnd - 1;
+		const start = matchEnd;
 		const end = start;
-		const updatedTo = comment.length + start;
-		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: comment, update, dbLocation: location, attribute};
+		const updatedTo = value.length + start;
+		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: value, update, dbLocation: location, attribute};
+	}
+
+	//This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
+	const addNewClassOrComment = ({location, code, newClass, oldClass, commentValue, attribute}: {location: ComponentLocation, code: string, newClass: string, oldClass: string | undefined, commentValue: string, attribute: ComponentAttributePrisma | undefined}) => {
+		if (oldClass === undefined) {
+			//If we have a className that means it is a dynamic property, so just add a comment
+			if (/^<([a-zA-Z0-9]*)(\s[^>]*)?className=([^>]*)?(\/?)>/.test(code)) {
+				return addCommentToJSXElement({location, code, commentValue, attribute});
+			}
+
+			const match = /<([a-zA-Z0-9]+)(\s?)/.exec(code);
+			if (!match) {
+				throw new Error(`There was no update to add className to jsx: snippet: ${code}, commentValue: ${commentValue}`);
+			}
+
+			//Here means we do not have a class 
+			let value = match[2] ? `className="${newClass}" ` : ` className="${newClass}" `;
+			value = value.replace('undefined ', '');
+			oldClass = match[0];
+			newClass = `${match[0]}${value}`;
+		}
+
+		const oldValue = oldClass;
+		const start = code.indexOf(oldValue);
+		const end = oldValue.length + start;
+		const updatedTo = newClass.length + start;
+		if (start < 0) {
+			throw new Error(`There was no update for tailwind classes, snippet: ${code}, oldValue: ${oldValue}`);
+		}
+		
+		result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: newClass, update, dbLocation: location, attribute};
 	}
 
 	switch(type) {
@@ -257,6 +328,37 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 				
 				const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
 
+				//If it is a font, just add/replace the class name
+				if (update.name === 'font') {
+					// let oldValue = _oldValue;
+					// let start = elementSnippet.indexOf(oldValue);
+					// let end = oldValue.length + start;
+					// let updatedValue = update.value;
+					// let updatedTo = updatedValue.length + start;
+
+					result = addNewClassOrComment({location, code: elementSnippet, newClass: `${value} ${update.value}`, oldClass: value, commentValue: `font className: ${update.value}`, attribute: classNameAttribute})
+					
+					//If an old font does not exist, just tack on the classname at the end of the 
+					//class list
+					// if (start < 0) {
+					// 	//If we do not have className data
+					// 	if (!value) {
+					// 		const commentValue = `font className: ${update.value}`;
+					// 		result = addCommentToJSXElement({location, code: elementSnippet, commentValue, attribute: classNameAttribute});
+					// 		break;
+					// 	}
+
+					// 	oldValue = value;
+					// 	start = elementSnippet.indexOf(oldValue);
+					// 	end = oldValue.length + start;
+					// 	updatedValue = `${value} ${update.value}`;
+					// 	updatedTo = updatedValue.length + start;
+					// }
+					
+					// result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: updatedValue, update, dbLocation: location, attribute: classNameAttribute};
+					break;
+				}
+
 				if (repository.cssFramework === 'tailwind') {
 					//This assumes that the update values have already been merged and converted to name:value pairs
 					const converted = await converter.convertCSS(`.example {
@@ -265,27 +367,30 @@ async function getChangeAndLocation(update: ComponentUpdate, _oldValue: string, 
 					const newClasses = converted.nodes.reduce((prev, curr) => prev + curr.tailwindClasses.join(' '), '')
 
 					//If this is a class property, just add a comment of the classes
-					if (!value) {
-						const withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
-						result = addCommentToJSXElement({location, commentValue: withPrefix, attribute: classNameAttribute, code: elementSnippet});
-						break;
-					};
+					// if (!value) {
+					// 	const withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
+					// 	result = addCommentToJSXElement({location, commentValue: withPrefix, attribute: classNameAttribute, code: elementSnippet});
+					// 	break;
+					// };
 
 					//TODO: Make the tailwind prefix part dynamic
-					let oldClasses = repository.tailwindPrefix ? value.replaceAll(repository.tailwindPrefix, '') : value;
+					let oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
 					
 					const mergedIt = twMerge(oldClasses, newClasses);
 					const mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 
-					const oldValue = value || _oldValue;
-					const start = elementSnippet.indexOf(oldValue);
-					const end = oldValue.length + start;
-					const updatedTo = mergedClasses.length + start;
-					if (start < 0) {
-						throw new Error(`There was no update for tailwind classes, snippet: ${elementSnippet}, oldValue: ${oldValue}`);
-					}
+					// const oldValue = value;
+					// const start = elementSnippet.indexOf(oldValue);
+					// const end = oldValue.length + start;
+					// const updatedTo = mergedClasses.length + start;
+					// if (start < 0) {
+					// 	throw new Error(`There was no update for tailwind classes, snippet: ${elementSnippet}, oldValue: ${oldValue}`);
+					// }
 					
-					result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: mergedClasses, update, dbLocation: location, attribute: classNameAttribute};
+					//result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: mergedClasses, update, dbLocation: location, attribute: classNameAttribute};
+
+					const withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
+					result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute});
 				} else {
 					const valuesNewLined = update.value.replaceAll(';', ';\n');
 					result = addCommentToJSXElement({location, commentValue: valuesNewLined, code: elementSnippet, attribute: classNameAttribute});

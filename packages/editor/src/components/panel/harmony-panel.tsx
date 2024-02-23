@@ -290,7 +290,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		changeMode('preview')
 	}
 
-	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published (No saved changes)' : null;
+	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published' : null;
 
 	const textToolsComponents: Record<TextTools, ComponentTool | undefined> = {
 		'font': fonts ? ({data, onChange}) => {
@@ -369,7 +369,9 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 					<ComponentTools tools={textTools} components={textToolsComponents} data={data} onChange={changeData}/>
 				</div>
 				<div className="hw-px-4">
-					<Button mode="secondary">Behavior</Button>
+					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
+						<div>Behavior coming soon!</div>
+					</Popover>
 				</div>
 			</> : null}
 			{savingText ? <div className="hw-px-4">{savingText}</div> : null}
@@ -402,7 +404,7 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 	const [show, setShow] = useState(false);
 	const changeProperty = useChangeProperty<PullRequest>(setPublishState);
 	const [loading, setLoading] = useState(false);
-	const {branchId, publish, setIsPublished} = useHarmonyContext();
+	const {branchId, publish, setIsPublished, isPublished} = useHarmonyContext();
 	const [error, setError] = useState('');
 
 	const pullRequest: PullRequest = publishState || {id: '', title: '', body: '', url: ''}
@@ -416,9 +418,12 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 			branchId,
 			pullRequest
 		}
-		publish(request).then(() => {
+		publish(request).then((published) => {
 			setLoading(false);
-			setIsPublished(true);
+			setIsPublished(published);
+			if (!published) {
+				setError('There was an error when publishing');
+			}
 		})
 	}
 
@@ -442,7 +447,7 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 	}
 
 	return <>
-		<Button onClick={() => setShow(true)}>Publish</Button>
+		<Button onClick={() => setShow(true)} disabled={isPublished}>Publish</Button>
 		<HarmonyModal show={show} onClose={onClose} editor>
 			<div className="hw-flex hw-gap-2 hw-items-center">
 				<GitBranchIcon className="hw-w-6 hw-h-6"/>
