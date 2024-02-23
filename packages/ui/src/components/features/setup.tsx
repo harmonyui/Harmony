@@ -315,29 +315,12 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
 	// }
 	
 	const onFinish = (): void => {
-		// setLoading(true);
-		// fetch('/api/import', {
-		// 	method: 'POST',
-		// 	body: JSON.stringify({repository})
-		// }).then(response => {
-		// 	if (!response.ok) {
-		// 		setLoading(false);
-		// 		setError("There was an error, please contact support if this problem persists")
-		// 		return;
-		// 	}
+        if (!repository) throw new Error("Repository should be defined");
 
-		// 	const reader = response.body?.getReader();
-		// 	if (!reader) {
-		// 		setLoading(false);
-		// 		setError("There was an error, please contact support if this problem persists")
-		// 		return;
-		// 	}
-
-		// 	readData(reader).then(() => {
-		// 		setLoading(false);
-		// 		router.push('/');
-		// 	})
-		// })
+		mutate({repository, teamId}, {
+			onSuccess: () => {
+				setPage(page+1);
+		}})
         router.push('/');
 	}
 
@@ -347,12 +330,7 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
 	}
     
     const onAdditionalContinue = () => {
-        if (!repository) throw new Error("Repository should be defined");
-
-        mutate({repository, teamId}, {
-			onSuccess: () => {
-				setPage(page+1);
-		}})
+        setPage(page + 1);
     }
 
 	const pages = [
@@ -491,10 +469,10 @@ interface InstallEditorProps {
 	onContinue: () => void;
 }
 const InstallEditor: React.FunctionComponent<InstallEditorProps> = ({onContinue, repositoryId}) => {
-	const designSuiteCode = `<script id="harmony-id">
-    harmony={load:function(e){const r=document.createElement("script");r.src="https://unpkg.com/harmony-ai-editor";r.addEventListener('load',function(){window.HarmonyProvider({repositoryId:e});});document.body.appendChild(r);}}
-    harmony.load('${repositoryId}');
-</script>`
+	const designSuiteCode = `<HarmonySetup repositoryId="${repositoryId}"/>`
+    const designSuiteCodeWithFonts = `import fonts from "path/to/fonts/file";
+//... other code
+<HarmonySetup repositoryId="${repositoryId}" fonts={fonts}/>`
 	const swcPluginCode = `/** @type {import('next').NextConfig} */
 const nextConfig = {
 	//...Other config properties
@@ -507,18 +485,127 @@ const nextConfig = {
 }
 	
 module.exports = nextConfig`
+
+const fontsFile = `import { NextFont } from 'next/dist/compiled/@next/font';
+import {Inter, Roboto, Open_Sans, Alegreya, Montserrat, Lato, Poppins, Mulish, Corben, Nobile} from 'next/font/google';
+
+interface Font {
+	id: string;
+	name: string;
+	font: NextFont
+}
+
+const inter = Inter({
+    subsets: ['latin']
+});
+const roboto = Roboto({
+    subsets: ['latin'],
+    weight: ['100', '300', '400', '500', '700', '900']
+});
+
+const openSans = Open_Sans({
+    subsets: ['latin']
+});
+
+const alegreya = Alegreya({
+    subsets: ['latin']
+});
+
+const montserrat = Montserrat({
+    subsets: ['latin']
+});
+
+const lato = Lato({
+    subsets: ['latin'],
+    weight: ['100', '300', '400', '700', '900']
+});
+
+const poppins = Poppins({
+    subsets: ['latin'],
+    weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900']
+})
+
+const mulish = Mulish({
+    subsets: ['latin']
+});
+
+const corben = Corben({
+    subsets: ['latin'],
+    weight: ['400', '700']
+})
+
+const nobile = Nobile({
+    subsets: ['latin'],
+    weight: ['400', '500', '700']
+})
+
+export const fonts: Font[] = [
+    {
+        id: inter.className,
+        name: 'Inter',
+        font: inter
+    },
+    {
+        id: roboto.className,
+        name: 'Roboto',
+        font: roboto
+    },
+    {
+        id: openSans.className,
+        name: 'Open Sans',
+        font: openSans
+    },
+    {
+        id: alegreya.className,
+        name: 'Alegreya',
+        font: alegreya
+    },
+    {
+        id: montserrat.className,
+        name: 'Montserrat',
+        font: montserrat
+    },
+    {
+        id: lato.className,
+        name: 'Lato',
+        font: lato
+    },
+    {
+        id: poppins.className,
+        name: 'Poppins',
+        font: poppins
+    },
+    {
+        id: mulish.className,
+        name: 'Mulish',
+        font: mulish
+    },
+]`
 	return (<>
 		<Header level={4}>Install Design Suite</Header>
-		<p className="hw-text-sm">Copy and paste the snippet below before your website&#39;s closing <span className="hw-p-0.5" style={{background: "rgb(29, 31, 33)"}}><span style={{color: "rgb(197, 200, 198)"}}>&lt;/</span><span style={{color: "rgb(150, 203, 254)"}}>body</span><span style={{color: "rgb(197, 200, 198)"}}>&gt;</span></span> tag. Once installed, you can begin editing on your site.</p>
+		<p className="hw-text-sm">Install the harmony packages using your package manager</p>
+        <CodeSnippet language="terminal" code='npm install harmony-ai-plugin harmony-ai-editor'/>
+        <p className="hw-text-sm">Then, import from <SmallCode>harmony-ai-editor</SmallCode> and add the following component before your closing <SmallCode>body</SmallCode> tag</p>
 		<CodeSnippet language="html" code={designSuiteCode}/>
 
 		<Header level={4}>Configure Data Tagging (NextJS Only)</Header>
-		<p className="hw-text-sm">In order for the front-end to communicate with the code base, you need to install the harmony-ai-plugin npm package by running <code style={{background: "rgb(29, 31, 33)"}} className="hw-text-white hw-p-0.5">npm|yarn|pnpm install harmony-ai-plugin</code>.</p>
+		<p className="hw-text-sm">In order for the front-end to communicate with the code base, you need to use the Harmony SWC plugin.</p>
 		<p className="hw-text-sm">Next, create a next.config.js file in the root (if it doesn&#39;t exist) and insert the following code:</p>
 		<CodeSnippet language="javascript" code={swcPluginCode}/>
+
+        <Header level={4}>Using Fonts (Optional)</Header>
+		<p className="hw-text-sm">If you want to be able to pick between fonts in your editor, then you need to install the fonts on your own machine. To do that, add the following file somewhere in your code base (ex. in a utils folder). Feel free to add or remove any fonts you want from google fonts and add it to the fonts array</p>
+        <p className="hw-text-sm">Note: This only works with NextJS Fonts</p>
+		<CodeSnippet language="typescript" code={fontsFile}/>
+        <p className="hw-text-sm">Then where you added the HarmonySetup component, pass in the fonts array you just created.</p>
+        <CodeSnippet language="javascript" code={designSuiteCodeWithFonts}/>
 		
 		<div className="hw-flex">
 			<Button className="hw-ml-auto" onClick={onContinue}>Continue</Button>
 		</div>
 	</>)
+}
+
+const SmallCode: React.FunctionComponent<{children: string}> = ({children}) => {
+    return <code style={{background: "rgb(29, 31, 33)"}} className="hw-text-white hw-p-0.5">{children}</code>
 }
