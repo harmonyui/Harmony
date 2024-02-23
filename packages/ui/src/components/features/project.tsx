@@ -63,6 +63,10 @@ const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps>
 				onSuccessfulCreation(data);
 				onClose();
 				setLoading(false);
+			},
+			onError() {
+				setLoading(false);
+				setError('There was an error creating the project');
 			}
 		})
 	}

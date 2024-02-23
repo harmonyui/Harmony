@@ -262,7 +262,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}
 		const oldValue = selectedComponentText || '';
-		onAttributesChange(component, [update], [oldValue]);
+		onAttributesChange(component, [update], [oldValue], false);
 	});
 
 	const onResize = useEffectEvent((size: ResizeValue) => {
@@ -366,8 +366,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={(d) => {
-							harmonyContainerRef.current = d
-							if (harmonyContainerRef.current) {
+							if (d && !harmonyContainerRef.current) {
+								harmonyContainerRef.current = d
 								setRootComponent(harmonyContainerRef.current);
 								harmonyContainerRef.current.appendChild(rootElement);
 							}

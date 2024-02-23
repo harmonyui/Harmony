@@ -37,7 +37,7 @@ export const setupRoute = createTRPCRouter({
 		.input(createSetupSchema)
 		.mutation(async ({ctx, input}) => {
 			const userId = ctx.session.auth.userId;
-
+			
 			const newAccount = await ctx.prisma.account.create({
 				data: {
 					firstName: input.account.firstName,
@@ -48,7 +48,7 @@ export const setupRoute = createTRPCRouter({
 					team: {
 						connectOrCreate: {
 							where: {
-								id: input.teamId,
+								id: input.teamId || '',
 							},
 							create: {
 								id: input.teamId,

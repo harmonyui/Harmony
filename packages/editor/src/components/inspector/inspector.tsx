@@ -384,8 +384,10 @@ class Overlay {
 		if (stuff) {
 			stuff.values.forEach(({rect}) => rect.remove());
 			this.rects.delete(method);
-			if (method === 'select') stuff.values[0].element.contentEditable = 'inherit';
-			stuff.values[0].element.removeAttribute('data-selected')
+			if (method === 'select') {
+				stuff.values[0].element.contentEditable = 'inherit';
+				stuff.values[0].element.removeAttribute('data-selected')
+			}
 			stuff.observer?.disconnect();
 			stuff.aborter.abort();
 			if (stuff.values[0].element.draggable) {
@@ -1497,7 +1499,8 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 	}, [element, scale]);
 
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
-		if (!element) return;
+		//TODO: Dependency on dataset.selected. This hook should not know about that
+		if (!element || element.dataset.selected === 'true') return;
 
 		let axis: Axis | undefined = undefined;
 		let amount = 5;

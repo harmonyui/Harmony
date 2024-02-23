@@ -11,7 +11,6 @@ export interface User {
   id: string;
   name: string;
   image: string;
-  username: string;
   email: string;
 }
 
@@ -87,9 +86,6 @@ export const getServerAuthSession = async (): Promise<Session | undefined> => {
 	
 	if (userId) {
 		const user = await clerkClient.users.getUser(userId);
-		if (user.username === null) {
-			throw new Error("User does not have username");
-		}
 
 		if (!user.emailAddresses[0].emailAddress) {
 			throw new Error("User does not have an email address");
@@ -99,7 +95,6 @@ export const getServerAuthSession = async (): Promise<Session | undefined> => {
 				id: user.id,
 				name: `${user.firstName} ${user.lastName}`,
 				image: user.imageUrl,
-				username: user.username,
 				email: user.emailAddresses[0].emailAddress
 			},
 			userId,

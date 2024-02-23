@@ -27,12 +27,16 @@ export const WelcomeDisplay: React.FunctionComponent<{teamId: string | undefined
         setAccount(queryAccount.data);
     }
 
-	const onWelcomeContinue = (data: Account) => {
-		createAccount({account: data, teamId}, {
+	const onWelcomeContinue = async (data: Account) => {
+		return new Promise<boolean>((resolve) => createAccount({account: data, teamId}, {
 			onSuccess(account) {
 				setAccount(account);
-			}
-		})
+                resolve(true);
+			},
+            onError() {
+                resolve(false);
+            }
+		}))
 	}
 
     if (account) {
@@ -55,14 +59,26 @@ const SetupLayout: React.FunctionComponent<{children: React.ReactNode}> = ({chil
 
 interface WelcomeSetupProps {
 	data: Account,
-	onContinue: (data: Account) => void;
+	onContinue: (data: Account) => Promise<boolean>;
 }
 const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({data, onContinue}) => {
 	const [account, setAccount] = useState(data);
 	const changeProperty = useChangeProperty<Account>(setAccount);
+    const [error, setError] = useState('');
+    const [loading, setLoading] = useState(false);
 
 	const onContinueClick = () => {
-		onContinue(account);
+        if (!account.firstName || !account.lastName || !account.role) {
+            setError("Please fill out all fields");
+            return;
+        }
+        setLoading(true);
+		onContinue(account).then((created) => {
+            setLoading(false);
+            if (!created) {
+                setError('There was an error in creating the account');
+            }
+        });
 	}
 
 	return (
@@ -79,7 +95,8 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({data, onConti
 					<Input className="hw-w-full" value={account.role} onChange={changeProperty.formFunc('role', account)} />
 				</Label>
 			</div>
-			<Button className="hw-w-fit hw-ml-auto" onClick={onContinueClick}>Create Account</Button>
+            {error ? <p className="hw-text-sm hw-text-red-400">{error}</p> : null}
+			<Button className="hw-w-fit hw-ml-auto" onClick={onContinueClick} loading={loading}>Create Account</Button>
 		</>
 	)
 }

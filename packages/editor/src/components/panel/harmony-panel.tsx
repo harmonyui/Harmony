@@ -125,7 +125,7 @@ const PreviewPanel: React.FunctionComponent = () => {
 		}
 
 		setLoading(true);
-		publish(request).then(() => {
+		publish(request).then((published) => {
 			setLoading(false);
 		})
 	}
