@@ -59,18 +59,32 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 		}
 	}
 
-	await prisma.componentUpdate.createMany({
-		data: updates.map(up => ({
-			component_parent_id: up.parentId,
-			component_id: up.componentId,
-			action: up.action,
-			type: up.type,
-			name: up.name,
-			value: up.value,
-			branch_id: branchId,
-			old_value: up.oldValue
-		}))
-	});
+	for (const up of updates) {
+		await prisma.componentUpdate.create({
+			data: {
+				component_parent_id: up.parentId,
+				component_id: up.componentId,
+				action: up.action,
+				type: up.type,
+				name: up.name,
+				value: up.value,
+				branch_id: branchId,
+				old_value: up.oldValue
+			}
+		})
+	}
+	// await prisma.componentUpdate.createMany({
+	// 	data: updates.map(up => ({
+	// 		component_parent_id: up.parentId,
+	// 		component_id: up.componentId,
+	// 		action: up.action,
+	// 		type: up.type,
+	// 		name: up.name,
+	// 		value: up.value,
+	// 		branch_id: branchId,
+	// 		old_value: up.oldValue
+	// 	}))
+	// });
 
 	return new Response(JSON.stringify({}), {
 		status: 200,

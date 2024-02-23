@@ -1635,6 +1635,8 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 	}
 	  
 	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
+		//TODO: Remove dependency on selected
+		if (element?.dataset.selected === 'true') return;
 		handleTheDragging({dx: event.dx, dy: event.dy, rect: event.rect});
 	});
 	

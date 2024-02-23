@@ -388,6 +388,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 export const usePinchGesture = ({scale, onTouching}: {scale: number, onTouching: (scale: number) => void}) => {
 	const onTouch = useEffectEvent((event: WheelEvent) => {
+		if (!event.ctrlKey) return;
 		event.preventDefault();
 		
 		const delta = event.deltaY;
