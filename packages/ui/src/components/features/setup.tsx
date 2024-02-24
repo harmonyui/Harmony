@@ -315,12 +315,6 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
 	// }
 	
 	const onFinish = (): void => {
-        if (!repository) throw new Error("Repository should be defined");
-
-		mutate({repository, teamId}, {
-			onSuccess: () => {
-				setPage(page+1);
-		}})
         router.push('/');
 	}
 
@@ -330,7 +324,12 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
 	}
     
     const onAdditionalContinue = () => {
-        setPage(page + 1);
+        if (!repository) throw new Error("Repository should be defined");
+
+        mutate({repository, teamId}, {
+			onSuccess: () => {
+				setPage(page+1);
+		}})
     }
 
 	const pages = [
