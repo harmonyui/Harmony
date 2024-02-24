@@ -469,7 +469,7 @@ interface InstallEditorProps {
 	onContinue: () => void;
 }
 const InstallEditor: React.FunctionComponent<InstallEditorProps> = ({onContinue, repositoryId}) => {
-	const designSuiteCode = `<HarmonySetup repositoryId="${repositoryId}"/>`
+	const designSuiteCode = `{process.env.NODE_ENV !== 'production' ? <HarmonySetup repositoryId="${repositoryId}"/> : null }`
     const designSuiteCodeWithFonts = `import fonts from "path/to/fonts/file";
 //... other code
 <HarmonySetup repositoryId="${repositoryId}" fonts={fonts}/>`
@@ -586,7 +586,7 @@ export const fonts: Font[] = [
 		<p className="hw-text-sm">Install the harmony packages using your package manager</p>
         <CodeSnippet language="terminal" code='npm install harmony-ai-plugin harmony-ai-editor'/>
         <p className="hw-text-sm">Then, import from <SmallCode>harmony-ai-editor</SmallCode> and add the following component before your closing <SmallCode>body</SmallCode> tag</p>
-		<CodeSnippet language="html" code={designSuiteCode}/>
+		<CodeSnippet language="javascript" code={designSuiteCode}/>
 
 		<Header level={4}>Configure Data Tagging (NextJS Only)</Header>
 		<p className="hw-text-sm">In order for the front-end to communicate with the code base, you need to use the Harmony SWC plugin.</p>
