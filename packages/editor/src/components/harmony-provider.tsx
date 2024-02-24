@@ -366,7 +366,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={(d) => {
-							if (d && !harmonyContainerRef.current) {
+							if (d && d !== harmonyContainerRef.current) {
 								harmonyContainerRef.current = d
 								setRootComponent(harmonyContainerRef.current);
 								harmonyContainerRef.current.appendChild(rootElement);
@@ -620,10 +620,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 	//Updates that should happen just for the element (reordering)
 	for (const update of translated) {
-		const element = findElementFromId(update.componentId, update.parentId);
-		if (!element) throw new Error("Cannot find element with id " + update.componentId + " and parent id " + update.parentId);
-
-		const parent = element.parentElement;
+		const parent = el.parentElement;
 		if (!parent) throw new Error("Element does not have a parent");
 
 		if (update.type === 'component') {
@@ -649,8 +646,8 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		//TODO: Need to figure out when a text component should update everywhere and where it should update just this element
 		if (update.type === 'text') {
-			if (element.textContent !== update.value) {
-				element.textContent = update.value;
+			if (el.textContent !== update.value) {
+				el.textContent = update.value;
 				alreadyDoneText = true;
 			}
 		}

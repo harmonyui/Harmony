@@ -5,7 +5,7 @@ import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
-import { Fragment, useState } from "react";
+import { Fragment, useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { componentIdentifier } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
@@ -224,7 +224,7 @@ const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | u
 				console.log("No fonts");
 				return '';
 			}
-			const font = fonts.find(f => element.element!.className.includes(f.id) || computedFont.includes(f.name));
+			const font = fonts.find(f => element.element!.classList.contains(f.id) || computedFont.includes(f.name));
 
 			if (font) return font.id;
 
@@ -292,7 +292,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 
 	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published' : null;
 
-	const textToolsComponents: Record<TextTools, ComponentTool | undefined> = {
+	const textToolsComponents: Record<TextTools, ComponentTool | undefined> = useMemo(() => ({
 		'font': fonts ? ({data, onChange}) => {
 			const items: DropdownItem<string>[] = fonts;
 			return (
@@ -356,7 +356,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				</Popover>
 			)
 		}
-	}
+	}), [fonts]);
 
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
