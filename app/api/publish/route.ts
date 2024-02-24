@@ -51,6 +51,7 @@ function addPrefixToClassName(className: string, prefix: string): string {
 	return final;
 }
 
+export const maxDuration = 300;
 export async function POST(req: Request): Promise<Response> {
     const request = publishRequestSchema.safeParse(await req.json());
     if (!request.success) {

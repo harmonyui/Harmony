@@ -9,6 +9,7 @@ import { indexFilesAndFollowImports } from '../../../../src/server/api/services/
 import { getRepository } from '../../../../src/server/api/routers/branch';
 import { Repository } from '@harmony/ui/src/types/branch';
 
+export const maxDuration = 300;
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
 	const {branchId} = params;
 
