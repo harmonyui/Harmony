@@ -3,7 +3,7 @@ import { NextResponse } from "next/server";
  
 const allowedOrigins: string[] = [];
 
-const publicApis = [/\/api\/load/, /\/api\/update/, /\/api\/github\/callback/, /\/api\/trpc\/setup\.getRepositories/];
+const publicApis = [/\/api\/load/, /\/api\/update/, /\/api\/github\/callback/, /\/api\/trpc\/setup\.getRepositories/, /\/api\/trpc\/setup\.connectRepository/];
 
 // This example protects all routes including api/trpc routes
 // Please edit this to allow other routes to be public as needed.
