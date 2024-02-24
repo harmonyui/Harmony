@@ -357,10 +357,10 @@ const StartPage: React.FunctionComponent<StartPageProps> = ({clientId}) => {
     useEffect(() => {
         const callbackUrl = `${window.location.href}`;
         const redirectUri = new URL('/api/github/callback', WEB_URL);
-        redirectUri.searchParams.append('callback', callbackUrl);
         const authorizeUrl = new URL('https://github.com/login/oauth/authorize');
         authorizeUrl.searchParams.append('client_id', clientId);
         authorizeUrl.searchParams.append('redirect_uri', redirectUri.href);
+        authorizeUrl.searchParams.append('state', callbackUrl);
 
         setHref(authorizeUrl.href);
     }, []);

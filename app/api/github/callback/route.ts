@@ -4,7 +4,7 @@ const CLIENT_SECRET = process.env.GITHUB_APP_CLIENT_SECRET || '';
 export async function GET(req: Request): Promise<Response> {
     const url = new URL(req.url);
     const code = url.searchParams.get('code');
-    const callback = url.searchParams.get('callback');
+    const callback = url.searchParams.get('state');
     if (!code || !callback) {
         return new Response(JSON.stringify({message: "Invalid body parameters"}), {
             status: 400
