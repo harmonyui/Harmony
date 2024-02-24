@@ -6,7 +6,7 @@ type LabelProps = {
 export const Label: React.FunctionComponent<LabelProps> = ({ children, className, label, sameLine }) => {
   return (
     <div
-      className={`${className || ""} ${
+/** hw-pl-0 hw-pr-1 hw-py-0 */       className={`${className || ""} ${
         sameLine ? "hw-flex hw-items-center" : ""
       }`}
     >

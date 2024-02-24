@@ -41,7 +41,7 @@ export const Header = ({
   const Component = headerMapping[level ?? 2];
   return (
     <Component
-      className={`${
+/** font className: __className_4c242f */       className={`${
         size[Component]
       } hw-font-semibold hw-leading-9 hw-tracking-tight hw-text-gray-900 dark:hw-text-gray-200 ${
         className || ""

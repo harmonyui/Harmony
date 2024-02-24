@@ -42,7 +42,7 @@ export function Button <T extends React.ElementType>({
   } hw-inline-flex hw-justify-center hw-rounded-md hw-px-2.5 hw-py-1.5 hw-text-sm hw-font-medium hw-border focus:hw-outline-none focus-visible:hw-ring-2 focus-visible:hw-ring-white focus-visible:hw-ring-opacity-75 ${className}`
 	: `${buttonClasses[mode]} ${className}`;
   return (
-    <Component className={_class} style={style} type="button" {...rest}>
+   OpenssName={_class} style={style} type="button" {...rest}>
       {loading ? <Spinner className="hw-relative hw-left-1/2 -hw-translate-x-1/2" sizeClass="hw-w-5 hw-h-5"/> : null}
       {loading ? <div className="hw-invisible">{children}</div> : children}
     </Component>
