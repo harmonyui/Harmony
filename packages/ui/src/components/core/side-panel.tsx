@@ -244,7 +244,7 @@ const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: 
 	return (
 		<li key={item.label} className={getClass(className)}>
 			<a
-				className={getClass(
+/** hw-leading-6 hw-tracking-[normal] hw-text-[#a2cfec] hw-p-2 */ 				className={getClass(
 					item.current
 						? 'hw-bg-gray-50 hw-text-primary'
 						: 'hw-text-gray-700 hover:hw-text-primary hover:hw-bg-gray-50',
