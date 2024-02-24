@@ -51,7 +51,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 				}
 			});
 			if (!element) {
-				indexForComponent(update.componentId, update.parentId, repository);
+				await indexForComponent(update.componentId, update.parentId, repository);
 			}
 			
 
