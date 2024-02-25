@@ -67,6 +67,7 @@ export const ListBox = <T,>({
 export interface DropdownItem<T> {
   name: React.ReactNode;
   id: T;
+  className?: string;
 }
 export type ItemAction<T> = (item: DropdownItem<T>, index: number) => void;
 interface DropdownProps<T> extends PropsWithChildren {
@@ -116,6 +117,7 @@ export const Dropdown = <T,>({
           onClick(item, i);
         }}
         selected={initialValue !== undefined && item === value}
+        className={item.className}
       >
         {item.name}
       </DropdownLineItem>
@@ -142,16 +144,16 @@ export const Dropdown = <T,>({
 export interface DropdownLineItemProps {
   selected?: boolean;
   children: React.ReactNode;
+  className?: string;
 }
-export const DropdownLineItem = <C extends React.ElementType>({ selected, children, as, ...rest }:  PolymorphicComponentProps<C, DropdownLineItemProps>) => {
+export const DropdownLineItem = <C extends React.ElementType>({ selected, children, as, className, ...rest }:  PolymorphicComponentProps<C, DropdownLineItemProps>) => {
   const Component = as || 'button';
 	const restProps = Component === 'button' ? {type: 'button', ...rest} : rest;
 	return (
     <Component
 			{...restProps}
-			className={`${
-        selected ? "hw-bg-primary-light" : "hw-text-gray-900"
-      } group hw-flex hw-w-full hw-items-center hw-rounded-md hw-p-2 hw-text-sm hw-cursor-pointer hover:hw-bg-gray-100 [&>*]:hw-flex-1`}
+			className={getClass(
+        selected ? "hw-bg-primary-light" : "hw-text-gray-900", className, 'group hw-flex hw-w-full hw-items-center hw-rounded-md hw-p-2 hw-text-sm hw-cursor-pointer hover:hw-bg-gray-100 [&>*]:hw-flex-1')}
     >
       {children}
     </Component>

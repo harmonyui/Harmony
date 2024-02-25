@@ -294,7 +294,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 
 	const textToolsComponents: Record<TextTools, ComponentTool | undefined> = useMemo(() => ({
 		'font': fonts ? ({data, onChange}) => {
-			const items: DropdownItem<string>[] = fonts;
+			const items: DropdownItem<string>[] = fonts.map(font => ({id: font.id, name: font.name, className: font.id}));
 			return (
 				<Dropdown className="hw-w-[170px]" items={items} initialValue={data} onChange={(item) => onChange(item.id)} container={document.getElementById("harmony-container") || undefined}/>
 			)
