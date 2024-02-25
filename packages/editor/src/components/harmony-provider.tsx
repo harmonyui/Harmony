@@ -203,6 +203,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		return () => hotkeys.unbind('esc', onToggle);
 	}, []);
 
+	useEffect(() => {
+		if (!isToggled) {
+			setSelectedComponent(undefined);
+		}
+	}, [isToggled])
+
 	// useEffect(() => {
 	// 	if (ref.current) {
 	// 		//const element = componentIdentifier.getComponentFromElement(ref.current.nextElementSibling as HTMLElement);

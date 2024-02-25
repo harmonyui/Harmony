@@ -1097,8 +1097,8 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 		
 		if (!['center', 'space-evenly', 'space-around', 'space-between'].includes(parent.style.justifyContent)) {
 			parent.style[closePadding] = `${padding}px`
-			parent.style.justifyContent = '';
-			parent.style[farPadding] = '';
+			parent.style.justifyContent = 'normal';
+			parent.style[farPadding] = '0px';
 		}
 	} else {
 		//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
@@ -1107,9 +1107,9 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 			padding = 0;
 		}
 		parent.style[closePadding] = `${padding}px`
-		parent.style.justifyContent = '';
+		parent.style.justifyContent = 'normal';
 		parent.style.gap = `${gapBetween}px`;
-		parent.style[farPadding] = '';
+		parent.style[farPadding] = '0px';
 	}
 	
 
@@ -1118,8 +1118,8 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 
 	if (close(info.parentMidpoint, info.childrenMidpoint, 0.1)) {
 		parent.style.justifyContent = 'center';
-		parent.style[closePadding] = '';
-		parent.style[farPadding] = '';
+		parent.style[closePadding] = '0px';
+		parent.style[farPadding] = '0px';
 
 		info = calculateFlexInfo(parent, axis, scale);
 		if (close(info.gapBetween, info.evenlySpace, 0.1)) {
@@ -1133,11 +1133,11 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 			parent.style[axisGap] = '0px';
 		}
 	} else if (info.childrenMidpoint > info.parentMidpoint) {
-		parent.style[closePadding] = '';
+		parent.style[closePadding] = '0px';
 		parent.style[farPadding] = `${info.gapEnd}px`;
 		parent.style.justifyContent = 'flex-end';
 	} else {
-		parent.style.justifyContent = '';
+		parent.style.justifyContent = 'normal';
 	}
 
 	if (close(info.gapBetween, minGap, 1)) {
@@ -1151,6 +1151,11 @@ function setDragPositionOtherAxis(element: HTMLElement, props: {dx: number, dy: 
 	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close', scale);
 	const closePadding = axis === 'y' ? 'paddingTop' : 'paddingLeft';
 	const farPadding = axis === 'y' ? 'paddingBottom' : 'paddingRight';
+
+	const {gapStart, gapEnd} = calculateFlexInfo(parent, axis, scale);
+
+	//Only deal with align-items axis if there is space to move
+	if (gapEnd === 0 && gapStart === 0) return;
 
 	const selfIndex = Array.from(parent.children).indexOf(element);
 	if (selfIndex < 0) {
@@ -1169,7 +1174,6 @@ function setDragPositionOtherAxis(element: HTMLElement, props: {dx: number, dy: 
 	
 
 	let info = calculateFlexInfo(parent, axis, scale);
-
 
 	if (close(info.parentMidpoint, info.childrenMidpoint, .1)) {
 		parent.style.alignItems = 'center';
@@ -1345,6 +1349,10 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 function createSnapGuidesOtherAxis(element: HTMLElement, pos: number, current: number, type: 'x' | 'y', _scale: number) {
 	const parent = element.parentElement!;
 	const {childrenMidpoint, parentMidpoint, gapEnd, gapStart, gapBetween, evenlySpace, aroundSpace, betweenSpace, centerSpace} = calculateFlexInfo(parent, type, 1);
+	
+	//Only show snap points if there is space to move
+	if (gapEnd === 0 && gapStart === 0) return;
+	
 	const _ = getBoundingClientRect(element, type, 'close', 1) - getBoundingClientRect(parent, type, 'close', 1);
 	const posY = _;
 	const dy = pos + getBoundingClientRect(parent, type, 'close', 1) - current;
@@ -1499,8 +1507,8 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 	}, [element, scale]);
 
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
-		//TODO: Dependency on dataset.selected. This hook should not know about that
-		if (!element || element.dataset.selected === 'true') return;
+		//TODO: Dependency on contentEditable. This hook should not know about that
+		if (!element || element.contentEditable === 'true') return;
 
 		let axis: Axis | undefined = undefined;
 		let amount = 5;
@@ -1636,7 +1644,7 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 	  
 	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
 		//TODO: Remove dependency on selected
-		if (element?.dataset.selected === 'true') return;
+		if (element?.contentEditable === 'true') return;
 		handleTheDragging({dx: event.dx, dy: event.dy, rect: event.rect});
 	});
 	
