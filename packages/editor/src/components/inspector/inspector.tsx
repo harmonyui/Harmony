@@ -43,11 +43,11 @@ export interface InspectorProps {
 	onSelect: (component: HTMLElement | undefined) => void;
 	rootElement: HTMLElement | undefined;
 	parentElement: HTMLElement | undefined;
-	onElementTextChange: (value: string) => void;
+	onElementTextChange: (value: string, oldValue: string) => void;
 	mode: SelectMode;
 	onResize: (size: ResizeValue) => void;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
-	onChange: (component: HTMLElement, update: ComponentUpdate[], oldValue: string[], execute?: boolean) => void;
+	onChange: (component: HTMLElement, update: ComponentUpdate[], execute?: boolean) => void;
 	updateOverlay: number;
 	scale: number;
 }
@@ -133,15 +133,16 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 			const componentId = parent.dataset.harmonyId || '';
 			const parentId = parent.dataset.harmonyParentId || '';
-			const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value};
-
 			const oldValue = oldProperties[property];
 
+			const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue};
+
+			
 			updates.push(update);
 			oldValues.push(oldValue);
 		});
 
-		onChange(parent, updates, oldValues, true);
+		onChange(parent, updates, true);
 		onSelect(undefined);
 	}, scale});
 
@@ -203,7 +204,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	}, [hoveredComponent])
 
 	const isInteractableComponent = useCallback((component: HTMLElement) => {
-		if (!Boolean(component.dataset.harmonyId)) {
+		//TODO: Get rid of dependency on harmonyText
+		if (!Boolean(component.dataset.harmonyId) && !Boolean(component.dataset.harmonyText)) {
 			return false;
 		}
 		if (mode === 'tweezer') return true;
@@ -423,16 +425,19 @@ class Overlay {
 		this.inspect(element, 'hover');
 	}
 
-	select(element: HTMLElement, listeners: {onTextChange?: (value: string) => void, onDrag?: (box: ResizeRect) => void}) {
+	select(element: HTMLElement, listeners: {onTextChange?: (value: string, oldValue: string) => void, onDrag?: (box: ResizeRect) => void}) {
 		this.inspect(element, 'select', listeners.onDrag);
 
 		const stuff = this.rects.get('select');
 		if (!stuff) throw new Error("What happend??");
 
 		if (listeners.onTextChange && Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE)) {
+			let lastTextValue = element.textContent || '';
 			element.addEventListener('input', (e) => {
 				const target = e.target as HTMLElement;
-				listeners.onTextChange && listeners.onTextChange(target.textContent || '');
+				const value = target.textContent || ''
+				listeners.onTextChange && listeners.onTextChange(value, lastTextValue);
+				lastTextValue = value;
 			}, {signal: stuff.aborter.signal});
 		}
 

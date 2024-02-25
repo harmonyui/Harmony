@@ -38,12 +38,11 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	}
 	const body = updateRequestBodySchema.parse(await req.json());
 
-	const updates: (ComponentUpdate & {oldValue: string})[] = [];
+	const updates: ComponentUpdate[] = [];
 	for (const value of body.values) {
 		for (let i = 0; i < value.update.length; i++) {
 			const update = value.update[i];
-			const old = value.old[i];
-
+			
 			const element = await prisma.componentElement.findFirst({
 				where: {
 					id: update.componentId,
@@ -56,7 +55,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 			}
 			
 
-			updates.push({...update, oldValue: old.value});
+			updates.push(update);
 		}
 	}
 

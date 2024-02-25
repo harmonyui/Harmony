@@ -243,6 +243,21 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (!rootComponent) return;
 		const id = element.dataset.harmonyId;
 		const parentId = element.dataset.harmonyParentId || null;
+		const children = Array.from(element.childNodes);
+		const textNodes = children.filter(child => child.nodeType === Node.TEXT_NODE);
+
+		//TODO: Do this better so there is no dependency on this action in this function
+		//If there are text nodes and non-text nodes inside of an element, wrap the text nodes in
+		//span tags so we can select and edit them
+		if (textNodes.length > 0 && children.length > textNodes.length) {
+			textNodes.forEach(node => {
+				const span = document.createElement('span');
+				span.dataset.harmonyText = 'true';
+				element.appendChild(span);
+				span.appendChild(node);
+			})
+		}
+
 		if (id !== undefined) {
 			const updates = availableIds.filter(up => up.componentId === id && up.parentId === parentId);
 			makeUpdates(element, updates, rootComponent, fonts);
@@ -260,15 +275,25 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         _setScale(scale);
     }, [harmonyContainerRef]);
 
-	const onTextChange = useEffectEvent((value: string) => {
+	const onTextChange = useEffectEvent((value: string, oldValue: string) => {
 		if (!selectedComponent) return;
 
-		const component = componentIdentifier.getComponentFromElement(selectedComponent);
-		if (!component) throw new Error("Error when getting component");
+		let component: ComponentElement | undefined = componentIdentifier.getComponentFromElement(selectedComponent);
+		let index = 0;
+		if (!component) {
+			if (selectedComponent.dataset.harmonyText === 'true') {
+				const element = selectedComponent.parentElement;
+				component = element ? componentIdentifier.getComponentFromElement(element) : undefined;
+				index = Array.from(element?.children || []).filter(child => (child as HTMLElement).dataset.harmonyText === 'true').indexOf(selectedComponent);
+			}
 
-		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'text', name: '0', action: 'change', value}
-		const oldValue = selectedComponentText || '';
-		onAttributesChange(component, [update], [oldValue], false);
+			if (!component || index < 0) {
+				throw new Error("Error when getting component");
+			}
+		}
+
+		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'text', name: String(index), action: 'change', value, oldValue}
+		onAttributesChange(component, [update], false);
 	});
 
 	const onResize = useEffectEvent((size: ResizeValue) => {
@@ -289,9 +314,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const convertSizeToString = (size: ResizeValue): string => Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}:${direction}=${value}` : `${direction}=${value}`, '')
 
 		const value = convertSizeToString(size);
-		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value}
 		const oldValue = convertSizeToString(oldSize);
-		onAttributesChange(component, [update], [oldValue]);
+		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value, oldValue}
+		
+		onAttributesChange(component, [update]);
 	});
 
 	const onReorder = useEffectEvent(({from, to, element}: {from: number, to: number, element: HTMLElement}) => {
@@ -300,22 +326,22 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		
 		const value = `from=${from}:to=${to}`
 		const oldValue = `from=${to}:to=${from}`;
-		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value};
+		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value, oldValue};
 		
-		onAttributesChange(component, [update], [oldValue], false);
+		onAttributesChange(component, [update], false);
 	})
 
-	const onAttributesChange = (component: ComponentElement, update: ComponentUpdate[], oldValue: string[], execute=true) => {
-		executeCommand(component, update, oldValue, execute);
+	const onAttributesChange = (component: ComponentElement, update: ComponentUpdate[], execute=true) => {
+		executeCommand(component, update, execute);
 	}
 
-	const onElementChange = (element: HTMLElement, update: ComponentUpdate[], oldValue: string[], execute=true) => {
+	const onElementChange = (element: HTMLElement, update: ComponentUpdate[], execute=true) => {
 		const component = componentIdentifier.getComponentFromElement(element);
 		if (!component) {
 			throw new Error("Error when getting component");
 		}
 
-		onAttributesChange(component, update, oldValue, execute);
+		onAttributesChange(component, update, execute);
 	}
 
 	const onPublish = async (request: PublishRequest): Promise<boolean> => {
@@ -411,7 +437,7 @@ export const usePinchGesture = ({scale, onTouching}: {scale: number, onTouching:
 interface HarmonyCommandChange {
 	name: 'change',
 	update: ComponentUpdate[],
-	old: ComponentUpdate[]
+	//old: ComponentUpdate[]
 	//oldValue: Attribute[]
 }
 type HarmonyCommand = HarmonyCommandChange;
@@ -434,11 +460,16 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	
 	useBackgroundLoop(() => {
 		if (saveStack.length && !isSaving && !isPublished) {
+			const copy = saveStack.slice();
 			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
-				setSaveStack([]);
-			}).catch(() => {
 				
+			}).catch(() => {
+				//TODO: Test this
+				setSaveStack((oldSave) => [...copy, ...oldSave]);
 			});
+			setSaveStack([]);
+			//Force there to be a new change when we are saving
+			setEditTimeout(new Date().getTime() - 1000);
 		}
 	}, 10);
 
@@ -455,12 +486,12 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		return () => window.removeEventListener('beforeunload', onLeave);
 	}, []);
 
-	const executeCommand = (component: ComponentElement, update: ComponentUpdate[], oldValues: string[], execute=true): void => {
-		const old = oldValues.map((oldValue, i) => ({...update[i], value: oldValue}));
+	const executeCommand = (component: ComponentElement, update: ComponentUpdate[], execute=true): void => {
+		//const old = oldValues.map((oldValue, i) => ({...update[i], value: oldValue}));
 		const newCommand: HarmonyCommand = {
 			name: 'change',
 			update,
-			old,
+			//old,
 		}
 		//TODO: find a better way to do this
 		if (execute)
@@ -484,7 +515,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		} else {
 			//TODO: Get rid of type = 'component' dependency
 			if (newEdits.length && newCommand.update.length === 1 && newCommand.update[0].type !== 'component') {
-				newCommand.old[0].value = lastEdits.old[0].value;
+				newCommand.update[0].oldValue = lastEdits.update[0].oldValue;
 				newEdits[newEdits.length - 1] = newCommand;
 				//TODO: test this to make sure this works
 				newSaves[newSaves.length - 1] = newCommand;
@@ -498,7 +529,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		setRedoStack([]);
 	}
 
-	const change = ({update, old}: HarmonyCommandChange): void => {
+	const change = ({update}: HarmonyCommandChange): void => {
 		if (!rootComponent) return;
 		for (let i = 0; i < update.length; i++) {
 			const element = findElementFromId(update[i].componentId, update[i].parentId);
@@ -516,7 +547,8 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 		if (fromValue.length === 0) return;
 		const lastEdit = fromValue[fromValue.length - 1];
-		const newEdit: HarmonyCommand = {name: 'change', update: lastEdit.old, old: lastEdit.update};
+		const newUpdates = lastEdit.update.map(up => ({...up, value: up.oldValue, oldValue: up.value}))
+		const newEdit: HarmonyCommand = {name: 'change', update: newUpdates};
 		change(newEdit);
 		const newFrom = fromValue.slice();
 		newFrom.splice(newFrom.length - 1);
@@ -542,7 +574,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 	const saveCommand = async (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}): Promise<void> => {
 		setIsSaving(true);
-		const cmds = commands.map(cmd => ({update: cmd.update, old: cmd.old}))
+		const cmds = commands.map(cmd => ({update: cmd.update}))
 		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId};
 		const result = await fetch(`${WEB_URL}/api/update/${save.branchId}`, {
 			method: 'POST',
@@ -652,8 +684,13 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		//TODO: Need to figure out when a text component should update everywhere and where it should update just this element
 		if (update.type === 'text') {
-			if (el.textContent !== update.value) {
-				el.textContent = update.value;
+			const textNodes = Array.from(el.childNodes).filter(node => node.nodeType === Node.TEXT_NODE || (node as HTMLElement).dataset.harmonyText === 'true');
+			const index = parseInt(update.name);
+			if (isNaN(index)) {
+				throw new Error("Invalid update text element " + update.name);
+			}
+			if (textNodes[index].textContent !== update.value && textNodes[index].textContent === update.oldValue) {
+				textNodes[index].textContent = update.value;
 				alreadyDoneText = true;
 			}
 		}

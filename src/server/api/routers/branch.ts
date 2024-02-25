@@ -176,6 +176,7 @@ export const getBranch = async({prisma, branchId}: {prisma: Db, branchId: string
 			type: update.type as ComponentUpdate['type'],
 			name: update.name,
 			value: update.value,
+			oldValue: update.old_value,
 			componentId: update.component_id,
 			parentId: update.component_parent_id
 		})),

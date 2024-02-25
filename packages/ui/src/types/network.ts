@@ -5,7 +5,7 @@ import { pullRequestSchema } from "./branch";
 export const updateRequestBodySchema = z.object({
 	values: z.array(z.object({
 		update: z.array(updateSchema),
-		old: z.array(updateSchema)
+		//old: z.array(updateSchema)
 	})),
 	repositoryId: z.string()
 })

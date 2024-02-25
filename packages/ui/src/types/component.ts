@@ -7,7 +7,8 @@ export const updateSchema = z.object({
 	type: z.union([z.literal('className'), z.literal('text'), z.literal('component')]),
 	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]), 
 	name: z.string(),
-	value: z.string()
+	value: z.string(),
+	oldValue: z.string()
 })
 export type ComponentUpdate = z.infer<typeof updateSchema>;
 
