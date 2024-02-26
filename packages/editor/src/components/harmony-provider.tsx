@@ -14,7 +14,7 @@ import React from "react";
 import {WEB_URL} from '@harmony/util/src/constants';
 
 import '../global.css';
-import { setupHarmonyProvider, setupNormalMode } from "./harmony-setup";
+import { Setup, setupHarmonyProvider } from "./harmony-setup";
 import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
 import { PullRequest } from "@harmony/ui/src/types/branch";
 import { Font } from "@harmony/util/src/fonts";
@@ -28,7 +28,7 @@ export function findElementFromId(componentId: string, parentId: string): HTMLEl
 
 
 const viewModes = ['designer', 'preview', 'preview-full'] as const;
-type DisplayMode = typeof viewModes[number];
+export type DisplayMode = typeof viewModes[number];
 
 interface HarmonyContextProps {
 	branchId: string;
@@ -54,17 +54,19 @@ export const useHarmonyContext = () => {
 export interface HarmonyProviderProps {
 	repositoryId: string;
 	branchId: string;
-	rootElement: HTMLElement;
-	bodyObserver: MutationObserver;
+	//rootElement: HTMLElement;
+	children: React.ReactNode;
+	//bodyObserver: MutationObserver;
+	setup: Setup;
 	fonts?: Font[];
 }
-export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, rootElement: _rootElement, branchId: branchIdProps, fonts, bodyObserver}) => {
+export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, children, branchId: branchIdProps, fonts, setup}) => {
 	const [isToggled, setIsToggled] = useState(true);
 	const [selectedComponent, _setSelectedComponent] = useState<HTMLElement>();
 	const [selectedComponentText, setSelectedComponentText] = useState<string>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
 	const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
-	const [rootElement, setRootElement] = useState<HTMLElement>(_rootElement);
+	//const [rootElement, setRootElement] = useState<HTMLElement>(_rootElement);
 	const ref = useRef<HTMLDivElement>(null);
 	const harmonyContainerRef = useRef<HTMLDivElement | null>(null);
 	//const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
@@ -79,7 +81,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [isPublished, setIsPublished] = useState(false);
 	const [displayMode, setDisplayMode] = useState<DisplayMode>();
 	const [publishState, setPublishState] = useState<PullRequest | undefined>();
-	const bodyObserverRef = useRef<MutationObserver>(bodyObserver);
+	//const bodyObserverRef = useRef<MutationObserver>(bodyObserver);
 	
 	const executeCommand = useComponentUpdator({isSaving, setIsSaving, fonts, isPublished, branchId: branchId || '', repositoryId, rootComponent, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
@@ -119,6 +121,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const mode = url.searchParams.get('mode');
 		if (mode && (viewModes as readonly string[]).includes(mode)) {
 			setDisplayMode(mode as DisplayMode);
+			setup.changeMode(mode as DisplayMode);
 		}
 
 		if (!mode) {
@@ -156,20 +159,20 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		return () => window.removeEventListener('popstate', onHistoryChange);
 	}, []);
 
-	useEffect(() => {
-		bodyObserverRef.current = bodyObserver
-	}, [bodyObserver, bodyObserverRef])
+	// useEffect(() => {
+	// 	bodyObserverRef.current = bodyObserver
+	// }, [bodyObserver, bodyObserverRef])
 
 	useEffect(() => {
 		if (displayMode?.includes('preview')) {
 			setIsToggled(false);
 			setScale(0.5);
 
-			if (displayMode === 'preview-full') {
-				const harmonyContainer = document.getElementById('harmony-container') as HTMLElement;
-				setupNormalMode(rootElement, harmonyContainer, document.body as HTMLBodyElement, bodyObserverRef.current);
-				rootComponent !== document.body && setRootComponent(document.body);
-			}
+			// if (displayMode === 'preview-full') {
+			// 	const harmonyContainer = document.getElementById('harmony-container') as HTMLElement;
+			// 	setupNormalMode(rootElement, harmonyContainer, document.body as HTMLBodyElement, bodyObserverRef.current);
+			// 	rootComponent !== document.body && setRootComponent(document.body);
+			// }
 		}
 
 		if (displayMode === 'designer') {
@@ -375,14 +378,15 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		window.history.pushState(publishState, 'mode', url.href);
 		onHistoryChange();
 
-		if (mode === 'preview' && displayMode === 'preview-full') {
-			const result = setupHarmonyProvider(false);
-			if (!result) throw new Error("There should be a result");
-			setRootElement(result.container);
-			bodyObserverRef.current = result.bodyObserver;
-			// setRootComponent(harmonyContainerRef.current);
-			// harmonyContainerRef.current.appendChild(rootElement);
-		}
+		//setup.changeMode(mode);
+		// if (mode === 'preview' && displayMode === 'preview-full') {
+		// 	const result = setupHarmonyProvider(false);
+		// 	if (!result) throw new Error("There should be a result");
+		// 	setRootElement(result.container);
+		// 	bodyObserverRef.current = result.bodyObserver;
+		// 	// setRootComponent(harmonyContainerRef.current);
+		// 	// harmonyContainerRef.current.appendChild(rootElement);
+		// }
 	}
 
 	const onMinimize = () => {
@@ -398,13 +402,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={(d) => {
-							if (d && d !== harmonyContainerRef.current) {
-								harmonyContainerRef.current = d
-								setRootComponent(harmonyContainerRef.current);
-								harmonyContainerRef.current.appendChild(rootElement);
-							}
+							// if (d && d !== harmonyContainerRef.current) {
+							// 	harmonyContainerRef.current = d
+							// 	setRootComponent(harmonyContainerRef.current);
+							// 	harmonyContainerRef.current.appendChild(rootElement);
+							// }
 						}} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
 						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onResize={onResize} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
+						{children}
 						</div>
 					</div>
 					</HarmonyPanel></> : <div className="hw-absolute hw-z-[100] hw-group hw-p-2">

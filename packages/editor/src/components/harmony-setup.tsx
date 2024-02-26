@@ -1,7 +1,12 @@
-import React, { useEffect } from "react";
+import React, { useEffect, useRef } from "react";
 import ReactDOM from "react-dom";
-import { HarmonyProvider, HarmonyProviderProps } from "./harmony-provider";
+import { DisplayMode, HarmonyProvider, HarmonyProviderProps } from "./harmony-provider";
+import { FiberHTMLElement, getElementFiber } from "./inspector/inspector-dev";
+import { getComponentElementFiber } from "./inspector/component-identifier";
+import { Fiber } from "react-reconciler";
 
+var harmonyArguments = [{'data-harmony-id': 0}]
+    
 export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts'> & {local?: boolean}> = ({local=false, ...options}) => {
 	const setBranchId = (branchId: string | undefined) => {
 		const url = new URL(window.location.href);
@@ -22,9 +27,9 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 
 			const {container, harmonyContainer} = result;
 			if (!local) {
-                createProductionScript(options, branchId, container, harmonyContainer, result.bodyObserver);
+                createProductionScript(options, branchId, container, harmonyContainer, result.setup);
             } else {
-                ReactDOM.render(React.createElement(HarmonyProvider, {...options, rootElement: container, branchId, bodyObserver: result.bodyObserver}), harmonyContainer);
+                ReactDOM.render(React.createElement(HarmonyProvider, {...options, branchId, setup: result.setup, children: container}, container), harmonyContainer);
             }
 		}
 		
@@ -32,11 +37,11 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 	return (<></>)
 }
 
-function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, branchId: string, container: HTMLElement, harmonyContainer: HTMLDivElement, bodyObserver: MutationObserver) {
+function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, branchId: string, container: JSX.Element, harmonyContainer: HTMLDivElement, setup: Setuper) {
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/harmony-ai-editor/dist/editor/bundle.js';
     script.addEventListener('load', function() {
-        window.HarmonyProvider({...options, rootElement: container, branchId, bodyObserver}, harmonyContainer);
+        window.HarmonyProvider({...options, branchId, setup, children: container}, harmonyContainer);
     });
 
     document.body.appendChild(script);
@@ -46,59 +51,138 @@ function isNativeElement(element: Element): boolean {
     return element.tagName.toLowerCase() !== 'script' && element.id !== 'harmony-container';
 }
 
+const appendChild = (container: Element, child: Element | Node) => {
+    const childFiber = getElementFiber(child as FiberHTMLElement)
+    if (childFiber) {
+        const fiber = getComponentElementFiber(child as FiberHTMLElement);
+        console.log(fiber);
+        //const parentFiber = new ParentFiber();
+        let parent: Fiber | null = childFiber || null;
+        while (parent != null) {
+            if (parent.elementType === 'body') {
+                break;
+            }
+
+            // if (parent.tag === 4) {
+            //     break;
+            // }
+
+            parent = parent.return;
+        }
+        if (!parent) {
+            throw new Error("Cannot find parent")
+        }
+        if (parent.stateNode instanceof HTMLElement) {
+            parent.stateNode = container;
+        } //else if (typeof parent.stateNode === 'object' && 'containerInfo' in parent.stateNode) {
+            //parent.stateNode.containerInfo = container;
+        //} 
+        else {
+            throw new Error("Invalid state node");
+        }
+        container.appendChild(child);
+        // parentFiber.setFiber(parent);
+        // parentFiber.sendChild(containerParent, 0, 0);
+        //removeChildFiberAt(fiber.return.return, 0);
+        //child.parentElement?.removeChild(child);
+        //appendChildFiber(containerFiber, fiber.return);
+    } else {
+        container.appendChild(child);
+    }
+}
+
 const createPortal = ReactDOM.createPortal;
-export function setupHarmonyMode(container: Element, harmonyContainer: HTMLElement, body: HTMLBodyElement) {
-    for (let i = 0; i < body.children.length; i++) {
-        const child = body.children[i];
-        if (isNativeElement(child)) {
-            container.appendChild(child);
-			i--;
-        }
-    }
-    harmonyContainer.className = "hw-h-full";
 
-    ReactDOM.createPortal = function(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
-		if (_container === document.body) {
-			_container = container;
-		}
-		
-		return createPortal(children, _container, key);
-	}
-
-    const bodyObserver: MutationObserver = new MutationObserver((mutations) => {
-        for (const mutation of mutations) {
-            mutation.addedNodes.forEach(node => {
-                if (node.parentElement === document.body && isNativeElement(node as Element)) {
-					container.appendChild(node);
-                }
-            })
-        }
-    });
-    bodyObserver.observe(document.body, {
-        'attributeOldValue': true,
-        attributes: true,
-        characterData: true,
-        characterDataOldValue: true,
-        childList: true,
-        subtree: true,
-    });
-
-    return {bodyObserver};
+export interface Setup {
+    changeMode: (mode: DisplayMode) => void;
 }
-
-export function setupNormalMode(container: Element, harmonyContainer: HTMLElement, body: HTMLBodyElement, bodyObserver: MutationObserver) {
-    for (let i = 0; i < container.children.length; i++) {
-        const child = container.children[i];
-        if (isNativeElement(child)) {
-            body.appendChild(child);
-			i--;
-        }
+class Setuper implements Setup {
+    private bodyObserver: MutationObserver;
+    private mode: DisplayMode = 'preview-full';
+    private container: Element | undefined;
+    constructor(private harmonyContainer: Element) {
+        this.bodyObserver = new MutationObserver(() => undefined);
     }
 
-    ReactDOM.createPortal = createPortal;
-    bodyObserver.disconnect();
-    harmonyContainer.classList.remove('hw-h-full');
+    public setContainer(container: Element) {
+        this.container = container;
+    }
+
+    public changeMode(mode: DisplayMode) {
+        if (!this.container) return;
+        let res = true;
+        if (mode === 'preview-full' && this.mode !== 'preview-full') {
+            res = this.setupNormalMode(this.container);
+        } else if (mode !=='preview-full' && this.mode === 'preview-full') {
+            res = this.setupHarmonyMode(this.container);
+        }
+        if (res)
+            this.mode = mode;
+    }
+
+    private setupNormalMode(container: Element) {
+        for (let i = 0; i < container.children.length; i++) {
+            const child = container.children[i];
+            if (isNativeElement(child)) {
+                appendChild(document.body, child);
+                i--;
+            }
+        }
+    
+        ReactDOM.createPortal = createPortal;
+        this.bodyObserver.disconnect();
+        this.harmonyContainer.classList.remove('hw-h-full');
+
+        return true;
+    }
+
+    private setupHarmonyMode(container: Element): boolean {
+        const containerFiber = getElementFiber(container as FiberHTMLElement);
+        if (!containerFiber) {
+            return false;
+        }
+        // const containerParent = new ParentFiber();
+        // containerParent.setFiber(containerFiber);
+
+        for (let i = 0; i < document.body.children.length; i++) {
+            const child = document.body.children[i];
+            if (isNativeElement(child)) {
+                appendChild(container, child);
+                i--;
+            }
+        }
+        this.harmonyContainer.className = "hw-h-full";
+
+        ReactDOM.createPortal = function(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
+            if (_container === document.body) {
+                _container = container;
+            }
+            
+            return createPortal(children, _container, key);
+        }
+
+        this.bodyObserver = new MutationObserver((mutations) => {
+            for (const mutation of mutations) {
+                mutation.addedNodes.forEach(node => {
+                    if (node.parentElement === document.body && isNativeElement(node as Element)) {
+                        appendChild(container, node);
+                    }
+                })
+            }
+        });
+        this.bodyObserver.observe(document.body, {
+            'attributeOldValue': true,
+            attributes: true,
+            characterData: true,
+            characterDataOldValue: true,
+            childList: true,
+            subtree: true,
+        });
+
+        return true;
+    }
 }
+
 
 export function setupHarmonyProvider(setupHarmonyContainer=true) {
     if (document.getElementById('harmony-container') && setupHarmonyContainer) return undefined;
@@ -116,16 +200,28 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
     }
 
 	const documentBody = document.body as HTMLBodyElement;
-	
-    const container = document.createElement('body');
-    container.className = documentBody.className;
+
+    const setup = new Setuper(harmonyContainer);
+    const Container: React.FunctionComponent<{harmonyContainer: HTMLElement, className: string}> = ({harmonyContainer, className}) => {
+        const ref = useRef<HTMLBodyElement>(null);
+        useEffect(() => {
+            if (ref.current) {
+                //setupHarmonyMode(ref.current, harmonyContainer, document.body as HTMLBodyElement)
+                setup.setContainer(ref.current);
+                setup.changeMode('designer');
+            }
+        }, [ref])
+        return <section id="harmony-section" className={className} ref={ref} style={{backgroundColor: 'white'}}></section>
+    }
+	const container = <Container harmonyContainer={harmonyContainer} className={documentBody.className}/>//document.createElement('body');
+    //container.className = documentBody.className;
 	documentBody.classList.add('hw-h-full');
 	document.documentElement.classList.add('hw-h-full');
 	//documentBody.contentEditable = 'true';
 
 	//TODO: Probably need to do this for all styles;
-	container.style.backgroundColor = 'white';
-    const {bodyObserver} = setupHarmonyMode(container, harmonyContainer, documentBody);
+	//container.style.backgroundColor = 'white';
+    //const {bodyObserver} = setupHarmonyMode(container, harmonyContainer, documentBody);
 
-    return {container, harmonyContainer, bodyObserver};
+    return {container, harmonyContainer, setup};
 }

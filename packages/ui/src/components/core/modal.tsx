@@ -58,7 +58,8 @@ interface ModalPortalProps {
 	show: boolean;
 }
 export const ModalPortal: React.FunctionComponent<ModalPortalProps> = ({children, show, container}) => {
-	const _container = container || document.body;
+	const _container = //document.getElementById('harmony-section') || 
+	container || document.body;
 
 	return <>
 	{createPortal(show ? <div className="hw-fixed hw-top-0 hw-left-0 hw-w-full hw-z-50 hw-bg-gray-500/90 hw-h-screen hw-overflow-auto">

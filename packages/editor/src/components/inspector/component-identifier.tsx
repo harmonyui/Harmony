@@ -7,7 +7,7 @@ export interface ComponentIdentifier {
 	//getComponentTree: (rootElement: HTMLElement) => ComponentElement | undefined
 }
 
-const getComponentElementFiber = (element: HTMLElement): Fiber | undefined => {
+export const getComponentElementFiber = (element: HTMLElement): Fiber | undefined => {
 	//const fiber = getElementFiber(element as FiberHTMLElement);
 	// //If the fiber of an html element is the first element in a component, just return the component
 	// if (fiber?.return && typeof fiber.return.type === 'function') {

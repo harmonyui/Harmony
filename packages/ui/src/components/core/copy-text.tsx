@@ -26,9 +26,9 @@ export const CopyText: React.FunctionComponent<{text: string}> = ({text}) => {
                     <svg
                         fill="none"
                         stroke="currentColor"
-                        stroke-linecap="round"
-                        stroke-linejoin="round"
-                        stroke-width="2"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth="2"
                         viewBox="0 0 24 24"
                         className="hw-w-5 hw-h-5 hw-mr-1"
                     >
