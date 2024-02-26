@@ -402,11 +402,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={(d) => {
-							// if (d && d !== harmonyContainerRef.current) {
-							// 	harmonyContainerRef.current = d
-							// 	setRootComponent(harmonyContainerRef.current);
-							// 	harmonyContainerRef.current.appendChild(rootElement);
-							// }
+							if (d && d !== harmonyContainerRef.current) {
+								harmonyContainerRef.current = d
+								setRootComponent(harmonyContainerRef.current);
+								//harmonyContainerRef.current.appendChild(rootElement);
+							}
 						}} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
 						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onResize={onResize} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
 						{children}
