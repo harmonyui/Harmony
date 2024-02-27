@@ -68,7 +68,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -107,7 +107,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -158,7 +158,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -212,12 +212,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
 		overlayRef.current.remove('hover');
-	}, [updateOverlay]);
+	}, [updateOverlay, scale]);
 
 	useEffect(() => {
 		const onEscape = () => {
@@ -238,11 +238,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, {onTextChange: onElementTextChange, onDrag});
+			overlayRef.current.select(selectedComponent, scale, {onTextChange: onElementTextChange, onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
-	}, [selectedComponent])
+	}, [selectedComponent, scale])
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -252,11 +252,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			overlayRef.current = new Overlay(container, parentElement);
 		}
 		if (hoveredComponent) {
-			overlayRef.current.hover(hoveredComponent);
+			overlayRef.current.hover(hoveredComponent, scale);
 		} else {
 			overlayRef.current.remove('hover');
 		}
-	}, [hoveredComponent])
+	}, [hoveredComponent, scale])
 
 	const isInteractableComponent = useCallback((component: HTMLElement) => {
 		//TODO: Get rid of dependency on harmonyText
@@ -476,12 +476,12 @@ class Overlay {
 		return name;
 	}
 
-	hover(element: HTMLElement) {
-		this.inspect(element, 'hover');
+	hover(element: HTMLElement, scale: number) {
+		this.inspect(element, 'hover', scale);
 	}
 
-	select(element: HTMLElement, listeners: {onTextChange?: (value: string, oldValue: string) => void, onDrag?: (box: ResizeRect) => void}) {
-		this.inspect(element, 'select', listeners.onDrag);
+	select(element: HTMLElement, scale: number, listeners: {onTextChange?: (value: string, oldValue: string) => void, onDrag?: (box: ResizeRect) => void}) {
+		this.inspect(element, 'select', scale, listeners.onDrag);
 
 		const stuff = this.rects.get('select');
 		if (!stuff) throw new Error("What happend??");
@@ -502,12 +502,12 @@ class Overlay {
 		if (parent) {
 			const [box, dims] = this.getSizing(parent);
 			const rect = new OverlayRect(this.window.document, parent, this.container);
-			rect.update({box, dims, borderSize: 2, borderStyle: 'dashed', opacity: .5});
+			rect.update({box, dims, borderSize: 2, borderStyle: 'dashed', opacity: .5}, scale);
 			stuff.values.push({rect, element: parent});
 		}
 	}
 
-	inspect(element: HTMLElement, method: 'select' | 'hover', onDrag?: (rect: ResizeRect) => void) {
+	inspect(element: HTMLElement, method: 'select' | 'hover', scale: number, onDrag?: (rect: ResizeRect) => void) {
 		// We can't get the size of text nodes or comment nodes. React as of v15
     	// heavily uses comment nodes to delimit text.
 		if (element.nodeType !== Node.ELEMENT_NODE) {
@@ -516,7 +516,7 @@ class Overlay {
 
 		const [box, dims] = this.getSizing(element);
 		const rect = new OverlayRect(this.window.document, element, this.container, onDrag);
-		rect[method](box, dims);
+		rect[method](box, dims, scale);
 
 		this.remove(method);
 
@@ -527,7 +527,7 @@ class Overlay {
 			const stuff = this.rects.get(method);
 			if ((size.width !== newSize.width || size.height !== newSize.height) && stuff) {
 				const [box, dims] = this.getSizing(element);
-				stuff.values[0].rect.updateSize(box, dims);
+				stuff.values[0].rect.updateSize(box, dims, scale);
 			}
 		});
 
@@ -635,27 +635,29 @@ export class OverlayRect {
 		}
 	}
 
-	public updateSize(box: Rect, dims: BoxSizing) {
-		this.update({box, dims, borderSize: 2});
+	public updateSize(box: Rect, dims: BoxSizing, scale: number) {
+		this.update({box, dims, borderSize: 2}, scale);
 	}
 
-	public hover(box: Rect, dims: BoxSizing) {
-		this.update({box, dims, borderSize: 2});
+	public hover(box: Rect, dims: BoxSizing, scale: number) {
+		this.update({box, dims, borderSize: 2}, scale);
 	}
 
-	public select(box: Rect, dims: BoxSizing) {
-		this.update({box, dims, borderSize: 2});
+	public select(box: Rect, dims: BoxSizing, scale: number) {
+		this.update({box, dims, borderSize: 2}, scale);
 	}
 
-  	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle}: OverlayProps) {
-		dims.borderBottom = borderSize;
-		dims.borderLeft = borderSize;
-		dims.borderRight = borderSize;
-		dims.borderTop = borderSize;
+  	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle}: OverlayProps, scale: number) {
+		dims.borderBottom = borderSize / scale;
+		dims.borderLeft = borderSize / scale;
+		dims.borderRight = borderSize / scale;
+		dims.borderTop = borderSize / scale;
 	    boxWrap(dims, 'border', this.border)
 		
 		boxWrap(dims, 'margin', this.node)
 		boxWrap(dims, 'padding', this.padding);
+
+		const resizeThreshold = 30;
 
 		Object.assign(this.content.style, {
 			height:
@@ -700,8 +702,8 @@ export class OverlayRect {
 		//E -> S -> W -> N
 		if (this.onDrag) {
 			Object.assign(this.resizeHandles[0].style, {
-				height: '6px',
-				width: '6px',
+				height: `${6 / scale}px`,
+				width: `${6 / scale}px`,
 				'pointer-events': 'auto',
 				cursor: 'se-resize',
 				position: 'absolute',
@@ -711,8 +713,8 @@ export class OverlayRect {
 			this.resizeHandles[0].addEventListener('mousedown', initFullDrag('nw'), false);
 
 			Object.assign(this.resizeHandles[1].style, {
-				height: '6px',
-				width: '6px',
+				height: `${6 / scale}px`,
+				width: `${6 / scale}px`,
 				'pointer-events': 'auto',
 				cursor: 'ne-resize',
 				position: 'absolute',
@@ -722,8 +724,8 @@ export class OverlayRect {
 			this.resizeHandles[1].addEventListener('mousedown', initFullDrag('sw'), false);
 
 			Object.assign(this.resizeHandles[2].style, {
-				height: '6px',
-				width: '6px',
+				height: `${6 / scale}px`,
+				width: `${6 / scale}px`,
 				'pointer-events': 'auto',
 				cursor: 'nw-resize',
 				position: 'absolute',
@@ -733,8 +735,8 @@ export class OverlayRect {
 			this.resizeHandles[2].addEventListener('mousedown', initFullDrag('se'), false);
 
 			Object.assign(this.resizeHandles[3].style, {
-				height: '6px',
-				width: '6px',
+				height: `${6 / scale}px`,
+				width: `${6 / scale}px`,
 				'pointer-events': 'auto',
 				cursor: 'sw-resize',
 				position: 'absolute',
@@ -743,49 +745,57 @@ export class OverlayRect {
 			})
 			this.resizeHandles[3].addEventListener('mousedown', initFullDrag('ne'), false);
 
-			Object.assign(this.resizeHandles[4].style, {
-				height: '6px',
-				width: '6px',
-				'pointer-events': 'auto',
-				cursor: 'e-resize',
-				position: 'absolute',
-				top: `${box.height / 2 - dims.borderTop}px`,
-				left: `${-dims.borderLeft}px`,
-			})
-			this.resizeHandles[4].addEventListener('mousedown', initFullDrag('w'), false);
+			const boxHeight = box.height * scale;
+			console.log(boxHeight);
+			if (boxHeight >= resizeThreshold) {
+				Object.assign(this.resizeHandles[4].style, {
+					height: `${6 / scale}px`,
+					width: `${6 / scale}px`,
+					'pointer-events': 'auto',
+					cursor: 'e-resize',
+					position: 'absolute',
+					top: `${box.height / 2 - dims.borderTop}px`,
+					left: `${-dims.borderLeft}px`,
+				})
+				this.resizeHandles[4].addEventListener('mousedown', initFullDrag('w'), false);
 
-			Object.assign(this.resizeHandles[5].style, {
-				height: '6px',
-				width: '6px',
-				'pointer-events': 'auto',
-				cursor: 's-resize',
-				position: 'absolute',
-				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
-				left: `${box.width / 2 - dims.borderLeft}px`,
-			})
-			this.resizeHandles[5].addEventListener('mousedown', initFullDrag('s'), false);
+				Object.assign(this.resizeHandles[6].style, {
+					height: `${6 / scale}px`,
+					width: `${6 / scale}px`,
+					'pointer-events': 'auto',
+					cursor: 'w-resize',
+					position: 'absolute',
+					top: `${box.height / 2 - dims.borderTop}px`,
+					left: `${box.width - dims.borderLeft - dims.borderRight}px`,
+				})
+				this.resizeHandles[6].addEventListener('mousedown', initFullDrag('e'), false);
+			}
 
-			Object.assign(this.resizeHandles[6].style, {
-				height: '6px',
-				width: '6px',
-				'pointer-events': 'auto',
-				cursor: 'w-resize',
-				position: 'absolute',
-				top: `${box.height / 2 - dims.borderTop}px`,
-				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
-			})
-			this.resizeHandles[6].addEventListener('mousedown', initFullDrag('e'), false);
+			const boxWidth = box.width * scale;
+			console.log(boxWidth);
+			if (boxWidth >= resizeThreshold) {
+				Object.assign(this.resizeHandles[5].style, {
+					height: `${6 / scale}px`,
+					width: `${6 / scale}px`,
+					'pointer-events': 'auto',
+					cursor: 's-resize',
+					position: 'absolute',
+					top: `${box.height - dims.borderTop - dims.borderBottom}px`,
+					left: `${box.width / 2 - dims.borderLeft}px`,
+				})
+				this.resizeHandles[5].addEventListener('mousedown', initFullDrag('s'), false);
 
-			Object.assign(this.resizeHandles[7].style, {
-				height: '6px',
-				width: '6px',
-				'pointer-events': 'auto',
-				cursor: 'n-resize',
-				position: 'absolute',
-				top: `${-dims.borderTop}px`,
-				left: `${box.width / 2 - dims.borderLeft}px`,
-			})
-			this.resizeHandles[7].addEventListener('mousedown', initFullDrag('n'), false);
+				Object.assign(this.resizeHandles[7].style, {
+					height: `${6 / scale}px`,
+					width: `${6 / scale}px`,
+					'pointer-events': 'auto',
+					cursor: 'n-resize',
+					position: 'absolute',
+					top: `${-dims.borderTop}px`,
+					left: `${box.width / 2 - dims.borderLeft}px`,
+				});
+				this.resizeHandles[7].addEventListener('mousedown', initFullDrag('n'), false);
+			}
 		}
 
 		this.border.style.borderColor = addAlpha(overlayStyles.background, opacity);
