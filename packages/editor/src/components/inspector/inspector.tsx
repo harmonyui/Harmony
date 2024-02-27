@@ -58,6 +58,7 @@ export interface InspectorProps {
 export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onResize, onReorder, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
+	const [error, setError] = useState(false);
 
 	const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect, oldRect) {
 		const container = containerRef.current;
@@ -68,12 +69,29 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, error, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
 
-		return onResize(rect, oldRect);
+		const value = onResize(rect, oldRect);
+		setError(!value);
+
+		return value;
+	}, onDragFinish() {
+		const container = containerRef.current;
+		if (container === null || parentElement === undefined) return false;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container, parentElement);
+		}
+
+		if (selectedComponent) {
+			overlayRef.current.select(selectedComponent, scale, false, {onDrag});
+		} else {
+			overlayRef.current.remove('select');
+		}
+		setError(false);
 	}});
 
 	// const {makeDraggable, isDragging: isDraggingReal} = useDraggableList({onIsDragging() {
@@ -107,7 +125,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, error, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -115,7 +133,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		if (!selectedComponent) return;
 
 		//Round all of the values;
-		['marginLeft', 'marginRight', 'marginTop', 'marginBottom'].forEach(property => {
+		['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom'].forEach(property => {
 			const propValue = element.style[property as unknown as number];
 			if (!propValue || propValue === 'auto') return;
 
@@ -130,7 +148,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		const updates: ComponentUpdate[] = [];
 		const oldValues: string[] = [];
-		const keys: (keyof MarginValues)[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display'];
+		const keys: (keyof MarginValues | keyof FlexValues)[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems'];
 		(keys).forEach(property => {
 			const value = element.style[property as unknown as number];
 			if (!value) return;
@@ -148,8 +166,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		onChange(element, updates, true);
 		onSelect(undefined);
-	}, scale});
-	const {isDragging: isDraggingFlex} = useFlexSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging() {
+	}, onError() {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -158,50 +175,13 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, true, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
-	}, onDragFinish(parent, oldProperties) {
-		if (!selectedComponent) return;
-
-		//Round all of the values;
-		['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap'].forEach(property => {
-			const propValue = parent.style[property as unknown as number];
-			if (!propValue) return;
-
-			const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
-			if (!match) throw new Error("Invalid property value " + propValue);
-			const num = round(parseFloat(match[1]));
-			const unit = match[2];
-			const value = `${num}${unit}`;
-
-			parent.style[property as unknown as number] = value;
-		});
-
-		const updates: ComponentUpdate[] = [];
-		const oldValues: string[] = [];
-		const keys: (keyof FlexValues)[] = ['paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems'];
-		(keys).forEach(property => {
-			const value = parent.style[property as unknown as number];
-			if (!value) return;
-
-			const componentId = parent.dataset.harmonyId || '';
-			const parentId = parent.dataset.harmonyParentId || '';
-			const oldValue = oldProperties[property];
-
-			const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue};
-
-			
-			updates.push(update);
-			oldValues.push(oldValue);
-		});
-
-		onChange(parent, updates, true);
-		onSelect(undefined);
 	}, scale});
 
-	const isDragging = isResizing || isDraggingFlex || isDraggingSelf;
+	const isDragging = isResizing || false || isDraggingSelf;
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -212,7 +192,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, error, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -238,7 +218,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, {onTextChange: onElementTextChange, onDrag});
+			overlayRef.current.select(selectedComponent, scale, error, {onTextChange: onElementTextChange, onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -259,8 +239,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	}, [hoveredComponent, scale])
 
 	const isInteractableComponent = useCallback((component: HTMLElement) => {
+		const sizeThreshold = 15;
 		//TODO: Get rid of dependency on harmonyText
 		if (!Boolean(component.dataset.harmonyId) && !Boolean(component.dataset.harmonyText)) {
+			return false;
+		}
+		if (component.clientHeight * scale < sizeThreshold || component.clientWidth < sizeThreshold) {
 			return false;
 		}
 		if (mode === 'tweezer') return true;
@@ -272,7 +256,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			return Array.from(startingComponent.children).includes(component);
 		}
 		return true;
-	}, [selectedComponent, rootElement, mode]);
+	}, [selectedComponent, rootElement, mode, scale]);
 
 	useEffect(() => {
 		if (rootElement) {
@@ -477,11 +461,11 @@ class Overlay {
 	}
 
 	hover(element: HTMLElement, scale: number) {
-		this.inspect(element, 'hover', scale);
+		this.inspect(element, 'hover', scale, false);
 	}
 
-	select(element: HTMLElement, scale: number, listeners: {onTextChange?: (value: string, oldValue: string) => void, onDrag?: (box: ResizeRect) => void}) {
-		this.inspect(element, 'select', scale, listeners.onDrag);
+	select(element: HTMLElement, scale: number, error: boolean, listeners: {onTextChange?: (value: string, oldValue: string) => void, onDrag?: (box: ResizeRect) => void}) {
+		this.inspect(element, 'select', scale, error, listeners.onDrag);
 
 		const stuff = this.rects.get('select');
 		if (!stuff) throw new Error("What happend??");
@@ -507,7 +491,7 @@ class Overlay {
 		}
 	}
 
-	inspect(element: HTMLElement, method: 'select' | 'hover', scale: number, onDrag?: (rect: ResizeRect) => void) {
+	inspect(element: HTMLElement, method: 'select' | 'hover', scale: number, error: boolean, onDrag?: (rect: ResizeRect) => void) {
 		// We can't get the size of text nodes or comment nodes. React as of v15
     	// heavily uses comment nodes to delimit text.
 		if (element.nodeType !== Node.ELEMENT_NODE) {
@@ -516,7 +500,7 @@ class Overlay {
 
 		const [box, dims] = this.getSizing(element);
 		const rect = new OverlayRect(this.window.document, element, this.container, onDrag);
-		rect[method](box, dims, scale);
+		rect[method](box, dims, scale, error);
 
 		this.remove(method);
 
@@ -527,7 +511,7 @@ class Overlay {
 			const stuff = this.rects.get(method);
 			if ((size.width !== newSize.width || size.height !== newSize.height) && stuff) {
 				const [box, dims] = this.getSizing(element);
-				stuff.values[0].rect.updateSize(box, dims, scale);
+				stuff.values[0].rect.updateSize(box, dims, scale, error);
 			}
 		});
 
@@ -562,6 +546,7 @@ class Overlay {
 
 const overlayStyles = {
   background: '#0094FF',
+  error: '#ef4444',
   resize: 'rgba(120, 170, 210, 1)',
   padding: 'rgba(77, 200, 0, 0.3)',
   margin: 'rgba(255, 155, 0, 0.3)',
@@ -580,6 +565,7 @@ interface OverlayProps {
 	dims: BoxSizing,
 	borderSize: number,
 	opacity?: number,
+	error?: boolean,
 	padding?: boolean,
 	borderStyle?: 'dotted' | 'dashed'
 }
@@ -635,19 +621,19 @@ export class OverlayRect {
 		}
 	}
 
-	public updateSize(box: Rect, dims: BoxSizing, scale: number) {
-		this.update({box, dims, borderSize: 2}, scale);
+	public updateSize(box: Rect, dims: BoxSizing, scale: number, error: boolean) {
+		this.update({box, dims, borderSize: 2, error}, scale);
 	}
 
-	public hover(box: Rect, dims: BoxSizing, scale: number) {
-		this.update({box, dims, borderSize: 2}, scale);
+	public hover(box: Rect, dims: BoxSizing, scale: number, error: boolean) {
+		this.update({box, dims, borderSize: 2, error}, scale);
 	}
 
-	public select(box: Rect, dims: BoxSizing, scale: number) {
-		this.update({box, dims, borderSize: 2}, scale);
+	public select(box: Rect, dims: BoxSizing, scale: number, error: boolean) {
+		this.update({box, dims, borderSize: 2, error}, scale);
 	}
 
-  	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle}: OverlayProps, scale: number) {
+  	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle, error=false}: OverlayProps, scale: number) {
 		dims.borderBottom = borderSize / scale;
 		dims.borderLeft = borderSize / scale;
 		dims.borderRight = borderSize / scale;
@@ -746,7 +732,6 @@ export class OverlayRect {
 			this.resizeHandles[3].addEventListener('mousedown', initFullDrag('ne'), false);
 
 			const boxHeight = box.height * scale;
-			console.log(boxHeight);
 			if (boxHeight >= resizeThreshold) {
 				Object.assign(this.resizeHandles[4].style, {
 					height: `${6 / scale}px`,
@@ -772,7 +757,6 @@ export class OverlayRect {
 			}
 
 			const boxWidth = box.width * scale;
-			console.log(boxWidth);
 			if (boxWidth >= resizeThreshold) {
 				Object.assign(this.resizeHandles[5].style, {
 					height: `${6 / scale}px`,
@@ -798,7 +782,7 @@ export class OverlayRect {
 			}
 		}
 
-		this.border.style.borderColor = addAlpha(overlayStyles.background, opacity);
+		this.border.style.borderColor = addAlpha(error ? overlayStyles.error : overlayStyles.background, opacity);
     	this.padding.style.borderColor = overlayStyles.padding
 		this.node.style.borderColor = overlayStyles.margin;
 		if (!padding) {
@@ -1332,30 +1316,33 @@ function setDragPosition(element: HTMLElement, props: DraggingEvent, axis: Axis,
 	}
 }
 
-type SelfSnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
-	onDragFinish: (element: HTMLElement, oldValues: MarginValues) => void;
-};
-const useSelfSnapping = ({element, onIsDragging, onDragFinish, scale}: SelfSnappableProps) => {
-	const style = element ? getComputedStyle(element.parentElement!) : undefined;
-	const [oldValues, setOldValues] = useState<MarginValues>({marginLeft: '', marginRight: '', marginTop: '', marginBottom: '', display: ''});
-	useEffect(() => {
-		if (element) {
-			setOldValues({
-				marginLeft: element.style.marginLeft || '', 
-				marginRight: element.style.marginRight || '', 
-				marginTop: element.style.marginTop || '', 
-				marginBottom: element.style.marginBottom || '', 
-				display: element.style.display || '',
-			});
+interface SnapBehavior {
+	getOldValues: (element: HTMLElement) => Record<string, string>;
+	isDraggable: (element: HTMLElement) => boolean;
+	onIsDragging: (element: HTMLElement, event: DraggingEvent, scale: number) => void;
+	onCalculateSnapping: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number, scale: number) => SnappingResult | undefined;
+	onDragFinish: (element: HTMLElement) => HTMLElement;
+}
+
+const elementSnapBehavior: SnapBehavior = {
+	getOldValues(element) {
+		return {
+			marginLeft: element.style.marginLeft || '', 
+			marginRight: element.style.marginRight || '', 
+			marginTop: element.style.marginTop || '', 
+			marginBottom: element.style.marginBottom || '', 
+			display: element.style.display || '',
 		}
-	}, [element]);
-
-	const result = useDraggable({element: style?.display.includes('flex') ? undefined : element, onIsDragging(event) {
-		setDragPosition(element!, event, 'x', scale);
-		setDragPosition(element!, event, 'y', scale);
-
-		onIsDragging && onIsDragging(event);
-	}, onCalculateSnapping(element, x, y, currentX, currentY) {
+	},
+	isDraggable(element) {
+		const style = element ? getComputedStyle(element.parentElement!) : undefined;
+		return style?.display.includes('flex') ? false : true;
+	},
+	onIsDragging(element, event, scale) {
+		setDragPosition(element, event, 'x', scale);
+		setDragPosition(element, event, 'y', scale);
+	},
+	onCalculateSnapping(element, x, y, currentX, currentY, scale) {
 		const resX = createSnapGuidesElement(element, x, currentX, 'x', scale);
 		const resY = createSnapGuidesElement(element, y, currentY, 'y', scale);
 		let result: SnappingResult | undefined;
@@ -1381,8 +1368,110 @@ const useSelfSnapping = ({element, onIsDragging, onDragFinish, scale}: SelfSnapp
 		}
 
 		return result;
+	},
+	onDragFinish(element) {
+		return element;
+	}
+}
+
+const flexSnapping: SnapBehavior = {
+	getOldValues(element) {
+		return {
+			paddingLeft: element.parentElement!.style.paddingLeft || '', 
+			paddingRight: element.parentElement!.style.paddingRight || '', 
+			paddingTop: element.parentElement!.style.paddingTop || '', 
+			paddingBottom: element.parentElement!.style.paddingBottom || '', 
+			justifyContent: element.parentElement!.style.justifyContent || '', 
+			alignItems: element.parentElement!.style.alignItems || '',
+			gap: element.parentElement!.style.gap || '',
+		}
+	},
+	isDraggable(element) {
+		const parentStyle = getComputedStyle(element.parentElement!);
+		const flexElement = parentStyle?.display.includes('flex') && Array.from(element?.parentElement?.children || []).every(child => parentStyle.flexDirection === 'column' ? child.clientWidth === element?.clientWidth : child.clientHeight === element?.clientHeight) ? element: undefined
+		return flexElement ? true : false;
+	},
+	onIsDragging(element, event, scale) {
+		const style = getComputedStyle(element!.parentElement!);
+
+		if (style.flexDirection === 'column') {
+			setFlexDragPosition(element!, event, 'y', scale);
+			setFlexDragPositionOtherAxis(element!, event, 'x', scale);
+		} else {
+			setFlexDragPosition(element!, event, 'x', scale);
+			setFlexDragPositionOtherAxis(element!, event, 'y', scale);
+		}
+	},
+	onCalculateSnapping(element, x, y, currentX, currentY, scale) {
+		const style = getComputedStyle(element.parentElement!);
+
+		const resX = style.flexDirection === 'column' ? createSnapGuidesFlexOtherAxis(element, x, currentX * scale, 'x', scale) : createSnapGuidesFlex(element, x, currentX * scale, 'x', scale);
+		const resY = style.flexDirection === 'column' ? createSnapGuidesFlex(element, y, currentY * scale, 'y', scale) : createSnapGuidesFlexOtherAxis(element, y, currentY * scale, 'y', scale);
+
+		let result: SnappingResult | undefined;
+
+		if (resX) {
+			result = {snapGuides: []};
+			result.x = resX.y;
+			result.range = resX.range;
+			result.snapGuides.push(...resX.snapPoints.map(guide => ({...guide, point: {
+				x: (guide.point.y as number) / scale + (getBoundingClientRect(element!.parentElement!, 'x', 'close', scale) as number),
+				y: 0
+			}})));
+		}
+
+		if (resY) {
+			result = result || {snapGuides: []};
+			result.y = resY.y;
+			result.range = resY.range;
+			result.snapGuides.push(...resY.snapPoints.map(guide => ({...guide, point: {
+				y: (guide.point.y as number) / scale + (getBoundingClientRect(element!.parentElement!, 'y', 'close', scale) as number),
+				x: 0
+			}})));
+		}
+
+		return result;
+	},
+	onDragFinish(element) {
+		return element.parentElement!;
+	}
+}
+
+type SelfSnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
+	onDragFinish: (element: HTMLElement, oldValues: Record<string, string>) => void;
+	onError: () => void;
+};
+const useSelfSnapping = ({element, onIsDragging, onDragFinish, onError, scale}: SelfSnappableProps) => {
+	const [oldValues, setOldValues] = useState<Record<string, string>>({marginLeft: '', marginRight: '', marginTop: '', marginBottom: '', display: ''});
+	let snappingBehavior = elementSnapBehavior;
+	if (element && getComputedStyle(element.parentElement!).display.includes('flex')) {
+		snappingBehavior = flexSnapping;
+	}
+
+	useEffect(() => {
+		if (element) {
+			const values = snappingBehavior.getOldValues(element);
+			setOldValues(values);
+		}
+	}, [element]);
+
+	const result = useDraggable({element, onIsDragging(event) {
+		snappingBehavior.onIsDragging(element!, event, scale);
+
+		onIsDragging && onIsDragging(event);
+	}, onCalculateSnapping(element, x, y, currentX, currentY) {
+		return snappingBehavior.onCalculateSnapping(element, x,y, currentX, currentY, scale);
 	}, onDragFinish(element) {
-		onDragFinish && onDragFinish(element, oldValues);
+		onDragFinish && onDragFinish(snappingBehavior.onDragFinish(element), oldValues);
+	}, canDrag(element) {
+		if (element.contentEditable === 'true') return false;
+
+		if (!snappingBehavior.isDraggable(element)) {
+			onError();
+			return false;
+		}
+
+		return true;
 	}, restrictToParent: true, scale});
 
 	// const onShift = useEffectEvent(() => {
@@ -1399,17 +1488,12 @@ const useSelfSnapping = ({element, onIsDragging, onDragFinish, scale}: SelfSnapp
 
 type FlexSnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
 	onDragFinish: (parent: HTMLElement, oldValues: FlexValues) => void;
+	onError: () => void;
 };
-const useFlexSnapping = ({element, onIsDragging, onDragFinish, scale}: FlexSnappableProps) => {
+const useFlexSnapping = ({element, onIsDragging, onDragFinish, onError, scale}: FlexSnappableProps) => {
 	const [shiftPressed, setShiftPressed] = useState(false);
 	const [oldValues, setOldValues] = useState<FlexValues>({paddingLeft: '', paddingRight: '', paddingTop: '', paddingBottom: '', justifyContent: '', alignItems: '', gap: ''});
 	
-	const parentStyle = element ? getComputedStyle(element.parentElement!) : undefined;
-	
-	
-	//TODO: We only do flex for children that have the same x dimensions (or y for flex-column)
-	const flexElement = parentStyle?.display.includes('flex') && Array.from(element?.parentElement?.children || []).every(child => parentStyle.flexDirection === 'column' ? child.clientWidth === element?.clientWidth : child.clientHeight === element?.clientHeight) ? element: undefined
-
 	useEffect(() => {
 		if (element) {
 			setOldValues({
@@ -1424,7 +1508,7 @@ const useFlexSnapping = ({element, onIsDragging, onDragFinish, scale}: FlexSnapp
 		}
 	}, [element]);
 	
-	const result = useDraggable({element: flexElement, onIsDragging(event) {
+	const result = useDraggable({element, onIsDragging(event) {
 		const style = getComputedStyle(element!.parentElement!);
 
 		if (style.flexDirection === 'column') {
@@ -1467,6 +1551,19 @@ const useFlexSnapping = ({element, onIsDragging, onDragFinish, scale}: FlexSnapp
 		return result;
 	}, onDragFinish(element) {
 		onDragFinish && onDragFinish(element.parentElement!, oldValues);
+	}, canDrag(element) {
+		if (element.contentEditable === 'true') return false;
+		
+		//TODO: We only do flex for children that have the same x dimensions (or y for flex-column)
+		const parentStyle = getComputedStyle(element.parentElement!);
+		const flexElement = parentStyle?.display.includes('flex') && Array.from(element.parentElement?.children || []).every(child => parentStyle.flexDirection === 'column' ? child.clientWidth === element?.clientWidth : child.clientHeight === element.clientHeight) ? element: undefined
+
+		if (!flexElement) {
+			onError();
+			return false;
+		}
+
+		return true;
 	}, restrictToParent: true, scale});
 
 	// const onShift = useEffectEvent(() => {
@@ -1752,8 +1849,9 @@ interface DraggableProps {
 	snapPoints?: SnapPoint[],
 	restrictToParent?: boolean;
 	scale: number;
+	canDrag: (element: HTMLElement) => boolean;
 }
-const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDragFinish, restrictToParent=false, scale}: DraggableProps) => {
+const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDragFinish, canDrag, restrictToParent=false, scale}: DraggableProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [offsetX, setOffsetX] = useState<number>(0);
 	const [offsetY, setOffsetY] = useState<number>(0);
@@ -1975,7 +2073,7 @@ const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDragFinish,
 	  
 	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
 		//TODO: Remove dependency on selected
-		if (element?.contentEditable === 'true') return;
+		if (!element || !canDrag(element)) return;
 		handleTheDragging({dx: event.dx, dy: event.dy, rect: event.rect});
 	});
 	

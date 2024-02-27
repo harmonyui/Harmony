@@ -315,7 +315,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			return str;
 		}
 
-		const value = convertSizeToString(size);
+		const value = convertSizeToString({...oldSize, ...size});
 		const oldValue = convertSizeToString(oldSize);
 		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value, oldValue}
 		
@@ -327,18 +327,20 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const newHeight = selectedComponent.clientHeight;
 		makeUpdates(selectedComponent, [{...update, value: update.oldValue, oldValue: update.value}], rootComponent, fonts);
 
-		if (newWidth === width) {
-			//if ((size.e || oldSize.e) - oldSize.e >= 0)
-			size.e = undefined;
-			//if ((size.w || oldSize.w) - oldSize.w >= 0)
-			size.w = undefined;
+		console.log(size);
+		console.log(oldSize);
+		if (newWidth === width && oldValue !== value) {
+			//if ((size.e || oldSize.e || 0) - (oldSize.e || 0) >= 0 || (size.e || 0) < 0)
+				size.e = undefined;
+			//if ((size.w || oldSize.w || 0) - (oldSize.w || 0) >= 0 || (size.w || 0) < 0)
+				size.w = undefined;
 		}
 
-		if (newHeight === height) {
-			//if ((size.n || oldSize.n) - oldSize.n >= 0)
-			size.n = undefined;
-			//if ((size.s || oldSize.s) - oldSize.s >= 0)
-			size.s = undefined;
+		if (newHeight === height && oldValue !== value) {
+			//if ((size.n || oldSize.n || 0) - (oldSize.n || 0) >= 0 || (size.n || 0) < 0)
+				size.n = undefined;
+			//if ((size.s || oldSize.s || 0) - (oldSize.s || 0) >= 0 || (size.s || 0) < 0)
+				size.s = undefined;
 		}
 		update.value = convertSizeToString(size);
 		if (!update.value || update.value === 'h') return false;
