@@ -94,7 +94,58 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	// 	onReorder({from, to, element})
 	// }});
 
-	const {isDragging: isDraggingReal} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging() {
+	const {isDragging: isDraggingSelf} = useSelfSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging() {
+		const container = containerRef.current;
+		if (container === null || parentElement === undefined) return;
+
+		if (overlayRef.current === undefined) {
+			overlayRef.current = new Overlay(container, parentElement);
+		}
+
+		if (selectedComponent) {
+			overlayRef.current.select(selectedComponent, {onDrag});
+		} else {
+			overlayRef.current.remove('select');
+		}
+	}, onDragFinish(element, oldProperties) {
+		if (!selectedComponent) return;
+
+		//Round all of the values;
+		['marginLeft', 'marginRight', 'marginTop', 'marginBottom'].forEach(property => {
+			const propValue = element.style[property as unknown as number];
+			if (!propValue || propValue === 'auto') return;
+
+			const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
+			if (!match) throw new Error("Invalid property value " + propValue);
+			const num = round(parseFloat(match[1]));
+			const unit = match[2];
+			const value = `${num}${unit}`;
+
+			element.style[property as unknown as number] = value;
+		});
+
+		const updates: ComponentUpdate[] = [];
+		const oldValues: string[] = [];
+		const keys: (keyof MarginValues)[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display'];
+		(keys).forEach(property => {
+			const value = element.style[property as unknown as number];
+			if (!value) return;
+
+			const componentId = element.dataset.harmonyId || '';
+			const parentId = element.dataset.harmonyParentId || '';
+			const oldValue = oldProperties[property];
+
+			const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue};
+
+			
+			updates.push(update);
+			oldValues.push(oldValue);
+		});
+
+		onChange(element, updates, true);
+		onSelect(undefined);
+	}, scale});
+	const {isDragging: isDraggingFlex} = useFlexSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging() {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -146,7 +197,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		onSelect(undefined);
 	}, scale});
 
-	const isDragging = isResizing || isDraggingReal;
+	const isDragging = isResizing || isDraggingFlex || isDraggingSelf;
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -976,6 +1027,63 @@ function getBoundingClientRectParent(parent: HTMLElement, axis: Axis, type: Boun
 
 type Axis = 'x' | 'y';
 
+interface ElementInfo {
+	gapStart: number;
+	gapEnd: number;
+	parentMidpoint: number;
+	elementMidpoint: number;
+}
+function calculateElementInfo(element: HTMLElement, axis: Axis, scale: number): ElementInfo {
+	const parent = element.parentElement!;
+	const numChildren = parent.children.length;
+
+	const otherAxis = axis === 'x' ? 'y' : 'x';
+	const selfIndex = Array.from(parent.children).indexOf(element);
+	const myStart = getBoundingClientRect(element, otherAxis, 'close', scale);
+	const myEnd = getBoundingClientRect(element, otherAxis, 'far', scale);
+	let gapStart = getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRectParent(parent, axis, 'close', scale);
+	let gapEnd = getBoundingClientRectParent(parent, axis, 'far', scale) - getBoundingClientRect(element, axis, 'far', scale);
+	for (let i = 0; i < numChildren; i++) {
+		const child = parent.children[i] as HTMLElement;
+		if (i === selfIndex) {
+			continue;
+		}
+
+		const closeOtherSide = getBoundingClientRect(child, otherAxis, 'close', scale);
+		const farOtherSide = getBoundingClientRect(child, otherAxis, 'far', scale);
+		if (!((closeOtherSide < myStart && farOtherSide < myStart) || (closeOtherSide > myEnd && farOtherSide > myEnd))) {
+			const newStart = getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(child, axis, 'far', scale);
+			const newEnd = getBoundingClientRect(child, axis, 'close', scale) - getBoundingClientRect(element, axis, 'far', scale);
+
+			if (newStart >= 0 && newStart < gapStart) {
+				gapStart = newStart;
+			}
+			if (newEnd >= 0 && newEnd < gapEnd) {
+				gapEnd = newEnd;
+			}
+		}
+	}
+	
+	const parentMidpoint = (getBoundingClientRectParent(parent, axis, 'close', scale) + getBoundingClientRectParent(parent, axis, 'size', scale) / 2);
+	const elementMidpoint = (getBoundingClientRect(element, axis, 'close', scale) + getBoundingClientRect(element, axis, 'size', scale) / 2);
+
+	return {gapStart, gapEnd, parentMidpoint, elementMidpoint};
+}
+
+interface FlexInfo {
+	parentMidpoint: number,
+	childrenMidpoint: number,
+	childrenHeight: number,
+	gapBetween: number;
+	gapStart: number;
+	gapEnd: number;
+	remainingSpace: number;
+	childrenCount: number;
+	evenlySpace: number;
+	aroundSpace: number;
+	betweenSpace: number;
+	centerSpace: number;
+}
 function calculateFlexInfo(parent: HTMLElement, axis: Axis, scale: number): FlexInfo {
 	const numChildren = parent.children.length;
 	const firstChild = parent.children[0] as HTMLElement;
@@ -998,7 +1106,6 @@ function calculateFlexInfo(parent: HTMLElement, axis: Axis, scale: number): Flex
 
 		gap += getBoundingClientRect(nextChild, axis, 'close', scale) - getExtra(nextChild, axis, 'close') - (getBoundingClientRect(child, axis, 'far', scale));
 	}
-
 	const childrenMidpoint = (getBoundingClientRect(lastChild, axis, 'far', scale) + getBoundingClientRect(firstChild, axis, 'close', scale)) / 2;
 	const parentMidpoint = (getBoundingClientRectParent(parent, axis, 'close', scale) + getBoundingClientRectParent(parent, axis, 'size', scale) / 2);
 	
@@ -1025,40 +1132,10 @@ function calculateFlexInfo(parent: HTMLElement, axis: Axis, scale: number): Flex
 		centerSpace
 	}
 }
-interface FlexInfo {
-	parentMidpoint: number,
-	childrenMidpoint: number,
-	childrenHeight: number,
-	gapBetween: number;
-	gapStart: number;
-	gapEnd: number;
-	remainingSpace: number;
-	childrenCount: number;
-	evenlySpace: number;
-	aroundSpace: number;
-	betweenSpace: number;
-	centerSpace: number;
-}
-
-interface FlexConditionInfo extends FlexInfo {
-	y: number;
-	dy: number;
-}
-interface TransitionCondition {
-	name: string,
-	in: {
-		condition: (element: HTMLElement, info: FlexConditionInfo) => boolean,
-		func: (element: HTMLElement, info: FlexConditionInfo) => void;
-	},
-	out: {
-		condition: (element: HTMLElement, info: FlexConditionInfo) => boolean,
-		func: (element: HTMLElement, info: FlexConditionInfo) => void;
-	}
-}
 
 const minGap = 8;
 
-function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, rect: Rect}, axis: Axis, scale: number) {
+function setFlexDragPosition(element: HTMLElement, props: DraggingEvent, axis: Axis, scale: number) {
 	const parent = element.parentElement as HTMLElement;
 	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
 	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close', scale);
@@ -1150,7 +1227,7 @@ function setDragPosition(element: HTMLElement, props: {dx: number, dy: number, r
 	}
 }
 
-function setDragPositionOtherAxis(element: HTMLElement, props: {dx: number, dy: number, rect: Rect}, axis: Axis, scale: number) {
+function setFlexDragPositionOtherAxis(element: HTMLElement, props: DraggingEvent, axis: Axis, scale: number) {
 	const parent = element.parentElement as HTMLElement;
 	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
 	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close', scale);
@@ -1193,11 +1270,100 @@ function setDragPositionOtherAxis(element: HTMLElement, props: {dx: number, dy: 
 	}
 }
 
-type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale' | 'onDragFinish'>;
-const useSnapping = ({element, onIsDragging, onDragFinish, scale}: SnappableProps) => {
-	const [shiftPressed, setShiftPressed] = useState(false);
+function setDragPosition(element: HTMLElement, props: DraggingEvent, axis: Axis, scale: number) {
+	const parent = element.parentElement as HTMLElement;
+	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
+	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close', scale);
+	const closeMargin = axis === 'y' ? 'marginTop' : 'marginLeft';
+	const farMargin = axis === 'y' ? 'marginBottom' : 'marginRight';
 
-	const result = useDraggable({element, onIsDragging, onDragFinish, restrictToParent: true, scale});
+	const {gapStart, gapEnd} = calculateElementInfo(element, axis, scale);
+
+	//Only deal with align-items axis if there is space to move
+	if (gapEnd === 0 && gapStart === 0) return;
+
+	// const selfIndex = Array.from(parent.children).indexOf(element);
+	// if (selfIndex < 0) {
+	// 	throw new Error("Invalid self index");
+	// }
+	//const firstChild = parent.children[0] as HTMLElement;
+	//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
+	let margin = startPos - getBoundingClientRectParent(parent, axis, 'close', scale)
+	if (margin < 0) {
+		margin = 0;
+	}
+	
+	element.style[closeMargin] = `${margin}px`
+	element.style[farMargin] = '0px';
+	
+
+	let info = calculateElementInfo(element, axis, scale);
+
+	if (close(info.parentMidpoint, info.elementMidpoint, .1)) {
+		element.style.display = 'block';
+		element.style[closeMargin] = 'auto';
+		element.style[farMargin] = 'auto';
+	} else if (info.elementMidpoint > info.parentMidpoint) {
+		element.style.display = 'block';
+		element.style[closeMargin] = 'auto';
+		element.style[farMargin] = `${info.gapEnd}px`;
+	} else {
+		//element.style.display = 'inherit'
+	}
+}
+
+type SelfSnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
+	onDragFinish: (element: HTMLElement, oldValues: MarginValues) => void;
+};
+const useSelfSnapping = ({element, onIsDragging, onDragFinish, scale}: SelfSnappableProps) => {
+	const style = element ? getComputedStyle(element.parentElement!) : undefined;
+	const [oldValues, setOldValues] = useState<MarginValues>({marginLeft: '', marginRight: '', marginTop: '', marginBottom: '', display: ''});
+	useEffect(() => {
+		if (element) {
+			setOldValues({
+				marginLeft: element.style.marginLeft || '', 
+				marginRight: element.style.marginRight || '', 
+				marginTop: element.style.marginTop || '', 
+				marginBottom: element.style.marginBottom || '', 
+				display: element.style.display || '',
+			});
+		}
+	}, [element]);
+
+	const result = useDraggable({element: style?.display.includes('flex') ? undefined : element, onIsDragging(event) {
+		setDragPosition(element!, event, 'x', scale);
+		setDragPosition(element!, event, 'y', scale);
+
+		onIsDragging && onIsDragging(event);
+	}, onCalculateSnapping(element, x, y, currentX, currentY) {
+		const resX = createSnapGuidesElement(element, x, currentX, 'x', scale);
+		const resY = createSnapGuidesElement(element, y, currentY, 'y', scale);
+		let result: SnappingResult | undefined;
+
+		if (resX) {
+			result = {snapGuides: []};
+			result.x = resX.x;
+			result.range = resX.range;
+			result.snapGuides.push(...resX.snapGuides.map(guide => ({...guide, point: {
+				x: (guide.point.x as number) / scale + (getBoundingClientRect(element!.parentElement!, 'x', 'close', scale) as number),
+				y: 0
+			}})));
+		}
+
+		if (resY) {
+			result = result || {snapGuides: []};
+			result.y = resY.y;
+			result.range = resY.range;
+			result.snapGuides.push(...resY.snapGuides.map(guide => ({...guide, point: {
+				y: (guide.point.y as number) / scale + (getBoundingClientRect(element!.parentElement!, 'y', 'close', scale) as number),
+				x: 0
+			}})));
+		}
+
+		return result;
+	}, onDragFinish(element) {
+		onDragFinish && onDragFinish(element, oldValues);
+	}, restrictToParent: true, scale});
 
 	// const onShift = useEffectEvent(() => {
 	// 	console.log("Setting shift...");
@@ -1211,9 +1377,140 @@ const useSnapping = ({element, onIsDragging, onDragFinish, scale}: SnappableProp
 	return result;
 }
 
+type FlexSnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
+	onDragFinish: (parent: HTMLElement, oldValues: FlexValues) => void;
+};
+const useFlexSnapping = ({element, onIsDragging, onDragFinish, scale}: FlexSnappableProps) => {
+	const [shiftPressed, setShiftPressed] = useState(false);
+	const [oldValues, setOldValues] = useState<FlexValues>({paddingLeft: '', paddingRight: '', paddingTop: '', paddingBottom: '', justifyContent: '', alignItems: '', gap: ''});
+	
+	const parentStyle = element ? getComputedStyle(element.parentElement!) : undefined;
+	
+	
+	//TODO: We only do flex for children that have the same x dimensions (or y for flex-column)
+	const flexElement = parentStyle?.display.includes('flex') && Array.from(element?.parentElement?.children || []).every(child => parentStyle.flexDirection === 'column' ? child.clientWidth === element?.clientWidth : child.clientHeight === element?.clientHeight) ? element: undefined
+
+	useEffect(() => {
+		if (element) {
+			setOldValues({
+				paddingLeft: element.parentElement!.style.paddingLeft || '', 
+				paddingRight: element.parentElement!.style.paddingRight || '', 
+				paddingTop: element.parentElement!.style.paddingTop || '', 
+				paddingBottom: element.parentElement!.style.paddingBottom || '', 
+				justifyContent: element.parentElement!.style.justifyContent || '', 
+				alignItems: element.parentElement!.style.alignItems || '',
+				gap: element.parentElement!.style.gap || '',
+			});
+		}
+	}, [element]);
+	
+	const result = useDraggable({element: flexElement, onIsDragging(event) {
+		const style = getComputedStyle(element!.parentElement!);
+
+		if (style.flexDirection === 'column') {
+			setFlexDragPosition(element!, event, 'y', scale);
+			setFlexDragPositionOtherAxis(element!, event, 'x', scale);
+		} else {
+			setFlexDragPosition(element!, event, 'x', scale);
+			setFlexDragPositionOtherAxis(element!, event, 'y', scale);
+		}
+
+		onIsDragging && onIsDragging(event);
+	}, onCalculateSnapping(element, x, y, currentX, currentY) {
+		const style = getComputedStyle(element.parentElement!);
+
+		const resX = style.flexDirection === 'column' ? createSnapGuidesFlexOtherAxis(element, x, currentX * scale, 'x', scale) : createSnapGuidesFlex(element, x, currentX * scale, 'x', scale);
+		const resY = style.flexDirection === 'column' ? createSnapGuidesFlex(element, y, currentY * scale, 'y', scale) : createSnapGuidesFlexOtherAxis(element, y, currentY * scale, 'y', scale);
+
+		let result: SnappingResult | undefined;
+
+		if (resX) {
+			result = {snapGuides: []};
+			result.x = resX.y;
+			result.range = resX.range;
+			result.snapGuides.push(...resX.snapPoints.map(guide => ({...guide, point: {
+				x: (guide.point.y as number) / scale + (getBoundingClientRect(element!.parentElement!, 'x', 'close', scale) as number),
+				y: 0
+			}})));
+		}
+
+		if (resY) {
+			result = result || {snapGuides: []};
+			result.y = resY.y;
+			result.range = resY.range;
+			result.snapGuides.push(...resY.snapPoints.map(guide => ({...guide, point: {
+				y: (guide.point.y as number) / scale + (getBoundingClientRect(element!.parentElement!, 'y', 'close', scale) as number),
+				x: 0
+			}})));
+		}
+
+		return result;
+	}, onDragFinish(element) {
+		onDragFinish && onDragFinish(element.parentElement!, oldValues);
+	}, restrictToParent: true, scale});
+
+	// const onShift = useEffectEvent(() => {
+	// 	console.log("Setting shift...");
+	// 	setShiftPressed(true);
+	// })
+
+	// useEffect(() => {
+	// 	hotkeys('shift+a', onShift)
+	// }, []);
+
+	return result;
+}
+
+function createSnapGuidesElement(element: HTMLElement, pos: number, current: number, type: Axis, scale: number): SnappingResult | undefined {
+	const parent = element.parentElement!;
+	const _scale = 1;
+	const {gapStart, gapEnd, parentMidpoint, elementMidpoint} = calculateElementInfo(element, type, _scale);
+	
+	const _ = getBoundingClientRect(element, type, 'close', _scale) - getBoundingClientRect(parent, type, 'close', _scale);
+	const posY = _;
+	const dy = pos + getBoundingClientRect(parent, type, 'close', _scale) - current;
+
+	//Only show snap points if there is space to move
+	if (gapEnd === 0 && gapStart === 0) return;
+
+	const selfIndex = Array.from(parent.children).indexOf(element);
+	//const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= minGap;
+	const direction = selfIndex === 0 ? -1 : 1;
+	const threshold = 5;
+	const range = 10;
+
+	const centerDiff = parentMidpoint - elementMidpoint;
+	if (Math.abs(centerDiff) <= threshold) {
+		console.log(posY + centerDiff);
+		const firstChild = parent.children[0] as HTMLElement;
+		
+		const x = (posY + centerDiff)
+		const snapPoints: SnapPoint[] = [{
+			point: {[type]: x, range},
+			offset: parent,
+			guides: [
+				{rotate: type === 'x', y0: .5, x0: 0, y1: .5, x1: 1, relative: ['x0', 'x1', 'y0', 'y1']}, 
+			]
+		},]
+		return {[type]: posY + centerDiff, range, snapGuides: snapPoints};
+	}
+
+	if (Math.abs(gapEnd) <= threshold) {
+		let snapGuides: SnapPoint[] = [];
+		return {[type]: posY + gapEnd, range, snapGuides};
+	}
+
+	
+	if (Math.abs(gapStart) <= threshold) {
+		let snapGuides: SnapPoint[] = [];
+		return {[type]: posY - gapStart, range, snapGuides};
+	} 
+
+	return undefined;
+}
 
 
-function createSnapGuides(element: HTMLElement, pos: number, current: number, type: 'x' | 'y', scale: number) {
+function createSnapGuidesFlex(element: HTMLElement, pos: number, current: number, type: 'x' | 'y', scale: number) {
 	const parent = element.parentElement!;
 	const _scale = 1;
 	const {childrenMidpoint, parentMidpoint, gapEnd, gapStart, gapBetween, evenlySpace, aroundSpace, betweenSpace, centerSpace} = calculateFlexInfo(parent, type, scale);
@@ -1351,7 +1648,7 @@ function createSnapGuides(element: HTMLElement, pos: number, current: number, ty
 	return undefined;
 }
 
-function createSnapGuidesOtherAxis(element: HTMLElement, pos: number, current: number, type: 'x' | 'y', _scale: number) {
+function createSnapGuidesFlexOtherAxis(element: HTMLElement, pos: number, current: number, type: 'x' | 'y', _scale: number) {
 	const parent = element.parentElement!;
 	const {childrenMidpoint, parentMidpoint, gapEnd, gapStart, gapBetween, evenlySpace, aroundSpace, betweenSpace, centerSpace} = calculateFlexInfo(parent, type, 1);
 	
@@ -1397,6 +1694,26 @@ function createSnapGuidesOtherAxis(element: HTMLElement, pos: number, current: n
 	return undefined;
 }
 
+interface DraggingEvent {
+	dx: number, 
+	dy: number,
+	rect: Rect
+}
+
+interface SnappingResult {
+	x?: number, 
+	y?: number, 
+	range?: number, 
+	snapGuides: SnapPoint[]
+}
+
+interface MarginValues {
+	marginLeft: string;
+	marginRight: string;
+	marginTop: string;
+	marginBottom: string;
+	display: string;
+}
 interface FlexValues {
 	paddingLeft: string;
 	paddingRight: string;
@@ -1408,23 +1725,22 @@ interface FlexValues {
 }
 interface DraggableProps {
 	element: HTMLElement | undefined;
-	onIsDragging?: () => void;
+	onIsDragging?: (event: DraggingEvent) => void;
 	//TODO: Do something better to not have a dependency on FlexValues
-	onDragFinish?: (parent: HTMLElement, oldValues: FlexValues) => void;
+	onDragFinish?: (parent: HTMLElement) => void;
+	onCalculateSnapping?: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number) => SnappingResult | undefined;
 	snapPoints?: SnapPoint[],
 	restrictToParent?: boolean;
 	scale: number;
 }
-const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=false, scale}: DraggableProps) => {
+const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDragFinish, restrictToParent=false, scale}: DraggableProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [offsetX, setOffsetX] = useState<number>(0);
 	const [offsetY, setOffsetY] = useState<number>(0);
 	const refX = useRef(0);
 	const refY = useRef(0);
-	const snapGuidesX = useRef<SnapPoint[]>([]);
-	const snapGuidesY = useRef<SnapPoint[]>([]);
+	const snapGuides = useRef<SnapPoint[]>([]);
 	const $parent = $('#harmony-snap-guides');
-	const [oldValues, setOldValues] = useState<FlexValues>({paddingLeft: '', paddingRight: '', paddingTop: '', paddingBottom: '', justifyContent: '', alignItems: '', gap: ''});
 		
 	useEffect(() => {
 		if (element) {
@@ -1433,16 +1749,6 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 			setOffsetX(refX.current);
 			setOffsetY(refY.current);
 
-			//TODO: This is breaking all dependencies. Bad
-			setOldValues({
-				paddingLeft: element.parentElement!.style.paddingLeft || '', 
-				paddingRight: element.parentElement!.style.paddingRight || '', 
-				paddingTop: element.parentElement!.style.paddingTop || '', 
-				paddingBottom: element.parentElement!.style.paddingBottom || '', 
-				justifyContent: element.parentElement!.style.justifyContent || '', 
-				alignItems: element.parentElement!.style.alignItems || '',
-				gap: element.parentElement!.style.gap || '',
-			});
 			const modifiers: Modifier[] = [
 				interact.modifiers.snap({
 					targets: [interact.createSnapGrid({x: 2, y: 2})],
@@ -1453,32 +1759,12 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 				}),
 				interact.modifiers.snap({
 					targets: [function(x, y, interaction, offset, index) {
-						const style = getComputedStyle(element.parentElement!);
+						if (!onCalculateSnapping) return;
 
-						const resX = style.flexDirection === 'column' ? createSnapGuidesOtherAxis(element, x, refX.current * scale, 'x', scale) : createSnapGuides(element, x, refX.current * scale, 'x', scale);
-						const resY = style.flexDirection === 'column' ? createSnapGuides(element, y, refY.current * scale, 'y', scale) : createSnapGuidesOtherAxis(element, y, refY.current * scale, 'y', scale);
-						if (!resX) {
-							snapGuidesX.current = [];
-						}
-						if (!resY) {
-							snapGuidesY.current = [];
-						}
+						const result = onCalculateSnapping(element, x, y, refX.current, refY.current);
+						if (!result) return;
 
-						let result: {x?: number, y?: number, range?: number} | undefined;
-
-						if (resX) {
-							result = {};
-							result.x = resX.y;
-							result.range = resX.range;
-							snapGuidesX.current = resX.snapPoints;
-						}
-
-						if (resY) {
-							result = result || {};
-							result.y = resY.y;
-							result.range = resY.range;
-							snapGuidesY.current = resY.snapPoints;
-						}
+						snapGuides.current = result.snapGuides;
 
 						return result;
 					}],
@@ -1547,7 +1833,7 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 		}, setIsDragging);
 	});
 
-	const handleGuides = useEffectEvent((posY: number, snapPoints: SnapPoint[], axis: Axis) => {
+	const handleGuides = useEffectEvent((posX: number, posY: number, snapPoints: SnapPoint[]) => {
 		const createGuide = (rect: {x0: number, y0: number, y1: number, x1: number, text?: string | number}) => {
 			const height = rect.y1 - rect.y0 || 1;
 			const width = rect.x1 - rect.x0 || 1;
@@ -1578,8 +1864,38 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 			const {point, guides} = snapPoint;
 			const offsetParent = snapPoint.offset ? setOffset(snapPoint.offset) : undefined;
 
-			const top = (point.y as number) / scale + (getBoundingClientRect(element!.parentElement!, axis, 'close', scale) as number);
+			const top = point.y as number;
 			if (close(top, posY, 0.1)) {
+				guides && guides.forEach((guide) => {
+					const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
+					const copy = {...guide};
+					copy.relative.forEach(p => {
+						const sizeY = guide.rotate ? offset.w : offset.h;
+						const sizeX = guide.rotate ? offset.h : offset.w;
+						const sizeOffset = p.includes('y') ? sizeY : sizeX;
+						copy[p] *= sizeOffset;
+					});
+
+					if (guide.rotate) {
+						const temp0 = copy.x0;
+						copy.x0 = copy.y0;
+						copy.y0 = temp0;
+						const temp1 = copy.x1;
+						copy.x1 = copy.y1;
+						copy.y1 = temp1;
+					}
+
+					copy.x0 += offset.x;
+					copy.y0 += offset.y;
+					copy.y1 += offset.y;
+					copy.x1 += offset.x;
+
+					createGuide(copy);
+				});
+			}
+
+			const left = point.x as number;
+			if (close(left, posX, 0.1)) {
 				guides && guides.forEach((guide) => {
 					const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
 					const copy = {...guide};
@@ -1615,7 +1931,8 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 		// setOffsetY(event.clientY0);
 	});
 
-	const handleTheDragging = (event: {dx: number, dy: number, rect: Rect}) => {
+	const handleTheDragging = (event: DraggingEvent) => {
+		if (!element) return;
 		!isDragging && setIsDragging(true);
 		event.rect.top /= scale;
 		event.rect.left /= scale;
@@ -1628,23 +1945,12 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 		
 		refY.current = event.rect.top;
 		refX.current = event.rect.left;
-		
-		const style = getComputedStyle(element!.parentElement!);
-
-		if (style.flexDirection === 'column') {
-			setDragPosition(element!, event, 'y', scale);
-			setDragPositionOtherAxis(element!, event, 'x', scale);
-		} else {
-			setDragPosition(element!, event, 'x', scale);
-			setDragPositionOtherAxis(element!, event, 'y', scale);
-		}
+		onIsDragging && onIsDragging(event);
 
 		$parent.children().remove();
-		handleGuides(event.rect.top, snapGuidesY.current, 'y');
-		handleGuides(event.rect.left, snapGuidesX.current, 'x');
-
-		
-		onIsDragging && onIsDragging();
+		handleGuides(event.rect.left, event.rect.top, snapGuides.current);
+		// handleGuides(event.rect.top, snapGuidesY.current, 'y');
+		// handleGuides(event.rect.left, snapGuidesX.current, 'x');
 	}
 	  
 	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
@@ -1655,10 +1961,11 @@ const useDraggable = ({element, onIsDragging, onDragFinish, restrictToParent=fal
 	
 	const stopDragging = useEffectEvent((e: InteractEvent<'drag', 'move'>) => {
 		setIsDragging(false);
+		if (!element) return;
 		// setOffsetX(refX.current);
 		// setOffsetY(refY.current);
 		$parent.children().remove();
-		onDragFinish && onDragFinish(element!.parentElement!, oldValues);
+		onDragFinish && onDragFinish(element);
 	});
 
 	return {isDragging};
