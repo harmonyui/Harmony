@@ -6,7 +6,7 @@ export type ResizeDirection = 'n' | 'e' | 's' | 'w' | 'ne' | 'se' | 'sw' | 'nw';
 export type ResizeValue = Partial<Record<ResizeCoords, number>>;
 export type ResizeRect = {x: number, y: number, direction: ResizeDirection} & Record<ResizeCoords, number>;
 interface ResizeProps {
-	onIsDragging?: (value: ResizeValue, oldValue: ResizeValue) => void;
+	onIsDragging?: (value: ResizeValue, oldValue: ResizeValue) => boolean;
 	onDragFinish?: (value: ResizeValue, oldValue: ResizeValue) => void;
 }
 export const useResize = ({onIsDragging, onDragFinish}: ResizeProps) => {
@@ -75,11 +75,11 @@ export const useResize = ({onIsDragging, onDragFinish}: ResizeProps) => {
 		}
 
 		const newRect = {n: copy.n, s: copy.s, e: copy.e, w: copy.w};
-		console.log(currRect);
-		console.log(newRect);
-		setUpdates(copy);
-		setCurrRect(newRect);
-		onIsDragging && onIsDragging(copy, {n: currRect.n, e: currRect.e, s: currRect.s, w: currRect.w});
+		if (onIsDragging && onIsDragging({...copy}, {n: currRect.n, e: currRect.e, s: currRect.s, w: currRect.w})) {
+			setCurrRect(newRect);
+			setUpdates(copy);
+		}
+		
 	});
 
 	const stopDrag = useEffectEvent((e: MouseEvent) => {

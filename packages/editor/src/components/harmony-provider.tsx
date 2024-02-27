@@ -300,8 +300,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		onAttributesChange(component, [update], false);
 	});
 
-	const onResize = useEffectEvent((size: ResizeValue, oldSize: ResizeValue) => {
-		if (!selectedComponent || !rootComponent) return;
+	const onResize = useEffectEvent((size: ResizeValue, oldSize: ResizeValue): boolean => {
+		if (!selectedComponent || !rootComponent) return false;
 
 		const component = componentIdentifier.getComponentFromElement(selectedComponent);
 		if (!component) throw new Error("Error when getting component");
@@ -319,7 +319,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const oldValue = convertSizeToString(oldSize);
 		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value, oldValue}
 		
-		console.log(`old: ${oldValue}`)
 		//Only let the size change if it is actually changing the size of the component
 		const width = selectedComponent.clientWidth;
 		const height = selectedComponent.clientHeight;
@@ -342,10 +341,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			size.s = undefined;
 		}
 		update.value = convertSizeToString(size);
-		if (!update.value || update.value === 'h') return;
-		console.log(`${update.value}, ${update.oldValue}`)
-
+		if (!update.value || update.value === 'h') return false;
+		
 		onAttributesChange(component, [update]);
+		return true;
 	});
 
 	const onReorder = useEffectEvent(({from, to, element}: {from: number, to: number, element: HTMLElement}) => {

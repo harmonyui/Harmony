@@ -49,7 +49,7 @@ export interface InspectorProps {
 	parentElement: HTMLElement | undefined;
 	onElementTextChange: (value: string, oldValue: string) => void;
 	mode: SelectMode;
-	onResize: (size: ResizeValue, oldRect: ResizeValue) => void;
+	onResize: (size: ResizeValue, oldRect: ResizeValue) => boolean;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
 	onChange: (component: HTMLElement, update: ComponentUpdate[], execute?: boolean) => void;
 	updateOverlay: number;
@@ -61,7 +61,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect, oldRect) {
 		const container = containerRef.current;
-		if (container === null || parentElement === undefined) return;
+		if (container === null || parentElement === undefined) return false;
 
 		if (overlayRef.current === undefined) {
 			overlayRef.current = new Overlay(container, parentElement);
@@ -73,7 +73,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			overlayRef.current.remove('select');
 		}
 
-		onResize(rect, oldRect);
+		return onResize(rect, oldRect);
 	}});
 
 	// const {makeDraggable, isDragging: isDraggingReal} = useDraggableList({onIsDragging() {
