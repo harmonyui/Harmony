@@ -25,11 +25,11 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 		if (result) {
 			setBranchId(branchId);
 
-			const {container, harmonyContainer} = result;
+			const {harmonyContainer} = result;
 			if (!local) {
-                createProductionScript(options, branchId, container, harmonyContainer, result.setup);
+                createProductionScript(options, branchId, harmonyContainer, result.setup);
             } else {
-                ReactDOM.render(React.createElement(HarmonyProvider, {...options, branchId, setup: result.setup, children: container}, container), harmonyContainer);
+                window.HarmonyProvider({...options, branchId, setup: result.setup}, harmonyContainer);
             }
 		}
 		
@@ -37,11 +37,11 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 	return (<></>)
 }
 
-function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, branchId: string, container: JSX.Element, harmonyContainer: HTMLDivElement, setup: Setuper) {
+function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, branchId: string, harmonyContainer: HTMLDivElement, setup: Setuper) {
     const script = document.createElement('script');
     script.src = 'https://unpkg.com/harmony-ai-editor/dist/editor/bundle.js';
     script.addEventListener('load', function() {
-        window.HarmonyProvider({...options, branchId, setup, children: container}, harmonyContainer);
+        window.HarmonyProvider({...options, branchId, setup}, harmonyContainer);
     });
 
     document.body.appendChild(script);
@@ -94,6 +94,7 @@ const appendChild = (container: Element, child: Element | Node) => {
 const createPortal = ReactDOM.createPortal;
 
 export interface Setup {
+    setContainer: (container: Element) => void;
     changeMode: (mode: DisplayMode) => void;
 }
 class Setuper implements Setup {
@@ -202,18 +203,7 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
 	const documentBody = document.body as HTMLBodyElement;
 
     const setup = new Setuper(harmonyContainer);
-    const Container: React.FunctionComponent<{harmonyContainer: HTMLElement, className: string}> = ({harmonyContainer, className}) => {
-        const ref = useRef<HTMLBodyElement>(null);
-        useEffect(() => {
-            if (ref.current) {
-                //setupHarmonyMode(ref.current, harmonyContainer, document.body as HTMLBodyElement)
-                setup.setContainer(ref.current);
-                setup.changeMode('designer');
-            }
-        }, [ref])
-        return <section id="harmony-section" className={className} ref={ref} style={{backgroundColor: 'white'}}></section>
-    }
-	const container = <Container harmonyContainer={harmonyContainer} className={documentBody.className}/>//document.createElement('body');
+    
     //container.className = documentBody.className;
 	documentBody.classList.add('hw-h-full');
 	document.documentElement.classList.add('hw-h-full');
@@ -223,5 +213,5 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
 	//container.style.backgroundColor = 'white';
     //const {bodyObserver} = setupHarmonyMode(container, harmonyContainer, documentBody);
 
-    return {container, harmonyContainer, setup};
+    return {harmonyContainer, setup};
 }

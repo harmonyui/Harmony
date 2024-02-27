@@ -254,6 +254,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		//span tags so we can select and edit them
 		if (textNodes.length > 0 && children.length > textNodes.length) {
 			textNodes.forEach(node => {
+				if (!node.textContent?.trim()) return;
 				const span = document.createElement('span');
 				span.dataset.harmonyText = 'true';
 				element.appendChild(span);

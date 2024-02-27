@@ -1,7 +1,7 @@
 use std::{sync::Arc};
 use base64::prelude::*;
 use fancy_regex::Regex;
-use swc_ecma_ast::{Expr, MemberExpr, JSXExprContainer, JSXExpr, MemberProp, ComputedPropName, Decl, VarDecl, VarDeclKind, Stmt, VarDeclarator, Pat, ObjectPat, ObjectPatProp, PropName, KeyValuePatProp, FnDecl, Function, BlockStmt, Param, RestPat, ObjectLit, ExprStmt, BindingIdent, op, BinExpr, ReturnStmt};
+use swc_ecma_ast::{op, BinExpr, BindingIdent, BlockStmt, ComputedPropName, CondExpr, Decl, Expr, ExprStmt, FnDecl, Function, JSXExpr, JSXExprContainer, KeyValuePatProp, MemberExpr, MemberProp, ObjectLit, ObjectPat, ObjectPatProp, Param, Pat, PropName, RestPat, ReturnStmt, Stmt, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator, Null};
 
 use std::path::{PathBuf,Path};
 use serde_json::Value;
@@ -67,7 +67,7 @@ impl VisitMut for TransformVisitor {
         if valid_path(&self.filename[1..]) && node.params.len() < 2 && !has_spread_operator_pat(&node.params) && !has_default_params_pat(&node.params) {
             let params = node.params.clone();
 
-            // Create a new parameter with the identifier '...arguments'
+            // Create a new parameter with the identifier '...harmonyArguments'
             let new_param = Pat::Rest(RestPat {
                 span: DUMMY_SP,
                 arg: Box::new(Pat::Ident(BindingIdent {
@@ -157,7 +157,7 @@ impl VisitMut for TransformVisitor {
             println!("{}", self.filename);
             let params = node.params.clone();
 
-            // Create a new parameter with the identifier '...arguments'
+            // Create a new parameter with the identifier '...harmonyArguments'
             let new_param = Param {
                 span: DUMMY_SP,
                 decorators: Default::default(),
@@ -258,35 +258,53 @@ impl VisitMut for TransformVisitor {
                 }))),
             };
 
-            // Create the attribute value: harmonyArguments[0]["data-harmony-id"]
+            // Create the attribute value: typeof harmonyArguments !== 'undefined' ? harmonyArguments[0]["data-harmony-id"] : undefined
             let parent_attr_value = JSXAttrValue::JSXExprContainer(JSXExprContainer {
                 span: swc_common::DUMMY_SP,
-                expr: swc_ecma_ast::JSXExpr::Expr(Box::new(Expr::Member(MemberExpr {
-                    span: swc_common::DUMMY_SP,
-                    obj: (Box::new(Expr::Member(MemberExpr {
+                expr: swc_ecma_ast::JSXExpr::Expr(Box::new(Expr::Cond(CondExpr {
+                    span: DUMMY_SP,
+                    test: Box::new(Expr::Bin(BinExpr {
+                        span: DUMMY_SP,
+                        op: op!("!=="),
+                        left: Box::new(Expr::Unary(UnaryExpr {
+                            span: DUMMY_SP,
+                            op: op!("typeof"),
+                            arg: Box::new(Expr::Ident(Ident::new("harmonyArguments".into(), DUMMY_SP)))
+                        })),
+                        right: Box::new(Expr::Lit(Lit::Str(Str {
+                            span: DUMMY_SP,
+                            value: "undefined".into(),
+                            raw: None
+                        })))
+                    })),
+                    cons: Box::new(Expr::Member(MemberExpr {
                         span: swc_common::DUMMY_SP,
-                        obj: Box::new(Expr::Ident(Ident::new(
-                            "harmonyArguments".into(),
-                            swc_common::DUMMY_SP,
-                        ))),
+                        obj: (Box::new(Expr::Member(MemberExpr {
+                            span: swc_common::DUMMY_SP,
+                            obj: Box::new(Expr::Ident(Ident::new(
+                                "harmonyArguments".into(),
+                                swc_common::DUMMY_SP,
+                            ))),
+                            prop: MemberProp::Computed(ComputedPropName {
+                                expr: Box::new(Expr::Lit(Lit::Num(Number {
+                                    span: swc_common::DUMMY_SP,
+                                    value: 0.0,
+                                    raw: None
+                                }))),
+                                span: swc_common::DUMMY_SP
+                            })
+                        }))),
                         prop: MemberProp::Computed(ComputedPropName {
-                            expr: Box::new(Expr::Lit(Lit::Num(Number {
+                            expr: Box::new(Expr::Lit(Lit::Str(Str {
                                 span: swc_common::DUMMY_SP,
-                                value: 0.0,
+                                value: "data-harmony-id".into(),
                                 raw: None
                             }))),
-                            span: swc_common::DUMMY_SP
-                        })
-                    }))),
-                    prop: MemberProp::Computed(ComputedPropName {
-                        expr: Box::new(Expr::Lit(Lit::Str(Str {
-                            span: swc_common::DUMMY_SP,
-                            value: "data-harmony-id".into(),
-                            raw: None
-                        }))),
-                        span: DUMMY_SP
-                    }),
-                }))),
+                            span: DUMMY_SP
+                        }),
+                    })),
+                    alt: Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))
+                })))
             });
 
             let parent_attribute = JSXAttr {
