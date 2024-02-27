@@ -1,9 +1,9 @@
 "use client";
 import { Component, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Inspector, componentIdentifier } from "./inspector/inspector";
+import { Inspector, componentIdentifier, isImageElement } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {PublishRequest, loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
-import {ResizeValue} from '@harmony/ui/src/hooks/resize';
+import {ResizeCoords, ResizeValue} from '@harmony/ui/src/hooks/resize';
 import {translateUpdatesToCss} from '@harmony/util/src/component';
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
@@ -299,27 +299,51 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		onAttributesChange(component, [update], false);
 	});
 
-	const onResize = useEffectEvent((size: ResizeValue) => {
-		if (!selectedComponent) return;
+	const onResize = useEffectEvent((size: ResizeValue, oldSize: ResizeValue) => {
+		if (!selectedComponent || !rootComponent) return;
 
 		const component = componentIdentifier.getComponentFromElement(selectedComponent);
 		if (!component) throw new Error("Error when getting component");
 
-		const styles = getComputedStyle(selectedComponent);
+		const convertSizeToString = (size: ResizeValue): string => {
+			let str = Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}${value !== undefined ? `:${direction}=${value}` : ''}` : value !== undefined ? `${direction}=${value}` : '', '');
+			if (isImageElement(selectedComponent)) {
+				str = `h${str}`;
+			}
 
-		const oldSize = {
-			n: getNumberFromString(styles.paddingTop),
-			e: getNumberFromString(styles.paddingRight),
-			s: getNumberFromString(styles.paddingBottom),
-			w: getNumberFromString(styles.paddingLeft),
+			return str;
 		}
-
-		const convertSizeToString = (size: ResizeValue): string => Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}:${direction}=${value}` : `${direction}=${value}`, '')
 
 		const value = convertSizeToString(size);
 		const oldValue = convertSizeToString(oldSize);
 		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value, oldValue}
 		
+		console.log(`old: ${oldValue}`)
+		//Only let the size change if it is actually changing the size of the component
+		const width = selectedComponent.clientWidth;
+		const height = selectedComponent.clientHeight;
+		makeUpdates(selectedComponent, [update], rootComponent, fonts);
+		const newWidth = selectedComponent.clientWidth;
+		const newHeight = selectedComponent.clientHeight;
+		makeUpdates(selectedComponent, [{...update, value: update.oldValue, oldValue: update.value}], rootComponent, fonts);
+
+		if (newWidth === width) {
+			//if ((size.e || oldSize.e) - oldSize.e >= 0)
+			size.e = undefined;
+			//if ((size.w || oldSize.w) - oldSize.w >= 0)
+			size.w = undefined;
+		}
+
+		if (newHeight === height) {
+			//if ((size.n || oldSize.n) - oldSize.n >= 0)
+			size.n = undefined;
+			//if ((size.s || oldSize.s) - oldSize.s >= 0)
+			size.s = undefined;
+		}
+		update.value = convertSizeToString(size);
+		if (!update.value || update.value === 'h') return;
+		console.log(`${update.value}, ${update.oldValue}`)
+
 		onAttributesChange(component, [update]);
 	});
 

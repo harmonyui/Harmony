@@ -12,7 +12,7 @@ import {InteractEvent, Point} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
 import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 import { ComponentUpdate } from "@harmony/ui/src/types/component";
-import { ResizeValue, useResize, ResizeRect, ResizeDirection } from "@harmony/ui/src/hooks/resize";
+import { ResizeValue, useResize, ResizeRect, ResizeDirection, ResizeCoords } from "@harmony/ui/src/hooks/resize";
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -32,8 +32,12 @@ function selectDesignerElement(element: HTMLElement): HTMLElement {
 	return target;
 }
 
-function isTextElement(element: HTMLElement): boolean {
+export function isTextElement(element: HTMLElement): boolean {
 	return Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE);
+}
+
+export function isImageElement(element: Element): boolean {
+	return ['img', 'svg'].includes(element.tagName.toLowerCase());
 }
 
 export interface InspectorProps {
@@ -45,7 +49,7 @@ export interface InspectorProps {
 	parentElement: HTMLElement | undefined;
 	onElementTextChange: (value: string, oldValue: string) => void;
 	mode: SelectMode;
-	onResize: (size: ResizeValue) => void;
+	onResize: (size: ResizeValue, oldRect: ResizeValue) => void;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
 	onChange: (component: HTMLElement, update: ComponentUpdate[], execute?: boolean) => void;
 	updateOverlay: number;
@@ -55,7 +59,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 
-	const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect) {
+	const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect, oldRect) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -69,7 +73,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			overlayRef.current.remove('select');
 		}
 
-		onResize(rect);
+		onResize(rect, oldRect);
 	}});
 
 	// const {makeDraggable, isDragging: isDraggingReal} = useDraggableList({onIsDragging() {
@@ -675,11 +679,17 @@ export class OverlayRect {
 		const initFullDrag = (direction: ResizeDirection) => (e: MouseEvent) => {
 			const x = e.clientX;
 			const y = e.clientY;
-			const values = {
+			let values = {
 				n: parseFloat($(this.element).css('paddingTop')),
 				e: parseFloat($(this.element).css('paddingRight')),
 				s: parseFloat($(this.element).css('paddingBottom')),
 				w: parseFloat($(this.element).css('paddingLeft')),
+			}
+			if (isImageElement(this.element)) {
+				values.n = this.element.clientHeight;
+				values.s = values.n;
+				values.e = this.element.clientWidth;
+				values.w = values.e;
 			}
 
 			this.onDrag && this.onDrag({x, y, direction, ...values});

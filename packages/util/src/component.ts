@@ -15,12 +15,20 @@ export function translateUpdatesToCss(updates: ComponentUpdate[]): ComponentUpda
 				const letterSpacing: ComponentUpdate = {...update, name: 'letterSpacing', value: letter};
 				translated.push(...[lineHeight, letterSpacing]);
 			} else if (update.name === 'size') {
-				const directionsStr = update.value.split(':');
-				const mapping: Record<ResizeCoords, 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight'> = {
+				const useHeight = update.value.startsWith('h');
+				const value = update.value.replace('h', '');
+				const directionsStr = value.split(':');
+				const mappingPadding: Record<ResizeCoords, 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight'> = {
 					n: 'paddingTop',
 					e: 'paddingRight',
 					s: 'paddingBottom',
 					w: 'paddingLeft'
+				}
+				const mappingHeight: Record<ResizeCoords, 'width' | 'height'> = {
+					n: 'height',
+					e: 'width',
+					s: 'height',
+					w: 'width'
 				}
 				for (const directionStr of directionsStr) {
 					const [direction, value] = directionStr.split('=');
@@ -28,6 +36,7 @@ export function translateUpdatesToCss(updates: ComponentUpdate[]): ComponentUpda
 					if (direction.length !== 1 || !'nesw'.includes(direction)) throw new Error("Invalid direction " + direction);
 
 					const valueStyle = `${value}px`;
+					const mapping = useHeight ? mappingHeight : mappingPadding;
 					const spaceUpdate = {...update, name: mapping[direction as ResizeCoords], value: valueStyle};
 					translated.push(spaceUpdate);
 				}

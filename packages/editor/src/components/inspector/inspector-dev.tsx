@@ -678,7 +678,7 @@ export const getReferenceFiber = (baseFiber?: Fiber): Fiber | undefined => {
   if (!directParent) return undefined
 
   const isParentNative = isNativeTagFiber(directParent)
-  const isOnlyOneChild = !directParent.child!.sibling
+  const isOnlyOneChild = !directParent.child?.sibling
 
   let referenceFiber = (!isParentNative && isOnlyOneChild)
     ? directParent

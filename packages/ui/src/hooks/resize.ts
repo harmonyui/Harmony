@@ -6,17 +6,18 @@ export type ResizeDirection = 'n' | 'e' | 's' | 'w' | 'ne' | 'se' | 'sw' | 'nw';
 export type ResizeValue = Partial<Record<ResizeCoords, number>>;
 export type ResizeRect = {x: number, y: number, direction: ResizeDirection} & Record<ResizeCoords, number>;
 interface ResizeProps {
-	onIsDragging?: (value: ResizeValue) => void;
-	onDragFinish?: (value: ResizeValue) => void;
+	onIsDragging?: (value: ResizeValue, oldValue: ResizeValue) => void;
+	onDragFinish?: (value: ResizeValue, oldValue: ResizeValue) => void;
 }
 export const useResize = ({onIsDragging, onDragFinish}: ResizeProps) => {
 	const [rect, setRect] = useState<ResizeRect>();
 	const [updates, setUpdates] = //useState<ResizeValue>();
 	useState<ResizeValue>({});
 	const [isDragging, setIsDragging] = useState(false);
+	const [currRect, setCurrRect] = useState<ResizeValue>();
 
 	const doDrag = useEffectEvent((e: MouseEvent) => {
-		if (!rect) return;
+		if (!rect || !currRect) return;
 
 		const shift = e.shiftKey && rect.direction.length === 2;
 		
@@ -73,23 +74,31 @@ export const useResize = ({onIsDragging, onDragFinish}: ResizeProps) => {
 			copy.n = (originalProportions.n / originalProportions.s) * copy.s;
 		}
 
-		onIsDragging && onIsDragging(copy);
+		const newRect = {n: copy.n, s: copy.s, e: copy.e, w: copy.w};
+		console.log(currRect);
+		console.log(newRect);
 		setUpdates(copy);
+		setCurrRect(newRect);
+		onIsDragging && onIsDragging(copy, {n: currRect.n, e: currRect.e, s: currRect.s, w: currRect.w});
 	});
 
 	const stopDrag = useEffectEvent((e: MouseEvent) => {
 		if (!updates) {
 			throw new Error("There are no updates");
 		}
+		if (!rect) {
+			throw new Error("There is no rect")
+		}
 		
 		setIsDragging(false);
 		document.documentElement.removeEventListener('mousemove', doDrag, false);    
     	document.documentElement.removeEventListener('mouseup', stopDrag, false);
-		onDragFinish && onDragFinish(updates);
+		onDragFinish && onDragFinish(updates, {n: rect.n, s: rect.s, e: rect.e, w: rect.w});
 	});
 
 	const onDrag = useEffectEvent((rect: ResizeRect): void => {
 		setRect(rect);
+		setCurrRect(rect);
 		setUpdates({});
 		document.documentElement.addEventListener('mousemove', doDrag, false);
 		document.documentElement.addEventListener('mouseup', stopDrag, false);
