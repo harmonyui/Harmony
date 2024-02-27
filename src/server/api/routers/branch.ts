@@ -47,7 +47,7 @@ export const branchRoute = createTRPCRouter({
 				...branchPayload
 			});
 
-			const lastUpdated = newBranch.updates.sort((a, b) => compare(b.date_modified, a.date_modified))[0].date_modified;
+			const lastUpdated = getLastUpdated(newBranch);
 
 			return {
 				id: newBranch.id,
