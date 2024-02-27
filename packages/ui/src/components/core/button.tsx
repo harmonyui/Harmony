@@ -1,6 +1,8 @@
-import React from "react";
+import React, { useState } from "react";
 import type { PolymorphicComponentProps } from "../../types/polymorphics";
 import { Spinner } from "./spinner";
+import { ModalPortal } from "./modal";
+import { Header } from "./header";
 
 export type ButtonType = "primary" | "secondary" | "other" | "none";
 type ButtonProps = {
@@ -48,3 +50,58 @@ export function Button <T extends React.ElementType>({
     </Component>
   );
 };
+
+interface ButtonInfo {
+  mode: Exclude<ButtonType, 'other'>,
+  handler: () => void;
+  label: string;
+}
+type ConfirmButtonPropsInner = {
+    onConfirm: () => void,
+    onCancel?: () => void
+    header: string,
+    message: string
+}
+type ConfirmButtonProps<C extends React.ElementType> = TextProps<C> & ConfirmButtonPropsInner;
+const ConfirmButton = <C extends React.ElementType>(props: ConfirmButtonProps<C>) => {
+    const [isOpen, setIsOpen] = useState(false);
+    const {onConfirm, onCancel, message, header} = props;
+
+    const onButtonClick = () => {
+        setIsOpen(true);
+    }
+    const onCancelClick = () => {
+        setIsOpen(false);
+        onCancel && onCancel();
+    }
+    const onOk = () => {
+        setIsOpen(false);
+        onConfirm();
+    }
+
+    const buttons: ButtonInfo[] = [
+        {
+            mode: 'secondary',
+            label: 'Cancel',
+            handler: onCancelClick
+        },
+        {
+            mode: 'primary',
+            label: 'Confirm',
+            handler: onOk
+        }
+    ]
+
+    return <>
+        <Button {...props} onClick={onButtonClick} />
+        <ModalPortal show={isOpen}>
+            <Header level={3}>{header}</Header>
+            {message}
+            <div className="hw-flex hw-justify-end hw-gap-2">
+              {buttons.map(({mode, label, handler}) => <Button mode={mode} onClick={handler}>{label}</Button>)}
+            </div>
+        </ModalPortal>
+    </>
+}
+
+export default ConfirmButton;

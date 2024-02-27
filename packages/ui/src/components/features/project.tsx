@@ -16,10 +16,14 @@ import { CreateNewPullRequestModal } from "./pull-request";
 import { DropdownIcon } from "../core/dropdown";
 import {load} from 'cheerio';
 import domtoimage from 'dom-to-image';
+import { ConfirmModal } from "../core/confirm";
+import { useRouter } from "next/navigation";
 
 
 export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> = ({Projectes}) => {
 	const [showNewProject, setShowNewProject] = useState(false);
+	const {mutate: deleteItem} = api.branch.deleteBranch.useMutation();
+	const router = useRouter();
 	
 	const openProject = (item: BranchItem) => {
 		const url = new URL(item.url);
@@ -27,11 +31,16 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 		window.open(url.href, '_blank');
 	}
 
+	const onDelete = (item: BranchItem) => {
+		deleteItem({branchId: item.id});
+		router.refresh();
+	}
+
 	return <ModalProvider>
 		<div className="hw-flex hw-flex-col hw-gap-4">
 			{Projectes ? <>
 				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create New Project</Button>
-				{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)}/>)}
+				{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)} onDelete={() => onDelete(item)}/>)}
 				<CreateNewProjectModal show={showNewProject} onClose={() => setShowNewProject(false)} onSuccessfulCreation={openProject}/>
 			</> : null}
 		</div>
@@ -99,10 +108,12 @@ const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps>
 export interface ProjectLineItemProps {
 	item: BranchItem;
 	onOpenHarmony: () => void;
+	onDelete: () => void;
 }
-export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({item, onOpenHarmony}) => {
+export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({item, onOpenHarmony, onDelete: onDeleteProps}) => {
 	const thumbnailQuery = api.branch.getURLThumbnail.useQuery({url: item.url});
     const [thumbnail, setThumbnail] = useState<string>('');
+	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
 	if (thumbnailQuery.data && !thumbnail) {
 		setThumbnail(thumbnailQuery.data);
@@ -118,12 +129,22 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 	// 	fetch();
 	// }, [thumbnailQuery])
 
+	const onDeleteDesire = () => {
+		setShowDeleteConfirm(true);
+	}
+
+	const onDelete = () => {
+		setShowDeleteConfirm(false);
+		onDeleteProps();
+	}
+
 
     const moreItems = [
-        {id: '0', name: 'Open', onClick: onOpenHarmony}
+        {id: '0', name: 'Open', onClick: onOpenHarmony},
+		{id: '1', name: 'Delete', onClick: onDeleteDesire}
     ]
 
-	return (
+	return (<>
 		<div className="hw-w-[400px]" >
 			<button className="hw-rounded-md hw-overflow-auto">
                 <img className="w-full" src={thumbnail} onClick={onOpenHarmony}/>
@@ -136,5 +157,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
                 <div className="hw-text-xs hw-text-gray-400 hw-text-start">Last updated {displayElapsedTime(item.lastUpdated)}</div>
             </div>
 		</div>
+		<ConfirmModal show={showDeleteConfirm} header="Delete Project" message={`Are you sure you want to delete the project ${item.label}`} onConfirm={onDelete} onCancel={() => setShowDeleteConfirm(false)}/>
+	</>
 	)
 }

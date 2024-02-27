@@ -58,6 +58,18 @@ export const branchRoute = createTRPCRouter({
 				lastUpdated
 			} satisfies BranchItem;
 		}),
+	deleteBranch: protectedProcedure
+		.input(z.object({branchId: z.string()}))
+		.mutation(async ({ctx, input}) => {
+			await ctx.prisma.branch.update({
+				where: {
+					id: input.branchId
+				},
+				data: {
+					is_deleted: true
+				}
+			});
+		}),
 	getURLThumbnail: publicProcedure
 		.input(z.object({url: z.string()}))
 		.query(async ({ctx, input}) => {
@@ -120,6 +132,10 @@ export const getBranches = async ({prisma, repositoryId}: {prisma: Db, repositor
 	const branches = await prisma.branch.findMany({
 		where: {
 			repository_id: repositoryId,
+			is_deleted: false
+		},
+		orderBy: {
+			date_modified: 'desc'
 		},
 		...branchPayload
 	});
@@ -155,6 +171,7 @@ export const getBranch = async({prisma, branchId}: {prisma: Db, branchId: string
 	const branch = await prisma.branch.findUnique({
 		where: {
 			id: branchId,
+			is_deleted: false
 		},
 		...branchPayload
 	});

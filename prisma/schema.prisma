@@ -41,6 +41,7 @@ model Branch {
 	updates ComponentUpdate[]
 	pullRequest PullRequest?
 	date_modified DateTime @default(now())
+	is_deleted Boolean @default(false)
 }
 
 model ComponentUpdate {
