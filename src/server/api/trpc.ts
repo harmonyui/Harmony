@@ -26,6 +26,7 @@ import { EmailService, NodeMailerEmailService } from "./services/email-service";
 
 interface CreateContextOptions {
   session: Session | undefined;
+  req: Request;
 }
 
 interface AuthContextOptions {
@@ -57,17 +58,17 @@ export const mailer = new NodeMailerEmailService();
 const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
 
   return {
-    session: opts.session,
+    ...opts,
     prisma,
-    mailer
+    mailer,
   };
 };
 
-export const createAuthContext = (session: Session) => {
-  return createInnerTRPCContext({
-    session
-  })
-}
+// export const createAuthContext = (session: Session) => {
+//   return createInnerTRPCContext({
+//     session
+//   })
+// }
 
 /**
  * This is the actual context you will use in your router. It will be used to process every request
@@ -75,12 +76,24 @@ export const createAuthContext = (session: Session) => {
  *
  * @see https://trpc.io/docs/context
  */
-export const createTRPCContext = async () => {
+export const createTRPCContext = async (req: Request) => {
+  const cookies = req.headers.get('cookie');
+  let mockUserId: string | undefined;
+  if (cookies) {
+    const cookieValues = cookies.split('; ');
+    for (const cookieValue of cookieValues) {
+      const [name, value] = cookieValue.split('=');
+      if (name === 'harmony-user-id') {
+        mockUserId = value;
+      }
+    }
+  }
   // Get the session from the server using the getServerSession wrapper function
-  const session = await getServerAuthSession();
+  const session = await getServerAuthSession(mockUserId);
 
   return createInnerTRPCContext({
     session,
+    req
   });
 };
 

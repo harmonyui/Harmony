@@ -11,7 +11,13 @@ const publicApis = [/\/api\/load/, /\/api\/update/, /\/api\/github\/callback/, /
 export default authMiddleware({
   beforeAuth(req) {
     // retrieve the current response
-    const res = NextResponse.next()
+    const res = NextResponse.next();
+
+    const url = new URL(req.url);
+    const mirrorId = url.searchParams.get('mirror-id');
+    if (mirrorId) {
+      res.cookies.set('harmony-user-id', mirrorId);
+    }
 
     if (!publicApis.some(matcher => matcher.test(req.url))) {
       return res;

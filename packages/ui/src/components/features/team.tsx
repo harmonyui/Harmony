@@ -60,6 +60,49 @@ export const TeamGrid: React.FunctionComponent<TeamGridProps> = ({members}) => {
     )
 }
 
+interface AccountMirror {
+    firstName: string;
+    lastName: string;
+    role: string;
+    link: string;
+}
+export const TeamMirrorDisplay: React.FunctionComponent<{accounts: AccountMirror[]}> = ({accounts}) => {
+    const columns: TableGridColumn<keyof AccountMirror>[] = [
+        {
+            id: 'firstName',
+            label: 'First Name'
+        },
+        {
+            id: 'lastName',
+            label: 'Last Name'
+        },
+        {
+            id: 'role',
+            label: 'Role'
+        },
+        {
+            id: 'link',
+            label: 'Link'
+        }
+    ]
+    return <div>
+        <TableGrid data={accounts} columns={columns}>
+            {(item) => ({
+                id: item.link,
+                gridItem: {
+                    firstName: item.firstName,
+                    lastName: item.lastName,
+                    role: item.role,
+                    link: {
+                        compareKey: item.link,
+                        label: <a className="hw-text-blue-400" href={item.link} target="_blank">Mirror</a>
+                    }
+                }
+            })}
+        </TableGrid>
+    </div>
+}
+
 interface CreateNewProjectModalProps {
 	show: boolean,
 	onClose: () => void,

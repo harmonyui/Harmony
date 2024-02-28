@@ -8,6 +8,7 @@ import { GithubRepository, appOctokit } from "../repository/github";
 import { Repository, repositorySchema } from "../../../../packages/ui/src/types/branch";
 import {components} from '@octokit/openapi-types/types'
 import { emailSchema } from "@harmony/ui/src/types/utils";
+import { cookies } from "next/headers";
 
 const createSetupSchema = z.object({
 	account: z.object({firstName: z.string(), lastName: z.string(), role: z.string()}),  
@@ -57,6 +58,9 @@ export const setupRoute = createTRPCRouter({
 					}
 				}
 			});
+
+			const cookie = cookies();
+			cookie.delete('harmony-user-id');
 		
 			return {
 				id: newAccount.id,

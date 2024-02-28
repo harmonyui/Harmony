@@ -3,6 +3,7 @@ import { FullSession, Session, getServerAuthSession } from "../src/server/auth";
 import { redirect } from "next/navigation";
 import { AuthContext, mailer } from "../src/server/api/trpc";
 import { prisma } from "../src/server/db";
+import {cookies} from 'next/headers';
 
 interface RequireRouteProps {
   redirect: string;
@@ -11,8 +12,8 @@ interface RequireRouteProps {
 export const requireRoute =
   ({ redirect, check }: RequireRouteProps) =>
   () =>
-  async () => {
-    const session = await getServerAuthSession();
+  async (mockUserId?: string) => {
+    const session = await getServerAuthSession(mockUserId);
 
     if (!session?.auth || !session.account || (check && check(session))) {
       return {redirect, session: undefined}
@@ -43,7 +44,9 @@ export const requireAuth = requireRoute({ redirect: "/setup", check: (session) =
 type AuthProps = {ctx: AuthContext}
 export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.FunctionComponent<AuthProps> => 
 	async (props) => {
-		const response = await requireAuth()();
+    const cookie = cookies();
+    const mockUserId = cookie.get('harmony-user-id');
+    const response = await requireAuth()(mockUserId?.value);
 
 		if (response.redirect) {
 			redirect('/setup');

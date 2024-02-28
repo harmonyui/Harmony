@@ -1,3 +1,4 @@
+"use client";
 import { useState } from "react";
 import { ChevronSwitch } from "./chevron-switch";
 import { Input } from "./input";

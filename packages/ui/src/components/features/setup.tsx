@@ -18,14 +18,14 @@ import { CopyText } from "../core/copy-text";
 
 type Account = AccountServer
 
-export const WelcomeDisplay: React.FunctionComponent<{teamId: string | undefined}> = ({teamId}) => {
-    const queryAccount = api.setup.getAccount.useQuery();
+export const WelcomeDisplay: React.FunctionComponent<{teamId: string | undefined, account: Account | undefined}> = ({teamId, account: _account}) => {
+    //const queryAccount = api.setup.getAccount.useQuery();
 	const {mutate: createAccount} = api.setup.createAccount.useMutation();
-	const [account, setAccount] = useState<Account | undefined>();
+	const [account, setAccount] = useState<Account | undefined>(_account);
 	
-    if (queryAccount.data && !account) {
-        setAccount(queryAccount.data);
-    }
+    // if (queryAccount.data && !account) {
+    //     setAccount(queryAccount.data);
+    // }
 
 	const onWelcomeContinue = async (data: Account) => {
 		return new Promise<boolean>((resolve) => createAccount({account: data, teamId}, {
@@ -392,6 +392,11 @@ interface GitImportRepositoryProps {
 }
 const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = ({onImport, accessToken}) => {
 	const query = api.setup.getRepositories.useQuery({accessToken});
+    const [error, setError] = useState('');
+
+    if (query.isError && !error) {
+        setError('There was an error getting repositories');
+    }
 
 	const repos = query.data;
 
@@ -400,6 +405,7 @@ const GitImportRepository: React.FunctionComponent<GitImportRepositoryProps> = (
 	return (<>
 		<Header level={4}>Import Git Repository</Header>
         <p className="hw-text-gray-400 hw-text-sm">Note: while in beta, this cannot be changed later.</p>
+        {error ? <p className="hw-text-red-400 hw-text-sm">{error}</p> : null}
 		{repos ? repos.length === 0 ? <Button onClick={() => window.open("https://github.com/apps/harmony-ai-app/installations/new", 'MyWindow', 'width=600,height=300')}>Install</Button> : <>
 			<div className="hw-flex hw-flex-col">
 				{repos.map(repo => <div key={repo.id} className="hw-flex hw-justify-between hw-items-center hw-border hw-rounded-md hw-p-3">

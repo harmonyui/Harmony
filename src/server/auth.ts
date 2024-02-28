@@ -29,7 +29,8 @@ export type Account = z.infer<typeof accountSchema>;
 export type AuthContext = {
 	userId: string;
 	//oauthToken: string;
-	user: User
+	user: User,
+	role: string
 };
 
 export type FullSession = {
@@ -80,8 +81,9 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 	}
 }
 
-export const getServerAuthSession = async (): Promise<Session | undefined> => {
-	const {userId} = auth();
+const harmonyAdmins = ['bradofrado@gmail.com', 'braydon.jones28@gmail.com', 'jacobwyliehansen@gmail.com'];
+export const getServerAuthSession = async (mockUserId?: string): Promise<Session | undefined> => {
+	const {userId} = auth()// : {userId: null};
 	let ourAuth: AuthContext | null = null;
 	
 	if (userId) {
@@ -90,18 +92,21 @@ export const getServerAuthSession = async (): Promise<Session | undefined> => {
 		if (!user.emailAddresses[0].emailAddress) {
 			throw new Error("User does not have an email address");
 		}
+		const email = user.emailAddresses[0].emailAddress;
 		ourAuth = {
 			user: {
 				id: user.id,
 				name: `${user.firstName} ${user.lastName}`,
 				image: user.imageUrl,
-				email: user.emailAddresses[0].emailAddress
+				email
 			},
 			userId,
+			role: harmonyAdmins.includes(email) ? 'harmony-admin' : 'user'
 		}
 	}
 	
-	const account: Account | undefined = ourAuth ? (await getAccount(userId as string)) : undefined;
+	const userIdToUse = mockUserId !== 'none' ? mockUserId || userId : null;
+	const account: Account | undefined = ourAuth && userIdToUse ? (await getAccount(userIdToUse)) : undefined;
 
 	if (account?.contact === 'example@gmail.com' && ourAuth) {
 		account.contact = emailSchema.parse(ourAuth.user.email);
