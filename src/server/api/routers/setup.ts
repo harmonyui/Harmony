@@ -60,7 +60,7 @@ export const setupRoute = createTRPCRouter({
 			});
 
 			const cookie = cookies();
-			cookie.delete('harmony-user-id');
+			cookie.set('harmony-user-id', userId);
 		
 			return {
 				id: newAccount.id,
