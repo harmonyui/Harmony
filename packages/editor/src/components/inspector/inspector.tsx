@@ -229,12 +229,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		if (overlayRef.current === undefined) {
 			overlayRef.current = new Overlay(container, parentElement);
 		}
-		if (hoveredComponent) {
+		if (hoveredComponent && !isDragging) {
 			overlayRef.current.hover(hoveredComponent, scale);
 		} else {
 			overlayRef.current.remove('hover');
 		}
-	}, [hoveredComponent, scale])
+	}, [hoveredComponent, scale, isDragging])
 
 	const isInteractableComponent = useCallback((component: HTMLElement) => {
 		const sizeThreshold = 15;
@@ -376,6 +376,13 @@ export interface Rect {
   right: number;
   top: number;
   width: number;
+}
+
+export interface RectBox {
+	left: number;
+	right: number;
+	top: number;
+	bottom: number;
 }
 
 export interface BoxSizing {
@@ -684,7 +691,7 @@ export class OverlayRect {
 
 		//NE -> SE -> SW -> NW
 		//E -> S -> W -> N
-		if (this.onDrag) {
+		if (this.onDrag && false) {
 			Object.assign(this.resizeHandles[0].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,

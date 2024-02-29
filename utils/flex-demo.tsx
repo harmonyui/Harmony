@@ -228,9 +228,9 @@ style="${parentStyle}">
     return <DragDemo code={code}>
         <div className="hw-ml-[200px] hw-w-[400px]">
         <div className="hw-py-[50px] hw-border hw-w-[200px]" ref={parentRef}>
-            <div className="hw-w-[50px] hw-h-[50px] hw-bg-primary hw-border" ref={child1Ref} id="child-1"></div>
-            <div className="hw-w-[50px] hw-h-[50px] hw-bg-primary hw-border" ref={child2Ref} id="child-2"></div>
-            <div className="hw-w-[50px] hw-h-[50px] hw-bg-primary hw-border" ref={child3Ref} id="child-3"></div>
+            <div className="hw-h-[50px] hw-bg-primary hw-border" ref={child1Ref} id="child-1"></div>
+            <div className="hw-h-[50px] hw-bg-primary hw-border" ref={child2Ref} id="child-2"></div>
+            <div className="hw-h-[50px] hw-bg-primary hw-border" ref={child3Ref} id="child-3"></div>
         </div>
         </div>
     </DragDemo>

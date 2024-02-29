@@ -1,9 +1,9 @@
 import { CapitalizeFirstLetter as capitalizeFirstLetter, groupBy, groupByDistinct, round } from "@harmony/util/src";
 import interact from "interactjs";
 import { useState, useEffect, useRef } from "react";
-import { Rect, selectDesignerElement } from "./inspector";
+import { Rect, RectBox, selectDesignerElement } from "./inspector";
 import { useEffectEvent } from "../../../../ui/src/hooks/effect-event";
-import {InteractEvent, Point} from '@interactjs/types'
+import {InteractEvent, ResizeEvent} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
 import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 import $ from 'jquery';
@@ -439,21 +439,22 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
     for (const info of childEdgeInfo) {
         const leftGap = info.left.parentEdge.gap - edges.left.parentEdge.gap;
         const rightGap = info.right.parentEdge.gap - edges.right.parentEdge.gap;
-        if (info.left.parentEdge.gap >= 0 && info.right.parentEdge.gap >= 0 && Math.abs(edges.left.parentEdge.gap - 0.1) >= 0) {
+        if (info.left.parentEdge.gap >= 0 && info.right.parentEdge.gap >= 0) {
             info.element.style.marginLeft = `${leftGap}px`;
+            info.element.style.marginRight = `${rightGap}px`;
         }
         if (info.index > 0 && info.top.siblingEdge && Math.abs(info.top.siblingEdge.gap - 0.1) >= 0) {
             info.element.style.marginTop = `${info.top.siblingEdge.gap}px`
         } 
 
-        if (midpointXRelative <= info.midpointX) {
-            info.element.style.marginLeft = 'auto';
-            if (midpointXRelative === info.midpointX && edges.left.parentEdge.gap === edges.right.parentEdge.gap) {
-                info.element.style.marginRight = 'auto';
-            } else {
-                info.element.style.marginRight = `${rightGap}px`;
-            }
-        }
+        // if (midpointXRelative <= info.midpointX) {
+        //     info.element.style.marginLeft = 'auto';
+        //     if (midpointXRelative === info.midpointX && edges.left.parentEdge.gap === edges.right.parentEdge.gap) {
+        //         info.element.style.marginRight = 'auto';
+        //     } else {
+        //         info.element.style.marginRight = `${rightGap}px`;
+        //     }
+        // }
     }
 }
 
@@ -562,6 +563,59 @@ function calculateFlexInfo(parent: HTMLElement, axis: Axis, scale: number): Flex
 		centerSpace
 	}
 }
+
+function isElementFluid(elm: Element, side: 'width' | 'height'){
+    var wrapper, clone = elm.cloneNode(false) as HTMLElement, ow, p1, p2;
+    let value;
+    if( window.getComputedStyle ) {
+      value = window.getComputedStyle(clone,null)[side];
+    }
+    /// the browsers that fail to work as Firefox does
+    /// return an empty width value, so here we fall back.
+    if ( !value ) {
+      /// remove styles that can get in the way
+      clone.style.margin = '0';
+      clone.style.padding = '0';
+      clone.style[`max${capitalizeFirstLetter(side)}` as 'maxWidth'] = 'none';
+      clone.style[`min${capitalizeFirstLetter(side)}` as 'minWidth'] = 'none';
+      /// create a wrapper that we can control, my reason for
+      /// using an unknown element is that it stands less chance
+      /// of being affected by stylesheets - this could be improved
+      /// to avoid possible erroneous results by overriding more css
+      /// attributes with inline styles.
+      wrapper = document.createElement('wrapper');
+      wrapper.style.display = 'block';
+      wrapper.style[side] = '500px';
+      wrapper.style.padding = '0';
+      wrapper.style.margin = '0';
+      wrapper.appendChild(clone);
+      /// insert the element in the same location as our target
+      elm.parentNode?.insertBefore(wrapper,elm);
+      /// store the clone's calculated width
+      ow = clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'];
+      /// change the wrapper size once more
+      wrapper.style[side] = '600px';
+      /// if the new width is the same as before, most likely a fixed width
+      if( clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'] == ow ){
+        /// tidy up
+        elm.parentNode?.removeChild(wrapper);
+        return false;
+      }
+      /// otherwise, calculate the percentages each time - if they
+      /// match then it's likely this is a fluid element
+      else {
+        p1 = Math.floor(100/500*ow);
+        p2 = Math.floor(100/600*clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth']);
+        /// tidy up
+        elm.parentNode?.removeChild(wrapper);
+        return (p1 == p2) ? Math.round(p1)+'%' : false;
+      }
+    }
+    else {
+      p1 = (value && String(value).indexOf('%') != -1);
+      return p1 ? value : false;
+    }
+  }
 
 const minGap = 8;
 
@@ -879,7 +933,7 @@ interface SnapBehavior {
 	onIsDragging: (element: HTMLElement, event: DraggingEvent, scale: number) => void;
 	onCalculateSnapping: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number, scale: number) => {resultsX: SnappingResult[], resultsY: SnappingResult[]};
 	onDragFinish: (element: HTMLElement) => HTMLElement;
-    getRestrictions: (element: HTMLElement, scale: number) => {left: number, right: number, bottom: number, top: number}[];
+    getRestrictions: (element: HTMLElement, scale: number) => RectBox[];
 }
 
 const elementSnapBehavior: SnapBehavior = {
@@ -1150,21 +1204,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
     const restrictions = element ? snappingBehavior.getRestrictions(element, scale) : [];
 
-	useEffect(() => {
-		if (element) {
-			const values = snappingBehavior.getOldValues(element);
-			setOldValues(values);
-		}
-	}, [element]);
-
-	const result = useDraggable({element, onIsDragging(event) {
-		snappingBehavior.onIsDragging(element!, event, scale);
-
-		onIsDragging && onIsDragging(event);
-	}, onCalculateSnapping(element, x, y, currentX, currentY) {
-        const parent = element.parentElement!;
-		const {resultsX, resultsY} = snappingBehavior.onCalculateSnapping(element, x,y, currentX, currentY, scale);
-
+    function normalizeSnappingResults({x, y, resultsX, resultsY}: {x: number, y: number, resultsX: SnappingResult[], resultsY: SnappingResult[]}) {
+        const parent = element!.parentElement!;
         let result: SnappingResult | undefined;
         
         const resX = resultsX.reduce<SnappingResult[]>((prev, curr) => {
@@ -1210,6 +1251,23 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		}
 
         return result;
+    }
+
+	useEffect(() => {
+		if (element) {
+			const values = snappingBehavior.getOldValues(element);
+			setOldValues(values);
+		}
+	}, [element]);
+
+	const result = useDraggable({element, onIsDragging(event) {
+		snappingBehavior.onIsDragging(element!, event, scale);
+
+		onIsDragging && onIsDragging(event);
+	}, onCalculateSnapping(element, x, y, currentX, currentY) {
+        const result = snappingBehavior.onCalculateSnapping(element, x,y, currentX, currentY, scale);
+
+        return normalizeSnappingResults({...result, x, y});
 	}, onDragFinish(element) {
 		onDragFinish && onDragFinish(snappingBehavior.onDragFinish(element), oldValues);
 	}, canDrag(element) {
@@ -1223,16 +1281,26 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		return true;
 	}, restrictions, restrictToParent: true, scale});
 
-	// const onShift = useEffectEvent(() => {
-	// 	console.log("Setting shift...");
-	// 	setShiftPressed(true);
-	// })
+    const {isResizing} = useResizable({element, scale, restrictions: [], onIsResizing(event) {
+        if (!element) return;
 
-	// useEffect(() => {
-	// 	hotkeys('shift+a', onShift)
-	// }, []);
+        elementSnapBehavior.onIsDragging(element, event, scale);
+        if (!isElementFluid(element, 'width')) {
+            element.style.width = `${event.rect.width}px`
+        }
+        if (!isElementFluid(element, 'height')) {
+            element.style.height = `${event.rect.height}px`
+        }
+    }, onCalculateSnapping(element, x, y, currentX, currentY) {
+        return undefined;
+        // const result = elementSnapBehavior.onCalculateSnapping(element, x,y, currentX, currentY, scale);
 
-	return result;
+        // const res = normalizeSnappingResults({...result, x, y});
+
+        // return res;
+    },});
+
+	return {isDragging: result.isDragging || isResizing, isResizing};
 }
 
 function createSnapGuidesElement(element: HTMLElement, pos: number, current: number, type: Axis, scale: number): SnappingResult | undefined {
@@ -1467,6 +1535,113 @@ function createSnapGuidesFlexOtherAxis(element: HTMLElement, pos: number, curren
 	return undefined;
 }
 
+const handleGuides = (rect: RectBox, snapPoints: SnapPoint[], scale: number) => {
+    const $parent = $('#harmony-snap-guides');
+    const createGuide = (rect: {x0: number, y0: number, y1: number, x1: number, text?: string | number}) => {
+        const height = rect.y1 - rect.y0 || 1;
+        const width = rect.x1 - rect.x0 || 1;
+
+        const lineTemplate = `<div name="harmony-guide-0" class="hw-bg-primary hw-absolute hw-z-[100]" style="top: ${rect.y0}px; left: ${rect.x0}px; height: ${height}px; width: ${width}px">
+            ${rect.text && height > 1 ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-top-1/2 -hw-translate-y-1/2 hw-left-1">
+                ${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
+            </div>` : rect.text && width > 1 ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-left-1/2 -hw-translate-x-1/2 hw-top-1">
+            ${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
+        </div>` : ''}
+        </div>`
+        
+        const $line = $(lineTemplate);
+        $line.appendTo($parent);
+        return $line;
+    }
+
+    const setOffset = (element: HTMLElement): {x: number, y: number, w: number, h: number} => {
+        const rect = element.getBoundingClientRect();
+        return {
+            x: element.offsetLeft * scale,
+            y: element.offsetTop * scale,
+            w: element.clientWidth * scale,
+            h: element.clientHeight * scale,
+        }
+    }
+
+    snapPoints.forEach(snapPoint => {
+        const {point, guides} = snapPoint;
+        const offsetParent = snapPoint.offset ? setOffset(snapPoint.offset) : undefined;
+
+        const posY = rect.top;
+        const top = point.y as number;
+        if (close(top, posY, 0.1)) {
+            guides && guides.forEach((guide) => {
+                const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
+                const copy = {...guide};
+                copy.relative.forEach(p => {
+                    const sizeY = guide.rotate ? offset.w : offset.h;
+                    const sizeX = guide.rotate ? offset.h : offset.w;
+                    const sizeOffset = p.includes('y') ? sizeY : sizeX;
+                    copy[p] *= sizeOffset;
+                });
+
+                if (guide.rotate) {
+                    const temp0 = copy.x0;
+                    copy.x0 = copy.y0;
+                    copy.y0 = temp0;
+                    const temp1 = copy.x1;
+                    copy.x1 = copy.y1;
+                    copy.y1 = temp1;
+                }
+
+                copy.x0 += offset.x;
+                copy.y0 += offset.y;
+                copy.y1 += offset.y;
+                copy.x1 += offset.x;
+
+                copy.x0 /= scale;
+                copy.y0 /= scale;
+                copy.y1 /= scale;
+                copy.x1 /= scale;
+
+                createGuide(copy);
+            });
+        }
+
+        const posX = rect.left;
+        const left = point.x as number;
+        if (close(left, posX, 0.1)) {
+            guides && guides.forEach((guide) => {
+                const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
+                const copy = {...guide};
+                copy.relative.forEach(p => {
+                    const sizeY = guide.rotate ? offset.w : offset.h;
+                    const sizeX = guide.rotate ? offset.h : offset.w;
+                    const sizeOffset = p.includes('y') ? sizeY : sizeX;
+                    copy[p] *= sizeOffset;
+                });
+
+                if (guide.rotate) {
+                    const temp0 = copy.x0;
+                    copy.x0 = copy.y0;
+                    copy.y0 = temp0;
+                    const temp1 = copy.x1;
+                    copy.x1 = copy.y1;
+                    copy.y1 = temp1;
+                }
+
+                copy.x0 += offset.x;
+                copy.y0 += offset.y;
+                copy.y1 += offset.y;
+                copy.x1 += offset.x;
+
+                copy.x0 /= scale;
+                copy.y0 /= scale;
+                copy.y1 /= scale;
+                copy.x1 /= scale;
+
+                createGuide(copy);
+            });
+        }
+    })
+}
+
 interface DraggingEvent {
 	dx: number, 
 	dy: number,
@@ -1505,7 +1680,7 @@ interface DraggableProps {
 	onCalculateSnapping?: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number) => SnappingResult | undefined;
 	snapPoints?: SnapPoint[],
 	restrictToParent?: boolean;
-    restrictions: {left: number, right: number, top: number, bottom: number}[],
+    restrictions: RectBox[],
 	scale: number;
 	canDrag: (element: HTMLElement) => boolean;
 }
@@ -1516,8 +1691,8 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 	const refX = useRef(0);
 	const refY = useRef(0);
 	const snapGuides = useRef<SnapPoint[]>([]);
-	const $parent = $('#harmony-snap-guides');
-		
+    const $parent = $('#harmony-snap-guides');
+
 	useEffect(() => {
 		if (element) {
 			refY.current = getBoundingClientRect(element, 'y', 'close', scale)
@@ -1554,18 +1729,7 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 				modifiers.push(interact.modifiers.restrict({
 					restriction: 'parent',
 					elementRect: { top: 0, left: 0, bottom: 1, right: 1 }, // Restrict to the parent element
-					//endOnly: true, // Only snap when dragging ends
 				}));
-
-                // const sibling = document.getElementById('child-1');
-                // const rect = sibling!.getBoundingClientRect();
-                // const sibling3 = document.getElementById('child-3');
-                // const rect3 = sibling3!.getBoundingClientRect();
-                // modifiers.push(interact.modifiers.restrict({
-                //     restriction: {top: rect.bottom, left: -Infinity, bottom: rect3.top, right: Infinity},
-                //     elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
-                //     //elementRect: {top: 0, left: 0, bottom: 0, right: 0}
-                // }))
 			}
 
             for (const restriction of restrictions) {
@@ -1626,147 +1790,20 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 		}, setIsDragging);
 	});
 
-	const handleGuides = useEffectEvent((rect: {left: number, right: number, top: number, bottom: number}, snapPoints: SnapPoint[]) => {
-		const createGuide = (rect: {x0: number, y0: number, y1: number, x1: number, text?: string | number}) => {
-			const height = rect.y1 - rect.y0 || 1;
-			const width = rect.x1 - rect.x0 || 1;
-
-			const lineTemplate = `<div name="harmony-guide-0" class="hw-bg-primary hw-absolute hw-z-[100]" style="top: ${rect.y0}px; left: ${rect.x0}px; height: ${height}px; width: ${width}px">
-				${rect.text && height > 1 ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-top-1/2 -hw-translate-y-1/2 hw-left-1">
-					${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
-				</div>` : rect.text && width > 1 ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-left-1/2 -hw-translate-x-1/2 hw-top-1">
-				${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
-			</div>` : ''}
-			</div>`
-			
-			const $line = $(lineTemplate);
-			$line.appendTo($parent);
-			return $line;
-		}
-
-		const setOffset = (element: HTMLElement): {x: number, y: number, w: number, h: number} => {
-            const rect = element.getBoundingClientRect();
-			return {
-				x: element.offsetLeft * scale,
-				y: element.offsetTop * scale,
-				w: element.clientWidth * scale,
-				h: element.clientHeight * scale,
-			}
-		}
-
-		snapPoints.forEach(snapPoint => {
-			const {point, guides} = snapPoint;
-			const offsetParent = snapPoint.offset ? setOffset(snapPoint.offset) : undefined;
-
-            const posY = rect.top;
-			const top = point.y as number;
-			if (close(top, posY, 0.1)) {
-				guides && guides.forEach((guide) => {
-					const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
-					const copy = {...guide};
-					copy.relative.forEach(p => {
-						const sizeY = guide.rotate ? offset.w : offset.h;
-						const sizeX = guide.rotate ? offset.h : offset.w;
-						const sizeOffset = p.includes('y') ? sizeY : sizeX;
-						copy[p] *= sizeOffset;
-					});
-
-					if (guide.rotate) {
-						const temp0 = copy.x0;
-						copy.x0 = copy.y0;
-						copy.y0 = temp0;
-						const temp1 = copy.x1;
-						copy.x1 = copy.y1;
-						copy.y1 = temp1;
-					}
-
-					copy.x0 += offset.x;
-					copy.y0 += offset.y;
-					copy.y1 += offset.y;
-					copy.x1 += offset.x;
-
-                    copy.x0 /= scale;
-					copy.y0 /= scale;
-					copy.y1 /= scale;
-					copy.x1 /= scale;
-
-                    // if (typeof copy.text === 'number') {
-                    //     copy.text /= scale;
-                    // }
-
-					createGuide(copy);
-				});
-			}
-
-            const posX = rect.left;//rect[snapPoint.side || 'left']
-			const left = point.x as number;
-			if (close(left, posX, 0.1)) {
-				guides && guides.forEach((guide) => {
-					const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
-					const copy = {...guide};
-					copy.relative.forEach(p => {
-						const sizeY = guide.rotate ? offset.w : offset.h;
-						const sizeX = guide.rotate ? offset.h : offset.w;
-						const sizeOffset = p.includes('y') ? sizeY : sizeX;
-						copy[p] *= sizeOffset;
-					});
-
-					if (guide.rotate) {
-						const temp0 = copy.x0;
-						copy.x0 = copy.y0;
-						copy.y0 = temp0;
-						const temp1 = copy.x1;
-						copy.x1 = copy.y1;
-						copy.y1 = temp1;
-					}
-
-					copy.x0 += offset.x;
-					copy.y0 += offset.y;
-					copy.y1 += offset.y;
-					copy.x1 += offset.x;
-
-                    copy.x0 /= scale;
-					copy.y0 /= scale;
-					copy.y1 /= scale;
-					copy.x1 /= scale;
-
-                    // if (typeof copy.text === 'number') {
-                    //     copy.text /= scale;
-                    // }
-
-					createGuide(copy);
-				});
-			}
-		})
-	})
-
 	const startDragging = useEffectEvent((event: InteractEvent<'drag', 'start'>) => {
-        //if (!element) return;
-		// setOffsetX(event.clientX0);
-		// setOffsetY(event.clientY0);
-        //event.rect = getOffsetRect(element);
+        
 	});
 
 	const handleTheDragging = (event: DraggingEvent) => {
 		if (!element) return;
 		!isDragging && setIsDragging(true);
-        // event.rect.top /= scale;
-		// event.rect.left /= scale;
-		// event.rect.right /= scale;
-		// event.rect.bottom /= scale;
-		// event.rect.height /= scale;
-		// event.rect.width /= scale;
-		// event.dy /= scale;
-		// event.dx /= scale;
-		
+        
 		refY.current = event.rect.top;
 		refX.current = event.rect.left;
 		onIsDragging && onIsDragging(event);
 
 		$parent.children().remove();
-		handleGuides(event.eventRect, snapGuides.current);
-		// handleGuides(event.rect.top, snapGuidesY.current, 'y');
-		// handleGuides(event.rect.left, snapGuidesX.current, 'x');
+		handleGuides(event.eventRect, snapGuides.current, scale);
 	}
 	  
 	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
@@ -1778,21 +1815,126 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
         rect.top += round(event.dy / scale);
         rect.bottom += round(event.dy / scale);
 
-        console.log(`${scale}, ${event.dx / scale}, ${event.dy / scale}`)
-
-		handleTheDragging({dx: event.dx, dy: event.dy, rect: rect, eventRect: event.rect});
+        handleTheDragging({dx: event.dx, dy: event.dy, rect: rect, eventRect: event.rect});
 	});
 	
 	const stopDragging = useEffectEvent((e: InteractEvent<'drag', 'move'>) => {
 		setIsDragging(false);
 		if (!element) return;
-		// setOffsetX(refX.current);
-		// setOffsetY(refY.current);
 		$parent.children().remove();
 		onDragFinish && onDragFinish(element);
 	});
 
 	return {isDragging};
+}
+
+//TODO: Refactor out duplicate code into useSnappable hook
+interface ResizableProps {
+    element: HTMLElement | undefined;
+    scale: number;
+    restrictions: RectBox[],
+    onIsResizing?: (event: DraggingEvent) => void;
+    onResizeFinish?: (element: HTMLElement) => void;
+    onCalculateSnapping?: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number) => SnappingResult | undefined;
+}
+export const useResizable = ({element, scale, restrictions, onIsResizing, onResizeFinish, onCalculateSnapping}: ResizableProps) => {
+    const [isResizing, setIsResizing] = useState(false);
+    const snapGuides = useRef<SnapPoint[]>([]);
+    const refX = useRef(0);
+	const refY = useRef(0);
+    const $parent = $('#harmony-snap-guides');
+
+    useEffect(() => {
+		if (element) {
+			const modifiers: Modifier[] = [
+				interact.modifiers.snap({
+					targets: [interact.createSnapGrid({x: 2 * scale, y: 2 * scale})],
+					// Control the snapping behavior
+					range: Infinity, // Snap to the closest target within the entire range
+					relativePoints: [{x: 0, y: 0}],
+					offset: 'self',
+				}),
+				interact.modifiers.snapEdges({
+					targets: [function(x, y, interaction, offset, index) {
+						if (!onCalculateSnapping) return;
+
+						const result = onCalculateSnapping(element, x, y, refX.current, refY.current);
+						if (!result) return;
+
+						snapGuides.current = result.snapGuides;
+
+						return result;
+					}],
+					// Control the snapping behavior
+					range: Infinity, // Snap to the closest target within the entire range
+					//relativePoints: [{ x: 0, y: 0 }], // Snap relative to the top-left corner of the draggable element
+					offset: 'parent'//{x: element.parentElement!.getBoundingClientRect().x / scale, y: element.parentElement!.getBoundingClientRect().y / scale}
+				}),
+			];
+			if (false) {
+				modifiers.push(interact.modifiers.restrictRect({restriction: 'parent'}));
+			}
+
+            for (const restriction of restrictions) {
+                modifiers.push(interact.modifiers.restrict({
+                    restriction,
+                    elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
+                }))
+            }
+			interact(element).resizable({
+                edges: {left: true, right: true, top: true, bottom: true},
+				listeners: {
+					start: startResizing,
+					move: resize,
+					end: stopResizing
+				},
+				modifiers,
+			});
+		}
+	}, [element, scale]);
+
+    const handleTheResizing = (event: DraggingEvent) => {
+        if (!element) return;
+		!isResizing && setIsResizing(true);
+        
+		refY.current = event.rect.top;
+		refX.current = event.rect.left;
+		onIsResizing && onIsResizing(event);
+
+		$parent.children().remove();
+		handleGuides(event.eventRect, snapGuides.current, scale);
+    }
+
+    const startResizing = (event: InteractEvent<'resize', 'start'>) => {
+
+    }
+
+    const resize = (event: ResizeEvent<'move'>) => {
+        if (!element) return;
+
+        if (!event.deltaRect) {
+            throw new Error("Let's figure out why delta rect doesn't exist");
+        }
+
+        const rect = getOffsetRect(element);
+        rect.left += round(event.deltaRect.left / scale);
+        rect.right += round(event.deltaRect.right / scale);
+        rect.top += round(event.deltaRect.top / scale);
+        rect.bottom += round(event.deltaRect.bottom / scale);
+        rect.width += round(event.deltaRect.width / scale);
+        rect.height += round(event.deltaRect.height / scale);
+        
+        handleTheResizing({dx: event.dx, dy: event.dy, rect: rect, eventRect: event.rect});
+    }
+
+    const stopResizing = (event: InteractEvent<'resize', 'end'>) => {
+        setIsResizing(false);
+        if (!element) return;
+		$parent.children().remove();
+		onResizeFinish && onResizeFinish(element);
+    }
+
+    return {isResizing};
 }
 
 interface DraggableListProps {
