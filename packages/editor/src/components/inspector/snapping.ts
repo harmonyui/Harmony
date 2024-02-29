@@ -69,8 +69,8 @@ const getOffsetRect = (element: HTMLElement, includeBorder=true): Rect => {
         right: element.offsetLeft + element.clientWidth + border.left + border.right,
         top: element.offsetTop,
         bottom: element.offsetTop + element.clientHeight + border.top + border.bottom,
-        width: element.clientWidth,
-        height: element.clientHeight
+        width: element.clientWidth + border.left + border.right,
+        height: element.clientHeight + border.top + border.bottom
     }
 }
 
@@ -241,81 +241,10 @@ interface ParentEdgeInfo {
     midpointXRelative: number;
     midpointYRelative: number;
     edges: {
-        left: ElementEdgeInfo,
-        right: ElementEdgeInfo,
-        top: ElementEdgeInfo,
-        bottom: ElementEdgeInfo
-    }
-}
-
-function calculateParentEdgeInfo(parent: HTMLElement, scale: number, useRectOffset: boolean, updates: UpdateRect[]=[]): ParentEdgeInfo {
-    const childEdgeInfo: ChildEdgeInfo[] = [];
-
-    //If we want to use the client properties instead of boudning box, add an override to everything that doesn't already have an override
-    if (useRectOffset) {
-        if (!updates.find(update => update.element === parent)) {
-            updates.push({element: parent, rect: getOffsetRect(parent)})
-        }
-
-        for (const child of Array.from(parent.children)) {
-            if (!updates.find(update => update.element === child)) {
-                updates.push({element: child as HTMLElement, rect: getOffsetRect(child as HTMLElement)})
-            }
-        }
-    }
-    for (const child of Array.from(parent.children)) {
-        childEdgeInfo.push(calculateEdgesInfo(child as HTMLElement, scale, updates));
-    }
-
-    const copy = childEdgeInfo.slice();
-    const left = copy.sort((a, b) => a.left.parentEdge.gap - b.left.parentEdge.gap)[0].left;
-    const right = copy.sort((a, b) => a.right.parentEdge.gap - b.right.parentEdge.gap)[0].right;
-    const top = copy.sort((a, b) => a.top.parentEdge.gap - b.top.parentEdge.gap)[0].top;
-    const bottom = copy.sort((a, b) => a.bottom.parentEdge.gap - b.bottom.parentEdge.gap)[0].bottom;
-
-    const midpointX = (getBoundingClientRectParent(parent, 'x', 'close', scale) + getBoundingClientRectParent(parent, 'x', 'size', scale) / 2);
-	const midpointY = (getBoundingClientRectParent(parent, 'y', 'close', scale) + getBoundingClientRectParent(parent, 'y', 'size', scale) / 2);
-	const midpointXRelative = midpointX - getBoundingClientRectParent(parent, 'x', 'close', scale)
-    const midpointYRelative = midpointY - getBoundingClientRectParent(parent, 'y', 'close', scale)
-    return {
-        childEdgeInfo,
-        midpointX,
-        midpointY,
-        midpointXRelative,
-        midpointYRelative,
-        edges: {
-            left, 
-            right,
-            top,
-            bottom
-        }
-    }
-}
-interface UpdateRect {
-    element: HTMLElement,
-    rect: Rect
-}
-interface UpdateRectsProps {
-    parentUpdate: UpdateRect,
-    childrenUpdates: UpdateRect[]
-}
-function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number) {
-    const parent = parentUpdate.element;
-    const children = Array.from(parent.children);
-    const {edges, childEdgeInfo} = calculateParentEdgeInfo(parent, scale, true, [parentUpdate, ...childrenUpdates]);
-    Object.entries(edges).forEach(([side, edge]) => {
-        const gap = edge.parentEdge.gap;
-        parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
-    });
-
-    for (const info of childEdgeInfo) {
-        const leftGap = info.left.parentEdge.gap - edges.left.parentEdge.gap;
-        if (info.left.parentEdge.gap >= 0 && info.right.parentEdge.gap >= 0 && Math.abs(edges.left.parentEdge.gap - 0.1) >= 0) {
-            info.element.style.marginLeft = `${leftGap}px`;
-        }
-        if (info.index > 0 && info.top.siblingEdge && Math.abs(info.top.siblingEdge.gap - 0.1) >= 0) {
-            info.element.style.marginTop = `${info.top.siblingEdge.gap}px`
-        } 
+        left: ElementEdgeInfo & {info: ChildEdgeInfo},
+        right: ElementEdgeInfo & {info: ChildEdgeInfo},
+        top: ElementEdgeInfo & {info: ChildEdgeInfo},
+        bottom: ElementEdgeInfo & {info: ChildEdgeInfo},
     }
 }
 
@@ -325,10 +254,10 @@ function calculateEdgesInfo(element: HTMLElement, scale: number, updates: Update
     const right = calculateAxisEdgeInfo(element, 'x', 'far', scale, updates);
     const top = calculateAxisEdgeInfo(element, 'y', 'close', scale, updates);
     const bottom = calculateAxisEdgeInfo(element, 'y', 'far', scale, updates);
-    // const {close: left, far: right} = calculateAxisEdgeInfo(element, 'x', 'close', scale, updates);
-    // const {close: top, far: bottom} = calculateAxisEdgeInfo(element, 'y', 'close', scale, updates);
-    const midpointX = (getBoundingClientRect(element, 'x', 'close', scale) + getBoundingClientRect(element, 'x', 'size', scale) / 2) - getBoundingClientRectParent(parent, 'x', 'close', scale);
-    const midpointY = (getBoundingClientRect(element, 'y', 'close', scale) + getBoundingClientRect(element, 'y', 'size', scale) / 2) - getBoundingClientRectParent(parent, 'y', 'close', scale);
+    const rectOverride = updates.find(update => update.element === element)?.rect;
+    const parentOverride = updates.find(update => update.element === parent)?.rect;
+    const midpointX = (getBoundingClientRect(element, 'x', 'close', scale, rectOverride) + getBoundingClientRect(element, 'x', 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, 'x', 'close', scale, parentOverride);
+    const midpointY = (getBoundingClientRect(element, 'y', 'close', scale, rectOverride) + getBoundingClientRect(element, 'y', 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, 'y', 'close', scale, parentOverride);
     
     return {
         element,
@@ -445,6 +374,87 @@ function calculateAxisEdgeInfo(element: HTMLElement, axis: Axis, side: Side, sca
 	const elementLocation = getBoundingClientRect(element, axis, side, scale, getRectOverride(element));
     const elementLocationRelative = elementLocation - getBoundingClientRectParent(parent, axis, 'close', scale, getRectOverride(parent))
     return {parentEdge, siblingEdge, elementLocation, elementLocationRelative, parentMidpoint, parentMidpointRelative, element}
+}
+
+function calculateParentEdgeInfo(parent: HTMLElement, scale: number, useRectOffset: boolean, updates: UpdateRect[]=[]): ParentEdgeInfo {
+    const childEdgeInfo: ChildEdgeInfo[] = [];
+
+    //If we want to use the client properties instead of boudning box, add an override to everything that doesn't already have an override
+    if (useRectOffset) {
+        if (!updates.find(update => update.element === parent)) {
+            updates.push({element: parent, rect: getOffsetRect(parent)})
+        }
+
+        for (const child of Array.from(parent.children)) {
+            if (!updates.find(update => update.element === child)) {
+                updates.push({element: child as HTMLElement, rect: getOffsetRect(child as HTMLElement)})
+            }
+        }
+    }
+    for (const child of Array.from(parent.children)) {
+        childEdgeInfo.push(calculateEdgesInfo(child as HTMLElement, scale, updates));
+    }
+
+    const copy = childEdgeInfo.slice();
+    const left = copy.sort((a, b) => a.left.parentEdge.gap - b.left.parentEdge.gap)[0];
+    const right = copy.sort((a, b) => a.right.parentEdge.gap - b.right.parentEdge.gap)[0];
+    const top = copy.sort((a, b) => a.top.parentEdge.gap - b.top.parentEdge.gap)[0];
+    const bottom = copy.sort((a, b) => a.bottom.parentEdge.gap - b.bottom.parentEdge.gap)[0];
+
+    const midpointX = (getBoundingClientRectParent(parent, 'x', 'close', scale) + getBoundingClientRectParent(parent, 'x', 'size', scale) / 2);
+	const midpointY = (getBoundingClientRectParent(parent, 'y', 'close', scale) + getBoundingClientRectParent(parent, 'y', 'size', scale) / 2);
+	const midpointXRelative = midpointX - getBoundingClientRectParent(parent, 'x', 'close', scale)
+    const midpointYRelative = midpointY - getBoundingClientRectParent(parent, 'y', 'close', scale)
+    return {
+        childEdgeInfo,
+        midpointX,
+        midpointY,
+        midpointXRelative,
+        midpointYRelative,
+        edges: {
+            left: {info: left, ...left.left}, 
+            right: {info: right, ...right.right},
+            top: {info: top, ...top.top},
+            bottom: {info: bottom, ...bottom.bottom}
+        }
+    }
+}
+interface UpdateRect {
+    element: HTMLElement,
+    rect: Rect
+}
+interface UpdateRectsProps {
+    parentUpdate: UpdateRect,
+    childrenUpdates: UpdateRect[]
+}
+function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number) {
+    const parent = parentUpdate.element;
+    const children = Array.from(parent.children);
+    const {edges, childEdgeInfo, midpointXRelative} = calculateParentEdgeInfo(parent, scale, true, [parentUpdate, ...childrenUpdates]);
+    Object.entries(edges).forEach(([side, edge]) => {
+        const gap = edge.parentEdge.gap;
+        parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
+    });
+
+    for (const info of childEdgeInfo) {
+        const leftGap = info.left.parentEdge.gap - edges.left.parentEdge.gap;
+        const rightGap = info.right.parentEdge.gap - edges.right.parentEdge.gap;
+        if (info.left.parentEdge.gap >= 0 && info.right.parentEdge.gap >= 0 && Math.abs(edges.left.parentEdge.gap - 0.1) >= 0) {
+            info.element.style.marginLeft = `${leftGap}px`;
+        }
+        if (info.index > 0 && info.top.siblingEdge && Math.abs(info.top.siblingEdge.gap - 0.1) >= 0) {
+            info.element.style.marginTop = `${info.top.siblingEdge.gap}px`
+        } 
+
+        if (midpointXRelative <= info.midpointX) {
+            info.element.style.marginLeft = 'auto';
+            if (midpointXRelative === info.midpointX && edges.left.parentEdge.gap === edges.right.parentEdge.gap) {
+                info.element.style.marginRight = 'auto';
+            } else {
+                info.element.style.marginRight = `${rightGap}px`;
+            }
+        }
+    }
 }
 
 interface ElementInfo {
@@ -895,16 +905,6 @@ const elementSnapBehavior: SnapBehavior = {
             element,
             rect: event.rect
         }];
-        // for (const child of Array.from(element.parentElement.children)) {
-        //     if (child === element) {
-        //         childrenUpdates.push({element: child as HTMLElement, rect: event.rect})
-        //     } else {
-        //         childrenUpdates.push({element: child as HTMLElement, rect: getOffsetRect(child as HTMLElement)})
-        //     }
-        // }
-        // if (element.nextElementSibling) {
-        //     childrenUpdates.push({element: element.nextElementSibling as HTMLElement, rect: getOffsetRect(element.nextElementSibling)});
-        // }
         updateRects({
             parentUpdate: {
                 element: element.parentElement,
@@ -1046,32 +1046,6 @@ const elementSnapBehavior: SnapBehavior = {
         }
 
         return {resultsX, resultsY};
-
-		// const resX = createSnapGuidesElement(element, x, currentX, 'x', scale);
-		// const resY = createSnapGuidesElement(element, y, currentY, 'y', scale);
-		// let result: SnappingResult | undefined;
-
-		// if (resX) {
-		// 	result = {snapGuides: []};
-		// 	result.x = resX.x;
-		// 	result.range = resX.range;
-		// 	result.snapGuides.push(...resX.snapGuides.map(guide => ({...guide, point: {
-		// 		x: (guide.point.x as number) / scale + (getBoundingClientRect(element!.parentElement!, 'x', 'close', scale) as number),
-		// 		y: 0
-		// 	}})));
-		// }
-
-		// if (resY) {
-		// 	result = result || {snapGuides: []};
-		// 	result.y = resY.y;
-		// 	result.range = resY.range;
-		// 	result.snapGuides.push(...resY.snapGuides.map(guide => ({...guide, point: {
-		// 		y: (guide.point.y as number) / scale + (getBoundingClientRect(element!.parentElement!, 'y', 'close', scale) as number),
-		// 		x: 0
-		// 	}})));
-		// }
-
-		// return result;
 	},
 	onDragFinish(element) {
 		return element;
