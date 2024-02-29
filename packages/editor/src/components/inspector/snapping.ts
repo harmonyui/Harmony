@@ -35,13 +35,13 @@ const getExtraD = (element: HTMLElement, type: 'top' | 'bottom' | 'left' | 'righ
 	return parseFloat($(element).css(`margin${upper}`) || '0')// + parseFloat($(element).css(`border${upper}`) || '0');
 }
 
-
+type RelativePoint = 'x0' | 'x1' | 'y0' | 'y1';
 type SnapPoint = {
     point: SnapPosition;
 	offset?: HTMLElement,
 	guides?: {
 		x0: number, y0: number, x1: number, y1: number, text?: number | string, offset?: HTMLElement, 
-		relative: ('x0' | 'x1' | 'y0' | 'y1')[],
+		relative: RelativePoint[],
 		rotate?: boolean
 	}[]
 }
@@ -732,6 +732,137 @@ function setDragPosition(element: HTMLElement, props: DraggingEvent, axis: Axis,
 	}
 }
 
+interface GuidePoint {
+    relativeTo: HTMLElement,
+    value: number
+}
+interface GuidePosition {
+    x: GuidePoint | number;
+    y: GuidePoint | number;
+}
+
+interface AddGuide {
+    start?: GuidePosition,
+    end?: GuidePosition,
+    length?: {
+        value: number,
+        axis: Axis
+    },
+    text?: number
+}
+
+function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent: HTMLElement, element: HTMLElement, parentEdgeInfo: ParentEdgeInfo, resultsX: SnappingResult[], resultsY: SnappingResult[]}) {
+    const range = 10;
+    const addSnapToParent = ({point, axis, from, snapSide}: {point: number, axis: Axis, from?: RectSide, snapSide?: RectSide}) => {
+        function createGuide({start, end, length, text}: AddGuide) {
+            const offset = parent.getBoundingClientRect();
+            let x0 = 0;
+            let x1 = 0;
+            let y0 = 0;
+            let y1 = 0;
+            const relative: RelativePoint[] = [];
+            const calculatePoints = (point: GuidePoint | number, axis: Axis) => {
+                let p = 0;
+                if (typeof point === 'number') {
+                    p = point;
+                } else {
+                    const offsetRect = point.relativeTo.getBoundingClientRect();
+                    const sizeIdent = axis === 'x' ? 'width' : 'height';
+                    const sideIdent = axis === 'x' ? 'left' : 'top';
+                    const width = offsetRect[sizeIdent] * point.value;
+                    p = width + offsetRect[sideIdent] - offset[sideIdent];
+                }
+
+                return p;
+            }
+
+            const calculatePosition = (position: GuidePosition, direction: 1 | -1) => {
+                let x0 = calculatePoints(position.x, 'x');
+                let x1 = x0;
+                let y0 = calculatePoints(position.y,'y');
+                let y1 = y0;
+
+                if (length) {
+                    if (length.axis === 'x') {
+                        x1 = x0 + length.value * direction;
+                    } else {
+                        y1 = y0 + length.value * direction;
+                    }
+                }
+
+                return {fromX: x0, toX: x1, fromY: y0, toY: y1};
+            }
+
+            if (start) {
+                const {fromX, toX, fromY, toY} = calculatePosition(start, 1);
+                x0 = fromX;
+                x1 = toX;
+                y0 = fromY;
+                y1 = toY;
+            }
+
+            if (end) {
+                const {fromX, toX, fromY, toY} = calculatePosition(end, -1);
+                if (!start) {
+                    x1 = fromX;
+                    x0 = toX;
+                    y1 = fromY;
+                    y0 = toY;
+                } else {
+                    x1 = fromX;
+                    y1 = fromY;
+                }
+            }
+
+            return ({
+                point: {[axis]: point},
+                offset: parent,
+                guides: [{
+                    x0,x1,y0,y1,relative,text,
+                }]
+            })
+        }
+        
+        const results = axis === 'x' ? resultsX : resultsY;
+        if (from && from !== 'left' && from !== 'top') {
+            point = parentEdgeInfo.edges[from].parentEdge.edgeLocationRelative - point;
+        }
+
+        if (snapSide) {
+            if (snapSide === 'right') {
+                point = point - getBoundingClientRect(element, 'x', 'size', 1);
+            } else if (snapSide === 'bottom') {
+                point = point - getBoundingClientRect(element, 'y', 'size', 1);
+            }
+        }
+
+        const newResult: SnappingResult = {
+            snapGuides: [],
+            range,
+            [axis]: point
+        }
+        results.push(newResult);
+
+        return {
+            addGuide(props: AddGuide) {
+                const result = createGuide(props);
+                newResult.snapGuides.push(result);
+            },
+            // addGuideFunction(func: () => AddGuide) {
+            //     const callback = () => {
+            //         const props = func();
+            //         const result = createGuide(props);
+
+            //         return result;
+            //     }
+            //     newResult.snapGuides.push(callback);
+            // }
+        }
+    }
+
+    return {addSnapToParent};
+}
+
 interface SnapBehavior {
 	getOldValues: (element: HTMLElement) => Record<string, string>;
 	isDraggable: (element: HTMLElement) => boolean;
@@ -785,7 +916,7 @@ const elementSnapBehavior: SnapBehavior = {
 	onCalculateSnapping(element, x, y, currentX, currentY, scale) {
         const parent = element.parentElement!;
         const parentEdgeInfo = calculateParentEdgeInfo(parent, 1, false);
-        const parentEdgeInfoScaled = calculateParentEdgeInfo(parent, scale, true);
+        const parentEdgeInfoScaled = calculateParentEdgeInfo(parent, 1, true);
         const resultsX: SnappingResult[] = [];
         const resultsY: SnappingResult[] = [];
         const myChildInfo = parentEdgeInfo.childEdgeInfo.find(info => info.element === element);
@@ -795,128 +926,69 @@ const elementSnapBehavior: SnapBehavior = {
 
         const range = 10;
 
-        if (parentEdgeInfo.edges.left.element === element) {
-            const diff = parentEdgeInfo.edges.right.parentEdge.gap - parentEdgeInfo.edges.left.parentEdge.gap;
-            const point = parentEdgeInfo.edges.left.elementLocationRelative + diff
-            resultsX.push({
-                snapGuides: [
-                    {
-                        offset: parent,
-                        point: {x: point},
-                        guides: [
-                            {
-                                x0: 0, 
-                                x1: point, 
-                                y0: 0.5, 
-                                y1: 0.5, relative: ['y0', 'y1'],
-                                text: parentEdgeInfoScaled.edges.right.parentEdge.gap
+        const snapping = Snapping({parent, element, parentEdgeInfo, resultsX, resultsY});
+
+        const addSnapsForParentEdges = () => {
+            const currParentEdges = Object.entries(parentEdgeInfo.edges).filter(([_, edge]) => edge.element === element);
+            const addSnapForEdges = (side: RectSide, otherSide: RectSide) => {
+                const addGuideForSide = (side: RectSide) => {
+                    const axis = side === 'left' || side === 'right' ? 'x' : 'y';
+                    const oppositeAxis = axis === 'x' ? 'y' : 'x';
+                    if (side === 'left' || side === 'top') {
+                        result.addGuide({
+                            start: {
+                                [axis as 'x']: {
+                                    value: 0,
+                                    relativeTo: parent
+                                },
+                                [oppositeAxis as 'y']: {
+                                    relativeTo: parent,
+                                    value: 0.5
+                                }
                             },
-                            {
-                                x0: parentEdgeInfo.edges.right.elementLocationRelative, 
-                                x1: 1, 
-                                y0: 0.5, 
-                                y1: 0.5, relative: ['y0', 'y1', 'x1'],
-                                text: parentEdgeInfoScaled.edges.right.parentEdge.gap
-                            }
-                        ]
+                            length: {
+                                value: point,
+                                axis
+                            },
+                            text: parentEdgeInfoScaled.edges[otherSide].parentEdge.gap
+                        });
+                    } else {
+                        result.addGuide({
+                            end: {
+                                [axis as 'x']: {
+                                    value: 1,
+                                    relativeTo: parent
+                                },
+                                [oppositeAxis as 'y']: {
+                                    relativeTo: parent,
+                                    value: 0.5
+                                }
+                            },
+                            length: {
+                                value: point,
+                                axis
+                            },
+                            text: parentEdgeInfoScaled.edges[otherSide].parentEdge.gap
+                        });
                     }
-                ],
-                range,
-                x: point
-            });
+                }
+                const axis = side === 'left' || side === 'right' ? 'x' : 'y';
+                
+                const point = parentEdgeInfo.edges[otherSide].parentEdge.gap;
+                const result = snapping.addSnapToParent({point, axis, from: side, snapSide: side});
+                addGuideForSide(side);
+                addGuideForSide(otherSide);
+            }
+            const edges = currParentEdges.map(p => p[0]) as RectSide[]
+            for (const side of edges) {
+                ['left', 'right', 'top', 'bottom'].forEach(otherSide => {
+                    if (side === otherSide || edges.includes(otherSide as RectSide)) return;
+                    addSnapForEdges(side, otherSide as RectSide);
+                })
+            }
         }
 
-        if (parentEdgeInfo.edges.right.element === element) {
-            const diff = parentEdgeInfo.edges.right.parentEdge.edgeLocationRelative - parentEdgeInfo.edges.left.parentEdge.gap;
-            const point = diff - getBoundingClientRect(element, 'x', 'size', 1);
-            resultsX.push({
-                snapGuides: [
-                    {
-                        offset: parent,
-                        point: {x: point},
-                        guides: [
-                            {
-                                x0: 0, 
-                                x1: parentEdgeInfo.edges.left.parentEdge.gap, 
-                                y0: 0.5, 
-                                y1: 0.5, relative: ['y0', 'y1'],
-                                text: parentEdgeInfoScaled.edges.left.parentEdge.gap
-                            },
-                            {
-                                x0: diff, 
-                                x1: 1, 
-                                y0: 0.5, 
-                                y1: 0.5, relative: ['y0', 'y1', 'x1'],
-                                text: parentEdgeInfoScaled.edges.left.parentEdge.gap
-                            }
-                        ]
-                    }
-                ],
-                range,
-                x: point
-            });
-        }
-
-        if (parentEdgeInfo.edges.top.element === element) {
-            const point = parentEdgeInfo.edges.bottom.parentEdge.gap;
-            resultsY.push({
-                snapGuides: [
-                    {
-                        offset: parent,
-                        point: {y: point},
-                        guides: [
-                            {
-                                x0: 0.5, 
-                                x1: 0.5, 
-                                y0: 0, 
-                                y1: point, relative: ['x0', 'x1'],
-                                text: parentEdgeInfoScaled.edges.bottom.parentEdge.gap
-                            },
-                            {
-                                x0: 0.5, 
-                                x1: 0.5, 
-                                y0: parentEdgeInfo.edges.bottom.elementLocationRelative, 
-                                y1: 1, relative: ['x0', 'x1', 'y1'],
-                                text: parentEdgeInfoScaled.edges.bottom.parentEdge.gap
-                            }
-                        ]
-                    }
-                ],
-                range,
-                y: point
-            });
-        }
-
-        if (parentEdgeInfo.edges.bottom.element === element) {
-            const diff = parentEdgeInfo.edges.bottom.parentEdge.edgeLocationRelative - parentEdgeInfo.edges.top.parentEdge.gap;
-            const point = diff - getBoundingClientRect(element, 'y', 'size', 1);
-            resultsY.push({
-                snapGuides: [
-                    {
-                        offset: parent,
-                        point: {y: point},
-                        guides: [
-                            {
-                                y0: 0, 
-                                y1: parentEdgeInfo.edges.top.parentEdge.gap, 
-                                x0: 0.5, 
-                                x1: 0.5, relative: ['x0', 'x1'],
-                                text: parentEdgeInfoScaled.edges.top.parentEdge.gap
-                            },
-                            {
-                                y0: diff, 
-                                y1: 1, 
-                                x0: 0.5, 
-                                x1: 0.5, relative: ['x0', 'x1', 'y1'],
-                                text: parentEdgeInfoScaled.edges.top.parentEdge.gap
-                            }
-                        ]
-                    }
-                ],
-                range,
-                y: point
-            });
-        }
+        addSnapsForParentEdges();
 
         resultsX.push({
             snapGuides: [{
@@ -945,16 +1017,31 @@ const elementSnapBehavior: SnapBehavior = {
 
             const loc = childInfo.left.elementLocationRelative;
             const others = parentEdgeInfo.childEdgeInfo.filter(info => info.left.elementLocationRelative === loc);
-            resultsX.push({
-                snapGuides: [{
-                    offset: parent,
-                    point: {x: loc},
-                    guides: [
-                        {x0: loc, y0: others[0].top.elementLocationRelative, x1: loc, y1: others[others.length - 1].bottom.elementLocationRelative, relative: []}
-                    ]
-                }],
-                x: loc,
-                range
+            const result = snapping.addSnapToParent({
+                point: loc,
+                axis: 'x',
+            });
+            result.addGuide({
+                start: {
+                    x: {
+                        value: 0,
+                        relativeTo: others[0].element
+                    },
+                    y: {
+                        value: 0,
+                        relativeTo: others[0].element
+                    }
+                },
+                end: {
+                    x: {
+                        value: 0,
+                        relativeTo: others[others.length - 1].element
+                    },
+                    y: {
+                        value: 1,
+                        relativeTo: others[others.length - 1].element
+                    }
+                },
             });
         }
 
@@ -1105,8 +1192,27 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		const {resultsX, resultsY} = snappingBehavior.onCalculateSnapping(element, x,y, currentX, currentY, scale);
 
         let result: SnappingResult | undefined;
-        const resX = resultsX.filter(res => Math.abs(res.x! - x) < 10)[0]//.sort((a, b) => Math.abs(a.x! - x) - Math.abs(b.x! - x))[0];
-        const resY = resultsY.filter(res => Math.abs(res.y! - y) < 10)[0]//.sort((a, b) => Math.abs(a.y! - y) - Math.abs(b.y! - y))[0];
+        
+        const resX = resultsX.reduce<SnappingResult[]>((prev, curr) => {
+            const same = prev.find(p => p.x === curr.x);
+            if (same) {
+                same.snapGuides.push(...curr.snapGuides);
+            } else {
+                prev.push(curr);
+            }
+
+            return prev;
+        }, []).filter(res => Math.abs(res.x! - x) < 10)[0]//.sort((a, b) => Math.abs(a.x! - x) - Math.abs(b.x! - x))[0];
+        const resY = resultsY.reduce<SnappingResult[]>((prev, curr) => {
+            const same = prev.find(p => p.y === curr.y);
+            if (same) {
+                same.snapGuides.push(...curr.snapGuides);
+            } else {
+                prev.push(curr);
+            }
+
+            return prev;
+        }, []).filter(res => Math.abs(res.y! - y) < 10)[0]//.sort((a, b) => Math.abs(a.y! - y) - Math.abs(b.y! - y))[0];
         if (resX) {
 			result = {snapGuides: []};
             //Our edge calculations are relative to no border, but interact.js is relative to a border, so get rid of
