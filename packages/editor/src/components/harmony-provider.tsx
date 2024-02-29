@@ -327,8 +327,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const newHeight = selectedComponent.clientHeight;
 		makeUpdates(selectedComponent, [{...update, value: update.oldValue, oldValue: update.value}], rootComponent, fonts);
 
-		console.log(size);
-		console.log(oldSize);
 		if (newWidth === width && oldValue !== value) {
 			//if ((size.e || oldSize.e || 0) - (oldSize.e || 0) >= 0 || (size.e || 0) < 0)
 				size.e = undefined;
