@@ -8,7 +8,7 @@ import {translateUpdatesToCss} from '@harmony/util/src/component';
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
-import { getNumberFromString} from "@harmony/util/src/index";
+import { getNumberFromString, round} from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import React from "react";
 import {WEB_URL} from '@harmony/util/src/constants';
@@ -271,13 +271,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}
 
 	const setScale = useCallback((scale: number) => {
-        if (harmonyContainerRef.current && harmonyContainerRef.current.parentElement) {
-            harmonyContainerRef.current.style.transform = `scale(${scale})`;
-            harmonyContainerRef.current.parentElement.style.width = `${WIDTH*scale}px`;
-            harmonyContainerRef.current.parentElement.style.height = `${HEIGHT*scale}px`;
-        }
+		//scale = round(scale, 1);
+        // if (harmonyContainerRef.current && harmonyContainerRef.current.parentElement) {
+        //     harmonyContainerRef.current.style.transform = `scale(${scale})`;
+        //     harmonyContainerRef.current.parentElement.style.width = `${WIDTH*scale}px`;
+        //     harmonyContainerRef.current.parentElement.style.height = `${HEIGHT*scale}px`;
+        // }
         _setScale(scale);
-    }, [harmonyContainerRef]);
+    }, []);
 
 	const onTextChange = useEffectEvent((value: string, oldValue: string) => {
 		if (!selectedComponent) return;
@@ -423,7 +424,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
 				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts}}>
-					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
+					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={(d) => {
 							if (d && d !== harmonyContainerRef.current) {
