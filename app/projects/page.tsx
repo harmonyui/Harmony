@@ -22,8 +22,8 @@ const ProjectsPage = withAuth(async ({ctx}) => {
 				{/* {branches ? <ProjectDisplay Projectes={branches}/> : <div>
 					No Repositories
 				</div>} */}
-				{/* <FlexBoxDemo/> */}
-				<ElementDemo/>
+				<FlexBoxDemo/>
+				{/* <ElementDemo/> */}
 			</SideNav>
 		</ModalProvider>
 	)

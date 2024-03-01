@@ -111,9 +111,15 @@ const positions = [
 
 export const FlexBoxDemo = () => {
 	const ref = useRef<HTMLDivElement>(null);
+    const refChild1 = useRef<HTMLDivElement>(null);
+    const refChild2 = useRef<HTMLDivElement>(null);
+    const refChild3 = useRef<HTMLDivElement>(null);
     const [isLooping, setIsLooping] = useState(false);
     const [timeout, setTheTimeout] = useState<NodeJS.Timeout>();
     const style = useWatchElementStyles(ref);
+    const styleChild1 = useWatchElementStyles(refChild1);
+    const styleChild2 = useWatchElementStyles(refChild2);
+    const styleChild3 = useWatchElementStyles(refChild3);
 
     const loop = useCallback((index: number) => {
         if (!ref.current) return;
@@ -159,15 +165,22 @@ export const FlexBoxDemo = () => {
     
 	const code = `<div className="flex w-1/2 h-[400px] border space-x-1" 
 style="${style}">
-	<div className="w-[50px] h-[50px] bg-primary"></div>
-	<div className="w-[50px] h-[50px] bg-primary"></div>
-	<div className="w-[50px] h-[50px] bg-primary"></div>
+	<div className="w-[50px] h-[50px] bg-primary"
+style="${styleChild1}"></div>
+	<div className="w-[50px] h-[50px] bg-primary"
+style="${styleChild2}"></div>
+	<div className="w-[50px] h-[50px] bg-primary"
+style="${styleChild3}"></div>
 </div>`
 	return (
 		<div className="hw-flex">
 			<div>
-                <div className="hw-flex hw-w-[400px] hw-h-[240px] hw-border hw-space-x-1 hw-gap-2" ref={ref}>
-				    {[1, 2, 3].map((i) => <div key={i} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>)}
+                <div className="hw-flex hw-px-10 hw-w-[400px] hw-h-[240px] hw-space-x-1 hw-gap-2 " ref={ref}>
+				    {/* {[1, 2, 3].map((i) => <div key={i} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>)} */}
+                    <div ref={refChild1} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>
+                    <div ref={refChild2} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>
+                    <div ref={refChild3} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>
+                    <div className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>
                 </div>
                 <Button onClick={() => setIsLooping(!isLooping)}>Try Me</Button>
 			</div>
