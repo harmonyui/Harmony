@@ -218,7 +218,7 @@ export function convertRgbToHex(rgb: string) {
                   + hexCode(match[3]) + (match[4] ? hexCode(`${parseFloat(match[4]) * 255}`) : ''); 
 }
 
-export function CapitalizeFirstLetter(str: string): string {
+export function capitalizeFirstLetter(str: string): string {
   return `${str[0].toUpperCase()}${str.slice(1)}`;
 }
 

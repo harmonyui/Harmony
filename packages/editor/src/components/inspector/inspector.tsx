@@ -587,8 +587,12 @@ export class OverlayRect {
 		this.border = doc.createElement('div')
 		this.padding = doc.createElement('div')
 		this.content = doc.createElement('div')
+
+		//const handles = $('[name="resize-handle"]').remove();
+			
 		for (let i = 0; i < 8; i++) {
-			this.resizeHandles.push(doc.createElement('div'));
+			const handle = $('<div name="resize-handle"></div>');
+			this.resizeHandles.push(handle[0]);
 			this.resizeHandles[i].style.backgroundColor = overlayStyles.resize;
 		}
 
@@ -691,74 +695,74 @@ export class OverlayRect {
 
 		//NE -> SE -> SW -> NW
 		//E -> S -> W -> N
-		if (this.onDrag && false) {
+		if (this.onDrag) {
 			Object.assign(this.resizeHandles[0].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
-				'pointer-events': 'auto',
-				cursor: 'se-resize',
+				'pointer-events': 'none',
+				cursor: 'nwse-resize',
 				position: 'absolute',
 				top: `${-dims.borderTop}px`,
 				left: `${-dims.borderLeft}px`,
 			})
-			this.resizeHandles[0].addEventListener('mousedown', initFullDrag('nw'), false);
+			//this.resizeHandles[0].addEventListener('mousedown', initFullDrag('nw'), false);
 
 			Object.assign(this.resizeHandles[1].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
-				'pointer-events': 'auto',
-				cursor: 'ne-resize',
+				'pointer-events': 'none',
+				cursor: 'nesw-resize',
 				position: 'absolute',
 				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
 				left: `${-dims.borderLeft}px`,
 			})
-			this.resizeHandles[1].addEventListener('mousedown', initFullDrag('sw'), false);
+			//this.resizeHandles[1].addEventListener('mousedown', initFullDrag('sw'), false);
 
 			Object.assign(this.resizeHandles[2].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
-				'pointer-events': 'auto',
-				cursor: 'nw-resize',
+				'pointer-events': 'none',
+				cursor: 'nwse-resize',
 				position: 'absolute',
 				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
 				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
 			})
-			this.resizeHandles[2].addEventListener('mousedown', initFullDrag('se'), false);
+			//this.resizeHandles[2].addEventListener('mousedown', initFullDrag('se'), false);
 
 			Object.assign(this.resizeHandles[3].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
-				'pointer-events': 'auto',
-				cursor: 'sw-resize',
+				'pointer-events': 'none',
+				cursor: 'nesw-resize',
 				position: 'absolute',
 				top: `${-dims.borderTop}px`,
 				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
 			})
-			this.resizeHandles[3].addEventListener('mousedown', initFullDrag('ne'), false);
+			//this.resizeHandles[3].addEventListener('mousedown', initFullDrag('ne'), false);
 
 			const boxHeight = box.height * scale;
 			if (boxHeight >= resizeThreshold) {
 				Object.assign(this.resizeHandles[4].style, {
 					height: `${6 / scale}px`,
 					width: `${6 / scale}px`,
-					'pointer-events': 'auto',
-					cursor: 'e-resize',
+					'pointer-events': 'none',
+					cursor: 'ew-resize',
 					position: 'absolute',
 					top: `${box.height / 2 - dims.borderTop}px`,
 					left: `${-dims.borderLeft}px`,
 				})
-				this.resizeHandles[4].addEventListener('mousedown', initFullDrag('w'), false);
+				//this.resizeHandles[4].addEventListener('mousedown', initFullDrag('w'), false);
 
 				Object.assign(this.resizeHandles[6].style, {
 					height: `${6 / scale}px`,
 					width: `${6 / scale}px`,
-					'pointer-events': 'auto',
-					cursor: 'w-resize',
+					'pointer-events': 'none',
+					cursor: 'ew-resize',
 					position: 'absolute',
 					top: `${box.height / 2 - dims.borderTop}px`,
 					left: `${box.width - dims.borderLeft - dims.borderRight}px`,
 				})
-				this.resizeHandles[6].addEventListener('mousedown', initFullDrag('e'), false);
+				//this.resizeHandles[6].addEventListener('mousedown', initFullDrag('e'), false);
 			}
 
 			const boxWidth = box.width * scale;
@@ -766,24 +770,24 @@ export class OverlayRect {
 				Object.assign(this.resizeHandles[5].style, {
 					height: `${6 / scale}px`,
 					width: `${6 / scale}px`,
-					'pointer-events': 'auto',
-					cursor: 's-resize',
+					'pointer-events': 'none',
+					cursor: 'ns-resize',
 					position: 'absolute',
 					top: `${box.height - dims.borderTop - dims.borderBottom}px`,
 					left: `${box.width / 2 - dims.borderLeft}px`,
 				})
-				this.resizeHandles[5].addEventListener('mousedown', initFullDrag('s'), false);
+				//this.resizeHandles[5].addEventListener('mousedown', initFullDrag('s'), false);
 
 				Object.assign(this.resizeHandles[7].style, {
 					height: `${6 / scale}px`,
 					width: `${6 / scale}px`,
-					'pointer-events': 'auto',
-					cursor: 'n-resize',
+					'pointer-events': 'none',
+					cursor: 'ns-resize',
 					position: 'absolute',
 					top: `${-dims.borderTop}px`,
 					left: `${box.width / 2 - dims.borderLeft}px`,
 				});
-				this.resizeHandles[7].addEventListener('mousedown', initFullDrag('n'), false);
+				//this.resizeHandles[7].addEventListener('mousedown', initFullDrag('n'), false);
 			}
 		}
 

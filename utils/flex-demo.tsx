@@ -1,5 +1,6 @@
 'use client';
 import { Button } from "@harmony/ui/src/components/core/button";
+import { capitalizeFirstLetter, getClass } from "@harmony/util/src";
 import { changeByAmount } from "harmony-ai-editor/src/components/inspector/snapping";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
@@ -109,7 +110,7 @@ const positions = [
     {x: 0, y: 5, element: 0},
 ];
 
-export const FlexBoxDemo = () => {
+export const FlexBoxDemo: React.FunctionComponent<{stretch: boolean}> = ({stretch}) => {
 	const ref = useRef<HTMLDivElement>(null);
     const refChild1 = useRef<HTMLDivElement>(null);
     const refChild2 = useRef<HTMLDivElement>(null);
@@ -177,9 +178,9 @@ style="${styleChild3}"></div>
 			<div>
                 <div className="hw-flex hw-flex-col hw-px-10 hw-w-[400px] hw-h-[400px] hw-space-x-1 hw-gap-2 " ref={ref}>
 				    {/* {[1, 2, 3].map((i) => <div key={i} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>)} */}
-                    <div ref={refChild1} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>
-                    <div ref={refChild2} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>
-                    <div ref={refChild3} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>
+                    <div ref={refChild1} className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div>
+                    <div ref={refChild2} className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div>
+                    <div ref={refChild3} className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div>
                     {/* <div className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div> */}
                 </div>
                 <Button onClick={() => setIsLooping(!isLooping)}>Try Me</Button>
@@ -215,7 +216,7 @@ style="${styleChild3}"></div>
 	)
 }
 
-export const ElementDemo = () => {
+export const ElementDemo: React.FunctionComponent<{stretch: boolean}> = ({stretch}) => {
     const parentRef = useRef<HTMLDivElement>(null);
     const child1Ref = useRef<HTMLDivElement>(null);
     const child2Ref = useRef<HTMLDivElement>(null);
@@ -240,10 +241,10 @@ style="${parentStyle}">
 </div>`;
     return <DragDemo code={code}>
         <div className="hw-ml-[200px] hw-w-[400px]">
-        <div className="hw-py-[50px] hw-border hw-w-[200px]" ref={parentRef}>
-            <div className="hw-h-[50px] hw-bg-primary hw-border" ref={child1Ref} id="child-1"></div>
-            <div className="hw-h-[50px] hw-bg-primary hw-border" ref={child2Ref} id="child-2"></div>
-            <div className="hw-h-[50px] hw-bg-primary hw-border" ref={child3Ref} id="child-3"></div>
+        <div className="hw-py-[50px] hw-w-[200px]" ref={parentRef}>
+            <div className={getClass("hw-h-[50px] hw-bg-primary hw-border", stretch ? '' : 'hw-w-[50px]')} ref={child1Ref} id="child-1"></div>
+            <div className={getClass("hw-h-[50px] hw-bg-primary hw-border", stretch ? '' : 'hw-w-[50px]')} ref={child2Ref} id="child-2"></div>
+            <div className={getClass("hw-h-[50px] hw-bg-primary hw-border", stretch ? '' : 'hw-w-[50px]')} ref={child3Ref} id="child-3"></div>
         </div>
         </div>
     </DragDemo>
@@ -291,7 +292,7 @@ const DragDemo: React.FunctionComponent<DragDemoProps>  = ({children, code}) => 
 		</div>
     )
 }
-const keys = ['justify-content', 'align-items', 'gap', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'margin-left', 'margin-right','margin-top', 'margin-bottom'] as const;
+const keys = ['justify-content', 'align-items', 'gap', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right', 'margin-left', 'margin-right','margin-top', 'margin-bottom', 'height', 'width'] as const;
 const useWatchElementStyles = (ref: React.RefObject<HTMLElement>, initialValue?: Record<typeof keys[number], string>) => {
     const [style, setStyle] = useState('');
 
@@ -320,4 +321,28 @@ const useWatchElementStyles = (ref: React.RefObject<HTMLElement>, initialValue?:
     }, [ref]);
 
     return style;
+}
+
+
+const demos = ['Element', 'Element Stretch', 'Flex', 'Flex Stretch'] as const;
+const demoComps = [
+    <ElementDemo stretch={false}/>,
+    <ElementDemo stretch={true}/>,
+    <FlexBoxDemo stretch={false}/>,
+    <FlexBoxDemo stretch={true}/>,
+]
+export const SnappingDemo = () => {
+    const [currDemo, setCurrDemo] = useState(0);
+    
+
+    const currComponent = useMemo(() => {
+        return demoComps[currDemo];
+    }, [currDemo])
+
+    return <div>
+        <div className="hw-flex">
+        {demos.map(demo => <Button key={demo} onClick={() => setCurrDemo(demos.indexOf(demo))}>{capitalizeFirstLetter(demo)}</Button>)}
+        </div>
+        {currComponent}
+    </div>
 }
