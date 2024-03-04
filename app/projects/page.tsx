@@ -19,10 +19,10 @@ const ProjectsPage = withAuth(async ({ctx}) => {
 	return (
 		<ModalProvider>
 			<SideNav>
-				{/* {branches ? <ProjectDisplay Projectes={branches}/> : <div>
+				{branches ? <ProjectDisplay Projectes={branches}/> : <div>
 					No Repositories
-				</div>} */}
-				<SnappingDemo/>
+				</div>}
+				{/* <SnappingDemo/> */}
 			</SideNav>
 		</ModalProvider>
 	)

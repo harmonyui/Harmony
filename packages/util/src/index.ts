@@ -75,9 +75,10 @@ export const displayRelativeDate = (date: Date): string => {
 	return displayDate(date);
 }
 
-export const round = (value: number, digits = 0): number => {
+export const round = (value: number, digits = 0, floor=false): number => {
   const places = Math.pow(10, digits);
-  return Math.round(value * places) / places;
+  const func = floor ? 'floor' : 'round'
+  return Math[func](value * places) / places;
 };
 
 export const displayStorageSpace = (value: number): string => {

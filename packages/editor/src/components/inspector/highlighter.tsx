@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 let controller = new AbortController();
 
 //The event function emitted. Return whether or not this is the desired element (should stop propagation)
-export type HighlighterDispatch = (element: HTMLElement, clientX: number, clientY: number) => boolean
+export type HighlighterDispatch = (element: HTMLElement, clientX: number, clientY: number, event: MouseEvent) => boolean
 export interface HighlighterProps {
 	handlers: {
 		onClick: HighlighterDispatch,
@@ -76,11 +76,11 @@ export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPoin
 		} else {
 			//console.log('Holding');
 		}
-		while (target !== null && !dispatch(target, event.clientX, event.clientY)) {
+		while (target !== null && !dispatch(target, event.clientX, event.clientY, event)) {
 			target = target.parentElement;
 		}
 
-		finish && target !== null && finish(target, event.clientX, event.clientY);
+		finish && target !== null && finish(target, event.clientX, event.clientY, event);
 	
 	});
 

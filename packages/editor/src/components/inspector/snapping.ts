@@ -1,7 +1,7 @@
 import { capitalizeFirstLetter, groupBy, groupByDistinct, round } from "@harmony/util/src";
 import interact from "interactjs";
-import { useState, useEffect, useRef } from "react";
-import { Rect, RectBox, selectDesignerElement } from "./inspector";
+import { useState, useEffect, useRef, useMemo } from "react";
+import { Rect, RectBox, isSelectable, selectDesignerElement } from "./inspector";
 import { useEffectEvent } from "../../../../ui/src/hooks/effect-event";
 import {InteractEvent, ResizeEvent} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
@@ -13,13 +13,15 @@ const close = (a: number, b: number, threshold: number): boolean => {
 	return Math.abs(a-b) <= threshold;
 }
 
-const getMinGapForElement = (element: HTMLElement): number => {
-	const parent = element.parentElement!;
+const getMinGap = (parent: HTMLElement): number => {
 	const minGapStr = parent.dataset.minGap;
 	let minGap = 0;
 	if (!minGapStr) {
 		const style = getComputedStyle(parent);
 		minGap = parseFloat($(parent).css('gap') || '0');
+		if (isNaN(minGap)) {
+			minGap = 0;
+		}
 		parent.dataset.minGap = `${minGap}`;
 	} else {
 		minGap = parseFloat(minGapStr);
@@ -246,7 +248,7 @@ interface ElementEdgeInfo {
 
 interface ChildEdgeInfo {
     element: HTMLElement,
-    index: number,
+	index: number,
     midpointX: number,
     midpointY: number,
     left: ElementEdgeInfo,
@@ -256,6 +258,7 @@ interface ChildEdgeInfo {
 }
 
 interface ParentEdgeInfo {
+	children: HTMLElement[],
     childEdgeInfo: ChildEdgeInfo[],
     midpointX: number;
     midpointY: number;
@@ -277,13 +280,16 @@ interface ParentEdgeInfo {
     }
 }
 
-function calculateEdgesInfo(element: HTMLElement, scale: number, axis: Axis, updates: UpdateRect[]=[]): ChildEdgeInfo {
+function calculateEdgesInfo(element: HTMLElement, scale: number, scaleActual: number, axis: Axis, updates: UpdateRect[]=[]): ChildEdgeInfo {
     const parent = element.parentElement!;
 	const otherAxis = axis === 'x' ? 'y' : 'x';
-    const left = calculateAxisEdgeInfo(element, axis, 'close', scale, updates);
-    const right = calculateAxisEdgeInfo(element, axis, 'far', scale, updates);
-    const top = calculateAxisEdgeInfo(element, otherAxis, 'close', scale, updates);
-    const bottom = calculateAxisEdgeInfo(element, otherAxis, 'far', scale, updates);
+	const children = Array.from(element.parentElement!.children).filter(child => isSelectable(child as HTMLElement, scaleActual)) as HTMLElement[];
+	const index = children.indexOf(element)
+
+    const left = calculateAxisEdgeInfo(element, axis, 'close', scale, index, children, updates);
+    const right = calculateAxisEdgeInfo(element, axis, 'far', scale, index, children, updates);
+    const top = calculateAxisEdgeInfo(element, otherAxis, 'close', scale, index, children, updates);
+    const bottom = calculateAxisEdgeInfo(element, otherAxis, 'far', scale, index, children, updates);
     const rectOverride = updates.find(update => update.element === element)?.rect;
     const parentOverride = updates.find(update => update.element === parent)?.rect;
     const midpointX = (getBoundingClientRect(element, axis, 'close', scale, rectOverride) + getBoundingClientRect(element, axis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, axis, 'close', scale, parentOverride);
@@ -297,15 +303,13 @@ function calculateEdgesInfo(element: HTMLElement, scale: number, axis: Axis, upd
         bottom,
         midpointX,
         midpointY,
-        index: Array.from(element.parentElement!.children).indexOf(element)
+        index
     }
 }
 
-function calculateAxisEdgeInfo(element: HTMLElement, axis: Axis, side: Side, scale: number, updates: UpdateRect[]=[]): ElementEdgeInfo {
+function calculateAxisEdgeInfo(element: HTMLElement, axis: Axis, side: Side, scale: number, selfIndex: number, children: HTMLElement[], updates: UpdateRect[]=[]): ElementEdgeInfo {
     const parent = element.parentElement;
     if (!parent) throw new Error("Element does not have a parent");
-    const selfIndex = Array.from(parent.children).indexOf(element);
-    //const siblings: HTMLElement[] = Array.from(parent.children).filter(sibiling => sibiling !== element) as HTMLElement[];
     
     const otherSide = side === 'close' ? 'far' : 'close';
     const otherAxis = axis === 'x' ? 'y' : 'x';
@@ -338,7 +342,7 @@ function calculateAxisEdgeInfo(element: HTMLElement, axis: Axis, side: Side, sca
     // }
     let siblingEdge: EdgeInfo | undefined = undefined;
     if (selfIndex > 0 && side === 'close') {
-        const sibling = parent.children[selfIndex - 1] as HTMLElement;
+        const sibling = children[selfIndex - 1] as HTMLElement;
         const newStart = getBoundingClientRect(element, axis, side, scale, getRectOverride(element)) - getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling));
         siblingEdge = {
             gap: newStart,
@@ -350,8 +354,8 @@ function calculateAxisEdgeInfo(element: HTMLElement, axis: Axis, side: Side, sca
         };
     }
 
-    if (selfIndex < parent.children.length - 1 && side === 'far') {
-        const sibling = parent.children[selfIndex + 1] as HTMLElement;
+    if (selfIndex < children.length - 1 && side === 'far') {
+        const sibling = children[selfIndex + 1] as HTMLElement;
         const newEnd = getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - getBoundingClientRect(element, axis, side, scale, getRectOverride(element));
         siblingEdge = {
             gap: newEnd,
@@ -406,15 +410,19 @@ function calculateAxisEdgeInfo(element: HTMLElement, axis: Axis, side: Side, sca
     return {parentEdge, siblingEdge, elementLocation, elementLocationRelative, parentMidpoint, parentMidpointRelative, element}
 }
 
-function calculateParentEdgeInfo(parent: HTMLElement, scale: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[]): ParentEdgeInfo {
+function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scaleActual: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[]): ParentEdgeInfo {
     const childEdgeInfo: ChildEdgeInfo[] = [];
-	const firstChild = parent.children[0] as HTMLElement;
-	const lastChild = parent.children[parent.children.length - 1] as HTMLElement;
+	const children = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scaleActual)) as HTMLElement[];
+
+	const firstChild = children[0] as HTMLElement;
+	const lastChild = children[children.length - 1] as HTMLElement;
 	const leftSide = axis === 'x' ? 'left' : 'top';
 	const rightSide = axis === 'x' ? 'right' : 'bottom';
 	const topSide = axis === 'x' ? 'top' : 'left';
 	const bottomSide = axis === 'x' ? 'bottom' : 'right'; 
 	const otherAxis = axis === 'x' ? 'y' : 'x';
+
+	
 	
 	const getRectOverride = (element: HTMLElement): Rect | undefined => {
         const updateRect = updates.find(update => update.element === element);
@@ -427,14 +435,14 @@ function calculateParentEdgeInfo(parent: HTMLElement, scale: number, useRectOffs
             updates.push({element: parent, rect: getOffsetRect(parent)})
         }
 
-        for (const child of Array.from(parent.children)) {
+        for (const child of children) {
             if (!updates.find(update => update.element === child)) {
                 updates.push({element: child as HTMLElement, rect: getOffsetRect(child as HTMLElement)})
             }
         }
     }
-    for (const child of Array.from(parent.children)) {
-        childEdgeInfo.push(calculateEdgesInfo(child as HTMLElement, scale, axis, updates));
+    for (const child of children) {
+        childEdgeInfo.push(calculateEdgesInfo(child as HTMLElement, scale, scaleActual, axis, updates));
     }
 
     const copy = childEdgeInfo.slice();
@@ -447,8 +455,8 @@ function calculateParentEdgeInfo(parent: HTMLElement, scale: number, useRectOffs
 	const midpointY = (getBoundingClientRectParent(parent, otherAxis, 'close', scale, getRectOverride(parent)) + getBoundingClientRectParent(parent, otherAxis, 'size', scale, getRectOverride(parent)) / 2);
 	const midpointXRelative = midpointX - getBoundingClientRectParent(parent, axis, 'close', scale, getRectOverride(parent));
     const midpointYRelative = midpointY - getBoundingClientRectParent(parent, otherAxis, 'close', scale, getRectOverride(parent));
-	const childrenWidth = Array.from(parent.children).reduce((prev, curr) => prev + curr.clientWidth, 0);
-	const childrenHeight = Array.from(parent.children).reduce((prev, curr) => prev + curr.clientHeight, 0);
+	const childrenWidth = children.reduce((prev, curr) => prev + curr.clientWidth, 0);
+	const childrenHeight = children.reduce((prev, curr) => prev + curr.clientHeight, 0);
 	const childrenMidpointX = (getBoundingClientRect(lastChild, axis, 'far', scale, getRectOverride(lastChild)) + getBoundingClientRect(firstChild, axis, 'close', scale, getRectOverride(firstChild))) / 2;
 	const childrenMidpointY = (getBoundingClientRect(lastChild, otherAxis, 'far', scale, getRectOverride(lastChild)) + getBoundingClientRect(firstChild, otherAxis, 'close', scale, getRectOverride(firstChild))) / 2;
 	
@@ -484,6 +492,7 @@ function calculateParentEdgeInfo(parent: HTMLElement, scale: number, useRectOffs
 	
 
     return {
+		children,
         childEdgeInfo,
         midpointX,
         midpointY,
@@ -521,15 +530,15 @@ type ParentFlexEdgeInfo = ParentEdgeInfo & {
 	betweenSpaceY: number;
 	centerSpaceY: number;
 }
-function calculateFlexParentEdgeInfo(parent: HTMLElement, scale: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[]): ParentFlexEdgeInfo {
-	const parentInfo = calculateParentEdgeInfo(parent, scale, useRectOffset, axis, updates);
+function calculateFlexParentEdgeInfo(parent: HTMLElement, scale: number, scaleActual: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[]): ParentFlexEdgeInfo {
+	const parentInfo = calculateParentEdgeInfo(parent, scale, scaleActual, useRectOffset, axis, updates);
 
 	const getRectOverride = (element: HTMLElement): Rect | undefined => {
         const updateRect = updates.find(update => update.element === element);
         return updateRect?.rect;
     }
 
-	const numChildren = parent.children.length;
+	const numChildren = parentInfo.children.length;
 
 	
 	const remainingSpaceX = getBoundingClientRect(parent, 'x', 'size', scale, getRectOverride(parent)) - parentInfo.childrenWidth;
@@ -570,22 +579,27 @@ interface UpdateRectsProps {
     parentUpdate: UpdateRect,
     childrenUpdates: UpdateRect[]
 }
-function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number) {
+function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number, scaleActual: number) {
     const parent = parentUpdate.element;
-    const children = Array.from(parent.children);
-    const {edges, childEdgeInfo, midpointXRelative} = calculateParentEdgeInfo(parent, scale, true, 'x', [parentUpdate, ...childrenUpdates]);
+    const {edges, childEdgeInfo, midpointXRelative} = calculateParentEdgeInfo(parent, scale, scaleActual, true, 'x', [parentUpdate, ...childrenUpdates]);
     Object.entries(edges).forEach(([side, edge]) => {
         const gap = edge.parentEdge.gap;
         parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
     });
 
     for (const info of childEdgeInfo) {
+		info.element.style.marginBottom = '0px';
+		info.element.style.marginRight = '0px';
+
         const leftGap = info.left.parentEdge.gap - edges.left.parentEdge.gap;
         const rightGap = info.right.parentEdge.gap - edges.right.parentEdge.gap;
-        if (info.left.parentEdge.gap >= 0 && info.right.parentEdge.gap >= 0) {
+        if (info.left.parentEdge.gap >= 0) {
             info.element.style.marginLeft = `${leftGap}px`;
-            info.element.style.marginRight = `${rightGap}px`;
+           
         }
+		if (info.right.parentEdge.gap >= 0 && isElementFluid(info.element, 'width')) {
+			info.element.style.marginRight = `${rightGap}px`;
+		}
         if (info.index > 0 && info.top.siblingEdge && Math.abs(info.top.siblingEdge.gap - 0.1) >= 0) {
             info.element.style.marginTop = `${info.top.siblingEdge.gap}px`
         } 
@@ -601,111 +615,232 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
     }
 }
 
-interface ElementInfo {
-	gapStart: number;
-	gapEnd: number;
-	parentMidpoint: number;
-	elementMidpoint: number;
-}
-function calculateElementInfo(element: HTMLElement, axis: Axis, scale: number): ElementInfo {
-	const parent = element.parentElement!;
-	const numChildren = parent.children.length;
-
+function updateRectFlex({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number, scaleActual: number) {
+	const parent = parentUpdate.element;
+	const style = getComputedStyle(parent);
+	const axis = style.flexDirection !== 'column' ? 'x' : 'y';
+	const left = axis === 'x' ? 'left' : 'top';
+	const right = axis === 'x' ? 'right' : 'bottom';
+	const top = axis === 'x' ? 'top' : 'left';
+	const bottom = axis === 'x' ? 'bottom' : 'right'; 
 	const otherAxis = axis === 'x' ? 'y' : 'x';
-	const selfIndex = Array.from(parent.children).indexOf(element);
-	const myStart = getBoundingClientRect(element, otherAxis, 'close', scale);
-	const myEnd = getBoundingClientRect(element, otherAxis, 'far', scale);
-	let gapStart = getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRectParent(parent, axis, 'close', scale);
-	let gapEnd = getBoundingClientRectParent(parent, axis, 'far', scale) - getBoundingClientRect(element, axis, 'far', scale);
-	for (let i = 0; i < numChildren; i++) {
-		const child = parent.children[i] as HTMLElement;
-		if (i === selfIndex) {
-			continue;
-		}
+	const minGapBetweenX = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
+	const evenlySpace = axis === 'x' ? 'evenlySpaceX' : 'evenlySpaceY';
+	const aroundSpace = axis === 'x' ? 'aroundSpaceX' : 'aroundSpaceY';
+	const betweenSpace = axis === 'x' ? 'betweenSpaceX' : 'betweenSpaceY';
+	const gapBetween = axis === 'x' ? 'gapBetweenX' : 'gapBetweenY';
+	const minGap = getMinGap(parent);
+	const height = axis === 'x' ? 'height' : 'width';
 
-		const closeOtherSide = getBoundingClientRect(child, otherAxis, 'close', scale);
-		const farOtherSide = getBoundingClientRect(child, otherAxis, 'far', scale);
-		if (!((closeOtherSide < myStart && farOtherSide < myStart) || (closeOtherSide > myEnd && farOtherSide > myEnd))) {
-			const newStart = getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(child, axis, 'far', scale);
-			const newEnd = getBoundingClientRect(child, axis, 'close', scale) - getBoundingClientRect(element, axis, 'far', scale);
+	const updates: UpdateRect[] = childrenUpdates;
+	updates.push(parentUpdate);
 
-			if (newStart >= 0 && newStart < gapStart) {
-				gapStart = newStart;
-			}
-			if (newEnd >= 0 && newEnd < gapEnd) {
-				gapEnd = newEnd;
-			}
-		}
+	const parentInfo = calculateFlexParentEdgeInfo(parent, scale, scale, false, 'x', updates);
+	if (parentInfo.edges[left].parentEdge.gap <= 0) {
+		parentInfo.edges[left].parentEdge.gap = 0;
+	}
+	if (parentInfo.edges[right].parentEdge.gap <= 0) {
+		parentInfo.edges[right].parentEdge.gap = 0;
+	}
+
+	if (parentInfo[minGapBetweenX] < minGap) {
+		parentInfo[minGapBetweenX] = minGap;
+	}
+
+	if (parentInfo[minGapBetweenX] > parentInfo[betweenSpace]) {
+		parentInfo[minGapBetweenX] = parentInfo[betweenSpace];
 	}
 	
-	const parentMidpoint = (getBoundingClientRectParent(parent, axis, 'close', scale) + getBoundingClientRectParent(parent, axis, 'size', scale) / 2);
-	const elementMidpoint = (getBoundingClientRect(element, axis, 'close', scale) + getBoundingClientRect(element, axis, 'size', scale) / 2);
 
-	return {gapStart, gapEnd, parentMidpoint, elementMidpoint};
-}
+	parent.style.gap = `${parentInfo[minGapBetweenX]}px`;
+	parent.style.justifyContent = 'normal';
+	parent.style.alignItems = 'normal';
 
-interface FlexInfo {
-	parentMidpoint: number,
-	childrenMidpoint: number,
-	childrenHeight: number,
-	gapBetween: number;
-	gapStart: number;
-	gapEnd: number;
-	remainingSpace: number;
-	childrenCount: number;
-	evenlySpace: number;
-	aroundSpace: number;
-	betweenSpace: number;
-	centerSpace: number;
-}
-function calculateFlexInfo(parent: HTMLElement, axis: Axis, scale: number): FlexInfo {
-	const numChildren = parent.children.length;
-	const firstChild = parent.children[0] as HTMLElement;
-	const lastChild = parent.children[parent.children.length - 1] as HTMLElement;
-
-	let gap = 0;
-	let gapStart = 0;
-	let gapEnd = 0;
-	for (let i = 0; i < numChildren; i++) {
-		const child = parent.children[i] as HTMLElement;
-
-		if (i === 0) {
-			gapStart = getBoundingClientRect(child, axis, 'close', scale) - getBoundingClientRectParent(parent, axis, 'close', scale);
-		}
-		if (i === numChildren - 1) {
-			gapEnd = getBoundingClientRectParent(parent, axis, 'far', scale) - (getBoundingClientRect(child, axis, 'far', scale));
-			continue;
-		}
-		const nextChild = parent.children[i + 1] as HTMLElement;
-
-		gap += getBoundingClientRect(nextChild, axis, 'close', scale) - getExtra(nextChild, axis, 'close') - (getBoundingClientRect(child, axis, 'far', scale));
-	}
-	const childrenMidpoint = (getBoundingClientRect(lastChild, axis, 'far', scale) + getBoundingClientRect(firstChild, axis, 'close', scale)) / 2;
-	const parentMidpoint = (getBoundingClientRectParent(parent, axis, 'close', scale) + getBoundingClientRectParent(parent, axis, 'size', scale) / 2);
+	const startXSide = parentInfo.edges[left].parentEdge.gap <= parentInfo.edges[right].parentEdge.gap ? left : right;
+	const startYSide = parentInfo.edges[top].parentEdge.gap <= parentInfo.edges[bottom].parentEdge.gap ? top : bottom;
 	
-	const childrenHeight = Array.from(parent.children).reduce((prev, curr) => prev + getBoundingClientRect(curr as HTMLElement, axis, 'size-full', scale), 0)
-	const remainingSpace = getBoundingClientRectParent(parent, axis, 'size', scale) - childrenHeight;
-	const evenlySpace = remainingSpace / (numChildren + 1);
-	const aroundSpace = remainingSpace / numChildren;
-	const betweenSpace = remainingSpace / (numChildren - 1);
-	const gapBetween = gap / (numChildren - 1);
-	const centerSpace = remainingSpace / 2;
+	parent.style.paddingTop = '0px';
+	parent.style.paddingBottom = '0px';
+	parent.style.paddingLeft = '0px';
+	parent.style.paddingRight = '0px';
 
-	return {
-		parentMidpoint,
-		childrenCount: numChildren,
-		childrenMidpoint,
-		childrenHeight,
-		gapBetween,
-		gapStart,
-		gapEnd,
-		remainingSpace,
-		evenlySpace,
-		aroundSpace,
-		betweenSpace,
-		centerSpace
+	Object.entries(parentInfo.edges).forEach(([side, edge]) => {
+		const gap = side === startXSide || startYSide === side ? edge.parentEdge.gap : edge.parentEdge.gap;
+		parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
+	});
+
+	for (const info of parentInfo.childEdgeInfo) {
+		info.element.style.marginTop = '0px';
+		info.element.style.marginBottom = '0px';
+		info.element.style.marginLeft = '0px';
+		info.element.style.marginRight = '0px';
+
+		// if (info.index > 0 && info.left.siblingEdge && info.left.siblingEdge.gap - parentInfo.minGapBetweenX >= 0) {
+		// 	const gap = info.left.siblingEdge.gap - parentInfo.minGapBetweenX;
+			
+		// 	info.element.style.marginLeft = `${gap}px`
+		// }
+
+		const topGap = info[top].parentEdge.gap - parentInfo.edges[top].parentEdge.gap;
+		if (topGap >= 0) {
+			info.element.style[`margin${capitalizeFirstLetter(top)}` as unknown as number] = `${topGap}px`;
+		}
+
+		const bottomGap = info[bottom].parentEdge.gap - parentInfo.edges[bottom].parentEdge.gap;
+		if (bottomGap >= 0) {
+			info.element.style[`margin${capitalizeFirstLetter(bottom)}` as unknown as number] = `${bottomGap}px`;
+		}
+	}
+
+	const parentFixed = !isElementFluid(parent, height);
+
+	//Justify-content stuff
+	if (parentInfo[gapBetween] !== undefined && close(parentInfo.edges[left].parentEdge.gap, parentInfo.edges[right].parentEdge.gap, 0.1) && parentFixed) {
+		parent.style[`padding${capitalizeFirstLetter(left)}` as unknown as number] = '0px';
+		parent.style[`padding${capitalizeFirstLetter(right)}` as unknown as number] = '0px';
+		parent.style.justifyContent = 'center';
+		
+		if (close(parentInfo[gapBetween]!, parentInfo[aroundSpace], 0.1)) {
+			parent.style.justifyContent = 'space-around';
+			parent.style.gap = '0px';
+		} else if (close(parentInfo[gapBetween]!, parentInfo[evenlySpace], 0.1)) {
+			parent.style.justifyContent = 'space-evenly';
+			parent.style.gap = '0px';
+		} else if (close(parentInfo[gapBetween]!, parentInfo[betweenSpace], 0.1)) {
+			parent.style.justifyContent = 'space-between';
+			parent.style.gap = '0px';
+		}
+	}
+
+	const childrenFixed = parentInfo.children.every(child => !isElementFluid(child, height));
+
+	//Align items stuff
+	if (parentInfo.edges.top.parentEdge.gap > 0 && parentInfo.edges.bottom.parentEdge.gap > 0 && childrenFixed && parentFixed) {
+		if (parentInfo.childEdgeInfo.every(info => info[top].elementLocationRelative === info[top].parentMidpointRelative)) {
+			parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
+			parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
+			parent.style.alignItems = 'center';
+		}
+
+		if (startYSide === top) {
+			parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
+		}
+		else if (startYSide === bottom) {
+			parent.style.alignItems = 'flex-end';
+			parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
+		}
+	}
+
+	if (startXSide === right) {
+		parent.style.justifyContent = 'flex-end';
 	}
 }
+
+// interface ElementInfo {
+// 	gapStart: number;
+// 	gapEnd: number;
+// 	parentMidpoint: number;
+// 	elementMidpoint: number;
+// }
+// function calculateElementInfo(element: HTMLElement, axis: Axis, scale: number): ElementInfo {
+// 	const parent = element.parentElement!;
+// 	const numChildren = parent.children.length;
+
+// 	const otherAxis = axis === 'x' ? 'y' : 'x';
+// 	const selfIndex = Array.from(parent.children).indexOf(element);
+// 	const myStart = getBoundingClientRect(element, otherAxis, 'close', scale);
+// 	const myEnd = getBoundingClientRect(element, otherAxis, 'far', scale);
+// 	let gapStart = getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRectParent(parent, axis, 'close', scale);
+// 	let gapEnd = getBoundingClientRectParent(parent, axis, 'far', scale) - getBoundingClientRect(element, axis, 'far', scale);
+// 	for (let i = 0; i < numChildren; i++) {
+// 		const child = parent.children[i] as HTMLElement;
+// 		if (i === selfIndex) {
+// 			continue;
+// 		}
+
+// 		const closeOtherSide = getBoundingClientRect(child, otherAxis, 'close', scale);
+// 		const farOtherSide = getBoundingClientRect(child, otherAxis, 'far', scale);
+// 		if (!((closeOtherSide < myStart && farOtherSide < myStart) || (closeOtherSide > myEnd && farOtherSide > myEnd))) {
+// 			const newStart = getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(child, axis, 'far', scale);
+// 			const newEnd = getBoundingClientRect(child, axis, 'close', scale) - getBoundingClientRect(element, axis, 'far', scale);
+
+// 			if (newStart >= 0 && newStart < gapStart) {
+// 				gapStart = newStart;
+// 			}
+// 			if (newEnd >= 0 && newEnd < gapEnd) {
+// 				gapEnd = newEnd;
+// 			}
+// 		}
+// 	}
+	
+// 	const parentMidpoint = (getBoundingClientRectParent(parent, axis, 'close', scale) + getBoundingClientRectParent(parent, axis, 'size', scale) / 2);
+// 	const elementMidpoint = (getBoundingClientRect(element, axis, 'close', scale) + getBoundingClientRect(element, axis, 'size', scale) / 2);
+
+// 	return {gapStart, gapEnd, parentMidpoint, elementMidpoint};
+// }
+
+// interface FlexInfo {
+// 	parentMidpoint: number,
+// 	childrenMidpoint: number,
+// 	childrenHeight: number,
+// 	gapBetween: number;
+// 	gapStart: number;
+// 	gapEnd: number;
+// 	remainingSpace: number;
+// 	childrenCount: number;
+// 	evenlySpace: number;
+// 	aroundSpace: number;
+// 	betweenSpace: number;
+// 	centerSpace: number;
+// }
+// function calculateFlexInfo(parent: HTMLElement, axis: Axis, scale: number): FlexInfo {
+// 	const numChildren = parent.children.length;
+// 	const firstChild = parent.children[0] as HTMLElement;
+// 	const lastChild = parent.children[parent.children.length - 1] as HTMLElement;
+
+// 	let gap = 0;
+// 	let gapStart = 0;
+// 	let gapEnd = 0;
+// 	for (let i = 0; i < numChildren; i++) {
+// 		const child = parent.children[i] as HTMLElement;
+
+// 		if (i === 0) {
+// 			gapStart = getBoundingClientRect(child, axis, 'close', scale) - getBoundingClientRectParent(parent, axis, 'close', scale);
+// 		}
+// 		if (i === numChildren - 1) {
+// 			gapEnd = getBoundingClientRectParent(parent, axis, 'far', scale) - (getBoundingClientRect(child, axis, 'far', scale));
+// 			continue;
+// 		}
+// 		const nextChild = parent.children[i + 1] as HTMLElement;
+
+// 		gap += getBoundingClientRect(nextChild, axis, 'close', scale) - getExtra(nextChild, axis, 'close') - (getBoundingClientRect(child, axis, 'far', scale));
+// 	}
+// 	const childrenMidpoint = (getBoundingClientRect(lastChild, axis, 'far', scale) + getBoundingClientRect(firstChild, axis, 'close', scale)) / 2;
+// 	const parentMidpoint = (getBoundingClientRectParent(parent, axis, 'close', scale) + getBoundingClientRectParent(parent, axis, 'size', scale) / 2);
+	
+// 	const childrenHeight = Array.from(parent.children).reduce((prev, curr) => prev + getBoundingClientRect(curr as HTMLElement, axis, 'size-full', scale), 0)
+// 	const remainingSpace = getBoundingClientRectParent(parent, axis, 'size', scale) - childrenHeight;
+// 	const evenlySpace = remainingSpace / (numChildren + 1);
+// 	const aroundSpace = remainingSpace / numChildren;
+// 	const betweenSpace = remainingSpace / (numChildren - 1);
+// 	const gapBetween = gap / (numChildren - 1);
+// 	const centerSpace = remainingSpace / 2;
+
+// 	return {
+// 		parentMidpoint,
+// 		childrenCount: numChildren,
+// 		childrenMidpoint,
+// 		childrenHeight,
+// 		gapBetween,
+// 		gapStart,
+// 		gapEnd,
+// 		remainingSpace,
+// 		evenlySpace,
+// 		aroundSpace,
+// 		betweenSpace,
+// 		centerSpace
+// 	}
+// }
 
 function isElementFluid(elm: Element, side: 'width' | 'height'){
     var wrapper, clone = elm.cloneNode(false) as HTMLElement, ow, p1, p2;
@@ -717,6 +852,7 @@ function isElementFluid(elm: Element, side: 'width' | 'height'){
     /// return an empty width value, so here we fall back.
     if ( !value ) {
       /// remove styles that can get in the way
+	  const padding = clone.style.padding;
       clone.style.margin = '0';
       clone.style.padding = '0';
       clone.style[`max${capitalizeFirstLetter(side)}` as 'maxWidth'] = 'none';
@@ -740,6 +876,12 @@ function isElementFluid(elm: Element, side: 'width' | 'height'){
       wrapper.style[side] = '600px';
       /// if the new width is the same as before, most likely a fixed width
       if( clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'] == ow ){
+		clone.style.padding = padding;
+		if (clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'] != ow ) {
+			elm.parentElement?.removeChild(wrapper);
+			return true;
+		}
+
         /// tidy up
         elm.parentNode?.removeChild(wrapper);
         return false;
@@ -854,90 +996,90 @@ function isElementFluid(elm: Element, side: 'width' | 'height'){
 // 	}
 // }
 
-function setFlexDragPositionOtherAxis(element: HTMLElement, props: DraggingEvent, axis: Axis, scale: number) {
-	const parent = element.parentElement as HTMLElement;
-	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
-	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close', scale);
-	const closePadding = axis === 'y' ? 'paddingTop' : 'paddingLeft';
-	const farPadding = axis === 'y' ? 'paddingBottom' : 'paddingRight';
+// function setFlexDragPositionOtherAxis(element: HTMLElement, props: DraggingEvent, axis: Axis, scale: number) {
+// 	const parent = element.parentElement as HTMLElement;
+// 	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
+// 	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close', scale);
+// 	const closePadding = axis === 'y' ? 'paddingTop' : 'paddingLeft';
+// 	const farPadding = axis === 'y' ? 'paddingBottom' : 'paddingRight';
 
-	const {gapStart, gapEnd} = calculateFlexInfo(parent, axis, scale);
+// 	const {gapStart, gapEnd} = calculateFlexInfo(parent, axis, scale);
 
-	//Only deal with align-items axis if there is space to move
-	if (gapEnd === 0 && gapStart === 0) return;
+// 	//Only deal with align-items axis if there is space to move
+// 	if (gapEnd === 0 && gapStart === 0) return;
 
-	const selfIndex = Array.from(parent.children).indexOf(element);
-	if (selfIndex < 0) {
-		throw new Error("Invalid self index");
-	}
-	const firstChild = parent.children[0] as HTMLElement;
-	//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
-	let padding = startPos - (getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(firstChild, axis, 'close', scale)) - getBoundingClientRectParent(parent, axis, 'close', scale)
-	if (padding < 0) {
-		padding = 0;
-	}
+// 	const selfIndex = Array.from(parent.children).indexOf(element);
+// 	if (selfIndex < 0) {
+// 		throw new Error("Invalid self index");
+// 	}
+// 	const firstChild = parent.children[0] as HTMLElement;
+// 	//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
+// 	let padding = startPos - (getBoundingClientRect(element, axis, 'close', scale) - getBoundingClientRect(firstChild, axis, 'close', scale)) - getBoundingClientRectParent(parent, axis, 'close', scale)
+// 	if (padding < 0) {
+// 		padding = 0;
+// 	}
 	
-	parent.style[closePadding] = `${padding}px`
-		parent.style.alignItems = '';
-		parent.style[farPadding] = '';
-	
-
-	let info = calculateFlexInfo(parent, axis, scale);
-
-	if (close(info.parentMidpoint, info.childrenMidpoint, .1)) {
-		parent.style.alignItems = 'center';
-		parent.style[closePadding] = '';
-		parent.style[farPadding] = '';
-	} else if (info.childrenMidpoint > info.parentMidpoint) {
-		parent.style[closePadding] = '';
-		parent.style[farPadding] = `${info.gapEnd}px`;
-		parent.style.alignItems = 'flex-end';
-	} else {
-		parent.style.alignItems = '';
-	}
-}
-
-function setDragPosition(element: HTMLElement, props: DraggingEvent, axis: Axis, scale: number) {
-	const parent = element.parentElement as HTMLElement;
-	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
-	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close', scale);
-	const closeMargin = axis === 'y' ? 'marginTop' : 'marginLeft';
-	const farMargin = axis === 'y' ? 'marginBottom' : 'marginRight';
-
-	const {gapStart, gapEnd} = calculateElementInfo(element, axis, scale);
-
-	//Only deal with align-items axis if there is space to move
-	if (gapEnd === 0 && gapStart === 0) return;
-
-	// const selfIndex = Array.from(parent.children).indexOf(element);
-	// if (selfIndex < 0) {
-	// 	throw new Error("Invalid self index");
-	// }
-	//const firstChild = parent.children[0] as HTMLElement;
-	//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
-	let margin = startPos - getBoundingClientRectParent(parent, axis, 'close', scale)
-	if (margin < 0) {
-		margin = 0;
-	}
-	
-	element.style[closeMargin] = `${margin}px`
-	element.style[farMargin] = '0px';
+// 	parent.style[closePadding] = `${padding}px`
+// 		parent.style.alignItems = '';
+// 		parent.style[farPadding] = '';
 	
 
-	let info = calculateElementInfo(element, axis, scale);
+// 	let info = calculateFlexInfo(parent, axis, scale);
 
-	if (close(info.parentMidpoint, info.elementMidpoint, .1)) {
-		element.style.display = 'block';
-		element.style[closeMargin] = 'auto';
-		element.style[farMargin] = 'auto';
-	} else if (info.elementMidpoint > info.parentMidpoint) {
-		element.style.display = 'block';
-		element.style[closeMargin] = 'auto';
-		element.style[farMargin] = `${info.gapEnd}px`;
-	} else {
-		//element.style.display = 'inherit'
-	}
-}
+// 	if (close(info.parentMidpoint, info.childrenMidpoint, .1)) {
+// 		parent.style.alignItems = 'center';
+// 		parent.style[closePadding] = '';
+// 		parent.style[farPadding] = '';
+// 	} else if (info.childrenMidpoint > info.parentMidpoint) {
+// 		parent.style[closePadding] = '';
+// 		parent.style[farPadding] = `${info.gapEnd}px`;
+// 		parent.style.alignItems = 'flex-end';
+// 	} else {
+// 		parent.style.alignItems = '';
+// 	}
+// }
+
+// function setDragPosition(element: HTMLElement, props: DraggingEvent, axis: Axis, scale: number) {
+// 	const parent = element.parentElement as HTMLElement;
+// 	const startPos = axis === 'y' ? props.rect.top : props.rect.left;
+// 	const posY = startPos - getBoundingClientRectParent(parent, axis, 'close', scale);
+// 	const closeMargin = axis === 'y' ? 'marginTop' : 'marginLeft';
+// 	const farMargin = axis === 'y' ? 'marginBottom' : 'marginRight';
+
+// 	const {gapStart, gapEnd} = calculateElementInfo(element, axis, scale);
+
+// 	//Only deal with align-items axis if there is space to move
+// 	if (gapEnd === 0 && gapStart === 0) return;
+
+// 	// const selfIndex = Array.from(parent.children).indexOf(element);
+// 	// if (selfIndex < 0) {
+// 	// 	throw new Error("Invalid self index");
+// 	// }
+// 	//const firstChild = parent.children[0] as HTMLElement;
+// 	//TODO: Fix bug where having the border top factored in for the top at scale causes negative padding
+// 	let margin = startPos - getBoundingClientRectParent(parent, axis, 'close', scale)
+// 	if (margin < 0) {
+// 		margin = 0;
+// 	}
+	
+// 	element.style[closeMargin] = `${margin}px`
+// 	element.style[farMargin] = '0px';
+	
+
+// 	let info = calculateElementInfo(element, axis, scale);
+
+// 	if (close(info.parentMidpoint, info.elementMidpoint, .1)) {
+// 		element.style.display = 'block';
+// 		element.style[closeMargin] = 'auto';
+// 		element.style[farMargin] = 'auto';
+// 	} else if (info.elementMidpoint > info.parentMidpoint) {
+// 		element.style.display = 'block';
+// 		element.style[closeMargin] = 'auto';
+// 		element.style[farMargin] = `${info.gapEnd}px`;
+// 	} else {
+// 		//element.style.display = 'inherit'
+// 	}
+// }
 
 interface GuidePoint {
     relativeTo: HTMLElement,
@@ -1104,7 +1246,7 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
 }
 
 interface SnapBehavior {
-	getOldValues: (element: HTMLElement) => Record<string, string>;
+	getOldValues: (element: HTMLElement) => [HTMLElement, Record<string, string>][];
 	isDraggable: (element: HTMLElement) => boolean;
 	onUpdate: (element: HTMLElement, event: DraggingEvent, scale: number, isResize: boolean) => void;
 	onCalculateSnapping: (element: HTMLElement, posX: number, posY: number, dx: number, dy: number, scale: number, isResize: boolean) => {resultsX: SnappingResult[], resultsY: SnappingResult[]};
@@ -1114,13 +1256,59 @@ interface SnapBehavior {
 
 const elementSnapBehavior: SnapBehavior = {
 	getOldValues(element) {
-		return {
-			marginLeft: element.style.marginLeft || '', 
-			marginRight: element.style.marginRight || '', 
-			marginTop: element.style.marginTop || '', 
-			marginBottom: element.style.marginBottom || '', 
-			display: element.style.display || '',
+		const parent = element.parentElement!;
+		const parentStyle = getComputedStyle(parent);
+		const oldValues: [HTMLElement, Record<string, string>][] = [
+			[parent,
+			{
+				paddingLeft: parentStyle.paddingLeft || '', 
+				paddingRight: parentStyle.paddingRight || '', 
+				paddingTop: parentStyle.paddingTop || '', 
+				paddingBottom: parentStyle.paddingBottom || '', 
+			}]
+		];
+
+		for (const child of Array.from(parent.children)) {
+			const style = getComputedStyle(child);
+			const componentId = (child as HTMLElement).dataset.harmonyId || '';
+			//Only add the old values of new elements to not interfere with the updates
+			if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
+				oldValues.push([child as HTMLElement, {
+					paddingLeft: style.paddingLeft || '', 
+					paddingRight: style.paddingRight || '', 
+					paddingTop: style.paddingTop || '', 
+					paddingBottom: style.paddingBottom || '', 
+					marginLeft: style.marginLeft || '', 
+					marginRight: style.marginRight || '', 
+					marginTop: style.marginTop || '', 
+					marginBottom: style.marginBottom || '', 
+					height: style.height || '',
+					width: style.width || ''
+				}])
+			}
 		}
+
+		for (const child of Array.from(element.children)) {
+			const style = getComputedStyle(child);
+			const componentId = (child as HTMLElement).dataset.harmonyId || '';
+			//Only add the old values of new elements to not interfere with the updates
+			if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
+				oldValues.push([child as HTMLElement, {
+					paddingLeft: style.paddingLeft || '', 
+					paddingRight: style.paddingRight || '', 
+					paddingTop: style.paddingTop || '', 
+					paddingBottom: style.paddingBottom || '', 
+					marginLeft: style.marginLeft || '', 
+					marginRight: style.marginRight || '', 
+					marginTop: style.marginTop || '', 
+					marginBottom: style.marginBottom || '', 
+					height: style.height || '',
+					width: style.width || ''
+				}])
+			}
+		}
+
+		return oldValues;
 	},
 	isDraggable(element) {
 		const style = element ? getComputedStyle(element.parentElement!) : undefined;
@@ -1141,12 +1329,12 @@ const elementSnapBehavior: SnapBehavior = {
                 rect: getOffsetRect(element.parentElement)
             },
             childrenUpdates
-        }, scale);
+        }, scale, scale);
 	},
-	onCalculateSnapping(element) {
+	onCalculateSnapping(element, poxX, posY, dx, dy, scale) {
         const parent = element.parentElement!;
-        const parentEdgeInfo = calculateParentEdgeInfo(parent, 1, false, 'x');
-        const parentEdgeInfoScaled = calculateParentEdgeInfo(parent, 1, true, 'x');
+        const parentEdgeInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
+        const parentEdgeInfoScaled = calculateParentEdgeInfo(parent, 1, scale, true, 'x');
         const resultsX: SnappingResult[] = [];
         const resultsY: SnappingResult[] = [];
         const myChildInfo = parentEdgeInfo.childEdgeInfo.find(info => info.element === element);
@@ -1282,7 +1470,7 @@ const elementSnapBehavior: SnapBehavior = {
 		return element;
 	},
     getRestrictions(element, scale) {
-        const edgeInfo = calculateEdgesInfo(element, 1, 'x');
+        const edgeInfo = calculateEdgesInfo(element, 1, scale, 'x');
         
         const top = edgeInfo.top.siblingEdge ? edgeInfo.top.siblingEdge.edgeLocation : edgeInfo.top.parentEdge.edgeLocation;
         const bottom = edgeInfo.bottom.siblingEdge ? edgeInfo.bottom.siblingEdge.edgeLocation : edgeInfo.bottom.parentEdge.edgeLocation;
@@ -1300,15 +1488,62 @@ const elementSnapBehavior: SnapBehavior = {
 
 const flexSnapping: SnapBehavior = {
 	getOldValues(element) {
-		return {
-			paddingLeft: element.parentElement!.style.paddingLeft || '', 
-			paddingRight: element.parentElement!.style.paddingRight || '', 
-			paddingTop: element.parentElement!.style.paddingTop || '', 
-			paddingBottom: element.parentElement!.style.paddingBottom || '', 
-			justifyContent: element.parentElement!.style.justifyContent || '', 
-			alignItems: element.parentElement!.style.alignItems || '',
-			gap: element.parentElement!.style.gap || '',
+		const parent = element.parentElement!;
+		const parentStyle = getComputedStyle(parent);
+		const oldValues: [HTMLElement, Record<string, string>][] = [
+			[parent,
+			{
+				paddingLeft: parentStyle.paddingLeft || '', 
+				paddingRight: parentStyle.paddingRight || '', 
+				paddingTop: parentStyle.paddingTop || '', 
+				paddingBottom: parentStyle.paddingBottom || '', 
+				justifyContent: parentStyle.justifyContent || '', 
+				alignItems: parentStyle.alignItems || '',
+				gap: parentStyle.gap || '',
+			}]
+		];
+
+		for (const child of Array.from(parent.children)) {
+			const style = getComputedStyle(child);
+			const componentId = (child as HTMLElement).dataset.harmonyId || '';
+			//Only add the old values of new elements to not interfere with the updates
+			if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
+				oldValues.push([child as HTMLElement, {
+					paddingLeft: style.paddingLeft || '', 
+					paddingRight: style.paddingRight || '', 
+					paddingTop: style.paddingTop || '', 
+					paddingBottom: style.paddingBottom || '', 
+					marginLeft: style.marginLeft || '', 
+					marginRight: style.marginRight || '', 
+					marginTop: style.marginTop || '', 
+					marginBottom: style.marginBottom || '', 
+					height: style.height || '',
+					width: style.width || ''
+				}]);
+			}
 		}
+
+		for (const child of Array.from(element.children)) {
+			const style = getComputedStyle(child);
+			const componentId = (child as HTMLElement).dataset.harmonyId || '';
+			//Only add the old values of new elements to not interfere with the updates
+			if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
+				oldValues.push([child as HTMLElement, {
+					paddingLeft: style.paddingLeft || '', 
+					paddingRight: style.paddingRight || '', 
+					paddingTop: style.paddingTop || '', 
+					paddingBottom: style.paddingBottom || '', 
+					marginLeft: style.marginLeft || '', 
+					marginRight: style.marginRight || '', 
+					marginTop: style.marginTop || '', 
+					marginBottom: style.marginBottom || '', 
+					height: style.height || '',
+					width: style.width || ''
+				}])
+			}
+		}
+
+		return oldValues;
 	},
 	isDraggable(element) {
 		const parentStyle = getComputedStyle(element.parentElement!);
@@ -1317,6 +1552,7 @@ const flexSnapping: SnapBehavior = {
 	},
 	onUpdate(element, event, scale, isResize) {
 		const parent = element.parentElement!;
+		const updates: UpdateRect[] = [];
 		const style = getComputedStyle(parent);
 		const axis = style.flexDirection !== 'column' ? 'x' : 'y';
 		const left = axis === 'x' ? 'left' : 'top';
@@ -1324,27 +1560,20 @@ const flexSnapping: SnapBehavior = {
 		const top = axis === 'x' ? 'top' : 'left';
 		const bottom = axis === 'x' ? 'bottom' : 'right'; 
 		const otherAxis = axis === 'x' ? 'y' : 'x';
+		const currParentInfo = calculateParentEdgeInfo(parent, scale, scale, false, 'x');
+		const selfIndex = currParentInfo.childEdgeInfo.find(info => info.element === element)!.index;
 		const minGapBetweenX = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
-		const evenlySpace = axis === 'x' ? 'evenlySpaceX' : 'evenlySpaceY';
-		const aroundSpace = axis === 'x' ? 'aroundSpaceX' : 'aroundSpaceY';
-		const betweenSpace = axis === 'x' ? 'betweenSpaceX' : 'betweenSpaceY';
-		const gapBetween = axis === 'x' ? 'gapBetweenX' : 'gapBetweenY';
-		const minGap = getMinGapForElement(element);
-		const height = axis === 'x' ? 'height' : 'width';
+		const minGap = getMinGap(parent);
 
-		const currParentInfo = calculateParentEdgeInfo(parent, scale, false, 'x');
-		const selfIndex = Array.from(parent.children).indexOf(element);
-		const updates: UpdateRect[] = [];
-		
 		const addRect = (element: HTMLElement, rect: Rect) => {
 			updates.push({element, rect})
 		}
 		addRect(element, event.eventRect)
-
-
+	
+	
 		const addDs = (element: HTMLElement, ds: number) => {
 			const rect = element.getBoundingClientRect();
-
+	
 			addRect(element, {
 				left: rect.left + (axis === 'x' ? ds : 0),
 				right: rect.right + (axis === 'x' ? ds : 0),
@@ -1354,39 +1583,39 @@ const flexSnapping: SnapBehavior = {
 				width: rect.width
 			});
 		}
-
+	
 		const addChildRects = (exclude: Element[], ds: number) => {
 			if (isResize) return;
-			for (const child of Array.from(parent.children)) {
+			for (const child of currParentInfo.children) {
 				if (exclude.includes(child)) continue;
-
+	
 				addDs(child as HTMLElement, ds);
 			}
 		}
-
+	
 		const calculateMovePositions = () => {
 			//TODO: This is super hacky and confusing, refactor into a better system that makes more sense
 			//Creating the expanding/moving train
 			let ds = axis === 'x' ? event.dx : event.dy;
-			if (parent.children.length > 1) {
-				if (false && (selfIndex === 0 || selfIndex === parent.children.length - 1)) {
+			if (currParentInfo.children.length > 1) {
+				if (false && (selfIndex === 0 || selfIndex === currParentInfo.children.length - 1)) {
 					ds = selfIndex === 0 ? ds : -ds;
-					for (let start = 0, end = parent.children.length - 1; start < end; start++, end--) {
-						const first = parent.children[start] as HTMLElement;
-						const last = parent.children[end] as HTMLElement;
-
+					for (let start = 0, end = currParentInfo.children.length - 1; start < end; start++, end--) {
+						const first = currParentInfo.children[start] as HTMLElement;
+						const last = currParentInfo.children[end] as HTMLElement;
+	
 						first !== element && addDs(first, ds);
 						last !== element && addDs(last, -ds);
 						ds /= 3;
 					}
 				} else if (selfIndex === 0) {
 					if (currParentInfo[minGapBetweenX] > minGap || ds < 0) {
-						const last = parent.children[parent.children.length - 1] as HTMLElement;
+						const last = currParentInfo.children[currParentInfo.children.length - 1] as HTMLElement;
 						if (currParentInfo.edges[right].parentEdge.gap === 0 && ds < 0) {
 							// if (currParentInfo.edges.left.parentEdge.gap <= 0) {
 							// 	return;
 							// }
-							addChildRects([element, last], ds / (parent.children.length - 1))
+							addChildRects([element, last], ds / (currParentInfo.children.length - 1))
 						} else {
 							addDs(last, -ds);
 						}
@@ -1396,14 +1625,14 @@ const flexSnapping: SnapBehavior = {
 						// }
 						addChildRects([element], ds)
 					}
-				} else if (selfIndex === parent.children.length - 1) {
+				} else if (selfIndex === currParentInfo.children.length - 1) {
 					if (currParentInfo[minGapBetweenX] > minGap || ds > 0) {
-						const first = parent.children[0] as HTMLElement;
+						const first = currParentInfo.children[0] as HTMLElement;
 						if (currParentInfo.edges[left].parentEdge.gap === 0 && ds > 0) {
 							// if (currParentInfo.edges.right.parentEdge.gap <= 0) {
 							// 	return;
 							// }
-							addChildRects([element, first], ds / (parent.children.length - 1))
+							addChildRects([element, first], ds / (currParentInfo.children.length - 1))
 						} else {
 							addDs(first, -ds);
 						}
@@ -1422,121 +1651,31 @@ const flexSnapping: SnapBehavior = {
 				}
 			}
 		}
-
+	
 		if (!isResize) {
 			calculateMovePositions();
 		}
 
-		const parentInfo = calculateFlexParentEdgeInfo(parent, scale, false, 'x', updates);
-		if (parentInfo.edges[left].parentEdge.gap <= 0) {
-			parentInfo.edges[left].parentEdge.gap = 0;
-		}
-		if (parentInfo.edges[right].parentEdge.gap <= 0) {
-			parentInfo.edges[right].parentEdge.gap = 0;
-		}
-
-		if (parentInfo[minGapBetweenX] < minGap) {
-			parentInfo[minGapBetweenX] = minGap;
-		}
-
-		if (parentInfo[minGapBetweenX] > parentInfo[betweenSpace]) {
-			parentInfo[minGapBetweenX] = parentInfo[betweenSpace];
-		}
-		
-
-		parent.style.gap = `${parentInfo[minGapBetweenX]}px`;
-		parent.style.justifyContent = 'normal';
-		parent.style.alignItems = 'normal';
-
-		const startXSide = parentInfo.edges[left].parentEdge.gap <= parentInfo.edges[right].parentEdge.gap ? left : right;
-		const startYSide = parentInfo.edges[top].parentEdge.gap <= parentInfo.edges[bottom].parentEdge.gap ? top : bottom;
-		
-		parent.style.paddingTop = '0px';
-		parent.style.paddingBottom = '0px';
-		parent.style.paddingLeft = '0px';
-		parent.style.paddingRight = '0px';
-
-		Object.entries(parentInfo.edges).forEach(([side, edge]) => {
-			const gap = side === startXSide || startYSide === side ? edge.parentEdge.gap : edge.parentEdge.gap;
-			parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
-		});
-
-		for (const info of parentInfo.childEdgeInfo) {
-			info.element.style.marginTop = '0px';
-			info.element.style.marginBottom = '0px';
-			info.element.style.marginLeft = '0px';
-			info.element.style.marginRight = '0px';
-
-			// if (info.index > 0 && info.left.siblingEdge && info.left.siblingEdge.gap - parentInfo.minGapBetweenX >= 0) {
-			// 	const gap = info.left.siblingEdge.gap - parentInfo.minGapBetweenX;
-				
-			// 	info.element.style.marginLeft = `${gap}px`
-			// }
-
-			const topGap = info[top].parentEdge.gap - parentInfo.edges[top].parentEdge.gap;
-			if (topGap >= 0) {
-				info.element.style[`margin${capitalizeFirstLetter(top)}` as unknown as number] = `${topGap}px`;
-			}
-
-			const bottomGap = info[bottom].parentEdge.gap - parentInfo.edges[bottom].parentEdge.gap;
-			if (bottomGap >= 0) {
-				info.element.style[`margin${capitalizeFirstLetter(bottom)}` as unknown as number] = `${bottomGap}px`;
-			}
-		}
-
-		//Justify-content stuff
-		if (parentInfo[gapBetween] !== undefined && close(parentInfo.edges[left].parentEdge.gap, parentInfo.edges[right].parentEdge.gap, 0.1)) {
-			parent.style[`padding${capitalizeFirstLetter(left)}` as unknown as number] = '0px';
-			parent.style[`padding${capitalizeFirstLetter(right)}` as unknown as number] = '0px';
-			parent.style.justifyContent = 'center';
-			
-			if (close(parentInfo[gapBetween]!, parentInfo[aroundSpace], 0.1)) {
-				parent.style.justifyContent = 'space-around';
-				parent.style.gap = '0px';
-			} else if (close(parentInfo[gapBetween]!, parentInfo[evenlySpace], 0.1)) {
-				parent.style.justifyContent = 'space-evenly';
-				parent.style.gap = '0px';
-			} else if (close(parentInfo[gapBetween]!, parentInfo[betweenSpace], 0.1)) {
-				parent.style.justifyContent = 'space-between';
-				parent.style.gap = '0px';
-			}
-		}
-
-		const childrenFixed = Array.from(parent.children).every(child => !isElementFluid(child, height));
-
-		//Align items stuff
-		if (parentInfo.edges.top.parentEdge.gap > 0 && parentInfo.edges.bottom.parentEdge.gap > 0 && childrenFixed) {
-			if (parentInfo.childEdgeInfo.every(info => info[top].elementLocationRelative === info[top].parentMidpointRelative)) {
-				parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
-				parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
-				parent.style.alignItems = 'center';
-			}
-
-			if (startYSide === top) {
-				parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
-			}
-			else if (startYSide === bottom) {
-				parent.style.alignItems = 'flex-end';
-				parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
-			}
-		}
-
-		if (startXSide === right) {
-			parent.style.justifyContent = 'flex-end';
-		}
+		updateRectFlex({
+			parentUpdate: {
+				element: parent,
+				rect: parent.getBoundingClientRect()
+			},
+			childrenUpdates: updates
+		}, scale, scale)
 	},
-	onCalculateSnapping(element, posX, posY, dx, dy) {
+	onCalculateSnapping(element, posX, posY, dx, dy, scale) {
 		const parent = element.parentElement!;
 		const style = getComputedStyle(parent);
 		const axis = style.flexDirection !== 'column' ? 'x' : 'y';
 		const otherAxis = axis === 'x' ? 'y' : 'x';
 		const pos = axis === 'x' ? posX : posY;
 		
-		const parentInfo = calculateFlexParentEdgeInfo(parent, 1, false, 'x');
-		const selfIndex = Array.from(parent.children).indexOf(element);
+		const parentInfo = calculateFlexParentEdgeInfo(parent, 1, scale, false, 'x');
+		const selfIndex = parentInfo.childEdgeInfo.find(info => info.element === element)!.index;
 		const isMoving = selfIndex > 0 && selfIndex < parentInfo.childrenCount - 1;
-		const minGap = getMinGapForElement(element);
-		const gapDiff = parentInfo.minGapBetweenX - minGap;//(parentInfo.minGapBetweenX - minGap) * (parent.children.length - 1);
+		const minGap = getMinGap(parent);
+		const gapDiff = parentInfo.minGapBetweenX - minGap;
 		
 		const direction = selfIndex === 0 ? -1 : 1;
 		const resultsX: SnappingResult[] = [];
@@ -1616,7 +1755,8 @@ const flexSnapping: SnapBehavior = {
 			// 	});
 			// }
 
-			if (parentInfo[gapBetween] && close(parentInfo[childrenMidpoint], parentInfo[midpoint], 0.1)) {
+			const minSpaceBetweenSnaps = Math.min(parentInfo[aroundSpace] - parentInfo[evenlySpace], parentInfo[betweenSpace] - parentInfo[aroundSpace]);
+			if (parentInfo[gapBetween] && close(parentInfo[childrenMidpoint], parentInfo[midpoint], 0.1) && minSpaceBetweenSnaps >= 5) {
 
 				const spaceEvenlyDiff = parentInfo[evenlySpace] - parentInfo[gapBetween]!;
 				const spaceEvenly = snapping.addSnapToParent({
@@ -1658,7 +1798,7 @@ const flexSnapping: SnapBehavior = {
 					},
 					text: parentInfo[evenlySpace]
 				});
-				for (let i = 0; i < parent.children.length - 1; i++) {
+				for (let i = 0; i < parentInfo.children.length - 1; i++) {
 					spaceEvenly.addGuide({
 						start: {
 							[axis as 'x']: {
@@ -1718,7 +1858,7 @@ const flexSnapping: SnapBehavior = {
 					},
 					text: parentInfo[aroundSpace] / 2
 				});
-				for (let i = 0; i < parent.children.length - 1; i++) {
+				for (let i = 0; i < parentInfo.children.length - 1; i++) {
 					spaceAround.addGuide({
 						start: {
 							[axis as 'x']: {
@@ -1744,7 +1884,7 @@ const flexSnapping: SnapBehavior = {
 					axis,
 					range: 10
 				})
-				for (let i = 0; i < parent.children.length - 1; i++) {
+				for (let i = 0; i < parentInfo.children.length - 1; i++) {
 					spaceBetween.addGuide({
 						start: {
 							[axis as 'x']: {
@@ -1791,11 +1931,11 @@ const flexSnapping: SnapBehavior = {
 		const top = axis === 'x' ? 'top' : 'left';
 		const bottom = axis === 'x' ? 'bottom' : 'right'; 
 		const minGapBetween = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
-		const minGap = getMinGapForElement(element);
+		const minGap = getMinGap(parent);
 
 		
-		const selfIndex = Array.from(parent.children).indexOf(element);
-        const parentInfo = calculateParentEdgeInfo(parent, 1, false, 'x');
+		const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
+		const selfIndex = parentInfo.childEdgeInfo.find(info => info.element === element)!.index;
 		const parentRect = {
 			left: parentInfo.edges.left.parentEdge.edgeLocation,
 			right: parentInfo.edges.right.parentEdge.edgeLocation,
@@ -1803,7 +1943,7 @@ const flexSnapping: SnapBehavior = {
 			bottom: parentInfo.edges.bottom.parentEdge.edgeLocation,
 		}
 		
-		if (selfIndex > 0 && selfIndex < parent.children.length - 1) {
+		if (selfIndex > 0 && selfIndex < parentInfo.children.length - 1) {
 			if (parentInfo.edges[right].parentEdge.gap > 0)
 			parentRect[left] = parentInfo.childEdgeInfo[selfIndex][left].elementLocation - parentInfo.edges[left].parentEdge.gap;
 			
@@ -1816,34 +1956,41 @@ const flexSnapping: SnapBehavior = {
 			// 	parentRect[left] += parentInfo.edges[left].parentEdge.gap - parentInfo.edges[right].parentEdge.gap;
 			// }
 
-			parentRect[right] = parentInfo.childEdgeInfo[selfIndex][right].elementLocation + (parentInfo[minGapBetween] - minGap) * (parent.children.length - 1) + parentInfo.edges[right].parentEdge.gap;
+			parentRect[right] = parentInfo.childEdgeInfo[selfIndex][right].elementLocation + (parentInfo[minGapBetween] - minGap) * (parentInfo.children.length - 1) + parentInfo.edges[right].parentEdge.gap;
 		}
 
-		if (selfIndex === parent.children.length - 1) {
+		if (selfIndex === parentInfo.children.length - 1) {
 			// if (parentInfo.edges[left].parentEdge.gap < parentInfo.edges[right].parentEdge.gap) {
 			// 	parentRect[right] -= parentInfo.edges[right].parentEdge.gap - parentInfo.edges[left].parentEdge.gap;
 			// }
 
-			parentRect[left] = parentInfo.childEdgeInfo[selfIndex][left].elementLocation - (parentInfo[minGapBetween] - minGap) * (parent.children.length - 1) - parentInfo.edges[left].parentEdge.gap;
+			parentRect[left] = parentInfo.childEdgeInfo[selfIndex][left].elementLocation - (parentInfo[minGapBetween] - minGap) * (parentInfo.children.length - 1) - parentInfo.edges[left].parentEdge.gap;
 		}
 
 		return [parentRect];
     }
 }
 
+const getSnappingBehavior = (parent: HTMLElement | undefined) => {
+	let snappingBehavior = elementSnapBehavior;
+	if (parent && getComputedStyle(parent).display.includes('flex')) {
+		snappingBehavior = flexSnapping;
+	}
+
+	return snappingBehavior;
+}
+
 type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
-	onDragFinish: (element: HTMLElement, oldValues: Record<string, string>) => void;
+	onDragFinish: (element: HTMLElement, oldValues: [HTMLElement, Record<string, string>][]) => void;
 	onError: () => void;
 };
 export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale}: SnappableProps) => {
-	const [oldValues, setOldValues] = useState<Record<string, string>>({marginLeft: '', marginRight: '', marginTop: '', marginBottom: '', display: ''});
+	const [oldValues, setOldValues] = useState<[HTMLElement, Record<string, string>][]>([]);
 	const resX = useRef(0);
 	const resY = useRef(0);
-	
-	let snappingBehavior = elementSnapBehavior;
-	if (element && getComputedStyle(element.parentElement!).display.includes('flex')) {
-		snappingBehavior = flexSnapping;
-	}
+	const elementsRef = useRef<HTMLElement[]>([]);
+
+	const snappingBehavior = useMemo(() => getSnappingBehavior(element?.parentElement || undefined), [element]);
 
     const restrictions = element ? snappingBehavior.getRestrictions(element, scale) : [];
 
@@ -1852,9 +1999,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
         let result: SnappingResult | undefined;
 
 		
-		console.log(`snap: ${resultsX[0]?.x}`)
-        
-        const resX = resultsX.reduce<SnappingResult[]>((prev, curr) => {
+		const resX = resultsX.reduce<SnappingResult[]>((prev, curr) => {
             const same = prev.find(p => p.x === curr.x);
             if (same) {
                 same.snapGuides.push(...curr.snapGuides);
@@ -1902,14 +2047,24 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
     }
 
 	useEffect(() => {
+		for (const element of elementsRef.current) {
+			interact(element).unset();
+		}
+
 		if (element) {
 			const values = snappingBehavior.getOldValues(element);
 			setOldValues(values);
+
+			if (!elementsRef.current.includes(element)) {
+				elementsRef.current.push(element);
+			}
 		}
-	}, [element]);
+	}, [element, elementsRef]);
 
 	const result = useDraggable({element, onIsDragging(event) {
-		snappingBehavior.onUpdate(element!, event, scale, false);
+		if (!element) return;
+
+		snappingBehavior.onUpdate(element, event, scale, false);
 
 		onIsDragging && onIsDragging(event);
 		// resX.current = event.eventRect.left - getBoundingClientRect(element!.parentElement!, 'x', 'close', 1);
@@ -1929,6 +2084,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		return res;
 	}, onDragFinish(element) {
 		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), oldValues);
+		setOldValues(snappingBehavior.getOldValues(element));
 	}, canDrag(element) {
 		if (element.contentEditable === 'true') return false;
 
@@ -1942,14 +2098,39 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 	const {isResizing} = useResizable({element, scale, restrictions: [], onIsResizing(event) {
         if (!element) return;
+		const parent = element.parentElement!;
 
         snappingBehavior.onUpdate(element, event, scale, true);
+		//Update for all the children too
+		//TODO: Make this polymorphic
+		if (element.children.length > 0) {
+			const childrenSnap = getSnappingBehavior(element)
+			if (childrenSnap === flexSnapping) {
+				updateRectFlex({
+					parentUpdate: {
+						element,
+						rect: event.eventRect
+					},
+					childrenUpdates: []
+				}, scale, scale);
+			} else {
+				updateRects({
+					parentUpdate: {
+						element,
+						rect: event.rect
+					},
+					childrenUpdates: []
+				}, scale, scale)
+			}
+		}
         if (!isElementFluid(element, 'width')) {
             element.style.width = `${event.rect.width}px`
         }
         if (!isElementFluid(element, 'height')) {
             element.style.height = `${event.rect.height}px`
         }
+
+		onIsDragging && onIsDragging(event);
     }, onCalculateSnapping(element, x, y, currentX, currentY) {
 		return;
 		const parent = element.parentElement!;
@@ -1962,57 +2143,60 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
         return normalizeSnappingResults({...result, x, y});
 
         // return res;
-    },});
+    }, onResizeFinish(element) {
+		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), oldValues);
+		setOldValues(snappingBehavior.getOldValues(element));
+	}});
 
 	return {isDragging: result.isDragging || isResizing, isResizing};
 }
 
-function createSnapGuidesElement(element: HTMLElement, pos: number, current: number, type: Axis, scale: number): SnappingResult | undefined {
-	const parent = element.parentElement!;
-	const _scale = 1;
-	const {gapStart, gapEnd, parentMidpoint, elementMidpoint} = calculateElementInfo(element, type, _scale);
+// function createSnapGuidesElement(element: HTMLElement, pos: number, current: number, type: Axis, scale: number): SnappingResult | undefined {
+// 	const parent = element.parentElement!;
+// 	const _scale = 1;
+// 	const {gapStart, gapEnd, parentMidpoint, elementMidpoint} = calculateElementInfo(element, type, _scale);
 	
-	const _ = getBoundingClientRect(element, type, 'close', _scale) - getBoundingClientRect(parent, type, 'close', _scale);
-	const posY = _;
-	const dy = pos + getBoundingClientRect(parent, type, 'close', _scale) - current;
+// 	const _ = getBoundingClientRect(element, type, 'close', _scale) - getBoundingClientRect(parent, type, 'close', _scale);
+// 	const posY = _;
+// 	const dy = pos + getBoundingClientRect(parent, type, 'close', _scale) - current;
 
-	//Only show snap points if there is space to move
-	if (gapEnd === 0 && gapStart === 0) return;
+// 	//Only show snap points if there is space to move
+// 	if (gapEnd === 0 && gapStart === 0) return;
 
-	const selfIndex = Array.from(parent.children).indexOf(element);
-	//const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= minGap;
-	const direction = selfIndex === 0 ? -1 : 1;
-	const threshold = 5;
-	const range = 10;
+// 	const selfIndex = Array.from(parent.children).indexOf(element);
+// 	//const isMoving = selfIndex > 0 && selfIndex < parent.children.length - 1 || gapBetween <= minGap;
+// 	const direction = selfIndex === 0 ? -1 : 1;
+// 	const threshold = 5;
+// 	const range = 10;
 
-	const centerDiff = parentMidpoint - elementMidpoint;
-	if (Math.abs(centerDiff) <= threshold) {
-		const firstChild = parent.children[0] as HTMLElement;
+// 	const centerDiff = parentMidpoint - elementMidpoint;
+// 	if (Math.abs(centerDiff) <= threshold) {
+// 		const firstChild = parent.children[0] as HTMLElement;
 		
-		const x = (posY + centerDiff)
-		const snapPoints: SnapPoint[] = [{
-			point: {[type]: x, range},
-			offset: parent,
-			guides: [
-				{rotate: type === 'x', y0: .5, x0: 0, y1: .5, x1: 1, relative: ['x0', 'x1', 'y0', 'y1']}, 
-			]
-		},]
-		return {[type]: posY + centerDiff, range, snapGuides: snapPoints};
-	}
+// 		const x = (posY + centerDiff)
+// 		const snapPoints: SnapPoint[] = [{
+// 			point: {[type]: x, range},
+// 			offset: parent,
+// 			guides: [
+// 				{rotate: type === 'x', y0: .5, x0: 0, y1: .5, x1: 1, relative: ['x0', 'x1', 'y0', 'y1']}, 
+// 			]
+// 		},]
+// 		return {[type]: posY + centerDiff, range, snapGuides: snapPoints};
+// 	}
 
-	if (Math.abs(gapEnd) <= threshold) {
-		let snapGuides: SnapPoint[] = [];
-		return {[type]: posY + gapEnd, range, snapGuides};
-	}
+// 	if (Math.abs(gapEnd) <= threshold) {
+// 		let snapGuides: SnapPoint[] = [];
+// 		return {[type]: posY + gapEnd, range, snapGuides};
+// 	}
 
 	
-	if (Math.abs(gapStart) <= threshold) {
-		let snapGuides: SnapPoint[] = [];
-		return {[type]: posY - gapStart, range, snapGuides};
-	} 
+// 	if (Math.abs(gapStart) <= threshold) {
+// 		let snapGuides: SnapPoint[] = [];
+// 		return {[type]: posY - gapStart, range, snapGuides};
+// 	} 
 
-	return undefined;
-}
+// 	return undefined;
+// }
 
 
 // function createSnapGuidesFlex(element: HTMLElement, pos: number, current: number, type: 'x' | 'y', scale: number): SnappingResult | undefined {
@@ -2402,6 +2586,7 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
                     elementRect: { top: 0, left: 0, bottom: 1, right: 1 },
                 }));
             }
+
 			interact(element).draggable({
 				listeners: {
 					start: startDragging,
@@ -2497,7 +2682,7 @@ interface ResizableProps {
     element: HTMLElement | undefined;
     scale: number;
     restrictions: RectBox[],
-    onIsResizing?: (event: DraggingEvent) => void;
+	onIsResizing?: (event: DraggingEvent) => void;
     onResizeFinish?: (element: HTMLElement) => void;
     onCalculateSnapping?: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number) => SnappingResult | undefined;
 }
@@ -2506,7 +2691,7 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
     const snapGuides = useRef<SnapPoint[]>([]);
     const refX = useRef(0);
 	const refY = useRef(0);
-    const $parent = $('#harmony-snap-guides');
+	const $parent = $('#harmony-snap-guides');
 
     useEffect(() => {
 		if (element) {
@@ -2535,8 +2720,17 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
 					offset: 'parent'//{x: element.parentElement!.getBoundingClientRect().x / scale, y: element.parentElement!.getBoundingClientRect().y / scale}
 				}),
 			];
-			if (false) {
-				modifiers.push(interact.modifiers.restrictRect({restriction: 'parent'}));
+			if (true) {
+				const parent = element.parentElement!;
+				const parentRect = parent.getBoundingClientRect();
+				modifiers.push(interact.modifiers.restrictEdges({
+					outer: {
+						left: parentRect.left,
+						right: parentRect.right,
+						top: parentRect.top,
+						bottom: parentRect.bottom
+					}
+				}));
 			}
 
             for (const restriction of restrictions) {
@@ -2545,6 +2739,7 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
                     elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
                 }))
             }
+
 			interact(element).resizable({
                 edges: {left: true, bottom: true, right: true, top: true},
 				listeners: {
@@ -2554,7 +2749,7 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
 				},
 				modifiers,
 				margin: 4
-			})
+			});
 		}
 	}, [element, scale]);
 
@@ -2570,11 +2765,11 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
 		handleGuides(event.eventRect, snapGuides.current, scale);
     }
 
-    const startResizing = (event: InteractEvent<'resize', 'start'>) => {
+    const startResizing = useEffectEvent((event: InteractEvent<'resize', 'start'>) => {
 
-    }
+    });
 
-    const resize = (event: ResizeEvent<'move'>) => {
+    const resize = useEffectEvent((event: ResizeEvent<'move'>) => {
         if (!element) return;
 
         if (!event.deltaRect) {
@@ -2590,14 +2785,14 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
         rect.height += round(event.deltaRect.height / scale);
         
         handleTheResizing({dx: event.dx, dy: event.dy, rect: rect, eventRect: event.rect});
-    }
+    })
 
-    const stopResizing = (event: InteractEvent<'resize', 'end'>) => {
+    const stopResizing = useEffectEvent((event: InteractEvent<'resize', 'end'>) => {
         setIsResizing(false);
         if (!element) return;
 		$parent.children().remove();
 		onResizeFinish && onResizeFinish(element);
-    }
+    })
 
     return {isResizing};
 }

@@ -724,6 +724,12 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				alreadyDoneText = true;
 			}
 		}
+
+		//TODO: Find a better way to exclude margin class names from being applied to all elements.
+		//Probably the solution is figure out what needs to applied to all elements by indexing the code base before hand
+		if (update.type === "className" && update.name.includes('margin')) {
+			el.style[update.name as unknown as number]= update.value;
+		}
 	}
 
 	//Updates that should happen for every element in a component
@@ -745,7 +751,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 					})
 
 					htmlElement.classList.add(font.font.className);
-				} else {
+				} else if (!update.name.includes('margin')) {
 					htmlElement.style[update.name as unknown as number]= update.value;
 				}
 			}

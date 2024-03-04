@@ -38,6 +38,15 @@ export function isImageElement(element: Element): boolean {
 	return ['img', 'svg'].includes(element.tagName.toLowerCase());
 }
 
+export function isSelectable(element: HTMLElement, scale: number): boolean {
+	const sizeThreshold = 15;
+	if (element.clientHeight * scale < sizeThreshold || element.clientWidth < sizeThreshold) {
+		return false;
+	}
+
+	return true;
+}
+
 export interface InspectorProps {
 	hoveredComponent: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
@@ -127,40 +136,43 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		} else {
 			overlayRef.current.remove('select');
 		}
-	}, onDragFinish(element, oldProperties) {
+	}, onDragFinish(element, oldValues) {
 		if (!selectedComponent) return;
 
-		//Round all of the values;
-		['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom'].forEach(property => {
-			const propValue = element.style[property as unknown as number];
-			if (!propValue || propValue === 'auto') return;
-
-			const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
-			if (!match) throw new Error("Invalid property value " + propValue);
-			const num = round(parseFloat(match[1]));
-			const unit = match[2];
-			const value = `${num}${unit}`;
-
-			element.style[property as unknown as number] = value;
-		});
-
 		const updates: ComponentUpdate[] = [];
-		const oldValues: string[] = [];
-		const keys: (keyof MarginValues | keyof FlexValues)[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems'];
-		(keys).forEach(property => {
-			const value = element.style[property as unknown as number];
-			if (!value) return;
-
-			const componentId = element.dataset.harmonyId || '';
-			const parentId = element.dataset.harmonyParentId || '';
-			const oldValue = oldProperties[property];
-
-			const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue};
-
 			
-			updates.push(update);
-			oldValues.push(oldValue);
-		});
+		for (const oldValue of oldValues) {
+			const [element, oldProperties] = oldValue;
+			//Round all of the values;
+			['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom'].forEach(property => {
+				const propValue = element.style[property as unknown as number];
+				if (!propValue || propValue === 'auto') return;
+
+				const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
+				if (!match) throw new Error("Invalid property value " + propValue);
+				const num = round(parseFloat(match[1]), 1, true);
+				const unit = match[2];
+				const value = `${num}${unit}`;
+
+				element.style[property as unknown as number] = value;
+			});
+
+			const oldValues: string[] = [];
+			const keys: (keyof MarginValues | keyof FlexValues | 'width' | 'height')[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems', 'width', 'height'];
+			(keys).forEach(property => {
+				const value = element.style[property as unknown as number];
+				if (!value) return;
+
+				const componentId = element.dataset.harmonyId || '';
+				const parentId = element.dataset.harmonyParentId || '';
+				const oldValue = oldProperties[property];
+
+				const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue};
+
+				
+				updates.push(update);
+			});
+		}
 
 		onChange(element, updates, true);
 		onSelect(undefined);
@@ -237,14 +249,15 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	}, [hoveredComponent, scale, isDragging])
 
 	const isInteractableComponent = useCallback((component: HTMLElement) => {
-		const sizeThreshold = 15;
 		//TODO: Get rid of dependency on harmonyText
 		if (!Boolean(component.dataset.harmonyId) && !Boolean(component.dataset.harmonyText)) {
 			return false;
 		}
-		if (component.clientHeight * scale < sizeThreshold || component.clientWidth < sizeThreshold) {
+		
+		if (!isSelectable(component, scale)) {
 			return false;
 		}
+
 		if (mode === 'tweezer') return true;
 
 		// The current component scope is determined by either the currently selected component or 
@@ -273,14 +286,14 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 	}, [rootElement])
 
-	const onHover = useEffectEvent((element: HTMLElement) => {
+	const onHover = useEffectEvent((element: HTMLElement, x: number, y: number, event: MouseEvent) => {
 		const container = containerRef.current;
 		if (container === null) return false;
 		if (rootElement && !rootElement.contains(element)) return true;
 
 		//const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
-		if (isDragging || !isInteractableComponent(element)) {
+		if (isDragging || !isInteractableComponent(element) || event.altKey) {
 			onHoverProps(undefined);
 			return false;
 		}
@@ -289,7 +302,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		return true;
 	});
-	const onClick = useEffectEvent((element: HTMLElement) => {
+	const onClick = useEffectEvent((element: HTMLElement, x: number, y: number, event: MouseEvent) => {
 		const container = containerRef.current;
 		if (container === null || isDragging) return false;
 		if (rootElement && !rootElement.contains(element)) return true;
@@ -300,6 +313,9 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			onSelect(undefined);
 			return false;
 		}
+
+		//TODO: ctrlKey is kind of hacky. Find a better way to turn off selection
+		if (event.altKey) return false;
 
 		onSelect(element);
 		
@@ -428,7 +444,10 @@ class Overlay {
 	remove(method: 'select' | 'hover') {
 		const stuff = this.rects.get(method);
 		if (stuff) {
-			stuff.values.forEach(({rect}) => rect.remove());
+			stuff.values.forEach(({rect, element}) => {
+				rect.remove();
+				element.style.cursor = '';
+			});
 			this.rects.delete(method);
 			if (method === 'select') {
 				stuff.values[0].element.contentEditable = 'inherit';
@@ -466,6 +485,7 @@ class Overlay {
 	}
 
 	hover(element: HTMLElement, scale: number) {
+		element.style.cursor = 'inherit';	
 		this.inspect(element, 'hover', scale, false);
 	}
 
@@ -534,16 +554,16 @@ class Overlay {
 		const box = getNestedBoundingClientRect(element, this.parent)
 		const dims = getElementDimensions(element)
 
-		outerBox.top = Math.min(outerBox.top, box.top - dims.marginTop)
+		outerBox.top = Math.min(outerBox.top, box.top)
 		outerBox.right = Math.max(
 			outerBox.right,
-			box.left + box.width + dims.marginRight,
+			box.left + box.width,
 		)
 		outerBox.bottom = Math.max(
 			outerBox.bottom,
-			box.top + box.height + dims.marginBottom,
+			box.top + box.height,
 		)
-		outerBox.left = Math.min(outerBox.left, box.left - dims.marginLeft)
+		outerBox.left = Math.min(outerBox.left, box.left)
 
 		return [box, dims];
   	}
@@ -649,7 +669,7 @@ export class OverlayRect {
 		dims.borderTop = borderSize / scale;
 	    boxWrap(dims, 'border', this.border)
 		
-		boxWrap(dims, 'margin', this.node)
+		//boxWrap(dims, 'margin', this.node)
 		boxWrap(dims, 'padding', this.padding);
 
 		const resizeThreshold = 30;
@@ -804,8 +824,8 @@ export class OverlayRect {
 		}
 
 		Object.assign(this.node.style, {
-		top: `${box.top - dims.marginTop - borderSize}px`,
-		left: `${box.left - dims.marginLeft - borderSize}px`,
+		top: `${box.top - borderSize}px`,
+		left: `${box.left - borderSize}px`,
 		})
 	}
 }
