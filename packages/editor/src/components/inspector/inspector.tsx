@@ -17,10 +17,11 @@ export const componentIdentifier = new ReactComponentIdentifier();
 //Returns the element as understood from a designer (no nested containers with one child and no padding)
 export function selectDesignerElement(element: HTMLElement): HTMLElement {
 	let target = element;
+	
 	const isSelectable = (element: HTMLElement | null): element is HTMLElement => {
 		if (!element) return false;
-	
-		return element.children.length === 1 && ['Bottom', 'Top', 'Left', 'Right'].every(d => parseFloat($(element).css(`padding${d}`)) === 0);
+
+		return element.children.length === 1 && ['Bottom', 'Top', 'Left', 'Right'].every(d => parseFloat($(element).css(`padding${d}`)) === 0) && element.children[0].clientWidth === element.clientWidth && element.children[0].clientHeight === element.clientHeight;
 	}
 
 	while(isSelectable(target.parentElement)) {
@@ -123,7 +124,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	// 	onReorder({from, to, element})
 	// }});
 
-	const {isDragging: isDraggingSelf} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging() {
+	const {isDragging: isDraggingSelf} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -132,7 +133,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, error, {onDrag});
+			overlayRef.current.select(element, scale, error, {onDrag});
 		} else {
 			overlayRef.current.remove('select');
 		}
