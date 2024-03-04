@@ -75,9 +75,10 @@ export const displayRelativeDate = (date: Date): string => {
 	return displayDate(date);
 }
 
-export const round = (value: number, digits = 0): number => {
+export const round = (value: number, digits = 0, floor=false): number => {
   const places = Math.pow(10, digits);
-  return Math.round(value * places) / places;
+  const func = floor ? 'floor' : 'round'
+  return Math[func](value * places) / places;
 };
 
 export const displayStorageSpace = (value: number): string => {
@@ -216,6 +217,10 @@ export function convertRgbToHex(rgb: string) {
   } 
   return "#" + hexCode(match[1]) + hexCode(match[2]) 
                   + hexCode(match[3]) + (match[4] ? hexCode(`${parseFloat(match[4]) * 255}`) : ''); 
+}
+
+export function capitalizeFirstLetter(str: string): string {
+  return `${str[0].toUpperCase()}${str.slice(1)}`;
 }
 
 declare global {

@@ -8,7 +8,7 @@ import {translateUpdatesToCss} from '@harmony/util/src/component';
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
-import { getNumberFromString} from "@harmony/util/src/index";
+import { getNumberFromString, round} from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import React from "react";
 import {WEB_URL} from '@harmony/util/src/constants';
@@ -271,13 +271,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}
 
 	const setScale = useCallback((scale: number) => {
-        if (harmonyContainerRef.current && harmonyContainerRef.current.parentElement) {
-            harmonyContainerRef.current.style.transform = `scale(${scale})`;
-            harmonyContainerRef.current.parentElement.style.width = `${WIDTH*scale}px`;
-            harmonyContainerRef.current.parentElement.style.height = `${HEIGHT*scale}px`;
-        }
+		//scale = round(scale, 1);
+        // if (harmonyContainerRef.current && harmonyContainerRef.current.parentElement) {
+        //     harmonyContainerRef.current.style.transform = `scale(${scale})`;
+        //     harmonyContainerRef.current.parentElement.style.width = `${WIDTH*scale}px`;
+        //     harmonyContainerRef.current.parentElement.style.height = `${HEIGHT*scale}px`;
+        // }
         _setScale(scale);
-    }, [harmonyContainerRef]);
+    }, []);
 
 	const onTextChange = useEffectEvent((value: string, oldValue: string) => {
 		if (!selectedComponent) return;
@@ -327,8 +328,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const newHeight = selectedComponent.clientHeight;
 		makeUpdates(selectedComponent, [{...update, value: update.oldValue, oldValue: update.value}], rootComponent, fonts);
 
-		console.log(size);
-		console.log(oldSize);
 		if (newWidth === width && oldValue !== value) {
 			//if ((size.e || oldSize.e || 0) - (oldSize.e || 0) >= 0 || (size.e || 0) < 0)
 				size.e = undefined;
@@ -425,7 +424,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
 				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts}}>
-					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={_setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
+					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={(d) => {
 							if (d && d !== harmonyContainerRef.current) {
@@ -490,7 +489,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
 	
 	useBackgroundLoop(() => {
-		if (saveStack.length && !isSaving && !isPublished) {
+		if (saveStack.length && !isSaving && !isPublished && false) {
 			const copy = saveStack.slice();
 			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
 				
@@ -725,6 +724,12 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				alreadyDoneText = true;
 			}
 		}
+
+		//TODO: Find a better way to exclude margin class names from being applied to all elements.
+		//Probably the solution is figure out what needs to applied to all elements by indexing the code base before hand
+		if (update.type === "className" && update.name.includes('margin')) {
+			el.style[update.name as unknown as number]= update.value;
+		}
 	}
 
 	//Updates that should happen for every element in a component
@@ -746,7 +751,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 					})
 
 					htmlElement.classList.add(font.font.className);
-				} else {
+				} else if (!update.name.includes('margin')) {
 					htmlElement.style[update.name as unknown as number]= update.value;
 				}
 			}

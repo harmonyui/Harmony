@@ -9,7 +9,7 @@ import { getBranches } from "../../src/server/api/routers/branch";
 import { GithubRepository } from "../../src/server/api/repository/github";
 import { createTRPCContext } from "../../src/server/api/trpc";
 import CodeSnippet from "@harmony/ui/src/components/core/code-snippet";
-import { FlexBoxDemo } from "../../utils/flex-demo";
+import { ElementDemo, FlexBoxDemo, SnappingDemo } from "../../utils/flex-demo";
 import { ProjectDisplay } from "@harmony/ui/src/components/features/project";
 
 
@@ -22,7 +22,7 @@ const ProjectsPage = withAuth(async ({ctx}) => {
 				{branches ? <ProjectDisplay Projectes={branches}/> : <div>
 					No Repositories
 				</div>}
-				{/* <FlexBoxDemo/> */}
+				{/* <SnappingDemo/> */}
 			</SideNav>
 		</ModalProvider>
 	)
