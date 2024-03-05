@@ -311,13 +311,15 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				<ColorPicker value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
-		'textAlign': ({data, onChange}) => {
+		'textAlign': ({data: raw, onChange}) => {
 			const icons: Record<string, React.ReactNode> = {
 				'left': <Bars3CenterLeft className="hw-h-5 hw-w-5"/>,
 				'center': <Bars3 className="hw-h-5 hw-w-5"/>,
 				'right': <Bars3CenterLeft className="hw-h-5 hw-w-5 hw-rotate-180"/>,
 				'justify': <Bars4Icon className="hw-h-5 hw-w-5"/>,
 			};
+			const data = raw === 'start' ? 'left' : raw === 'end' ? 'right' : raw;
+			
 			const options = Object.keys(icons);
 	
 			const onClick = () => {

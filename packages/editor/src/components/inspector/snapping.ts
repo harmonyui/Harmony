@@ -1842,7 +1842,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 	}, canDrag(element) {
 		if (element.contentEditable === 'true') return false;
 
-		if (!snappingBehavior.isDraggable(element)) {
+		if (!snappingBehavior.isDraggable(element) || !element.parentElement?.dataset.harmonyId) {
 			onError();
 			return false;
 		}
@@ -1931,7 +1931,16 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
         return normalizeSnappingResults({...result, x, y});
 
         // return res;
-    }, onResizeFinish(element) {
+    }, canResize(element) {
+		if (element.contentEditable === 'true') return false;
+
+		if (!snappingBehavior.isDraggable(element) || !element.parentElement?.dataset.harmonyId) {
+			onError();
+			return false;
+		}
+
+		return true;
+	}, onResizeFinish(element) {
 		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), oldValues);
 		setOldValues(snappingBehavior.getOldValues(element));
 	}});
@@ -2276,8 +2285,9 @@ interface ResizableProps {
 	onIsResizing?: (event: ResizingEvent) => void;
     onResizeFinish?: (element: HTMLElement) => void;
     onCalculateSnapping?: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number) => SnappingResult | undefined;
+	canResize: (element: HTMLElement) => boolean;
 }
-export const useResizable = ({element, scale, restrictions, onIsResizing, onResizeFinish, onCalculateSnapping}: ResizableProps) => {
+export const useResizable = ({element, scale, restrictions, canResize, onIsResizing, onResizeFinish, onCalculateSnapping}: ResizableProps) => {
     const [isResizing, setIsResizing] = useState(false);
     const snapGuides = useRef<SnapPoint[]>([]);
     const refX = useRef(0);
@@ -2387,8 +2397,8 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
     });
 
     const resize = useEffectEvent((event: ResizeEvent<'move'>) => {
-        if (!element) return;
-
+        if (!element || !canResize(element)) return;
+		
         if (!event.deltaRect) {
             throw new Error("Let's figure out why delta rect doesn't exist");
         }
