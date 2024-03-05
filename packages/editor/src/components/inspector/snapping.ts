@@ -108,9 +108,8 @@ const getBoundingRect = (element: HTMLElement): Rect => {
 		height: rect.height
 	}
 }
-function getBoundingClientRect(element: HTMLElement, axis: Axis, type: BoundingType, _scale: number, rectOverride?: Rect): number {
-    const scale = 1;
-	const rect = rectOverride || element.getBoundingClientRect();
+function getBoundingClientRect(element: HTMLElement, axis: Axis, type: BoundingType, scale: number, rectOverride?: Rect): number {
+    const rect = rectOverride || element.getBoundingClientRect();
 
 	if (axis === 'y') {
 		switch (type) {
@@ -138,9 +137,8 @@ function getBoundingClientRect(element: HTMLElement, axis: Axis, type: BoundingT
 	throw new Error("Invalid params");
 }
 
-function getBoundingClientRectParent(parent: HTMLElement, axis: Axis, type: BoundingType, _scale: number, rectOverride?: Rect) {
-	const scale = 1;
-    const rect = rectOverride || parent.getBoundingClientRect();
+function getBoundingClientRectParent(parent: HTMLElement, axis: Axis, type: BoundingType, scale: number, rectOverride?: Rect) {
+	const rect = rectOverride || parent.getBoundingClientRect();
 
 	if (axis === 'y') {
 		const top = rect.top / scale + parseFloat($(parent).css('borderTop') || '0')
@@ -483,6 +481,7 @@ function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scaleActual
 		for (let i = 2; i < childEdgeInfo.length; i++) {
 			const currBetweenX = childEdgeInfo[i][leftSide].elementLocationRelative - (childEdgeInfo[i - 1][rightSide].elementLocationRelative);
 			const currBetweenY = childEdgeInfo[i][topSide].elementLocationRelative - (childEdgeInfo[i - 1][bottomSide].elementLocationRelative);
+			
 			if (currBetweenX < minGapBetweenX) {
 				minGapBetweenX = currBetweenX;
 			}
@@ -1287,7 +1286,7 @@ const flexSnapping: SnapBehavior = {
 		const currParentInfo = calculateParentEdgeInfo(parent, scale, scale, false, 'x');
 		const selfIndex = currParentInfo.childEdgeInfo.find(info => info.element === element)!.index;
 		const minGapBetweenX = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
-		const minGap = getMinGap(parent);
+		const minGap = round(getMinGap(parent), 0.1);
 
 		const addRect = (element: HTMLElement, rect: Rect) => {
 			updates.push({element, rect})
@@ -1320,7 +1319,7 @@ const flexSnapping: SnapBehavior = {
 		const calculateMovePositions = () => {
 			//TODO: This is super hacky and confusing, refactor into a better system that makes more sense
 			//Creating the expanding/moving train
-			let ds = axis === 'x' ? event.dx : event.dy;
+			let ds = (axis === 'x' ? event.dx : event.dy);
 			if (currParentInfo.children.length > 1) {
 				if (false && (selfIndex === 0 || selfIndex === currParentInfo.children.length - 1)) {
 					ds = selfIndex === 0 ? ds : -ds;
@@ -1394,14 +1393,15 @@ const flexSnapping: SnapBehavior = {
 		const axis = style.flexDirection !== 'column' ? 'x' : 'y';
 		const otherAxis = axis === 'x' ? 'y' : 'x';
 		const pos = axis === 'x' ? posX : posY;
+		const ds = axis === 'x' ? dx : dy;
 		
 		const parentInfo = calculateFlexParentEdgeInfo(parent, 1, scale, false, 'x');
 		const selfIndex = parentInfo.childEdgeInfo.find(info => info.element === element)!.index;
-		const isMoving = selfIndex > 0 && selfIndex < parentInfo.childrenCount - 1;
 		const minGap = getMinGap(parent);
-		const gapDiff = parentInfo.minGapBetweenX - minGap;
 		
-		const direction = selfIndex === 0 ? -1 : 1;
+		
+		
+		const direction = selfIndex === 0 ? -1/(parentInfo.childrenCount % 2 !== 0 ? 1 : parentInfo.childrenCount) : 1/(parentInfo.childrenCount % 2 !== 0 ? 1 : parentInfo.childrenCount);
 		const resultsX: SnappingResult[] = [];
 		const resultsY: SnappingResult[] = [];
 		const snapping = Snapping({parent, element, parentEdgeInfo: parentInfo, resultsX, resultsY});
@@ -1417,7 +1417,11 @@ const flexSnapping: SnapBehavior = {
 		const bottom = axis === 'x' ? 'bottom' : 'right'; 
 		const midpoint = axis === 'x' ? 'midpointX' : 'midpointY';
 		const childrenMidpoint = axis === 'x' ? 'childrenMidpointX' : 'childrenMidpointY';
+
+		const lastGap = parent.dataset.lastGap ? parseFloat(parent.dataset.lastGap) : parentInfo[minGapBetweenX];
+		const gapDiff = parentInfo[minGapBetweenX] - lastGap;
 		
+		const isMoving = selfIndex > 0 && selfIndex < parentInfo.childrenCount - 1 || close(gapDiff, 0, 0.1)//(selfIndex === 0 && close(minGap, parentInfo[minGapBetweenX], 0.1) && ds > 0) || (selfIndex === parentInfo.childrenCount - 1 && close(minGap, parentInfo[minGapBetweenX], 0.1) && ds < 0);
 		const centerY = snapping.addSnapToParent({
 			point: parentInfo.childEdgeInfo[selfIndex][top].parentMidpointRelative,
 			axis: otherAxis,
@@ -1479,12 +1483,24 @@ const flexSnapping: SnapBehavior = {
 			// 	});
 			// }
 
+			if ((selfIndex === 0 && ds >= 0) || (selfIndex === parentInfo.childrenCount - 1 && ds <= 0)) {
+				const minGapDiff = parentInfo[minGapBetweenX] - minGap;
+				const minGapPoint = snapping.addSnapToParent({
+					point: pos - (minGapDiff * direction),
+					axis,
+					range: 10
+				});
+
+			} else {
+				console.log(pos);
+			}
+		
 			const minSpaceBetweenSnaps = Math.min(parentInfo[aroundSpace] - parentInfo[evenlySpace], parentInfo[betweenSpace] - parentInfo[aroundSpace]);
-			if (parentInfo[gapBetween] && close(parentInfo[childrenMidpoint], parentInfo[midpoint], 0.1) && minSpaceBetweenSnaps >= 5) {
+			if (parentInfo[gapBetween] && close(parentInfo[childrenMidpoint], parentInfo[midpoint], 0.5) && minSpaceBetweenSnaps >= 5) {
 
 				const spaceEvenlyDiff = parentInfo[evenlySpace] - parentInfo[gapBetween]!;
 				const spaceEvenly = snapping.addSnapToParent({
-					point: pos + spaceEvenlyDiff * direction,
+					point: pos + (spaceEvenlyDiff * direction),
 					axis,
 					range: 10
 				});
@@ -1750,7 +1766,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
             }
 
             return prev;
-        }, []).filter(res => Math.abs(res.y! - y) < 10).sort((a, b) => a.x! - b.x!)[0];
+        }, []).filter(res => Math.abs(res.y! - y) < 10).sort((a, b) => a.y! - b.y!)[0];
         if (resX) {
 			result = {snapGuides: []};
             //Our edge calculations are relative to no border, but interact.js is relative to a border, so get rid of
@@ -1794,11 +1810,16 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 	const result = useDraggable({element, onIsDragging(event) {
 		if (!element) return;
 
-		snappingBehavior.onUpdate(element, event, scale, false);
+		resX.current = getBoundingClientRect(element, 'x', 'close', 1) - getBoundingClientRect(element!.parentElement!, 'x', 'close', 1);
+		const newY = getBoundingClientRect(element, 'y', 'close', 1) - getBoundingClientRect(element!.parentElement!, 'y', 'close', 1);
+		const s = event.eventRect.top - getBoundingClientRect(element!.parentElement!, 'y', 'close', 1);
+		resY.current = newY;
 
+		//TODO: Get rid of this gap dependency
+		element.parentElement!.dataset.lastGap = `${parseFloat(element.parentElement!.style.gap || '0')}`;
+		snappingBehavior.onUpdate(element, event, scale, false);
+		
 		onIsDragging && onIsDragging(event, element);
-		// resX.current = event.eventRect.left - getBoundingClientRect(element!.parentElement!, 'x', 'close', 1);
-		// resY.current = event.eventRect.top - getBoundingClientRect(element!.parentElement!, 'y', 'close', 1);
 		
 	}, onCalculateSnapping(element, x, y, currentX, currentY) {
 		const parent = element.parentElement!;
@@ -1809,10 +1830,12 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 		const result = snappingBehavior.onCalculateSnapping(element, posX, posY, dx, dy, scale, false)
 
-        const res = normalizeSnappingResults({...result, x, y});
-
+		const res = normalizeSnappingResults({...result, x, y});
+		
 		return res;
 	}, onDragFinish(element) {
+		resX.current = getBoundingClientRect(element, 'x', 'close', 1) - getBoundingClientRect(element!.parentElement!, 'x', 'close', 1);
+		resY.current = getBoundingClientRect(element, 'y', 'close', 1) - getBoundingClientRect(element!.parentElement!, 'y', 'close', 1);
 		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), oldValues);
 		setOldValues(snappingBehavior.getOldValues(element));
 	}, canDrag(element) {
