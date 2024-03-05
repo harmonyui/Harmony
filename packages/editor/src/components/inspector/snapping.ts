@@ -5,6 +5,7 @@ import { Rect, RectBox, isImageElement, isSelectable, selectDesignerElement } fr
 import { useEffectEvent } from "../../../../ui/src/hooks/effect-event";
 import {InteractEvent, ResizeEvent} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
+import {AspectRatioOptions, AspectRatioState} from '@interactjs/modifiers/aspectRatio'
 import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 import $ from 'jquery';
 import { info } from "console";
@@ -1039,7 +1040,7 @@ const elementSnapBehavior: SnapBehavior = {
 	},
 	isDraggable(element) {
 		const style = element ? getComputedStyle(element.parentElement!) : undefined;
-		return style?.display.includes('flex') ? false : true;
+		return style?.display === 'block' ? true : false;
 	},
 	onUpdate(element, event, scale) {
         if (!element.parentElement) {
@@ -1270,7 +1271,7 @@ const flexSnapping: SnapBehavior = {
 	},
 	isDraggable(element) {
 		const parentStyle = getComputedStyle(element.parentElement!);
-		const flexElement = parentStyle?.display.includes('flex') //&& Array.from(element?.parentElement?.children || []).every(child => parentStyle.flexDirection === 'column' ? child.clientWidth === element?.clientWidth : child.clientHeight === element?.clientHeight) ? element: undefined
+		const flexElement = parentStyle?.display.includes('flex') && parentStyle.flexWrap !== 'wrap' //&& Array.from(element?.parentElement?.children || []).every(child => parentStyle.flexDirection === 'column' ? child.clientWidth === element?.clientWidth : child.clientHeight === element?.clientHeight) ? element: undefined
 		return flexElement ? true : false;
 	},
 	onUpdate(element, event, scale, isResize) {
@@ -2094,6 +2095,7 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 	const refX = useRef(0);
 	const refY = useRef(0);
 	const snapGuides = useRef<SnapPoint[]>([]);
+	const shiftSnapper = useRef<{x: number, y: number}>()
     const $parent = $('#harmony-snap-guides');
 
 	useEffect(() => {
@@ -2104,6 +2106,19 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 			setOffsetY(refY.current);
 
 			const modifiers: Modifier[] = [
+				interact.modifiers.snap({
+					targets: [function() {
+						if (shiftSnapper.current) {
+							return {x: shiftSnapper.current.x};
+						}
+					}, function() {
+						if (shiftSnapper.current) {
+							return {y: shiftSnapper.current.y};
+						}
+					}],
+					range: Infinity,
+					relativePoints: [{x: 0, y: 0}],
+				}),
 				interact.modifiers.snap({
 					targets: [interact.createSnapGrid({x: 2 * scale, y: 2 * scale})],
 					// Control the snapping behavior
@@ -2153,14 +2168,24 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 			});
 
 			document.addEventListener('keydown', onKeyDown);
+			document.addEventListener('keyup', onKeyUp);
 		}
 
-		return () => document.removeEventListener('keydown', onKeyDown)
-	}, [element, scale]);
+		return () => {
+			document.removeEventListener('keydown', onKeyDown)
+			document.addEventListener('keyup', onKeyUp);
+		}
+	}, [element, scale, shiftSnapper]);
 
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
 		//TODO: Dependency on contentEditable. This hook should not know about that
 		if (!element || element.contentEditable === 'true') return;
+
+		if (e.key === 'Shift') {
+			const rect = element.getBoundingClientRect();
+			shiftSnapper.current = {x: rect.left, y: rect.top}
+		}
+
 
 		let axis: Axis | undefined = undefined;
 		let amount = 5;
@@ -2193,6 +2218,12 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 			height: rect.height,
 		}, setIsDragging);
 	});
+
+	const onKeyUp = useEffectEvent((event: KeyboardEvent) => {
+		if (event.key === "Shift") {
+			shiftSnapper.current = undefined;
+		}
+	})
 
 	const startDragging = useEffectEvent((event: InteractEvent<'drag', 'start'>) => {
         
@@ -2251,6 +2282,7 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
     const snapGuides = useRef<SnapPoint[]>([]);
     const refX = useRef(0);
 	const refY = useRef(0);
+	const aspectRef = useRef<Modifier<AspectRatioOptions, AspectRatioState, "aspectRatio", unknown>>()
 	const $parent = $('#harmony-snap-guides');
 
     useEffect(() => {
@@ -2300,6 +2332,11 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
                 }))
             }
 
+			aspectRef.current = interact.modifiers.aspectRatio({
+				ratio: 'preserve',
+				modifiers
+			}).disable();
+
 			interact(element).resizable({
                 edges: {left: true, bottom: true, right: true, top: true},
 				listeners: {
@@ -2307,11 +2344,31 @@ export const useResizable = ({element, scale, restrictions, onIsResizing, onResi
 					move: resize,
 					end: stopResizing
 				},
-				modifiers,
-				margin: 4
+				modifiers: [aspectRef.current, ...modifiers],
+				margin: 4,
 			});
+
+			document.addEventListener('keydown', onKeyDown);
+			document.addEventListener('keyup', onKeyUp);
 		}
-	}, [element, scale]);
+
+		return () => {
+			document.removeEventListener('keydown', onKeyDown);
+			document.removeEventListener('keyup', onKeyUp);
+		}
+	}, [element, scale, aspectRef]);
+
+	const onKeyDown = useEffectEvent((event: KeyboardEvent) => {
+		if (event.key === 'Shift') {
+			aspectRef.current?.enable();
+		}
+	});
+
+	const onKeyUp = useEffectEvent((event: KeyboardEvent) => {
+		if (event.key === 'Shift') {
+			aspectRef.current?.disable();
+		}
+	})
 
     const handleTheResizing = (event: ResizingEvent) => {
         if (!element) return;

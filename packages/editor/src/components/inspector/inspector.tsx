@@ -309,14 +309,16 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		if (rootElement && !rootElement.contains(element)) return true;
 		//const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
 
+		//TODO: ctrlKey is kind of hacky. Find a better way to turn off selection
+		if (event.altKey) return false;
+
 		if (!isInteractableComponent(element)) {
 			//If we get here, that means we have clicked outside of the parent, which means we should deselect
 			onSelect(undefined);
 			return false;
 		}
 
-		//TODO: ctrlKey is kind of hacky. Find a better way to turn off selection
-		if (event.altKey) return false;
+		
 
 		onSelect(element);
 		
