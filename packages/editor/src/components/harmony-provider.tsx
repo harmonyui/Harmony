@@ -71,7 +71,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const harmonyContainerRef = useRef<HTMLDivElement | null>(null);
 	//const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
 	const [mode, setMode] = useState<SelectMode>('tweezer');
-	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>([]);
+	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>();
 	const [branches, setBranches] = useState<{id: string, name: string}[]>([]);
 	const [scale, _setScale] = useState(1);
 	const [isDirty, setIsDirty] = useState(false);
@@ -228,9 +228,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}, [harmonyContainerRef]);
 
 	useEffect(() => {
-		if (rootComponent && availableIds.length > 0) {
+		if (rootComponent && availableIds) {
 			const mutationObserver = new MutationObserver((mutations) => {
-				updateElements(rootComponent);
+				updateElements(rootComponent, availableIds);
 			});
 			const body = rootComponent.querySelector('body');
 			mutationObserver.observe(body || rootComponent, {
@@ -238,11 +238,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				//subtree: true,
 			});
 
-			updateElements(rootComponent);
+			updateElements(rootComponent, availableIds);
 		}
 	}, [rootComponent, availableIds]);
 
-	const updateElements = (element: HTMLElement): void => {
+	const updateElements = (element: HTMLElement, availableIds: ComponentUpdate[]): void => {
 		if (!rootComponent) return;
 		const id = element.dataset.harmonyId;
 		const parentId = element.dataset.harmonyParentId || null;
@@ -267,7 +267,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			makeUpdates(element, updates, rootComponent, fonts);
 		}
 
-		Array.from(element.children).forEach(child => updateElements(child as HTMLElement));
+		Array.from(element.children).forEach(child => updateElements(child as HTMLElement, availableIds));
 	}
 
 	const setScale = useCallback((scale: number) => {

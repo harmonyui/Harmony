@@ -332,7 +332,7 @@ const demoComps = [
     <FlexBoxDemo stretch={true}/>,
 ]
 export const SnappingDemo = () => {
-    const [currDemo, setCurrDemo] = useState(0);
+    const [currDemo, setCurrDemo] = useState(2);
     
 
     const currComponent = useMemo(() => {

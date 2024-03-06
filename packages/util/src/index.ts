@@ -76,6 +76,8 @@ export const displayRelativeDate = (date: Date): string => {
 }
 
 export const round = (value: number, digits = 0, floor=false): number => {
+  if (digits < 0) throw new Error("Invalid argument digits. Must be less than zero");
+  
   const places = Math.pow(10, digits);
   const func = floor ? 'floor' : 'round'
   return Math[func](value * places) / places;
