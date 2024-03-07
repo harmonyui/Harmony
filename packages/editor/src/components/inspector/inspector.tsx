@@ -11,6 +11,8 @@ import $ from 'jquery';
 import { ComponentUpdate } from "@harmony/ui/src/types/component";
 import { ResizeValue, useResize, ResizeRect, ResizeDirection, ResizeCoords } from "@harmony/ui/src/hooks/resize";
 import { FlexValues, MarginValues, useSnapping } from "./snapping";
+import { usePrevious } from "@harmony/ui/src/hooks/previous";
+import {Alert} from '@harmony/ui/src/components/core/alert';
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -62,50 +64,50 @@ export interface InspectorProps {
 	parentElement: HTMLElement | undefined;
 	onElementTextChange: (value: string, oldValue: string) => void;
 	mode: SelectMode;
-	onResize: (size: ResizeValue, oldRect: ResizeValue) => boolean;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
 	onChange: (component: HTMLElement, update: ComponentUpdate[], execute?: boolean) => void;
 	updateOverlay: number;
 	scale: number;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onResize, onReorder, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onReorder, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
-	const [error, setError] = useState(false);
+	const [error, setError] = useState<string | undefined>();
+	const previousError = usePrevious(error);
 
-	const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect, oldRect) {
-		const container = containerRef.current;
-		if (container === null || parentElement === undefined) return false;
+	// const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect, oldRect) {
+	// 	const container = containerRef.current;
+	// 	if (container === null || parentElement === undefined) return false;
 
-		if (overlayRef.current === undefined) {
-			overlayRef.current = new Overlay(container, parentElement);
-		}
+	// 	if (overlayRef.current === undefined) {
+	// 		overlayRef.current = new Overlay(container, parentElement);
+	// 	}
 
-		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, error, {onDrag});
-		} else {
-			overlayRef.current.remove('select');
-		}
+	// 	if (selectedComponent) {
+	// 		overlayRef.current.select(selectedComponent, scale, Boolean(error), {onDrag});
+	// 	} else {
+	// 		overlayRef.current.remove('select');
+	// 	}
 
-		const value = onResize(rect, oldRect);
-		setError(!value);
+	// 	const value = onResize(rect, oldRect);
+	// 	setError(value);
 
-		return value;
-	}, onDragFinish() {
-		const container = containerRef.current;
-		if (container === null || parentElement === undefined) return false;
+	// 	return Boolean(value);
+	// }, onDragFinish() {
+	// 	const container = containerRef.current;
+	// 	if (container === null || parentElement === undefined) return false;
 
-		if (overlayRef.current === undefined) {
-			overlayRef.current = new Overlay(container, parentElement);
-		}
+	// 	if (overlayRef.current === undefined) {
+	// 		overlayRef.current = new Overlay(container, parentElement);
+	// 	}
 
-		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, false, {onDrag});
-		} else {
-			overlayRef.current.remove('select');
-		}
-		setError(false);
-	}});
+	// 	if (selectedComponent) {
+	// 		overlayRef.current.select(selectedComponent, scale, false, {onDrag});
+	// 	} else {
+	// 		overlayRef.current.remove('select');
+	// 	}
+	// 	setError(undefined);
+	// }});
 
 	// const {makeDraggable, isDragging: isDraggingReal} = useDraggableList({onIsDragging() {
 	// 	const container = containerRef.current;
@@ -138,7 +140,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(element, scale, error, {onDrag});
+			overlayRef.current.select(element, scale, Boolean(error), {});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -182,7 +184,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		onChange(element, updates, true);
 		onSelect(undefined);
-	}, onError() {
+	}, onError(error) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -191,13 +193,14 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, true, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, true, {});
 		} else {
 			overlayRef.current.remove('select');
 		}
+		setError(error);
 	}, scale});
 
-	const isDragging = isResizing || false || isDraggingSelf;
+	const isDragging = isDraggingSelf;
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -208,7 +211,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, error, {onDrag});
+			overlayRef.current.select(selectedComponent, scale, Boolean(error), {});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -234,7 +237,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, error, {onTextChange: onElementTextChange, onDrag});
+			overlayRef.current.select(selectedComponent, scale, Boolean(error), {onTextChange: onElementTextChange});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -252,7 +255,13 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		} else {
 			overlayRef.current.remove('hover');
 		}
-	}, [hoveredComponent, scale, isDragging])
+	}, [hoveredComponent, scale, isDragging]);
+
+	useEffect(() => {
+		if (error !== previousError && error) {
+			//showAlert(error);
+		}
+	}, [error, previousError])
 
 	const isInteractableComponent = useCallback((component: HTMLElement) => {
 		//TODO: Get rid of dependency on harmonyText
@@ -377,10 +386,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		noEvents: []
 	});
 
-	return (
+	return (<>
 		<div ref={containerRef} className="hw-z-100" id="harmonyInspector">
 			<div id="harmony-snap-guides"></div>
 		</div>
+		<Alert label={error} setLabel={setError}/> 
+		</>
 	)
 }
 

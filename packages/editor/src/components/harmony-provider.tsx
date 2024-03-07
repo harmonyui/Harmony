@@ -301,52 +301,52 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		onAttributesChange(component, [update], false);
 	});
 
-	const onResize = useEffectEvent((size: ResizeValue, oldSize: ResizeValue): boolean => {
-		if (!selectedComponent || !rootComponent) return false;
+	// const onResize = useEffectEvent((size: ResizeValue, oldSize: ResizeValue): string | undefined => {
+	// 	if (!selectedComponent || !rootComponent) return undefined;
 
-		const component = componentIdentifier.getComponentFromElement(selectedComponent);
-		if (!component) throw new Error("Error when getting component");
+	// 	const component = componentIdentifier.getComponentFromElement(selectedComponent);
+	// 	if (!component) throw new Error("Error when getting component");
 
-		const convertSizeToString = (size: ResizeValue): string => {
-			let str = Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}${value !== undefined ? `:${direction}=${value}` : ''}` : value !== undefined ? `${direction}=${value}` : '', '');
-			if (isImageElement(selectedComponent)) {
-				str = `h${str}`;
-			}
+	// 	const convertSizeToString = (size: ResizeValue): string => {
+	// 		let str = Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}${value !== undefined ? `:${direction}=${value}` : ''}` : value !== undefined ? `${direction}=${value}` : '', '');
+	// 		if (isImageElement(selectedComponent)) {
+	// 			str = `h${str}`;
+	// 		}
 
-			return str;
-		}
+	// 		return str;
+	// 	}
 
-		const value = convertSizeToString({...oldSize, ...size});
-		const oldValue = convertSizeToString(oldSize);
-		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value, oldValue}
+	// 	const value = convertSizeToString({...oldSize, ...size});
+	// 	const oldValue = convertSizeToString(oldSize);
+	// 	const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value, oldValue}
 		
-		//Only let the size change if it is actually changing the size of the component
-		const width = selectedComponent.clientWidth;
-		const height = selectedComponent.clientHeight;
-		makeUpdates(selectedComponent, [update], rootComponent, fonts);
-		const newWidth = selectedComponent.clientWidth;
-		const newHeight = selectedComponent.clientHeight;
-		makeUpdates(selectedComponent, [{...update, value: update.oldValue, oldValue: update.value}], rootComponent, fonts);
+	// 	//Only let the size change if it is actually changing the size of the component
+	// 	const width = selectedComponent.clientWidth;
+	// 	const height = selectedComponent.clientHeight;
+	// 	makeUpdates(selectedComponent, [update], rootComponent, fonts);
+	// 	const newWidth = selectedComponent.clientWidth;
+	// 	const newHeight = selectedComponent.clientHeight;
+	// 	makeUpdates(selectedComponent, [{...update, value: update.oldValue, oldValue: update.value}], rootComponent, fonts);
 
-		if (newWidth === width && oldValue !== value) {
-			//if ((size.e || oldSize.e || 0) - (oldSize.e || 0) >= 0 || (size.e || 0) < 0)
-				size.e = undefined;
-			//if ((size.w || oldSize.w || 0) - (oldSize.w || 0) >= 0 || (size.w || 0) < 0)
-				size.w = undefined;
-		}
+	// 	if (newWidth === width && oldValue !== value) {
+	// 		//if ((size.e || oldSize.e || 0) - (oldSize.e || 0) >= 0 || (size.e || 0) < 0)
+	// 			size.e = undefined;
+	// 		//if ((size.w || oldSize.w || 0) - (oldSize.w || 0) >= 0 || (size.w || 0) < 0)
+	// 			size.w = undefined;
+	// 	}
 
-		if (newHeight === height && oldValue !== value) {
-			//if ((size.n || oldSize.n || 0) - (oldSize.n || 0) >= 0 || (size.n || 0) < 0)
-				size.n = undefined;
-			//if ((size.s || oldSize.s || 0) - (oldSize.s || 0) >= 0 || (size.s || 0) < 0)
-				size.s = undefined;
-		}
-		update.value = convertSizeToString(size);
-		if (!update.value || update.value === 'h') return false;
+	// 	if (newHeight === height && oldValue !== value) {
+	// 		//if ((size.n || oldSize.n || 0) - (oldSize.n || 0) >= 0 || (size.n || 0) < 0)
+	// 			size.n = undefined;
+	// 		//if ((size.s || oldSize.s || 0) - (oldSize.s || 0) >= 0 || (size.s || 0) < 0)
+	// 			size.s = undefined;
+	// 	}
+	// 	update.value = convertSizeToString(size);
+	// 	if (!update.value || update.value === 'h') return false;
 		
-		onAttributesChange(component, [update]);
-		return true;
-	});
+	// 	onAttributesChange(component, [update]);
+	// 	return true;
+	// });
 
 	const onReorder = useEffectEvent(({from, to, element}: {from: number, to: number, element: HTMLElement}) => {
 		const component = componentIdentifier.getComponentFromElement(element);
@@ -433,7 +433,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 								//harmonyContainerRef.current.appendChild(rootElement);
 							}
 						}} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
-						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onResize={onResize} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
+						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
 						{children}
 						</div>
 					</div>

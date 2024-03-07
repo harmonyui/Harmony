@@ -324,9 +324,13 @@ function calculateEdgesInfo(element: HTMLElement, scale: number, scaleActual: nu
 	const {width: minWidthContent, height: minHeightContent} = getFitContentSize(element, true);
 	const height = bottom.elementLocation - top.elementLocation;
 	const width = right.elementLocation - left.elementLocation;
+	//TODO: Checking for image element is kind of hacky here
 	const widthType = isElementFluid(element, 'width') ? 'expand' : close(width, minWidthContent, 0.1) ? 'content' : 'fixed';
-	const heightType = isElementFluid(element, 'height') ? 'expand' : close(height, minHeightContent, 0.1) ? 'content' : 'fixed';
+	let heightType: 'content' | 'expand' | 'fixed' = isElementFluid(element, 'height', !isImageElement(element)) ? 'expand' : close(height, minHeightContent, 0.1) ? 'content' : 'fixed';
 
+	if (isImageElement(element)) {
+		heightType = 'fixed';
+	}
 	
 
     return {
@@ -1087,7 +1091,7 @@ interface UpdateRectInfo {
 	childrenGaps: StyleValue[]
 }
 
-function isElementFluid(elm: Element, side: 'width' | 'height'){
+function isElementFluid(elm: Element, side: 'width' | 'height', useFlexForHeight=true){
     var wrapper, clone = elm.cloneNode(true) as HTMLElement, ow, p1, p2;
     let value;
     if( window.getComputedStyle ) {
@@ -1109,7 +1113,7 @@ function isElementFluid(elm: Element, side: 'width' | 'height'){
       /// attributes with inline styles.
       wrapper = document.createElement('wrapper');
 	  //Flex will make the height stretch
-      wrapper.style.display = side === 'width' ? 'block' : 'flex';
+      wrapper.style.display = side === 'height' && useFlexForHeight ? 'flex' : 'block';
       wrapper.style[side] = '500px';
       wrapper.style.padding = '0';
       wrapper.style.margin = '0';
@@ -1353,7 +1357,7 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
 
 interface SnapBehavior {
 	getOldValues: (element: HTMLElement) => [HTMLElement, Record<string, string>][];
-	isDraggable: (element: HTMLElement) => boolean;
+	isDraggable: (element: HTMLElement) => string | undefined;
 	onUpdate: (element: HTMLElement, event: DraggingEvent, scale: number, isResize: boolean) => void;
 	onCalculateSnapping: (element: HTMLElement, posX: number, posY: number, dx: number, dy: number, scale: number, isResize: boolean) => {resultsX: SnappingResult[], resultsY: SnappingResult[]};
 	onFinish: (element: HTMLElement) => HTMLElement;
@@ -1418,7 +1422,7 @@ const elementSnapBehavior: SnapBehavior = {
 	},
 	isDraggable(element) {
 		const style = element ? getComputedStyle(element.parentElement!) : undefined;
-		return ['block', 'list-item'].includes(style?.display || '') ? true : false;
+		return ['block', 'list-item'].includes(style?.display || '') ? undefined : 'This is not a block element';
 	},
 	onUpdate(element, event, scale) {
         if (!element.parentElement) {
@@ -1649,8 +1653,14 @@ const flexSnapping: SnapBehavior = {
 	},
 	isDraggable(element) {
 		const parentStyle = getComputedStyle(element.parentElement!);
-		const flexElement = parentStyle?.display.includes('flex') && parentStyle.flexWrap !== 'wrap' //&& Array.from(element?.parentElement?.children || []).every(child => parentStyle.flexDirection === 'column' ? child.clientWidth === element?.clientWidth : child.clientHeight === element?.clientHeight) ? element: undefined
-		return flexElement ? true : false;
+		if (parentStyle?.display.includes('flex')) {
+			if (parentStyle.flexWrap === 'wrap') {
+				return 'Harmony does not currently support flex-wrap';
+			}
+
+			return undefined;
+		}
+		return 'This is not a flex component'
 	},
 	onUpdate(element, event, scale, isResize) {
 		const parent = element.parentElement!;
@@ -2100,7 +2110,7 @@ const getSnappingBehavior = (parent: HTMLElement | undefined) => {
 
 type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
 	onDragFinish: (element: HTMLElement, oldValues: [HTMLElement, Record<string, string>][]) => void;
-	onError: () => void;
+	onError: (error: string | undefined) => void;
 };
 export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale}: SnappableProps) => {
 	const [oldValues, setOldValues] = useState<[HTMLElement, Record<string, string>][]>([]);
@@ -2241,8 +2251,14 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 	}, canDrag(element) {
 		if (element.contentEditable === 'true') return false;
 
-		if (!snappingBehavior.isDraggable(element) || !element.parentElement?.dataset.harmonyId) {
-			onError();
+		const error = snappingBehavior.isDraggable(element)
+		if (error) {
+			onError(error);
+			return false;
+		}
+
+		if (!element.parentElement?.dataset.harmonyId) {
+			onError('Do not have access to parent component\'s code');
 			return false;
 		}
 
@@ -2363,8 +2379,14 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
     }, canResize(element) {
 		if (element.contentEditable === 'true') return false;
 
-		if (!snappingBehavior.isDraggable(element) || !element.parentElement?.dataset.harmonyId) {
-			onError();
+		const error = snappingBehavior.isDraggable(element)
+		if (error) {
+			onError(error);
+			return false;
+		}
+
+		if (!element.parentElement?.dataset.harmonyId) {
+			onError('Do not have access to parent component\'s code');
 			return false;
 		}
 
