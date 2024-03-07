@@ -1,7 +1,7 @@
 import { capitalizeFirstLetter, groupBy, groupByDistinct, round } from "@harmony/util/src";
 import interact from "interactjs";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Rect, RectBox, isImageElement, isSelectable, isTextElement, selectDesignerElement } from "./inspector";
+import { Rect, RectBox, isImageElement, isSelectable, isTextElement, selectDesignerElement, selectDesignerElementReverse } from "./inspector";
 import { useEffectEvent } from "../../../../ui/src/hooks/effect-event";
 import {InteractEvent, ResizeEvent} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
@@ -274,6 +274,7 @@ interface ChildEdgeInfo {
 }
 
 interface ParentEdgeInfo {
+	element: HTMLElement,
 	children: HTMLElement[],
     childEdgeInfo: ChildEdgeInfo[],
     midpointX: number;
@@ -304,23 +305,29 @@ interface ParentEdgeInfo {
 
 function calculateEdgesInfo(element: HTMLElement, scale: number, scaleActual: number, axis: Axis, updates: UpdateRect[]=[]): ChildEdgeInfo {
     const parent = element.parentElement!;
+	const elementReal = element;
+	element = updates.find(update => update.element === element)?.proxyElement || element;
+
 	const otherAxis = axis === 'x' ? 'y' : 'x';
 	const children = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scaleActual)) as HTMLElement[];
-	const index = children.indexOf(element)
+	const index = children.indexOf(elementReal)
 
-    const left = calculateAxisEdgeInfo(element, axis, 'close', scale, index, children, updates);
-    const right = calculateAxisEdgeInfo(element, axis, 'far', scale, index, children, updates);
-    const top = calculateAxisEdgeInfo(element, otherAxis, 'close', scale, index, children, updates);
-    const bottom = calculateAxisEdgeInfo(element, otherAxis, 'far', scale, index, children, updates);
+    const left = calculateAxisEdgeInfo(element, parent, axis, 'close', scale, index, children, updates);
+    const right = calculateAxisEdgeInfo(element, parent, axis, 'far', scale, index, children, updates);
+    const top = calculateAxisEdgeInfo(element, parent, otherAxis, 'close', scale, index, children, updates);
+    const bottom = calculateAxisEdgeInfo(element, parent, otherAxis, 'far', scale, index, children, updates);
     const rectOverride = updates.find(update => update.element === element)?.rect;
     const parentOverride = updates.find(update => update.element === parent)?.rect;
     const midpointX = (getBoundingClientRect(element, axis, 'close', scale, rectOverride) + getBoundingClientRect(element, axis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, axis, 'close', scale, parentOverride);
     const midpointY = (getBoundingClientRect(element, otherAxis, 'close', scale, rectOverride) + getBoundingClientRect(element, otherAxis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, otherAxis, 'close', scale, parentOverride);
     const {width: minWidth, height: minHeight} = getFitContentSize(element);
+	const {width: minWidthContent, height: minHeightContent} = getFitContentSize(element, true);
 	const height = bottom.elementLocation - top.elementLocation;
 	const width = right.elementLocation - left.elementLocation;
-	const widthType = close(width, minWidth, 0.1) ? 'content' : isElementFluid(element, 'width') ? 'expand' : 'fixed';
-	const heightType = close(height, minHeight, 0.1) ? 'content' : isElementFluid(element, 'height') ? 'expand' : 'fixed';
+	const widthType = isElementFluid(element, 'width') ? 'expand' : close(width, minWidthContent, 0.1) ? 'content' : 'fixed';
+	const heightType = isElementFluid(element, 'height') ? 'expand' : close(height, minHeightContent, 0.1) ? 'content' : 'fixed';
+
+	
 
     return {
         element,
@@ -340,15 +347,14 @@ function calculateEdgesInfo(element: HTMLElement, scale: number, scaleActual: nu
     }
 }
 
-function calculateAxisEdgeInfo(element: HTMLElement, axis: Axis, side: Side, scale: number, selfIndex: number, children: HTMLElement[], updates: UpdateRect[]=[]): ElementEdgeInfo {
-    const parent = element.parentElement!;
-    if (!parent) throw new Error("Element does not have a parent");
+function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement, axis: Axis, side: Side, scale: number, selfIndex: number, children: HTMLElement[], updates: UpdateRect[]=[]): ElementEdgeInfo {
+   if (!parent) throw new Error("Element does not have a parent");
     
     const otherSide = side === 'close' ? 'far' : 'close';
     const otherAxis = axis === 'x' ? 'y' : 'x';
 
     const getRectOverride = (element: HTMLElement): Rect | undefined => {
-        const updateRect = updates.find(update => update.element === element);
+        const updateRect = updates.find(update => update.element === element || update.proxyElement === element);
         return updateRect?.rect;
     }
 
@@ -447,8 +453,8 @@ function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scaleActual
     const childEdgeInfo: ChildEdgeInfo[] = [];
 	const children = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scaleActual)) as HTMLElement[];
 
-	const firstChild = children[0] as HTMLElement;
-	const lastChild = children[children.length - 1] as HTMLElement;
+	const firstChild = children[0] as HTMLElement | undefined;
+	const lastChild = children[children.length - 1] as HTMLElement | undefined;
 	const leftSide = axis === 'x' ? 'left' : 'top';
 	const rightSide = axis === 'x' ? 'right' : 'bottom';
 	const topSide = axis === 'x' ? 'top' : 'left';
@@ -490,8 +496,8 @@ function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scaleActual
     const midpointYRelative = midpointY - getBoundingClientRectParent(parent, otherAxis, 'close', scale, getRectOverride(parent));
 	const childrenWidth = children.reduce((prev, curr) => prev + curr.clientWidth, 0);
 	const childrenHeight = children.reduce((prev, curr) => prev + curr.clientHeight, 0);
-	const childrenMidpointX = (getBoundingClientRect(lastChild, axis, 'far', scale, getRectOverride(lastChild)) + getBoundingClientRect(firstChild, axis, 'close', scale, getRectOverride(firstChild))) / 2;
-	const childrenMidpointY = (getBoundingClientRect(lastChild, otherAxis, 'far', scale, getRectOverride(lastChild)) + getBoundingClientRect(firstChild, otherAxis, 'close', scale, getRectOverride(firstChild))) / 2;
+	const childrenMidpointX = lastChild && firstChild ? (getBoundingClientRect(lastChild, axis, 'far', scale, getRectOverride(lastChild)) + getBoundingClientRect(firstChild, axis, 'close', scale, getRectOverride(firstChild))) / 2 : 0;
+	const childrenMidpointY = lastChild && firstChild ? (getBoundingClientRect(lastChild, otherAxis, 'far', scale, getRectOverride(lastChild)) + getBoundingClientRect(firstChild, otherAxis, 'close', scale, getRectOverride(firstChild))) / 2 : 0;
 	
 	let minGapBetweenX = Infinity;
 	let minGapBetweenY = Infinity;
@@ -532,13 +538,16 @@ function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scaleActual
 		minGapBetweenY = 0;
 	}
 	
-	const {width: minWidth, height: minHeight} = getFitContentSize(parent);
-	const height = bottom.bottom.parentEdge.edgeLocation - top.top.parentEdge.edgeLocation;
-	const width = right.right.parentEdge.edgeLocation - left.left.parentEdge.edgeLocation;
+	const {width: minWidth, height: minHeight} = getFitContentSize(parent, true);
+	const rect = getBoundingRect(parent);
+	const height = rect.height;//bottom.bottom.parentEdge.edgeLocation - top.top.parentEdge.edgeLocation;
+	const width = rect.width//right.right.parentEdge.edgeLocation - left.left.parentEdge.edgeLocation;
 	const widthType = close(width, minWidth, 0.1) ? 'content' : isElementFluid(parent, 'width') ? 'expand' : 'fixed';
 	const heightType = close(height, minHeight, 0.1) ? 'content' : isElementFluid(parent, 'height') ? 'expand' : 'fixed';
-	
+	const proxy = updates.find(update => update.element === parent)?.proxyElement || parent;
+
     return {
+		element: proxy,
 		children,
         childEdgeInfo,
         midpointX,
@@ -624,9 +633,14 @@ function calculateFlexParentEdgeInfo(parent: HTMLElement, scale: number, scaleAc
 	}
 }
 
+const setSpaceForElement = (element: HTMLElement, space: 'margin' | 'padding', side: RectSide, value: number | string) => {
+	const propertyValue = typeof value === 'number' ? `${value}px` : value;
+	element.style[`${space}${capitalizeFirstLetter(side)}` as unknown as number] = propertyValue;
+}
+
 interface UpdateRect {
     element: HTMLElement,
-	elementOverride?: HTMLElement;
+	proxyElement?: HTMLElement;
     rect: Rect
 }
 interface UpdateRectsProps {
@@ -634,42 +648,127 @@ interface UpdateRectsProps {
     childrenUpdates: UpdateRect[]
 }
 function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number, scaleActual: number) {
-    const parent = parentUpdate.element;
-    const {edges, childEdgeInfo, midpointXRelative} = calculateParentEdgeInfo(parent, scale, scaleActual, false, 'x', [parentUpdate, ...childrenUpdates]);
-    Object.entries(edges).forEach(([side, edge]) => {
-        const gap = edge.parentEdge.gap;
-		let toUpdate = parentUpdate.elementOverride || parent;
-        toUpdate.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
-    });
+    const parentInfo = calculateParentEdgeInfo(parentUpdate.element, scale, scaleActual, false, 'x', [parentUpdate, ...childrenUpdates]);
+	const left = 'left';
+	const right = 'right';
+	const top = 'top';
+	const bottom = 'bottom';
 
-    for (const info of childEdgeInfo) {
-		info.element.style.marginBottom = '0px';
-		info.element.style.marginRight = '0px';
 
-        const leftGap = info.left.parentEdge.gap - edges.left.parentEdge.gap;
-        const rightGap = info.right.parentEdge.gap - edges.right.parentEdge.gap;
-        if (info.left.parentEdge.gap >= 0) {
-            info.element.style.marginLeft = `${leftGap}px`;
-           
-        }
-		if (info.right.parentEdge.gap >= 0 && isElementFluid(info.element, 'width')) {
-			info.element.style.marginRight = `${rightGap}px`;
+	
+
+	setSpaceForElement(parentInfo.element, 'padding', left, 0);
+	setSpaceForElement(parentInfo.element, 'padding', right, 0);
+	setSpaceForElement(parentInfo.element, 'padding', top, 0);
+	setSpaceForElement(parentInfo.element, 'padding', bottom, 0);
+	for (const info of parentInfo.childEdgeInfo) {
+		setSpaceForElement(info.element, 'margin', left, 0);
+		setSpaceForElement(info.element, 'margin', right, 0);
+		setSpaceForElement(info.element, 'margin', top, 0);
+		setSpaceForElement(info.element, 'margin', bottom, 0);
+
+		const isBlock = getComputedStyle(info.element).display === 'block';
+
+		const isChildXCenter = close(info.midpointX, parentInfo.midpointXRelative, 0.1) && close(parentInfo.edges.left.parentEdge.gap, parentInfo.edges.right.parentEdge.gap, 0.1);
+		const startXSide: RectSide = !isBlock || info.midpointX <= parentInfo.midpointXRelative ? left : right;
+		const endXSide = startXSide === left ? right : left;
+		// const startYSide = info.midpointY <= parentInfo.midpointY ? top : bottom;
+		// const endYSide = startYSide === top ? bottom : top;
+
+		//left 
+		if (startXSide === right) {
+			setSpaceForElement(info[endXSide].element, 'margin', endXSide, 'auto');
 		}
-        if (info.index > 0 && info.top.siblingEdge && Math.abs(info.top.siblingEdge.gap - 0.1) >= 0) {
-            info.element.style.marginTop = `${info.top.siblingEdge.gap}px`
-        } 
+		const parentGap = Math.max(parentInfo.edges[startXSide].parentEdge.gap, 0);
+		const remainingGap = info[startXSide].parentEdge.gap - parentGap
+		setSpaceForElement(info[startXSide].element, 'margin', startXSide, remainingGap);
+		setSpaceForElement(parentInfo.element, 'padding', startXSide, parentGap);
+		if (isChildXCenter && isBlock && remainingGap > 0 && info.widthType !== 'expand') {
+			setSpaceForElement(info[left].element, 'margin', left, 'auto');
+			setSpaceForElement(info[right].element, 'margin', right, 'auto');
+		}
+		
 
-		//Height naturally fits content
+		//right - width naturally expands in div block
+		if (info.widthType === 'fixed') {
+			info.element.style.width = `${info.width}px`
+		} else if (info.widthType === 'expand') {
+			const parentGap = Math.max(parentInfo.edges[endXSide].parentEdge.gap, 0);
+			const remainingGap = info[endXSide].parentEdge.gap - parentGap;
+			setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
+			setSpaceForElement(parentInfo.element, 'padding', endXSide, parentGap);
+		} else {
+			info.element.style.width = 'auto';
+		}
+
+		//top
+		if (info.index === 0) {
+			const parentGap = parentInfo.edges[top].parentEdge.gap;
+			setSpaceForElement(parentInfo.element, 'padding', top, parentGap);
+		} else {
+			if (!info.top.siblingEdge) throw new Error("Non first child should have a sibling");
+
+			let siblingGap = info.top.siblingEdge.gap;
+			const siblingStyle = getComputedStyle(info.top.siblingEdge.edgeElement);
+			//TODO: This is super hacky and have no idea if this will work in other scenarios
+			// if (siblingStyle.display.includes('inline')) {
+			// 	siblingGap -= 6;
+			// }
+			setSpaceForElement(info.element, 'margin', top, siblingGap);
+		}
+
+		//bottom - height fits content naturally
 		if (info.heightType === 'fixed') {
-			info.element.style.height = `${info.height}px`;
-		} else if (info.heightType === 'content') {
+			info.element.style.height = `${info.height}px`
+		} else {
 			info.element.style.height = 'auto';
 		}
+	}
 
-		//Width naturally expands
-		if (info.widthType === 'fixed') {
-			info.element.style.width = `${info.width}px`;
-		}
+	//parent edges for sizing
+	if (parentInfo.widthType === 'content') {
+		setSpaceForElement(parentInfo.element, 'padding', left, parentInfo.edges[left].parentEdge.gap);
+		setSpaceForElement(parentInfo.element, 'padding', right, parentInfo.edges[right].parentEdge.gap);
+	}
+
+	if (parentInfo.heightType === 'content') {
+		setSpaceForElement(parentInfo.element, 'padding', top, parentInfo.edges[top].parentEdge.gap);
+		setSpaceForElement(parentInfo.element, 'padding', bottom, parentInfo.edges[bottom].parentEdge.gap);
+	}
+
+	// Object.entries(edges).forEach(([side, edge]) => {
+    //     const gap = edge.parentEdge.gap;
+	// 	parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
+    // });
+
+    // for (const info of childEdgeInfo) {
+	// 	info.element.style.marginBottom = '0px';
+	// 	info.element.style.marginRight = '0px';
+
+    //     const leftGap = info.left.parentEdge.gap - edges.left.parentEdge.gap;
+    //     const rightGap = info.right.parentEdge.gap - edges.right.parentEdge.gap;
+    //     if (info.left.parentEdge.gap >= 0) {
+    //         info.element.style.marginLeft = `${leftGap}px`;
+           
+    //     }
+	// 	if (info.right.parentEdge.gap >= 0 && isElementFluid(info.element, 'width')) {
+	// 		info.element.style.marginRight = `${rightGap}px`;
+	// 	}
+    //     if (info.index > 0 && info.top.siblingEdge && Math.abs(info.top.siblingEdge.gap - 0.1) >= 0) {
+    //         info.element.style.marginTop = `${info.top.siblingEdge.gap}px`
+    //     } 
+
+	// 	//Height naturally fits content
+	// 	if (info.heightType === 'fixed') {
+	// 		info.element.style.height = `${info.height}px`;
+	// 	} else {
+	// 		info.element.style.height = 'auto';
+	// 	}
+
+	// 	//Width naturally expands
+	// 	if (info.widthType === 'fixed') {
+	// 		info.element.style.width = `${info.width}px`;
+	// 	}
 
         // if (midpointXRelative <= info.midpointX) {
         //     info.element.style.marginLeft = 'auto';
@@ -679,12 +778,12 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
         //         info.element.style.marginRight = `${rightGap}px`;
         //     }
         // }
-    }
+    //}
 }
 
 function updateRectFlex({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number, scaleActual: number) {
-	const parent = parentUpdate.element;
-	const style = getComputedStyle(parent);
+	const parentReal = parentUpdate.element;
+	const style = getComputedStyle(parentReal);
 	const axis = style.flexDirection !== 'column' ? 'x' : 'y';
 	const left = axis === 'x' ? 'left' : 'top';
 	const right = axis === 'x' ? 'right' : 'bottom';
@@ -696,125 +795,280 @@ function updateRectFlex({parentUpdate, childrenUpdates}: UpdateRectsProps, scale
 	const aroundSpace = axis === 'x' ? 'aroundSpaceX' : 'aroundSpaceY';
 	const betweenSpace = axis === 'x' ? 'betweenSpaceX' : 'betweenSpaceY';
 	const gapBetween = axis === 'x' ? 'gapBetweenX' : 'gapBetweenY';
-	const minGap = getMinGap(parent);
+	const minGap = getMinGap(parentReal);
 	const height = axis === 'x' ? 'height' : 'width';
 	const width = axis === 'x' ? 'width' : 'height';
+	const minHeight = axis === 'x' ? 'minHeight' : 'minWidth';
+	const minWidth = axis === 'x' ? 'minWidth' : 'minHeight';
 	const heightType = axis === 'x' ? 'heightType' : 'widthType';
 	const widthType = axis === 'x' ? 'widthType' : 'heightType';
 
 
 	const updates: UpdateRect[] = childrenUpdates;
 	updates.push(parentUpdate);
-
-	const parentInfo = calculateFlexParentEdgeInfo(parent, scale, scale, false, 'x', updates);
-	if (parentInfo.edges[left].parentEdge.gap <= 0) {
-		parentInfo.edges[left].parentEdge.gap = 0;
-	}
-	if (parentInfo.edges[right].parentEdge.gap <= 0) {
-		parentInfo.edges[right].parentEdge.gap = 0;
+	//updates.push(...Array.from(parentReal.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)})));
+	const parentInfo = calculateFlexParentEdgeInfo(parentReal, scale, scale, false, 'x', updates);
+	if (parentInfo[minGapBetweenX] < 0) {
+		throw new Error("mingap cannot be less than zero")
 	}
 
-	// if (parentInfo[minGapBetweenX] < minGap) {
-	// 	parentInfo[minGapBetweenX] = minGap;
-	// }
 
-	if (parentInfo[minGapBetweenX] > parentInfo[betweenSpace]) {
-		parentInfo[minGapBetweenX] = parentInfo[betweenSpace];
-	}
+	const childrenWidthFixed = parentInfo.childEdgeInfo.every(child => child[widthType] !== 'expand');
+	const childrenHeightFixed = parentInfo.childEdgeInfo.every(child => child[heightType] !== 'expand');
 	
-
-	parent.style.gap = `${parentInfo[minGapBetweenX]}px`;
-	parent.style.justifyContent = 'normal';
-	parent.style.alignItems = 'normal';
-
-	const startXSide = parentInfo.edges[left].parentEdge.gap <= parentInfo.edges[right].parentEdge.gap ? left : right;
+	let startXSide: RectSide = parentInfo.edges[left].parentEdge.gap <= parentInfo.edges[right].parentEdge.gap ? left : right;
+	//Start X Side being right assumes we will have a flex-end, but that won't happen if one of the children has
+	//expand width
+	if (!childrenWidthFixed) {
+		startXSide = left;
+	}
+	const endXSide = startXSide === left ? right : left;
 	const startYSide = parentInfo.edges[top].parentEdge.gap <= parentInfo.edges[bottom].parentEdge.gap ? top : bottom;
+	const endYSide = startYSide === top ? bottom : top;
 	
-	parent.style.paddingTop = '0px';
-	parent.style.paddingBottom = '0px';
-	parent.style.paddingLeft = '0px';
-	parent.style.paddingRight = '0px';
 
-	Object.entries(parentInfo.edges).forEach(([side, edge]) => {
-		const gap = side === startXSide || startYSide === side ? edge.parentEdge.gap : edge.parentEdge.gap;
-		parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
-	});
+	//If all the items are on the y center line and there is space between the top and bottom
+	const isYCenter = parentInfo.childEdgeInfo.every(info => info[top].elementLocationRelative === info[top].parentMidpointRelative) && (parentInfo.edges[top].parentEdge.gap > 0 && parentInfo.edges[bottom].parentEdge.gap > 0 && close(parentInfo.edges[top].parentEdge.gap, parentInfo.edges[bottom].parentEdge.gap, 0.1)) && childrenHeightFixed;
+	const isXCenter = close(parentInfo.edges[left].parentEdge.gap, parentInfo.edges[right].parentEdge.gap, 0.1) && childrenWidthFixed;
+	const alignStart = parentInfo.childEdgeInfo.some(child => close(child[height], child[minHeight], 0.1)) ? 'flex-start' : 'normal';
+
+	setSpaceForElement(parentInfo.element, 'padding', left, 0);
+	setSpaceForElement(parentInfo.element, 'padding', right, 0);
+	setSpaceForElement(parentInfo.element, 'padding', top, 0);
+	setSpaceForElement(parentInfo.element, 'padding', bottom, 0);
+	parentInfo.element.style.justifyContent = 'normal';
 
 	for (const info of parentInfo.childEdgeInfo) {
-		info.element.style.marginTop = '0px';
-		info.element.style.marginBottom = '0px';
-		info.element.style.marginLeft = '0px';
-		info.element.style.marginRight = '0px';
+		setSpaceForElement(info.element, 'margin', left, 0);
+		setSpaceForElement(info.element, 'margin', right, 0);
+		setSpaceForElement(info.element, 'margin', top, 0);
+		setSpaceForElement(info.element, 'margin', bottom, 0);
 
-		if (info[widthType] === 'content') {
-			parent.style.alignItems = startYSide === top ? 'flex-start' : 'flex-end';
-		} else if (info[widthType] === 'fixed') {
+		//top
+		if (!isYCenter) { //Top is determined by parent padding
+			const parentGap = parentInfo.edges[startYSide].parentEdge.gap;
+			const remainingGap = info[startYSide].parentEdge.gap - parentGap;
+			setSpaceForElement(info[startYSide].element, 'margin', startYSide, remainingGap);
+			setSpaceForElement(parentInfo.element, 'padding', startYSide, parentGap);
+
+			if (childrenHeightFixed) {
+				if (startYSide === top) {
+					parentInfo.element.style.alignItems = alignStart;
+				}
+				if (startYSide === bottom) {
+					parentInfo.element.style.alignItems = 'flex-end';
+				}
+			} else {
+				parentInfo.element.style.alignItems = 'normal';
+			}
+
+		} else if (parentInfo[heightType] !== 'content' && childrenHeightFixed) {
+			parentInfo.element.style.alignItems = 'center';
+			setSpaceForElement(parentInfo.element, 'padding', top, 0);
+			setSpaceForElement(parentInfo.element, 'padding', bottom, 0);
+		}
+
+		//bottom - set by height or align-items (to fit content)
+		if (info[heightType] === 'expand') {
+			const parentGap = parentInfo.edges[endYSide].parentEdge.gap;
+			const remainingGap = info[endYSide].parentEdge.gap - parentGap;
+			setSpaceForElement(info[endYSide].element, 'margin', endYSide, remainingGap);
+			setSpaceForElement(parentInfo.element, 'padding', endYSide, parentGap);
+		}	
+		else if (info[heightType] === 'fixed') {
+			info.element.style[height] = `${info[height]}px`;
+		} else if (close(info[height], info[minHeight], 0.1) && parentInfo.element.style.alignItems === 'normal') {
+			parentInfo.element.style.alignItems = 'flex-start';
+		}
+
+		//left
+		if (info.index === 0) {
+			if (!isXCenter) {
+				const parentGap = parentInfo.edges[startXSide].parentEdge.gap;
+				setSpaceForElement(parentInfo.element, 'padding', startXSide, parentGap);
+			}
+		} else {
+			const minSpace = parentInfo[minGapBetweenX];
+			if (!info[left].siblingEdge) throw new Error("A non 0 index item should have a sibling");
+
+			const spaceDiff = info[left].siblingEdge!.gap - minSpace;
+			parentInfo.element.style.gap = `${minSpace}px`;
+			setSpaceForElement(info[left].element, 'margin', left, spaceDiff);
+		}
+		if (isXCenter && parentInfo[widthType] !== 'content') {
+			parentInfo.element.style.justifyContent = 'center';
+			if (close(parentInfo[gapBetween]!, parentInfo[aroundSpace], 0.1)) {
+				parentInfo.element.style.justifyContent = 'space-around';
+				parentInfo.element.style.gap = '0px';
+			} else if (close(parentInfo[gapBetween]!, parentInfo[evenlySpace], 0.1)) {
+				parentInfo.element.style.justifyContent = 'space-evenly';
+				parentInfo.element.style.gap = '0px';
+			} else if (close(parentInfo[gapBetween]!, parentInfo[betweenSpace], 0.1)) {
+				parentInfo.element.style.justifyContent = 'space-between';
+				parentInfo.element.style.gap = '0px';
+			}
+		}
+		if (!isXCenter && startXSide === left) {
+			parentInfo.element.style.justifyContent = 'normal';
+		}
+		if (!isXCenter && startXSide === right && childrenWidthFixed) {
+			parentInfo.element.style.justifyContent = 'flex-end';
+		} 
+
+		//right - width
+		if (info[widthType] === 'fixed') {
 			info.element.style[width] = `${info[width]}px`;
-		}
-
-		if (info[heightType] === 'fixed') {
-			info.element.style[height] = `${info[height]}px`
-		}
-
-		// if (info.index > 0 && info.left.siblingEdge && info.left.siblingEdge.gap - parentInfo.minGapBetweenX >= 0) {
-		// 	const gap = info.left.siblingEdge.gap - parentInfo.minGapBetweenX;
-			
-		// 	info.element.style.marginLeft = `${gap}px`
+		} 
+		// else if (info[widthType] === 'expand') {
+		// 	//If we are expanding the width, that means we have some sort of flex grow or something
+		// 	//TODO: let's deal with that later
+		// 	info.element.style[width] = `${info[width]}px`
+		// 	info.element.style.flexGrow = 'inherit';
+		// 	info.element.style.flexShrink = 'inherit';
 		// }
-
-		const topGap = info[top].parentEdge.gap - parentInfo.edges[top].parentEdge.gap;
-		if (topGap >= 0) {
-			info.element.style[`margin${capitalizeFirstLetter(top)}` as unknown as number] = `${topGap}px`;
-		}
-
-		const bottomGap = info[bottom].parentEdge.gap - parentInfo.edges[bottom].parentEdge.gap;
-		if (bottomGap >= 0) {
-			info.element.style[`margin${capitalizeFirstLetter(bottom)}` as unknown as number] = `${bottomGap}px`;
-		}
 	}
 
-	const parentFixed = !isElementFluid(parent, height);
+	//parent edges for sizing
+	if (parentInfo[widthType] === 'content') {
+		setSpaceForElement(parentInfo.element, 'padding', left, parentInfo.edges[left].parentEdge.gap);
+		setSpaceForElement(parentInfo.element, 'padding', right, parentInfo.edges[right].parentEdge.gap);
+	}
 
-	//Justify-content stuff
-	if (parentInfo[gapBetween] !== undefined && close(parentInfo.edges[left].parentEdge.gap, parentInfo.edges[right].parentEdge.gap, 0.1) && parentFixed) {
-		parent.style[`padding${capitalizeFirstLetter(left)}` as unknown as number] = '0px';
-		parent.style[`padding${capitalizeFirstLetter(right)}` as unknown as number] = '0px';
-		parent.style.justifyContent = 'center';
+	if (parentInfo[heightType] === 'content') {
+		setSpaceForElement(parentInfo.element, 'padding', top, parentInfo.edges[top].parentEdge.gap);
+		setSpaceForElement(parentInfo.element, 'padding', bottom, parentInfo.edges[bottom].parentEdge.gap);
+	}
+
+
+	// const parent = parentInfo.element;
+	// if (parentInfo.edges[left].parentEdge.gap <= 0) {
+	// 	parentInfo.edges[left].parentEdge.gap = 0;
+	// }
+	// if (parentInfo.edges[right].parentEdge.gap <= 0) {
+	// 	parentInfo.edges[right].parentEdge.gap = 0;
+	// }
+
+	// // if (parentInfo[minGapBetweenX] < minGap) {
+	// // 	parentInfo[minGapBetweenX] = minGap;
+	// // }
+
+	// if (parentInfo[minGapBetweenX] > parentInfo[betweenSpace]) {
+	// 	parentInfo[minGapBetweenX] = parentInfo[betweenSpace];
+	// }
+	
+
+	// parent.style.gap = `${parentInfo[minGapBetweenX]}px`;
+	// parent.style.justifyContent = 'normal';
+	// parent.style.alignItems = 'normal';
+
+	// const startXSide = parentInfo.edges[left].parentEdge.gap <= parentInfo.edges[right].parentEdge.gap ? left : right;
+	// const endXSide = startXSide === left ? right : left;
+	// const startYSide = parentInfo.edges[top].parentEdge.gap <= parentInfo.edges[bottom].parentEdge.gap ? top : bottom;
+	// const endYSide = startYSide === top ? bottom : top;
+	
+	// parent.style.paddingTop = '0px';
+	// parent.style.paddingBottom = '0px';
+	// parent.style.paddingLeft = '0px';
+	// parent.style.paddingRight = '0px';
+
+	// //Padding for sizing only if the parent is fit content
+	// Object.entries(parentInfo.edges).forEach(([side, edge]) => {
+	// 	if ([left, right].includes(side) && parentInfo[widthType] !== 'content') return;
+	// 	if ([top, bottom].includes(side) && parentInfo[heightType] !== 'content') return;
+
+	// 	const gap = edge.parentEdge.gap;
+	// 	parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
+	// });
+
+	// for (const info of parentInfo.childEdgeInfo) {
+	// 	info.element.style.marginTop = '0px';
+	// 	info.element.style.marginBottom = '0px';
+	// 	info.element.style.marginLeft = '0px';
+	// 	info.element.style.marginRight = '0px';
+
+	// 	if (info[heightType] === 'content') {
+	// 		parent.style.alignItems = startYSide === top ? 'flex-start' : 'flex-end';
+	// 	} else if (info[heightType] === 'fixed') {
+	// 		info.element.style[height] = `${info[height]}px`;
+	// 	}
+
+	// 	if (info[widthType] === 'fixed') {
+	// 		info.element.style[width] = `${info[width]}px`
+	// 	}
+
+	// 	// if (info.index > 0 && info.left.siblingEdge && info.left.siblingEdge.gap - parentInfo.minGapBetweenX >= 0) {
+	// 	// 	const gap = info.left.siblingEdge.gap - parentInfo.minGapBetweenX;
+			
+	// 	// 	info.element.style.marginLeft = `${gap}px`
+	// 	// }
+
+	// 	const topGap = info[top].parentEdge.gap - parentInfo.edges[top].parentEdge.gap;
+	// 	if (topGap > 0) {
+	// 		info.element.style[`margin${capitalizeFirstLetter(top)}` as unknown as number] = `${topGap}px`;
+	// 	}
+
+	// 	const bottomGap = info[bottom].parentEdge.gap - parentInfo.edges[bottom].parentEdge.gap;
+	// 	if (bottomGap > 0) {
+	// 		info.element.style[`margin${capitalizeFirstLetter(bottom)}` as unknown as number] = `${bottomGap}px`;
+	// 	}
+	// }
+
+	// const parentFixed = !isElementFluid(parent, height);
+
+	// //Justify-content stuff
+	// if (parentInfo[gapBetween] !== undefined && close(parentInfo.edges[left].parentEdge.gap, parentInfo.edges[right].parentEdge.gap, 0.1) && parentFixed) {
+	// 	parent.style[`padding${capitalizeFirstLetter(left)}` as unknown as number] = '0px';
+	// 	parent.style[`padding${capitalizeFirstLetter(right)}` as unknown as number] = '0px';
+	// 	parent.style.justifyContent = 'center';
 		
-		if (close(parentInfo[gapBetween]!, parentInfo[aroundSpace], 0.1)) {
-			parent.style.justifyContent = 'space-around';
-			parent.style.gap = '0px';
-		} else if (close(parentInfo[gapBetween]!, parentInfo[evenlySpace], 0.1)) {
-			parent.style.justifyContent = 'space-evenly';
-			parent.style.gap = '0px';
-		} else if (close(parentInfo[gapBetween]!, parentInfo[betweenSpace], 0.1)) {
-			parent.style.justifyContent = 'space-between';
-			parent.style.gap = '0px';
-		}
-	} else {
-		if (startXSide === right) {
-			parent.style.justifyContent = 'flex-end';
-		}
-	}
+	// 	if (close(parentInfo[gapBetween]!, parentInfo[aroundSpace], 0.1)) {
+	// 		parent.style.justifyContent = 'space-around';
+	// 		parent.style.gap = '0px';
+	// 	} else if (close(parentInfo[gapBetween]!, parentInfo[evenlySpace], 0.1)) {
+	// 		parent.style.justifyContent = 'space-evenly';
+	// 		parent.style.gap = '0px';
+	// 	} else if (close(parentInfo[gapBetween]!, parentInfo[betweenSpace], 0.1)) {
+	// 		parent.style.justifyContent = 'space-between';
+	// 		parent.style.gap = '0px';
+	// 	}
+	// } else {
+	// 	if (startXSide === right) {
+	// 		parent.style.justifyContent = 'flex-end';
+	// 	}
+	// }
 
-	const childrenFixed = parentInfo.children.every(child => !isElementFluid(child, height));
+	// const childrenFixed = parentInfo.children.every(child => !isElementFluid(child, height));
 
-	//Align items stuff
-	if (parentInfo.edges.top.parentEdge.gap > 0 && parentInfo.edges.bottom.parentEdge.gap > 0 && childrenFixed && parentFixed) {
-		if (parentInfo.childEdgeInfo.every(info => info[top].elementLocationRelative === info[top].parentMidpointRelative)) {
-			parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
-			parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
-			parent.style.alignItems = 'center';
-		}
+	// //Align items stuff
+	// if (parentInfo.edges.top.parentEdge.gap > 0 && parentInfo.edges.bottom.parentEdge.gap > 0 && childrenFixed && parentFixed) {
+	// 	if (parentInfo.childEdgeInfo.every(info => info[top].elementLocationRelative === info[top].parentMidpointRelative)) {
+	// 		parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
+	// 		parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
+	// 		parent.style.alignItems = 'center';
+	// 	}
 
-		if (startYSide === top) {
-			parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
-		}
-		else if (startYSide === bottom) {
-			parent.style.alignItems = 'flex-end';
-			parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
-		}
-	}
+	// 	if (startYSide === top) {
+	// 		parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
+	// 	}
+	// 	else if (startYSide === bottom) {
+	// 		parent.style.alignItems = 'flex-end';
+	// 		parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
+	// 	}
+	// }
+
+	// //Padding for position
+	// if (['flex-start', 'normal'].includes(parent.style.alignItems) || parentInfo.edges[top].info[heightType] === 'expand') {
+	// 	parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = `${parentInfo.edges[top].parentEdge.gap}px`;
+	// }
+	// if (parent.style.alignItems === 'flex-end' || parentInfo.edges[bottom].info[heightType] === 'expand') {
+	// 	parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = `${parentInfo.edges[bottom].parentEdge.gap}px`;
+	// }
+	// if (['flex-start', 'normal'].includes(parent.style.justifyContent) || parentInfo.edges[left].info[widthType] === 'expand') {
+	// 	parent.style[`padding${capitalizeFirstLetter(left)}` as unknown as number] = `${parentInfo.edges[left].parentEdge.gap}px`;
+	// } 
+	// if (parent.style.justifyContent === 'flex-end' || parentInfo.edges[right].info[widthType] === 'expand') {
+	// 	parent.style[`padding${capitalizeFirstLetter(right)}` as unknown as number] = `${parentInfo.edges[right].parentEdge.gap}px`;
+	// }
 }
 
 
@@ -894,11 +1148,12 @@ function isElementFluid(elm: Element, side: 'width' | 'height'){
     }
 }
 
-function getFitContentSize(element: HTMLElement): {width: number, height: number} {
+function getFitContentSize(element: HTMLElement, keepPadding=false): {width: number, height: number} {
 	var wrapper, clone = element.cloneNode(true) as HTMLElement, ow, p1, p2;
 	const padding = clone.style.padding;
 	clone.style.margin = '0';
-	clone.style.padding = '0';
+	if (!keepPadding)
+		clone.style.padding = '0';
 	clone.style.maxWidth = 'none';
 	clone.style.minWidth = 'none';
 	clone.style.maxHeight = 'none';
@@ -919,12 +1174,15 @@ function getFitContentSize(element: HTMLElement): {width: number, height: number
 	wrapper.style.margin = '0';
 	wrapper.appendChild(clone);
 	/// insert the element in the same location as our target
-	element.parentNode?.insertBefore(wrapper,element);
+	const container = document.getElementById("harmonyInspector"); 
+	if (!container) throw new Error("cannot find container")
+	container.appendChild(wrapper)
 
-	const width = clone.clientWidth;
-	const height = clone.clientHeight;
+	const rect = getBoundingRect(clone);
+	const width = rect.width;
+	const height = rect.height;
 
-	element.parentNode?.removeChild(wrapper);
+	container.removeChild(wrapper);
 
 	return {width, height};
 }
@@ -1525,6 +1783,7 @@ const flexSnapping: SnapBehavior = {
 		const direction = selfIndex === 0 ? -1/(parentInfo.childrenCount % 2 !== 0 ? 1 : parentInfo.childrenCount) : 1/(parentInfo.childrenCount % 2 !== 0 ? 1 : parentInfo.childrenCount);
 		const resultsX: SnappingResult[] = [];
 		const resultsY: SnappingResult[] = [];
+		
 		const snapping = Snapping({parent, element, parentEdgeInfo: parentInfo, resultsX, resultsY});
 
 		const minGapBetweenX = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
@@ -1561,6 +1820,8 @@ const flexSnapping: SnapBehavior = {
 			range: 10,
 			snapSide: bottom
 		})
+
+		const enoughSpace = parentInfo.edges[left].parentEdge.gap >= 20 && parentInfo.edges[right].parentEdge.gap >= 20
 		
 		if (isMoving) {
 			// if (parentInfo.edges.left.parentEdge.gap > 0) {
@@ -1578,13 +1839,15 @@ const flexSnapping: SnapBehavior = {
 			// 		snapSide: 'left',
 			// 	})
 			// }
-			const centerXDiff = parentInfo[midpoint] - parentInfo[childrenMidpoint];
-			const center = snapping.addSnapToParent({
-				point: pos + centerXDiff,
-				axis,
-				range: 10
-			});
-			center.addCenterAxisGuide({axis: otherAxis})
+			if (enoughSpace) {
+				const centerXDiff = parentInfo[midpoint] - parentInfo[childrenMidpoint];
+				const center = snapping.addSnapToParent({
+					point: pos + centerXDiff,
+					axis,
+					range: 10
+				});
+				center.addCenterAxisGuide({axis: otherAxis})
+			}
 		} else {
 			// let diff = selfIndex === 0 ? 0 : gapDiff;
 			// if (dx <= 0) {
@@ -1604,7 +1867,7 @@ const flexSnapping: SnapBehavior = {
 			// 	});
 			// }
 
-			//if ((selfIndex === 0 && ds >= 0) || (selfIndex === parentInfo.childrenCount - 1 && ds <= 0)) {
+			if ((selfIndex === 0 && ds >= 0) || (selfIndex === parentInfo.childrenCount - 1 && ds <= 0)) {
 				const minGapDiff = parentInfo[minGapBetweenX] - minGap;
 				const minGapPoint = snapping.addSnapToParent({
 					point: pos - (minGapDiff * direction),
@@ -1612,14 +1875,15 @@ const flexSnapping: SnapBehavior = {
 					range: 10
 				});
 
-			//} else {
-				console.log(pos);
-			//}
+			} else {
+				//console.log(pos);
+			}
 		
 			const minSpaceBetweenSnaps = Math.min(parentInfo[aroundSpace] - parentInfo[evenlySpace], parentInfo[betweenSpace] - parentInfo[aroundSpace]);
-			if (parentInfo[gapBetween] && close(parentInfo[childrenMidpoint], parentInfo[midpoint], 0.5) && minSpaceBetweenSnaps >= 5) {
+			if (parentInfo[gapBetween] && close(parentInfo[childrenMidpoint], parentInfo[midpoint], 0.5) && minSpaceBetweenSnaps >= 5 && enoughSpace) {
 
 				const spaceEvenlyDiff = parentInfo[evenlySpace] - parentInfo[gapBetween]!;
+				console.log(pos + (spaceEvenlyDiff * direction))
 				const spaceEvenly = snapping.addSnapToParent({
 					point: pos + (spaceEvenlyDiff * direction),
 					axis,
@@ -1848,14 +2112,29 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 	//TODO: Super hacky fix to fix the space that exists between inline elements
 	useEffect(() => {
+		const hackyInlineSpaceFix = (parent: HTMLElement) => {
+			const recurse = (element: HTMLElement) => {
+				for (const child of Array.from(element.childNodes)) {
+					if (child.nodeType === Node.TEXT_NODE) {
+						const style = getComputedStyle(element);
+						element.style.fontSize = style.fontSize;
+					} else {
+						recurse(child as HTMLElement);
+					}
+				}
+			}
+			if (parent.children.length > 0) {
+				recurse(parent);
+
+				parent.style.fontSize = '0px';
+			}
+		}
+
 		if (element) {
 			const parent = element.parentElement!;
-			for (const child of Array.from(parent.children)) {
-				const style = getComputedStyle(child);
-				(child as HTMLElement).style.fontSize = style.fontSize;
-			}
-
-			parent.style.fontSize = '0px';
+			hackyInlineSpaceFix(element);
+			hackyInlineSpaceFix(parent as HTMLElement);
+			
 		}
 	}, [element])
 
@@ -1973,65 +2252,93 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 	const {isResizing} = useResizable({element, scale, restrictions, onIsResizing(event) {
         if (!element) return;
 
+		const parent = element.parentElement as HTMLElement;
+
 		//TODO: Super hacky. 
 		//This just checks to see if we have selected a 'designer element' (one where there is a thin wrapper over an element).
 		//Normal we select the outmost component, but we want to apply resizing to the inner most component
-		const isDesignerSelected = element.children.length === 1 && selectDesignerElement(element.children[0] as HTMLElement) === element
-		let toResize = element;
+		const toResize = selectDesignerElementReverse(element);
 
-		const childrenUpdates = Array.from(element.children).map<UpdateRect>(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)}));
+		const childrenUpdates = Array.from(toResize.children).map<UpdateRect>(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)}));
 
-        snappingBehavior.onUpdate(element, event, scale, true);
+		const elementSnap = getSnappingBehavior(parent);
+		if (elementSnap === flexSnapping) {
+			updateRectFlex({
+				parentUpdate: {
+					element: parent,
+					rect: getBoundingRect(parent)
+				},
+				childrenUpdates: [{
+					element,
+					rect: event.eventRect,
+					//proxyElement: toResize
+				}]
+			}, scale, scale)
+		} else {
+			updateRects({
+				parentUpdate: {
+					element: parent,
+					rect: getBoundingRect(parent)
+				},
+				childrenUpdates: [{
+					element,
+					rect: event.eventRect,
+					proxyElement: toResize
+				}]
+			}, scale, scale)
+		}
+
+        //snappingBehavior.onUpdate(element, event, scale, true);
 		//Update for all the children too
 		//TODO: Make this polymorphic
-		if (element.children.length > 0) {
-			const childrenSnap = getSnappingBehavior(element)
+		if (Array.from(toResize.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 0) {
+			const childrenSnap = getSnappingBehavior(toResize)
 			if (childrenSnap === flexSnapping) {
 				updateRectFlex({
 					parentUpdate: {
-						element,
-						rect: event.eventRect
+						element: toResize,
+						rect: event.eventRect,
 					},
 					childrenUpdates
 				}, scale, scale);
 			} else {
 				updateRects({
 					parentUpdate: {
-						element,
-						rect: event.eventRect
+						element: toResize,
+						rect: event.eventRect,
 					},
 					childrenUpdates
 				}, scale, scale)
 			}
 		}
 
-		if (isDesignerSelected) {
-			toResize = element.children[0] as HTMLElement;
-			const newStuff = {
-				Bottom: event.deltaRect.bottom,
-				Top: -event.deltaRect.top,
-				Left: -event.deltaRect.left,
-				Right: event.deltaRect.right,
-			};
+		// if (isDesignerSelected) {
+		// 	toResize = element.children[0] as HTMLElement;
+		// 	const newStuff = {
+		// 		Bottom: event.deltaRect.bottom,
+		// 		Top: -event.deltaRect.top,
+		// 		Left: -event.deltaRect.left,
+		// 		Right: event.deltaRect.right,
+		// 	};
 
-			if (isElementFluid(toResize, 'height')) {
-				(['Bottom', 'Top'] as const).forEach(d => {
-					const old = parseFloat($(toResize).css(`padding${d}`));
-					const _new = newStuff[d];
-					toResize.style[`padding${d}`] = `${old + _new}px`;
-				})
-			}
+		// 	if (isElementFluid(toResize, 'height')) {
+		// 		(['Bottom', 'Top'] as const).forEach(d => {
+		// 			const old = parseFloat($(toResize).css(`padding${d}`));
+		// 			const _new = newStuff[d];
+		// 			toResize.style[`padding${d}`] = `${old + _new}px`;
+		// 		})
+		// 	}
 
-			if (isElementFluid(toResize, 'width')) {
-				(['Left', 'Right'] as const).forEach(d => {
-					const old = parseFloat($(toResize).css(`padding${d}`));
-					const _new = newStuff[d];
-					toResize.style[`padding${d}`] = `${old + _new}px`;
-				})
-			}
+		// 	if (isElementFluid(toResize, 'width')) {
+		// 		(['Left', 'Right'] as const).forEach(d => {
+		// 			const old = parseFloat($(toResize).css(`padding${d}`));
+		// 			const _new = newStuff[d];
+		// 			toResize.style[`padding${d}`] = `${old + _new}px`;
+		// 		})
+		// 	}
 
-			element.style.padding = '0px';
-		} 
+		// 	element.style.padding = '0px';
+		// } 
 
 		// if (!isElementFluid(toResize, 'width')) {
 		// 	toResize.style.width = `${event.eventRect.width}px`
@@ -2445,30 +2752,54 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				}),
 			];
 			if (true) {
+				//TODO: Remove this dependency on edge info
 				const parent = element.parentElement!;
-				const parentRect = parent.getBoundingClientRect();
-				const parentInfo = element.children.length > 0 && !isTextElement(element) ? calculateParentEdgeInfo(element, scale, scale, false, 'x') : undefined;
+				const style = getComputedStyle(parent);
+				const axis = style.display.includes('flex') && style.flexDirection === 'column' ? 'y' : 'x';
+				const parentInfo = calculateParentEdgeInfo(parent, scale, scale, false, 'x');
+				const myInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
+				if (!myInfo) throw new Error("Cannot find my info");
+
+				const toMeasure = selectDesignerElementReverse(element);
+				const toMeasureInfo = toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? calculateParentEdgeInfo(toMeasure, scale, scale, false, 'x') : undefined;
 				
+				const validSibiling = (side: RectSide) => {
+					const otherSideClose = side === 'left' || side === 'right' ? 'top' : 'left';
+					const otherSideFar = otherSideClose === 'top' ? 'bottom' : 'right';
+
+					const selfRect = getBoundingRect(myInfo.element);
+					const selfLocationClose = myInfo[otherSideClose].elementLocation
+					const selfLocationFar = myInfo[otherSideFar].elementLocation;
+					const sibiling = myInfo[side].siblingEdge?.edgeElement;
+					if (sibiling !== undefined) {
+						const rect = getBoundingRect(sibiling);
+						if (rect[otherSideClose] >= selfLocationClose && rect[otherSideClose] <= selfLocationFar || rect[otherSideFar] >= selfLocationClose && rect[otherSideFar] <= selfLocationFar) {
+							return true;
+						}
+					}
+
+					return false;
+				}
+
 				modifiers.push(interact.modifiers.restrictEdges({
-					inner: parentInfo ? {
-						left: parentInfo.edges.left.elementLocation,
-						right: parentInfo.edges.right.elementLocation,
-						top: parentInfo.edges.top.elementLocation,
-						bottom: parentInfo.edges.bottom.elementLocation
+					inner: toMeasureInfo ? {
+						left: toMeasureInfo.edges.left.elementLocation,
+						right: toMeasureInfo.edges.right.elementLocation,
+						top: toMeasureInfo.edges.top.elementLocation,
+						bottom: toMeasureInfo.edges.bottom.elementLocation
 					} : undefined,
 					outer: {
-						left: parentRect.left,
-						right: parentRect.right,
-						top: parentRect.top,
-						bottom: parentRect.bottom
+						left: validSibiling('left') ? Math.max(parentInfo.edges.left.parentEdge.edgeLocation, myInfo.left.siblingEdge?.edgeLocation || 0) : parentInfo.edges.left.parentEdge.edgeLocation,
+						right: validSibiling('right') ? Math.min(parentInfo.edges.right.parentEdge.edgeLocation, myInfo.right.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges.right.parentEdge.edgeLocation,
+						top: true ? Math.max(parentInfo.edges.top.parentEdge.edgeLocation, myInfo.top.siblingEdge?.edgeLocation || 0) : parentInfo.edges.top.parentEdge.edgeLocation,
+						bottom: true ? Math.min(parentInfo.edges.bottom.parentEdge.edgeLocation, myInfo.bottom.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges.bottom.parentEdge.edgeLocation,
 					}
 				}));
-				const {width, height} = getFitContentSize(element);
+				const {width, height} = getFitContentSize(toMeasure);
 				modifiers.push(interact.modifiers.restrictSize({
-					min: {width: Math.max(width, 20), height: Math.max(height, 20)}
+					//Hacky fix for when a flex-basis flex-col item is measured, it comes out all wrong
+					min: {width: width <= toMeasure.clientWidth ? Math.max(width, 20) : 20, height: height <= toMeasure.clientHeight ? Math.max(height, 20) : 20}
 				}))
-
-				
 			}
 
             for (const restriction of restrictions) {

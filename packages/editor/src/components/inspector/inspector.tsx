@@ -31,6 +31,11 @@ export function selectDesignerElement(element: HTMLElement): HTMLElement {
 	return target;
 }
 
+export function selectDesignerElementReverse(element: HTMLElement): HTMLElement {
+	const isDesignerSelected = element.children.length === 1 && selectDesignerElement(element.children[0] as HTMLElement) === element
+	return isDesignerSelected ? element.children[0] as HTMLElement : element;
+}
+
 export function isTextElement(element: HTMLElement): boolean {
 	return Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE);
 }
