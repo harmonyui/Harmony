@@ -320,16 +320,38 @@ function calculateEdgesInfo(element: HTMLElement, scale: number, scaleActual: nu
     const parentOverride = updates.find(update => update.element === parent)?.rect;
     const midpointX = (getBoundingClientRect(element, axis, 'close', scale, rectOverride) + getBoundingClientRect(element, axis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, axis, 'close', scale, parentOverride);
     const midpointY = (getBoundingClientRect(element, otherAxis, 'close', scale, rectOverride) + getBoundingClientRect(element, otherAxis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, otherAxis, 'close', scale, parentOverride);
-    const {width: minWidth, height: minHeight} = getFitContentSize(element);
-	const {width: minWidthContent, height: minHeightContent} = getFitContentSize(element, true);
+    //TODO: We are doing lots of hacky stuff with images. Stop that.
+	
+	let minWidth = 20;
+	let minHeight = 20;
+	let minWidthContent = 20;
+	let minHeightContent = 20;	
+
+	//TODO: I'm sure this logic will break in other scenarios, but we essentially want the sizing
+	//stuff to happen at the lower level
+	const sizingElement = selectDesignerElementReverse(element);
+	if (sizingElement instanceof HTMLImageElement) {
+		minWidth = sizingElement.naturalWidth;
+		minWidth = sizingElement.naturalHeight;
+		minWidthContent = minWidth;
+		minHeightContent = minHeight;
+	} else if (!isImageElement(sizingElement)) {
+		const {width: _minWidth, height: _minHeight} = getFitContentSize(sizingElement);
+		const {width: _minWidthContent, height: _minHeightContent} = getFitContentSize(sizingElement, true);
+		minWidth = _minWidth;
+		minHeight = _minHeight;
+		minWidthContent = _minWidthContent;
+		minHeightContent = _minHeightContent;
+	} //Basically svg's will have a min width and height of 20
+	
 	const height = bottom.elementLocation - top.elementLocation;
 	const width = right.elementLocation - left.elementLocation;
-	//TODO: Checking for image element is kind of hacky here
-	const widthType = isElementFluid(element, 'width') ? 'expand' : close(width, minWidthContent, 0.1) ? 'content' : 'fixed';
-	let heightType: 'content' | 'expand' | 'fixed' = isElementFluid(element, 'height', !isImageElement(element)) ? 'expand' : close(height, minHeightContent, 0.1) ? 'content' : 'fixed';
+	let widthType: 'content' | 'expand' | 'fixed' = !isImageElement(sizingElement) && isElementFluid(sizingElement, 'width') ? 'expand' : close(width, minWidthContent, 0.1) ? 'content' : 'fixed';
+	let heightType: 'content' | 'expand' | 'fixed' = !isImageElement(sizingElement) && isElementFluid(sizingElement, 'height') ? 'expand' : close(height, minHeightContent, 0.1) ? 'content' : 'fixed';
 
-	if (isImageElement(element)) {
+	if (isImageElement(sizingElement) || isImageElement(selectDesignerElementReverse(sizingElement))) {
 		heightType = 'fixed';
+		widthType = 'fixed';
 	}
 	
 
@@ -695,7 +717,8 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
 
 		//right - width naturally expands in div block
 		if (info.widthType === 'fixed') {
-			info.element.style.width = `${info.width}px`
+			const toResize = selectDesignerElementReverse(info.element);
+			toResize.style.width = `${info.width}px`
 		} else if (info.widthType === 'expand') {
 			const parentGap = Math.max(parentInfo.edges[endXSide].parentEdge.gap, 0);
 			const remainingGap = info[endXSide].parentEdge.gap - parentGap;
@@ -723,7 +746,9 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
 
 		//bottom - height fits content naturally
 		if (info.heightType === 'fixed') {
-			info.element.style.height = `${info.height}px`
+			//TODO: hacky fix to resize the image but not the wrapper
+			const toResize = selectDesignerElementReverse(info.element);
+			toResize.style.height = `${info.height}px`
 		} else {
 			info.element.style.height = 'auto';
 		}
@@ -880,7 +905,8 @@ function updateRectFlex({parentUpdate, childrenUpdates}: UpdateRectsProps, scale
 			setSpaceForElement(parentInfo.element, 'padding', endYSide, parentGap);
 		}	
 		else if (info[heightType] === 'fixed') {
-			info.element.style[height] = `${info[height]}px`;
+			const toResize = selectDesignerElementReverse(info.element);
+			toResize.style[height] = `${info[height]}px`;
 		} else if (close(info[height], info[minHeight], 0.1) && parentInfo.element.style.alignItems === 'normal') {
 			parentInfo.element.style.alignItems = 'flex-start';
 		}
@@ -921,7 +947,8 @@ function updateRectFlex({parentUpdate, childrenUpdates}: UpdateRectsProps, scale
 
 		//right - width
 		if (info[widthType] === 'fixed') {
-			info.element.style[width] = `${info[width]}px`;
+			const toResize = selectDesignerElementReverse(info.element);
+			toResize.style[width] = `${info[width]}px`;
 		} 
 		// else if (info[widthType] === 'expand') {
 		// 	//If we are expanding the width, that means we have some sort of flex grow or something
@@ -2299,7 +2326,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 				childrenUpdates: [{
 					element,
 					rect: event.eventRect,
-					proxyElement: toResize
+					//proxyElement: toResize
 				}]
 			}, scale, scale)
 		}
@@ -2817,7 +2844,8 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 						bottom: true ? Math.min(parentInfo.edges.bottom.parentEdge.edgeLocation, myInfo.bottom.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges.bottom.parentEdge.edgeLocation,
 					}
 				}));
-				const {width, height} = getFitContentSize(toMeasure);
+				//TODO: Remove isImage dependency (This is here because we want to be able to resize an image at will till the minimum size)
+				const {width, height} = isImageElement(toMeasure) ? {width: 20, height: 20} : getFitContentSize(toMeasure);
 				modifiers.push(interact.modifiers.restrictSize({
 					//Hacky fix for when a flex-basis flex-col item is measured, it comes out all wrong
 					min: {width: width <= toMeasure.clientWidth ? Math.max(width, 20) : 20, height: height <= toMeasure.clientHeight ? Math.max(height, 20) : 20}
