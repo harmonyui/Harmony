@@ -18,6 +18,7 @@ import { Setup, setupHarmonyProvider } from "./harmony-setup";
 import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
 import { PullRequest } from "@harmony/ui/src/types/branch";
 import { Font } from "@harmony/util/src/fonts";
+import $ from 'jquery';
 
 const WIDTH = 1960;
 const HEIGHT = 1080;
@@ -87,11 +88,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const onHistoryChange = () => {
 		const url = new URL(window.location.href);
-		const mode = url.searchParams.get('mode');
+		let mode = url.searchParams.get('mode');
+		if (!mode) {
+			mode = window.sessionStorage.getItem('harmony-mode');
+			mode && url.searchParams.set('mode', mode);
+			window.history.pushState(publishState, 'mode', url.href);
+		}
 		if (mode && (viewModes as readonly string[]).includes(mode)) {
 			setDisplayMode(mode as DisplayMode);
 			setup.changeMode(mode as DisplayMode);
 		}
+
+		
 
 		if (!mode) {
 			changeMode('designer');
@@ -217,11 +225,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const parentId = element.dataset.harmonyParentId || null;
 		const children = Array.from(element.childNodes);
 		const textNodes = children.filter(child => child.nodeType === Node.TEXT_NODE);
+		const styles = getComputedStyle(element);
 
 		//TODO: Do this better so there is no dependency on this action in this function
 		//If there are text nodes and non-text nodes inside of an element, wrap the text nodes in
 		//span tags so we can select and edit them
-		if (textNodes.length > 0 && children.length > textNodes.length) {
+		if (textNodes.length > 0 && (children.length > textNodes.length || ['Bottom', 'Top', 'Left', 'Right'].some(d => parseFloat($(element).css(`padding${d}`)) !== 0))) {
 			for (let i = 0; i < children.length; i++) {
 				const node = children[i] as HTMLElement;
 				if (node.nodeType !== Node.TEXT_NODE) continue;
@@ -378,6 +387,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		//TODO: Change to history.pushState so the transition is smooth
 		//window.location.replace(url.href);
 		window.history.pushState(publishState, 'mode', url.href);
+		window.sessionStorage.setItem('harmony-mode', mode);
 		onHistoryChange();
 
 		//setup.changeMode(mode);
@@ -402,14 +412,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			{/* <div ref={harmonyContainerRef}> */}
 				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts}}>
 					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
-					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
+					<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
 						<div ref={(d) => {
 							if (d && d !== harmonyContainerRef.current) {
 								harmonyContainerRef.current = d
 								setRootComponent(harmonyContainerRef.current);
 								//harmonyContainerRef.current.appendChild(rootElement);
 							}
-						}} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
+						}} style={{width: `${WIDTH}px`, minHeight: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
 						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
 						{children}
 						</div>
@@ -655,7 +665,8 @@ const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
 function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent: HTMLElement, fonts: Font[] | undefined) {
 	let alreadyDoneText = false;
 	const id = el.dataset.harmonyId;
-	if (!id) {
+	const parentId = el.dataset.harmonyParentId;
+	if (!id || !parentId) {
 		return;
 	}
 
@@ -704,13 +715,13 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		//TODO: Find a better way to exclude margin class names from being applied to all elements.
 		//Probably the solution is figure out what needs to applied to all elements by indexing the code base before hand
-		if (update.type === "className" && update.name.includes('margin')) {
-			el.style[update.name as unknown as number]= update.value;
-		}
+		// if (update.type === "className" && update.name.includes('margin')) {
+		// 	el.style[update.name as unknown as number]= update.value;
+		// }
 	}
 
 	//Updates that should happen for every element in a component
-	const sameElements = rootComponent.querySelectorAll(`[data-harmony-id="${id}"]`);
+	const sameElements = rootComponent.querySelectorAll(`[data-harmony-id="${id}"][data-harmony-parent-id="${parentId}"]`);
 	for (const element of Array.from(sameElements)) {
 		const htmlElement = element as HTMLElement;
 		for (const update of translated) {
@@ -728,7 +739,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 					})
 
 					htmlElement.classList.add(font.font.className);
-				} else if (!update.name.includes('margin')) {
+				} else if (true || !update.name.includes('margin')) {
 					htmlElement.style[update.name as unknown as number]= update.value;
 				}
 			}

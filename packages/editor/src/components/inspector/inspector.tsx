@@ -612,7 +612,8 @@ interface OverlayProps {
 	opacity?: number,
 	error?: boolean,
 	padding?: boolean,
-	borderStyle?: 'dotted' | 'dashed'
+	borderStyle?: 'dotted' | 'dashed',
+	drag?: boolean
 }
 export class OverlayRect {
 	node: HTMLElement
@@ -679,10 +680,10 @@ export class OverlayRect {
 	}
 
 	public select(box: Rect, dims: BoxSizing, scale: number, error: boolean) {
-		this.update({box, dims, borderSize: 2, error}, scale);
+		this.update({box, dims, borderSize: 2, error, drag: true}, scale);
 	}
 
-  	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle, error=false}: OverlayProps, scale: number) {
+  	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle, error=false, drag=false}: OverlayProps, scale: number) {
 		dims.borderBottom = borderSize / scale;
 		dims.borderLeft = borderSize / scale;
 		dims.borderRight = borderSize / scale;
@@ -735,7 +736,7 @@ export class OverlayRect {
 
 		//NE -> SE -> SW -> NW
 		//E -> S -> W -> N
-		if (this.onDrag) {
+		if (drag) {
 			Object.assign(this.resizeHandles[0].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
