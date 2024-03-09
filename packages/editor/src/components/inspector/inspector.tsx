@@ -56,6 +56,45 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
 	return true;
 }
 
+export function replaceTextContentWithSpans(element: HTMLElement) {
+	const children = element.childNodes;
+	for (let i = 0; i < children.length; i++) {
+		const node = children[i] as HTMLElement;
+		if (node.nodeType !== Node.TEXT_NODE) continue;
+		if (!node.textContent?.trim()) return;
+		const span = document.createElement('span');
+		span.dataset.harmonyText = 'true';
+		span.appendChild(node);
+
+		const beforeNode = i < children.length - 1 ? children[i + 1] : undefined;
+		if (beforeNode) {
+			element.insertBefore(span, beforeNode);
+		} else {
+			element.appendChild(span);
+		}
+	}
+}
+
+export function removeTextContentSpans(element: HTMLElement) {
+	const children = element.children;
+	for (let i = 0; i < children.length; i++) {
+		const node = children[i] as HTMLElement;
+		if (node.dataset.harmonyText !== 'true') continue;
+		if (!node.textContent) continue;
+
+		const textNode = document.createTextNode(node.textContent);
+
+		
+		const beforeNode = i < children.length - 1 ? children[i + 1] : undefined;
+		if (beforeNode) {
+			element.insertBefore(textNode, beforeNode);
+		} else {
+			element.appendChild(textNode);
+		}
+		node.remove();
+	}
+}
+
 export interface InspectorProps {
 	hoveredComponent: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;

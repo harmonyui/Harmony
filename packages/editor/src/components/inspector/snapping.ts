@@ -1,7 +1,7 @@
 import { capitalizeFirstLetter, groupBy, groupByDistinct, round } from "@harmony/util/src";
 import interact from "interactjs";
 import { useState, useEffect, useRef, useMemo } from "react";
-import { Rect, RectBox, isImageElement, isSelectable, isTextElement, selectDesignerElement, selectDesignerElementReverse } from "./inspector";
+import { Rect, RectBox, isImageElement, isSelectable, isTextElement, removeTextContentSpans, replaceTextContentWithSpans, selectDesignerElement, selectDesignerElementReverse } from "./inspector";
 import { useEffectEvent } from "../../../../ui/src/hooks/effect-event";
 import {InteractEvent, ResizeEvent} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
@@ -1085,14 +1085,54 @@ function isElementFluid(elm: Element, side: 'width' | 'height', useFlexForHeight
     }
 }
 
-function getFitContentSize(element: HTMLElement, keepPadding=false): {width: number, height: number} {
-	var wrapper, clone = element.cloneNode(true) as HTMLElement, ow, p1, p2;
-	const styles = getComputedStyle(element);
+export function getFitContentSize(element: HTMLElement, keepPadding=false): {width: number, height: number} {
+	// var wrapper, clone = element.cloneNode(true) as HTMLElement, ow, p1, p2;
+	// const styles = getComputedStyle(element);
 
-	clone.style.margin = '0';
+	// clone.style.margin = '0';
+	// if (!keepPadding)
+	// 	clone.style.padding = '0';
+	// clone.style.maxWidth = 'none';
+	// clone.style.minWidth = 'none';
+	// clone.style.maxHeight = 'none';
+	// clone.style.minHeight = 'none';
+	// clone.style.height = 'auto';
+	// clone.style.width = 'auto';
+	// clone.style.fontSize = styles.fontSize;
+	// clone.style.fontFamily = styles.fontFamily;
+	// clone.style.lineHeight = styles.lineHeight;
+	// clone.style.letterSpacing = styles.letterSpacing;
+	// clone.style.fontWeight = styles.fontWeight;
+	// /// create a wrapper that we can control, my reason for
+	// /// using an unknown element is that it stands less chance
+	// /// of being affected by stylesheets - this could be improved
+	// /// to avoid possible erroneous results by overriding more css
+	// /// attributes with inline styles.
+	// wrapper = document.createElement('wrapper');
+	// wrapper.style.display = 'flex';
+	// wrapper.style.alignItems = 'center';
+	// const elementRect = element.getBoundingClientRect();
+	// wrapper.style.width = `${elementRect.width + 500}px`
+	// wrapper.style.height = `${elementRect.height + 500}px`
+	// wrapper.style.padding = '0';
+	// wrapper.style.margin = '0';
+	// wrapper.appendChild(clone);
+	// /// insert the element in the same location as our target
+	// document.body.appendChild(wrapper)
+
+	// const rect = getBoundingRect(clone);
+	// const width = rect.width;
+	// const height = rect.height;
+
+	// document.body.removeChild(wrapper);
+
+	// return {width, height};
+
+	const clone = element.cloneNode(true) as HTMLElement;
+	const styles = getComputedStyle(element);
 	if (!keepPadding)
 		clone.style.padding = '0';
-	clone.style.maxWidth = 'none';
+  	clone.style.maxWidth = 'none';
 	clone.style.minWidth = 'none';
 	clone.style.maxHeight = 'none';
 	clone.style.minHeight = 'none';
@@ -1103,32 +1143,25 @@ function getFitContentSize(element: HTMLElement, keepPadding=false): {width: num
 	clone.style.lineHeight = styles.lineHeight;
 	clone.style.letterSpacing = styles.letterSpacing;
 	clone.style.fontWeight = styles.fontWeight;
-	/// create a wrapper that we can control, my reason for
-	/// using an unknown element is that it stands less chance
-	/// of being affected by stylesheets - this could be improved
-	/// to avoid possible erroneous results by overriding more css
-	/// attributes with inline styles.
-	wrapper = document.createElement('wrapper');
-	wrapper.style.display = 'flex';
-	wrapper.style.alignItems = 'center';
-	const elementRect = element.getBoundingClientRect();
-	wrapper.style.width = `${elementRect.width + 500}px`
-	wrapper.style.height = `${elementRect.height + 500}px`
-	wrapper.style.padding = '0';
-	wrapper.style.margin = '0';
-	wrapper.appendChild(clone);
-	/// insert the element in the same location as our target
-	const container = document.getElementById("harmonyInspector"); 
-	if (!container) throw new Error("cannot find container")
-	container.appendChild(wrapper)
 
-	const rect = getBoundingRect(clone);
-	const width = rect.width;
-	const height = rect.height;
-
-	container.removeChild(wrapper);
-
-	return {width, height};
+	// Set clone's visibility to hidden and position to absolute to measure its size accurately
+	clone.style.visibility = 'hidden';
+	clone.style.position = 'absolute';
+	clone.style.top = '-9999px';
+	clone.style.left = '-9999px';
+	
+	// Append the clone to the document body
+	element.parentNode?.insertBefore(clone,element);
+	
+	const rect = clone.getBoundingClientRect();
+	// Get the computed size of the clone
+	const naturalWidth = rect.width;
+	const naturalHeight = rect.height;
+	
+	// Remove the clone from the DOM
+	element.parentNode?.removeChild(clone);
+  
+  	return { width: naturalWidth, height: naturalHeight };
 }
 
 interface GuidePoint {
@@ -2259,10 +2292,21 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 			}, scale, scale)
 		}
 
-        //snappingBehavior.onUpdate(element, event, scale, true);
-		//Update for all the children too
+		const hasTextNodes = toResize.childNodes.length === 1 && toResize.childNodes[0].nodeType === Node.TEXT_NODE
+        //Update for all the children too
 		//TODO: Make this polymorphic
-		if (Array.from(toResize.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 0) {
+		if (Array.from(toResize.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 0 || hasTextNodes) {
+			
+			if (hasTextNodes) {
+				replaceTextContentWithSpans(toResize);
+				Array.from(toResize.children).forEach(child => {
+					const span = child as HTMLElement;
+					if (span.dataset.harmonyText === 'true') {
+						span.style.display = 'block';
+					}
+				})
+			}
+
 			const childrenSnap = getSnappingBehavior(toResize)
 			if (childrenSnap === flexSnapping) {
 				updateRectFlex({
@@ -2280,6 +2324,10 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 					},
 					childrenUpdates
 				}, scale, scale)
+			}
+
+			if (hasTextNodes) {
+				removeTextContentSpans(toResize);
 			}
 		}
 
@@ -2767,8 +2815,8 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 					inner: toMeasureInfo ? {
 						left: toMeasureInfo.edges.left.elementLocation,
 						right: toMeasureInfo.edges.right.elementLocation,
-						top: toMeasureInfo.edges.top.elementLocation,
-						bottom: toMeasureInfo.edges.bottom.elementLocation
+						top: toMeasureInfo.edges.top.elementLocation -  + getNonWorkableGap(toMeasureInfo.edges.top.parentEdge.gapTypes),
+						bottom: toMeasureInfo.edges.bottom.elementLocation + getNonWorkableGap(toMeasureInfo.edges.bottom.parentEdge.gapTypes)
 					} : undefined,
 					outer: {
 						left: validSibiling('left') ? Math.max(parentInfo.edges.left.parentEdge.edgeLocation, myInfo.left.siblingEdge?.edgeLocation || 0) : parentInfo.edges.left.parentEdge.edgeLocation,

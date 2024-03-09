@@ -1,6 +1,6 @@
 "use client";
 import { Component, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Inspector, componentIdentifier, isImageElement } from "./inspector/inspector";
+import { Inspector, componentIdentifier, isImageElement, replaceTextContentWithSpans } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {PublishRequest, loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
 import {ResizeCoords, ResizeValue} from '@harmony/ui/src/hooks/resize';
@@ -19,6 +19,7 @@ import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
 import { PullRequest } from "@harmony/ui/src/types/branch";
 import { Font } from "@harmony/util/src/fonts";
 import $ from 'jquery';
+import { getFitContentSize } from "./inspector/snapping";
 
 const WIDTH = 1960;
 const HEIGHT = 1080;
@@ -231,21 +232,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		//If there are text nodes and non-text nodes inside of an element, wrap the text nodes in
 		//span tags so we can select and edit them
 		if (textNodes.length > 0 && (children.length > textNodes.length || ['Bottom', 'Top', 'Left', 'Right'].some(d => parseFloat($(element).css(`padding${d}`)) !== 0))) {
-			for (let i = 0; i < children.length; i++) {
-				const node = children[i] as HTMLElement;
-				if (node.nodeType !== Node.TEXT_NODE) continue;
-				if (!node.textContent?.trim()) return;
-				const span = document.createElement('span');
-				span.dataset.harmonyText = 'true';
-				span.appendChild(node);
-
-				const beforeNode = i < children.length - 1 ? children[i + 1] : undefined;
-				if (beforeNode) {
-					element.insertBefore(span, beforeNode);
-				} else {
-					element.appendChild(span);
-				}
-			}
+			replaceTextContentWithSpans(element);
 		}
 
 		if (id !== undefined) {
@@ -253,7 +240,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			makeUpdates(element, updates, rootComponent, fonts);
 		}
 
-		Array.from(element.children).forEach(child => updateElements(child as HTMLElement, availableIds));
+		Array.from(element.children).filter(child => (child as HTMLElement).dataset.harmonyText !== 'true').forEach(child => updateElements(child as HTMLElement, availableIds));
 	}
 
 	const setScale = useCallback((scale: number) => {
