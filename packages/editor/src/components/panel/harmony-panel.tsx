@@ -1,7 +1,7 @@
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
-import { Input, InputBlur } from "@harmony/ui/src/components/core/input";
+import { Input, InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
@@ -87,9 +87,8 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 }
 
 const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches}) => {
-	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement) : undefined;
-	//const root = rootElement ? componentIdentifier.getComponentFromElement(rootElement) : undefined;
-
+	//TODO: Remove dependency on harmony text
+	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement.dataset.harmonyText === 'true' ? selectedElement.parentElement! : selectedElement) : undefined;
 	
 	return (
 		<div className="hw-flex hw-w-full">
@@ -301,7 +300,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		} : undefined,
 		'fontSize': ({data, onChange}) => {
 			return (
-				<Input className="hw-w-fit" value={data} onChange={onChange}/>
+				<NumberStepperInput key={data} value={parseInt(data)} onChange={(value) => onChange(`${value}px`)}/>
 			)
 		},
 		'color': ({data, onChange}) => {

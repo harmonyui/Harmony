@@ -1,6 +1,7 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { CheckmarkIcon } from "./icons";
 import { Label } from "./label";
+import { Button } from "./button";
 
 interface InputProps {
   onChange?: (value: string) => void;
@@ -109,3 +110,40 @@ export const CheckboxInput: React.FunctionComponent<CheckboxInputProps> = ({
 
   return input;
 };
+
+interface NumberStepperInputProps {
+  value: number;
+  onChange: (value: number) => void;
+}
+export const NumberStepperInput: React.FunctionComponent<NumberStepperInputProps> = ({value: valueProp, onChange: onChangeProps}) => {
+  const [value, setValue] = useState(String(valueProp));
+
+  const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setValue(value);
+  }
+
+
+  const changeValue = (newVal: number) => {
+    newVal = Math.min(Math.max(0, newVal), 99);
+    setValue(String(newVal));
+    onChangeProps(newVal);
+  }
+
+  const onBlur = () => {
+    let num = parseInt(value);
+    if (isNaN(num)) {
+      num = valueProp;
+    }
+
+    changeValue(num);
+  }
+
+  return (
+    <div className="hw-flex hw-rounded-md hw-border hw-items-center hw-overflow-auto">
+      <button className="hover:hw-bg-gray-100 hw-py-1.5 hw-px-2.5 hw-border-r" onClick={() => changeValue(valueProp - 1)}>-</button>
+      <input className="hw-px-1.5 hw-text-sm hw-py-1.5 hw-border-none hw-w-8 focus:hw-ring-0" value={value} onChange={onChange} onBlur={onBlur}/>
+      <button className="hover:hw-bg-gray-100 hw-py-1.5 hw-px-2.5 hw-border-l" onClick={() => changeValue(valueProp + 1)}>+</button>
+    </div>
+  )
+}

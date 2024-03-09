@@ -222,13 +222,21 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		//If there are text nodes and non-text nodes inside of an element, wrap the text nodes in
 		//span tags so we can select and edit them
 		if (textNodes.length > 0 && children.length > textNodes.length) {
-			textNodes.forEach(node => {
+			for (let i = 0; i < children.length; i++) {
+				const node = children[i] as HTMLElement;
+				if (node.nodeType !== Node.TEXT_NODE) continue;
 				if (!node.textContent?.trim()) return;
 				const span = document.createElement('span');
 				span.dataset.harmonyText = 'true';
-				element.appendChild(span);
 				span.appendChild(node);
-			})
+
+				const beforeNode = i < children.length - 1 ? children[i + 1] : undefined;
+				if (beforeNode) {
+					element.insertBefore(span, beforeNode);
+				} else {
+					element.appendChild(span);
+				}
+			}
 		}
 
 		if (id !== undefined) {

@@ -1087,7 +1087,8 @@ function isElementFluid(elm: Element, side: 'width' | 'height', useFlexForHeight
 
 function getFitContentSize(element: HTMLElement, keepPadding=false): {width: number, height: number} {
 	var wrapper, clone = element.cloneNode(true) as HTMLElement, ow, p1, p2;
-	const padding = clone.style.padding;
+	const styles = getComputedStyle(element);
+
 	clone.style.margin = '0';
 	if (!keepPadding)
 		clone.style.padding = '0';
@@ -1097,6 +1098,11 @@ function getFitContentSize(element: HTMLElement, keepPadding=false): {width: num
 	clone.style.minHeight = 'none';
 	clone.style.height = 'auto';
 	clone.style.width = 'auto';
+	clone.style.fontSize = styles.fontSize;
+	clone.style.fontFamily = styles.fontFamily;
+	clone.style.lineHeight = styles.lineHeight;
+	clone.style.letterSpacing = styles.letterSpacing;
+	clone.style.fontWeight = styles.fontWeight;
 	/// create a wrapper that we can control, my reason for
 	/// using an unknown element is that it stands less chance
 	/// of being affected by stylesheets - this could be improved
@@ -1105,8 +1111,9 @@ function getFitContentSize(element: HTMLElement, keepPadding=false): {width: num
 	wrapper = document.createElement('wrapper');
 	wrapper.style.display = 'flex';
 	wrapper.style.alignItems = 'center';
-	wrapper.style.width = `${element.clientWidth + 500}px`
-	wrapper.style.height = `${element.clientHeight + 500}px`
+	const elementRect = element.getBoundingClientRect();
+	wrapper.style.width = `${elementRect.width + 500}px`
+	wrapper.style.height = `${elementRect.height + 500}px`
 	wrapper.style.padding = '0';
 	wrapper.style.margin = '0';
 	wrapper.appendChild(clone);
@@ -1355,7 +1362,15 @@ const elementSnapBehavior: SnapBehavior = {
 	},
 	isDraggable(element) {
 		const style = element ? getComputedStyle(element.parentElement!) : undefined;
-		return ['block', 'list-item'].includes(style?.display || '') ? undefined : 'This is not a block element';
+		if (!['block', 'list-item'].includes(style?.display || '')) {
+			return 'This is not a block element';
+		}
+
+		if (element.dataset.harmonyText === 'true') {
+			return 'Cannot move text element. Use text alignment to move.';
+		}
+
+		return undefined;
 	},
 	onUpdate(element, event, scale) {
         if (!element.parentElement) {
@@ -1993,16 +2008,18 @@ const flexSnapping: SnapBehavior = {
 		
 		const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
 		const myChildInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
-		if (!myChildInfo) {
-			throw new Error("Cannot find child info");
-		}
-		const selfIndex = myChildInfo.index;
 		const parentRect = {
 			left: parentInfo.edges.left.parentEdge.edgeLocation,
 			right: parentInfo.edges.right.parentEdge.edgeLocation,
 			top: parentInfo.edges.top.parentEdge.edgeLocation,
 			bottom: parentInfo.edges.bottom.parentEdge.edgeLocation,
 		}
+		//If there isn't my child info, that might mean we have gone too small and so it does not show up anymore
+		if (!myChildInfo) {
+			return [parentRect];
+		}
+		const selfIndex = myChildInfo.index;
+		
 		
 		if (selfIndex > 0 && selfIndex < parentInfo.children.length - 1) {
 			if (parentInfo.edges[right].parentEdge.gap > 0)
@@ -2184,6 +2201,11 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 	}, canDrag(element) {
 		if (element.contentEditable === 'true') return false;
 
+		if (!isSelectable(element, scale)) {
+			onError('Element is too small to drag');
+			return false;
+		}
+
 		const error = snappingBehavior.isDraggable(element)
 		if (error) {
 			onError(error);
@@ -2311,6 +2333,11 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
         // return res;
     }, canResize(element) {
 		if (element.contentEditable === 'true') return false;
+
+		if (!isSelectable(element, scale)) {
+			onError('Element is too small to resize');
+			return false;
+		}
 
 		const error = snappingBehavior.isDraggable(element)
 		if (error) {
