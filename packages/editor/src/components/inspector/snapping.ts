@@ -177,20 +177,56 @@ type Side = 'close' | 'far';
 type RectSide = 'bottom' | 'top' | 'left' | 'right';
 type Axis = 'x' | 'y';
 
-function getGapTypesToParent(element: HTMLElement, parent: HTMLElement, axis: Axis, side: Side) {
-    return getGapTypes(element, parent, axis, side, ['margin', 'other-padding']);
+const getSibling = (element: HTMLElement, children: HTMLElement[], side: RectSide, scale: number, rectOverride?: Rect) => {
+	const otherSideClose = side === 'left' || side === 'right' ? 'top' : 'left';
+	const otherSideFar = otherSideClose === 'top' ? 'bottom' : 'right';
+	const axis = side === 'left' || side === 'right' ? 'x' : 'y';
+	const type = side === 'left' || side === 'top' ? 'close' : 'far';
+	const otherAxis = axis === 'x' ? 'y' : 'x';
+	const otherSide = side === 'left' ? 'right' : side === 'top' ? 'bottom' : side === 'right' ? 'left' : 'top';
+
+	const selfLocationCloseOther = getBoundingClientRect(element, otherAxis, 'close', scale, rectOverride);
+	const selfLocationFarOther = getBoundingClientRect(element, otherAxis, 'far', scale, rectOverride);
+	const selfLocation = getBoundingClientRect(element, axis, type, scale, rectOverride);
+
+	let minLocation: {value: number, element: HTMLElement} | undefined = undefined;
+	for (const sibling of children) {
+		if (sibling === element) continue;
+
+		const rect = getBoundingRect(sibling);
+		if (!(rect[otherSideClose] < selfLocationCloseOther && rect[otherSideFar] < selfLocationCloseOther || rect[otherSideClose] > selfLocationFarOther && rect[otherSideFar] > selfLocationFarOther)) {//(rect[otherSideClose] >= selfLocationCloseOther && rect[otherSideClose] <= selfLocationFarOther || rect[otherSideFar] >= selfLocationCloseOther && rect[otherSideFar] <= selfLocationFarOther) {
+			const isCorrectDirection = side === 'left' || side === 'top' ? rect[otherSide] <= selfLocation : rect[otherSide] > selfLocation;
+			const isCloser = side === 'left' || side === 'top' ? rect[otherSide] > (minLocation?.value || -Infinity) : rect[otherSide] < (minLocation?.value || Infinity);
+			if (isCorrectDirection && isCloser) {
+				minLocation = {
+					value: rect[otherSide],
+					element: sibling
+				}
+			}
+		}
+	}
+
+	return minLocation?.element;
 }
 
-function getGapTypesToSibiling(element: HTMLElement, sibling: HTMLElement, axis: Axis, side: Side) {
-    return getGapTypes(element, sibling, axis, side, ['margin', 'other-otherside-margin']);
+function getGapTypesToParent(element: HTMLElement, parent: HTMLElement, axis: Axis, side: Side, scale: number) {
+	const otherSide = side === 'close' ? 'far' : 'close';
+	const gap = side === 'close' ? getBoundingClientRect(element, axis, side, scale) - getBoundingClientRectParent(parent, axis, side, scale) : getBoundingClientRectParent(parent, axis, side, scale) - getBoundingClientRect(element, axis, side, scale); 
+    return getGapTypes(element, parent, axis, side, ['margin', 'other-padding'], gap);
+}
+
+function getGapTypesToSibiling(element: HTMLElement, sibling: HTMLElement, axis: Axis, side: Side, scale: number) {
+	const otherSide = side === 'close' ? 'far' : 'close';
+	const gap = side === 'close' ? getBoundingClientRect(element, axis, side, scale) - getBoundingClientRect(sibling, axis, otherSide, scale) : getBoundingClientRect(sibling, axis, otherSide, scale) - getBoundingClientRect(element, axis, side, scale); 
+    return getGapTypes(element, sibling, axis, side, ['margin', 'other-otherside-margin'], gap);
 }
 
 type GapType = `${'other-' | ''}${'otherside-' | ''}${'margin' | 'padding'}`
 interface GapInfo {
-    type: GapType,
-    value: string | number,
+    type: GapType | 'empty',
+    value: number,
     element: HTMLElement,
-    style: string,
+    style: string | undefined,
 }
 interface EdgeInfo {
     gap: number,
@@ -201,7 +237,7 @@ interface EdgeInfo {
     gapTypes: GapInfo[],
 }
 
-function getGapTypes(fromElement: HTMLElement, toElement: HTMLElement, axis: Axis, side: Side, types: GapType[]): GapInfo[] {
+function getGapTypes(fromElement: HTMLElement, toElement: HTMLElement, axis: Axis, side: Side, types: GapType[], gap: number): GapInfo[] {
     const getRectSide = (axis: Axis, side: Side): RectSide => {
         const mapping: Record<Axis, Record<Side, RectSide>> = {
             x: {
@@ -217,6 +253,39 @@ function getGapTypes(fromElement: HTMLElement, toElement: HTMLElement, axis: Axi
         return mapping[axis][side];
     }
 
+	//Margin of the parent can be affected by the child margin if its the first layer and a single child
+	const secondNephi667 = (element: HTMLElement, numSoFar: number, style: string): {value: number, element: HTMLElement}[] => {
+		const getValue = (element: HTMLElement, style: string): number => {
+			const styleValue = $(element).css(style);
+			if (!styleValue) return numSoFar;
+	
+			let value: number = parseFloat(styleValue);
+			if (isNaN(value)) {
+				return 0;
+			} 
+	
+			return value;
+		}
+		
+		const ret: {value: number, element: HTMLElement}[] = [];
+		let value = getValue(element, style);
+		if (element.children.length === 1) {
+			const child = element.children[0] as HTMLElement;
+			const childValue = getValue(child, style);
+			value = value - childValue;
+			if (value > 0) {
+				ret.push({value, element});
+			}
+			ret.push({value: childValue, element: child});
+		} else {
+			ret.push({value, element});
+		}
+
+		return ret;
+	}
+
+	if (gap < 0) return [];
+
     const otherSide = side === 'close' ? 'far' : 'close';
     
     const gapTypes: GapInfo[]  = [];
@@ -230,18 +299,20 @@ function getGapTypes(fromElement: HTMLElement, toElement: HTMLElement, axis: Axi
         const rawType = type.replace('other-', '').replace('otherside-', '');
         
         const style = `${rawType}${capitalizeFirstLetter(getRectSide(axis, isOtherSide ? otherSide : side))}`
-        const styleValue = $(curr).css(style);
-        if (!styleValue) continue;
 
-        let value: number | string = parseFloat(styleValue);
-        if (isNaN(value)) {
-            value = styleValue;
-        } 
-
-        if (value === 0) continue;
-
-        gapTypes.push({type, value, element: curr, style});
+		const values = secondNephi667(curr, 0, style);
+		
+        gapTypes.push(...values.map(({value, element}) => ({type, value, element, style})));
     }
+
+	const totalSoFar = gapTypes.reduce((prev, curr) => prev + curr.value, 0);
+	const remainingGap = gap - totalSoFar;
+	if (remainingGap > 0) {
+		gapTypes.push({element: fromElement, type: 'empty', style: undefined, value: remainingGap})
+	} else if (!close(remainingGap, 0, 0.1) && remainingGap < 0.1) {
+		//throw new Error("The gaps do not add up")
+		
+	}
 
     return gapTypes;
 }
@@ -386,18 +457,19 @@ function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement, axis: 
 
     const myStart = getBoundingClientRect(element, otherAxis, side, scale, getRectOverride(element));
 	const myEnd = getBoundingClientRect(element, otherAxis, otherSide, scale, getRectOverride(element));
+	const parentGap = side === 'close' ? getBoundingClientRect(element, axis, side, scale, getRectOverride(element)) - getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)) : getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)) - getBoundingClientRect(element, axis, side, scale, getRectOverride(element))
 	const parentEdge: EdgeInfo = side === 'close' ? {
-        gap: getBoundingClientRect(element, axis, side, scale, getRectOverride(element)) - getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)),
+        gap: parentGap,
         relation: 'parent',
         edgeElement: parent,
-        gapTypes: getGapTypesToParent(element, parent, axis, side),
+        gapTypes: getGapTypesToParent(element, parent, axis, side, scale),
         edgeLocation: getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)),
         edgeLocationRelative: 0,
     } : {
-        gap: getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)) - getBoundingClientRect(element, axis, side, scale, getRectOverride(element)),
+        gap: parentGap,
         relation: 'parent',
         edgeElement: parent,
-        gapTypes: getGapTypesToParent(element, parent, axis, side),
+        gapTypes: getGapTypesToParent(element, parent, axis, side, scale),
         edgeLocation: getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)),
         edgeLocationRelative: getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)) - getBoundingClientRectParent(parent, axis, otherSide, scale, getRectOverride(parent)),
     }
@@ -406,6 +478,25 @@ function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement, axis: 
     //     return {close, far};
     // }
     let siblingEdge: EdgeInfo | undefined = undefined;
+	// const rectSide = axis === 'x' ? (side === 'close' ? 'left' : 'right') : (side === 'close' ? 'top' : 'bottom');
+	// const sibling = getSibling(element, children, rectSide, scale, getRectOverride(element));
+	// if (sibling) {
+	// 	siblingEdge = side === 'close' ? {
+	// 		gap: getBoundingClientRect(element, axis, side, scale, getRectOverride(element)) - getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
+	// 		relation: 'sibling',
+	// 		edgeElement: sibling,
+	// 		gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scale),
+	// 		edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
+	// 		edgeLocationRelative: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - parentEdge.edgeLocation
+	// 	} : {
+	// 		gap: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - getBoundingClientRect(element, axis, side, scale, getRectOverride(element)),
+	// 		relation: 'sibling',
+	// 		edgeElement: sibling,
+	// 		gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scale),
+	// 		edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
+	// 		edgeLocationRelative: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - parentEdge.edgeLocation
+	// 	}
+	// }
     if (selfIndex > 0 && side === 'close') {
         const sibling = children[selfIndex - 1] as HTMLElement;
         const newStart = getBoundingClientRect(element, axis, side, scale, getRectOverride(element)) - getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling));
@@ -413,7 +504,7 @@ function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement, axis: 
             gap: newStart,
             relation: 'sibling',
             edgeElement: sibling,
-            gapTypes: getGapTypesToSibiling(element, sibling, axis, side),
+            gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scale),
             edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
             edgeLocationRelative: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - parentEdge.edgeLocation
         };
@@ -426,47 +517,11 @@ function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement, axis: 
             gap: newEnd,
             relation: 'sibling',
             edgeElement: sibling,
-            gapTypes: getGapTypesToSibiling(element, sibling, axis, otherSide),
+            gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scale),
             edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
             edgeLocationRelative: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - parentEdge.edgeLocation
         };
     }
-
-    //TODO: Do we need to check each sibling or just the one next to us? 
-	// for (const sibling of siblings) {
-		
-	// 	const closeOtherSide = getBoundingClientRect(sibling, otherAxis, side, scale, getRectOverride(sibling));
-	// 	const farOtherSide = getBoundingClientRect(sibling, otherAxis, otherSide, scale, getRectOverride(sibling));
-	// 	if (!((closeOtherSide < myStart && farOtherSide < myStart) || (closeOtherSide > myEnd && farOtherSide > myEnd))) {
-	// 		const newStart = getBoundingClientRect(element, axis, side, scale, getRectOverride(element)) - getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling));
-	// 		const newEnd = getBoundingClientRect(sibling, axis, side, scale, getRectOverride(sibling)) - getBoundingClientRect(element, axis, otherSide, scale, getRectOverride(element));
-
-	// 		if (newStart >= 0 && newStart < close.gap) {
-    //             console.log(`${axis} aligned close for ${element.id}`)
-	// 			close = {
-    //                 gap: newStart,
-    //                 relation: 'sibling',
-    //                 edgeElement: sibling,
-    //                 gapTypes: getGapTypesToSibiling(element, sibling, axis, side),
-    //                 edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
-    //                 elementLocation: getBoundingClientRect(element, axis, side, scale, getRectOverride(element)),
-    //                 element
-    //             };
-	// 		}
-	// 		if (newEnd >= 0 && newEnd < far.gap) {
-    //             console.log(`${axis} aligned far for ${element.id}`)
-	// 			far = {
-    //                 gap: newEnd,
-    //                 relation: 'sibling',
-    //                 edgeElement: sibling,
-    //                 gapTypes: getGapTypesToSibiling(element, sibling, axis, otherSide),
-    //                 edgeLocation: getBoundingClientRect(sibling, axis, side, scale, getRectOverride(sibling)),
-    //                 elementLocation: getBoundingClientRect(element, axis, otherSide, scale, getRectOverride(element)),
-    //                 element
-    //             };
-	// 		}
-	// 	}
-	// }
 
     const parentMidpoint = (getBoundingClientRectParent(parent, axis, 'close', scale, getRectOverride(parent)) + getBoundingClientRectParent(parent, axis, 'size', scale, getRectOverride(parent)) / 2) + (side === 'close' ? -1 : 1) * getBoundingClientRect(element, axis, 'size', scale, getRectOverride(element)) / 2;
     const parentMidpointRelative = parentMidpoint - getBoundingClientRectParent(parent, axis, 'close', scale, getRectOverride(parent));
@@ -664,6 +719,24 @@ const setSpaceForElement = (element: HTMLElement, space: 'margin' | 'padding', s
 	element.style[`${space}${capitalizeFirstLetter(side)}` as unknown as number] = propertyValue;
 }
 
+const getNonWorkableGap = (gapInfo: GapInfo[]): number => {
+	return gapInfo.reduce((prev, curr) => curr.type === 'empty' ? prev + curr.value : prev, 0);
+}
+
+const getSiblingGap = (gap: number, gapInfo: GapInfo[]): number => {
+	// const totalGap = gapInfo.reduce((prev, curr) => prev + curr.value, 0);
+	// if (totalGap !== gap) throw new Error("Gap value and gap info do not match");
+
+	// return gapInfo.reduce((prev, curr) => curr.type !== 'empty' ? prev + curr.value : prev, 0);
+	const nonWorkableGap = getNonWorkableGap(gapInfo);
+	const diff = gap - nonWorkableGap;
+	if (diff < 0) {
+		return 0; //TODO: This should be not allowed in our restrictions
+	}
+
+	return diff;
+}
+
 interface UpdateRect {
     element: HTMLElement,
 	proxyElement?: HTMLElement;
@@ -679,9 +752,6 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
 	const right = 'right';
 	const top = 'top';
 	const bottom = 'bottom';
-
-
-	
 
 	setSpaceForElement(parentInfo.element, 'padding', left, 0);
 	setSpaceForElement(parentInfo.element, 'padding', right, 0);
@@ -705,7 +775,7 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
 		if (startXSide === right) {
 			setSpaceForElement(info[endXSide].element, 'margin', endXSide, 'auto');
 		}
-		const parentGap = Math.max(parentInfo.edges[startXSide].parentEdge.gap, 0);
+		const parentGap = Math.max(getSiblingGap(parentInfo.edges[startXSide].parentEdge.gap, parentInfo.edges[startXSide].parentEdge.gapTypes), 0);
 		const remainingGap = info[startXSide].parentEdge.gap - parentGap
 		setSpaceForElement(info[startXSide].element, 'margin', startXSide, remainingGap);
 		setSpaceForElement(parentInfo.element, 'padding', startXSide, parentGap);
@@ -720,7 +790,7 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
 			const toResize = selectDesignerElementReverse(info.element);
 			toResize.style.width = `${info.width}px`
 		} else if (info.widthType === 'expand') {
-			const parentGap = Math.max(parentInfo.edges[endXSide].parentEdge.gap, 0);
+			const parentGap = Math.max(getSiblingGap(parentInfo.edges[endXSide].parentEdge.gap, parentInfo.edges[endXSide].parentEdge.gapTypes), 0);
 			const remainingGap = info[endXSide].parentEdge.gap - parentGap;
 			setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
 			setSpaceForElement(parentInfo.element, 'padding', endXSide, parentGap);
@@ -730,18 +800,29 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
 
 		//top
 		if (info.index === 0) {
-			const parentGap = parentInfo.edges[top].parentEdge.gap;
+			const parentGap = getSiblingGap(parentInfo.edges[top].parentEdge.gap, parentInfo.edges[top].parentEdge.gapTypes);
 			setSpaceForElement(parentInfo.element, 'padding', top, parentGap);
 		} else {
 			if (!info.top.siblingEdge) throw new Error("Non first child should have a sibling");
 
-			let siblingGap = info.top.siblingEdge.gap;
-			const siblingStyle = getComputedStyle(info.top.siblingEdge.edgeElement);
-			//TODO: This is super hacky and have no idea if this will work in other scenarios
-			// if (siblingStyle.display.includes('inline')) {
-			// 	siblingGap -= 6;
-			// }
-			setSpaceForElement(info.element, 'margin', top, siblingGap);
+			let gap = getSiblingGap(info.top.siblingEdge.gap, info.top.siblingEdge.gapTypes);
+			let foundGap = false;
+			for (const type of info.top.siblingEdge.gapTypes) {
+				if (type.type === 'empty') continue;
+
+				if (type.type.includes('margin')) {
+					if (gap - type.value >= 0) {
+						type.element.style[type.style as unknown as number] = '0px';
+					} else {
+						type.element.style[type.style as unknown as number] = `${gap}px`;
+						foundGap = true;
+						break;
+					}
+				}
+			}
+			if (!foundGap) {
+				setSpaceForElement(info.element, 'margin', top, gap);
+			}
 		}
 
 		//bottom - height fits content naturally
@@ -756,58 +837,14 @@ function updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: n
 
 	//parent edges for sizing
 	if (parentInfo.widthType === 'content') {
-		setSpaceForElement(parentInfo.element, 'padding', left, parentInfo.edges[left].parentEdge.gap);
-		setSpaceForElement(parentInfo.element, 'padding', right, parentInfo.edges[right].parentEdge.gap);
+		setSpaceForElement(parentInfo.element, 'padding', left, getSiblingGap(parentInfo.edges[left].parentEdge.gap, parentInfo.edges[left].parentEdge.gapTypes));
+		setSpaceForElement(parentInfo.element, 'padding', right, getSiblingGap(parentInfo.edges[right].parentEdge.gap, parentInfo.edges[right].parentEdge.gapTypes));
 	}
 
 	if (parentInfo.heightType === 'content') {
-		setSpaceForElement(parentInfo.element, 'padding', top, parentInfo.edges[top].parentEdge.gap);
-		setSpaceForElement(parentInfo.element, 'padding', bottom, parentInfo.edges[bottom].parentEdge.gap);
+		setSpaceForElement(parentInfo.element, 'padding', top, getSiblingGap(parentInfo.edges[top].parentEdge.gap, parentInfo.edges[top].parentEdge.gapTypes));
+		setSpaceForElement(parentInfo.element, 'padding', bottom, getSiblingGap(parentInfo.edges[bottom].parentEdge.gap, parentInfo.edges[bottom].parentEdge.gapTypes));
 	}
-
-	// Object.entries(edges).forEach(([side, edge]) => {
-    //     const gap = edge.parentEdge.gap;
-	// 	parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
-    // });
-
-    // for (const info of childEdgeInfo) {
-	// 	info.element.style.marginBottom = '0px';
-	// 	info.element.style.marginRight = '0px';
-
-    //     const leftGap = info.left.parentEdge.gap - edges.left.parentEdge.gap;
-    //     const rightGap = info.right.parentEdge.gap - edges.right.parentEdge.gap;
-    //     if (info.left.parentEdge.gap >= 0) {
-    //         info.element.style.marginLeft = `${leftGap}px`;
-           
-    //     }
-	// 	if (info.right.parentEdge.gap >= 0 && isElementFluid(info.element, 'width')) {
-	// 		info.element.style.marginRight = `${rightGap}px`;
-	// 	}
-    //     if (info.index > 0 && info.top.siblingEdge && Math.abs(info.top.siblingEdge.gap - 0.1) >= 0) {
-    //         info.element.style.marginTop = `${info.top.siblingEdge.gap}px`
-    //     } 
-
-	// 	//Height naturally fits content
-	// 	if (info.heightType === 'fixed') {
-	// 		info.element.style.height = `${info.height}px`;
-	// 	} else {
-	// 		info.element.style.height = 'auto';
-	// 	}
-
-	// 	//Width naturally expands
-	// 	if (info.widthType === 'fixed') {
-	// 		info.element.style.width = `${info.width}px`;
-	// 	}
-
-        // if (midpointXRelative <= info.midpointX) {
-        //     info.element.style.marginLeft = 'auto';
-        //     if (midpointXRelative === info.midpointX && edges.left.parentEdge.gap === edges.right.parentEdge.gap) {
-        //         info.element.style.marginRight = 'auto';
-        //     } else {
-        //         info.element.style.marginRight = `${rightGap}px`;
-        //     }
-        // }
-    //}
 }
 
 function updateRectFlex({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number, scaleActual: number) {
@@ -837,7 +874,7 @@ function updateRectFlex({parentUpdate, childrenUpdates}: UpdateRectsProps, scale
 	updates.push(parentUpdate);
 	//updates.push(...Array.from(parentReal.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)})));
 	const parentInfo = calculateFlexParentEdgeInfo(parentReal, scale, scale, false, 'x', updates);
-	if (parentInfo[minGapBetweenX] < 0) {
+	if (!close(parentInfo[minGapBetweenX], 0, 0.1) && parentInfo[minGapBetweenX] < 0.1) {
 		throw new Error("mingap cannot be less than zero")
 	}
 
@@ -969,137 +1006,6 @@ function updateRectFlex({parentUpdate, childrenUpdates}: UpdateRectsProps, scale
 		setSpaceForElement(parentInfo.element, 'padding', top, parentInfo.edges[top].parentEdge.gap);
 		setSpaceForElement(parentInfo.element, 'padding', bottom, parentInfo.edges[bottom].parentEdge.gap);
 	}
-
-
-	// const parent = parentInfo.element;
-	// if (parentInfo.edges[left].parentEdge.gap <= 0) {
-	// 	parentInfo.edges[left].parentEdge.gap = 0;
-	// }
-	// if (parentInfo.edges[right].parentEdge.gap <= 0) {
-	// 	parentInfo.edges[right].parentEdge.gap = 0;
-	// }
-
-	// // if (parentInfo[minGapBetweenX] < minGap) {
-	// // 	parentInfo[minGapBetweenX] = minGap;
-	// // }
-
-	// if (parentInfo[minGapBetweenX] > parentInfo[betweenSpace]) {
-	// 	parentInfo[minGapBetweenX] = parentInfo[betweenSpace];
-	// }
-	
-
-	// parent.style.gap = `${parentInfo[minGapBetweenX]}px`;
-	// parent.style.justifyContent = 'normal';
-	// parent.style.alignItems = 'normal';
-
-	// const startXSide = parentInfo.edges[left].parentEdge.gap <= parentInfo.edges[right].parentEdge.gap ? left : right;
-	// const endXSide = startXSide === left ? right : left;
-	// const startYSide = parentInfo.edges[top].parentEdge.gap <= parentInfo.edges[bottom].parentEdge.gap ? top : bottom;
-	// const endYSide = startYSide === top ? bottom : top;
-	
-	// parent.style.paddingTop = '0px';
-	// parent.style.paddingBottom = '0px';
-	// parent.style.paddingLeft = '0px';
-	// parent.style.paddingRight = '0px';
-
-	// //Padding for sizing only if the parent is fit content
-	// Object.entries(parentInfo.edges).forEach(([side, edge]) => {
-	// 	if ([left, right].includes(side) && parentInfo[widthType] !== 'content') return;
-	// 	if ([top, bottom].includes(side) && parentInfo[heightType] !== 'content') return;
-
-	// 	const gap = edge.parentEdge.gap;
-	// 	parent.style[`padding${capitalizeFirstLetter(side)}` as unknown as number] = `${gap}px`;
-	// });
-
-	// for (const info of parentInfo.childEdgeInfo) {
-	// 	info.element.style.marginTop = '0px';
-	// 	info.element.style.marginBottom = '0px';
-	// 	info.element.style.marginLeft = '0px';
-	// 	info.element.style.marginRight = '0px';
-
-	// 	if (info[heightType] === 'content') {
-	// 		parent.style.alignItems = startYSide === top ? 'flex-start' : 'flex-end';
-	// 	} else if (info[heightType] === 'fixed') {
-	// 		info.element.style[height] = `${info[height]}px`;
-	// 	}
-
-	// 	if (info[widthType] === 'fixed') {
-	// 		info.element.style[width] = `${info[width]}px`
-	// 	}
-
-	// 	// if (info.index > 0 && info.left.siblingEdge && info.left.siblingEdge.gap - parentInfo.minGapBetweenX >= 0) {
-	// 	// 	const gap = info.left.siblingEdge.gap - parentInfo.minGapBetweenX;
-			
-	// 	// 	info.element.style.marginLeft = `${gap}px`
-	// 	// }
-
-	// 	const topGap = info[top].parentEdge.gap - parentInfo.edges[top].parentEdge.gap;
-	// 	if (topGap > 0) {
-	// 		info.element.style[`margin${capitalizeFirstLetter(top)}` as unknown as number] = `${topGap}px`;
-	// 	}
-
-	// 	const bottomGap = info[bottom].parentEdge.gap - parentInfo.edges[bottom].parentEdge.gap;
-	// 	if (bottomGap > 0) {
-	// 		info.element.style[`margin${capitalizeFirstLetter(bottom)}` as unknown as number] = `${bottomGap}px`;
-	// 	}
-	// }
-
-	// const parentFixed = !isElementFluid(parent, height);
-
-	// //Justify-content stuff
-	// if (parentInfo[gapBetween] !== undefined && close(parentInfo.edges[left].parentEdge.gap, parentInfo.edges[right].parentEdge.gap, 0.1) && parentFixed) {
-	// 	parent.style[`padding${capitalizeFirstLetter(left)}` as unknown as number] = '0px';
-	// 	parent.style[`padding${capitalizeFirstLetter(right)}` as unknown as number] = '0px';
-	// 	parent.style.justifyContent = 'center';
-		
-	// 	if (close(parentInfo[gapBetween]!, parentInfo[aroundSpace], 0.1)) {
-	// 		parent.style.justifyContent = 'space-around';
-	// 		parent.style.gap = '0px';
-	// 	} else if (close(parentInfo[gapBetween]!, parentInfo[evenlySpace], 0.1)) {
-	// 		parent.style.justifyContent = 'space-evenly';
-	// 		parent.style.gap = '0px';
-	// 	} else if (close(parentInfo[gapBetween]!, parentInfo[betweenSpace], 0.1)) {
-	// 		parent.style.justifyContent = 'space-between';
-	// 		parent.style.gap = '0px';
-	// 	}
-	// } else {
-	// 	if (startXSide === right) {
-	// 		parent.style.justifyContent = 'flex-end';
-	// 	}
-	// }
-
-	// const childrenFixed = parentInfo.children.every(child => !isElementFluid(child, height));
-
-	// //Align items stuff
-	// if (parentInfo.edges.top.parentEdge.gap > 0 && parentInfo.edges.bottom.parentEdge.gap > 0 && childrenFixed && parentFixed) {
-	// 	if (parentInfo.childEdgeInfo.every(info => info[top].elementLocationRelative === info[top].parentMidpointRelative)) {
-	// 		parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
-	// 		parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
-	// 		parent.style.alignItems = 'center';
-	// 	}
-
-	// 	if (startYSide === top) {
-	// 		parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = '0px';
-	// 	}
-	// 	else if (startYSide === bottom) {
-	// 		parent.style.alignItems = 'flex-end';
-	// 		parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = '0px';
-	// 	}
-	// }
-
-	// //Padding for position
-	// if (['flex-start', 'normal'].includes(parent.style.alignItems) || parentInfo.edges[top].info[heightType] === 'expand') {
-	// 	parent.style[`padding${capitalizeFirstLetter(top)}` as unknown as number] = `${parentInfo.edges[top].parentEdge.gap}px`;
-	// }
-	// if (parent.style.alignItems === 'flex-end' || parentInfo.edges[bottom].info[heightType] === 'expand') {
-	// 	parent.style[`padding${capitalizeFirstLetter(bottom)}` as unknown as number] = `${parentInfo.edges[bottom].parentEdge.gap}px`;
-	// }
-	// if (['flex-start', 'normal'].includes(parent.style.justifyContent) || parentInfo.edges[left].info[widthType] === 'expand') {
-	// 	parent.style[`padding${capitalizeFirstLetter(left)}` as unknown as number] = `${parentInfo.edges[left].parentEdge.gap}px`;
-	// } 
-	// if (parent.style.justifyContent === 'flex-end' || parentInfo.edges[right].info[widthType] === 'expand') {
-	// 	parent.style[`padding${capitalizeFirstLetter(right)}` as unknown as number] = `${parentInfo.edges[right].parentEdge.gap}px`;
-	// }
 }
 
 
@@ -1605,10 +1511,10 @@ const elementSnapBehavior: SnapBehavior = {
     getRestrictions(element, scale) {
 		const edgeInfo = calculateEdgesInfo(element, 1, scale, 'x');
         
-        const top = edgeInfo.top.siblingEdge ? edgeInfo.top.siblingEdge.edgeLocation : edgeInfo.top.parentEdge.edgeLocation;
-        const bottom = edgeInfo.bottom.siblingEdge ? edgeInfo.bottom.siblingEdge.edgeLocation : edgeInfo.bottom.parentEdge.edgeLocation;
-        const left = edgeInfo.left.parentEdge.edgeLocation//edgeInfo.left.siblingEdge ? edgeInfo.left.siblingEdge.edgeLocation : edgeInfo.left.parentEdge.edgeLocation;
-        const right = edgeInfo.right.parentEdge.edgeLocation;//edgeInfo.right.siblingEdge ? edgeInfo.right.siblingEdge.edgeLocation : edgeInfo.right.parentEdge.edgeLocation;
+        const top = edgeInfo.top.siblingEdge ? edgeInfo.top.siblingEdge.edgeLocation + getNonWorkableGap(edgeInfo.top.siblingEdge.gapTypes) : edgeInfo.top.parentEdge.edgeLocation + getNonWorkableGap(edgeInfo.top.parentEdge.gapTypes);
+        const bottom = edgeInfo.bottom.siblingEdge ? edgeInfo.bottom.siblingEdge.edgeLocation - getNonWorkableGap(edgeInfo.bottom.siblingEdge.gapTypes) : edgeInfo.bottom.parentEdge.edgeLocation - getNonWorkableGap(edgeInfo.bottom.parentEdge.gapTypes);
+        const left = edgeInfo.left.parentEdge.edgeLocation //+ getNonWorkableGap(edgeInfo.left.parentEdge.gapTypes)//edgeInfo.left.siblingEdge ? edgeInfo.left.siblingEdge.edgeLocation : edgeInfo.left.parentEdge.edgeLocation;
+        const right = edgeInfo.right.parentEdge.edgeLocation //- getNonWorkableGap(edgeInfo.right.parentEdge.gapTypes);//edgeInfo.right.siblingEdge ? edgeInfo.right.siblingEdge.edgeLocation : edgeInfo.right.parentEdge.edgeLocation;
 
         return [{
             top,
@@ -2169,8 +2075,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 		if (element) {
 			const parent = element.parentElement!;
-			hackyInlineSpaceFix(element);
-			hackyInlineSpaceFix(parent as HTMLElement);
+			// hackyInlineSpaceFix(element);
+			// hackyInlineSpaceFix(parent as HTMLElement);
 			
 		}
 	}, [element])

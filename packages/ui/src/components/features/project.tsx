@@ -146,7 +146,8 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 
 	return (<>
 		<div className="hw-w-[400px]" >
-			<button className="hw-rounded-md hw-overflow-auto">
+			<a>Here is an a tag</a>
+			<button className="hw-rounded-md hw-overflow-auto hw-block hw-mt-10">
                 <img className="w-full" src={thumbnail} onClick={onOpenHarmony}/>
             </button>
             <div className="hw-mt-2">

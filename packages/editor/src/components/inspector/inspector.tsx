@@ -48,7 +48,8 @@ export function isImageElement(element: Element): boolean {
 
 export function isSelectable(element: HTMLElement, scale: number): boolean {
 	const sizeThreshold = 15;
-	if (element.clientHeight * scale < sizeThreshold || element.clientWidth < sizeThreshold) {
+	const rect = element.getBoundingClientRect();
+	if (rect.height * scale < sizeThreshold || rect.width < sizeThreshold) {
 		return false;
 	}
 
