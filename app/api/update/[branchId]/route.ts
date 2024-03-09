@@ -69,7 +69,8 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 				name: up.name,
 				value: up.value,
 				branch_id: branchId,
-				old_value: up.oldValue
+				old_value: up.oldValue,
+				childIndex: up.childIndex,
 			}
 		})
 	}

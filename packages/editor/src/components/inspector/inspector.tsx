@@ -215,7 +215,10 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				const parentId = element.dataset.harmonyParentId || '';
 				const oldValue = oldProperties[property];
 
-				const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue};
+				const childIndex = Array.from(element.parentElement!.children).indexOf(element);
+				if (childIndex < 0) throw new Error("Cannot get right child index");
+
+				const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue, childIndex};
 
 				
 				updates.push(update);

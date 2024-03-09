@@ -1,31 +1,34 @@
 "use client";
-import { Component, createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Inspector, componentIdentifier, isImageElement, replaceTextContentWithSpans } from "./inspector/inspector";
+import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { Inspector, componentIdentifier, replaceTextContentWithSpans } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {PublishRequest, loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
-import {ResizeCoords, ResizeValue} from '@harmony/ui/src/hooks/resize';
 import {translateUpdatesToCss} from '@harmony/util/src/component';
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
-import { getNumberFromString, round} from "@harmony/util/src/index";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import React from "react";
 import {WEB_URL} from '@harmony/util/src/constants';
 
 import '../global.css';
-import { Setup, setupHarmonyProvider } from "./harmony-setup";
+import { Setup } from "./harmony-setup";
 import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
 import { PullRequest } from "@harmony/ui/src/types/branch";
 import { Font } from "@harmony/util/src/fonts";
 import $ from 'jquery';
-import { getFitContentSize } from "./inspector/snapping";
 
 const WIDTH = 1960;
 const HEIGHT = 1080;
 
-export function findElementFromId(componentId: string, parentId: string): HTMLElement | undefined {
-	return (document.querySelector(`[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]`) as HTMLElement || null) || undefined;
+export function findElementFromId(componentId: string, parentId: string, childIndex: number): HTMLElement | undefined {
+	const elements = document.querySelectorAll(`[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]`);
+	for (const element of Array.from(elements)) {
+		const elementChildIndex = Array.from(element.parentElement!.children).indexOf(element);
+		if (elementChildIndex === childIndex) return element as HTMLElement;
+	}
+
+	return undefined;
 }
 
 
@@ -224,6 +227,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (!rootComponent) return;
 		const id = element.dataset.harmonyId;
 		const parentId = element.dataset.harmonyParentId || null;
+		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		const children = Array.from(element.childNodes);
 		const textNodes = children.filter(child => child.nodeType === Node.TEXT_NODE);
 		const styles = getComputedStyle(element);
@@ -236,7 +240,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 
 		if (id !== undefined) {
-			const updates = availableIds.filter(up => up.componentId === id && up.parentId === parentId);
+			const updates = availableIds.filter(up => up.componentId === id && up.parentId === parentId && up.childIndex === childIndex);
 			makeUpdates(element, updates, rootComponent, fonts);
 		}
 
@@ -270,7 +274,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			}
 		}
 
-		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'text', name: String(index), action: 'change', value, oldValue}
+		const childIndex = Array.from(selectedComponent.parentElement!.children).indexOf(selectedComponent);
+		if (childIndex < 0) throw new Error("Cannot get right child index");
+
+		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'text', name: String(index), action: 'change', value, oldValue, childIndex}
 		onAttributesChange(component, [update], false);
 	});
 
@@ -327,7 +334,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		
 		const value = `from=${from}:to=${to}`
 		const oldValue = `from=${to}:to=${from}`;
-		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value, oldValue};
+		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
+		if (childIndex < 0) throw new Error("Cannot get right child index");
+
+		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value, oldValue, childIndex};
 		
 		onAttributesChange(component, [update], false);
 	})
@@ -536,7 +546,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	const change = ({update}: HarmonyCommandChange): void => {
 		if (!rootComponent) return;
 		for (let i = 0; i < update.length; i++) {
-			const element = findElementFromId(update[i].componentId, update[i].parentId);
+			const element = findElementFromId(update[i].componentId, update[i].parentId, update[i].childIndex);
 			if (element === undefined) return;
 			
 			makeUpdates(element, [update[i]], rootComponent, fonts);
@@ -710,8 +720,11 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 	//Updates that should happen for every element in a component
 	const sameElements = rootComponent.querySelectorAll(`[data-harmony-id="${id}"][data-harmony-parent-id="${parentId}"]`);
 	for (const element of Array.from(sameElements)) {
+		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		const htmlElement = element as HTMLElement;
 		for (const update of translated) {
+			if (update.childIndex !== childIndex) continue;
+
 			if (update.type === 'className') {
 				if (update.name === 'font') {
 					if (!fonts) {

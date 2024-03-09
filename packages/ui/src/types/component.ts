@@ -4,6 +4,7 @@ import { z } from "zod";
 export const updateSchema = z.object({
 	componentId: z.string(),
 	parentId: z.string(),
+	childIndex: z.number(),
 	type: z.union([z.literal('className'), z.literal('text'), z.literal('component')]),
 	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]), 
 	name: z.string(),

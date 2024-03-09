@@ -279,7 +279,10 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		const old = data.find(t => t.name === values.name);
 		if (!old) throw new Error("Cannot find old property");
 		const oldValue = old.value;
-		const update: ComponentUpdate = {componentId, parentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue};
+		const childIndex = Array.from(selectedComponent.element!.parentElement!.children).indexOf(selectedComponent.element!);
+		if (childIndex < 0) throw new Error("Cannot get right child index");
+
+		const update: ComponentUpdate = {componentId, parentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
 		
 		
 		onChange(selectedComponent, [update]);

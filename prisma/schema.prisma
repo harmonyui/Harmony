@@ -51,6 +51,7 @@ model ComponentUpdate {
 	component_id String
 	component_parent_id String
 	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id], onDelete: Cascade)
+	childIndex Int
 	type String //text, className, component
 	action String //change, add, remove
 	name String

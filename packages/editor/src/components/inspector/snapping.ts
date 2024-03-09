@@ -1355,7 +1355,7 @@ const elementSnapBehavior: SnapBehavior = {
 			const style = getComputedStyle(child);
 			const componentId = (child as HTMLElement).dataset.harmonyId || '';
 			//Only add the old values of new elements to not interfere with the updates
-			if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
+			//if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
 				oldValues.push([child as HTMLElement, {
 					paddingLeft: style.paddingLeft || '', 
 					paddingRight: style.paddingRight || '', 
@@ -1368,14 +1368,14 @@ const elementSnapBehavior: SnapBehavior = {
 					height: style.height || '',
 					width: style.width || ''
 				}])
-			}
+			//}
 		}
 
 		for (const child of Array.from(element.children)) {
 			const style = getComputedStyle(child);
 			const componentId = (child as HTMLElement).dataset.harmonyId || '';
 			//Only add the old values of new elements to not interfere with the updates
-			if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
+			//if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
 				oldValues.push([child as HTMLElement, {
 					paddingLeft: style.paddingLeft || '', 
 					paddingRight: style.paddingRight || '', 
@@ -1388,7 +1388,7 @@ const elementSnapBehavior: SnapBehavior = {
 					height: style.height || '',
 					width: style.width || ''
 				}])
-			}
+			//}
 		}
 
 		return oldValues;
@@ -1594,7 +1594,7 @@ const flexSnapping: SnapBehavior = {
 			const style = getComputedStyle(child);
 			const componentId = (child as HTMLElement).dataset.harmonyId || '';
 			//Only add the old values of new elements to not interfere with the updates
-			if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
+			//if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
 				oldValues.push([child as HTMLElement, {
 					paddingLeft: style.paddingLeft || '', 
 					paddingRight: style.paddingRight || '', 
@@ -1607,14 +1607,14 @@ const flexSnapping: SnapBehavior = {
 					height: style.height || '',
 					width: style.width || ''
 				}]);
-			}
+			//}
 		}
 
 		for (const child of Array.from(element.children)) {
 			const style = getComputedStyle(child);
 			const componentId = (child as HTMLElement).dataset.harmonyId || '';
 			//Only add the old values of new elements to not interfere with the updates
-			if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
+			//if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
 				oldValues.push([child as HTMLElement, {
 					paddingLeft: style.paddingLeft || '', 
 					paddingRight: style.paddingRight || '', 
@@ -1627,7 +1627,7 @@ const flexSnapping: SnapBehavior = {
 					height: style.height || '',
 					width: style.width || ''
 				}])
-			}
+			//}
 		}
 
 		return oldValues;

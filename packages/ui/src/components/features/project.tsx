@@ -146,11 +146,11 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 
 	return (<>
 		<div className="hw-w-[400px]" >
-			<h4 className="hw-mt-10">Hello there</h4>
-			<p className="hw-mt-5">Thank you please</p>
-			{/* <button className="hw-rounded-md hw-overflow-auto hw-block hw-mt-10">
+			{/* <h4 className="hw-mt-10">Hello there</h4>
+			<p className="hw-mt-5">Thank you please</p> */}
+			<button className="hw-rounded-md hw-overflow-auto hw-block">
                 <img className="w-full" src={thumbnail} onClick={onOpenHarmony}/>
-            </button> */}
+            </button>
             <div className="hw-mt-2">
                 <div className="hw-flex hw-justify-between">
                     <span>{item.label}</span>

@@ -87,7 +87,7 @@ export async function POST(req: Request): Promise<Response> {
 
 	const old: string[] = branch.old;
     //Get rid of same type of updates (more recent one wins)
-    const updates = branch.updates.reduce<(ComponentUpdate & {oldValue: string})[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([{...curr, oldValue: old[i]}]), []);
+    const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([{...curr, oldValue: old[i]}]), []);
 	// const githubRepository = new GithubRepository(repository);
 	// const ref = await githubRepository.getBranchRef(repository.branch);
 	// if (ref !== repository.ref) {
