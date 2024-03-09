@@ -1,4 +1,4 @@
-import React, { useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { DisplayMode, HarmonyProvider, HarmonyProviderProps } from "./harmony-provider";
 import { FiberHTMLElement, getElementFiber } from "./inspector/inspector-dev";
@@ -8,17 +8,22 @@ import { Fiber } from "react-reconciler";
 var harmonyArguments = [{'data-harmony-id': 0}]
     
 export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts'> & {local?: boolean}> = ({local=false, ...options}) => {
-	const setBranchId = (branchId: string | undefined) => {
+	const setBranchId = (branchId: string) => {
 		const url = new URL(window.location.href);
-		if (branchId && !url.searchParams.has('branch-id')) {
+		if (!url.searchParams.has('branch-id')) {
 			url.searchParams.set('branch-id', branchId);
 			window.history.replaceState(null, '', url.href);
 		}
+        window.sessionStorage.setItem('branch-id', branchId);
 	}
     
     useEffect(() => {
         const urlParams = new URLSearchParams(window.location.search);
-        const branchId = urlParams.get('branch-id');
+        let branchId = urlParams.get('branch-id');
+        if (!branchId) {
+            branchId = window.sessionStorage.getItem('branch-id');
+        };
+
         if (!branchId) return;
         
 		const result = setupHarmonyProvider();

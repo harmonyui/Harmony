@@ -60,7 +60,7 @@ export interface HarmonyProviderProps {
 	setup: Setup;
 	fonts?: Font[];
 }
-export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, children, branchId: branchIdProps, fonts, setup}) => {
+export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, children, branchId, fonts, setup}) => {
 	const [isToggled, setIsToggled] = useState(true);
 	const [selectedComponent, _setSelectedComponent] = useState<HTMLElement>();
 	const [selectedComponentText, setSelectedComponentText] = useState<string>();
@@ -76,45 +76,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [scale, _setScale] = useState(1);
 	const [isDirty, setIsDirty] = useState(false);
 	const [updateOverlay, setUpdateOverlay] = useState(0);
-	const [branchId, _setBranchId] = useState<string | undefined>(branchIdProps);
 	const [isSaving, setIsSaving] = useState(false);
 	const [isPublished, setIsPublished] = useState(false);
 	const [displayMode, setDisplayMode] = useState<DisplayMode>();
 	const [publishState, setPublishState] = useState<PullRequest | undefined>();
-	//const bodyObserverRef = useRef<MutationObserver>(bodyObserver);
 	
-	const executeCommand = useComponentUpdator({isSaving, setIsSaving, fonts, isPublished, branchId: branchId || '', repositoryId, rootComponent, onChange() {
+	const executeCommand = useComponentUpdator({isSaving, setIsSaving, fonts, isPublished, branchId, repositoryId, rootComponent, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}});
-
-	// const assignIds = useCallback((element: HTMLElement): void => {
-	// 	const elementName = element.tagName.toLowerCase();
-	// 	const className = element.className;
-	// 	const childPosition = Array.from(element.parentNode?.children ?? []).indexOf(element)
-	// 	let hash = hashComponent({elementName, className, childPosition});
-
-	// 	let idIndex = availableIds.indexOf(hash);
-	// 	if (idIndex < 0) {
-	// 		hash = hashComponent({elementName, className, childPosition: 1});
-	// 		idIndex = availableIds.indexOf(hash);
-	// 	}
-
-	// 	if (idIndex > -1) {
-	// 		element.dataset.harmonyId = String(hash);
-	// 	}
-
-	// 	Array.from(element.children).forEach(child => assignIds(child as HTMLElement));
-	// }, [availableIds]);
-
-	const setBranchId = (branchId: string | undefined) => {
-		const url = new URL(window.location.href);
-		if (branchId && !url.searchParams.has('branch-id')) {
-			url.searchParams.set('branch-id', branchId);
-			window.history.replaceState(null, '', url.href);
-		}
-
-		_setBranchId(branchId);
-	}
 
 	const onHistoryChange = () => {
 		const url = new URL(window.location.href);
@@ -424,7 +393,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
 				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts}}>
-					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches} onBranchChange={setBranchId}>
+					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 					<div style={{width: `${WIDTH*scale}px`, height: `${HEIGHT*scale}px`}}>
 						<div ref={(d) => {
 							if (d && d !== harmonyContainerRef.current) {
