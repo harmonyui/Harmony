@@ -1086,82 +1086,63 @@ function isElementFluid(elm: Element, side: 'width' | 'height', useFlexForHeight
 }
 
 export function getFitContentSize(element: HTMLElement, keepPadding=false): {width: number, height: number} {
-	// var wrapper, clone = element.cloneNode(true) as HTMLElement, ow, p1, p2;
-	// const styles = getComputedStyle(element);
+	if (!keepPadding) {
+		//TODO: Find a better way to optimize
+		if (element.dataset.harmonyMinWidth && element.dataset.harmonyMinHeight) {
+			return {width: parseFloat(element.dataset.harmonyMinWidth), height: parseFloat(element.dataset.harmonyMinHeight)}
+		}
+		const clone = element.cloneNode(true) as HTMLElement;
+		const styles = getComputedStyle(element);
+		if (!keepPadding)
+			clone.style.padding = '0';
+		clone.style.maxWidth = 'none';
+		clone.style.minWidth = 'none';
+		clone.style.maxHeight = 'none';
+		clone.style.minHeight = 'none';
+		clone.style.height = 'auto';
+		clone.style.width = 'auto';
+		clone.style.fontSize = styles.fontSize;
+		clone.style.fontFamily = styles.fontFamily;
+		clone.style.lineHeight = styles.lineHeight;
+		clone.style.letterSpacing = styles.letterSpacing;
+		clone.style.fontWeight = styles.fontWeight;
 
-	// clone.style.margin = '0';
-	// if (!keepPadding)
-	// 	clone.style.padding = '0';
-	// clone.style.maxWidth = 'none';
-	// clone.style.minWidth = 'none';
-	// clone.style.maxHeight = 'none';
-	// clone.style.minHeight = 'none';
-	// clone.style.height = 'auto';
-	// clone.style.width = 'auto';
-	// clone.style.fontSize = styles.fontSize;
-	// clone.style.fontFamily = styles.fontFamily;
-	// clone.style.lineHeight = styles.lineHeight;
-	// clone.style.letterSpacing = styles.letterSpacing;
-	// clone.style.fontWeight = styles.fontWeight;
-	// /// create a wrapper that we can control, my reason for
-	// /// using an unknown element is that it stands less chance
-	// /// of being affected by stylesheets - this could be improved
-	// /// to avoid possible erroneous results by overriding more css
-	// /// attributes with inline styles.
-	// wrapper = document.createElement('wrapper');
-	// wrapper.style.display = 'flex';
-	// wrapper.style.alignItems = 'center';
-	// const elementRect = element.getBoundingClientRect();
-	// wrapper.style.width = `${elementRect.width + 500}px`
-	// wrapper.style.height = `${elementRect.height + 500}px`
-	// wrapper.style.padding = '0';
-	// wrapper.style.margin = '0';
-	// wrapper.appendChild(clone);
-	// /// insert the element in the same location as our target
-	// document.body.appendChild(wrapper)
+		// Set clone's visibility to hidden and position to absolute to measure its size accurately
+		clone.style.visibility = 'hidden';
+		clone.style.position = 'absolute';
+		clone.style.top = '-9999px';
+		clone.style.left = '-9999px';
+		
+		// Append the clone to the document body
+		element.parentNode?.insertBefore(clone,element);
+		
+		const rect = clone.getBoundingClientRect();
+		// Get the computed size of the clone
+		const naturalWidth = rect.width;
+		const naturalHeight = rect.height;
+		
+		// Remove the clone from the DOM
+		element.parentNode?.removeChild(clone);
 
-	// const rect = getBoundingRect(clone);
-	// const width = rect.width;
-	// const height = rect.height;
-
-	// document.body.removeChild(wrapper);
-
-	// return {width, height};
-
-	const clone = element.cloneNode(true) as HTMLElement;
-	const styles = getComputedStyle(element);
-	if (!keepPadding)
-		clone.style.padding = '0';
-  	clone.style.maxWidth = 'none';
-	clone.style.minWidth = 'none';
-	clone.style.maxHeight = 'none';
-	clone.style.minHeight = 'none';
-	clone.style.height = 'auto';
-	clone.style.width = 'auto';
-	clone.style.fontSize = styles.fontSize;
-	clone.style.fontFamily = styles.fontFamily;
-	clone.style.lineHeight = styles.lineHeight;
-	clone.style.letterSpacing = styles.letterSpacing;
-	clone.style.fontWeight = styles.fontWeight;
-
-	// Set clone's visibility to hidden and position to absolute to measure its size accurately
-	clone.style.visibility = 'hidden';
-	clone.style.position = 'absolute';
-	clone.style.top = '-9999px';
-	clone.style.left = '-9999px';
+		element.dataset.harmonyMinWidth = `${naturalWidth}`;
+		element.dataset.harmonyMinHeight = `${naturalHeight}`;
 	
-	// Append the clone to the document body
-	element.parentNode?.insertBefore(clone,element);
-	
-	const rect = clone.getBoundingClientRect();
-	// Get the computed size of the clone
-	const naturalWidth = rect.width;
-	const naturalHeight = rect.height;
-	
-	// Remove the clone from the DOM
-	element.parentNode?.removeChild(clone);
-  
-  	return { width: naturalWidth, height: naturalHeight };
+		return { width: naturalWidth, height: naturalHeight };
+	} else {
+		const styles = getComputedStyle(element);
+		const padding = styles.padding;
+		const oldRect = element.getBoundingClientRect();
+		element.style.padding = '10px';
+		const withPadding = element.getBoundingClientRect();
+		element.style.padding = '0px';
+		const withoutPadding = element.getBoundingClientRect();
+		element.style.padding = padding;
+
+		const width = withPadding.width > withoutPadding.width ? oldRect.width : 0;
+		const height = withPadding.height > withoutPadding.height ? oldRect.height : 0;
+
+		return {width, height};
+	}
 }
 
 interface GuidePoint {
@@ -1394,8 +1375,9 @@ const elementSnapBehavior: SnapBehavior = {
 		return oldValues;
 	},
 	isDraggable(element) {
-		const style = element ? getComputedStyle(element.parentElement!) : undefined;
-		if (!['block', 'list-item'].includes(style?.display || '')) {
+		const parent = element.parentElement!;
+		const style = getComputedStyle(parent);
+		if (!['block', 'list-item'].includes(style.display)) {
 			return 'This is not a block element';
 		}
 
@@ -1633,7 +1615,8 @@ const flexSnapping: SnapBehavior = {
 		return oldValues;
 	},
 	isDraggable(element) {
-		const parentStyle = getComputedStyle(element.parentElement!);
+		const parent = element.parentElement!;
+		const parentStyle = getComputedStyle(parent);
 		if (parentStyle?.display.includes('flex')) {
 			if (parentStyle.flexWrap === 'wrap') {
 				return 'Harmony does not currently support flex-wrap';
@@ -1657,6 +1640,7 @@ const flexSnapping: SnapBehavior = {
 		const selfIndex = currParentInfo.childEdgeInfo.find(info => info.element === element)!.index;
 		const minGapBetweenX = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
 		const minGap = round(getMinGap(parent), 1);
+		const childrenCount = currParentInfo.childEdgeInfo.length;
 
 		const addRect = (element: HTMLElement, rect: Rect) => {
 			updates.push({element, rect})
@@ -1699,7 +1683,8 @@ const flexSnapping: SnapBehavior = {
 	
 						first !== element && addDs(first, ds);
 						last !== element && addDs(last, -ds);
-						ds /= 3;
+						const ratio = childrenCount % 2 === 0 ? childrenCount - 1 : (childrenCount - 1) / 2
+						ds /= ratio
 					}
 				} else if (selfIndex === 0) {
 					if (currParentInfo[minGapBetweenX] > minGap || ds < 0) {
@@ -2055,10 +2040,10 @@ const flexSnapping: SnapBehavior = {
 		
 		
 		if (selfIndex > 0 && selfIndex < parentInfo.children.length - 1) {
-			if (parentInfo.edges[right].parentEdge.gap > 0)
+			//if (parentInfo.edges[right].parentEdge.gap > 0)
 			parentRect[left] = parentInfo.childEdgeInfo[selfIndex][left].elementLocation - parentInfo.edges[left].parentEdge.gap;
 			
-			if (parentInfo.edges[left].parentEdge.gap > 0)
+			//if (parentInfo.edges[left].parentEdge.gap > 0)
 			parentRect[right] = parentInfo.childEdgeInfo[selfIndex][right].elementLocation + parentInfo.edges[right].parentEdge.gap;
 		}
 		
@@ -2330,41 +2315,6 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 				removeTextContentSpans(toResize);
 			}
 		}
-
-		// if (isDesignerSelected) {
-		// 	toResize = element.children[0] as HTMLElement;
-		// 	const newStuff = {
-		// 		Bottom: event.deltaRect.bottom,
-		// 		Top: -event.deltaRect.top,
-		// 		Left: -event.deltaRect.left,
-		// 		Right: event.deltaRect.right,
-		// 	};
-
-		// 	if (isElementFluid(toResize, 'height')) {
-		// 		(['Bottom', 'Top'] as const).forEach(d => {
-		// 			const old = parseFloat($(toResize).css(`padding${d}`));
-		// 			const _new = newStuff[d];
-		// 			toResize.style[`padding${d}`] = `${old + _new}px`;
-		// 		})
-		// 	}
-
-		// 	if (isElementFluid(toResize, 'width')) {
-		// 		(['Left', 'Right'] as const).forEach(d => {
-		// 			const old = parseFloat($(toResize).css(`padding${d}`));
-		// 			const _new = newStuff[d];
-		// 			toResize.style[`padding${d}`] = `${old + _new}px`;
-		// 		})
-		// 	}
-
-		// 	element.style.padding = '0px';
-		// } 
-
-		// if (!isElementFluid(toResize, 'width')) {
-		// 	toResize.style.width = `${event.eventRect.width}px`
-		// }
-		// if (!isElementFluid(toResize, 'height')) {
-		// 	toResize.style.height = `${event.eventRect.height}px`
-		// }
 
 		onIsDragging && onIsDragging(event, element);
     }, onCalculateSnapping(element, x, y, currentX, currentY) {
@@ -2784,8 +2734,9 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 			if (true) {
 				//TODO: Remove this dependency on edge info
 				const parent = element.parentElement!;
-				const style = getComputedStyle(parent);
-				const axis = style.display.includes('flex') && style.flexDirection === 'column' ? 'y' : 'x';
+				const parentStyle = getComputedStyle(parent);
+				const style = getComputedStyle(element);
+				const axis = parentStyle.display.includes('flex') && parentStyle.flexDirection === 'column' ? 'y' : 'x';
 				const parentInfo = calculateParentEdgeInfo(parent, scale, scale, false, 'x');
 				const myInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
 				if (!myInfo) throw new Error("Cannot find my info");
@@ -2827,9 +2778,27 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				}));
 				//TODO: Remove isImage dependency (This is here because we want to be able to resize an image at will till the minimum size)
 				const {width, height} = isImageElement(toMeasure) ? {width: 20, height: 20} : getFitContentSize(toMeasure);
+				let maxWidth = parseFloat(style.maxWidth);
+				if (isNaN(maxWidth)) {
+					maxWidth = Infinity;
+				}
+				let maxHeight = parseFloat(style.maxHeight);
+				if (isNaN(maxHeight)) {
+					maxHeight = Infinity;
+				}
+
+				let minWidth = parseFloat(style.minWidth);
+				if (isNaN(minWidth)) {
+					minWidth = Infinity;
+				}
+				let minHeight = parseFloat(style.minHeight);
+				if (isNaN(minHeight)) {
+					minHeight = -Infinity;
+				}
 				modifiers.push(interact.modifiers.restrictSize({
-					//Hacky fix for when a flex-basis flex-col item is measured, it comes out all wrong
-					min: {width: width <= toMeasure.clientWidth ? Math.max(width, 20) : 20, height: height <= toMeasure.clientHeight ? Math.max(height, 20) : 20}
+					//TODO: Hacky fix for when a flex-basis flex-col item is measured, it comes out all wrong
+					min: {width: width <= toMeasure.clientWidth ? minWidth < Infinity ? minWidth : Math.min(width, 20, minWidth) : 20, height: height <= toMeasure.clientHeight ? Math.max(height, 20, minHeight) : 20},
+					max: {width: maxWidth, height: maxHeight}
 				}))
 			}
 

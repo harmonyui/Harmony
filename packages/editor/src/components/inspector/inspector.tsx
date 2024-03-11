@@ -47,6 +47,10 @@ export function isImageElement(element: Element): boolean {
 }
 
 export function isSelectable(element: HTMLElement, scale: number): boolean {
+	const style = getComputedStyle(element);
+	if (style.position === 'absolute') {
+		return false;
+	}
 	const sizeThreshold = 15;
 	const rect = element.getBoundingClientRect();
 	if (rect.height * scale < sizeThreshold || rect.width < sizeThreshold) {
@@ -277,6 +281,37 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		if (overlayRef.current === undefined) {
 			overlayRef.current = new Overlay(container, parentElement);
+		}
+
+		//TODO: Hacky fix. Inline elements are not affected by vertical margin, so the only way to get them to move when next
+		//to a block element is to change it to a block element.
+		if (selectedComponent) {
+			const parent = selectedComponent.parentElement!;
+			const selfIndex = Array.from(parent.children).indexOf(selectedComponent);
+			const prevSibling = selfIndex > 0 ? parent.children[selfIndex - 1] as HTMLElement : undefined;
+			const nextSibling = selfIndex < parent.children.length - 1 ? parent.children[selfIndex + 1] as HTMLElement : undefined;
+
+			const prevSiblingDisplay = prevSibling && isSelectable(prevSibling, scale) ? getComputedStyle(prevSibling).display : undefined;
+			const nextSiblingDisplay = nextSibling && isSelectable(nextSibling, scale) ? getComputedStyle(nextSibling).display : undefined;
+
+			const styles = getComputedStyle(selectedComponent);
+
+			if (styles.display === 'inline' && (prevSiblingDisplay === 'block' || nextSiblingDisplay === 'block')) {
+				selectedComponent.style.display = 'block';
+				selectedComponent.style.marginTop = '0px';
+				selectedComponent.style.marginBottom = '0px';
+			} else if (styles.display === 'block') {
+				if (prevSiblingDisplay === 'inline') {
+					prevSibling!.style.display = 'block';
+					prevSibling!.style.marginTop = '0px';
+					prevSibling!.style.marginBottom = '0px';
+				}
+				if (nextSiblingDisplay === 'inline') {
+					nextSibling!.style.display = 'block';
+					nextSibling!.style.marginTop = '0px';
+					nextSibling!.style.marginBottom = '0px';
+				}
+			}
 		}
 
 		if (selectedComponent) {

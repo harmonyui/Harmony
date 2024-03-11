@@ -145,7 +145,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
     ]
 
 	return (<>
-		<div className="hw-w-[400px]" >
+		<div className="hw-w-[400px] hw-min-w-[300px]" >
 			{/* <h4 className="hw-mt-10">Hello there</h4>
 			<p className="hw-mt-5">Thank you please</p> */}
 			<button className="hw-rounded-md hw-overflow-auto hw-block">
