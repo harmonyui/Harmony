@@ -473,7 +473,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
 	
 	useBackgroundLoop(() => {
-		if (saveStack.length && !isSaving && !isPublished && false) {
+		if (saveStack.length && !isSaving && !isPublished) {
 			const copy = saveStack.slice();
 			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
 				
@@ -548,6 +548,9 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		for (let i = 0; i < update.length; i++) {
 			const element = findElementFromId(update[i].componentId, update[i].parentId, update[i].childIndex);
 			if (element === undefined) return;
+
+			//We do not want to crowd the updates if they are not updating anything
+			if (update[i].value === update[i].oldValue) continue;
 			
 			makeUpdates(element, [update[i]], rootComponent, fonts);
 		}
