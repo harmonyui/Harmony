@@ -10,7 +10,7 @@ import $ from 'jquery';
 
 import { ComponentUpdate } from "@harmony/ui/src/types/component";
 import { ResizeValue, useResize, ResizeRect, ResizeDirection, ResizeCoords } from "@harmony/ui/src/hooks/resize";
-import { FlexValues, MarginValues, useSnapping } from "./snapping";
+import { FlexValues, MarginValues, useSnapping } from "../snapping/snapping";
 import { usePrevious } from "@harmony/ui/src/hooks/previous";
 import {Alert} from '@harmony/ui/src/components/core/alert';
 

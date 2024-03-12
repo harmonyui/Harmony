@@ -374,3 +374,7 @@ export function getIndexFromLineAndColumn(text: string, line: number, column: nu
 
   return undefined; // Column number out of range
 }
+
+export const close = (a: number, b: number, threshold: number): boolean => {
+	return Math.abs(a-b) <= threshold;
+}
