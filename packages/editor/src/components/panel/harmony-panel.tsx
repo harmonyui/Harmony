@@ -5,7 +5,7 @@ import { Input, InputBlur, NumberStepperInput } from "@harmony/ui/src/components
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
-import { Fragment, useMemo, useState } from "react";
+import { Fragment, useEffect, useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { componentIdentifier } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
@@ -91,11 +91,11 @@ const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElem
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement.dataset.harmonyText === 'true' ? selectedElement.parentElement! : selectedElement) : undefined;
 	
 	return (
-		<div className="hw-flex hw-w-full">
-			<div className="hw-h-20">
+		<div className="hw-flex hw-w-full hw-items-center">
+			<div className="hw-h-14 hw-ml-4">
 				<img className="hw-h-full" src={`${WEB_URL}/harmonylogo.svg`}/>
 			</div>
-			<div className="hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
+			<div className="hw-px-4 hw-py-4 sm:hw-px-6 hw-w-full">
 				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches}/>
 			</div>
 		</div>
@@ -135,10 +135,10 @@ const PreviewPanel: React.FunctionComponent = () => {
 		<div className="hw-flex hw-justify-between hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
 			<div>
 				<div className="hw-flex hw-gap-4">
-					<button className="hw-p-2 hw-bg-primary hover:hw-bg-primary/80 hw-rounded-md" onClick={onBack}>
+					<button className="hw-p-2 hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md" onClick={onBack}>
 						<ArrowLeftIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-white hw-stroke-[2.5]"/>
 					</button>
-					<button className="hw-bg-primary hw-rounded-md hw-p-2 hover:hw-bg-primary/80">
+					<button className="hw-bg-[#11283B] hw-rounded-md hw-p-2 hover:hw-bg-[#11283B]/80">
 						<MaximizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none" onClick={onMaximize}/>
 					</button>
 				</div>
@@ -146,7 +146,7 @@ const PreviewPanel: React.FunctionComponent = () => {
 			<div>
 				<div className="hw-flex hw-gap-4">
 					<ShareButton />
-					{!publishState ? <PublishButton/> : <Button onClick={onSendRequest} loading={loading}>Send Request</Button>}
+					{!publishState ? <PublishButton/> : <Button mode="dark" onClick={onSendRequest} loading={loading}>Send Request</Button>}
 				</div>
 			</div>
 		</div>
@@ -364,8 +364,8 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
-			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2">
-				<Header level={4}>{currBranch ? currBranch.name : 'Invalid Branch'}</Header>
+			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
+				<Header className="hw-font-normal" level={3}>{currBranch ? currBranch.name : 'Invalid Branch'}</Header>
 			</div>
 			{data ? <>
 				<div className="hw-px-4">
@@ -383,11 +383,12 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				<Button onClick={onSave}>Save</Button>
 			</div> : null} */}
 			<div className="hw-ml-auto" style={{borderLeft: '0px'}}>
-				<ToggleSwitch value={toggle} onChange={onToggleChange} label="Designer Mode"/>
+				{/* <ToggleSwitch value={toggle} onChange={onToggleChange} label="Designer Mode"/> */}
+				<p className="hw-text-base hw-font-light">{toggle ? 'Designer Mode' : 'Navigator Mode'} <span className="hw-text-gray-400">[T]</span></p>
 			</div>
 			<div className="hw-px-4 hw-flex hw-gap-4">
 				<PublishButton preview/>
-				<button className="hw-bg-primary hw-rounded-full hw-p-2 hover:hw-bg-primary/80" onClick={onPreview}>
+				<button className="hw-bg-[#11283B] hw-rounded-full hw-p-2 hover:hw-bg-[#11283B]/80" onClick={onPreview}>
 					<PlayIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
 				</button>
 			</div>
@@ -450,7 +451,7 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 	}
 
 	return <>
-		<Button onClick={() => setShow(true)} disabled={isPublished}>Publish</Button>
+		<Button mode="dark" onClick={() => setShow(true)} disabled={isPublished}>Publish</Button>
 		<HarmonyModal show={show} onClose={onClose} editor>
 			<div className="hw-flex hw-gap-2 hw-items-center">
 				<GitBranchIcon className="hw-w-6 hw-h-6"/>
@@ -498,7 +499,7 @@ const ShareButton = () => {
 	}
 
 	return (<>
-		<Popover button={<button className="hw-bg-primary hw-rounded-full hw-p-2 hover:hw-bg-primary/80" >
+		<Popover button={<button className="hw-bg-[#11283B] hw-rounded-full hw-p-2 hover:hw-bg-[#11283B]/80" >
 			<ShareArrowIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
 		</button>} container={document.getElementById('harmony-container') || undefined}>
 			<button className="hw-text-sm hw-text-blue-500 hw-flex hw-items-center hw-gap-1" onClick={onCopy}>

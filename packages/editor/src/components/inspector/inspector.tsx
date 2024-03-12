@@ -200,10 +200,10 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				const propValue = element.style[property as unknown as number];
 				if (!propValue || propValue === 'auto') return;
 
-				const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
-				if (!match) throw new Error("Invalid property value " + propValue);
-				const num = round(parseFloat(match[1]), 1, true);
-				const unit = match[2];
+				// const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
+				// if (!match) throw new Error("Invalid property value " + propValue);
+				const num = round(parseFloat(propValue), 1, true);
+				const unit = 'px';//match[2];
 				const value = `${num}${unit}`;
 
 				element.style[property as unknown as number] = value;

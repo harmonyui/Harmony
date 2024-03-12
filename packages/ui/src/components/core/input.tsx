@@ -28,7 +28,7 @@ export const Input: React.FunctionComponent<InputProps> = ({
   const props = {
     className: `${
       className || ""
-    } hw-border focus:hw-outline-0 focus:hw-border-gray-300 hw-border-gray-300 hw-shadow-sm hw-rounded-md hw-px-3 hw-py-1.5 hw-text-sm hw-text-gray-900 focus:hw-ring-primary focus:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none placeholder:hw-text-gray-400`,
+    } hw-border focus:hw-outline-0 focus:hw-border-gray-400 hw-border-gray-400 hw-shadow-sm hw-rounded-[3px] hw-px-3 hw-py-1.5 hw-text-sm hw-text-gray-900 focus:hw-ring-primary focus:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none placeholder:hw-text-gray-400`,
     onChange: (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
@@ -140,10 +140,10 @@ export const NumberStepperInput: React.FunctionComponent<NumberStepperInputProps
   }
 
   return (
-    <div className="hw-flex hw-rounded-md hw-border hw-items-center hw-overflow-auto">
-      <button className="hover:hw-bg-gray-100 hw-py-1.5 hw-px-2.5 hw-border-r" onClick={() => changeValue(valueProp - 1)}>-</button>
-      <input className="hw-px-1.5 hw-text-sm hw-py-1.5 hw-border-none hw-w-8 focus:hw-ring-0" value={value} onChange={onChange} onBlur={onBlur}/>
-      <button className="hover:hw-bg-gray-100 hw-py-1.5 hw-px-2.5 hw-border-l" onClick={() => changeValue(valueProp + 1)}>+</button>
+    <div className="hw-flex hw-rounded-[3px] hw-border hw-border-gray-400 hw-items-center hw-overflow-auto">
+      <button className="hover:hw-bg-gray-100 hw-py-1 hw-px-2.5 hw-border-r hw-border-gray-400" onClick={() => changeValue(valueProp - 1)}>-</button>
+      <input className="hw-px-1.5 hw-text-sm hw-py-1 hw-border-none hw-w-8 focus:hw-ring-0" value={value} onChange={onChange} onBlur={onBlur}/>
+      <button className="hover:hw-bg-gray-100 hw-py-1 hw-px-2.5 hw-border-l hw-border-gray-400" onClick={() => changeValue(valueProp + 1)}>+</button>
     </div>
   )
 }

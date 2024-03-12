@@ -180,7 +180,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	})
 
 	useEffect(() => {
-		hotkeys('ctrl+option+h,command+option+h', onToggle);
+		hotkeys('T', onToggle);
 		hotkeys('ctrl+=,command+=', onScaleIn);
 		hotkeys('ctrl+-,command+-', onScaleOut);
 		
