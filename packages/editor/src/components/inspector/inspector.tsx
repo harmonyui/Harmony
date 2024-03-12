@@ -211,13 +211,17 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 			const oldValues: string[] = [];
 			const keys: (keyof MarginValues | keyof FlexValues | 'width' | 'height')[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems', 'width', 'height'];
-			(keys).forEach(property => {
+			Object.keys(oldProperties).forEach(property => {
 				const value = element.style[property as unknown as number];
 				if (!value) return;
 
 				const componentId = element.dataset.harmonyId || '';
 				const parentId = element.dataset.harmonyParentId || '';
 				const oldValue = oldProperties[property];
+
+				if (!oldValue) {
+					throw new Error("Why are you happneing?");
+				}
 
 				const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 				if (childIndex < 0) throw new Error("Cannot get right child index");

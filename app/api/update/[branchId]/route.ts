@@ -36,7 +36,13 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	if (!repository) {
 		throw new Error("Cannot find repository with id " + branch.repository_id)
 	}
-	const body = updateRequestBodySchema.parse(await req.json());
+
+	const json = await req.json();
+	const parseResult = updateRequestBodySchema.safeParse(json);
+	if (!parseResult.success) {
+		throw new Error("Invalid parsing");
+	}
+	const body = parseResult.data;
 
 	const updates: ComponentUpdate[] = [];
 	for (const value of body.values) {

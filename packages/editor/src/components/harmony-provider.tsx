@@ -504,7 +504,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		//const old = oldValues.map((oldValue, i) => ({...update[i], value: oldValue}));
 		const newCommand: HarmonyCommand = {
 			name: 'change',
-			update,
+			update: update.filter(update => update.oldValue !== update.value),
 			//old,
 		}
 		//TODO: find a better way to do this
@@ -548,9 +548,6 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		for (let i = 0; i < update.length; i++) {
 			const element = findElementFromId(update[i].componentId, update[i].parentId, update[i].childIndex);
 			if (element === undefined) return;
-
-			//We do not want to crowd the updates if they are not updating anything
-			if (update[i].value === update[i].oldValue) continue;
 			
 			makeUpdates(element, [update[i]], rootComponent, fonts);
 		}
