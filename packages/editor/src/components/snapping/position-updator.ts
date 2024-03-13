@@ -22,41 +22,53 @@ interface UpdateRectsProps {
 
 export const absoluteUpdator: PositionUpdator = {
 	updateRects({parentUpdate, childrenUpdates}, scale, scaleActual) {
+		const container = document.getElementById('harmony-section');
+		if (!container) {
+			throw new Error("Cannot find harmony section");
+		}
+		const containerRect = getBoundingRect(parentUpdate.element);
+
 		const updatedElements: UpdatedElement[] = [];
 		const updateTransform = (element: HTMLElement, rect: Rect) => {
 			const style = getComputedStyle(element);
 			const oldValues = {
 				transform: style.transform,
-				width: style.width,
-				height: style.height
-			}
-			if (!element.dataset.harmonyLastX || !element.dataset.harmonyLastY || !element.dataset.harmonyLastWidth || !element.dataset.harmonyLastHeight) {
-				const rect = getBoundingRect(element);
-				element.dataset.harmonyLastX = `${rect.left / scaleActual}`;
-				element.dataset.harmonyLastY = `${rect.top / scaleActual}`;
-				element.dataset.harmonyLastWidth = style.width;
-				element.dataset.harmonyLastHeight = style.height;
+				width: element.style.width ? element.style.width : '',
+				height: element.style.height ? element.style.height : '',
+				position: style.position,
+				left: style.left,
+				top: style.top,
+				margin: style.margin
 			}
 			
-			const currX = parseFloat(element.dataset.harmonyLastX);
-			const currY = parseFloat(element.dataset.harmonyLastY);
-
-			const beforeSizeChange = getBoundingRect(element);
-			element.style.width = `${rect.width / scaleActual}px`;
-			element.style.height = `${rect.height / scaleActual }px`;
-			const afterSizeChange = getBoundingRect(element);
-
-			const diff = {
-				left: afterSizeChange.left - beforeSizeChange.left,
-				top: afterSizeChange.top - beforeSizeChange.top
-			}
-			element.style.transform = `translate(${rect.left /scaleActual - currX - diff.left}px, ${rect.top /scaleActual - currY - diff.top}px)`
 			
+			element.style.position = 'absolute';
+			element.style.left = `${rect.left - containerRect.left}px`;
+			element.style.top = `${rect.top - containerRect.top}px`
+			element.style.width = `${rect.width}px`
+			element.style.height = `${rect.height}px`;
+			element.style.margin = '0px';
+			element.dataset.harmonyForceSelectable = 'true';
 
 			updatedElements.push({element, oldValues});
 		}
 
-		updateTransform(parentUpdate.element, parentUpdate.rect);
+		for (const child of Array.from(parentUpdate.element.children)) {
+			const element = child as HTMLElement;
+			if (childrenUpdates.find(up => up.element === element)) continue;
+
+			childrenUpdates.push({element, rect: getBoundingRect(element)});
+		}
+
+		updatedElements.push({element: parentUpdate.element, oldValues: {
+			position: parentUpdate.element.style.position,
+			width: parentUpdate.element.style.width,
+			height: parentUpdate.element.style.height
+		}})
+		parentUpdate.element.style.position = 'relative';
+		parentUpdate.element.style.width = `${parentUpdate.rect.width}px`
+		parentUpdate.element.style.height = `${parentUpdate.rect.height}px`;
+		
 		for (const childUpdate of childrenUpdates) {
 			updateTransform(childUpdate.element, childUpdate.rect);
 		}
@@ -68,18 +80,41 @@ export const absoluteUpdator: PositionUpdator = {
 export const elementUpdator: PositionUpdator = {
 	updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number, scaleActual: number) {
 		const parentInfo = calculateParentEdgeInfo(parentUpdate.element, scale, scaleActual, false, 'x', [parentUpdate, ...childrenUpdates]);
-		if (!parentInfo.edges) return;
+		if (!parentInfo.edges) return [];
 		
 		const left = 'left';
 		const right = 'right';
 		const top = 'top';
 		const bottom = 'bottom';
+		const updatedElements: UpdatedElement[] = [];
+
+		const updateElementValues = (element: HTMLElement, properties: string[]) => {
+			const currElement = updatedElements.find(updated => updated.element === element);
+			const style = getComputedStyle(element);
+			if (currElement) {
+				properties.forEach(property => {
+					currElement.oldValues[property] = style[property as unknown as number];
+				})
+			} else {
+				const oldValues = properties.reduce<Record<string, string>>((prev, curr) => {
+					prev[curr] = style[curr as unknown as number];
+
+					return prev;
+				}, {});
+				updatedElements.push({element, oldValues})
+			}
+		}
+
+		updateElementValues(parentInfo.element, ['paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom'])
 
 		setSpaceForElement(parentInfo.element, 'padding', left, 0);
 		setSpaceForElement(parentInfo.element, 'padding', right, 0);
 		setSpaceForElement(parentInfo.element, 'padding', top, 0);
 		setSpaceForElement(parentInfo.element, 'padding', bottom, 0);
 		for (const info of parentInfo.childEdgeInfo) {
+			updateElementValues(info.element, ['marginRight', 'marginLeft', 'marginTop', 'marginBottom'])
+
+
 			setSpaceForElement(info.element, 'margin', left, 0);
 			setSpaceForElement(info.element, 'margin', right, 0);
 			setSpaceForElement(info.element, 'margin', top, 0);
@@ -110,6 +145,7 @@ export const elementUpdator: PositionUpdator = {
 			//right - width naturally expands in div block
 			if (info.widthType === 'fixed') {
 				const toResize = selectDesignerElementReverse(info.element);
+				updateElementValues(toResize, ['width']);
 				toResize.style.width = `${info.width}px`
 			} else if (info.widthType === 'expand') {
 				const parentGap = Math.max(getSiblingGap(parentInfo.edges[endXSide].parentEdge.gap, parentInfo.edges[endXSide].parentEdge.gapTypes), 0);
@@ -117,6 +153,7 @@ export const elementUpdator: PositionUpdator = {
 				setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
 				setSpaceForElement(parentInfo.element, 'padding', endXSide, parentGap);
 			} else {
+				updateElementValues(info.element, ['width']);
 				info.element.style.width = 'auto';
 			}
 
@@ -134,8 +171,10 @@ export const elementUpdator: PositionUpdator = {
 
 					if (type.type.includes('margin')) {
 						if (gap - type.value >= 0) {
+							type.style && updateElementValues(type.element, [type.style]);
 							type.element.style[type.style as unknown as number] = '0px';
 						} else {
+							type.style && updateElementValues(type.element, [type.style]);
 							type.element.style[type.style as unknown as number] = `${gap}px`;
 							foundGap = true;
 							break;
@@ -151,8 +190,10 @@ export const elementUpdator: PositionUpdator = {
 			if (info.heightType === 'fixed') {
 				//TODO: hacky fix to resize the image but not the wrapper
 				const toResize = selectDesignerElementReverse(info.element);
+				updateElementValues(toResize, ['height']);
 				toResize.style.height = `${info.height}px`
 			} else {
+				updateElementValues(info.element, ['height']);
 				info.element.style.height = 'auto';
 			}
 		}
@@ -167,6 +208,8 @@ export const elementUpdator: PositionUpdator = {
 			setSpaceForElement(parentInfo.element, 'padding', top, getSiblingGap(parentInfo.edges[top].parentEdge.gap, parentInfo.edges[top].parentEdge.gapTypes));
 			setSpaceForElement(parentInfo.element, 'padding', bottom, getSiblingGap(parentInfo.edges[bottom].parentEdge.gap, parentInfo.edges[bottom].parentEdge.gapTypes));
 		}
+
+		return updatedElements;
 	}
 }
 
@@ -193,12 +236,29 @@ export const flexUpdator: PositionUpdator = {
 		const heightType = axis === 'x' ? 'heightType' : 'widthType';
 		const widthType = axis === 'x' ? 'widthType' : 'heightType';
 
+		const updatedElements: UpdatedElement[] = [];
+		const updateElementValues = (element: HTMLElement, properties: string[]) => {
+			const currElement = updatedElements.find(updated => updated.element === element);
+			const style = getComputedStyle(element);
+			if (currElement) {
+				properties.forEach(property => {
+					currElement.oldValues[property] = style[property as unknown as number];
+				})
+			} else {
+				const oldValues = properties.reduce<Record<string, string>>((prev, curr) => {
+					prev[curr] = style[curr as unknown as number];
+
+					return prev;
+				}, {});
+				updatedElements.push({element, oldValues})
+			}
+		}
 
 		const updates: UpdateRect[] = childrenUpdates;
 		updates.push(parentUpdate);
 		//updates.push(...Array.from(parentReal.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)})));
 		const parentInfo = calculateFlexParentEdgeInfo(parentReal, scale, scale, false, 'x', updates);
-		if (!parentInfo.edges) return;
+		if (!parentInfo.edges) return [];
 
 		if (!close(parentInfo[minGapBetweenX], 0, 0.1) && parentInfo[minGapBetweenX] < 0.1) {
 			throw new Error("mingap cannot be less than zero")
@@ -224,6 +284,9 @@ export const flexUpdator: PositionUpdator = {
 		const isXCenter = close(parentInfo.edges[left].parentEdge.gap, parentInfo.edges[right].parentEdge.gap, 0.1) && childrenWidthFixed;
 		const alignStart = parentInfo.childEdgeInfo.some(child => close(child[height], child[minHeight], 0.1)) ? 'flex-start' : 'normal';
 
+
+		updateElementValues(parentInfo.element, ['paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom', 'alignItems', 'gap', 'justify-content']);
+
 		setSpaceForElement(parentInfo.element, 'padding', left, 0);
 		setSpaceForElement(parentInfo.element, 'padding', right, 0);
 		setSpaceForElement(parentInfo.element, 'padding', top, 0);
@@ -231,6 +294,8 @@ export const flexUpdator: PositionUpdator = {
 		parentInfo.element.style.justifyContent = 'normal';
 
 		for (const info of parentInfo.childEdgeInfo) {
+			updateElementValues(info.element, ['marginRight', 'marginLeft', 'marginTop', 'marginBottom'])
+
 			setSpaceForElement(info.element, 'margin', left, 0);
 			setSpaceForElement(info.element, 'margin', right, 0);
 			setSpaceForElement(info.element, 'margin', top, 0);
@@ -270,6 +335,7 @@ export const flexUpdator: PositionUpdator = {
 			}	
 			else if (info[heightType] === 'fixed') {
 				const toResize = selectDesignerElementReverse(info.element);
+				updateElementValues(toResize, ['height']);
 				toResize.style[height] = `${info[height]}px`;
 			} else if (close(info[height], info[minHeight], 0.1) && parentInfo.element.style.alignItems === 'normal') {
 				parentInfo.element.style.alignItems = 'flex-start';
@@ -312,6 +378,7 @@ export const flexUpdator: PositionUpdator = {
 			//right - width
 			if (info[widthType] === 'fixed') {
 				const toResize = selectDesignerElementReverse(info.element);
+				updateElementValues(toResize, ['width']);
 				toResize.style[width] = `${info[width]}px`;
 			} 
 			// else if (info[widthType] === 'expand') {
@@ -333,5 +400,7 @@ export const flexUpdator: PositionUpdator = {
 			setSpaceForElement(parentInfo.element, 'padding', top, parentInfo.edges[top].parentEdge.gap);
 			setSpaceForElement(parentInfo.element, 'padding', bottom, parentInfo.edges[bottom].parentEdge.gap);
 		}
+
+		return updatedElements;
 	}
 }

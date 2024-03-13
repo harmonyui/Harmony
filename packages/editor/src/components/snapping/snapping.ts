@@ -15,6 +15,8 @@ import { PositionUpdator, UpdateRect, UpdatedElement, absoluteUpdator, elementUp
 
 
 export function isSelectable(element: HTMLElement, scale: number): boolean {
+	if (element.dataset.harmonyForceSelectable === 'true') return true;
+	
 	//If the size is less but it has margin, make it selectable
 	if (['Bottom', 'Top', 'Left', 'Right'].some(d => parseFloat($(element).css(`margin${d}`)) !== 0)) {
 		return true;
@@ -1608,7 +1610,14 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 	})
 
 	const startDragging = useEffectEvent((event: InteractEvent<'drag', 'start'>) => {
-        
+        // if (!element) return;
+		// const clone = element.cloneNode(true);
+		// (clone as HTMLElement).style.visibility = 'hidden';
+		// element.parentNode?.insertBefore(clone, element);
+
+		// const cloneParent = element.parentNode!.cloneNode(true);
+		// (cloneParent as HTMLElement).style.visibility = 'hidden';
+		// element.parentNode?.parentNode?.insertBefore(cloneParent, element.parentNode);
 	});
 
 	const handleTheDragging = (event: DraggingEvent) => {
