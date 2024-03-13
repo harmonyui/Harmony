@@ -325,11 +325,11 @@ function getGapTypes(fromElement: HTMLElement, toElement: HTMLElement, axis: Axi
 function isElementFluid(elm: HTMLElement, side: 'width' | 'height', useFlexForHeight=true){
 	const harmonyFixed = side === 'width' ? 'harmonyFixedWidth' : 'harmonyFixedHeight';
 	//TODO: Hacky way to optimize
-	if (elm.dataset[harmonyFixed] === 'true') {
-		return false;
-	} else if (elm.dataset[harmonyFixed] === 'false') {
-		return true;
-	}
+	// if (elm.dataset[harmonyFixed] === 'true') {
+	// 	return false;
+	// } else if (elm.dataset[harmonyFixed] === 'false') {
+	// 	return true;
+	// }
 
     var wrapper, clone = elm.cloneNode(true) as HTMLElement, ow, p1, p2;
     let value;
@@ -408,12 +408,12 @@ function isElementFluid(elm: HTMLElement, side: 'width' | 'height', useFlexForHe
 export function getFitContentSize(element: HTMLElement, keepPadding=false): {width: number, height: number} {
 	if (!keepPadding) {
 		//TODO: Find a better way to optimize
-		if (element.dataset.harmonyMinWidthPadding && element.dataset.harmonyMinHeightPadding && keepPadding) {
-			return {width: parseFloat(element.dataset.harmonyMinWidthPadding), height: parseFloat(element.dataset.harmonyMinHeightPadding)}
-		}
-		if (element.dataset.harmonyMinWidth && element.dataset.harmonyMinHeight && !keepPadding) {
-			return {width: parseFloat(element.dataset.harmonyMinWidth), height: parseFloat(element.dataset.harmonyMinHeight)}
-		}
+		// if (element.dataset.harmonyMinWidthPadding && element.dataset.harmonyMinHeightPadding && keepPadding) {
+		// 	return {width: parseFloat(element.dataset.harmonyMinWidthPadding), height: parseFloat(element.dataset.harmonyMinHeightPadding)}
+		// }
+		// if (element.dataset.harmonyMinWidth && element.dataset.harmonyMinHeight && !keepPadding) {
+		// 	return {width: parseFloat(element.dataset.harmonyMinWidth), height: parseFloat(element.dataset.harmonyMinHeight)}
+		// }
 		const clone = element.cloneNode(true) as HTMLElement;
 		const styles = getComputedStyle(element);
 		if (!keepPadding)

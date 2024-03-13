@@ -1143,7 +1143,11 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		}
 	}
 
-	const setCssCalculations = (elementProp: HTMLElement, cssUpdator: PositionUpdator, oldValue: [HTMLElement, unknown][]): [HTMLElement, Record<string, string>][] => {
+	const setCssCalculations = (elementProp: HTMLElement, scale: number, oldValue: [HTMLElement, unknown][]): [HTMLElement, Record<string, string>][] => {
+		const scaledContainer = document.getElementById('harmony-scaled');
+		if (!scaledContainer) throw new Error("Cannot find scaled container");
+		scaledContainer.style.transform = '';
+		
 		const parent = elementProp.parentElement!;
 		const elementProps: UpdateRectsProps = {
 			parentUpdate: {
@@ -1174,22 +1178,11 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		}, [elementProps]);
 		
 		
-		// const parent = element.parentElement!;
-		// const props: UpdateRectsProps = {
-		// 	parentUpdate: {
-		// 		element: parent,
-		// 		rect: getBoundingRect(parent)
-		// 	},
-		// 	childrenUpdates: oldValue.reduce<UpdateRect[]>((prev, [element]) => {
-		// 		if (element === parent) return prev;
-
-		// 		prev.push({element, rect: getBoundingRect(element)});
-
-		// 		return prev;
-		// 	},[])//Array.from(parent.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)}))
-		// }
 		applyOldValues(oldValues);
-		return props.reduce<[HTMLElement, Record<string, string>][]>((prev, curr) => {
+
+		
+
+		const values = props.reduce<[HTMLElement, Record<string, string>][]>((prev, curr) => {
 			const cssUpdator = getSnappingBehavior(curr.parentUpdate.element).getCssUpdator();
 			const hasTextNodes = curr.parentUpdate.element.childNodes.length === 1 && curr.parentUpdate.element.childNodes[0].nodeType === Node.TEXT_NODE
 			if (hasTextNodes) {
@@ -1212,6 +1205,9 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 			return prev;
 		}, []);
+		scaledContainer.style.transform = `scale(${scale})`;
+
+		return values;
 	}
 
 	const result = useDraggable({element, onIsDragging(event) {
@@ -1247,7 +1243,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		
 		const cssUpdator = snappingBehavior.getCssUpdator();
 
-		const newOldValues = cssUpdator !== snappingBehavior.getPositionUpdator() ? setCssCalculations(element, cssUpdator, oldValues) : oldValues;
+		const newOldValues = cssUpdator !== snappingBehavior.getPositionUpdator() ? setCssCalculations(element, scale, oldValues) : oldValues;
 		
 		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), newOldValues);
 		setOldValues([]);
@@ -1370,7 +1366,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 		const cssUpdator = snappingBehavior.getCssUpdator();
 
-		const newOldValues = cssUpdator !== snappingBehavior.getPositionUpdator() ? setCssCalculations(element, cssUpdator, oldValues) : oldValues;
+		const newOldValues = cssUpdator !== snappingBehavior.getPositionUpdator() ? setCssCalculations(element, scale, oldValues) : oldValues;
 		
 		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), newOldValues);
 		setOldValues([]);
@@ -1775,12 +1771,12 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				const parentStyle = getComputedStyle(parent);
 				const style = getComputedStyle(element);
 				const axis = parentStyle.display.includes('flex') && parentStyle.flexDirection === 'column' ? 'y' : 'x';
-				const parentInfo = calculateParentEdgeInfo(parent, scale, scale, false, 'x');
+				const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
 				const myInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
 				if (!myInfo) throw new Error("Cannot find my info");
 
 				const toMeasure = selectDesignerElementReverse(element);
-				const toMeasureInfo = toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? calculateParentEdgeInfo(toMeasure, scale, scale, false, 'x') : undefined;
+				const toMeasureInfo = toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? calculateParentEdgeInfo(toMeasure, 1, scale, false, 'x') : undefined;
 				
 				const validSibiling = (side: RectSide) => {
 					const otherSideClose = side === 'left' || side === 'right' ? 'top' : 'left';
@@ -1837,8 +1833,8 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				}
 				modifiers.push(interact.modifiers.restrictSize({
 					//TODO: Hacky fix for when a flex-basis flex-col item is measured, it comes out all wrong
-					min: {width: width <= toMeasure.clientWidth ? minWidth < Infinity ? minWidth : Math.min(width, 20, minWidth) : 20, height: height <= toMeasure.clientHeight ? Math.max(height, 20, minHeight) : 20},
-					max: {width: maxWidth, height: maxHeight}
+					min: {width: (width <= toMeasure.clientWidth ? minWidth < Infinity ? minWidth : Math.min(width, 20, minWidth) : 20) * scale, height: (height <= toMeasure.clientHeight ? Math.max(height, 20, minHeight) : 20) * scale},
+					max: {width: maxWidth * scale, height: maxHeight * scale}
 				}))
 			}
 

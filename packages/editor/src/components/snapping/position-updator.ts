@@ -56,16 +56,21 @@ const updateElementValues = (element: HTMLElement, properties: string[], updated
 
 export const absoluteUpdator: PositionUpdator = {
 	updateRects({parentUpdate, childrenUpdates}, scale, scaleActual) {
+		// const scale = 1;
+		// const scaledContainer = document.getElementById('harmony-scaled');
+		// if (!scaledContainer) throw new Error("Cannot find scaled container");
+		// scaledContainer.style.transform = '';
+
 		const updatedElements: UpdatedElement[] = [];
 		
 		const updateTransform = (element: HTMLElement, rect: Rect) => {
 			updateElementValues(element, ['width', 'height', 'position', 'left', 'top', 'margin'], updatedElements);
 			
 			element.style.position = 'absolute';
-			element.style.left = `${rect.left - containerRect.left}px`;
-			element.style.top = `${rect.top - containerRect.top}px`
-			element.style.width = `${rect.width}px`
-			element.style.height = `${rect.height}px`;
+			element.style.left = `${(rect.left - containerRect.left) / scale}px`;
+			element.style.top = `${(rect.top - containerRect.top) / scale}px`
+			element.style.width = `${rect.width / scale}px`
+			element.style.height = `${rect.height / scale}px`;
 			element.style.margin = '0px';
 			element.dataset.harmonyForceSelectable = 'true';
 		}
@@ -89,12 +94,14 @@ export const absoluteUpdator: PositionUpdator = {
 		if (parentUpdate.element.style.position !== 'absolute') {
 			parentUpdate.element.style.position = 'relative';
 		}
-		parentUpdate.element.style.width = `${parentUpdate.rect.width}px`
-		parentUpdate.element.style.height = `${parentUpdate.rect.height}px`;
+		parentUpdate.element.style.width = `${parentUpdate.rect.width / scale}px`
+		parentUpdate.element.style.height = `${parentUpdate.rect.height / scale}px`;
 		
 		for (const childUpdate of childrenUpdates) {
 			updateTransform(childUpdate.element, childUpdate.rect);
 		}
+
+		//scaledContainer.style.transform = `scale(${_scale})`
 
 		return updatedElements;
 	},

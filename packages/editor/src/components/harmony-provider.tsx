@@ -410,7 +410,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts}}>
 					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 					<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
-						<div ref={(d) => {
+						<div id="harmony-scaled" ref={(d) => {
 							if (d && d !== harmonyContainerRef.current) {
 								harmonyContainerRef.current = d
 								setRootComponent(harmonyContainerRef.current);
