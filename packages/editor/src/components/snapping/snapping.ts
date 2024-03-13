@@ -9,7 +9,7 @@ import {AspectRatioOptions, AspectRatioState} from '@interactjs/modifiers/aspect
 import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 import $ from 'jquery';
 import { info } from "console";
-import { Axis, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
+import { Axis, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateEdgesInfoWithSizing, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
 import { PositionUpdator, UpdateRect, UpdateRectsProps, UpdatedElement, absoluteUpdator, elementUpdator, flexUpdator } from "./position-updator";
 
 
@@ -459,7 +459,7 @@ class ElementSnapping implements SnapBehavior {
 		return element;
 	}
     public getRestrictions(element: HTMLElement, scale: number) {
-		const edgeInfo = calculateEdgesInfo(element, 1, scale, 'x');
+		const edgeInfo = calculateEdgesInfoWithSizing(element, 1, scale, 'x');
 
         
         const top = edgeInfo.top.siblingEdge ? edgeInfo.top.siblingEdge.edgeLocation + getNonWorkableGap(edgeInfo.top.siblingEdge.gapTypes) : edgeInfo.top.parentEdge.edgeLocation + getNonWorkableGap(edgeInfo.top.parentEdge.gapTypes);
@@ -1043,7 +1043,9 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		}
 	}, [element])
 
-    const restrictions = element ? snappingBehavior.getRestrictions(element, scale) : [];
+    const restrictions = useMemo(() => {
+		return element ? snappingBehavior.getRestrictions(element, scale) : [];
+	}, [element, snappingBehavior, scale]);
 
     function normalizeSnappingResults({x, y, resultsX, resultsY}: {x: number, y: number, resultsX: SnappingResult[], resultsY: SnappingResult[]}) {
         const parent = element!.parentElement!;
@@ -1776,7 +1778,7 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				if (!myInfo) throw new Error("Cannot find my info");
 
 				const toMeasure = selectDesignerElementReverse(element);
-				const toMeasureInfo = toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? calculateParentEdgeInfo(toMeasure, 1, scale, false, 'x') : undefined;
+				const toMeasureInfo = toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? calculateParentEdgeInfoWithSizing(toMeasure, 1, scale, false, 'x') : undefined;
 				
 				const validSibiling = (side: RectSide) => {
 					const otherSideClose = side === 'left' || side === 'right' ? 'top' : 'left';

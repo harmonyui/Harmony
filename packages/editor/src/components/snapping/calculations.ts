@@ -486,12 +486,6 @@ interface ElementEdgeInfo {
 interface ChildEdgeInfo {
     element: HTMLElement,
 	index: number,
-	minWidth: number,
-	minHeight: number,
-	widthType: 'content' | 'expand' | 'fixed',
-	heightType: 'content' | 'expand' | 'fixed',
-	width: number,
-	height: number,
     midpointX: number,
     midpointY: number,
     left: ElementEdgeInfo,
@@ -500,10 +494,21 @@ interface ChildEdgeInfo {
     bottom: ElementEdgeInfo
 }
 
-interface ParentEdgeInfo {
+interface SizingInfo {
+	minWidth: number,
+	minHeight: number,
+	widthType: 'content' | 'expand' | 'fixed',
+	heightType: 'content' | 'expand' | 'fixed',
+	width: number,
+	height: number,
+}
+
+type ChildEdgeInfoWithSizing = ChildEdgeInfo & SizingInfo
+
+interface ParentEdgeInfo<T extends ChildEdgeInfo = ChildEdgeInfo> {
 	element: HTMLElement,
 	children: HTMLElement[],
-    childEdgeInfo: ChildEdgeInfo[],
+    childEdgeInfo: T[],
     midpointX: number;
     midpointY: number;
     midpointXRelative: number;
@@ -516,20 +521,16 @@ interface ParentEdgeInfo {
 	childrenMidpointY: number;
 	childrenWidth: number;
 	childrenHeight: number;
-	minWidth: number,
-	minHeight: number,
-	widthType: 'content' | 'expand' | 'fixed',
-	heightType: 'content' | 'expand' | 'fixed',
-	width: number,
-	height: number,
 	//TODO: Find a better fix for when there are no selectable items than just to not handle the drag
     edges: {
-        left: ElementEdgeInfo & {info: ChildEdgeInfo},
-        right: ElementEdgeInfo & {info: ChildEdgeInfo},
-        top: ElementEdgeInfo & {info: ChildEdgeInfo},
-        bottom: ElementEdgeInfo & {info: ChildEdgeInfo},
+        left: ElementEdgeInfo & {info: T},
+        right: ElementEdgeInfo & {info: T},
+        top: ElementEdgeInfo & {info: T},
+        bottom: ElementEdgeInfo & {info: T},
     } | undefined
 }
+
+export type ParentEdgeInfoWithSizing = ParentEdgeInfo<ChildEdgeInfoWithSizing> & SizingInfo;
 
 export type ParentEdgeInfoRequired = ParentEdgeInfo & {
 	edges: {
@@ -540,24 +541,9 @@ export type ParentEdgeInfoRequired = ParentEdgeInfo & {
 	}
 }
 
-export function calculateEdgesInfo(element: HTMLElement, scale: number, scaleActual: number, axis: Axis, updates: UpdateRect[]=[]): ChildEdgeInfo {
-    const parent = element.parentElement!;
+export function calculateEdgesInfoWithSizing(element: HTMLElement, scale: number, scaleActual: number, axis: Axis, updates: UpdateRect[]=[]): ChildEdgeInfoWithSizing {
 	const elementReal = element;
-	element = updates.find(update => update.element === element)?.proxyElement || element;
-
-	const otherAxis = axis === 'x' ? 'y' : 'x';
-	const children = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scaleActual)) as HTMLElement[];
-	const index = children.indexOf(elementReal)
-
-    const left = calculateAxisEdgeInfo(element, parent, axis, 'close', scale, index, children, updates);
-    const right = calculateAxisEdgeInfo(element, parent, axis, 'far', scale, index, children, updates);
-    const top = calculateAxisEdgeInfo(element, parent, otherAxis, 'close', scale, index, children, updates);
-    const bottom = calculateAxisEdgeInfo(element, parent, otherAxis, 'far', scale, index, children, updates);
-    const rectOverride = updates.find(update => update.element === element)?.rect;
-    const parentOverride = updates.find(update => update.element === parent)?.rect;
-    const midpointX = (getBoundingClientRect(element, axis, 'close', scale, rectOverride) + getBoundingClientRect(element, axis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, axis, 'close', scale, parentOverride);
-    const midpointY = (getBoundingClientRect(element, otherAxis, 'close', scale, rectOverride) + getBoundingClientRect(element, otherAxis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, otherAxis, 'close', scale, parentOverride);
-    //TODO: We are doing lots of hacky stuff with images. Stop that.
+	const edgeInfo = calculateEdgesInfo(element, scale, scaleActual, axis, updates);
 	
 	let minWidth = 20;
 	let minHeight = 20;
@@ -584,8 +570,8 @@ export function calculateEdgesInfo(element: HTMLElement, scale: number, scaleAct
 	const rect = getBoundingRect(elementReal);
 	const heightReal = rect.height;//bottom.bottom.parentEdge.edgeLocation - top.top.parentEdge.edgeLocation;
 	const widthReal = rect.width//right.right.parentEdge.edgeLocation - left.left.parentEdge.edgeLocation;
-	const height = bottom.elementLocation - top.elementLocation;
-	const width = right.elementLocation - left.elementLocation;
+	const height = edgeInfo.bottom.elementLocation - edgeInfo.top.elementLocation;
+	const width = edgeInfo.right.elementLocation - edgeInfo.left.elementLocation;
 	// let widthType: 'content' | 'expand' | 'fixed' = !isImageElement(sizingElement) && isElementFluid(sizingElement, 'width') ? 'expand' : close(width, minWidthContent, 0.1) ? 'content' : 'fixed';
 	// let heightType: 'content' | 'expand' | 'fixed' = !isImageElement(sizingElement) && isElementFluid(sizingElement, 'height') ? 'expand' : close(height, minHeightContent, 0.1) ? 'content' : 'fixed';
 	let widthType: 'content' | 'expand' | 'fixed' = isImageElement(sizingElement) || !isElementFluid(sizingElement, 'width') ? 'fixed' : close(widthReal, minWidthContent, 0.1) ? 'content' : 'expand';
@@ -595,6 +581,39 @@ export function calculateEdgesInfo(element: HTMLElement, scale: number, scaleAct
 		heightType = 'fixed';
 		widthType = 'fixed';
 	}
+
+
+	return {
+		...edgeInfo, 
+		minWidth,
+		minHeight,
+		widthType,
+		heightType,
+		height,
+		width,
+	}
+}
+
+export function calculateEdgesInfo(element: HTMLElement, scale: number, scaleActual: number, axis: Axis, updates: UpdateRect[]=[]): ChildEdgeInfo {
+    const parent = element.parentElement!;
+	const elementReal = element;
+	element = updates.find(update => update.element === element)?.proxyElement || element;
+
+	const otherAxis = axis === 'x' ? 'y' : 'x';
+	const children = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scaleActual)) as HTMLElement[];
+	const index = children.indexOf(elementReal)
+
+    const left = calculateAxisEdgeInfo(element, parent, axis, 'close', scale, index, children, updates);
+    const right = calculateAxisEdgeInfo(element, parent, axis, 'far', scale, index, children, updates);
+    const top = calculateAxisEdgeInfo(element, parent, otherAxis, 'close', scale, index, children, updates);
+    const bottom = calculateAxisEdgeInfo(element, parent, otherAxis, 'far', scale, index, children, updates);
+    const rectOverride = updates.find(update => update.element === element)?.rect;
+    const parentOverride = updates.find(update => update.element === parent)?.rect;
+    const midpointX = (getBoundingClientRect(element, axis, 'close', scale, rectOverride) + getBoundingClientRect(element, axis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, axis, 'close', scale, parentOverride);
+    const midpointY = (getBoundingClientRect(element, otherAxis, 'close', scale, rectOverride) + getBoundingClientRect(element, otherAxis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, otherAxis, 'close', scale, parentOverride);
+    //TODO: We are doing lots of hacky stuff with images. Stop that.
+	
+	
 	
 
     return {
@@ -606,12 +625,6 @@ export function calculateEdgesInfo(element: HTMLElement, scale: number, scaleAct
         midpointX,
         midpointY,
         index,
-		minWidth,
-		minHeight,
-		widthType,
-		heightType,
-		height,
-		width,
     }
 }
 
@@ -701,8 +714,29 @@ export function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement,
     return {parentEdge, siblingEdge, elementLocation, elementLocationRelative, parentMidpoint, parentMidpointRelative, element}
 }
 
-export function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scaleActual: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[]): ParentEdgeInfo {
-    const childEdgeInfo: ChildEdgeInfo[] = [];
+export function calculateParentEdgeInfoWithSizing(parent: HTMLElement, scale: number, scaleActual: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[]): ParentEdgeInfoWithSizing {
+	const parentInfo = calculateParentEdgeInfo<ChildEdgeInfoWithSizing>(parent, scale, scaleActual, useRectOffset, axis, updates, true);
+
+	const {width: minWidth, height: minHeight} = getFitContentSize(parent, true);
+	const rect = getBoundingRect(parent);
+	const height = rect.height;//bottom.bottom.parentEdge.edgeLocation - top.top.parentEdge.edgeLocation;
+	const width = rect.width//right.right.parentEdge.edgeLocation - left.left.parentEdge.edgeLocation;
+	const widthType = close(width, minWidth, 0.1) ? 'content' : isElementFluid(parent, 'width') ? 'expand' : 'fixed';
+	const heightType = close(height, minHeight, 0.1) ? 'content' : isElementFluid(parent, 'height') ? 'expand' : 'fixed';
+
+	return {
+		...parentInfo,
+		minWidth,
+		minHeight,
+		widthType,
+		heightType,
+		width,
+		height,
+	}
+}
+
+export function calculateParentEdgeInfo<T extends ChildEdgeInfo = ChildEdgeInfo>(parent: HTMLElement, scale: number, scaleActual: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[], withChildSizing=false): ParentEdgeInfo<T> {
+    const childEdgeInfo: T[] = [];
 	const children = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scaleActual)) as HTMLElement[];
 
 	const firstChild = children[0] as HTMLElement | undefined;
@@ -733,7 +767,7 @@ export function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scal
         }
     }
     for (const child of children) {
-        childEdgeInfo.push(calculateEdgesInfo(child as HTMLElement, scale, scaleActual, axis, updates));
+        childEdgeInfo.push((withChildSizing ? calculateEdgesInfoWithSizing(child as HTMLElement, scale, scaleActual, axis, updates) : calculateEdgesInfo(child as HTMLElement, scale, scaleActual, axis, updates)) as T);
     }
 
     const copy = childEdgeInfo.slice();
@@ -790,12 +824,6 @@ export function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scal
 		minGapBetweenY = 0;
 	}
 	
-	const {width: minWidth, height: minHeight} = getFitContentSize(parent, true);
-	const rect = getBoundingRect(parent);
-	const height = rect.height;//bottom.bottom.parentEdge.edgeLocation - top.top.parentEdge.edgeLocation;
-	const width = rect.width//right.right.parentEdge.edgeLocation - left.left.parentEdge.edgeLocation;
-	const widthType = close(width, minWidth, 0.1) ? 'content' : isElementFluid(parent, 'width') ? 'expand' : 'fixed';
-	const heightType = close(height, minHeight, 0.1) ? 'content' : isElementFluid(parent, 'height') ? 'expand' : 'fixed';
 	const proxy = updates.find(update => update.element === parent)?.proxyElement || parent;
 
     return {
@@ -820,16 +848,10 @@ export function calculateParentEdgeInfo(parent: HTMLElement, scale: number, scal
             top: {info: top, ...top.top},
             bottom: {info: bottom, ...bottom.bottom}
         },
-		minWidth,
-		minHeight,
-		widthType,
-		heightType,
-		width,
-		height,
     }
 }
 
-type ParentFlexEdgeInfo = ParentEdgeInfo & {
+type ParentFlexEdgeInfo<T extends ParentEdgeInfo = ParentEdgeInfo> = T & {
 	childrenCount: number;
 
 	remainingSpaceX: number;
@@ -844,8 +866,8 @@ type ParentFlexEdgeInfo = ParentEdgeInfo & {
 	betweenSpaceY: number;
 	centerSpaceY: number;
 }
-export function calculateFlexParentEdgeInfo(parent: HTMLElement, scale: number, scaleActual: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[]): ParentFlexEdgeInfo {
-	const parentInfo = calculateParentEdgeInfo(parent, scale, scaleActual, useRectOffset, axis, updates);
+export function calculateFlexParentEdgeInfo<T extends ParentEdgeInfo = ParentEdgeInfo>(parent: HTMLElement, scale: number, scaleActual: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[], withSizing = false): ParentFlexEdgeInfo<T> {
+	const parentInfo = withSizing ? calculateParentEdgeInfoWithSizing(parent, scale, scaleActual, useRectOffset, axis, updates) : calculateParentEdgeInfo(parent, scale, scaleActual, useRectOffset, axis, updates, false);
 
 	const getRectOverride = (element: HTMLElement): Rect | undefined => {
         const updateRect = updates.find(update => update.element === element);
@@ -882,5 +904,9 @@ export function calculateFlexParentEdgeInfo(parent: HTMLElement, scale: number, 
 		centerSpaceY,
 		remainingSpaceY,
 		childrenCount: numChildren
-	}
+	} as ParentFlexEdgeInfo<T>
+}
+
+export function calculateFlexParentEdgeInfoWithSizing(parent: HTMLElement, scale: number, scaleActual: number, useRectOffset: boolean, axis: Axis, updates: UpdateRect[]=[]): ParentFlexEdgeInfo<ParentEdgeInfoWithSizing> {
+	return calculateFlexParentEdgeInfo<ParentEdgeInfoWithSizing>(parent, scale, scaleActual, useRectOffset, axis, updates, true);
 }

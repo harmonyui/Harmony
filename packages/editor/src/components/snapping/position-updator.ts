@@ -1,5 +1,5 @@
 import { Rect, selectDesignerElementReverse } from "../inspector/inspector";
-import { RectSide, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, getBoundingRect, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
+import { RectSide, calculateFlexParentEdgeInfo, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
 import {close} from '@harmony/util/src/index'
 
 export interface UpdatedElement {
@@ -109,7 +109,7 @@ export const absoluteUpdator: PositionUpdator = {
 
 export const elementUpdator: PositionUpdator = {
 	updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number, scaleActual: number) {
-		const parentInfo = calculateParentEdgeInfo(parentUpdate.element, scale, scaleActual, false, 'x', [parentUpdate, ...childrenUpdates]);
+		const parentInfo = calculateParentEdgeInfoWithSizing(parentUpdate.element, scale, scaleActual, false, 'x', [parentUpdate, ...childrenUpdates]);
 		if (!parentInfo.edges) return [];
 		
 		const left = 'left';
@@ -254,7 +254,7 @@ export const flexUpdator: PositionUpdator = {
 		const updates: UpdateRect[] = childrenUpdates;
 		updates.push(parentUpdate);
 		//updates.push(...Array.from(parentReal.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)})));
-		const parentInfo = calculateFlexParentEdgeInfo(parentReal, scale, scale, false, 'x', updates);
+		const parentInfo = calculateFlexParentEdgeInfoWithSizing(parentReal, scale, scale, false, 'x', updates);
 		if (!parentInfo.edges) return [];
 
 		if (!close(parentInfo[minGapBetweenX], 0, 0.1) && parentInfo[minGapBetweenX] < 0.1) {
