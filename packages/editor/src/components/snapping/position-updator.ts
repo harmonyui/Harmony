@@ -86,7 +86,9 @@ export const absoluteUpdator: PositionUpdator = {
 
 		updateElementValues(parentUpdate.element, ['position', 'width', 'height'], updatedElements);
 
-		parentUpdate.element.style.position = 'relative';
+		if (parentUpdate.element.style.position !== 'absolute') {
+			parentUpdate.element.style.position = 'relative';
+		}
 		parentUpdate.element.style.width = `${parentUpdate.rect.width}px`
 		parentUpdate.element.style.height = `${parentUpdate.rect.height}px`;
 		
@@ -323,7 +325,7 @@ export const flexUpdator: PositionUpdator = {
 			}	
 			else if (info[heightType] === 'fixed') {
 				const toResize = selectDesignerElementReverse(info.element);
-				updateElementValues(toResize, ['height'], updatedElements);
+				updateElementValues(toResize, [height], updatedElements);
 				toResize.style[height] = `${info[height]}px`;
 			} else if (close(info[height], info[minHeight], 0.1) && parentInfo.element.style.alignItems === 'normal') {
 				parentInfo.element.style.alignItems = 'flex-start';
@@ -366,7 +368,7 @@ export const flexUpdator: PositionUpdator = {
 			//right - width
 			if (info[widthType] === 'fixed') {
 				const toResize = selectDesignerElementReverse(info.element);
-				updateElementValues(toResize, ['width'], updatedElements);
+				updateElementValues(toResize, [width], updatedElements);
 				toResize.style[width] = `${info[width]}px`;
 			} 
 			// else if (info[widthType] === 'expand') {

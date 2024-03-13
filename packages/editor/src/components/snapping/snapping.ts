@@ -460,9 +460,10 @@ class ElementSnapping implements SnapBehavior {
 	}
     public getRestrictions(element: HTMLElement, scale: number) {
 		const edgeInfo = calculateEdgesInfo(element, 1, scale, 'x');
+
         
         const top = edgeInfo.top.siblingEdge ? edgeInfo.top.siblingEdge.edgeLocation + getNonWorkableGap(edgeInfo.top.siblingEdge.gapTypes) : edgeInfo.top.parentEdge.edgeLocation + getNonWorkableGap(edgeInfo.top.parentEdge.gapTypes);
-        const bottom = edgeInfo.bottom.siblingEdge ? edgeInfo.bottom.siblingEdge.edgeLocation - getNonWorkableGap(edgeInfo.bottom.siblingEdge.gapTypes) : edgeInfo.bottom.parentEdge.edgeLocation - getNonWorkableGap(edgeInfo.bottom.parentEdge.gapTypes);
+        const bottom = edgeInfo.bottom.siblingEdge ? edgeInfo.bottom.siblingEdge.edgeLocation - (edgeInfo.heightType === 'content' ? getNonWorkableGap(edgeInfo.bottom.siblingEdge.gapTypes) : 0) : edgeInfo.bottom.parentEdge.edgeLocation - (edgeInfo.heightType === 'content' ? getNonWorkableGap(edgeInfo.bottom.parentEdge.gapTypes) : 0);
         const left = edgeInfo.left.parentEdge.edgeLocation //+ getNonWorkableGap(edgeInfo.left.parentEdge.gapTypes)//edgeInfo.left.siblingEdge ? edgeInfo.left.siblingEdge.edgeLocation : edgeInfo.left.parentEdge.edgeLocation;
         const right = edgeInfo.right.parentEdge.edgeLocation //- getNonWorkableGap(edgeInfo.right.parentEdge.gapTypes);//edgeInfo.right.siblingEdge ? edgeInfo.right.siblingEdge.edgeLocation : edgeInfo.right.parentEdge.edgeLocation;
 
@@ -1142,8 +1143,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		}
 	}
 
-	const setCssCalculations = (element: HTMLElement, cssUpdator: PositionUpdator, oldValue: [HTMLElement, unknown][]): [HTMLElement, Record<string, string>][] => {
-		const parent = element.parentElement!;
+	const setCssCalculations = (elementProp: HTMLElement, cssUpdator: PositionUpdator, oldValue: [HTMLElement, unknown][]): [HTMLElement, Record<string, string>][] => {
+		const parent = elementProp.parentElement!;
 		const elementProps: UpdateRectsProps = {
 			parentUpdate: {
 				element: parent,
@@ -1155,7 +1156,9 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 			//Let's not go up more levels than we need to
 			if (element === parent) return prev;
 
-			const currParent = element.parentElement!;
+			const currParent = element.dataset.harmonyText === 'true' ? elementProp : element.parentElement;
+			if (!currParent) throw new Error("Element should have a parent")
+
 			const currProp = prev.find(p => p.parentUpdate.element === currParent);
 			if (!currProp) {
 				prev.push({
@@ -1188,9 +1191,24 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		applyOldValues(oldValues);
 		return props.reduce<[HTMLElement, Record<string, string>][]>((prev, curr) => {
 			const cssUpdator = getSnappingBehavior(curr.parentUpdate.element).getCssUpdator();
+			const hasTextNodes = curr.parentUpdate.element.childNodes.length === 1 && curr.parentUpdate.element.childNodes[0].nodeType === Node.TEXT_NODE
+			if (hasTextNodes) {
+				replaceTextContentWithSpans(curr.parentUpdate.element);
+				Array.from(curr.parentUpdate.element.children).forEach(child => {
+					const span = child as HTMLElement;
+					if (span.dataset.harmonyText === 'true') {
+						span.style.display = 'block';
+					}
+				})
+			}
+
 			const updates: [HTMLElement, Record<string, string>][] = cssUpdator.updateRects(curr, 1, 1).map(update => ([update.element, update.oldValues]));
 
-			prev.push(...updates);
+			if (hasTextNodes) {
+				removeTextContentSpans(curr.parentUpdate.element);
+			}
+
+			prev.push(...updates.filter(([element]) => element.dataset.harmonyText !== 'true'));
 
 			return prev;
 		}, []);
@@ -1267,14 +1285,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 		const childrenUpdates = Array.from(toResize.children).map<UpdateRect>(child => {
 			const element = child as HTMLElement;
-			if (!element.dataset.harmonyLastX || !element.dataset.harmonyLastY) {
-				const rect = getBoundingRect(element);
-				element.dataset.harmonyLastX = `${rect.left / scale}`;
-				element.dataset.harmonyLastY = `${rect.top / scale}`;
-				element.dataset.harmonyLastWidth = `${rect.width}`;
-				element.dataset.harmonyLastHeight = `${rect.height}`
-			}
-			return ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)})
+			return ({element, rect: getBoundingRect(element)})
 		});
 
 		const elementSnap = getSnappingBehavior(parent);
@@ -1314,6 +1325,10 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 				},
 				childrenUpdates
 			}, scale, scale);
+
+			if (hasTextNodes) {
+				removeTextContentSpans(toResize);
+			}
 		}
 		updatedFirst.push(...updatedSecond);
 		updateOldValues(updatedFirst);
@@ -1569,10 +1584,19 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 				}),
 			];
 			if (restrictToParent) {
+				//const parentInfo = calculateParentEdgeInfo(element.parentElement!, scale, scale, false, 'x');
 				modifiers.push(interact.modifiers.restrict({
 					restriction: 'parent',
 					elementRect: { top: 0, left: 0, bottom: 1, right: 1 }, // Restrict to the parent element
 				}));
+				// parentInfo.edges && modifiers.push(interact.modifiers.restrictEdges({
+				// 	outer: {
+				// 		left: parentInfo.edges.left.parentEdge.edgeLocation,
+				// 		right: parentInfo.edges.right.parentEdge.edgeLocation,
+				// 		top: parentInfo.edges.top.parentEdge.edgeLocation,
+				// 		bottom: parentInfo.edges.bottom.parentEdge.edgeLocation,
+				// 	}
+				// }))
 			}
 
             for (const restriction of restrictions) {
@@ -1781,8 +1805,8 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 						inner: toMeasureInfo && toMeasureInfo.edges ? {
 							left: toMeasureInfo.edges.left.elementLocation,
 							right: toMeasureInfo.edges.right.elementLocation,
-							top: toMeasureInfo.edges.top.elementLocation -  + getNonWorkableGap(toMeasureInfo.edges.top.parentEdge.gapTypes),
-							bottom: toMeasureInfo.edges.bottom.elementLocation + getNonWorkableGap(toMeasureInfo.edges.bottom.parentEdge.gapTypes)
+							top: toMeasureInfo.edges.top.elementLocation - getNonWorkableGap(toMeasureInfo.edges.top.parentEdge.gapTypes),
+							bottom: toMeasureInfo.edges.bottom.elementLocation + (toMeasureInfo.heightType === 'content' ? getNonWorkableGap(toMeasureInfo.edges.bottom.parentEdge.gapTypes) : 0)
 						} : undefined,
 						outer: {
 							left: validSibiling('left') ? Math.max(parentInfo.edges.left.parentEdge.edgeLocation, myInfo.left.siblingEdge?.edgeLocation || 0) : parentInfo.edges.left.parentEdge.edgeLocation,
