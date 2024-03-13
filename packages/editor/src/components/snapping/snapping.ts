@@ -10,13 +10,13 @@ import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 import $ from 'jquery';
 import { info } from "console";
 import { Axis, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
-import { PositionUpdator, UpdateRect, UpdatedElement, absoluteUpdator, elementUpdator, flexUpdator } from "./position-updator";
+import { PositionUpdator, UpdateRect, UpdateRectsProps, UpdatedElement, absoluteUpdator, elementUpdator, flexUpdator } from "./position-updator";
 
 
 
 export function isSelectable(element: HTMLElement, scale: number): boolean {
 	if (element.dataset.harmonyForceSelectable === 'true') return true;
-	
+
 	//If the size is less but it has margin, make it selectable
 	if (['Bottom', 'Top', 'Left', 'Right'].some(d => parseFloat($(element).css(`margin${d}`)) !== 0)) {
 		return true;
@@ -222,19 +222,19 @@ interface SnapBehavior {
 	onCalculateSnapping: (element: HTMLElement, posX: number, posY: number, dx: number, dy: number, scale: number, isResize: boolean) => {resultsX: SnappingResult[], resultsY: SnappingResult[]};
 	onFinish: (element: HTMLElement) => HTMLElement;
     getRestrictions: (element: HTMLElement, scale: number) => RectBox[];
-	getUpdator: () => PositionUpdator;
-	setUpdator: (updator: PositionUpdator) => void;
+	getPositionUpdator: () => PositionUpdator;
+	getCssUpdator: () => PositionUpdator;
 }
 
 class ElementSnapping implements SnapBehavior {
-	constructor(private positionUpdator: PositionUpdator) {}
+	constructor(private positionUpdator: PositionUpdator, private cssUpdator: PositionUpdator) {}
 
-	public getUpdator() {
+	public getPositionUpdator() {
 		return this.positionUpdator;
 	}
 
-	public setUpdator(updater: PositionUpdator) {
-		this.positionUpdator = updater;
+	public getCssUpdator() {
+		return this.cssUpdator;
 	}
 
 	public getOldValues(element: HTMLElement) {
@@ -476,10 +476,14 @@ class ElementSnapping implements SnapBehavior {
 }
 
 class FlexSnapping implements SnapBehavior {
-	constructor(private positionUpdator: PositionUpdator) {}
+	constructor(private positionUpdator: PositionUpdator, private cssUpdator: PositionUpdator) {}
 
-	public getUpdator() {
+	public getPositionUpdator() {
 		return this.positionUpdator;
+	}
+
+	public getCssUpdator() {
+		return this.cssUpdator;
 	}
 
 	public setUpdator(updater: PositionUpdator) {
@@ -752,21 +756,6 @@ class FlexSnapping implements SnapBehavior {
 		const enoughSpace = parentInfo.edges[left].parentEdge.gap >= 20 && parentInfo.edges[right].parentEdge.gap >= 20
 		
 		if (isMoving) {
-			// if (parentInfo.edges.left.parentEdge.gap > 0) {
-			// 	const start = snapping.addSnapToParent({
-			// 		point: posX - parentInfo.edges.left.parentEdge.gap,
-			// 		axis: 'x',
-			// 		range: 10
-			// 	});
-			// }
-			// if (parentInfo.edges.right.parentEdge.gap > 0) {
-			// 	const end = snapping.addSnapToParent({
-			// 		point: posX + parentInfo.edges.right.parentEdge.gap,
-			// 		axis: 'x',
-			// 		range: 10,
-			// 		snapSide: 'left',
-			// 	})
-			// }
 			if (enoughSpace) {
 				const centerXDiff = parentInfo[midpoint] - parentInfo[childrenMidpoint];
 				const center = snapping.addSnapToParent({
@@ -777,24 +766,6 @@ class FlexSnapping implements SnapBehavior {
 				center.addCenterAxisGuide({axis: otherAxis})
 			}
 		} else {
-			// let diff = selfIndex === 0 ? 0 : gapDiff;
-			// if (dx <= 0) {
-			// 	const start = snapping.addSnapToParent({
-			// 		point: posX - (parentInfo.edges.left.parentEdge.gap + diff),
-			// 		axis: 'x',
-			// 		range: 10
-			// 	});
-			// }
-
-			// diff = diff === 0 ? gapDiff : 0;
-			// if (dx >= 0) {
-			// 	const end = snapping.addSnapToParent({
-			// 		point: posX + (parentInfo.edges.right.parentEdge.gap + diff),
-			// 		axis: 'x',
-			// 		range: 10
-			// 	});
-			// }
-
 			if ((selfIndex === 0 && ds >= 0) || (selfIndex === parentInfo.childrenCount - 1 && ds <= 0)) {
 				const minGapDiff = parentInfo[minGapBetweenX] - minGap;
 				const minGapPoint = snapping.addSnapToParent({
@@ -803,9 +774,7 @@ class FlexSnapping implements SnapBehavior {
 					range: 10
 				});
 
-			} else {
-				//console.log(pos);
-			}
+			} 
 		
 			const minSpaceBetweenSnaps = Math.min(parentInfo[aroundSpace] - parentInfo[evenlySpace], parentInfo[betweenSpace] - parentInfo[aroundSpace]);
 			if (parentInfo[gapBetween] && close(parentInfo[childrenMidpoint], parentInfo[midpoint], 0.5) && minSpaceBetweenSnaps >= 5 && enoughSpace) {
@@ -1021,8 +990,8 @@ class FlexSnapping implements SnapBehavior {
     }
 }
 
-const elementSnapBehavior = new ElementSnapping(absoluteUpdator);
-const flexSnapping = new FlexSnapping(absoluteUpdator);
+const elementSnapBehavior = new ElementSnapping(absoluteUpdator, elementUpdator);
+const flexSnapping = new FlexSnapping(absoluteUpdator, flexUpdator);
 
 const getSnappingBehavior = (parent: HTMLElement | undefined) => {
 	let snappingBehavior: SnapBehavior = elementSnapBehavior;
@@ -1162,7 +1131,70 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		}
 
 		setOldValues(copy);
-	}, [oldValues])
+	}, [oldValues]);
+
+	const applyOldValues = (oldValues: [HTMLElement, Record<string, string>][]) => {
+		for (const oldValue of oldValues) {
+			const [element, values] = oldValue;
+			Object.entries(values).forEach(([name, value]) => {
+				element.style[name as unknown as number] = value;
+			});
+		}
+	}
+
+	const setCssCalculations = (element: HTMLElement, cssUpdator: PositionUpdator, oldValue: [HTMLElement, unknown][]): [HTMLElement, Record<string, string>][] => {
+		const parent = element.parentElement!;
+		const elementProps: UpdateRectsProps = {
+			parentUpdate: {
+				element: parent,
+				rect: getBoundingRect(parent)
+			},
+			childrenUpdates: Array.from(parent.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)}))
+		}
+		const props: UpdateRectsProps[] = oldValue.reduce<UpdateRectsProps[]>((prev, [element]) => {
+			//Let's not go up more levels than we need to
+			if (element === parent) return prev;
+
+			const currParent = element.parentElement!;
+			const currProp = prev.find(p => p.parentUpdate.element === currParent);
+			if (!currProp) {
+				prev.push({
+					parentUpdate: {
+						element: currParent,
+						rect: getBoundingRect(currParent)
+					},
+					childrenUpdates: Array.from(currParent.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)}))
+				})
+			}
+
+			return prev;
+		}, [elementProps]);
+		
+		
+		// const parent = element.parentElement!;
+		// const props: UpdateRectsProps = {
+		// 	parentUpdate: {
+		// 		element: parent,
+		// 		rect: getBoundingRect(parent)
+		// 	},
+		// 	childrenUpdates: oldValue.reduce<UpdateRect[]>((prev, [element]) => {
+		// 		if (element === parent) return prev;
+
+		// 		prev.push({element, rect: getBoundingRect(element)});
+
+		// 		return prev;
+		// 	},[])//Array.from(parent.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)}))
+		// }
+		applyOldValues(oldValues);
+		return props.reduce<[HTMLElement, Record<string, string>][]>((prev, curr) => {
+			const cssUpdator = getSnappingBehavior(curr.parentUpdate.element).getCssUpdator();
+			const updates: [HTMLElement, Record<string, string>][] = cssUpdator.updateRects(curr, 1, 1).map(update => ([update.element, update.oldValues]));
+
+			prev.push(...updates);
+
+			return prev;
+		}, []);
+	}
 
 	const result = useDraggable({element, onIsDragging(event) {
 		if (!element) return;
@@ -1194,7 +1226,12 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 	}, onDragFinish(element) {
 		resX.current = getBoundingClientRect(element, 'x', 'close', 1) - getBoundingClientRect(element!.parentElement!, 'x', 'close', 1);
 		resY.current = getBoundingClientRect(element, 'y', 'close', 1) - getBoundingClientRect(element!.parentElement!, 'y', 'close', 1);
-		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), oldValues);
+		
+		const cssUpdator = snappingBehavior.getCssUpdator();
+
+		const newOldValues = cssUpdator !== snappingBehavior.getPositionUpdator() ? setCssCalculations(element, cssUpdator, oldValues) : oldValues;
+		
+		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), newOldValues);
 		setOldValues([]);
 	}, canDrag(element) {
 		if (element.contentEditable === 'true') return false;
@@ -1241,7 +1278,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		});
 
 		const elementSnap = getSnappingBehavior(parent);
-		const updator = elementSnap.getUpdator();
+		const updator = elementSnap.getPositionUpdator();
 		const updatedFirst = updator.updateRects({
 			parentUpdate: {
 				element: parent,
@@ -1269,7 +1306,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 			}
 
 			const childrenSnap = getSnappingBehavior(toResize)
-			const updator = childrenSnap.getUpdator();
+			const updator = childrenSnap.getPositionUpdator();
 			updatedSecond = updator.updateRects({
 				parentUpdate: {
 					element: toResize,
@@ -1316,7 +1353,11 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		return true;
 	}, onResizeFinish(element) {
 
-		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), oldValues);
+		const cssUpdator = snappingBehavior.getCssUpdator();
+
+		const newOldValues = cssUpdator !== snappingBehavior.getPositionUpdator() ? setCssCalculations(element, cssUpdator, oldValues) : oldValues;
+		
+		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), newOldValues);
 		setOldValues([]);
 	}});
 
