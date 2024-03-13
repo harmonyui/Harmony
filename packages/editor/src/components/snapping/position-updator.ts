@@ -1,6 +1,7 @@
 import { Rect, selectDesignerElementReverse } from "../inspector/inspector";
 import { RectSide, calculateFlexParentEdgeInfo, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
 import {close} from '@harmony/util/src/index'
+import { isSelectable } from "./snapping";
 
 export interface UpdatedElement {
 	element: HTMLElement;
@@ -83,7 +84,7 @@ export const absoluteUpdator: PositionUpdator = {
 
 		for (const child of Array.from(parentUpdate.element.children)) {
 			const element = child as HTMLElement;
-			if (childrenUpdates.find(up => up.element === element)) continue;
+			if (childrenUpdates.find(up => up.element === element) || !isSelectable(element, scale)) continue;
 
 			childrenUpdates.push({element, rect: getBoundingRect(element)});
 		}

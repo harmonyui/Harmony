@@ -18,7 +18,7 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
 	if (element.dataset.harmonyForceSelectable === 'true') return true;
 
 	//If the size is less but it has margin, make it selectable
-	if (['Bottom', 'Top', 'Left', 'Right'].some(d => parseFloat($(element).css(`margin${d}`)) !== 0)) {
+	if (['Bottom', 'Top', 'Left', 'Right'].some(d => parseFloat($(element).css(`margin${d}`)) > 0)) {
 		return true;
 	}
 
@@ -685,7 +685,7 @@ class FlexSnapping implements SnapBehavior {
 			}
 		}
 	
-		if (!isResize) {
+		if (!isResize && currParentInfo.children.length > 2) {
 			calculateMovePositions();
 		}
 
@@ -949,7 +949,10 @@ class FlexSnapping implements SnapBehavior {
 		const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
 		if (parentInfo.edges === undefined) return [];
 
+		
+
 		const myChildInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
+
 		const parentRect = {
 			left: parentInfo.edges.left.parentEdge.edgeLocation,
 			right: parentInfo.edges.right.parentEdge.edgeLocation,
@@ -961,6 +964,20 @@ class FlexSnapping implements SnapBehavior {
 			return [parentRect];
 		}
 		const selfIndex = myChildInfo.index;
+
+		if (parentInfo.children.length <= 2) {
+			const _left = myChildInfo[left].siblingEdge ? myChildInfo[left].siblingEdge!.edgeLocation : myChildInfo[left].parentEdge.edgeLocation
+			const _right = myChildInfo[right].siblingEdge ? myChildInfo[right].siblingEdge!.edgeLocation : myChildInfo[right].parentEdge.edgeLocation
+			const _top = myChildInfo[top].parentEdge.edgeLocation //+ getNonWorkableGap(myChildInfo.left.parentEdge.gapTypes)//myChildInfo.left.siblingEdge ? myChildInfo.left.siblingEdge.edgeLocation : myChildInfo.left.parentEdge.edgeLocation;
+			const _bottom = myChildInfo[bottom].parentEdge.edgeLocation //- getNonWorkableGap(myChildInfo.right.parentEdge.gapTypes);//myChildInfo.right.siblingEdge ? myChildInfo.right.siblingEdge.edgeLocation : myChildInfo.right.parentEdge.edgeLocation;
+
+			return [{
+				top: _top,
+				bottom: _bottom,
+				left: _left,
+				right: _right,
+			}];
+		}
 		
 		
 		if (selfIndex > 0 && selfIndex < parentInfo.children.length - 1) {

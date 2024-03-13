@@ -178,7 +178,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 
 								{/* Profile dropdown */}
 								{profileItem ? <Menu as="div" className="hw-relative">
-									<Menu.Button className="-hw-m-1.5 hw-flex hw-items-center hw-p-1.5">
+									<Menu.Button className="hw-flex hw-items-center hw-p-1.5">
 										<span className="hw-sr-only">Open user menu</span>
 										<img
 											className="hw-h-8 hw-w-8 hw-rounded-full hw-bg-gray-50"
