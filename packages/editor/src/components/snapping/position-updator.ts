@@ -1,9 +1,13 @@
 import { Rect, selectDesignerElementReverse } from "../inspector/inspector";
-import { RectSide, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
+import { RectSide, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, getBoundingRect, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
 import {close} from '@harmony/util/src/index'
 
+export interface UpdatedElement {
+	element: HTMLElement;
+	oldValues: Record<string, string>;
+}
 export interface PositionUpdator {
-	updateRects: (props: UpdateRectsProps, scale: number, scaleActual: number) => void;
+	updateRects: (props: UpdateRectsProps, scale: number, scaleActual: number) => UpdatedElement[];
 }
 
 export interface UpdateRect {
@@ -17,8 +21,47 @@ interface UpdateRectsProps {
 }
 
 export const absoluteUpdator: PositionUpdator = {
-	updateRects(props, scale, scaleActual) {
-		
+	updateRects({parentUpdate, childrenUpdates}, scale, scaleActual) {
+		const updatedElements: UpdatedElement[] = [];
+		const updateTransform = (element: HTMLElement, rect: Rect) => {
+			const style = getComputedStyle(element);
+			const oldValues = {
+				transform: style.transform,
+				width: style.width,
+				height: style.height
+			}
+			if (!element.dataset.harmonyLastX || !element.dataset.harmonyLastY || !element.dataset.harmonyLastWidth || !element.dataset.harmonyLastHeight) {
+				const rect = getBoundingRect(element);
+				element.dataset.harmonyLastX = `${rect.left / scaleActual}`;
+				element.dataset.harmonyLastY = `${rect.top / scaleActual}`;
+				element.dataset.harmonyLastWidth = style.width;
+				element.dataset.harmonyLastHeight = style.height;
+			}
+			
+			const currX = parseFloat(element.dataset.harmonyLastX);
+			const currY = parseFloat(element.dataset.harmonyLastY);
+
+			const beforeSizeChange = getBoundingRect(element);
+			element.style.width = `${rect.width / scaleActual}px`;
+			element.style.height = `${rect.height / scaleActual }px`;
+			const afterSizeChange = getBoundingRect(element);
+
+			const diff = {
+				left: afterSizeChange.left - beforeSizeChange.left,
+				top: afterSizeChange.top - beforeSizeChange.top
+			}
+			element.style.transform = `translate(${rect.left /scaleActual - currX - diff.left}px, ${rect.top /scaleActual - currY - diff.top}px)`
+			
+
+			updatedElements.push({element, oldValues});
+		}
+
+		updateTransform(parentUpdate.element, parentUpdate.rect);
+		for (const childUpdate of childrenUpdates) {
+			updateTransform(childUpdate.element, childUpdate.rect);
+		}
+
+		return updatedElements;
 	},
 }
 

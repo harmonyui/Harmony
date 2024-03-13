@@ -1,6 +1,6 @@
 import { capitalizeFirstLetter, groupBy, groupByDistinct, round, close } from "@harmony/util/src";
 import interact from "interactjs";
-import { useState, useEffect, useRef, useMemo } from "react";
+import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Rect, RectBox, isImageElement, isSelectable as isSelectableInspector, isTextElement, removeTextContentSpans, replaceTextContentWithSpans, selectDesignerElement, selectDesignerElementReverse } from "../inspector/inspector";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import {InteractEvent, ResizeEvent} from '@interactjs/types'
@@ -10,7 +10,7 @@ import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 import $ from 'jquery';
 import { info } from "console";
 import { Axis, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
-import { PositionUpdator, UpdateRect, absoluteUpdator, elementUpdator, flexUpdator } from "./position-updator";
+import { PositionUpdator, UpdateRect, UpdatedElement, absoluteUpdator, elementUpdator, flexUpdator } from "./position-updator";
 
 
 
@@ -214,9 +214,9 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
 }
 
 interface SnapBehavior {
-	getOldValues: (element: HTMLElement) => [HTMLElement, Record<string, string>][];
+	//getOldValues: (element: HTMLElement) => [HTMLElement, Record<string, string>][];
 	isDraggable: (element: HTMLElement) => string | undefined;
-	onUpdate: (element: HTMLElement, event: DraggingEvent, scale: number, isResize: boolean) => void;
+	onUpdate: (element: HTMLElement, event: DraggingEvent, scale: number, isResize: boolean) => UpdatedElement[];
 	onCalculateSnapping: (element: HTMLElement, posX: number, posY: number, dx: number, dy: number, scale: number, isResize: boolean) => {resultsX: SnappingResult[], resultsY: SnappingResult[]};
 	onFinish: (element: HTMLElement) => HTMLElement;
     getRestrictions: (element: HTMLElement, scale: number) => RectBox[];
@@ -313,7 +313,7 @@ class ElementSnapping implements SnapBehavior {
             element,
             rect: event.eventRect
         }];
-		this.positionUpdator.updateRects({
+		return this.positionUpdator.updateRects({
             parentUpdate: {
                 element: parent,
                 rect: getBoundingRect(parent)
@@ -566,7 +566,7 @@ class FlexSnapping implements SnapBehavior {
 		const otherAxis = axis === 'x' ? 'y' : 'x';
 		const currParentInfo = calculateParentEdgeInfo(parent, scale, scale, false, 'x');
 		const ds = (axis === 'x' ? event.dx : event.dy);
-		if (currParentInfo.edges === undefined) return;
+		if (currParentInfo.edges === undefined) return [];
 
 		const selfIndex = currParentInfo.childEdgeInfo.find(info => info.element === element)!.index;
 		const minGapBetweenX = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
@@ -682,7 +682,7 @@ class FlexSnapping implements SnapBehavior {
 			calculateMovePositions();
 		}
 
-		this.positionUpdator.updateRects({
+		return this.positionUpdator.updateRects({
 			parentUpdate: {
 				element: parent,
 				rect: parent.getBoundingClientRect()
@@ -1019,8 +1019,8 @@ class FlexSnapping implements SnapBehavior {
     }
 }
 
-const elementSnapBehavior = new ElementSnapping(elementUpdator);
-const flexSnapping = new FlexSnapping(flexUpdator);
+const elementSnapBehavior = new ElementSnapping(absoluteUpdator);
+const flexSnapping = new FlexSnapping(absoluteUpdator);
 
 const getSnappingBehavior = (parent: HTMLElement | undefined) => {
 	let snappingBehavior: SnapBehavior = elementSnapBehavior;
@@ -1131,14 +1131,36 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		}
 
 		if (element) {
-			const values = snappingBehavior.getOldValues(element);
-			setOldValues(values);
+			// const values = snappingBehavior.getOldValues(element);
+			// setOldValues(values);
 
 			if (!elementsRef.current.includes(element)) {
 				elementsRef.current.push(element);
 			}
 		}
 	}, [element, elementsRef]);
+
+	const updateOldValues = useCallback((updates: UpdatedElement[]) => {
+		const copy = oldValues.slice();
+		for (const update of updates) {
+			const oldValue = copy.find(([old]) => old === update.element);
+			if (oldValue) {
+				const propertiesCopy = {...oldValue[1]};
+				Object.entries(update.oldValues).forEach(([property, value]) => {
+					const old = propertiesCopy[property];
+					if (!old) {
+						propertiesCopy[property] = value;
+					}
+				});
+
+				oldValue[1] = propertiesCopy;
+			} else {
+				copy.push([update.element, update.oldValues]);
+			}
+		}
+
+		setOldValues(copy);
+	}, [oldValues])
 
 	const result = useDraggable({element, onIsDragging(event) {
 		if (!element) return;
@@ -1150,7 +1172,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 		//TODO: Get rid of this gap dependency
 		element.parentElement!.dataset.lastGap = `${parseFloat(element.parentElement!.style.gap || '0')}`;
-		snappingBehavior.onUpdate(element, event, scale, false);
+		const updated = snappingBehavior.onUpdate(element, event, scale, false);
+		updateOldValues(updated);
 		
 		onIsDragging && onIsDragging(event, element);
 		
@@ -1170,7 +1193,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		resX.current = getBoundingClientRect(element, 'x', 'close', 1) - getBoundingClientRect(element!.parentElement!, 'x', 'close', 1);
 		resY.current = getBoundingClientRect(element, 'y', 'close', 1) - getBoundingClientRect(element!.parentElement!, 'y', 'close', 1);
 		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), oldValues);
-		setOldValues(snappingBehavior.getOldValues(element));
+		setOldValues([]);
 	}, canDrag(element) {
 		if (element.contentEditable === 'true') return false;
 
@@ -1203,11 +1226,21 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		//Normal we select the outmost component, but we want to apply resizing to the inner most component
 		const toResize = selectDesignerElementReverse(element);
 
-		const childrenUpdates = Array.from(toResize.children).map<UpdateRect>(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)}));
+		const childrenUpdates = Array.from(toResize.children).map<UpdateRect>(child => {
+			const element = child as HTMLElement;
+			if (!element.dataset.harmonyLastX || !element.dataset.harmonyLastY) {
+				const rect = getBoundingRect(element);
+				element.dataset.harmonyLastX = `${rect.left / scale}`;
+				element.dataset.harmonyLastY = `${rect.top / scale}`;
+				element.dataset.harmonyLastWidth = `${rect.width}`;
+				element.dataset.harmonyLastHeight = `${rect.height}`
+			}
+			return ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)})
+		});
 
 		const elementSnap = getSnappingBehavior(parent);
 		const updator = elementSnap.getUpdator();
-		updator.updateRects({
+		const updatedFirst = updator.updateRects({
 			parentUpdate: {
 				element: parent,
 				rect: getBoundingRect(parent)
@@ -1217,6 +1250,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 				rect: event.eventRect,
 			}]
 		}, scale, scale);
+		let updatedSecond: UpdatedElement[] = [];
 
 		const hasTextNodes = toResize.childNodes.length === 1 && toResize.childNodes[0].nodeType === Node.TEXT_NODE
         //Update for all the children too
@@ -1234,7 +1268,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 			const childrenSnap = getSnappingBehavior(toResize)
 			const updator = childrenSnap.getUpdator();
-			updator.updateRects({
+			updatedSecond = updator.updateRects({
 				parentUpdate: {
 					element: toResize,
 					rect: event.eventRect,
@@ -1242,6 +1276,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 				childrenUpdates
 			}, scale, scale);
 		}
+		updatedFirst.push(...updatedSecond);
+		updateOldValues(updatedFirst);
 
 		onIsDragging && onIsDragging(event, element);
     }, onCalculateSnapping(element, x, y, currentX, currentY) {
@@ -1277,8 +1313,9 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 		return true;
 	}, onResizeFinish(element) {
+
 		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), oldValues);
-		setOldValues(snappingBehavior.getOldValues(element));
+		setOldValues([]);
 	}});
 
 	return {isDragging: result.isDragging || isResizing, isResizing};

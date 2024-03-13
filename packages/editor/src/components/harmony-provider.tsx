@@ -473,7 +473,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
 	
 	useBackgroundLoop(() => {
-		if (saveStack.length && !isSaving && !isPublished) {
+		if (saveStack.length && !isSaving && !isPublished && false) {
 			const copy = saveStack.slice();
 			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
 				
