@@ -333,7 +333,7 @@ class ElementSnapping implements SnapBehavior {
             throw new Error("Cannot find my child info");
         }
 
-        const range = 10;
+        const range = 10 / scale;
 
 		if (parentEdgeInfo.edges === undefined || parentEdgeInfoScaled.edges === undefined) return {resultsX, resultsY};
 
@@ -404,7 +404,7 @@ class ElementSnapping implements SnapBehavior {
 		const centerX = snapping.addSnapToParent({
 			point: myChildInfo.left.parentMidpointRelative,
 			axis: 'x',
-			range: 10,
+			range,
 		});
 		centerX.addCenterAxisGuide({
 			axis: 'y'
@@ -413,7 +413,7 @@ class ElementSnapping implements SnapBehavior {
 		const centerY = snapping.addSnapToParent({
 			point: myChildInfo.top.parentMidpointRelative,
 			axis: 'y',
-			range: 10,
+			range,
 		});
 		centerY.addCenterAxisGuide({
 			axis: 'x'
@@ -709,7 +709,7 @@ class FlexSnapping implements SnapBehavior {
 		const parentInfo = calculateFlexParentEdgeInfo(parent, 1, scale, false, 'x');
 		const selfIndex = parentInfo.childEdgeInfo.find(info => info.element === element)!.index;
 		const minGap = getMinGap(parent);
-		
+		const range = 10 / scale;
 		
 		
 		const direction = selfIndex === 0 ? -1/(parentInfo.childrenCount % 2 !== 0 ? 1 : parentInfo.childrenCount) : 1/(parentInfo.childrenCount % 2 !== 0 ? 1 : parentInfo.childrenCount);
@@ -739,19 +739,19 @@ class FlexSnapping implements SnapBehavior {
 		const centerY = snapping.addSnapToParent({
 			point: parentInfo.childEdgeInfo[selfIndex][top].parentMidpointRelative,
 			axis: otherAxis,
-			range: 10
+			range
 		});
 		centerY.addCenterAxisGuide({axis});
 
 		const startY = snapping.addSnapToParent({
 			point: parentInfo.edges[top].parentEdge.edgeLocationRelative,
 			axis: otherAxis,
-			range: 10
+			range
 		})
 		const endY = snapping.addSnapToParent({
 			point: parentInfo.edges[bottom].parentEdge.edgeLocationRelative,
 			axis: otherAxis,
-			range: 10,
+			range,
 			snapSide: bottom
 		})
 
@@ -763,7 +763,7 @@ class FlexSnapping implements SnapBehavior {
 				const center = snapping.addSnapToParent({
 					point: pos + centerXDiff,
 					axis,
-					range: 10
+					range
 				});
 				center.addCenterAxisGuide({axis: otherAxis})
 			}
@@ -773,7 +773,7 @@ class FlexSnapping implements SnapBehavior {
 				const minGapPoint = snapping.addSnapToParent({
 					point: pos - (minGapDiff * direction),
 					axis,
-					range: 10
+					range
 				});
 
 			} 
@@ -786,7 +786,7 @@ class FlexSnapping implements SnapBehavior {
 				const spaceEvenly = snapping.addSnapToParent({
 					point: pos + (spaceEvenlyDiff * direction),
 					axis,
-					range: 10
+					range
 				});
 				spaceEvenly.addGuide({
 					start: {
@@ -846,7 +846,7 @@ class FlexSnapping implements SnapBehavior {
 				const spaceAround = snapping.addSnapToParent({
 					point: pos + spaceAroundDiff * direction,
 					axis,
-					range: 10
+					range
 				});
 				spaceAround.addGuide({
 					start: {
@@ -906,7 +906,7 @@ class FlexSnapping implements SnapBehavior {
 				const spaceBetween = snapping.addSnapToParent({
 					point: pos + spaceBetweenDiff * direction,
 					axis,
-					range: 10
+					range
 				})
 				for (let i = 0; i < parentInfo.children.length - 1; i++) {
 					spaceBetween.addGuide({
@@ -1575,7 +1575,7 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 					relativePoints: [{x: 0, y: 0}],
 				}),
 				interact.modifiers.snap({
-					targets: [interact.createSnapGrid({x: 2 * scale, y: 2 * scale})],
+					targets: [interact.createSnapGrid({x: 2 / scale, y: 2 / scale})],
 					// Control the snapping behavior
 					range: Infinity, // Snap to the closest target within the entire range
 					relativePoints: [{x: 0, y: 0}],
