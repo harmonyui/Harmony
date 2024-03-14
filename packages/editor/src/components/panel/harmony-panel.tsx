@@ -7,7 +7,7 @@ import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
-import { componentIdentifier } from "../inspector/inspector";
+import { componentIdentifier, selectDesignerElement } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import {Dropdown, DropdownIcon, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import ColorPicker from '@harmony/ui/src/components/core/color-picker';
@@ -256,6 +256,10 @@ const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | u
 	return all;
 }
 
+const HotkeyLabel: React.FunctionComponent<{label: string, hotkey: string, onToggle: (value: boolean) => void, value: boolean}> = ({label, hotkey, onToggle, value}) => {
+	return <button onClick={() => onToggle(!value)} className="hw-text-base hw-font-light">{label} <span className="hw-text-gray-400">[{hotkey}]</span></button>
+}
+
 interface ToolbarPanelProps {
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
@@ -268,7 +272,7 @@ interface ToolbarPanelProps {
 	branches: {id: string, name: string}[];
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, isDirty, branchId, branches}) => {
-	const {isSaving, isPublished, changeMode, fonts} = useHarmonyContext();
+	const {isSaving, isPublished, changeMode, fonts, onFlexToggle} = useHarmonyContext();
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined;
 	const currBranch = branches.find(b => b.id === branchId);
 	const changeData = (values: ComponentToolData<typeof textTools>) => {
@@ -354,8 +358,8 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 						<Slider className="hw-col-span-3" value={line} max={50} onChange={(value) => onChange(`${value}px-${letter}px`)}/>
 						<span className="hw-col-span-1">{line}</span>
 						<span className="hw-col-span-2">Letter Spacing</span>
-						<Slider className="hw-col-span-3" value={letter} max={50} onChange={(value) => onChange(`${line}px-${value}px`)}/>
-						<span className="hw-col-span-1">{letter}</span>
+						<Slider className="hw-col-span-3" value={letter * 5} max={50} onChange={(value) => onChange(`${line}px-${value / 5}px`)}/>
+						<span className="hw-col-span-1">{letter * 5}</span>
 					</div>
 				</Popover>
 			)
@@ -371,11 +375,14 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				<div className="hw-px-4">
 					<ComponentTools tools={textTools} components={textToolsComponents} data={data} onChange={changeData}/>
 				</div>
-				<div className="hw-px-4">
+				{/* <div className="hw-px-4">
 					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
 						<div>Behavior coming soon!</div>
 					</Popover>
-				</div>
+				</div> */}
+				{selectedComponent?.element && selectDesignerElement(selectedComponent.element).parentElement?.dataset.harmonyFlex ? <div className="hw-px-4">
+					<HotkeyLabel label="Flex" hotkey="F" value={selectDesignerElement(selectedComponent.element).parentElement!.dataset.harmonyFlex === 'true'} onToggle={onFlexToggle}/>
+				</div> : null}
 			</> : null}
 			{savingText ? <div className="hw-px-4">{savingText}</div> : null}
 			{/* {isDirty ? <div className="hw-flex hw-gap-2 hw-px-4">
@@ -384,7 +391,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			</div> : null} */}
 			<div className="hw-ml-auto" style={{borderLeft: '0px'}}>
 				{/* <ToggleSwitch value={toggle} onChange={onToggleChange} label="Designer Mode"/> */}
-				<p className="hw-text-base hw-font-light">{toggle ? 'Designer Mode' : 'Navigator Mode'} <span className="hw-text-gray-400">[T]</span></p>
+				<HotkeyLabel label={toggle ? 'Designer Mode' : 'Navigator Mode'} hotkey="T" onToggle={onToggleChange} value={toggle}/>
 			</div>
 			<div className="hw-px-4 hw-flex hw-gap-4">
 				<PublishButton preview/>

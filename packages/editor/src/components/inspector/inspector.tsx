@@ -5,7 +5,7 @@ import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import { ReactComponentIdentifier } from "./component-identifier";
 import hotkeys from 'hotkeys-js';
 import { SelectMode } from "../panel/harmony-panel";
-import { getNumberFromString, round } from "@harmony/util/src";
+import { getClass, getNumberFromString, round } from "@harmony/util/src";
 import $ from 'jquery';
 
 import { ComponentUpdate } from "@harmony/ui/src/types/component";
@@ -13,6 +13,7 @@ import { ResizeValue, useResize, ResizeRect, ResizeDirection, ResizeCoords } fro
 import { FlexValues, MarginValues, useSnapping } from "../snapping/snapping";
 import { usePrevious } from "@harmony/ui/src/hooks/previous";
 import {Alert} from '@harmony/ui/src/components/core/alert';
+import { useHarmonyContext } from "../harmony-provider";
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -118,6 +119,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const overlayRef = useRef<Overlay>();
 	const [error, setError] = useState<string | undefined>();
 	const previousError = usePrevious(error);
+	const {onFlexToggle: onFlexClick} = useHarmonyContext();
 
 	// const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect, oldRect) {
 	// 	const container = containerRef.current;
@@ -184,7 +186,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(element, scale, Boolean(error), {});
+			overlayRef.current.select(element, scale, Boolean(error), {onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -244,7 +246,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, true, {});
+			overlayRef.current.select(selectedComponent, scale, true, {onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -262,7 +264,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, Boolean(error), {});
+			overlayRef.current.select(selectedComponent, scale, Boolean(error), {onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -274,9 +276,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			const parent = selectedComponent?.parentElement;
 			onSelect(rootElement?.contains(parent ?? null) ? parent ?? undefined : undefined);
 		}
+
 		hotkeys('esc', onEscape);
 
-		return () => hotkeys.unbind('esc', onEscape);
+		return () => {
+			hotkeys.unbind('esc', onEscape);
+		}
 	}, [selectedComponent, onSelect, rootElement]);
 
 	useEffect(() => {
@@ -319,7 +324,13 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, Boolean(error), {onTextChange: onElementTextChange});
+			const parent = selectDesignerElement(selectedComponent).parentElement;
+			if (parent && getComputedStyle(parent).display.includes('flex')) {
+				if (!parent.dataset.harmonyFlex) {
+					parent.dataset.harmonyFlex = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 2 ? 'true' : 'false';
+				}
+			}
+			overlayRef.current.select(selectedComponent, scale, Boolean(error), {onTextChange: onElementTextChange, onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -343,7 +354,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		if (error !== previousError && error) {
 			//showAlert(error);
 		}
-	}, [error, previousError])
+	}, [error, previousError]);
 
 	const isInteractableComponent = useCallback((component: HTMLElement) => {
 		//TODO: Get rid of dependency on harmonyText
@@ -590,8 +601,8 @@ class Overlay {
 		this.inspect(element, 'hover', scale, false);
 	}
 
-	select(element: HTMLElement, scale: number, error: boolean, listeners: {onTextChange?: (value: string, oldValue: string) => void, onDrag?: (box: ResizeRect) => void}) {
-		this.inspect(element, 'select', scale, error, listeners.onDrag);
+	select(element: HTMLElement, scale: number, error: boolean, listeners: {onTextChange?: (value: string, oldValue: string) => void, onFlexClick: () => 'true' | 'false' | undefined}) {
+		this.inspect(element, 'select', scale, error);
 
 		const stuff = this.rects.get('select');
 		if (!stuff) throw new Error("What happend??");
@@ -611,13 +622,13 @@ class Overlay {
 		const parent = designerElement.parentElement;
 		if (parent) {
 			const [box, dims] = this.getSizing(parent);
-			const rect = new OverlayRect(this.window.document, parent, this.container);
+			const rect = new OverlayRect(this.window.document, parent, this.container, listeners.onFlexClick);
 			rect.update({box, dims, borderSize: 2, borderStyle: 'dashed', opacity: .5}, scale);
 			stuff.values.push({rect, element: parent});
 		}
 	}
 
-	inspect(element: HTMLElement, method: 'select' | 'hover', scale: number, error: boolean, onDrag?: (rect: ResizeRect) => void) {
+	inspect(element: HTMLElement, method: 'select' | 'hover', scale: number, error: boolean) {
 		// We can't get the size of text nodes or comment nodes. React as of v15
     	// heavily uses comment nodes to delimit text.
 		if (element.nodeType !== Node.ELEMENT_NODE) {
@@ -625,7 +636,7 @@ class Overlay {
 		}
 
 		const [box, dims] = this.getSizing(element);
-		const rect = new OverlayRect(this.window.document, element, this.container, onDrag);
+		const rect = new OverlayRect(this.window.document, element, this.container);
 		rect[method](box, dims, scale, error);
 
 		this.remove(method);
@@ -694,7 +705,7 @@ interface OverlayProps {
 	error?: boolean,
 	padding?: boolean,
 	borderStyle?: 'dotted' | 'dashed',
-	drag?: boolean
+	drag?: boolean,
 }
 export class OverlayRect {
 	node: HTMLElement
@@ -702,9 +713,10 @@ export class OverlayRect {
 	padding: HTMLElement
 	content: HTMLElement
 	elementVisibleValue: string | undefined;
-	resizeHandles: HTMLElement[] = []
+	resizeHandles: HTMLElement[] = [];
+	onFlexClick: (() => void) | undefined;
 
-  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, private onDrag?: (rect: ResizeRect) => void) {
+  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, onFlexClick?: () => 'true' | 'false' | undefined) {
 		this.node = doc.createElement('div')
 		this.border = doc.createElement('div')
 		this.padding = doc.createElement('div')
@@ -716,6 +728,22 @@ export class OverlayRect {
 			const handle = $('<div name="resize-handle"></div>');
 			this.resizeHandles.push(handle[0]);
 			this.resizeHandles[i].style.backgroundColor = overlayStyles.resize;
+		}
+
+		if (element.dataset.harmonyFlex && onFlexClick) {
+			this.onFlexClick = () => {
+				// const result = onFlexClick();
+				// $displayText[0].dataset.harmonyFlex = result;
+				onFlexClick();
+			}
+			hotkeys('F', this.onFlexClick);
+			const $displayText = $(`<div id="harmony-flex-text" class="hw-absolute hw-text-xs hw-right-0 hw-top-0 hw-mr-2 hw-mt-2 hw-text-white hw-rounded-sm hw-px-1 hw-font-ligh hw-pointer-events-auto hover:hw-cursor-pointer hover:hw-bg-opacity-80 data-[harmony-flex=false]:hw-bg-[#64BDFE] data-[harmony-flex=true]:hw-bg-[#0094FF] after:data-[harmony-flex=false]:hw-content-[''] after:data-[harmony-flex=false]:hw-absolute after:data-[harmony-flex=false]:hw-left-0 after:data-[harmony-flex=false]:hw-top-[8px] after:data-[harmony-flex=false]:hw-w-[36px] after:data-[harmony-flex=false]:hw-border-t after:data-[harmony-flex=false]:hw-border-t-white after:data-[harmony-flex=false]:hw-rotate-[22deg] after:data-[harmony-flex=false]:hw-origin-center" data-harmony-flex="${element.dataset.harmonyFlex}">FLEX</div>`);
+			$displayText.on('pointerdown', (e) => {
+				e.stopPropagation();
+				element.dataset.harmonyFlex = element.dataset.harmonyFlex === 'true' ? 'false' : 'true';
+				$displayText[0].dataset.harmonyFlex = element.dataset.harmonyFlex;
+			})
+			this.content.appendChild($displayText[0]);
 		}
 
 		this.border.style.borderColor = overlayStyles.background
@@ -750,6 +778,8 @@ export class OverlayRect {
 		if (this.elementVisibleValue !== undefined) {
 			this.element.style.visibility = this.elementVisibleValue;
 		}
+
+		this.onFlexClick && hotkeys.unbind('F', this.onFlexClick)
 	}
 
 	public updateSize(box: Rect, dims: BoxSizing, scale: number, error: boolean) {
@@ -795,25 +825,6 @@ export class OverlayRect {
 				}px`,
 		})
 
-		const initFullDrag = (direction: ResizeDirection) => (e: MouseEvent) => {
-			const x = e.clientX;
-			const y = e.clientY;
-			let values = {
-				n: parseFloat($(this.element).css('paddingTop')),
-				e: parseFloat($(this.element).css('paddingRight')),
-				s: parseFloat($(this.element).css('paddingBottom')),
-				w: parseFloat($(this.element).css('paddingLeft')),
-			}
-			if (isImageElement(this.element)) {
-				values.n = this.element.clientHeight;
-				values.s = values.n;
-				values.e = this.element.clientWidth;
-				values.w = values.e;
-			}
-
-			this.onDrag && this.onDrag({x, y, direction, ...values});
-		}
-
 
 		//NE -> SE -> SW -> NW
 		//E -> S -> W -> N
@@ -827,7 +838,7 @@ export class OverlayRect {
 				top: `${-dims.borderTop}px`,
 				left: `${-dims.borderLeft}px`,
 			})
-			//this.resizeHandles[0].addEventListener('mousedown', initFullDrag('nw'), false);
+
 
 			Object.assign(this.resizeHandles[1].style, {
 				height: `${6 / scale}px`,
@@ -838,7 +849,7 @@ export class OverlayRect {
 				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
 				left: `${-dims.borderLeft}px`,
 			})
-			//this.resizeHandles[1].addEventListener('mousedown', initFullDrag('sw'), false);
+
 
 			Object.assign(this.resizeHandles[2].style, {
 				height: `${6 / scale}px`,
@@ -849,7 +860,7 @@ export class OverlayRect {
 				top: `${box.height - dims.borderTop - dims.borderBottom}px`,
 				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
 			})
-			//this.resizeHandles[2].addEventListener('mousedown', initFullDrag('se'), false);
+
 
 			Object.assign(this.resizeHandles[3].style, {
 				height: `${6 / scale}px`,
@@ -860,7 +871,7 @@ export class OverlayRect {
 				top: `${-dims.borderTop}px`,
 				left: `${box.width - dims.borderLeft - dims.borderRight}px`,
 			})
-			//this.resizeHandles[3].addEventListener('mousedown', initFullDrag('ne'), false);
+
 
 			const boxHeight = box.height * scale;
 			if (boxHeight >= resizeThreshold) {

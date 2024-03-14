@@ -216,7 +216,6 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
 }
 
 interface SnapBehavior {
-	//getOldValues: (element: HTMLElement) => [HTMLElement, Record<string, string>][];
 	isDraggable: (element: HTMLElement) => string | undefined;
 	onUpdate: (element: HTMLElement, event: DraggingEvent, scale: number, isResize: boolean) => UpdatedElement[];
 	onCalculateSnapping: (element: HTMLElement, posX: number, posY: number, dx: number, dy: number, scale: number, isResize: boolean) => {resultsX: SnappingResult[], resultsY: SnappingResult[]};
@@ -580,6 +579,8 @@ class FlexSnapping implements SnapBehavior {
 		const minGap = round(getMinGap(parent), 1);
 		const childrenCount = currParentInfo.childEdgeInfo.length;
 
+		const flexEnabled = parent.dataset.harmonyFlex === 'true';
+
 		const lastGap = parent.dataset.lastGap ? parseFloat(parent.dataset.lastGap) : currParentInfo[minGapBetweenX];
 		const gapDiff = currParentInfo[minGapBetweenX] - minGap// - lastGap;
 		
@@ -685,7 +686,7 @@ class FlexSnapping implements SnapBehavior {
 			}
 		}
 	
-		if (!isResize && currParentInfo.children.length > 2) {
+		if (!isResize && flexEnabled) {
 			calculateMovePositions();
 		}
 
@@ -944,7 +945,6 @@ class FlexSnapping implements SnapBehavior {
 		const bottom = axis === 'x' ? 'bottom' : 'right'; 
 		const minGapBetween = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
 		const minGap = getMinGap(parent);
-
 		
 		const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
 		if (parentInfo.edges === undefined) return [];
@@ -965,17 +965,17 @@ class FlexSnapping implements SnapBehavior {
 		}
 		const selfIndex = myChildInfo.index;
 
-		if (parentInfo.children.length <= 2) {
+		if (parent.dataset.harmonyFlex === 'false') {
 			const _left = myChildInfo[left].siblingEdge ? myChildInfo[left].siblingEdge!.edgeLocation : myChildInfo[left].parentEdge.edgeLocation
 			const _right = myChildInfo[right].siblingEdge ? myChildInfo[right].siblingEdge!.edgeLocation : myChildInfo[right].parentEdge.edgeLocation
 			const _top = myChildInfo[top].parentEdge.edgeLocation //+ getNonWorkableGap(myChildInfo.left.parentEdge.gapTypes)//myChildInfo.left.siblingEdge ? myChildInfo.left.siblingEdge.edgeLocation : myChildInfo.left.parentEdge.edgeLocation;
 			const _bottom = myChildInfo[bottom].parentEdge.edgeLocation //- getNonWorkableGap(myChildInfo.right.parentEdge.gapTypes);//myChildInfo.right.siblingEdge ? myChildInfo.right.siblingEdge.edgeLocation : myChildInfo.right.parentEdge.edgeLocation;
 
 			return [{
-				top: _top,
-				bottom: _bottom,
-				left: _left,
-				right: _right,
+				[top as 'top']: _top,
+				[bottom as 'bottom']: _bottom,
+				[left as 'left']: _left,
+				[right as 'right']: _right,
 			}];
 		}
 		

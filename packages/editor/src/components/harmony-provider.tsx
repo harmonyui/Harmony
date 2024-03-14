@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Inspector, componentIdentifier, replaceTextContentWithSpans } from "./inspector/inspector";
+import { Inspector, componentIdentifier, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {PublishRequest, loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
 import {translateUpdatesToCss} from '@harmony/util/src/component';
@@ -47,8 +47,9 @@ interface HarmonyContextProps {
 	publishState: PullRequest | undefined;
 	setPublishState: (value: PullRequest | undefined) => void;
 	fonts?: Font[];
+	onFlexToggle: () => void;
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined, onFlexToggle: () => undefined});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -191,7 +192,21 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (!isToggled) {
 			setSelectedComponent(undefined);
 		}
-	}, [isToggled])
+	}, [isToggled]);
+
+	const onFlexClick = useCallback(() => {
+		if (!selectedComponent) return;
+
+		const parent = selectDesignerElement(selectedComponent).parentElement!;
+		const flexEnabled = parent.dataset.harmonyFlex;
+		if (flexEnabled) {
+			// const newFlex = flexEnabled === 'true' ? 'false' : 'true';
+			// parent.dataset.harmonyFlex = newFlex;
+			const $text = $('#harmony-flex-text');
+			$text.trigger('pointerdown');
+			//return newFlex;
+		}
+	}, [selectedComponent]);
 
 	// useEffect(() => {
 	// 	if (ref.current) {
@@ -407,7 +422,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	return (
 		<>
 			{/* <div ref={harmonyContainerRef}> */}
-				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts}}>
+				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick}}>
 					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 					<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
 						<div id="harmony-scaled" ref={(d) => {
