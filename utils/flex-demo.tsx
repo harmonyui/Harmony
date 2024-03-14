@@ -1,7 +1,7 @@
 'use client';
 import { Button } from "@harmony/ui/src/components/core/button";
 import { capitalizeFirstLetter, getClass } from "@harmony/util/src";
-import { changeByAmount } from "harmony-ai-editor/src/components/inspector/snapping";
+import { changeByAmount } from "harmony-ai-editor/src/components/snapping/snapping";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism"; // Choose the theme you prefer
