@@ -133,3 +133,11 @@ model Repository {
 	//TODO: We don't need this in the future hopefully
 	tailwind_prefix String?
 }
+
+model ChangeLog {
+	id String @id @default(cuid())
+	release_date DateTime @default(now())
+	version String
+	features String
+	bugs String
+}

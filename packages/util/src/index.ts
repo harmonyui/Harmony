@@ -7,6 +7,10 @@ export const displayDate = (date: Date) => {
   return dayjs(date).format("MM/DD/YY");
 };
 
+export const displayDateFull = (date: Date) => {
+  return dayjs(date).format("MMM DD, YYYY");
+}
+
 export const displayTime = (date: Date): string => {
 	return dayjs(date).format("h:mm A");
 }

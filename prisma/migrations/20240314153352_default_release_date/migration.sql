@@ -1,0 +1,2 @@
+-- AlterTable
+ALTER TABLE "ChangeLog" ALTER COLUMN "release_date" SET DEFAULT CURRENT_TIMESTAMP;

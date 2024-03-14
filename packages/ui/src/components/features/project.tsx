@@ -40,7 +40,9 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 		<div className="hw-flex hw-flex-col hw-gap-4">
 			{Projectes ? <>
 				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create New Project</Button>
-				{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)} onDelete={() => onDelete(item)}/>)}
+				<div className="hw-grid hw-grid-cols-1 sm:hw-grid-cols-3 hw-gap-y-10 hw-overflow-auto">
+					{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)} onDelete={() => onDelete(item)}/>)}
+				</div>
 				<CreateNewProjectModal show={showNewProject} onClose={() => setShowNewProject(false)} onSuccessfulCreation={openProject}/>
 			</> : null}
 		</div>
@@ -145,7 +147,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
     ]
 
 	return (<>
-		<div className="hw-w-[400px] hw-min-w-[300px]" >
+		<div className="hw-w-[200px]" >
 			{/* <h4 className="hw-mt-10">Hello there</h4>
 			<p className="hw-mt-5">Thank you please</p> */}
 			<button className="hw-rounded-md hw-overflow-auto hw-block">

@@ -49,7 +49,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         <body class="hw-h-full">
         ```
       */}
-      <div>
+      <div className="hw-h-full">
         <Transition.Root as={Fragment} show={sidebarOpen}>
           <Dialog as="div" className="hw-relative hw-z-50 lg:hw-hidden" onClose={setSidebarOpen}>
             <Transition.Child
@@ -110,7 +110,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                             ))}
                           </ul>
                         </li>
-												<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/settings', icon: Cog6ToothIcon, label: 'Settings'}}/>
+												<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/release', icon: Cog6ToothIcon, label: 'Beta Release Log'}}/>
                       </ul>
                     </nav>
                   </div>
@@ -141,7 +141,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                     ))}
                   </ul>
                 </li>
-								<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/settings', icon: Cog6ToothIcon, label: 'Settings'}}/>
+								<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/release', icon: Cog6ToothIcon, label: 'Beta Release Log'}}/>
                 {/* <li className="hw-mt-auto">
                   <a
                     href="#"
@@ -156,7 +156,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
           </div>
         </div>
 
-				<div className="lg:hw-pl-72">
+				<div className="lg:hw-pl-72 hw-h-full">
 					<div className="hw-top-0 hw-z-40 hw-flex hw-h-16 shrink-0 hw-items-center hw-gap-x-4 hw-border-b hw-border-gray-200 hw-bg-white hw-px-4 hw-shadow-sm sm:hw-gap-x-6 sm:hw-px-6 lg:hw-px-8">
 						<button className="-hw-m-2.5 hw-p-2.5 hw-text-gray-700 lg:hw-hidden" onClick={() => { setSidebarOpen(true); }} type="button">
 							<span className="hw-sr-only">Open sidebar</span>
@@ -231,7 +231,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 							</div> 
 						</div>
 					</div>
-					<main className="hw-py-10">
+					<main className="hw-py-10 hw-h-full hw-bg-gray-100">
 						<div className="hw-px-4 sm:hw-px-6 lg:hw-px-8" onClick={onBodyClick}>{children}</div>
 					</main>
 				</div>

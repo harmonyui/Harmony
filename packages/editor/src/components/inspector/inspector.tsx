@@ -121,62 +121,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const previousError = usePrevious(error);
 	const {onFlexToggle: onFlexClick} = useHarmonyContext();
 
-	// const {onDrag, isDragging: isResizing} = useResize({onIsDragging(rect, oldRect) {
-	// 	const container = containerRef.current;
-	// 	if (container === null || parentElement === undefined) return false;
-
-	// 	if (overlayRef.current === undefined) {
-	// 		overlayRef.current = new Overlay(container, parentElement);
-	// 	}
-
-	// 	if (selectedComponent) {
-	// 		overlayRef.current.select(selectedComponent, scale, Boolean(error), {onDrag});
-	// 	} else {
-	// 		overlayRef.current.remove('select');
-	// 	}
-
-	// 	const value = onResize(rect, oldRect);
-	// 	setError(value);
-
-	// 	return Boolean(value);
-	// }, onDragFinish() {
-	// 	const container = containerRef.current;
-	// 	if (container === null || parentElement === undefined) return false;
-
-	// 	if (overlayRef.current === undefined) {
-	// 		overlayRef.current = new Overlay(container, parentElement);
-	// 	}
-
-	// 	if (selectedComponent) {
-	// 		overlayRef.current.select(selectedComponent, scale, false, {onDrag});
-	// 	} else {
-	// 		overlayRef.current.remove('select');
-	// 	}
-	// 	setError(undefined);
-	// }});
-
-	// const {makeDraggable, isDragging: isDraggingReal} = useDraggableList({onIsDragging() {
-	// 	const container = containerRef.current;
-	// 	if (container === null || parentElement === undefined) return;
-
-	// 	if (overlayRef.current === undefined) {
-	// 		overlayRef.current = new Overlay(container, parentElement);
-	// 	}
-
-	// 	if (selectedComponent) {
-	// 		overlayRef.current.select(selectedComponent, {onDrag});
-	// 	} else {
-	// 		overlayRef.current.remove('select');
-	// 	}
-	// }, onDragFinish({element, aborter, from, to}) {
-	// 	aborter.abort();
-	// 	element.draggable = false;
-
-	// 	if (from === to) return;
-		
-	// 	onReorder({from, to, element})
-	// }});
-
 	const {isDragging: isDraggingSelf} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
@@ -377,23 +321,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		return true;
 	}, [selectedComponent, rootElement, mode, scale]);
 
-	useEffect(() => {
-		if (rootElement) {
-			// const mutationObserver = new MutationObserver((mutations) => {
-			// 	for (const mutation of mutations) {
-			// 		if (mutation.type === 'characterData') {
-			// 			onElementTextChange(mutation.target.textContent || '')
-			// 		}
-			// 	}
-			// })
-
-			// mutationObserver.observe(rootElement, {
-			// 	characterData: true,
-    		// 	subtree: true,
-			// })
-		}
-	}, [rootElement])
-
 	const onHover = useEffectEvent((element: HTMLElement, x: number, y: number, event: MouseEvent) => {
 		const container = containerRef.current;
 		if (container === null) return false;
@@ -414,8 +341,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		const container = containerRef.current;
 		if (container === null || isDragging) return false;
 		if (rootElement && !rootElement.contains(element)) return true;
-		//const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
-
+		
 		//TODO: ctrlKey is kind of hacky. Find a better way to turn off selection
 		if (event.altKey) return false;
 
@@ -433,12 +359,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	});
 
 	const onHold = useEffectEvent((element: HTMLElement) => {
-		// const target = selectDesignerElement(element);
-		
-		// target.draggable = true;
-		// makeDraggable(target, new AbortController());
-		// overlayRef.current?.remove('hover');
-
 		return true;
 	});
 
