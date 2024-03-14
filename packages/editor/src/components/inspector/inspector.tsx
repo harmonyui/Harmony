@@ -601,7 +601,7 @@ class Overlay {
 		this.inspect(element, 'hover', scale, false);
 	}
 
-	select(element: HTMLElement, scale: number, error: boolean, listeners: {onTextChange?: (value: string, oldValue: string) => void, onFlexClick: () => 'true' | 'false' | undefined}) {
+	select(element: HTMLElement, scale: number, error: boolean, listeners: {onTextChange?: (value: string, oldValue: string) => void, onFlexClick: () => void}) {
 		this.inspect(element, 'select', scale, error);
 
 		const stuff = this.rects.get('select');
@@ -716,7 +716,7 @@ export class OverlayRect {
 	resizeHandles: HTMLElement[] = [];
 	onFlexClick: (() => void) | undefined;
 
-  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, onFlexClick?: () => 'true' | 'false' | undefined) {
+  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, onFlexClick?: () => void) {
 		this.node = doc.createElement('div')
 		this.border = doc.createElement('div')
 		this.padding = doc.createElement('div')

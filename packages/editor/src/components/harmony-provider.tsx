@@ -200,28 +200,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const parent = selectDesignerElement(selectedComponent).parentElement!;
 		const flexEnabled = parent.dataset.harmonyFlex;
 		if (flexEnabled) {
-			// const newFlex = flexEnabled === 'true' ? 'false' : 'true';
-			// parent.dataset.harmonyFlex = newFlex;
 			const $text = $('#harmony-flex-text');
+			//TODO: This is kind of hacky to use jquery to trigger the flex change, but we can't use react because the 
+			//overlay where the flex toggle lives is outside of react. We might be able to reverse dependencies
+			//to make this logic live here instead of in this jquery pointer down function
 			$text.trigger('pointerdown');
-			//return newFlex;
 		}
 	}, [selectedComponent]);
-
-	// useEffect(() => {
-	// 	if (ref.current) {
-	// 		//const element = componentIdentifier.getComponentFromElement(ref.current.nextElementSibling as HTMLElement);
-	// 		setRootComponent(ref.current.nextElementSibling as HTMLElement | null ?? undefined);
-	// 	}
-	// }, [ref]);
-
-	useEffect(() => {
-		// if (harmonyContainerRef.current) {
-		// 	setRootComponent(harmonyContainerRef.current);
-		// 	harmonyContainerRef.current.appendChild(rootElement);
-		// 	//document.body = rootElement;
-		// }
-	}, [harmonyContainerRef]);
 
 	useEffect(() => {
 		if (rootComponent && availableIds) {
@@ -263,12 +248,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}
 
 	const setScale = useCallback((scale: number) => {
-		//scale = round(scale, 1);
-        // if (harmonyContainerRef.current && harmonyContainerRef.current.parentElement) {
-        //     harmonyContainerRef.current.style.transform = `scale(${scale})`;
-        //     harmonyContainerRef.current.parentElement.style.width = `${WIDTH*scale}px`;
-        //     harmonyContainerRef.current.parentElement.style.height = `${HEIGHT*scale}px`;
-        // }
         _setScale(scale);
     }, []);
 
@@ -295,53 +274,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'text', name: String(index), action: 'change', value, oldValue, childIndex}
 		onAttributesChange(component, [update], false);
 	});
-
-	// const onResize = useEffectEvent((size: ResizeValue, oldSize: ResizeValue): string | undefined => {
-	// 	if (!selectedComponent || !rootComponent) return undefined;
-
-	// 	const component = componentIdentifier.getComponentFromElement(selectedComponent);
-	// 	if (!component) throw new Error("Error when getting component");
-
-	// 	const convertSizeToString = (size: ResizeValue): string => {
-	// 		let str = Object.entries(size).reduce((prev, [direction, value]) => prev ? `${prev}${value !== undefined ? `:${direction}=${value}` : ''}` : value !== undefined ? `${direction}=${value}` : '', '');
-	// 		if (isImageElement(selectedComponent)) {
-	// 			str = `h${str}`;
-	// 		}
-
-	// 		return str;
-	// 	}
-
-	// 	const value = convertSizeToString({...oldSize, ...size});
-	// 	const oldValue = convertSizeToString(oldSize);
-	// 	const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'className', name: 'size', action: 'change', value, oldValue}
-		
-	// 	//Only let the size change if it is actually changing the size of the component
-	// 	const width = selectedComponent.clientWidth;
-	// 	const height = selectedComponent.clientHeight;
-	// 	makeUpdates(selectedComponent, [update], rootComponent, fonts);
-	// 	const newWidth = selectedComponent.clientWidth;
-	// 	const newHeight = selectedComponent.clientHeight;
-	// 	makeUpdates(selectedComponent, [{...update, value: update.oldValue, oldValue: update.value}], rootComponent, fonts);
-
-	// 	if (newWidth === width && oldValue !== value) {
-	// 		//if ((size.e || oldSize.e || 0) - (oldSize.e || 0) >= 0 || (size.e || 0) < 0)
-	// 			size.e = undefined;
-	// 		//if ((size.w || oldSize.w || 0) - (oldSize.w || 0) >= 0 || (size.w || 0) < 0)
-	// 			size.w = undefined;
-	// 	}
-
-	// 	if (newHeight === height && oldValue !== value) {
-	// 		//if ((size.n || oldSize.n || 0) - (oldSize.n || 0) >= 0 || (size.n || 0) < 0)
-	// 			size.n = undefined;
-	// 		//if ((size.s || oldSize.s || 0) - (oldSize.s || 0) >= 0 || (size.s || 0) < 0)
-	// 			size.s = undefined;
-	// 	}
-	// 	update.value = convertSizeToString(size);
-	// 	if (!update.value || update.value === 'h') return false;
-		
-	// 	onAttributesChange(component, [update]);
-	// 	return true;
-	// });
 
 	const onReorder = useEffectEvent(({from, to, element}: {from: number, to: number, element: HTMLElement}) => {
 		const component = componentIdentifier.getComponentFromElement(element);
@@ -374,10 +306,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		try {
 			await fetch(`${WEB_URL}/api/publish`, {
 				method: 'POST',
-				// headers: {
-				// 	'Accept': 'application/json',
-				// 	'Content-Type': 'application/json'
-				// },
 				body: JSON.stringify(request)
 			});
 
@@ -401,16 +329,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		window.history.pushState(publishState, 'mode', url.href);
 		window.sessionStorage.setItem('harmony-mode', mode);
 		onHistoryChange();
-
-		//setup.changeMode(mode);
-		// if (mode === 'preview' && displayMode === 'preview-full') {
-		// 	const result = setupHarmonyProvider(false);
-		// 	if (!result) throw new Error("There should be a result");
-		// 	setRootElement(result.container);
-		// 	bodyObserverRef.current = result.bodyObserver;
-		// 	// setRootComponent(harmonyContainerRef.current);
-		// 	// harmonyContainerRef.current.appendChild(rootElement);
-		// }
 	}
 
 	const onMinimize = () => {
@@ -421,28 +339,26 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	return (
 		<>
-			{/* <div ref={harmonyContainerRef}> */}
-				{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick}}>
-					{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
-					<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
-						<div id="harmony-scaled" ref={(d) => {
-							if (d && d !== harmonyContainerRef.current) {
-								harmonyContainerRef.current = d
-								setRootComponent(harmonyContainerRef.current);
-								//harmonyContainerRef.current.appendChild(rootElement);
-							}
-						}} style={{width: `${WIDTH}px`, minHeight: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
-						{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
-						{children}
-						</div>
+			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick}}>
+				{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} scale={scale} onScaleChange={setScale} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
+				<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
+					<div id="harmony-scaled" ref={(d) => {
+						if (d && d !== harmonyContainerRef.current) {
+							harmonyContainerRef.current = d
+							setRootComponent(harmonyContainerRef.current);
+							//harmonyContainerRef.current.appendChild(rootElement);
+						}
+					}} style={{width: `${WIDTH}px`, minHeight: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
+					{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
+					{children}
 					</div>
-					</HarmonyPanel></> : <div className="hw-absolute hw-z-[100] hw-group hw-p-2">
-						<button className="hw-invisible group-hover:hw-visible hw-bg-primary hw-rounded-md hw-p-2" onClick={onMinimize}>
-							<MinimizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
-						</button>
-					</div>}
-				</HarmonyContext.Provider>}
-			{/* </div> */}
+				</div>
+				</HarmonyPanel></> : <div className="hw-absolute hw-z-[100] hw-group hw-p-2">
+					<button className="hw-invisible group-hover:hw-visible hw-bg-primary hw-rounded-md hw-p-2" onClick={onMinimize}>
+						<MinimizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
+					</button>
+				</div>}
+			</HarmonyContext.Provider>}
 		</>
 	)
 }
@@ -466,8 +382,6 @@ export const usePinchGesture = ({scale, onTouching}: {scale: number, onTouching:
 interface HarmonyCommandChange {
 	name: 'change',
 	update: ComponentUpdate[],
-	//old: ComponentUpdate[]
-	//oldValue: Attribute[]
 }
 type HarmonyCommand = HarmonyCommandChange;
 
@@ -516,11 +430,9 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	}, []);
 
 	const executeCommand = (component: ComponentElement, update: ComponentUpdate[], execute=true): void => {
-		//const old = oldValues.map((oldValue, i) => ({...update[i], value: oldValue}));
 		const newCommand: HarmonyCommand = {
 			name: 'change',
 			update: update.filter(update => update.oldValue !== update.value),
-			//old,
 		}
 		//TODO: find a better way to do this
 		if (execute)
@@ -607,10 +519,6 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId};
 		const result = await fetch(`${WEB_URL}/api/update/${save.branchId}`, {
 			method: 'POST',
-			// headers: {
-			// 	'Accept': 'application/json',
-			// 	'Content-Type': 'application/json'
-			// },
 			body: JSON.stringify(data)
 		});
 		setIsSaving(false);
