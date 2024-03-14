@@ -33,8 +33,6 @@ export interface HarmonyPanelProps {
 	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
-	scale: number;
-	onScaleChange: (scale: number) => void;
 	children: React.ReactNode;
 	toggle: boolean;
 	onToggleChange: (toggle: boolean) => void;
@@ -44,11 +42,11 @@ export interface HarmonyPanelProps {
 	branches: {id: string, name: string}[];
 }
 export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) => {
-	const {displayMode} = useHarmonyContext();
-	const {onTouch} = usePinchGesture({scale: props.scale, onTouching(newScale) {
-		props.onScaleChange(newScale);
+	const {displayMode, onScaleChange, scale} = useHarmonyContext();
+	const {onTouch} = usePinchGesture({scale, onTouching(newScale, cursorPos) {
+		onScaleChange(newScale, cursorPos);
 	}})
-	const {children, scale, onScaleChange} = props;
+	const {children} = props;
 
 	//TODO: Fix bug where getting rid of these parameters gives a "cannot read 'data-harmony-id' of undefined"
 	const getPanel = (_?: string, _2?: string) => {
@@ -66,13 +64,13 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 			</div> */}
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
 				{getPanel()}
-				<div ref={(ref) => {
+				<div id="harmony-scroll-container" ref={(ref) => {
 					ref?.addEventListener('wheel', onTouch);
 				}} className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-px-[250px] hw-bg-gray-200" >
 					{children}
 				</div>
 				<div className="hw-px-4 hw-py-4 sm:hw-px-6">
-					<Slider value={scale * 100} onChange={(value) => onScaleChange(value/100)} max={500}/>
+					<Slider value={scale * 100} onChange={(value) => onScaleChange(value/100, {x: 0, y: 0})} max={500}/>
 				</div>
 			</div>
 		
@@ -86,7 +84,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 	) 
 }
 
-const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, scale, onScaleChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches}) => {
+const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches}) => {
 	//TODO: Remove dependency on harmony text
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement.dataset.harmonyText === 'true' ? selectedElement.parentElement! : selectedElement) : undefined;
 	
