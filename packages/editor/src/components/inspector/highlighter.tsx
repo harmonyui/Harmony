@@ -14,11 +14,12 @@ export interface HighlighterProps {
 		onHover: HighlighterDispatch,
 		onHold: HighlighterDispatch,
 		onPointerUp: HighlighterDispatch,
+		onDoubleClick: HighlighterDispatch
 	},
 	container: HTMLElement | undefined;
 	noEvents: HTMLElement[];
 }
-export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPointerUpProps, onHold}, container, noEvents}: HighlighterProps) => {
+export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPointerUpProps, onDoubleClick: onDoubleClickProps, onHold}, container, noEvents}: HighlighterProps) => {
 	const timeoutRef = useRef<NodeJS.Timeout>();
 	//const [isHolding, setIsHolding] = useState(false);
 	const isHoldingRef = useRef(false);
@@ -41,7 +42,8 @@ export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPoin
 		//container?.addEventListener('mousedown', onMouseEvent, {signal: controller.signal}) //This one handels the content editable
 		container?.addEventListener('mouseover', onMouseEvent, {signal: controller.signal})
 		//container?.addEventListener('mouseup', onMouseEvent, {signal: controller.signal})
-		container?.addEventListener('pointerdown', onPointerDown, {signal: controller.signal})
+		container?.addEventListener('pointerdown', onPointerDown, {signal: controller.signal});
+		container?.addEventListener('dblclick', onDoubleClick, {signal: controller.signal});
 	});
 
 	const removeListeners = useEffectEvent((): void => {
@@ -100,6 +102,7 @@ export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPoin
 	// }
 	const onPointerOver = highligherDispatcher(onHover);
 	const onPointerDown = highligherDispatcher(onClick);
+	const onDoubleClick = highligherDispatcher(onDoubleClickProps);
 	// const onPointerDown = highligherDispatcher(onClick, useEffectEvent((element: HTMLElement) => {
 	// 	timeoutRef.current = setTimeout(() => {
 	// 		//setIsHolding(true);

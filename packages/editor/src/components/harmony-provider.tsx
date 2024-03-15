@@ -82,7 +82,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [mode, setMode] = useState<SelectMode>('tweezer');
 	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>();
 	const [branches, setBranches] = useState<{id: string, name: string}[]>([]);
-	const [scale, _setScale] = useState(1);
+	const [scale, _setScale] = useState(.6);
 	const [isDirty, setIsDirty] = useState(false);
 	const [updateOverlay, setUpdateOverlay] = useState(0);
 	const [isSaving, setIsSaving] = useState(false);
@@ -214,6 +214,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			setSelectedComponent(undefined);
 		}
 	}, [isToggled]);
+
+	useEffect(() => {
+		const scrollContainer = document.getElementById("harmony-scroll-container")
+		if (scrollContainer) {
+			scrollContainer.scrollLeft = 150;
+		}
+	}, [rootComponent]);
 
 	const onFlexClick = useCallback(() => {
 		if (!selectedComponent) return;
@@ -396,8 +403,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					{children}
 					</div>
 				</div>
-				</HarmonyPanel></> : <div className="hw-absolute hw-z-[100] hw-group hw-p-2">
-					<button className="hw-invisible group-hover:hw-visible hw-bg-primary hw-rounded-md hw-p-2" onClick={onMinimize}>
+				</HarmonyPanel></> : <div className="hw-fixed hw-z-[100] hw-group hw-p-2">
+					<button className="hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2" onClick={onMinimize}>
 						<MinimizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
 					</button>
 				</div>}

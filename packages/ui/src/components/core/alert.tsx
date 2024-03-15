@@ -8,22 +8,27 @@ interface AlertProps {
     setLabel: (value: string | undefined) => void;
 }
 export const Alert: React.FunctionComponent<AlertProps> = ({label, setLabel}) => {
-    // const [label, setLabel] = useState<string>();
-    // const previousLabel = usePrevious(labelProp);
+    const [transparency, setTransparency] = useState(1);
 
-    // useEffect(() => {
-    //     if (previousLabel !== labelProp) {
-    //         setLabel(labelProp);
-    //     }
-    // }, [labelProp, previousLabel])
+    useEffect(() => {
+        if (Boolean(label)) {
+            const decresaseTransparency = (transparency: number) => {
+                const newTrans = transparency - 0.05
+                setTransparency(Math.max(0, newTrans));
+                setTimeout(() => decresaseTransparency(newTrans), 50)
+            }
+
+            setTimeout(() => decresaseTransparency(1), 5000);
+        }
+    }, [label])
 
     const onClose = () => {
         setLabel(undefined);
     }
-    return ReactDOM.createPortal(Boolean(label) ? <div className="hw-fixed hw-inset-0 hw-z-[100] hw-h-fit">
-        <ClosableContent onClose={onClose}>
-        <div className="hw-p-4 hw-mb-4 hw-text-sm hw-text-red-800 hw-rounded-lg hw-bg-red-50 dark:hw-bg-gray-800 dark:hw-text-red-400" role="alert">
-            <span className="hw-font-medium">Danger!</span> {label}
+    return ReactDOM.createPortal(Boolean(label) ? <div className="hw-fixed hw-bottom-[40px] hw-left-0 hw-right-0 hw-z-[100] hw-h-fit">
+        <ClosableContent className="hw-w-[400px] hw-mx-auto hw-fill-white" xMarkClassName="hw-h-2 hw-w-2 hw-fill-white hw-mr-1 -hw-mt-[14px]" onClose={onClose}>
+        <div style={{opacity: `${transparency * 100}%`}} className="hw-py-2 hw-px-4 hw-mb-4 hw-text-sm hw-text-white hw-rounded-lg hw-bg-[#FF6565] dark:hw-bg-gray-800 dark:hw-text-red-400" role="alert">
+            {label}
         </div></ClosableContent>
         </div> : null, document.getElementById("harmony-container") || document.body
     )

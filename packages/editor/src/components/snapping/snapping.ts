@@ -3,7 +3,7 @@ import interact from "interactjs";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Rect, RectBox, isImageElement, isSelectable as isSelectableInspector, isTextElement, removeTextContentSpans, replaceTextContentWithSpans, selectDesignerElement, selectDesignerElementReverse } from "../inspector/inspector";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import {InteractEvent, ResizeEvent} from '@interactjs/types'
+import {InteractEvent, ResizeEvent, EdgeOptions} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
 import {AspectRatioOptions, AspectRatioState} from '@interactjs/modifiers/aspectRatio'
 import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
@@ -1628,8 +1628,19 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 					end: stopDragging
 				},
 				modifiers,
-				cursorChecker: function() {
-					return 'auto';
+				cursorChecker: function(a, b, e) {
+					const getCursor = () => {
+						if ((e as HTMLElement).contentEditable === 'true') {
+							return 'auto';
+						}
+						
+						return 'default';
+					}
+					const cursor = getCursor();
+					e.style.cursor = cursor;
+					selectDesignerElementReverse(e as HTMLElement).style.cursor = cursor;
+
+					return cursor;
 				}
 				//inertia: true
 			});
@@ -1881,6 +1892,35 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				},
 				modifiers: [aspectRef.current, ...modifiers],
 				margin: 6 / scale,
+				cursorChecker: function(action, b, element,d) {
+					if (!action.edges) return 'default';
+
+					const getCursor = (edges: EdgeOptions) => {
+						if (edges.top && edges.right || edges.bottom && edges.left) {
+							return 'nesw-resize';
+						}
+	
+						if (edges.top && edges.left || edges.bottom && edges.right) {
+							return 'nesw-resize';
+						}
+	
+						if (edges.left || edges.right) {
+							return 'ew-resize';
+						}
+	
+						if (edges.top || edges.bottom) {
+							return 'ns-resize';
+						}
+
+						return 'default';
+					}
+
+					const cursor = getCursor(action.edges);
+					element.style.cursor = cursor;
+					selectDesignerElementReverse(element as HTMLElement).style.cursor = cursor;
+					
+					return cursor;
+				}
 			});
 
 			document.addEventListener('keydown', onKeyDown);

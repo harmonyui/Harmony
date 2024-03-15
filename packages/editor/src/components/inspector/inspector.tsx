@@ -40,7 +40,7 @@ export function selectDesignerElementReverse(element: HTMLElement): HTMLElement 
 }
 
 export function isTextElement(element: HTMLElement): boolean {
-	return Array.from(element.children).every(child => child.nodeType === Node.TEXT_NODE);
+	return element.childNodes.length > 0 && Array.from(element.childNodes).every(child => child.nodeType === Node.TEXT_NODE);
 }
 
 export function isImageElement(element: Element): boolean {
@@ -130,7 +130,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(element, scale, Boolean(error), {onFlexClick});
+			overlayRef.current.select(element, scale, false, {onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -207,7 +207,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, Boolean(error), {onFlexClick});
+			overlayRef.current.select(selectedComponent, scale, false, {onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -273,7 +273,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 					parent.dataset.harmonyFlex = 'true';
 				}
 			}
-			overlayRef.current.select(selectedComponent, scale, Boolean(error), {onTextChange: onElementTextChange, onFlexClick});
+			overlayRef.current.select(selectedComponent, scale, false, {onTextChange: onElementTextChange, onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -366,12 +366,17 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			onClick,
 			onHover,
 			onHold,
-			onPointerUp(_, clientX, clientY) {
+			onPointerUp() {
+				return true;
+			},
+			onDoubleClick(_, clientX, clientY) {
 				if (selectedComponent) {
-					if (!selectedComponent.dataset.selected) {
-						selectedComponent.dataset.selected = 'true';
-					} else if (!isDragging && isTextElement(selectedComponent) && selectedComponent.contentEditable !== 'true') {
+					// if (!selectedComponent.dataset.selected) {
+					// 	selectedComponent.dataset.selected = 'true';
+					// } else 
+					if (!isDragging && isTextElement(selectedComponent) && selectedComponent.contentEditable !== 'true') {
 						selectedComponent.contentEditable = "true";
+						selectedComponent.style.cursor = 'auto';
 
 						// Focus the selectedComponent
 						selectedComponent.focus();
@@ -516,7 +521,7 @@ class Overlay {
 	}
 
 	hover(element: HTMLElement, scale: number) {
-		element.style.cursor = 'inherit';	
+		//element.style.cursor = 'default';	
 		this.inspect(element, 'hover', scale, false);
 	}
 
@@ -542,12 +547,19 @@ class Overlay {
 		if (parent) {
 			const [box, dims] = this.getSizing(parent);
 			const rect = new OverlayRect(this.window.document, parent, this.container, listeners.onFlexClick);
+			dims.borderBottom = 2 / scale;
+			dims.borderLeft = 2 / scale;
+			dims.borderRight = 2 / scale;
+			dims.borderTop = 2 / scale;
 			rect.update({box, dims, borderSize: 2, borderStyle: 'dashed', opacity: .5}, scale);
 			stuff.values.push({rect, element: parent});
 		}
 	}
 
 	inspect(element: HTMLElement, method: 'select' | 'hover', scale: number, error: boolean) {
+		
+		//
+		
 		// We can't get the size of text nodes or comment nodes. React as of v15
     	// heavily uses comment nodes to delimit text.
 		if (element.nodeType !== Node.ELEMENT_NODE) {
@@ -702,23 +714,36 @@ export class OverlayRect {
 	}
 
 	public updateSize(box: Rect, dims: BoxSizing, scale: number, error: boolean) {
+		dims.borderBottom = 2 / scale;
+		dims.borderLeft = 2 / scale;
+		dims.borderRight = 2 / scale;
+		dims.borderTop = 2 / scale;
 		this.update({box, dims, borderSize: 2, error}, scale);
 	}
 
 	public hover(box: Rect, dims: BoxSizing, scale: number, error: boolean) {
+		dims.borderBottom = 2 / scale;
+		dims.borderLeft = 2 / scale;
+		dims.borderRight = 2 / scale;
+		dims.borderTop = 2 / scale;
+		if (isTextElement(this.element)) {
+			dims.borderLeft = 0;
+			dims.borderRight = 0;
+			dims.borderTop = 0;
+		}
 		this.update({box, dims, borderSize: 2, error}, scale);
 	}
 
 	public select(box: Rect, dims: BoxSizing, scale: number, error: boolean) {
+		dims.borderBottom = 2 / scale;
+		dims.borderLeft = 2 / scale;
+		dims.borderRight = 2 / scale;
+		dims.borderTop = 2 / scale;
 		this.update({box, dims, borderSize: 2, error, drag: true}, scale);
 	}
 
   	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle, error=false, drag=false}: OverlayProps, scale: number) {
-		dims.borderBottom = borderSize / scale;
-		dims.borderLeft = borderSize / scale;
-		dims.borderRight = borderSize / scale;
-		dims.borderTop = borderSize / scale;
-	    boxWrap(dims, 'border', this.border)
+		boxWrap(dims, 'border', this.border)
 		
 		//boxWrap(dims, 'margin', this.node)
 		boxWrap(dims, 'padding', this.padding);

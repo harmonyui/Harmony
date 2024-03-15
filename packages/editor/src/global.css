@@ -5,3 +5,11 @@
 [contenteditable]:focus,[contenteditable]:focus-visible {
     outline: 0px solid transparent;
 }
+
+#harmony-section button, #harmony-section a {
+    cursor: default;
+}
+
+/* #harmony-section button {
+    cursor:none;
+} */

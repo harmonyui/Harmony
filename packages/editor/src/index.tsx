@@ -3,6 +3,7 @@ import ReactDOM from 'react-dom';
 import {HarmonyProvider, HarmonyProviderProps} from './components/harmony-provider';
 import { HarmonySetup } from './components/harmony-setup';
 import { useEffect, useRef } from 'react';
+import { getClass } from '@harmony/util/src';
 
 declare global {
     interface Window {
@@ -24,7 +25,7 @@ if (typeof window !== 'undefined') {
             }, [ref])
             return <section id="harmony-section" className={className} ref={ref} style={{backgroundColor: 'white'}}></section>
         }
-        const container = <Container harmonyContainer={harmonyContainer} className={document.body.className}/>//document.createElement('body');
+        const container = <Container harmonyContainer={harmonyContainer} className={getClass(document.body.className, 'hw-select-none')}/>//document.createElement('body');
         ReactDOM.render(<HarmonyProvider {...options}>{container}</HarmonyProvider>, harmonyContainer);
     }
 }
