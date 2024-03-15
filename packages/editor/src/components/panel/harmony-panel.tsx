@@ -3,7 +3,7 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon } from "@harmony/ui/src/components/core/icons";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon, XMarkIcon, SendIcon, PreviewIcon } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
@@ -144,7 +144,7 @@ const PreviewPanel: React.FunctionComponent = () => {
 			<div>
 				<div className="hw-flex hw-gap-4">
 					<ShareButton />
-					{!publishState ? <PublishButton/> : <Button mode="dark" onClick={onSendRequest} loading={loading}>Send Request</Button>}
+					{!publishState ? <PublishButton/> : <Button mode="dark" onClick={onSendRequest} loading={loading}>Send Request <SendIcon className="hw-h-5 hw-w-5"/></Button>}
 				</div>
 			</div>
 		</div>
@@ -294,6 +294,10 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		changeMode('preview')
 	}
 
+	const onClose = () => {
+		window.location.replace(WEB_URL)
+	}
+
 	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published' : null;
 
 	const textToolsComponents: Record<TextTools, ComponentTool | undefined> = useMemo(() => ({
@@ -393,8 +397,11 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			</div>
 			<div className="hw-px-4 hw-flex hw-gap-4">
 				<PublishButton preview/>
-				<button className="hw-bg-[#11283B] hw-rounded-full hw-p-2 hover:hw-bg-[#11283B]/80" onClick={onPreview}>
-					<PlayIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
+				<button className="hw-text-[#11283B] hover:hw-text-[#11283B]/80" onClick={onPreview}>
+					<PlayIcon className="hw-h-9 hw-w-9 hw-fill-white hw-stroke-none"/>
+				</button>
+				<button className="hover:hw-fill-slate-400 hw-group" onClick={onClose}>
+					<XMarkIcon className="group-hover:hw-fill-gray-500 hw-h-7 hw-w-7"/>
 				</button>
 			</div>
 			
@@ -456,7 +463,7 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 	}
 
 	return <>
-		<Button mode="dark" onClick={() => setShow(true)} disabled={isPublished}>Publish</Button>
+		<Button mode="dark" className="hw-h-10" onClick={() => setShow(true)} disabled={isPublished}>Publish</Button>
 		<HarmonyModal show={show} onClose={onClose} editor>
 			<div className="hw-flex hw-gap-2 hw-items-center">
 				<GitBranchIcon className="hw-w-6 hw-h-6"/>
@@ -475,8 +482,8 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 			</div>
 			{error ? <p className="hw-text-red-400 hw-text-sm">{error}</p> : null}
 			<div className="hw-flex hw-justify-between">
-				{preview ? <Button onClick={onPreview}>Preview Changes</Button> : null}
-				<Button onClick={onNewPullRequest} loading={loading}>Send Request</Button>
+				{preview ? <Button onClick={onPreview}>Preview Changes <PreviewIcon className="hw-ml-1 hw-h-4 hw-w-4"/></Button> : null}
+				<Button onClick={onNewPullRequest} loading={loading}>Send Request <SendIcon className="hw-ml-1 hw-h-5 hw-w-5"/></Button>
 			</div>
 		</HarmonyModal>
 	</>
@@ -504,8 +511,8 @@ const ShareButton = () => {
 	}
 
 	return (<>
-		<Popover button={<button className="hw-bg-[#11283B] hw-rounded-full hw-p-2 hover:hw-bg-[#11283B]/80" >
-			<ShareArrowIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
+		<Popover button={<button className="hw-text-[#11283B] hover:hw-text-[#11283B]/80" >
+			<ShareArrowIcon className="hw-h-10 hw-w-10 hw-fill-white hw-stroke-none"/>
 		</button>} container={document.getElementById('harmony-container') || undefined}>
 			<button className="hw-text-sm hw-text-blue-500 hw-flex hw-items-center hw-gap-1" onClick={onCopy}>
 				<LinkIcon className="hw-h-4 hw-w-4 hw-fill-blue-500"/>

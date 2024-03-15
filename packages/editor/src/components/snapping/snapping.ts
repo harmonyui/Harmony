@@ -1628,6 +1628,9 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 					end: stopDragging
 				},
 				modifiers,
+				cursorChecker: function() {
+					return 'auto';
+				}
 				//inertia: true
 			});
 
@@ -1877,7 +1880,7 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 					end: stopResizing
 				},
 				modifiers: [aspectRef.current, ...modifiers],
-				margin: 4,
+				margin: 6 / scale,
 			});
 
 			document.addEventListener('keydown', onKeyDown);

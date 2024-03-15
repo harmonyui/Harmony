@@ -180,7 +180,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		onChange(element, updates, true);
-		onSelect(undefined);
 	}, onError(error) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
@@ -269,9 +268,9 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 		if (selectedComponent) {
 			const parent = selectDesignerElement(selectedComponent).parentElement;
-			if (parent && getComputedStyle(parent).display.includes('flex')) {
+			if (parent && getComputedStyle(parent).display.includes('flex') && Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 2) {
 				if (!parent.dataset.harmonyFlex) {
-					parent.dataset.harmonyFlex = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 2 ? 'true' : 'false';
+					parent.dataset.harmonyFlex = 'true';
 				}
 			}
 			overlayRef.current.select(selectedComponent, scale, Boolean(error), {onTextChange: onElementTextChange, onFlexClick});

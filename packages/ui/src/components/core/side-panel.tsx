@@ -3,7 +3,7 @@
 'use client';
 import React, { Fragment, useState } from 'react'
 import { type IconComponent, ToggleIcon } from './icons';
-import { Bars3Icon, ChevronDownIcon, Cog6ToothIcon, XMarkIcon } from './icons';
+import { Bars3Icon, ChevronDownIcon, RectangleListIcon, XMarkIcon, UserCircleIcon } from './icons';
 import {Transition, Dialog, Menu} from '@headlessui/react';
 import { getClass } from '../../../../util/src/index';
 import { Header } from './header';
@@ -110,7 +110,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                             ))}
                           </ul>
                         </li>
-												<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/release', icon: Cog6ToothIcon, label: 'Beta Release Log'}}/>
+												<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/release', icon: RectangleListIcon, label: 'Beta Release Log'}}/>
                       </ul>
                     </nav>
                   </div>
@@ -141,13 +141,13 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                     ))}
                   </ul>
                 </li>
-								<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/release', icon: Cog6ToothIcon, label: 'Beta Release Log'}}/>
+								<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/release', icon: RectangleListIcon, label: 'Beta Release Log'}}/>
                 {/* <li className="hw-mt-auto">
                   <a
                     href="#"
                     className="group hw--mx-2 hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-font-semibold hw-leading-6 hw-text-gray-400 hover:hw-bg-gray-800 hover:hw-text-white"
                   >
-                    <Cog6ToothIcon className="hw-h-6 hw-w-6 shrink-0" aria-hidden="true" />
+                    <RectangleListIcon className="hw-h-6 hw-w-6 shrink-0" aria-hidden="true" />
                     Settings
                   </a>
                 </li> */}
@@ -180,16 +180,17 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 								{profileItem ? <Menu as="div" className="hw-relative">
 									<Menu.Button className="hw-flex hw-items-center hw-p-1.5">
 										<span className="hw-sr-only">Open user menu</span>
-										<img
+										{/* <img
 											className="hw-h-8 hw-w-8 hw-rounded-full hw-bg-gray-50"
 											src={profileItem.img}
 											alt=""
-										/>
-										<span className="hw-hidden lg:hw-flex lg:hw-items-center">
+										/> */}
+                    <span className="hw-hidden lg:hw-flex lg:hw-items-center">
 											<span className="hw-ml-4 hw-text-sm hw-font-semibold hw-leading-6 hw-text-gray-900" aria-hidden="true">
 												{profileItem.name}
 											</span>
-											<ChevronDownIcon className="hw-ml-2 hw-h-5 hw-w-5 hw-text-gray-400" aria-hidden="true" />
+                      <UserCircleIcon className="hw-ml-2 hw-h-10 hw-w-10"/>
+											<ChevronDownIcon className="hw-ml-1 hw-h-5 hw-w-5 hw-text-gray-400" aria-hidden="true" />
 										</span>
 									</Menu.Button>
 									<Transition
@@ -246,13 +247,13 @@ const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: 
 			<a
 				className={getClass(
 					item.current
-						? 'hw-bg-gray-50 hw-text-primary'
-						: 'hw-text-gray-700 hover:hw-text-primary hover:hw-bg-gray-50',
-					'group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-leading-6 hw-font-semibold'
+						? 'hw-text-[#11283B]'
+						: 'hw-text-[#88939D] hover:hw-text-[#11283B]',
+					'hw-group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-leading-6 hw-font-semibold'
 				)}
 				href={item.href}
 			>
-				{item.icon ? typeof item.icon === 'function' ? <ToggleIcon icon={item.icon} selected={item.current}/> : item.icon : null}
+				{item.icon ? typeof item.icon === 'function' ? <ToggleIcon className="d" icon={item.icon} selected={item.current}/> : item.icon : null}
 				{item.label}
 			</a>
 		</li>

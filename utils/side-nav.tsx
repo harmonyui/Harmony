@@ -18,19 +18,19 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({children}) => {
 			label: 'Projects',
 			href: '/projects',
 			current: window.location.href.includes('projects'),
-			icon: <ToggleIcon icon={GitBranchIcon} selected={true}/>
+			icon: GitBranchIcon
 		},
 		{
 			label: 'Pull Requests',
 			href: '/pull-requests',
 			current: window.location.href.includes('pull-requests'),
-			icon: <ToggleIcon icon={GitPullRequestIcon} selected={true}/>
+			icon: GitPullRequestIcon
 		},
 		{
 			label: 'My Team',
 			href: '/team',
 			current: window.location.href.includes('team'),
-			icon: <ToggleIcon icon={UserGroupIcon} selected={true}/>
+			icon: UserGroupIcon
 		}
 	];
 	const profileItem: ProfileItem = {

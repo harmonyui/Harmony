@@ -33,6 +33,7 @@ export default function RootLayout({
 								});
 								})()`}
 							</Script> */}
+							<script src="https://kit.fontawesome.com/c9c0cbd0ab.js" crossOrigin="anonymous"></script>
 					</body>
 				</html>
 			</TrpcProvider>

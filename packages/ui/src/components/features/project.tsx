@@ -1,5 +1,5 @@
 'use client';
-import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
+import { EllipsisHorizontalIcon, GitBranchIcon, PlusIcon } from "../core/icons";
 import {Button} from '../core/button';
 import { useEffect, useState } from "react";
 import { BranchItem } from "../../types/branch";
@@ -39,7 +39,7 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 	return <ModalProvider>
 		<div className="hw-flex hw-flex-col hw-gap-4">
 			{Projectes ? <>
-				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create New Project</Button>
+				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create New Project <PlusIcon className="hw-ml-1 hw-h-5 hw-w-5"/></Button>
 				<div className="hw-grid hw-grid-cols-1 sm:hw-grid-cols-3 hw-gap-y-10 hw-overflow-auto">
 					{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)} onDelete={() => onDelete(item)}/>)}
 				</div>
@@ -114,7 +114,7 @@ export interface ProjectLineItemProps {
 }
 export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({item, onOpenHarmony, onDelete: onDeleteProps}) => {
 	const thumbnailQuery = api.branch.getURLThumbnail.useQuery({url: item.url});
-    const [thumbnail, setThumbnail] = useState<string>('');
+    const [thumbnail, setThumbnail] = useState<string>('/harmony-project-placeholder.svg');
 	const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
 	if (thumbnailQuery.data && !thumbnail) {

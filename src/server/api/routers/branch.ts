@@ -101,7 +101,7 @@ async function createWebpageThumbnail(html: string): Promise<string> {
 		// // Create a data URL with the Base64-encoded SVG content
 		// const dataUrl = `data:image/svg+xml;base64,${base64Encoded}`;
 		//const dataUrl = `data:image/svg+xml;utf8, ${harmonySVG}`;
-		return '/harmonylogo.svg';
+		return '/harmony-project-placeholder.svg';
 	}
 
     return thumbnailImage || '';
