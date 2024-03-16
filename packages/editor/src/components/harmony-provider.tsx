@@ -229,7 +229,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const parent = selectDesignerElement(selectedComponent).parentElement!;
 		const flexEnabled = parent.dataset.harmonyFlex;
 		if (flexEnabled) {
-			const $text = $('#harmony-flex-text');
+			const $text = $('[name="harmony-flex-text"]');
 			//TODO: This is kind of hacky to use jquery to trigger the flex change, but we can't use react because the 
 			//overlay where the flex toggle lives is outside of react. We might be able to reverse dependencies
 			//to make this logic live here instead of in this jquery pointer down function

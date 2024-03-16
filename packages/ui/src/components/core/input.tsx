@@ -47,7 +47,7 @@ export const Input: React.FunctionComponent<InputProps> = ({
       <input {...props} type={type} value={value} />
     );
 	if (inlineLabel !== undefined) {
-		input = <div className="hw-flex hw-border hw-border-gray-300 hw-rounded-md hw-shadow-sm focus-within:hw-ring-primary focus-within:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none sm:hw-max-w-md">
+		input = <div className="hw-flex hw-border hw-border-gray-300 hw-rounded-[3px] hw-shadow-sm focus-within:hw-ring-primary focus-within:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none sm:hw-max-w-md">
 			<span className="hw-flex hw-select-none hw-items-center hw-pl-3 hw-text-gray-500 sm:hw-text-sm">{inlineLabel}</span>
 			<input
 				className="hw-block hw-flex-1 hw-border-0 hw-bg-transparent hw-py-1.5 hw-pl-1 hw-text-gray-900 placeholder:hw-text-gray-400 focus:hw-ring-0 sm:hw-text-sm sm:hw-leading-6"
@@ -141,9 +141,9 @@ export const NumberStepperInput: React.FunctionComponent<NumberStepperInputProps
 
   return (
     <div className="hw-flex hw-rounded-[3px] hw-border hw-border-gray-400 hw-items-center hw-overflow-auto">
-      <button className="hover:hw-bg-gray-100 hw-py-1 hw-px-2.5 hw-border-r hw-border-gray-400" onClick={() => changeValue(valueProp - 1)}>-</button>
-      <input className="hw-px-1.5 hw-text-sm hw-py-1 hw-border-none hw-w-8 focus:hw-ring-0" value={value} onChange={onChange} onBlur={onBlur}/>
-      <button className="hover:hw-bg-gray-100 hw-py-1 hw-px-2.5 hw-border-l hw-border-gray-400" onClick={() => changeValue(valueProp + 1)}>+</button>
+      <button className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-r hw-border-gray-400" onClick={() => changeValue(valueProp - 1)}>-</button>
+      <input className="hw-px-1.5 hw-text-sm hw-py-[1px] hw-border-none hw-w-8 focus:hw-ring-0" value={value} onChange={onChange} onBlur={onBlur}/>
+      <button className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-l hw-border-gray-400" onClick={() => changeValue(valueProp + 1)}>+</button>
     </div>
   )
 }

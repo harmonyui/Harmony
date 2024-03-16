@@ -130,21 +130,21 @@ const PreviewPanel: React.FunctionComponent = () => {
 	url.searchParams.set('mode', 'preview-full');
 
 	return (
-		<div className="hw-flex hw-justify-between hw-px-4 hw-py-5 sm:hw-px-6 hw-w-full">
+		<div className="hw-flex hw-w-full hw-items-center hw-shadow-2xl hw-justify-between hw-pl-4 hw-pr-2 hw-py-2">
 			<div>
 				<div className="hw-flex hw-gap-4">
-					<button className="hw-p-2 hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md" onClick={onBack}>
+					<button className="hw-p-1 hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md" onClick={onBack}>
 						<ArrowLeftIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-white hw-stroke-[2.5]"/>
 					</button>
-					<button className="hw-bg-[#11283B] hw-rounded-md hw-p-2 hover:hw-bg-[#11283B]/80">
+					<button className="hw-bg-[#11283B] hw-rounded-md hw-p-1 hover:hw-bg-[#11283B]/80">
 						<MaximizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none" onClick={onMaximize}/>
 					</button>
 				</div>
 			</div>
 			<div>
-				<div className="hw-flex hw-gap-4">
+				<div className="hw-flex hw-gap-4 hw-items-center">
 					<ShareButton />
-					{!publishState ? <PublishButton/> : <Button mode="dark" onClick={onSendRequest} loading={loading}>Send Request <SendIcon className="hw-h-5 hw-w-5"/></Button>}
+					{!publishState ? <PublishButton/> : <Button className="hw-h-7" mode="dark" onClick={onSendRequest} loading={loading}>Send Request <SendIcon className="hw-h-5 hw-w-5"/></Button>}
 				</div>
 			</div>
 		</div>
@@ -308,7 +308,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		'font': fonts ? ({data, onChange}) => {
 			const items: DropdownItem<string>[] = fonts.map(font => ({id: font.id, name: font.name, className: font.id}));
 			return (
-				<Dropdown className="hw-w-[170px]" items={items} initialValue={data} onChange={(item) => onChange(item.id)} container={document.getElementById("harmony-container") || undefined}/>
+				<Dropdown className="hw-w-[170px] hw-h-7 !hw-rounded-[3px]" items={items} initialValue={data} onChange={(item) => onChange(item.id)} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		} : undefined,
 		'fontSize': ({data, onChange}) => {
@@ -318,12 +318,12 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		},
 		'color': ({data, onChange}) => {
 			return (
-				<ColorPicker className="hw-h-8 hw-mt-1" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'background': ({data, onChange}) => {
 			return (
-				<ColorPicker className="hw-h-8 hw-mt-1" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'textAlign': ({data: raw, onChange}) => {
@@ -349,7 +349,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			}
 	
 			return (
-				<Button className="hw-mt-1" mode='none' onClick={onClick}>{icon}</Button>
+				<Button className="hw-h-7" mode='none' onClick={onClick}>{icon}</Button>
 			)
 		},
 		'spacing': ({data, onChange}) => {
@@ -363,7 +363,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			}
 			
 			return (
-				<Popover buttonClass="hw-h-8 hw-mt-1" button={<Button mode='none'><BarsArrowDownIcon className="hw-h-7 hw-w-7"/></Button>} container={document.getElementById("harmony-container") || undefined}>
+				<Popover buttonClass="hw-h-7" button={<Button mode='none'><BarsArrowDownIcon className="hw-h-7 hw-w-7"/></Button>} container={document.getElementById("harmony-container") || undefined}>
 					<div className="hw-grid hw-grid-cols-6 hw-gap-2 hw-text-sm hw-items-center hw-font-normal">
 						<span className="hw-col-span-2">Line Height</span>
 						<Slider className="hw-col-span-3" value={line} max={50} onChange={(value) => onChange(`${value}px-${letter}px`)}/>
@@ -534,8 +534,8 @@ const ShareButton = () => {
 	}
 
 	return (<>
-		<Popover button={<button className="hw-text-[#11283B] hover:hw-text-[#11283B]/80" >
-			<ShareArrowIcon className="hw-h-10 hw-w-10 hw-fill-white hw-stroke-none"/>
+		<Popover buttonClass="hw-h-8" button={<button className="hw-text-[#11283B] hover:hw-text-[#11283B]/80" >
+			<ShareArrowIcon className="hw-h-8 hw-w-8 hw-fill-white hw-stroke-none"/>
 		</button>} container={document.getElementById('harmony-container') || undefined}>
 			<button className="hw-text-sm hw-text-blue-500 hw-flex hw-items-center hw-gap-1" onClick={onCopy}>
 				<LinkIcon className="hw-h-4 hw-w-4 hw-fill-blue-500"/>
