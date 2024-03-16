@@ -21,7 +21,7 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({children}) => {
 			icon: GitBranchIcon
 		},
 		{
-			label: 'Pull Requests',
+			label: 'Publish Request',
 			href: '/pull-requests',
 			current: window.location.href.includes('pull-requests'),
 			icon: GitPullRequestIcon
@@ -34,7 +34,7 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({children}) => {
 		}
 	];
 	const profileItem: ProfileItem = {
-		name: user.fullName,
+		name: user.firstName,
 		img: user.imageUrl,
 		navigation: [
 			{

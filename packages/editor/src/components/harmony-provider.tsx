@@ -218,6 +218,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	useEffect(() => {
 		const scrollContainer = document.getElementById("harmony-scroll-container")
 		if (scrollContainer) {
+			//TODO: Hacky beyon hacky (went want to center the screen)
 			scrollContainer.scrollLeft = 150;
 		}
 	}, [rootComponent]);
@@ -298,6 +299,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			scrollContainer.scrollTop = newY;
 		}
 
+	
         _setScale(newScale);
     }, [rootComponent, oldScale, scale, cursorX, cursorY]);
 
@@ -398,7 +400,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 							setRootComponent(harmonyContainerRef.current);
 							//harmonyContainerRef.current.appendChild(rootElement);
 						}
-					}} style={{width: `${WIDTH}px`, minHeight: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
+					}} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
 					{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
 					{children}
 					</div>
@@ -452,7 +454,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
 	
 	useBackgroundLoop(() => {
-		if (saveStack.length && !isSaving && !isPublished && false) {
+		if (saveStack.length && !isSaving && !isPublished) {
 			const copy = saveStack.slice();
 			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
 				

@@ -546,7 +546,7 @@ class Overlay {
 		const parent = designerElement.parentElement;
 		if (parent) {
 			const [box, dims] = this.getSizing(parent);
-			const rect = new OverlayRect(this.window.document, parent, this.container, listeners.onFlexClick);
+			const rect = new OverlayRect(this.window.document, parent, this.container, scale, listeners.onFlexClick);
 			dims.borderBottom = 2 / scale;
 			dims.borderLeft = 2 / scale;
 			dims.borderRight = 2 / scale;
@@ -567,7 +567,7 @@ class Overlay {
 		}
 
 		const [box, dims] = this.getSizing(element);
-		const rect = new OverlayRect(this.window.document, element, this.container);
+		const rect = new OverlayRect(this.window.document, element, this.container, scale);
 		rect[method](box, dims, scale, error);
 
 		this.remove(method);
@@ -647,7 +647,7 @@ export class OverlayRect {
 	resizeHandles: HTMLElement[] = [];
 	onFlexClick: (() => void) | undefined;
 
-  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, onFlexClick?: () => void) {
+  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, scale: number, onFlexClick?: () => void) {
 		this.node = doc.createElement('div')
 		this.border = doc.createElement('div')
 		this.padding = doc.createElement('div')
@@ -668,7 +668,13 @@ export class OverlayRect {
 				onFlexClick();
 			}
 			hotkeys('F', this.onFlexClick);
-			const $displayText = $(`<div id="harmony-flex-text" class="hw-absolute hw-text-xs hw-right-0 hw-top-0 hw-mr-2 hw-mt-2 hw-text-white hw-rounded-sm hw-px-1 hw-font-ligh hw-pointer-events-auto hover:hw-cursor-pointer hover:hw-bg-opacity-80 data-[harmony-flex=false]:hw-bg-[#64BDFE] data-[harmony-flex=true]:hw-bg-[#0094FF] after:data-[harmony-flex=false]:hw-content-[''] after:data-[harmony-flex=false]:hw-absolute after:data-[harmony-flex=false]:hw-left-0 after:data-[harmony-flex=false]:hw-top-[8px] after:data-[harmony-flex=false]:hw-w-[36px] after:data-[harmony-flex=false]:hw-border-t after:data-[harmony-flex=false]:hw-border-t-white after:data-[harmony-flex=false]:hw-rotate-[22deg] after:data-[harmony-flex=false]:hw-origin-center" data-harmony-flex="${element.dataset.harmonyFlex}">FLEX</div>`);
+			const $displayText = $(`<div name="harmony-flex-text" class="hw-absolute hw-text-xs hw-right-0 hw-top-0 hw-mr-2 hw-mt-2 hw-text-white hw-rounded-sm hw-px-1 hw-font-ligh hw-pointer-events-auto hover:hw-cursor-pointer hover:hw-bg-opacity-80 data-[harmony-flex=false]:hw-bg-[#64BDFE] data-[harmony-flex=true]:hw-bg-[#0094FF] after:data-[harmony-flex=false]:hw-content-[''] after:data-[harmony-flex=false]:hw-absolute after:data-[harmony-flex=false]:hw-left-0 after:data-[harmony-flex=false]:hw-top-[8px] after:data-[harmony-flex=false]:hw-w-[36px] after:data-[harmony-flex=false]:hw-border-t after:data-[harmony-flex=false]:hw-border-t-white after:data-[harmony-flex=false]:hw-rotate-[22deg] after:data-[harmony-flex=false]:hw-origin-center" data-harmony-flex="${element.dataset.harmonyFlex}">FLEX</div>`);
+			$displayText.css('font-size', Math.min(12 / scale, 12));
+			$displayText.css('line-height', `${Math.min(12 / scale + 4 / scale, 16)}px`);
+			$displayText.css('padding-left', Math.min(4 / scale, 4));
+			$displayText.css('padding-right', Math.min(4 / scale, 4));
+			$displayText.css('margin-right', Math.min(4 / scale, 4));
+			$displayText.css('margin-top', Math.min(4 / scale, 4));
 			$displayText.on('pointerdown', (e) => {
 				e.stopPropagation();
 				element.dataset.harmonyFlex = element.dataset.harmonyFlex === 'true' ? 'false' : 'true';

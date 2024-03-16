@@ -11,6 +11,7 @@ import { api } from "../../../../../utils/api";
 import { useChangeProperty } from "../../hooks/change-property";
 import { emailSchema } from "../../types/utils";
 import { TeamMember as TeamMemberServer} from "../../types/branch";
+import { PlusIcon } from "../core/icons";
 
 type TeamMember = Omit<TeamMemberServer, 'contact'> & {contact: string}
 
@@ -21,7 +22,7 @@ export const TeamDisplay: React.FunctionComponent<TeamDisplayProps> = ({members}
     const [show, setShow] = useState(false);
     return (
         <div className="hw-flex hw-flex-col hw-gap-4">
-			<Button className="hw-w-fit hw-ml-auto" onClick={() => setShow(true)}>Invite Team Member</Button>
+			<Button className="hw-w-fit hw-ml-auto" onClick={() => setShow(true)}>Invite Team Member <PlusIcon className="hw-h-4 hw-w-4 hw-ml-1"/></Button>
             <TeamGrid members={members}/>
             <CreateNewProjectModal show={show} onClose={() => setShow(false)}/>
 		</div>

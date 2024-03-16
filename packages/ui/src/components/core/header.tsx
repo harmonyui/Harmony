@@ -23,8 +23,8 @@ export const Header = ({
   ...rest
 }: HeaderProps): JSX.Element => {
   const size: Record<Headers, string> = {
-    h1: "hw-text-5xl hw-font-semibold",
-    h2: "hw-text-3xl hw-font-semibold ",
+    h1: "hw-text-4xl",
+    h2: "hw-text-3xl ",
     h3: "hw-text-xl",
     h4: "text-m",
     h5: "text-s",

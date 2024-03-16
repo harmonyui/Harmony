@@ -107,7 +107,7 @@ function ColorSwatch<T extends Color | HexColor>(props: ColorSwatchProps<T>) {
   return (
     <div
       role="img"
-      className="hw-inline-block hw-rounded-sm hw-relative hw-w-7 hw-h-7 hw-overflow-hidden"
+      className="hw-inline-block hw-rounded-sm hw-relative hw-w-7 hw-h-7 hw-overflow-hidden  hw-border hw-border-gray-400"
       aria-label={valueString}
       {...otherProps}
     >

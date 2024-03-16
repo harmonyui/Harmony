@@ -7,6 +7,7 @@ import { Bars3Icon, ChevronDownIcon, RectangleListIcon, XMarkIcon, UserCircleIco
 import {Transition, Dialog, Menu} from '@headlessui/react';
 import { getClass } from '../../../../util/src/index';
 import { Header } from './header';
+import { cooper, mulish } from '@harmony/util/src/fonts';
 
 export interface SidePanelItems {
   label: string;
@@ -49,7 +50,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         <body class="hw-h-full">
         ```
       */}
-      <div className="hw-h-full">
+      <div className={getClass("hw-h-full", cooper.className)}>
         <Transition.Root as={Fragment} show={sidebarOpen}>
           <Dialog as="div" className="hw-relative hw-z-50 lg:hw-hidden" onClose={setSidebarOpen}>
             <Transition.Child
@@ -93,13 +94,13 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                   </Transition.Child>
                   {/* Sidebar component, swap this element with another sidebar if you like */}
                   <div className="hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-bg-white hw-px-6 hw-py-2">
-                    {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center">
+                    {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center hw-justify-center">
                       {/* <img
                         alt="Your Company"
                         className="hw-h-8 hw-w-auto"
                         src="/logo.png"
                       /> */}
-											<Header className="" level={2}>{title}</Header>
+											<Header className="hw-text-3xl" level={1}>{title}</Header>
                     </div> : null}
                     <nav className="hw-flex hw-flex-1 hw-flex-col">
                       <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
@@ -124,24 +125,24 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         <div className="hw-hidden lg:hw-fixed lg:hw-inset-y-0 lg:hw-z-50 lg:hw-flex lg:hw-w-72 lg:hw-flex-col">
           {/* Sidebar component, swap this element with another sidebar if you like */}
           <div className="hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2">
-            {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center">
+            {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center hw-justify-center">
               {/* <img
                 alt="Your Company"
                 className="hw-h-8 hw-w-auto"
                 src="/logo.png"
               /> */}
-							<Header level={2}>{title}</Header>
+							<Header className="hw-text-5xl hw-font-light" level={2}>{title}</Header>
             </div> : null}
             <nav className="hw-flex hw-flex-1 hw-flex-col">
               <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
                 <li className="hw-h-full">
-                  <ul className="-hw-mx-2 hw-space-y-1 hw-h-1/2 hw-flex hw-flex-col">
+                  <ul className="-hw-mx-2 hw-space-y-10 hw-h-1/2 hw-flex hw-flex-col hw-mt-20">
                     {items.map((item) => (
                       <SidePanelItem item={item} key={item.label}/>
                     ))}
                   </ul>
                 </li>
-								<SidePanelItem className="hw-mt-auto" item={{current: false, href: '/release', icon: RectangleListIcon, label: 'Beta Release Log'}}/>
+								<SidePanelItem className="hw-mt-auto hw-mb-20" item={{current: false, href: '/release', icon: RectangleListIcon, label: 'Beta Release Log'}}/>
                 {/* <li className="hw-mt-auto">
                   <a
                     href="#"
@@ -157,7 +158,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         </div>
 
 				<div className="lg:hw-pl-72 hw-h-full">
-					<div className="hw-top-0 hw-z-40 hw-flex hw-h-16 shrink-0 hw-items-center hw-gap-x-4 hw-border-b hw-border-gray-200 hw-bg-white hw-px-4 hw-shadow-sm sm:hw-gap-x-6 sm:hw-px-6 lg:hw-px-8">
+					<div className="hw-top-0 hw-z-40 hw-flex hw-h-16 shrink-0 hw-items-center hw-gap-x-4 hw-border-b hw-border-gray-200 hw-bg-white hw-px-4 hw-shadow-sm sm:hw-gap-x-6 sm:hw-px-4 lg:hw-px-6">
 						<button className="-hw-m-2.5 hw-p-2.5 hw-text-gray-700 lg:hw-hidden" onClick={() => { setSidebarOpen(true); }} type="button">
 							<span className="hw-sr-only">Open sidebar</span>
 							<Bars3Icon aria-hidden="true" className="hw-h-6 hw-w-6"/>
@@ -186,10 +187,10 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 											alt=""
 										/> */}
                     <span className="hw-hidden lg:hw-flex lg:hw-items-center">
-											<span className="hw-ml-4 hw-text-sm hw-font-semibold hw-leading-6 hw-text-gray-900" aria-hidden="true">
-												{profileItem.name}
+											<span className="hw-ml-4 hw-text-lg hw-font-semibold hw-leading-6 hw-text-gray-900" aria-hidden="true">
+												Welcome, {profileItem.name}.
 											</span>
-                      <UserCircleIcon className="hw-ml-2 hw-h-10 hw-w-10"/>
+                      <UserCircleIcon className="hw-ml-4 hw-h-10 hw-w-10"/>
 											<ChevronDownIcon className="hw-ml-1 hw-h-5 hw-w-5 hw-text-gray-400" aria-hidden="true" />
 										</span>
 									</Menu.Button>
@@ -232,8 +233,8 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 							</div> 
 						</div>
 					</div>
-					<main className="hw-py-10 hw-h-full hw-bg-gray-100">
-						<div className="hw-px-4 sm:hw-px-6 lg:hw-px-8" onClick={onBodyClick}>{children}</div>
+					<main className={getClass("hw-py-10 hw-h-full hw-bg-gray-100", mulish.className)}>
+						<div className="hw-px-4 sm:hw-px-6 lg:hw-px-8 hw-bg-gray-100" onClick={onBodyClick}>{children}</div>
 					</main>
 				</div>
       </div>
@@ -249,7 +250,7 @@ const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: 
 					item.current
 						? 'hw-text-[#11283B]'
 						: 'hw-text-[#88939D] hover:hw-text-[#11283B]',
-					'hw-group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-leading-6 hw-font-semibold'
+					'hw-group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-lg hw-leading-6 hw-pl-12'
 				)}
 				href={item.href}
 			>

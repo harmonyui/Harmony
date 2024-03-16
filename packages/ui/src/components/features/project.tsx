@@ -39,8 +39,8 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 	return <ModalProvider>
 		<div className="hw-flex hw-flex-col hw-gap-4">
 			{Projectes ? <>
-				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create New Project <PlusIcon className="hw-ml-1 hw-h-5 hw-w-5"/></Button>
-				<div className="hw-grid hw-grid-cols-1 sm:hw-grid-cols-3 hw-gap-y-10 hw-overflow-auto">
+				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create Project <PlusIcon className="hw-ml-1 hw-h-5 hw-w-5"/></Button>
+				<div className="hw-flex hw-gap-16 hw-flex-wrap hw-overflow-auto">
 					{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)} onDelete={() => onDelete(item)}/>)}
 				</div>
 				<CreateNewProjectModal show={showNewProject} onClose={() => setShowNewProject(false)} onSuccessfulCreation={openProject}/>
@@ -147,11 +147,11 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
     ]
 
 	return (<>
-		<div className="hw-w-[200px]" >
+		<div className="hw-w-[250px]" >
 			{/* <h4 className="hw-mt-10">Hello there</h4>
 			<p className="hw-mt-5">Thank you please</p> */}
 			<button className="hw-rounded-md hw-overflow-auto hw-block">
-                <img className="w-full" src={thumbnail} onClick={onOpenHarmony}/>
+                <img className="hw-w-[250px]" src={thumbnail} onClick={onOpenHarmony}/>
             </button>
             <div className="hw-mt-2">
                 <div className="hw-flex hw-justify-between">

@@ -584,7 +584,7 @@ class FlexSnapping implements SnapBehavior {
 		const lastGap = parent.dataset.lastGap ? parseFloat(parent.dataset.lastGap) : currParentInfo[minGapBetweenX];
 		const gapDiff = currParentInfo[minGapBetweenX] - minGap// - lastGap;
 		
-		const isMoving = selfIndex > 0 && selfIndex < childrenCount - 1 || (close(gapDiff, 0, 0.1) && (selfIndex === 0 && ds > 0 || selfIndex === childrenCount - 1 && ds < 0));
+		const isMoving = selfIndex > 0 && selfIndex < childrenCount - 1 || ((close(gapDiff, 0, 0.1) || currParentInfo[minGapBetweenX] < minGap) && (selfIndex === 0 && ds > 0 || selfIndex === childrenCount - 1 && ds < 0));
 
 		const addRect = (element: HTMLElement, rect: Rect) => {
 			updates.push({element, rect})
@@ -623,10 +623,10 @@ class FlexSnapping implements SnapBehavior {
 					addChildRects([element], ds);
 				}
 				else {
-					if (selfIndex === 0 && currParentInfo.edges![right].parentEdge.gap === 0 && ds < 0) {
+					if (selfIndex === 0 && currParentInfo.edges![right].parentEdge.gap <= 0 && ds < 0) {
 						const last = currParentInfo.children[currParentInfo.children.length - 1] as HTMLElement;
 						addChildRects([element, last], ds / (currParentInfo.children.length - 1))
-					} else if (selfIndex === childrenCount - 1 && currParentInfo.edges![left].parentEdge.gap === 0 && ds > 0) {
+					} else if (selfIndex === childrenCount - 1 && currParentInfo.edges![left].parentEdge.gap <= 0 && ds > 0) {
 						const first = currParentInfo.children[0] as HTMLElement;
 						addChildRects([element, first], ds / (currParentInfo.children.length - 1))
 					} else {
@@ -768,15 +768,15 @@ class FlexSnapping implements SnapBehavior {
 				center.addCenterAxisGuide({axis: otherAxis})
 			}
 		} else {
-			if ((selfIndex === 0 && ds >= 0) || (selfIndex === parentInfo.childrenCount - 1 && ds <= 0)) {
-				const minGapDiff = parentInfo[minGapBetweenX] - minGap;
-				const minGapPoint = snapping.addSnapToParent({
-					point: pos - (minGapDiff * direction),
-					axis,
-					range
-				});
+			// if ((selfIndex === 0 && ds >= 0) || (selfIndex === parentInfo.childrenCount - 1 && ds <= 0)) {
+			// 	const minGapDiff = parentInfo[minGapBetweenX] - minGap;
+			// 	const minGapPoint = snapping.addSnapToParent({
+			// 		point: pos - (minGapDiff * direction),
+			// 		axis,
+			// 		range
+			// 	});
 
-			} 
+			// } 
 		
 			const minSpaceBetweenSnaps = Math.min(parentInfo[aroundSpace] - parentInfo[evenlySpace], parentInfo[betweenSpace] - parentInfo[aroundSpace]);
 			if (parentInfo[gapBetween] && close(parentInfo[childrenMidpoint], parentInfo[midpoint], 0.5) && minSpaceBetweenSnaps >= 5 && enoughSpace) {
@@ -1165,7 +1165,12 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 	const setCssCalculations = (elementProp: HTMLElement, scale: number, oldValue: [HTMLElement, unknown][]): [HTMLElement, Record<string, string>][] => {
 		const scaledContainer = document.getElementById('harmony-scaled');
 		if (!scaledContainer) throw new Error("Cannot find scaled container");
+		const scrollContainer = document.getElementById("harmony-scroll-container");
+		if (!scrollContainer) throw new Error("Cannot find scroll container");
+		const scrollLeft = scrollContainer.scrollLeft;
+		const scrollTop = scrollContainer.scrollTop;
 		scaledContainer.style.transform = '';
+		
 		
 		const parent = elementProp.parentElement!;
 		const elementProps: UpdateRectsProps = {
@@ -1199,8 +1204,6 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		
 		applyOldValues(oldValues);
 
-		
-
 		const values = props.reduce<[HTMLElement, Record<string, string>][]>((prev, curr) => {
 			const cssUpdator = getSnappingBehavior(curr.parentUpdate.element).getCssUpdator();
 			const hasTextNodes = curr.parentUpdate.element.childNodes.length === 1 && curr.parentUpdate.element.childNodes[0].nodeType === Node.TEXT_NODE
@@ -1225,6 +1228,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 			return prev;
 		}, []);
 		scaledContainer.style.transform = `scale(${scale})`;
+		scrollContainer.scrollLeft = scrollLeft;
+		scrollContainer.scrollTop = scrollTop;
 
 		return values;
 	}
@@ -1830,6 +1835,7 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				}
 
 				if (parentInfo.edges) {
+					const considerTheYs = !parentStyle.display.includes('flex') || parentStyle.flexDirection === 'column';
 					modifiers.push(interact.modifiers.restrictEdges({
 						inner: toMeasureInfo && toMeasureInfo.edges ? {
 							left: toMeasureInfo.edges.left.elementLocation,
@@ -1840,8 +1846,8 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 						outer: {
 							left: validSibiling('left') ? Math.max(parentInfo.edges.left.parentEdge.edgeLocation, myInfo.left.siblingEdge?.edgeLocation || 0) : parentInfo.edges.left.parentEdge.edgeLocation,
 							right: validSibiling('right') ? Math.min(parentInfo.edges.right.parentEdge.edgeLocation, myInfo.right.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges.right.parentEdge.edgeLocation,
-							top: true ? Math.max(parentInfo.edges.top.parentEdge.edgeLocation, myInfo.top.siblingEdge?.edgeLocation || 0) : parentInfo.edges!.top.parentEdge.edgeLocation,
-							bottom: true ? Math.min(parentInfo.edges.bottom.parentEdge.edgeLocation, myInfo.bottom.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges!.bottom.parentEdge.edgeLocation,
+							top: considerTheYs ? Math.max(parentInfo.edges.top.parentEdge.edgeLocation, myInfo.top.siblingEdge?.edgeLocation || 0) : parentInfo.edges!.top.parentEdge.edgeLocation,
+							bottom: considerTheYs ? Math.min(parentInfo.edges.bottom.parentEdge.edgeLocation, myInfo.bottom.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges!.bottom.parentEdge.edgeLocation,
 						}
 					}));
 				}

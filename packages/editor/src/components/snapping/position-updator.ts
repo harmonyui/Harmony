@@ -259,7 +259,8 @@ export const flexUpdator: PositionUpdator = {
 		if (!parentInfo.edges) return [];
 
 		if (!close(parentInfo[minGapBetweenX], 0, 0.1) && parentInfo[minGapBetweenX] < 0.1) {
-			throw new Error("mingap cannot be less than zero")
+			//throw new Error("mingap cannot be less than zero")
+			parentInfo[minGapBetweenX] = 0;
 		}
 
 

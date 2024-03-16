@@ -19,7 +19,6 @@ export const PullRequestDisplay: React.FunctionComponent<{items: PullRequest[]}>
 	return <ModalProvider>
 		<div className="hw-flex hw-flex-col hw-gap-4">
 			{items ? <>
-				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewPullRequest(true)}>Create New Pull Request</Button>
 				{items.map(item => <PullRequestLineItem key={item.title} item={item}/>)}
 				<CreateNewPullRequestModal show={showNewPullRequest} onClose={() => setShowNewPullRequest(false)}/>
 			</> : null}

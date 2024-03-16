@@ -62,7 +62,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 				<img src="/harmony.ai.svg"/>
 				<SidePanelToolbar/>
 			</div> */}
-			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow">
+			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow-md">
 				{getPanel()}
 				<div id="harmony-scroll-container" ref={(ref) => {
 					ref?.addEventListener('wheel', onTouch);
@@ -89,11 +89,11 @@ const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElem
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement.dataset.harmonyText === 'true' ? selectedElement.parentElement! : selectedElement) : undefined;
 	
 	return (
-		<div className="hw-flex hw-w-full hw-items-center">
-			<div className="hw-h-14 hw-ml-4">
-				<img className="hw-h-full" src={`${WEB_URL}/harmonylogo.svg`}/>
+		<div className="hw-flex hw-w-full hw-items-center hw-shadow-2xl">
+			<div className="hw-h-10 hw-ml-4">
+				<img className="hw-h-full" src={`${WEB_URL}/Harmony_logo.svg`}/>
 			</div>
-			<div className="hw-px-4 hw-py-4 sm:hw-px-6 hw-w-full">
+			<div className="hw-pl-4 hw-pr-2 hw-py-2 hw-w-full">
 				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches}/>
 			</div>
 		</div>
@@ -395,13 +395,13 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				{/* <ToggleSwitch value={toggle} onChange={onToggleChange} label="Designer Mode"/> */}
 				<HotkeyLabel label={toggle ? 'Designer Mode' : 'Navigator Mode'} hotkey="T" onToggle={onToggleChange} value={toggle}/>
 			</div>
-			<div className="hw-px-4 hw-flex hw-gap-4">
+			<div className="hw-pl-4 hw-flex hw-gap-4 hw-items-center">
 				<PublishButton preview/>
 				<button className="hw-text-[#11283B] hover:hw-text-[#11283B]/80" onClick={onPreview}>
-					<PlayIcon className="hw-h-9 hw-w-9 hw-fill-white hw-stroke-none"/>
+					<PlayIcon className="hw-h-7 hw-w-7 hw-fill-white hw-stroke-none"/>
 				</button>
 				<button className="hover:hw-fill-slate-400 hw-group" onClick={onClose}>
-					<XMarkIcon className="group-hover:hw-fill-gray-500 hw-h-7 hw-w-7"/>
+					<XMarkIcon className="group-hover:hw-fill-gray-500 hw-h-6 hw-w-6"/>
 				</button>
 			</div>
 			
@@ -463,7 +463,7 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 	}
 
 	return <>
-		<Button mode="dark" className="hw-h-10" onClick={() => setShow(true)} disabled={isPublished}>Publish</Button>
+		<Button mode="dark" className="hw-h-7 hw-px-8" onClick={() => setShow(true)} disabled={isPublished}>Publish</Button>
 		<HarmonyModal show={show} onClose={onClose} editor>
 			<div className="hw-flex hw-gap-2 hw-items-center">
 				<GitBranchIcon className="hw-w-6 hw-h-6"/>
