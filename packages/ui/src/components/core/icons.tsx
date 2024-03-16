@@ -1,7 +1,7 @@
 import { getClass } from "../../../../util/src/index";
 import React from "react";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {faArrowUpRightFromSquare, faCirclePlay, faCodeBranch, faCodePullRequest, faRectangleList, faSquareShareNodes, faUserGroup} from '@fortawesome/free-solid-svg-icons'
+import {faAlignCenter, faAlignJustify, faAlignLeft, faAlignRight, faArrowUpRightFromSquare, faCirclePlay, faCodeBranch, faCodePullRequest, faRectangleList, faSquareShareNodes, faUserGroup} from '@fortawesome/free-solid-svg-icons'
 
 export type IconComponent = (
   props: React.ComponentPropsWithoutRef<"svg">,
@@ -20,6 +20,30 @@ export const DeleteIcon: IconComponent = ({ className, ...props }) => {
     </svg>
   );
 };
+
+export const AlignLeftIcon: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faAlignLeft} className={props.className}/>
+  )
+}
+
+export const AlignRightIcon: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faAlignRight} className={props.className}/>
+  )
+}
+
+export const AlignCenterIcon: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faAlignCenter} className={props.className}/>
+  )
+}
+
+export const AlignJustifyIcon: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faAlignJustify} className={props.className}/>
+  )
+}
 
 export const ClipboardIcon: IconComponent = (props) => {
   return (
@@ -88,9 +112,13 @@ export const AddIcon: IconComponent = ({ className, ...props }) => {
 
 export const BarsArrowDownIcon: IconComponent = (props) => {
 	return (
-		<svg {...props} fill="none" stroke="currentColor" strokeWidth={1.5} viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
-			<path d="M3 4.5h14.25M3 9h9.75M3 13.5h9.75m4.5-4.5v12m0 0l-3.75-3.75M17.25 21L21 17.25" strokeLinecap="round" strokeLinejoin="round" />
-		</svg>
+    <svg {...props} viewBox="0 0 74 60" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <line y1="3.54883" x2="50" y2="3.54883" stroke="#11283B" strokeWidth="4"/>
+      <line y1="29.7061" x2="50" y2="29.7061" stroke="#11283B" strokeWidth="4"/>
+      <line y1="57" x2="50" y2="57" stroke="#11283B" strokeWidth="4"/>
+      <path d="M66.7071 0.292893C66.3166 -0.0976311 65.6834 -0.0976311 65.2929 0.292893L58.9289 6.65685C58.5384 7.04738 58.5384 7.68054 58.9289 8.07107C59.3195 8.46159 59.9526 8.46159 60.3431 8.07107L66 2.41421L71.6569 8.07107C72.0474 8.46159 72.6805 8.46159 73.0711 8.07107C73.4616 7.68054 73.4616 7.04738 73.0711 6.65685L66.7071 0.292893ZM65.2929 59.7071C65.6834 60.0976 66.3166 60.0976 66.7071 59.7071L73.0711 53.3431C73.4616 52.9526 73.4616 52.3195 73.0711 51.9289C72.6805 51.5384 72.0474 51.5384 71.6569 51.9289L66 57.5858L60.3431 51.9289C59.9526 51.5384 59.3195 51.5384 58.9289 51.9289C58.5384 52.3195 58.5384 52.9526 58.9289 53.3431L65.2929 59.7071ZM65 1L65 59L67 59L67 1L65 1Z" fill="#11283B"/>
+    </svg>
+
 	)
 }
 

@@ -3,11 +3,11 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon, XMarkIcon, SendIcon, PreviewIcon } from "@harmony/ui/src/components/core/icons";
+import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon, XMarkIcon, SendIcon, PreviewIcon, AlignCenterIcon, AlignJustifyIcon, AlignLeftIcon, AlignRightIcon } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
 import { Fragment, useEffect, useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
-import { componentIdentifier, selectDesignerElement } from "../inspector/inspector";
+import { componentIdentifier, isTextElement, selectDesignerElement } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import {Dropdown, DropdownIcon, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import ColorPicker from '@harmony/ui/src/components/core/color-picker';
@@ -228,7 +228,7 @@ const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | u
 		}
 		return computed[name] as string;
 	}
-	const all = arrayOfAll<ComponentToolData<typeof textTools>>()([
+	const all = arrayOfAll<ComponentToolData>()([
 		{
 			name: 'font',
 			value: getAttr('font'),
@@ -248,6 +248,10 @@ const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | u
 		{
 			name: 'spacing',
 			value: `${getAttr('lineHeight')}-${getAttr('letterSpacing')}`
+		},
+		{
+			name: 'background',
+			value: convertRgbToHex(getAttr('backgroundColor')),
 		}
 	]);
 
@@ -273,7 +277,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 	const {isSaving, isPublished, changeMode, fonts, onFlexToggle} = useHarmonyContext();
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined;
 	const currBranch = branches.find(b => b.id === branchId);
-	const changeData = (values: ComponentToolData<typeof textTools>) => {
+	const changeData = (values: ComponentToolData) => {
 		if (selectedComponent === undefined || data === undefined) return;
 		const componentId = selectedComponent.id;
 		const parentId = selectedComponent.parentId;
@@ -300,7 +304,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 
 	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published' : null;
 
-	const textToolsComponents: Record<TextTools, ComponentTool | undefined> = useMemo(() => ({
+	const commonTools: Record<CommonTools, ComponentTool | undefined> = useMemo(() => ({
 		'font': fonts ? ({data, onChange}) => {
 			const items: DropdownItem<string>[] = fonts.map(font => ({id: font.id, name: font.name, className: font.id}));
 			return (
@@ -314,15 +318,20 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		},
 		'color': ({data, onChange}) => {
 			return (
-				<ColorPicker value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker className="hw-h-8 hw-mt-1" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+			)
+		},
+		'background': ({data, onChange}) => {
+			return (
+				<ColorPicker className="hw-h-8 hw-mt-1" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'textAlign': ({data: raw, onChange}) => {
 			const icons: Record<string, React.ReactNode> = {
-				'left': <Bars3CenterLeft className="hw-h-5 hw-w-5"/>,
-				'center': <Bars3 className="hw-h-5 hw-w-5"/>,
-				'right': <Bars3CenterLeft className="hw-h-5 hw-w-5 hw-rotate-180"/>,
-				'justify': <Bars4Icon className="hw-h-5 hw-w-5"/>,
+				'left': <AlignLeftIcon className="hw-h-7 hw-w-7"/>,
+				'center': <AlignCenterIcon className="hw-h-7 hw-w-7"/>,
+				'right': <AlignRightIcon className="hw-h-7 hw-w-7"/>,
+				'justify': <AlignJustifyIcon className="hw-h-7 hw-w-7"/>,
 			};
 			const data = raw === 'start' ? 'left' : raw === 'end' ? 'right' : raw;
 			
@@ -340,7 +349,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			}
 	
 			return (
-				<Button mode='none' onClick={onClick}>{icon}</Button>
+				<Button className="hw-mt-1" mode='none' onClick={onClick}>{icon}</Button>
 			)
 		},
 		'spacing': ({data, onChange}) => {
@@ -354,7 +363,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			}
 			
 			return (
-				<Popover buttonClass="hw-h-5" button={<Button mode='none'><BarsArrowDownIcon className="hw-h-5 hw-w-5"/></Button>} container={document.getElementById("harmony-container") || undefined}>
+				<Popover buttonClass="hw-h-8 hw-mt-1" button={<Button mode='none'><BarsArrowDownIcon className="hw-h-7 hw-w-7"/></Button>} container={document.getElementById("harmony-container") || undefined}>
 					<div className="hw-grid hw-grid-cols-6 hw-gap-2 hw-text-sm hw-items-center hw-font-normal">
 						<span className="hw-col-span-2">Line Height</span>
 						<Slider className="hw-col-span-3" value={line} max={50} onChange={(value) => onChange(`${value}px-${letter}px`)}/>
@@ -365,8 +374,22 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 					</div>
 				</Popover>
 			)
-		}
+		},
 	}), [fonts]);
+
+	const currTools: readonly CommonTools[] = useMemo(() => {
+		if (!selectedComponent) return [] as CommonTools[];
+
+		if (isTextElement(selectedComponent.element as HTMLElement)) {
+			return textTools;
+		}
+
+		if (selectedComponent.element?.tagName.toLowerCase() === 'button') {
+			return buttonTools;
+		}
+
+		return componentTools;
+	}, [selectedComponent]);
 
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
@@ -375,7 +398,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			</div>
 			{data ? <>
 				<div className="hw-px-4">
-					<ComponentTools tools={textTools} components={textToolsComponents} data={data} onChange={changeData}/>
+					<ComponentTools tools={currTools} components={currTools.reduce<Record<string, ComponentTool | undefined>>((prev, curr) => {prev[curr] = commonTools[curr]; return prev}, {})} data={data} onChange={changeData}/>
 				</div>
 				{/* <div className="hw-px-4">
 					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
@@ -531,20 +554,25 @@ const ShareButton = () => {
 	</>)
 }
 
+const buttonTools = ['color', 'background'] as const;
 const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
+const componentTools = ['background'] as const;
 type TextTools = typeof textTools[number];
+type ButtonTools = typeof buttonTools[number];
+type ComponentTools = typeof componentTools[number];
+type CommonTools = TextTools | ButtonTools | ComponentTools;
 type ComponentTool = React.FunctionComponent<{data: string, onChange: (data: string) => void}>;
 
-type ComponentToolData<T extends readonly string[]> = {name: T[number], value: string};
-interface ComponentToolsProps<T extends readonly string[]> {
-	tools: T,
-	components: Record<T[number], ComponentTool | undefined>,
-	data: ComponentToolData<T>[],
-	onChange: (data: ComponentToolData<T>) => void
+type ComponentToolData = {name: CommonTools, value: string};
+interface ComponentToolsProps {
+	tools: readonly CommonTools[],
+	components: Record<CommonTools, ComponentTool | undefined>,
+	data: ComponentToolData[],
+	onChange: (data: ComponentToolData) => void
 }
-const ComponentTools = <T extends readonly string[]>({tools, components, data, onChange}: ComponentToolsProps<T>) => {
+const ComponentTools = ({tools, components, data, onChange}: ComponentToolsProps) => {
 	return (<div className="hw-flex hw-gap-4 hw-items-center">
-		{tools.map((tool: T[number]) => {
+		{tools.map((tool: CommonTools) => {
 			const Component = components[tool] as ComponentTool | undefined;
 			if (!Component) return undefined;
 

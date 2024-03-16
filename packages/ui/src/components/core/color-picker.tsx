@@ -307,7 +307,8 @@ const ColorPicker = <T extends Color | HexColor>({
   value,
   onChange,
   container,
-}: ColorPickerProps<T> & {container?: HTMLElement}) => {
+  className
+}: ColorPickerProps<T> & {container?: HTMLElement, className?: string}) => {
   return (
     <>
       <Popover
@@ -318,7 +319,7 @@ const ColorPicker = <T extends Color | HexColor>({
             aria-label={`current color swatch: ${value.toString("rgb")}`}
           />
         }
-        buttonClass="hw-h-8"
+        buttonClass={className}
         container={container}
       >
         <ColorPickerFull value={value} onChange={onChange} preview="false" />
