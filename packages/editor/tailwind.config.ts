@@ -23,5 +23,8 @@ const config: Config = {
   plugins: [
 		forms
 	],
+  corePlugins: {
+    preflight: false
+  }
 }
 export default config

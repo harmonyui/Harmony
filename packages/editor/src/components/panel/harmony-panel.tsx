@@ -66,7 +66,9 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 				<SidePanelToolbar/>
 			</div> */}
 			<div className="hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow-md">
-				{getPanel()}
+				<div data-name="harmony-panel">
+					{getPanel()}
+				</div>
 				<div id="harmony-scroll-container" ref={(ref) => {
 					ref?.addEventListener('wheel', onTouch);
 				}} className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-px-[250px] hw-bg-gray-200" >
@@ -392,7 +394,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 	}, [selectedElement]);
 
 	return (
-		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
+		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-divide-x">
 			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
 				<Header className="hw-font-normal" level={3}>{currBranch ? currBranch.name : 'Invalid Branch'}</Header>
 			</div>

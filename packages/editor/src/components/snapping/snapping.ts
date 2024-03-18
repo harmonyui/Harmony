@@ -1884,10 +1884,11 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 				if (isNaN(minHeight)) {
 					minHeight = -Infinity;
 				}
+				const toMeasureRect = {width: toMeasure.clientWidth, height: toMeasure.clientHeight}//getBoundingRect(toMeasure);
 				modifiers.push(interact.modifiers.restrictSize({
 					//TODO: Hacky fix for when a flex-basis flex-col item is measured, it comes out all wrong
-					min: {width: (width <= toMeasure.clientWidth ? minWidth < Infinity ? minWidth : Math.min(width, 20, minWidth) : 20) * scale, height: (height <= toMeasure.clientHeight ? Math.max(height, 20, minHeight) : 20) * scale},
-					max: {width: maxWidth * scale, height: maxHeight * scale}
+					min: {width: (width <= toMeasureRect.width ? minWidth < Infinity ? minWidth : Math.min(width, 20 * scale, minWidth) : 20 * scale), height: (height <= toMeasureRect.height ? Math.max(height, 20 * scale, minHeight) : 20 * scale)},
+					max: {width: maxWidth, height: maxHeight}
 				}))
 			}
 

@@ -1,3 +1,4 @@
+"use client";
 import React, { useEffect, useRef, useState } from "react";
 import ReactDOM from "react-dom";
 import { DisplayMode, HarmonyProvider, HarmonyProviderProps } from "./harmony-provider";

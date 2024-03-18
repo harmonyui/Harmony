@@ -11,7 +11,6 @@ import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import React from "react";
 import {WEB_URL} from '@harmony/util/src/constants';
 
-import '../global.css';
 import { Setup } from "./harmony-setup";
 import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
 import { PullRequest } from "@harmony/ui/src/types/branch";
