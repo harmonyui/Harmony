@@ -28,7 +28,7 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 	const openProject = (item: BranchItem) => {
 		const url = new URL(item.url);
 		url.searchParams.append('branch-id', item.id);
-		window.open(url.href, '_blank');
+		window.location.replace(url.href);
 	}
 
 	const onDelete = (item: BranchItem) => {

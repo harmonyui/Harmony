@@ -22,6 +22,7 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
         let branchId = urlParams.get('branch-id');
         if (!branchId) {
             branchId = window.sessionStorage.getItem('branch-id');
+            branchId && setBranchId(branchId);
         };
 
         if (!branchId) return;

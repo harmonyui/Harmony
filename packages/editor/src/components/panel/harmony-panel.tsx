@@ -46,6 +46,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 	const {onTouch} = usePinchGesture({scale, onTouching(newScale, cursorPos) {
 		onScaleChange(newScale, cursorPos);
 	}})
+	const {onTouch: onTouchHeader} = usePinchGesture({scale, onTouching() {}});
 	const {children} = props;
 
 	//TODO: Fix bug where getting rid of these parameters gives a "cannot read 'data-harmony-id' of undefined"
@@ -57,7 +58,9 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 		return <PreviewPanel/>
 	}
 	return (
-		<div className="hw-flex hw-h-full">
+		<div className="hw-flex hw-h-full" ref={(ref) => {
+			ref?.addEventListener('wheel', onTouchHeader);
+		}}>
 			{/* <div className="hw-flex hw-flex-col">
 				<img src="/harmony.ai.svg"/>
 				<SidePanelToolbar/>
@@ -94,7 +97,7 @@ const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElem
 				<img className="hw-h-full" src={`${WEB_URL}/Harmony_logo.svg`}/>
 			</div>
 			<div className="hw-pl-4 hw-pr-2 hw-py-2 hw-w-full">
-				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches}/>
+				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} selectedElement={selectedElement} onChange={onAttributesChange} isDirty={isDirty} branchId={branchId} branches={branches}/>
 			</div>
 		</div>
 	)
@@ -268,13 +271,14 @@ interface ToolbarPanelProps {
 	toggle: boolean;
 	onToggleChange: (toggle: boolean) => void;
 	selectedComponent: ComponentElement | undefined;
+	selectedElement: HTMLElement | undefined;
 	onChange: (component: ComponentElement, update: ComponentUpdate[]) => void;
 	isDirty: boolean;
 	branchId: string;
 	branches: {id: string, name: string}[];
 }
-const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, onChange, isDirty, branchId, branches}) => {
-	const {isSaving, isPublished, changeMode, fonts, onFlexToggle} = useHarmonyContext();
+const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, selectedElement, onChange, isDirty, branchId, branches}) => {
+	const {isSaving, isPublished, changeMode, fonts, onFlexToggle, onClose} = useHarmonyContext();
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined;
 	const currBranch = branches.find(b => b.id === branchId);
 	const changeData = (values: ComponentToolData) => {
@@ -296,10 +300,6 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 
 	const onPreview = () => {
 		changeMode('preview')
-	}
-
-	const onClose = () => {
-		window.location.replace(WEB_URL)
 	}
 
 	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published' : null;
@@ -378,18 +378,18 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 	}), [fonts]);
 
 	const currTools: readonly CommonTools[] = useMemo(() => {
-		if (!selectedComponent) return [] as CommonTools[];
+		if (!selectedElement) return [] as CommonTools[];
 
-		if (isTextElement(selectedComponent.element as HTMLElement)) {
+		if (isTextElement(selectedElement)) {
 			return textTools;
 		}
 
-		if (selectedComponent.element?.tagName.toLowerCase() === 'button') {
+		if (selectedElement.tagName.toLowerCase() === 'button') {
 			return buttonTools;
 		}
 
 		return componentTools;
-	}, [selectedComponent]);
+	}, [selectedElement]);
 
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-overflow-auto hw-divide-x">
@@ -554,9 +554,9 @@ const ShareButton = () => {
 	</>)
 }
 
-const buttonTools = ['color', 'background'] as const;
-const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
-const componentTools = ['background'] as const;
+const buttonTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
+const textTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
+const componentTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
 type TextTools = typeof textTools[number];
 type ButtonTools = typeof buttonTools[number];
 type ComponentTools = typeof componentTools[number];

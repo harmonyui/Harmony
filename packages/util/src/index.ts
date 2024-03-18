@@ -211,9 +211,8 @@ export function convertRgbToHex(rgb: string) {
   if (match === null) {
     match = rgb.match(/^rgba\((\d+), \s*(\d+), \s*(\d+), \s*(\d+(?:\.\d+)?)\)$/)
     if (!match)
-      throw new Error('Invalid rgb ' + rgb);
-
-    
+      console.error('Invalid rgb ' + rgb);
+      return '#000000';
   }
   function hexCode(i: string) { 
         

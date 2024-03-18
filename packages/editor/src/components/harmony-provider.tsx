@@ -1,6 +1,6 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
-import { Inspector, componentIdentifier, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
+import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {PublishRequest, loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
 import {translateUpdatesToCss} from '@harmony/util/src/component';
@@ -51,8 +51,9 @@ interface HarmonyContextProps {
 	onFlexToggle: () => void;
 	scale: number;
 	onScaleChange: (scale: number, cursorPos: {x: number, y: number}) => void;
+	onClose: () => void;
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined, onFlexToggle: () => undefined, scale: 1, onScaleChange: () => undefined});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined, onFlexToggle: () => undefined, scale: 1, onScaleChange: () => undefined, onClose: () => undefined});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -92,8 +93,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [cursorX, setCursorX] = useState(0);
 	const [cursorY, setCursorY] = useState(0);
 	const [oldScale, setOldSclae] = useState(scale);
+	const [forceSave, setForceSave] = useState(0);
 	
-	const executeCommand = useComponentUpdator({isSaving, setIsSaving, fonts, isPublished, branchId, repositoryId, rootComponent, onChange() {
+	const executeCommand = useComponentUpdator({isSaving, setIsSaving, fonts, isPublished, branchId, repositoryId, rootComponent, forceSave, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}});
 
@@ -299,9 +301,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			scrollContainer.scrollTop = newY;
 		}
 
+		if (selectedComponent) {
+			if (!isSelectable(selectedComponent, newScale)) {
+				setSelectedComponent(undefined);
+			}
+		}
 	
         _setScale(newScale);
-    }, [rootComponent, oldScale, scale, cursorX, cursorY]);
+    }, [rootComponent, oldScale, scale, cursorX, cursorY, selectedComponent]);
 
 	const onTextChange = useEffectEvent((value: string, oldValue: string) => {
 		if (!selectedComponent) return;
@@ -387,11 +394,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		changeMode('preview');
 	}
 	
-	
+	const onClose = () => {
+		setForceSave(forceSave + 1);
+	}
 
 	return (
 		<>
-			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale}}>
+			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose}}>
 				{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 				<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
 					<div id="harmony-scaled" ref={(d) => {
@@ -445,28 +454,46 @@ interface ComponentUpdatorProps {
 	setIsSaving: (value: boolean) => void;
 	isPublished: boolean;
 	rootComponent: HTMLElement | undefined; 
-	fonts: Font[] | undefined
+	fonts: Font[] | undefined;
+	//TODO: This is super hacky 
+	forceSave: number;
 }
-const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPublished, setIsSaving, rootComponent, fonts}: ComponentUpdatorProps) => {
+const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPublished, setIsSaving, rootComponent, fonts, forceSave}: ComponentUpdatorProps) => {
 	const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([]);
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
 	const [saveStack, setSaveStack] = useState<HarmonyCommand[]>([]);
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
-	
-	useBackgroundLoop(() => {
-		if (saveStack.length && !isSaving && !isPublished) {
+
+	const save = useEffectEvent(() => {
+		return new Promise<void>((resolve, reject) => {
 			const copy = saveStack.slice();
 			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
-				
+				resolve();
 			}).catch(() => {
 				//TODO: Test this
 				setSaveStack((oldSave) => [...copy, ...oldSave]);
+				resolve();
 			});
 			setSaveStack([]);
 			//Force there to be a new change when we are saving
 			setEditTimeout(new Date().getTime() - 1000);
+		});
+	});
+	
+	useBackgroundLoop(() => {
+		if (saveStack.length && !isSaving && !isPublished) {
+			save();
 		}
 	}, 10);
+
+	useEffect(() => {
+		if (forceSave > 0) {
+			save().then(() => {
+				window.sessionStorage.removeItem('branch-id');
+				window.location.replace(WEB_URL);
+			});
+		}
+	}, [forceSave])
 
 	const onLeave = useEffectEvent((e: BeforeUnloadEvent) => {
 		if (saveStack.length > 0 && !isPublished) {
