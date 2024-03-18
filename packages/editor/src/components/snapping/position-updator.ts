@@ -374,12 +374,19 @@ export const flexUpdator: PositionUpdator = {
 				parentInfo.element.style.justifyContent = 'flex-end';
 			} 
 
+			//const styles = getComputedStyle(info.element);
+
 			//right - width
 			if (info[widthType] === 'fixed') {
 				const toResize = selectDesignerElementReverse(info.element);
 				updateElementValues(toResize, [width], updatedElements);
 				toResize.style[width] = `${info[width]}px`;
-			} 
+			} else if (info[widthType] === 'expand') {
+				const parentGap = parentInfo.edges[endXSide].parentEdge.gap;
+				const remainingGap = info[endXSide].parentEdge.gap - parentGap;
+				setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
+				setSpaceForElement(parentInfo.element, 'padding', endXSide, parentGap);
+			}
 			// else if (info[widthType] === 'expand') {
 			// 	//If we are expanding the width, that means we have some sort of flex grow or something
 			// 	//TODO: let's deal with that later

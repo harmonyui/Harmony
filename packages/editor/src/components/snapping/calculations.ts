@@ -356,9 +356,16 @@ function isElementFluid(elm: HTMLElement, side: 'width' | 'height', useFlexForHe
       wrapper.style[side] = '500px';
       wrapper.style.padding = '0';
       wrapper.style.margin = '0';
+	  wrapper.style.position = 'absolute';
+	  clone.style.top = '-9999px';
+	  clone.style.left = '-9999px';
       wrapper.appendChild(clone);
       /// insert the element in the same location as our target
       elm.parentNode?.insertBefore(wrapper,elm);
+	  const styles = getComputedStyle(clone);
+	  if (styles.display === 'inline') {
+		clone.style.display = 'block';
+	  }
       /// store the clone's calculated width
       ow = clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'];
       /// change the wrapper size once more
@@ -603,10 +610,10 @@ export function calculateEdgesInfo(element: HTMLElement, scale: number, scaleAct
 	const children = Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scaleActual)) as HTMLElement[];
 	const index = children.indexOf(elementReal)
 
-    const left = calculateAxisEdgeInfo(element, parent, axis, 'close', scale, index, children, updates);
-    const right = calculateAxisEdgeInfo(element, parent, axis, 'far', scale, index, children, updates);
-    const top = calculateAxisEdgeInfo(element, parent, otherAxis, 'close', scale, index, children, updates);
-    const bottom = calculateAxisEdgeInfo(element, parent, otherAxis, 'far', scale, index, children, updates);
+    const left = calculateAxisEdgeInfo(element, parent, axis, 'close', scale, scaleActual, index, children, updates);
+    const right = calculateAxisEdgeInfo(element, parent, axis, 'far', scale, scaleActual, index, children, updates);
+    const top = calculateAxisEdgeInfo(element, parent, otherAxis, 'close', scale, scaleActual, index, children, updates);
+    const bottom = calculateAxisEdgeInfo(element, parent, otherAxis, 'far', scale, scaleActual, index, children, updates);
     const rectOverride = updates.find(update => update.element === element)?.rect;
     const parentOverride = updates.find(update => update.element === parent)?.rect;
     const midpointX = (getBoundingClientRect(element, axis, 'close', scale, rectOverride) + getBoundingClientRect(element, axis, 'size', scale, rectOverride) / 2) - getBoundingClientRectParent(parent, axis, 'close', scale, parentOverride);
@@ -628,7 +635,7 @@ export function calculateEdgesInfo(element: HTMLElement, scale: number, scaleAct
     }
 }
 
-export function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement, axis: Axis, side: Side, scale: number, selfIndex: number, children: HTMLElement[], updates: UpdateRect[]=[]): ElementEdgeInfo {
+export function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement, axis: Axis, side: Side, scale: number, scaleActual: number, selfIndex: number, children: HTMLElement[], updates: UpdateRect[]=[]): ElementEdgeInfo {
    if (!parent) throw new Error("Element does not have a parent");
     
     const otherSide = side === 'close' ? 'far' : 'close';
@@ -646,14 +653,14 @@ export function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement,
         gap: parentGap,
         relation: 'parent',
         edgeElement: parent,
-        gapTypes: getGapTypesToParent(element, parent, axis, side, scale),
+        gapTypes: getGapTypesToParent(element, parent, axis, side, scaleActual),
         edgeLocation: getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)),
         edgeLocationRelative: 0,
     } : {
         gap: parentGap,
         relation: 'parent',
         edgeElement: parent,
-        gapTypes: getGapTypesToParent(element, parent, axis, side, scale),
+        gapTypes: getGapTypesToParent(element, parent, axis, side, scaleActual),
         edgeLocation: getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)),
         edgeLocationRelative: getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)) - getBoundingClientRectParent(parent, axis, otherSide, scale, getRectOverride(parent)),
     }
@@ -688,7 +695,7 @@ export function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement,
             gap: newStart,
             relation: 'sibling',
             edgeElement: sibling,
-            gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scale),
+            gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scaleActual),
             edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
             edgeLocationRelative: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - parentEdge.edgeLocation
         };
@@ -701,7 +708,7 @@ export function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement,
             gap: newEnd,
             relation: 'sibling',
             edgeElement: sibling,
-            gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scale),
+            gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scaleActual),
             edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
             edgeLocationRelative: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - parentEdge.edgeLocation
         };

@@ -1169,7 +1169,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		if (!scrollContainer) throw new Error("Cannot find scroll container");
 		const scrollLeft = scrollContainer.scrollLeft;
 		const scrollTop = scrollContainer.scrollTop;
-		scaledContainer.style.transform = '';
+		scaledContainer.style.transform = 'scale(1)';
 		
 		
 		const parent = elementProp.parentElement!;
