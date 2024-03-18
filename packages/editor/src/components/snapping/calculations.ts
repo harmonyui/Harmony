@@ -490,7 +490,7 @@ interface ElementEdgeInfo {
     siblingEdge: EdgeInfo | undefined,
 }
 
-interface ChildEdgeInfo {
+export interface ChildEdgeInfo {
     element: HTMLElement,
 	index: number,
     midpointX: number,

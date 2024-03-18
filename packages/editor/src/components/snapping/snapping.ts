@@ -9,7 +9,7 @@ import {AspectRatioOptions, AspectRatioState} from '@interactjs/modifiers/aspect
 import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 import $ from 'jquery';
 import { info } from "console";
-import { Axis, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateEdgesInfoWithSizing, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
+import { Axis, ChildEdgeInfo, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateEdgesInfoWithSizing, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
 import { PositionUpdator, UpdateRect, UpdateRectsProps, UpdatedElement, absoluteUpdator, elementUpdator, flexUpdator } from "./position-updator";
 
 
@@ -220,7 +220,7 @@ interface SnapBehavior {
 	onUpdate: (element: HTMLElement, event: DraggingEvent, scale: number, isResize: boolean) => UpdatedElement[];
 	onCalculateSnapping: (element: HTMLElement, posX: number, posY: number, dx: number, dy: number, scale: number, isResize: boolean) => {resultsX: SnappingResult[], resultsY: SnappingResult[]};
 	onFinish: (element: HTMLElement) => HTMLElement;
-    getRestrictions: (element: HTMLElement, scale: number) => RectBox[];
+    getRestrictions: (element: HTMLElement, scale: number) => RectBox | undefined;
 	getPositionUpdator: () => PositionUpdator;
 	getCssUpdator: () => PositionUpdator;
 }
@@ -466,12 +466,12 @@ class ElementSnapping implements SnapBehavior {
         const left = edgeInfo.left.parentEdge.edgeLocation //+ getNonWorkableGap(edgeInfo.left.parentEdge.gapTypes)//edgeInfo.left.siblingEdge ? edgeInfo.left.siblingEdge.edgeLocation : edgeInfo.left.parentEdge.edgeLocation;
         const right = edgeInfo.right.parentEdge.edgeLocation //- getNonWorkableGap(edgeInfo.right.parentEdge.gapTypes);//edgeInfo.right.siblingEdge ? edgeInfo.right.siblingEdge.edgeLocation : edgeInfo.right.parentEdge.edgeLocation;
 
-        return [{
+        return {
             top,
             bottom,
             left,
             right
-        }];
+        };
     }
 }
 
@@ -947,7 +947,7 @@ class FlexSnapping implements SnapBehavior {
 		const minGap = getMinGap(parent);
 		
 		const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
-		if (parentInfo.edges === undefined) return [];
+		if (parentInfo.edges === undefined) return undefined;
 
 		
 
@@ -961,7 +961,7 @@ class FlexSnapping implements SnapBehavior {
 		}
 		//If there isn't my child info, that might mean we have gone too small and so it does not show up anymore
 		if (!myChildInfo) {
-			return [parentRect];
+			return parentRect;
 		}
 		const selfIndex = myChildInfo.index;
 
@@ -971,12 +971,12 @@ class FlexSnapping implements SnapBehavior {
 			const _top = myChildInfo[top].parentEdge.edgeLocation //+ getNonWorkableGap(myChildInfo.left.parentEdge.gapTypes)//myChildInfo.left.siblingEdge ? myChildInfo.left.siblingEdge.edgeLocation : myChildInfo.left.parentEdge.edgeLocation;
 			const _bottom = myChildInfo[bottom].parentEdge.edgeLocation //- getNonWorkableGap(myChildInfo.right.parentEdge.gapTypes);//myChildInfo.right.siblingEdge ? myChildInfo.right.siblingEdge.edgeLocation : myChildInfo.right.parentEdge.edgeLocation;
 
-			return [{
+			return {
 				[top as 'top']: _top,
 				[bottom as 'bottom']: _bottom,
 				[left as 'left']: _left,
 				[right as 'right']: _right,
-			}];
+			};
 		}
 		
 		
@@ -1004,7 +1004,7 @@ class FlexSnapping implements SnapBehavior {
 			parentRect[left] = parentInfo.childEdgeInfo[selfIndex][left].elementLocation - (parentInfo[minGapBetween] - minGap) * (parentInfo.children.length - 1) - parentInfo.edges[left].parentEdge.gap;
 		}
 
-		return [parentRect];
+		return parentRect;
     }
 }
 
@@ -1291,9 +1291,11 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		}
 
 		return true;
-	}, restrictions, restrictToParent: true, scale});
+	}, onCalculateRestrictions(element) {
+		return snappingBehavior.getRestrictions(element, scale);
+	}, restrictToParent: true, scale});
 
-	const {isResizing} = useResizable({element, scale, restrictions, onIsResizing(event) {
+	const {isResizing} = useResizable({element, scale, onIsResizing(event) {
         if (!element) return;
 
 		const parent = element.parentElement as HTMLElement;
@@ -1366,7 +1368,9 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
         return normalizeSnappingResults({...result, x, y});
 
         // return res;
-    }, canResize(element) {
+    }, onCalculateRestriction(element) {
+		return snappingBehavior.getRestrictions(element, scale);
+	}, canResize(element) {
 		if (element.contentEditable === 'true') return false;
 
 		if (!isSelectable(element, scale)) {
@@ -1541,14 +1545,14 @@ interface DraggableProps {
 	onIsDragging?: (event: DraggingEvent, element: HTMLElement) => void;
 	//TODO: Do something better to not have a dependency on FlexValues
 	onDragFinish?: (parent: HTMLElement) => void;
+	onCalculateRestrictions: (element: HTMLElement) => RectBox | undefined;
 	onCalculateSnapping?: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number) => SnappingResult | undefined;
 	snapPoints?: SnapPoint[],
 	restrictToParent?: boolean;
-    restrictions: RectBox[],
-	scale: number;
+    scale: number;
 	canDrag: (element: HTMLElement) => boolean;
 }
-export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDragFinish, canDrag, restrictToParent=false, scale, restrictions}: DraggableProps) => {
+export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalculateRestrictions, onDragFinish, canDrag, restrictToParent=false, scale}: DraggableProps) => {
 	const [isDragging, setIsDragging] = useState(false);
 	const [offsetX, setOffsetX] = useState<number>(0);
 	const [offsetY, setOffsetY] = useState<number>(0);
@@ -1619,12 +1623,14 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onDrag
 				// }))
 			}
 
-            for (const restriction of restrictions) {
-                modifiers.push(interact.modifiers.restrict({
-                    restriction,
-                    elementRect: { top: 0, left: 0, bottom: 1, right: 1 },
-                }));
-            }
+			modifiers.push(interact.modifiers.restrict({
+				restriction: function(e, a, b) {
+					const rect = onCalculateRestrictions(element);
+
+					return rect || element.parentElement!;
+				},
+				elementRect: { top: 0, left: 0, bottom: 1, right: 1 },
+			}))
 
 			interact(element).draggable({
 				listeners: {
@@ -1762,13 +1768,13 @@ type ResizingEvent = DraggingEvent & {
 interface ResizableProps {
     element: HTMLElement | undefined;
     scale: number;
-    restrictions: RectBox[],
-	onIsResizing?: (event: ResizingEvent) => void;
+    onIsResizing?: (event: ResizingEvent) => void;
     onResizeFinish?: (element: HTMLElement) => void;
     onCalculateSnapping?: (element: HTMLElement, x: number, y: number, currentX: number, currentY: number) => SnappingResult | undefined;
+	onCalculateRestriction: (element: HTMLElement) => RectBox | undefined;
 	canResize: (element: HTMLElement) => boolean;
 }
-export const useResizable = ({element, scale, restrictions, canResize, onIsResizing, onResizeFinish, onCalculateSnapping}: ResizableProps) => {
+export const useResizable = ({element, scale, canResize, onIsResizing, onResizeFinish, onCalculateSnapping, onCalculateRestriction}: ResizableProps) => {
     const [isResizing, setIsResizing] = useState(false);
     const snapGuides = useRef<SnapPoint[]>([]);
     const refX = useRef(0);
@@ -1809,14 +1815,14 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				const parentStyle = getComputedStyle(parent);
 				const style = getComputedStyle(element);
 				const axis = parentStyle.display.includes('flex') && parentStyle.flexDirection === 'column' ? 'y' : 'x';
-				const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
-				const myInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
-				if (!myInfo) throw new Error("Cannot find my info");
+				// const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
+				// const myInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
+				// if (!myInfo) throw new Error("Cannot find my info");
 
 				const toMeasure = selectDesignerElementReverse(element);
-				const toMeasureInfo = toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? calculateParentEdgeInfoWithSizing(toMeasure, 1, scale, false, 'x') : undefined;
 				
-				const validSibiling = (side: RectSide) => {
+				
+				const validSibiling = (side: RectSide, myInfo: ChildEdgeInfo) => {
 					const otherSideClose = side === 'left' || side === 'right' ? 'top' : 'left';
 					const otherSideFar = otherSideClose === 'top' ? 'bottom' : 'right';
 
@@ -1834,23 +1840,31 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 					return false;
 				}
 
-				if (parentInfo.edges) {
-					const considerTheYs = !parentStyle.display.includes('flex') || parentStyle.flexDirection === 'column';
-					modifiers.push(interact.modifiers.restrictEdges({
-						inner: toMeasureInfo && toMeasureInfo.edges ? {
+				const considerTheYs = !parentStyle.display.includes('flex') || parentStyle.flexDirection === 'column';
+				modifiers.push(interact.modifiers.restrictEdges({
+					inner: toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? function() {
+						const toMeasureInfo =  calculateParentEdgeInfoWithSizing(toMeasure, 1, scale, false, 'x');
+
+						return toMeasureInfo.edges ? {
 							left: toMeasureInfo.edges.left.elementLocation,
 							right: toMeasureInfo.edges.right.elementLocation,
 							top: toMeasureInfo.edges.top.elementLocation - getNonWorkableGap(toMeasureInfo.edges.top.parentEdge.gapTypes),
 							bottom: toMeasureInfo.edges.bottom.elementLocation + (toMeasureInfo.heightType === 'content' ? getNonWorkableGap(toMeasureInfo.edges.bottom.parentEdge.gapTypes) : 0)
-						} : undefined,
-						outer: {
-							left: validSibiling('left') ? Math.max(parentInfo.edges.left.parentEdge.edgeLocation, myInfo.left.siblingEdge?.edgeLocation || 0) : parentInfo.edges.left.parentEdge.edgeLocation,
-							right: validSibiling('right') ? Math.min(parentInfo.edges.right.parentEdge.edgeLocation, myInfo.right.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges.right.parentEdge.edgeLocation,
+						} : getBoundingRect(toMeasure)
+					} : undefined,
+					outer: function() {
+						const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
+						const myInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
+						if (!myInfo) throw new Error("Cannot find my info");
+
+						return parentInfo.edges ? {
+							left: validSibiling('left', myInfo) ? Math.max(parentInfo.edges.left.parentEdge.edgeLocation, myInfo.left.siblingEdge?.edgeLocation || 0) : parentInfo.edges.left.parentEdge.edgeLocation,
+							right: validSibiling('right', myInfo) ? Math.min(parentInfo.edges.right.parentEdge.edgeLocation, myInfo.right.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges.right.parentEdge.edgeLocation,
 							top: considerTheYs ? Math.max(parentInfo.edges.top.parentEdge.edgeLocation, myInfo.top.siblingEdge?.edgeLocation || 0) : parentInfo.edges!.top.parentEdge.edgeLocation,
 							bottom: considerTheYs ? Math.min(parentInfo.edges.bottom.parentEdge.edgeLocation, myInfo.bottom.siblingEdge?.edgeLocation || Infinity) : parentInfo.edges!.bottom.parentEdge.edgeLocation,
-						}
-					}));
-				}
+						} : getBoundingRect(parentInfo.element)
+					}
+				}));
 				//TODO: Remove isImage dependency (This is here because we want to be able to resize an image at will till the minimum size)
 				const {width, height} = isImageElement(toMeasure) ? {width: 20, height: 20} : getFitContentSize(toMeasure);
 				let maxWidth = parseFloat(style.maxWidth);
@@ -1877,12 +1891,11 @@ export const useResizable = ({element, scale, restrictions, canResize, onIsResiz
 				}))
 			}
 
-            for (const restriction of restrictions) {
-                modifiers.push(interact.modifiers.restrictEdges({
-                    outer: restriction,
-                    //elementRect: { top: 0, left: 0, bottom: 1, right: 1 }
-                }))
-            }
+			modifiers.push(interact.modifiers.restrictEdges({
+				outer: function() {
+					return onCalculateRestriction(element) || element.parentElement!;
+				}
+			}))
 
 			aspectRef.current = interact.modifiers.aspectRatio({
 				ratio: 'preserve',
