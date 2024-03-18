@@ -37,7 +37,7 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 	}
 
 	return <ModalProvider>
-		<div className="hw-flex hw-flex-col hw-gap-4">
+		<div className="hw-flex hw-flex-col hw-gap-[15.9297px]">
 			{Projectes ? <>
 				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create Project <PlusIcon className="hw-ml-1 hw-h-5 hw-w-5"/></Button>
 				<div className="hw-flex hw-gap-16 hw-flex-wrap hw-overflow-auto">
@@ -154,7 +154,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
                 <img className="hw-w-[250px]" src={thumbnail} onClick={onOpenHarmony}/>
             </button>
             <div className="hw-mt-2">
-                <div className="hw-flex hw-justify-between">
+                <div className="hw-flex hw-justify-end hw-gap-[71.7109px] hw-items-start">
                     <span>{item.label}</span>
                     <DropdownIcon className="hover:hw-bg-gray-200 hw-rounded-full " icon={EllipsisHorizontalIcon} items={moreItems} mode='none' onChange={(item) => (item as typeof moreItems[number]).onClick()}/>
                 </div>
