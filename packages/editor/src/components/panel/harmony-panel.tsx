@@ -74,9 +74,9 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 				}} className="hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-px-[250px] hw-bg-gray-200" >
 					{children}
 				</div>
-				<div className="hw-px-4 hw-py-4 sm:hw-px-6">
+				{/* <div className="hw-px-4 hw-py-4 sm:hw-px-6">
 					<Slider value={scale * 100} onChange={(value) => onScaleChange(value/100, {x: 0, y: 0})} max={500}/>
-				</div>
+				</div> */}
 			</div>
 		
 			{/* <ToolbarPanel mode={mode} onModeChange={onModeChange}/>
