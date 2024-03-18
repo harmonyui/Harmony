@@ -234,7 +234,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 						</div>
 					</div>
 					<main className={getClass("hw-py-10 hw-h-full hw-bg-gray-100", mulish.className)}>
-						<div className="hw-px-4 sm:hw-px-6 lg:hw-px-8 hw-bg-gray-100" onClick={onBodyClick}>{children}</div>
+						<div className="hw-px-4 sm:hw-px-6 lg:hw-px-8 hw-bg-gray-100 hw-h-full" onClick={onBodyClick}>{children}</div>
 					</main>
 				</div>
       </div>
