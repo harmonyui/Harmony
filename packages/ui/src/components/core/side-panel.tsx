@@ -244,9 +244,9 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 
 const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: string}> = ({item, className}) => {
 	return (
-		<li key={item.label} className={getClass(className)}>
+		<li /** hw-mr-16 hw-mt-[0.4px] */ key={item.label} className={getClass(className)}>
 			<a
-				className={getClass(
+/** hw-pr-0 hw-pt-[7.8px] hw-pb-[8.1px] */ 				className={getClass(
 					item.current
 						? 'hw-text-[#11283B]'
 						: 'hw-text-[#88939D] hover:hw-text-[#11283B]',
