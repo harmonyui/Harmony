@@ -465,6 +465,7 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 			if (!published) {
 				setError('There was an error when publishing');
 			}
+			setShow(false);
 		})
 	}
 

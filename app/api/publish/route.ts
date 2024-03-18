@@ -297,7 +297,7 @@ async function getChangeAndLocation(update: (ComponentUpdate & {oldValue: string
 			throw new Error(`There was no update for tailwind classes, snippet: ${code}, oldValue: ${oldValue}`);
 		}
 		
-		result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: newClass, update, dbLocation: location, attribute};
+		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: newClass, update, dbLocation: location, attribute};
 	}
 
 	switch(type) {

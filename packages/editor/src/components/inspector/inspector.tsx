@@ -142,13 +142,16 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		for (const oldValue of oldValues) {
 			const [element, oldProperties] = oldValue;
 			//Round all of the values;
-			['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom'].forEach(property => {
+			['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'width', 'height'].forEach(property => {
 				const propValue = element.style[property as unknown as number];
 				if (!propValue || propValue === 'auto') return;
 
 				// const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
 				// if (!match) throw new Error("Invalid property value " + propValue);
-				const num = round(parseFloat(propValue), 1, true);
+				const float = parseFloat(propValue);
+				if (isNaN(float)) return;
+
+				const num = round(float, 0, true);
 				const unit = 'px';//match[2];
 				const value = `${num}${unit}`;
 

@@ -15,7 +15,7 @@ export const ClosableContent: React.FunctionComponent<ClosableContentProps> = ({
 }) => {
   return (
     <div className={getClass('hw-relative',className)}>
-      <div className="hw-absolute hw-top-0 hw-right-0">
+      <div className="hw-absolute hw-top-[5px] hw-right-[5px]">
         <button className="hover:hw-opacity-50" onClick={onClose} type="button">
           <XMarkIcon className={xMarkClassName || "hw-w-4 hw-h-4"}/>
         </button>
