@@ -124,8 +124,8 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         {/* Static sidebar for desktop */}
         <div className="hw-hidden lg:hw-fixed lg:hw-inset-y-0 lg:hw-z-50 lg:hw-flex lg:hw-w-72 lg:hw-flex-col">
           {/* Sidebar component, swap this element with another sidebar if you like */}
-          <div className="hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2">
-            {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center hw-justify-center">
+          <div className="hw-flex hw-grow hw-flex-col hw-overflow-y-auto hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2 hw-gap-5 hw-pr-2.5">
+            {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center hw-justify-center hw-ml-3.5">
               {/* <img
                 alt="Your Company"
                 className="hw-h-8 hw-w-auto"
@@ -133,10 +133,10 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
               /> */}
 							<Header className="hw-text-5xl hw-font-light" level={2}>{title}</Header>
             </div> : null}
-            <nav className="hw-flex hw-flex-1 hw-flex-col">
-              <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
+            <nav className="hw-flex hw-flex-1 hw-flex-col hw-mr-3.5">
+              <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-7 hw-pb-20">
                 <li className="hw-h-full">
-                  <ul className="-hw-mx-2 hw-space-y-10 hw-h-1/2 hw-flex hw-flex-col hw-mt-20">
+                  <ul className="-hw-mx-2 hw-space-y-10 hw-flex hw-flex-col hw-justify-evenly hw-gap-0 hw-h-3/6 hw-mt-0 hw-pb-0">
                     {items.map((item) => (
                       <SidePanelItem item={item} key={item.label}/>
                     ))}
@@ -244,7 +244,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 
 const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: string}> = ({item, className}) => {
 	return (
-		<li key={item.label} className={getClass(className)}>
+		<li /** hw-mb-0 */ key={item.label} className={getClass(className)}>
 			<a
 				className={getClass(
 					item.current
