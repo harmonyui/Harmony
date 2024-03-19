@@ -2,7 +2,7 @@
 import { useClerk } from "@clerk/nextjs";
 import { ToggleIcon, GitBranchIcon, GitPullRequestIcon, UserGroupIcon } from "../packages/ui/src/components/core/icons"
 import { SidePanelItems, SidePanel, ProfileItem } from "../packages/ui/src/components/core/side-panel"
-import { useRouter } from "next/navigation";
+import { useRouter, usePathname } from "next/navigation";
 
 interface SideNavProps {
 	children: React.ReactNode
@@ -10,6 +10,7 @@ interface SideNavProps {
 export const SideNav: React.FunctionComponent<SideNavProps> = ({children}) => {
 	const {user, signOut} = useClerk();
 	const router = useRouter();
+	const pathname = usePathname();
 
 	if (!user || !user.fullName) return;
 
@@ -17,19 +18,19 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({children}) => {
 		{
 			label: 'Projects',
 			href: '/projects',
-			current: window.location.href.includes('projects'),
+			current: pathname.includes('projects'),
 			icon: GitBranchIcon
 		},
 		{
 			label: 'Publish Requests',
 			href: '/pull-requests',
-			current: window.location.href.includes('pull-requests'),
+			current: pathname.includes('pull-requests'),
 			icon: GitPullRequestIcon
 		},
 		{
 			label: 'My Team',
 			href: '/team',
-			current: window.location.href.includes('team'),
+			current: pathname.includes('team'),
 			icon: UserGroupIcon
 		}
 	];

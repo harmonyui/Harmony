@@ -42,7 +42,7 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create Project <PlusIcon className="hw-ml-1 hw-h-5 hw-w-5"/></Button>
 				{Projectes.length ? <div className="hw-flex hw-gap-16 hw-flex-wrap hw-overflow-auto">
 					{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)} onDelete={() => onDelete(item)}/>)}
-				</div> : <div className="hw-h-full hw-items-center hw-justify-center hw-flex hw-text-lg hw-text-[#88939D]">No Projects Yet!</div>}
+				</div> : <div className="hw-h-full hw-items-center hw-justify-center hw-flex hw-text-lg hw-mb-48 hw-text-[#88939D]">No Projects Yet!</div>}
 				<CreateNewProjectModal show={showNewProject} onClose={() => setShowNewProject(false)} onSuccessfulCreation={openProject}/>
 			</> : null}
 		</div>

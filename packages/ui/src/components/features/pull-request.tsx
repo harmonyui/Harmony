@@ -95,10 +95,14 @@ export const PullRequestLineItem: React.FunctionComponent<PullRequestLineItemPro
 
 	return (
 		<div className="hw-w-full hw-border hw-rounded-md">
-			<a className="hw-flex hw-px-2 hw-py-3 hw-w-full hw-rounded-md hover:hw-bg-gray-50 hover:hw-cursor-pointer" href={url} target="_blank">
-				<GitPullRequestIcon className="hw-w-6 hw-h-6"/>
-				<span>{title}</span>
+			<a className="hw-flex hw-px-2 hw-justify-between hw-py-3 hw-w-full hw-rounded-md hw-bg-white hover:hw-bg-gray-50 hover:hw-cursor-pointer" href={url} target="_blank">
+				<div className="hw-flex hw-gap-4">
+					<GitPullRequestIcon className="hw-w-6 hw-h-6"/>
+					<span>{title}</span>
+				</div>
+				<span>Created by Jacob Hansen</span>
 			</a>
+
 			{/* {isOpen ? <div className="hw-flex hw-flex-col hw-gap-2 hw-border-t hw-py-2 hw-px-4">
 				<div className="hw-flex hw-flex-col hw-border-2 hw-h-32 hw-text-sm hw-divide-y hw-overflow-auto">
 				</div>
