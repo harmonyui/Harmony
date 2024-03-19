@@ -124,7 +124,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         {/* Static sidebar for desktop */}
         <div className="hw-hidden lg:hw-fixed lg:hw-inset-y-0 lg:hw-z-50 lg:hw-flex lg:hw-w-72 lg:hw-flex-col">
           {/* Sidebar component, swap this element with another sidebar if you like */}
-          <div className="hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2">
+          <div className="hw-flex hw-grow hw-flex-col hw-overflow-y-auto hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2 hw-gap-2.5 hw-pt-[18px]">
             {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center hw-justify-center">
               {/* <img
                 alt="Your Company"
@@ -136,7 +136,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
             <nav className="hw-flex hw-flex-1 hw-flex-col">
               <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
                 <li className="hw-h-full">
-                  <ul className="-hw-mx-2 hw-space-y-10 hw-h-1/2 hw-flex hw-flex-col hw-mt-20">
+                  <ul className="-hw-mx-2 hw-space-y-10 hw-flex hw-flex-col hw-justify-evenly hw-gap-0 hw-h-3/6 hw-mt-0">
                     {items.map((item) => (
                       <SidePanelItem item={item} key={item.label}/>
                     ))}
