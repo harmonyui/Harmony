@@ -124,8 +124,8 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         {/* Static sidebar for desktop */}
         <div className="hw-hidden lg:hw-fixed lg:hw-inset-y-0 lg:hw-z-50 lg:hw-flex lg:hw-w-72 lg:hw-flex-col">
           {/* Sidebar component, swap this element with another sidebar if you like */}
-          <div className="hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2">
-            {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center hw-justify-center">
+          <div className="hw-flex hw-grow hw-flex-col hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2 hw-gap-5 hw-pl-[23px] hw-pr-0 hw-pt-[7px]">
+            {title ? <div className="__className_6d65e1 hw-flex hw-shrink-0 hw-items-center hw-justify-center hw-h-[62px] hw-ml-[23px]">
               {/* <img
                 alt="Your Company"
                 className="hw-h-8 hw-w-auto"
@@ -133,16 +133,16 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
               /> */}
 							<Header className="hw-text-5xl hw-font-light" level={2}>{title}</Header>
             </div> : null}
-            <nav className="hw-flex hw-flex-1 hw-flex-col">
-              <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
+            <nav className="hw-flex hw-flex-1 hw-flex-col hw-mr-[23px]">
+              <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-7 hw-pr-0 hw-pb-20">
                 <li className="hw-h-full">
-                  <ul className="hw-space-y-10 hw-flex hw-flex-col hw-mt-20">
+                  <ul className="__className_68d44c hw-space-y-10 hw-flex hw-flex-col hw-gap-[66px] hw-justify-center hw-mt-0">
                     {items.map((item) => (
-                      <SidePanelItem item={item} key={item.label}/>
+                      <SidePanelItem className="hw-mt-0" item={item} key={item.label}/>
                     ))}
                   </ul>
                 </li>
-								<SidePanelItem className="hw-mt-auto hw-mb-20" item={{current: false, href: '/release', icon: RectangleListIcon, label: 'Beta Release Log'}}/>
+								<SidePanelItem className="hw-mt-auto hw-mb-0" item={{current: false, href: '/release', icon: RectangleListIcon, label: 'Beta Release Log'}}/>
                 {/* <li className="hw-mt-auto">
                   <a
                     href="#"
