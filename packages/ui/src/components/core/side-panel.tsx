@@ -31,8 +31,7 @@ export type SidePanelProps = {
   title?: string;
 	profileItem?: ProfileItem;
 } & React.PropsWithChildren;
-export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
-  //className,
+export const SidePanel: React.FunctionComponent<SidePanelProps> =Harmony Bob/className,
   items,
   children,
   onBodyClick,
@@ -124,8 +123,8 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         {/* Static sidebar for desktop */}
         <div className="hw-hidden lg:hw-fixed lg:hw-inset-y-0 lg:hw-z-50 lg:hw-flex lg:hw-w-72 lg:hw-flex-col">
           {/* Sidebar component, swap this element with another sidebar if you like */}
-          <div className="hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2">
-            {title ? <div className="hw-flex hw-h-16 hw-shrink-0 hw-items-center hw-justify-center">
+          <div className="hw-flex hw-grow hw-flex-col hw-border-r hw-border-gray-200 hw-bg-white hw-px-6 hw-py-2 hw-gap-5 hw-pl-3 hw-pr-0 hw-pt-1.5">
+            {title ? <div className="__className_6d65e1 hw-flex hw-shrink-0 hw-justify-center hw-items-center hw-h-[61px] hw-ml-0">
               {/* <img
                 alt="Your Company"
                 className="hw-h-8 hw-w-auto"
@@ -133,16 +132,16 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
               /> */}
 							<Header className="hw-text-5xl hw-font-light" level={2}>{title}</Header>
             </div> : null}
-            <nav className="hw-flex hw-flex-1 hw-flex-col">
-              <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
+            <nav className="hw-flex hw-flex-1 hw-flex-col hw-ml-[11px] hw-mr-[23px]">
+              <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-7 hw-pr-0 hw-pb-20">
                 <li className="hw-h-full">
-                  <ul className="hw-space-y-10 hw-flex hw-flex-col hw-mt-20">
+                  <ul className="__className_68d44c hw-space-y-10 hw-flex hw-flex-col hw-gap-[66px] hw-justify-center hw-mt-0">
                     {items.map((item) => (
-                      <SidePanelItem item={item} key={item.label}/>
+                      <SidePanelItem className="hw-mt-0" item={item} key={item.label}/>
                     ))}
                   </ul>
                 </li>
-								<SidePanelItem className="hw-mt-auto hw-mb-20" item={{current: false, href: '/release', icon: RectangleListIcon, label: 'Beta Release Log'}}/>
+								<SidePanelItem className="hw-mt-auto hw-mb-0" item={{current: false, href: '/release', icon: RectangleListIcon, label: 'Beta Release Log'}}/>
                 {/* <li className="hw-mt-auto">
                   <a
                     href="#"
@@ -245,8 +244,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: string}> = ({item, className}) => {
 	return (
 		<li key={item.label} className={getClass(className)}>
-			<a
-				className={getClass(
+		My Bo/** hw-justify-end hw-gap-3 hw-items-start hw-pl-0 hw-pr-[18px] hw-pt-[7px] */ o			className={getClass(
 					item.current
 						? 'hw-text-[#11283B]'
 						: 'hw-text-[#88939D] hover:hw-text-[#11283B]',
