@@ -442,6 +442,18 @@ try {
 					}
 				}
 			}
+
+			if (attribute.type === 'className' && attribute.name === 'property') {
+				const parent = instance.getParent();
+				if (parent) {
+					const pAttribute = parent.attributes.find(a => a.type === 'classname');
+					if (pAttribute) {
+						attribute.reference = parent;
+						attribute.name = pAttribute.name;
+						attribute.value = pAttribute.value;
+					}
+				}
+			}
 		}
 		await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)

@@ -225,7 +225,7 @@ const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | u
 				console.log("No fonts");
 				return '';
 			}
-			const font = fonts.find(f => element.element!.classList.contains(f.id) || computedFont.includes(f.name));
+			const font = fonts.find(f => element.element!.classList.contains(f.id) || computedFont.toLowerCase().includes(f.name.toLowerCase()));
 
 			if (font) return font.id;
 

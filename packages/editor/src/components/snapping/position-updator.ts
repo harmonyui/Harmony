@@ -1,6 +1,6 @@
 import { Rect, selectDesignerElementReverse } from "../inspector/inspector";
 import { RectSide, calculateFlexParentEdgeInfo, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
-import {close} from '@harmony/util/src/index'
+import {close, round} from '@harmony/util/src/index'
 import { isSelectable } from "./snapping";
 
 export interface UpdatedElement {
@@ -21,20 +21,32 @@ export interface UpdateRectsProps {
     childrenUpdates: UpdateRect[]
 }
 
+export const getComputedValue = (element: HTMLElement | StylePropertyMapReadOnly, property: string) => {
+	const styleMap = element instanceof Element ? element.computedStyleMap() : element;
+	const styleValue = styleMap.get(property);
+	if (styleValue instanceof CSSKeywordValue) {
+		return styleValue.value;
+	} else if (styleValue instanceof CSSUnitValue) {
+		const unit = styleValue.unit === 'percent' ? '%' : styleValue.unit;
+		return `${styleValue.value}${unit}`;
+	} else {
+		throw new Error("I'm not sure what to do this get-the-old-value scenario...");
+	}
+}
+
 const updateElementValues = (element: HTMLElement, properties: string[], updatedElements: UpdatedElement[]) => {
 	const currElement = updatedElements.find(updated => updated.element === element);
 	const style = getComputedStyle(element);
+	const styleMap = element.computedStyleMap();
 
 	const setValue = (values: Record<string, string>, property: string) => {
 		if (['width', 'height'].includes(property)) {
-			const styleValue = element.computedStyleMap().get(property);
-			if (styleValue instanceof CSSKeywordValue) {
-				values[property] = styleValue.value;
-			} else if (styleValue instanceof CSSUnitValue) {
-				values[property] = `${styleValue.value}${styleValue.unit}`;
-			} else {
-				throw new Error("I'm not sure what to do this get-the-old-value scenario...");
-			}
+			values[property] = getComputedValue(styleMap, property);
+		} else if (property === 'margin') {
+			values.marginLeft = getComputedValue(styleMap, 'margin-left');
+			values.marginRight = getComputedValue(styleMap, 'margin-right');
+			values.marginTop = getComputedValue(styleMap, 'margin-top');
+			values.marginBottom = getComputedValue(styleMap, 'margin-bottom');
 		} else {
 			values[property] = style[property as unknown as number];
 		}
@@ -200,8 +212,15 @@ export const elementUpdator: PositionUpdator = {
 				}
 			}
 
+			const heightPercentage = info.height / parentInfo.height;
+
 			//bottom - height fits content naturally
-			if (info.heightType === 'fixed') {
+			if (parentInfo.children.length === 1 && [0.5, 1].some(percentage => close(heightPercentage, percentage, 0.001)) && parentInfo.heightType !== 'content') {
+				const toResize = selectDesignerElementReverse(info.element);
+				toResize.style.height = `${round(heightPercentage * 100, 0)}%`;
+				updateElementValues(toResize, ['height'], updatedElements);
+			}
+			else if (info.heightType === 'fixed') {
 				//TODO: hacky fix to resize the image but not the wrapper
 				const toResize = selectDesignerElementReverse(info.element);
 				updateElementValues(toResize, ['height'], updatedElements);
@@ -293,13 +312,13 @@ export const flexUpdator: PositionUpdator = {
 		parentInfo.element.style.justifyContent = 'normal';
 
 		for (const info of parentInfo.childEdgeInfo) {
-			updateElementValues(info.element, ['marginRight', 'marginLeft', 'marginTop', 'marginBottom', ], updatedElements);
+			updateElementValues(info.element, ['marginRight', 'marginLeft', 'marginTop', 'marginBottom', 'flexGrow'], updatedElements);
 
 			setSpaceForElement(info.element, 'margin', left, 0);
 			setSpaceForElement(info.element, 'margin', right, 0);
 			setSpaceForElement(info.element, 'margin', top, 0);
 			setSpaceForElement(info.element, 'margin', bottom, 0);
-
+			
 			//top
 			if (!isYCenter) { //Top is determined by parent padding
 				const parentGap = parentInfo.edges[startYSide].parentEdge.gap;
@@ -352,7 +371,9 @@ export const flexUpdator: PositionUpdator = {
 
 				const spaceDiff = info[left].siblingEdge!.gap - minSpace;
 				parentInfo.element.style.gap = `${minSpace}px`;
-				setSpaceForElement(info[left].element, 'margin', left, spaceDiff);
+				if (spaceDiff > 0.1) {
+					setSpaceForElement(info[left].element, 'margin', left, spaceDiff);
+				}
 			}
 			if (isXCenter && parentInfo[widthType] !== 'content') {
 				parentInfo.element.style.justifyContent = 'center';
@@ -383,8 +404,11 @@ export const flexUpdator: PositionUpdator = {
 				toResize.style[width] = `${info[width]}px`;
 			} else if (info[widthType] === 'expand') {
 				const parentGap = parentInfo.edges[endXSide].parentEdge.gap;
-				const remainingGap = info[endXSide].parentEdge.gap - parentGap;
-				setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
+				const minGap = parentInfo[minGapBetweenX];
+				const remainingGap = info[endXSide].siblingEdge ? info[endXSide].siblingEdge!.gap - minGap : info[endXSide].parentEdge.gap - parentGap;
+				if (remainingGap > 0.1) {
+					setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
+				}
 				setSpaceForElement(parentInfo.element, 'padding', endXSide, parentGap);
 			}
 			// else if (info[widthType] === 'expand') {

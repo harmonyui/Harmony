@@ -277,7 +277,7 @@ async function getChangeAndLocation(update: (ComponentUpdate & {oldValue: string
 				return addCommentToJSXElement({location, code, commentValue, attribute});
 			}
 
-			const match = /<([a-zA-Z0-9]+)(\s?)/.exec(code);
+			const match = /^<([a-zA-Z0-9]+)(\s?)/.exec(code);
 			if (!match) {
 				throw new Error(`There was no update to add className to jsx: snippet: ${code}, commentValue: ${commentValue}`);
 			}

@@ -9,11 +9,7 @@ import { ElementDemo, FlexBoxDemo, SnappingDemo } from "../../utils/flex-demo";
 
 const DemoPage = withAuth(async ({ctx}) => {
 	return (
-		<ModalProvider>
-			<SideNav>
-				<SnappingDemo/>
-			</SideNav>
-		</ModalProvider>
+		<SnappingDemo/>
 	)
 });
 

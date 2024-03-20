@@ -27,7 +27,7 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
 
 type RelativePoint = 'x0' | 'x1' | 'y0' | 'y1';
 type SnapPoint = {
-    point: SnapPosition;
+    point: {left: number} | {right: number} | {top: number} | {bottom: number};
 	offset?: HTMLElement,
 	guides?: {
 		x0: number, y0: number, x1: number, y1: number, text?: number | string, offset?: HTMLElement, 
@@ -67,7 +67,8 @@ interface AddGuide {
         value: number,
         axis: Axis
     },
-    text?: number
+    text?: number | string,
+	edge?: RectSide
 }
 
 interface AddNewSnapProps {
@@ -79,7 +80,7 @@ interface AddNewSnapProps {
 }
 function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent: HTMLElement, element: HTMLElement, parentEdgeInfo: ParentEdgeInfoRequired, resultsX: SnappingResult[], resultsY: SnappingResult[]}) {
     const addSnapToParent = ({point, axis, from, snapSide, range}: AddNewSnapProps) => {
-        function createGuide({start, end, length, text}: AddGuide) {
+        function createGuide({start, end, length, text, edge}: AddGuide) {
             const offset = parent.getBoundingClientRect();
             let x0 = 0;
             let x1 = 0;
@@ -139,8 +140,9 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
                 }
             }
 
+			const side = edge || (axis === 'x' ? 'left' : 'top');
             return ({
-                point: {[axis]: point},
+                point: {[side as 'top']: point},
                 offset: parent,
                 guides: [{
                     x0,x1,y0,y1,relative,text,
@@ -175,7 +177,7 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
 
         return {
             addGuide,
-			addCenterAxisGuide({axis}: {axis: Axis}) {
+			addCenterAxisGuide({axis, edge}: {axis: Axis, edge?: RectSide}) {
 				const otherAxis = axis === 'x' ? 'y' : 'x'
 				addGuide({
 					start: {
@@ -198,6 +200,7 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
 							value: 1
 						}
 					},
+					edge
 				})
 			}
             // addGuideFunction(func: () => AddGuide) {
@@ -1068,6 +1071,13 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
         const parent = element!.parentElement!;
         let result: SnappingResult | undefined;
 
+		const getActualPosition = (point: number, side: RectSide): number => {
+			const axis = side === 'left' || side === 'right' ? 'x' : 'y';
+			const close = side === 'left' || side === 'top' ? 'close' : 'far';
+
+			return point + (getBoundingClientRect(element!.parentElement!, axis, 'close', 1) as number) + parseFloat($(parent).css(`border${capitalizeFirstLetter(side)}`) || '0')
+		}
+
 		
 		const resX = resultsX.reduce<SnappingResult[]>((prev, curr) => {
             const same = prev.find(p => p.x === curr.x);
@@ -1097,20 +1107,28 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
             //the border in the snap calculation
 			result.x = resX.x!// + parseFloat($(parent).css('borderLeft') || '0');
 			result.range = resX.range;
-            result.snapGuides.push(...resX.snapGuides.map(guide => ({...guide, point: {
-				x: guide.point.x! + (getBoundingClientRect(element!.parentElement!, 'x', 'close', 1) as number) + parseFloat($(parent).css('borderLeft') || '0'),
-				y: 0
-			}})));
+            result.snapGuides.push(...resX.snapGuides.map(guide => {
+				const [key, value] = Object.entries(guide.point)[0];
+				const side = key as RectSide;
+
+				return ({...guide, point: {
+					[side as 'left']: getActualPosition(Number(value), side)
+				}})
+			}));
 		}
 
 		if (resY) {
 			result = result || {snapGuides: []};
 			result.y = resY.y! + parseFloat($(parent).css('borderTop') || '0');
 			result.range = resY.range;
-            result.snapGuides.push(...resY.snapGuides.map(guide => ({...guide, point: {
-				y: guide.point.y! + (getBoundingClientRect(element!.parentElement!, 'y', 'close', 1) as number) + parseFloat($(parent).css('borderTop') || '0'),
-				x: 0
-			}})));
+            result.snapGuides.push(...resY.snapGuides.map(guide => {
+				const [key, value] = Object.entries(guide.point)[0];
+				const side = key as RectSide;
+
+				return ({...guide, point: {
+					[side as 'top']: getActualPosition(Number(value), side)
+				}})
+			}));
 		}
 
         return result;
@@ -1357,15 +1375,64 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 
 		onIsDragging && onIsDragging(event, element);
     }, onCalculateSnapping(element, x, y, currentX, currentY) {
-		return;
 		const parent = element.parentElement!;
-		const posX = getBoundingClientRect(element, 'x', 'close', 1) - getBoundingClientRect(parent, 'x', 'close', 1);
-		const posY = getBoundingClientRect(element, 'y', 'close', 1) - getBoundingClientRect(parent, 'y', 'close', 1);
-		const dx = posX  - resX.current//posX + getBoundingClientRect(parent, 'x', 'close', 1) - currentX;
-		const dy = posY - resY.current///posY + getBoundingClientRect(parent, 'y', 'close', 1) - currentX;
-        const result = elementSnapBehavior.onCalculateSnapping(element, posX,posY, dx, dy, scale);
+        const parentEdgeInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
+        const parentEdgeInfoScaled = calculateParentEdgeInfo(parent, scale, scale, false, 'x');
+        const resultsX: SnappingResult[] = [];
+        const resultsY: SnappingResult[] = [];
+        const myChildInfo = parentEdgeInfo.childEdgeInfo.find(info => info.element === element);
+        if (!myChildInfo) {
+            throw new Error("Cannot find my child info");
+        }
 
-        return normalizeSnappingResults({...result, x, y});
+        const range = 10 / scale;
+
+		if (parentEdgeInfo.edges === undefined || parentEdgeInfoScaled.edges === undefined) return undefined;
+
+        const snapping = Snapping({parent, element, parentEdgeInfo: parentEdgeInfo as ParentEdgeInfoRequired, resultsX, resultsY});
+
+		if (close(parentEdgeInfo.edges.top.parentEdge.gap, 0, 0.1)) {
+			const halfHeight = snapping.addSnapToParent({
+				point: parentEdgeInfo.midpointYRelative,
+				axis: 'y',
+				range
+			});
+
+			halfHeight.addGuide({
+				start: {
+					x: {
+						relativeTo: parent,
+						value: 0.5
+					},
+					y: {
+						relativeTo: parent,
+						value: 0.5
+					}
+				},
+				end: {
+					x: {
+						relativeTo: parent,
+						value: 0.5
+					},
+					y: {
+						relativeTo: parent,
+						value: 1
+					}
+				},
+				edge: 'bottom',
+				text: '50%'
+			});
+		}
+
+		return normalizeSnappingResults({resultsX, resultsY, x, y});
+		// const parent = element.parentElement!;
+		// const posX = getBoundingClientRect(element, 'x', 'close', 1) - getBoundingClientRect(parent, 'x', 'close', 1);
+		// const posY = getBoundingClientRect(element, 'y', 'close', 1) - getBoundingClientRect(parent, 'y', 'close', 1);
+		// const dx = posX  - resX.current//posX + getBoundingClientRect(parent, 'x', 'close', 1) - currentX;
+		// const dy = posY - resY.current///posY + getBoundingClientRect(parent, 'y', 'close', 1) - currentX;
+        // const result = elementSnapBehavior.onCalculateSnapping(element, posX,posY, dx, dy, scale);
+
+        // return normalizeSnappingResults({...result, x, y});
 
         // return res;
     }, onCalculateRestriction(element) {
@@ -1436,9 +1503,11 @@ const handleGuides = (rect: RectBox, snapPoints: SnapPoint[], scale: number) => 
         const {point, guides} = snapPoint;
         const offsetParent = snapPoint.offset ? setOffset(snapPoint.offset) : undefined;
 
-        const posY = rect.top;
-        const top = point.y as number;
-        if (close(top, posY, 0.1)) {
+		const [key, keyValue] = Object.entries(point)[0] as [RectSide, number];
+		const value = rect[key];
+		const pointValue = Number(keyValue);
+
+        if (close(value, pointValue, 0.1)) {
             guides && guides.forEach((guide) => {
                 const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
                 const copy = {...guide};
@@ -1472,41 +1541,41 @@ const handleGuides = (rect: RectBox, snapPoints: SnapPoint[], scale: number) => 
             });
         }
 
-        const posX = rect.left;
-        const left = point.x as number;
-        if (close(left, posX, 0.1)) {
-            guides && guides.forEach((guide) => {
-                const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
-                const copy = {...guide};
-                copy.relative.forEach(p => {
-                    const sizeY = guide.rotate ? offset.w : offset.h;
-                    const sizeX = guide.rotate ? offset.h : offset.w;
-                    const sizeOffset = p.includes('y') ? sizeY : sizeX;
-                    copy[p] *= sizeOffset;
-                });
+        // const posX = rect.left;
+        // const left = point.x as number;
+        // if (close(left, posX, 0.1)) {
+        //     guides && guides.forEach((guide) => {
+        //         const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
+        //         const copy = {...guide};
+        //         copy.relative.forEach(p => {
+        //             const sizeY = guide.rotate ? offset.w : offset.h;
+        //             const sizeX = guide.rotate ? offset.h : offset.w;
+        //             const sizeOffset = p.includes('y') ? sizeY : sizeX;
+        //             copy[p] *= sizeOffset;
+        //         });
 
-                if (guide.rotate) {
-                    const temp0 = copy.x0;
-                    copy.x0 = copy.y0;
-                    copy.y0 = temp0;
-                    const temp1 = copy.x1;
-                    copy.x1 = copy.y1;
-                    copy.y1 = temp1;
-                }
+        //         if (guide.rotate) {
+        //             const temp0 = copy.x0;
+        //             copy.x0 = copy.y0;
+        //             copy.y0 = temp0;
+        //             const temp1 = copy.x1;
+        //             copy.x1 = copy.y1;
+        //             copy.y1 = temp1;
+        //         }
 
-                copy.x0 += offset.x;
-                copy.y0 += offset.y;
-                copy.y1 += offset.y;
-                copy.x1 += offset.x;
+        //         copy.x0 += offset.x;
+        //         copy.y0 += offset.y;
+        //         copy.y1 += offset.y;
+        //         copy.x1 += offset.x;
 
-                copy.x0 /= scale;
-                copy.y0 /= scale;
-                copy.y1 /= scale;
-                copy.x1 /= scale;
+        //         copy.x0 /= scale;
+        //         copy.y0 /= scale;
+        //         copy.y1 /= scale;
+        //         copy.x1 /= scale;
 
-                createGuide(copy);
-            });
-        }
+        //         createGuide(copy);
+        //     });
+        // }
     })
 }
 
@@ -1887,7 +1956,7 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 				const toMeasureRect = {width: toMeasure.clientWidth, height: toMeasure.clientHeight}//getBoundingRect(toMeasure);
 				modifiers.push(interact.modifiers.restrictSize({
 					//TODO: Hacky fix for when a flex-basis flex-col item is measured, it comes out all wrong
-					min: {width: (width <= toMeasureRect.width ? minWidth < Infinity ? minWidth : Math.min(width, 20 * scale, minWidth) : 20 * scale), height: (height <= toMeasureRect.height ? Math.max(height, 20 * scale, minHeight) : 20 * scale)},
+					min: {width: (width <= toMeasureRect.width && width > 0 ? minWidth < Infinity ? minWidth : Math.min(width, 20 * scale, minWidth) : 20 * scale), height: (height <= toMeasureRect.height ? Math.max(height, 20 * scale, minHeight) : 20 * scale)},
 					max: {width: maxWidth, height: maxHeight}
 				}))
 			}

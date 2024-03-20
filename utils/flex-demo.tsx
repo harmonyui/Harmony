@@ -174,9 +174,9 @@ style="${styleChild2}"></div>
 style="${styleChild3}"></div>
 </div>`
 	return (
-		<div className="hw-flex">
+		<div className="hw-flex hw-mt-4">
 			<div className="hw-flex hw-flex-col">
-                <div className="hw-flex hw-flex-col hw-px-10 hw-w-[400px] hw-space-x-1 hw-gap-2 " ref={ref}>
+                <div className="hw-flex hw-px-10 hw-w-[400px] hw-h-[400px] hw-space-x-1 hw-gap-2 " ref={ref}>
 				    {/* {[1, 2, 3].map((i) => <div key={i} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>)} */}
                     <div ref={refChild1} className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div>
                     <div ref={refChild2} className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div>
@@ -184,7 +184,7 @@ style="${styleChild3}"></div>
                     {/* <div className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div> */}
                     {/* <div className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div> */}
                 </div>
-                <Button onClick={() => setIsLooping(!isLooping)}>Try Me</Button>
+                {/* <Button onClick={() => setIsLooping(!isLooping)}>Try Me</Button> */}
 			</div>
 
 			<div>
