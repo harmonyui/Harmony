@@ -133,6 +133,14 @@ const attributePayload = {
 type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof elementPayload>
 type ComponentAttributePrisma = Prisma.ComponentAttributeGetPayload<typeof attributePayload>
 type FileUpdate = {update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & {updatedTo: number}), updatedCode: string, attribute?: ComponentAttributePrisma};
+interface UpdateInfo {
+	component: ComponentElementPrisma, 
+	update: ComponentUpdate, 
+	type: ComponentUpdate['type'], 
+	oldValue: string, 
+	value: string, 
+	font?: string
+}
 
 async function createGithubBranch(repository: Repository, branchName: string): Promise<void> {
     const githubRepository = new GithubRepository(repository);
@@ -143,7 +151,7 @@ const camelToKebab = (camelCase: string): string => {
 	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
-async function findAndCommitUpdates(updates: (ComponentUpdate & {oldValue: string})[], repository: Repository, branch: BranchItem) {
+async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repository, branch: BranchItem) {
 	const elementInstances = await prisma.componentElement.findMany({
 		where: {
 			repository_id: repository.id,
@@ -155,34 +163,45 @@ async function findAndCommitUpdates(updates: (ComponentUpdate & {oldValue: strin
 	let fileUpdates: FileUpdate[] = [];
 
 	//TODO: old value is not updated properly for size and spacing
-	updates = translateUpdatesToCss(updates) as (ComponentUpdate & {oldValue: string})[];
+	updates = translateUpdatesToCss(updates) as ComponentUpdate[];
 
-	updates = updates.reduce<(ComponentUpdate & {oldValue: string})[]>((prev, curr) => {
-		//Don't combine the fonts with the styling because we are using next/fonts for now
-		if (curr.type === 'className' && curr.name === 'font') {
-			prev.push(curr);
-			return prev;
-		}
-
+	const updateInfo = updates.reduce<UpdateInfo[]>((prev, curr) => {
 		if (curr.type === 'className') {
-			const cssName = camelToKebab(curr.name);
-			curr.value = `${cssName}:${curr.value};`
-			curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`;
+			if (curr.name !== 'font') {
+				const cssName = camelToKebab(curr.name);
+				curr.value = `${cssName}:${curr.value};`
+				curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`;
+			}
 		}
-		const classNameUpdate = curr.type === 'className' && curr.name !== 'font' ? prev.find(up => up.componentId === curr.componentId && up.parentId === curr.parentId && up.type === 'className' && up.name !== 'font') : undefined;
+		const classNameUpdate = curr.type === 'className' ? prev.find(({update: up}) => up.componentId === curr.componentId && up.parentId === curr.parentId && up.type === 'className') : undefined;
 		if (classNameUpdate) {
-			classNameUpdate.value += curr.value;
-			classNameUpdate.oldValue += curr.oldValue;
+			if (curr.name !== 'font') {
+				classNameUpdate.value += curr.value;
+				classNameUpdate.oldValue += curr.oldValue;
+			} else {
+				classNameUpdate.font = curr.value;
+			}
 		} else {
-			prev.push(curr);
+			const numSameComponentsButDifferentParents = updates.filter(update => update.componentId === curr.componentId && update.parentId !== curr.parentId).length;
+
+			//When every we have a component that has a different parent, that means we need to set the classes at this parent
+			// level not the component level
+			const component = curr.type === 'className' && numSameComponentsButDifferentParents > 0 ? elementInstances.find(el => el.id === curr.parentId) : elementInstances.find(el => el.id === curr.componentId && el.parent_id === curr.parentId);
+			if (!component) {
+				throw new Error('Cannot find component with id ' + curr.componentId);
+			}
+			const font = curr.type === 'className' && curr.name === 'font' ? curr.value : undefined;
+			const value = curr.type === 'className' && curr.name === 'font' ? '' : curr.value;
+
+			prev.push({update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font});
 		}
 		return prev;
 	}, []);
 
-	for (let i = 0; i < updates.length; i++) {
+	for (let i = 0; i < updateInfo.length; i++) {
         //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
         // in the future we probably will use the actual branch
-		const result = await getChangeAndLocation(updates[i], repository, githubRepository, elementInstances, repository.branch);
+		const result = await getChangeAndLocation(updateInfo[i], repository, githubRepository, elementInstances, repository.branch);
 
         if (result)
 		fileUpdates.push(result);
@@ -230,23 +249,24 @@ async function findAndCommitUpdates(updates: (ComponentUpdate & {oldValue: strin
 	await githubRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
 }
 
-async function getChangeAndLocation(update: (ComponentUpdate & {oldValue: string}), repository: Repository, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
-	const {componentId: id, parentId, type, oldValue: _oldValue, name} = update;
-	const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
+async function getChangeAndLocation(update: UpdateInfo, repository: Repository, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
+	const {component, type, oldValue: _oldValue} = update;
+	// const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
 	
-	if (component === undefined ) {
-		throw new Error('Cannot find component with id ' + id);
-	}
+	// if (component === undefined ) {
+	// 	throw new Error('Cannot find component with id ' + id);
+	// }
+	// const parent = elementInstances.find(el => el.id === component.parent_id);
 	
 	const attributes = await prisma.componentAttribute.findMany({
 		where: {
 			component_id: component.id,
-			component_parent_id: component.parent_id
+			component_parent_id: component.parent_id,
 		},
 		...attributePayload
 	});
 
-	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined): {location: ComponentLocation, value: string | undefined} => {
+	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined, component: ComponentElementPrisma): {location: ComponentLocation, value: string | undefined} => {
 		return {location: attribute?.location || component.location, value: attribute?.name === 'string' ? attribute.value : undefined};
 	}
 
@@ -266,7 +286,7 @@ async function getChangeAndLocation(update: (ComponentUpdate & {oldValue: string
 		const start = matchEnd;
 		const end = start;
 		const updatedTo = value.length + start;
-		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: value, update, dbLocation: location, attribute};
+		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: value, update: update.update, dbLocation: location, attribute};
 	}
 
 	//This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
@@ -297,14 +317,14 @@ async function getChangeAndLocation(update: (ComponentUpdate & {oldValue: string
 			throw new Error(`There was no update for tailwind classes, snippet: ${code}, oldValue: ${oldValue}`);
 		}
 		
-		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: newClass, update, dbLocation: location, attribute};
+		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: newClass, update: update.update, dbLocation: location, attribute};
 	}
 
 	switch(type) {
 		case 'text':
 			{
 				const textAttribute = attributes.find(attr => attr.type === 'text');
-				const {location, value} = getLocationAndValue(textAttribute);
+				const {location, value} = getLocationAndValue(textAttribute, component);
 				
 				const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
 				const oldValue = value || _oldValue;
@@ -316,49 +336,19 @@ async function getChangeAndLocation(update: (ComponentUpdate & {oldValue: string
 					result = addCommentToJSXElement({location, code: elementSnippet, attribute: textAttribute, commentValue})
 				}
 				
-				result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update, dbLocation: location, attribute: textAttribute};
+				result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update: update.update, dbLocation: location, attribute: textAttribute};
 			}
 			break;
         case 'className':
 			{
 				const classNameAttribute = attributes.find(attr => attr.type === 'className');
-				const locationAndValue = getLocationAndValue(classNameAttribute);
+				const locationAndValue = getLocationAndValue(classNameAttribute, component);
 				//TODO: This is temporary. It shouldn't have 'className:'
 				locationAndValue.value = locationAndValue.value?.replace('className:', '');
 				const {location, value} = locationAndValue;
 				
 				const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
 
-				//If it is a font, just add/replace the class name
-				if (update.name === 'font') {
-					// let oldValue = _oldValue;
-					// let start = elementSnippet.indexOf(oldValue);
-					// let end = oldValue.length + start;
-					// let updatedValue = update.value;
-					// let updatedTo = updatedValue.length + start;
-
-					result = addNewClassOrComment({location, code: elementSnippet, newClass: `${value} ${update.value}`, oldClass: value, commentValue: `font className: ${update.value}`, attribute: classNameAttribute})
-					
-					//If an old font does not exist, just tack on the classname at the end of the 
-					//class list
-					// if (start < 0) {
-					// 	//If we do not have className data
-					// 	if (!value) {
-					// 		const commentValue = `font className: ${update.value}`;
-					// 		result = addCommentToJSXElement({location, code: elementSnippet, commentValue, attribute: classNameAttribute});
-					// 		break;
-					// 	}
-
-					// 	oldValue = value;
-					// 	start = elementSnippet.indexOf(oldValue);
-					// 	end = oldValue.length + start;
-					// 	updatedValue = `${value} ${update.value}`;
-					// 	updatedTo = updatedValue.length + start;
-					// }
-					
-					// result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: updatedValue, update, dbLocation: location, attribute: classNameAttribute};
-					break;
-				}
 
 				if (repository.cssFramework === 'tailwind') {
 					//This assumes that the update values have already been merged and converted to name:value pairs
@@ -367,33 +357,20 @@ async function getChangeAndLocation(update: (ComponentUpdate & {oldValue: string
 					}`);
 					const newClasses = converted.nodes.reduce((prev, curr) => prev + curr.tailwindClasses.join(' '), '')
 
-					//If this is a class property, just add a comment of the classes
-					// if (!value) {
-					// 	const withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
-					// 	result = addCommentToJSXElement({location, commentValue: withPrefix, attribute: classNameAttribute, code: elementSnippet});
-					// 	break;
-					// };
-
 					//TODO: Make the tailwind prefix part dynamic
 					let oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
 					
 					const mergedIt = twMerge(oldClasses, newClasses);
-					const mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
+					let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 
-					// const oldValue = value;
-					// const start = elementSnippet.indexOf(oldValue);
-					// const end = oldValue.length + start;
-					// const updatedTo = mergedClasses.length + start;
-					// if (start < 0) {
-					// 	throw new Error(`There was no update for tailwind classes, snippet: ${elementSnippet}, oldValue: ${oldValue}`);
-					// }
+					let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
+					mergedClasses = update.font ? `${update.font} ${mergedClasses}` : mergedClasses;
+					withPrefix = update.font ? `${update.font} ${withPrefix}` : withPrefix;
 					
-					//result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: mergedClasses, update, dbLocation: location, attribute: classNameAttribute};
-
-					const withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
 					result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute});
 				} else {
-					const valuesNewLined = update.value.replaceAll(';', ';\n');
+					let valuesNewLined = update.value.replaceAll(';', ';\n');
+					valuesNewLined = update.font ? `font className: ${update.value}\n\n${valuesNewLined}` : valuesNewLined;
 					result = addCommentToJSXElement({location, commentValue: valuesNewLined, code: elementSnippet, attribute: classNameAttribute});
 				}
 			}
