@@ -401,14 +401,17 @@ try {
 				const parent = curr.getParent();
 				if (parent) {
 					const reference = findAttributeLocation(parent, instance, propertyName);
-					if (reference === undefined) {
-						return {reference: curr.containingComponent, attribute};
-					}
+
+					//TODO: find the text in the containing component
+					// if (reference === undefined) {
+					// 	return {reference: curr.containingComponent, attribute};
+					// }
 
 					return reference;
 				}
 
-				return {reference: curr.containingComponent, attribute}
+				//TODO: find the text in the containing component
+				//return {reference: curr.containingComponent, attribute}
 			}
 		}  
 
@@ -416,7 +419,8 @@ try {
 	}
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
-		for (const attribute of instance.attributes) {
+		for (let j = 0; j < instance.attributes.length; j++) {
+			const attribute = instance.attributes[j];
 			if (attribute.type === 'text' && attribute.name === 'property') {
 				const parent = instance.getParent();
 				if (parent) {
@@ -425,6 +429,10 @@ try {
 						attribute.reference = results.reference;
 						attribute.name = results.attribute.name;
 						attribute.value = results.attribute.value;
+
+						if (attribute.name !== 'string') {
+							throw new Error("Attribute should be a string!");
+						}
 						
 						//For a string text property, we need to make sure the value is just the text. 
 						//However, getting the info from a 'property' means the value is {name}:{value}. 
@@ -438,22 +446,15 @@ try {
 							attribute.value = attribute.value.substring(splitIndex + 1);
 						}
 					} else {
-						attribute.reference = instance.containingComponent;
+						//attribute.reference = instance.containingComponent;
+						
+						//For now, if we cannot find where to update the text in a string property then just 
+						//delete the attribute so we can say 'We cannot updat the text'
+						instance.attributes.splice(j);
+						j--;
 					}
 				}
 			}
-
-			// if (attribute.type === 'className' && attribute.name === 'property') {
-			// 	const parent = instance.getParent();
-			// 	if (parent) {
-			// 		const pAttribute = parent.attributes.find(a => a.type === 'classname');
-			// 		if (pAttribute) {
-			// 			attribute.reference = parent;
-			// 			attribute.name = pAttribute.name;
-			// 			attribute.value = pAttribute.value;
-			// 		}
-			// 	}
-			// }
 		}
 		await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)

@@ -99,6 +99,16 @@ model ComponentElement {
 	@@id([id, parent_id])
 }
 
+model ComponentError {
+	id String @id @default(cuid())
+	component_id String
+	component_parent_id String
+	repository_id String
+	type String
+	
+	@@unique([component_parent_id, component_id])
+}
+
 model ComponentAttribute {
 	id String @id @default(cuid())
 	type String

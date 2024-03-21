@@ -4,10 +4,11 @@ import { Branch, Prisma } from '@prisma/client';
 import { getCodeSnippet, getFileContent } from '../../../../src/server/api/services/indexor/github';
 import { GithubRepository } from '../../../../src/server/api/repository/github';
 
-import { updateRequestBodySchema } from '@harmony/ui/src/types/network';
+import { UpdateResponse, updateRequestBodySchema, updateResponseSchema } from '@harmony/ui/src/types/network';
 import { indexFilesAndFollowImports } from '../../../../src/server/api/services/indexor/indexor';
 import { getRepository } from '../../../../src/server/api/routers/branch';
 import { Repository } from '@harmony/ui/src/types/branch';
+import { reverseUpdates } from '@harmony/util/src';
 
 export const maxDuration = 300;
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
@@ -45,11 +46,13 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	const body = parseResult.data;
 
 	const updates: ComponentUpdate[] = [];
+	const errorUpdates: (ComponentUpdate & {errorType: string})[] = [];
 	for (const value of body.values) {
 		for (let i = 0; i < value.update.length; i++) {
 			const update = value.update[i];
+			if (!update.componentId || !update.parentId) continue;
 			
-			const element = await prisma.componentElement.findFirst({
+			let element = await prisma.componentElement.findFirst({
 				where: {
 					id: update.componentId,
 					parent_id: update.parentId,
@@ -59,9 +62,60 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 			if (!element) {
 				await indexForComponent(update.componentId, update.parentId, repository);
 			}
+
+			element = await prisma.componentElement.findFirst({
+				where: {
+					id: update.componentId,
+					parent_id: update.parentId,
+					repository_id: branch.repository_id
+				}
+			});
+			let error: string | undefined = undefined;
+
+			//If the element was not created, or if this is text and it is not a static string 
+			//(i.e it is tied to a property or containing component) then this is an error that needs to be reverted
+			if (!element) {
+				error = 'element';
+			} else if (update.type === 'text') {
+				const textAttribute = await prisma.componentAttribute.findFirst({
+					where: {
+						component_id: update.componentId,
+						component_parent_id: update.parentId,
+						type: 'text',
+						name: 'string'
+					}
+				});
+				if (!textAttribute) {
+					error = 'text';
+				}
+			}
 			
 
-			updates.push(update);
+			if (!error) {
+				updates.push(update);
+			} else {
+				const pastError = await prisma.componentError.findUnique({
+					where: {
+						component_parent_id_component_id: {
+							component_id: update.componentId,
+							component_parent_id: update.parentId
+						},
+						repository_id: branch.repository_id
+					}
+				});
+
+				if (!pastError) {
+					await prisma.componentError.create({
+						data: {
+							component_id: update.componentId,
+							component_parent_id: update.parentId,
+							repository_id: branch.repository_id,
+							type: error
+						},
+					})
+					errorUpdates.push({...update, errorType: error});
+				}
+			}
 		}
 	}
 
@@ -93,7 +147,9 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	// 	}))
 	// });
 
-	return new Response(JSON.stringify({}), {
+	const reversed = reverseUpdates(errorUpdates);
+	const response: UpdateResponse = {errorUpdates: reversed};
+	return new Response(JSON.stringify(response), {
 		status: 200,
 	})
 }

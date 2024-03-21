@@ -2,6 +2,7 @@ import dayjs from "dayjs";
 import { Change } from "diff";
 import { z } from "zod";
 import { diffChars } from "diff";
+import { ComponentUpdate } from "@harmony/ui/src/types/component";
 
 export const displayDate = (date: Date) => {
   return dayjs(date).format("MM/DD/YY");
@@ -380,4 +381,14 @@ export function getIndexFromLineAndColumn(text: string, line: number, column: nu
 
 export const close = (a: number, b: number, threshold: number): boolean => {
 	return Math.abs(a-b) <= threshold;
+}
+
+export const reverseUpdates = <T extends ComponentUpdate>(updates: T[]): T[] => {
+  const reversed: T[] = [];
+  for (let i = updates.length - 1; i >= 0; i--) {
+    const update = updates[i];
+    reversed.push({...update, oldValue: update.value, value: update.oldValue});
+  }
+
+  return reversed
 }

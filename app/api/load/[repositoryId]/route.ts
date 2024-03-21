@@ -153,12 +153,19 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 		}
 	});
 
+	const errorElements = await prisma.componentError.findMany({
+		where: {
+			repository_id: repositoryId
+		}
+	})
+
 	return new Response(JSON.stringify(loadResponseSchema.parse({
 		updates,
 		branches: branches.map(branch => ({
 			id: branch.id,
 			name: branch.label
 		})),
+		errorElements: errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
 		isPublished
 	} satisfies LoadResponse)));
 }

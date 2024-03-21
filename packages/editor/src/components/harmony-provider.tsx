@@ -1,8 +1,8 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
-import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
-import {PublishRequest, loadResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
+import { Attribute, ComponentElement, ComponentError, ComponentUpdate } from "@harmony/ui/src/types/component";
+import {PublishRequest, loadResponseSchema, updateResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
 import {translateUpdatesToCss} from '@harmony/util/src/component';
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
@@ -17,6 +17,7 @@ import { PullRequest } from "@harmony/ui/src/types/branch";
 import { Font } from "@harmony/util/src/fonts";
 import $ from 'jquery';
 import { getBoundingRect } from "./snapping/calculations";
+import { reverseUpdates } from "@harmony/util/src";
 
 const WIDTH = 1960;
 const HEIGHT = 1080;
@@ -29,6 +30,11 @@ export function findElementFromId(componentId: string, parentId: string, childIn
 	}
 
 	return undefined;
+}
+
+export function findElementsFromId(componentId: string, parentId: string): HTMLElement[] {
+	const elements = document.querySelectorAll(`[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]`);
+	return Array.from(elements) as HTMLElement[];
 }
 
 
@@ -51,8 +57,10 @@ interface HarmonyContextProps {
 	scale: number;
 	onScaleChange: (scale: number, cursorPos: {x: number, y: number}) => void;
 	onClose: () => void;
+	error: string | undefined;
+	setError: (value: string | undefined) => void;
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined, onFlexToggle: () => undefined, scale: 1, onScaleChange: () => undefined, onClose: () => undefined});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined, onFlexToggle: () => undefined, scale: 1, onScaleChange: () => undefined, onClose: () => undefined, error: undefined, setError: () => undefined});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -81,6 +89,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	//const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
 	const [mode, setMode] = useState<SelectMode>('tweezer');
 	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>();
+	const [errorElements, setErrorElements] = useState<ComponentError[]>();
 	const [branches, setBranches] = useState<{id: string, name: string}[]>([]);
 	const [scale, _setScale] = useState(.8);
 	const [isDirty, setIsDirty] = useState(false);
@@ -93,10 +102,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [cursorY, setCursorY] = useState(0);
 	const [oldScale, setOldSclae] = useState(scale);
 	const [forceSave, setForceSave] = useState(0);
+	const [error, setError] = useState<string | undefined>();
 	
 	const executeCommand = useComponentUpdator({isSaving, setIsSaving, fonts, isPublished, branchId, repositoryId, rootComponent, forceSave, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
-	}});
+	}, onError: setError});
 
 	const onHistoryChange = () => {
 		const url = new URL(window.location.href);
@@ -131,10 +141,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					},
 				});
 
-				const {updates, branches, isPublished} = loadResponseSchema.parse(await response.json());
+				const {updates, branches, isPublished, errorElements} = loadResponseSchema.parse(await response.json());
 				setAvailableIds(updates);
 				setBranches(branches);
 				setIsPublished(isPublished);
+				setErrorElements(errorElements);
 			} catch(err) {
 				console.log(err);
 			}
@@ -239,9 +250,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}, [selectedComponent]);
 
 	useEffect(() => {
-		if (rootComponent && availableIds) {
+		if (rootComponent && availableIds && errorElements) {
 			const mutationObserver = new MutationObserver((mutations) => {
-				updateElements(rootComponent, availableIds);
+				updateElements(rootComponent, availableIds, errorElements);
 			});
 			const body = rootComponent.querySelector('body');
 			mutationObserver.observe(body || rootComponent, {
@@ -249,12 +260,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				//subtree: true,
 			});
 
-			updateElements(rootComponent, availableIds);
+			updateElements(rootComponent, availableIds, errorElements);
 		}
-	}, [rootComponent, availableIds]);
+	}, [rootComponent, availableIds, errorElements]);
 
-	const updateElements = (element: HTMLElement, availableIds: ComponentUpdate[]): void => {
+	const updateElements = (element: HTMLElement, availableIds: ComponentUpdate[], errorElements: ComponentError[]): void => {
 		if (!rootComponent) return;
+		const errorComponent = errorElements.find(el => el.componentId === element.dataset.harmonyId && el.parentId === element.dataset.harmonyParentId)
+		if (errorComponent) {
+			const type = errorComponent.type;
+			element.dataset.harmonyError = type;
+		}
+
 		const id = element.dataset.harmonyId;
 		const parentId = element.dataset.harmonyParentId || null;
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
@@ -274,7 +291,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			makeUpdates(element, updates, rootComponent, fonts);
 		}
 
-		Array.from(element.children).filter(child => (child as HTMLElement).dataset.harmonyText !== 'true').forEach(child => updateElements(child as HTMLElement, availableIds));
+		Array.from(element.children).filter(child => (child as HTMLElement).dataset.harmonyText !== 'true').forEach(child => updateElements(child as HTMLElement, availableIds, errorElements));
 	}
 
 	const setScale = useCallback((newScale: number, {x, y}: {x: number, y: number}) => {
@@ -399,7 +416,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	return (
 		<>
-			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose}}>
+			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError}}>
 				{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 				<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
 					<div id="harmony-scaled" ref={(d) => {
@@ -456,8 +473,9 @@ interface ComponentUpdatorProps {
 	fonts: Font[] | undefined;
 	//TODO: This is super hacky 
 	forceSave: number;
+	onError: (error: string) => void;
 }
-const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPublished, setIsSaving, rootComponent, fonts, forceSave}: ComponentUpdatorProps) => {
+const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPublished, setIsSaving, rootComponent, fonts, forceSave, onError}: ComponentUpdatorProps) => {
 	const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([]);
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
 	const [saveStack, setSaveStack] = useState<HarmonyCommand[]>([]);
@@ -466,11 +484,25 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	const save = useEffectEvent(() => {
 		return new Promise<void>((resolve, reject) => {
 			const copy = saveStack.slice();
-			saveCommand(saveStack, {branchId, repositoryId}).then(() => {
+			saveCommand(saveStack, {branchId, repositoryId}).then((errorUpdates) => {
+				if (errorUpdates.length > 0) {
+					change({name: 'change', update: errorUpdates});
+					errorUpdates.forEach(error => {
+						const elements = findElementsFromId(error.componentId, error.parentId);
+						elements.forEach(element => {
+							element.dataset.harmonyError = error.errorType;
+						})
+					})
+					onError("Some elements are not updateable at the moment");
+				}
 				resolve();
 			}).catch(() => {
 				//TODO: Test this
-				setSaveStack((oldSave) => [...copy, ...oldSave]);
+				for (const update of copy) {
+					change({name: update.name, update: reverseUpdates(update.update)});
+				}
+				setSaveStack([]);
+				onError("There was an error saving the project");
 				resolve();
 			});
 			setSaveStack([]);
@@ -591,7 +623,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		changeStack([redoStack, setRedoStack], [undoStack, setUndoStack]);
 	});
 
-	const saveCommand = async (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}): Promise<void> => {
+	const saveCommand = async (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}) => {
 		setIsSaving(true);
 		const cmds = commands.map(cmd => ({update: cmd.update}))
 		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId};
@@ -604,6 +636,10 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		if (!result.ok) {
 			throw new Error("There was an problem saving the changes");
 		}
+
+		const resultData = updateResponseSchema.parse(await result.json());
+
+		return resultData.errorUpdates;
 	}
 
 	useEffect(() => {

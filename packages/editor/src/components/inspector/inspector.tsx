@@ -117,9 +117,8 @@ export interface InspectorProps {
 export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onReorder, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
-	const [error, setError] = useState<string | undefined>();
+	const {onFlexToggle: onFlexClick, error, setError} = useHarmonyContext();
 	const previousError = usePrevious(error);
-	const {onFlexToggle: onFlexClick} = useHarmonyContext();
 
 	const {isDragging: isDraggingSelf} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
 		const container = containerRef.current;
@@ -381,6 +380,10 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 					// 	selectedComponent.dataset.selected = 'true';
 					// } else 
 					if (!isDragging && isTextElement(selectedComponent) && selectedComponent.contentEditable !== 'true') {
+						if (selectedComponent.dataset.harmonyError === 'text') {
+							setError('Element\'s text is not yet editable');
+							return true;
+						}
 						selectedComponent.contentEditable = "true";
 						selectedComponent.style.cursor = 'auto';
 

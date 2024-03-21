@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { updateSchema } from "./component";
+import { componentErrorSchema, updateSchema } from "./component";
 import { pullRequestSchema } from "./branch";
 
 export const updateRequestBodySchema = z.object({
@@ -11,12 +11,18 @@ export const updateRequestBodySchema = z.object({
 })
 export type UpdateRequest = z.infer<typeof updateRequestBodySchema>;
 
+export const updateResponseSchema = z.object({
+	errorUpdates: z.array(updateSchema.extend({errorType: z.string()}))
+});
+export type UpdateResponse = z.infer<typeof updateResponseSchema>;
+
 export const loadResponseSchema = z.object({
 	updates: z.array(updateSchema),
 	branches: z.array(z.object({
 		id: z.string(),
 		name: z.string()
 	})),
+	errorElements: z.array(componentErrorSchema),
 	isPublished: z.boolean()
 });
 export type LoadResponse = z.infer<typeof loadResponseSchema>;

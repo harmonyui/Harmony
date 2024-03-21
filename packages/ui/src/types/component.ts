@@ -49,3 +49,11 @@ export interface HarmonyComponent extends ComponentElementBase {
 	isComponent: true;
 
 }
+
+export const componentErrorSchema = z.object({
+	componentId: z.string(),
+	parentId: z.string(),
+	type: z.string()
+});
+
+export type ComponentError = z.infer<typeof componentErrorSchema>;

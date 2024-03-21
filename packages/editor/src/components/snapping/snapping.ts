@@ -296,6 +296,15 @@ class ElementSnapping implements SnapBehavior {
 	}
 	public isDraggable(element: HTMLElement) {
 		const parent = element.parentElement!;
+
+		if (element.dataset.harmonyError === 'element') {
+			return "Element is not updateable at the moment"
+		}
+
+		if (parent.dataset.harmonyError === 'element') {
+			return "Parent is not updateable at the moment"
+		}
+
 		const style = getComputedStyle(parent);
 		if (!['block', 'list-item'].includes(style.display)) {
 			return 'This is not a block element';
@@ -553,6 +562,14 @@ class FlexSnapping implements SnapBehavior {
 	}
 	public isDraggable(element: HTMLElement) {
 		const parent = element.parentElement!;
+		if (element.dataset.harmonyError === 'element') {
+			return "Element is not updateable at the moment"
+		}
+
+		if (parent.dataset.harmonyError === 'element') {
+			return "Parent is not updateable at the moment"
+		}
+
 		const parentStyle = getComputedStyle(parent);
 		if (parentStyle?.display.includes('flex')) {
 			if (parentStyle.flexWrap === 'wrap') {
