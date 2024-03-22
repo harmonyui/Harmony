@@ -473,8 +473,10 @@ class ElementSnapping implements SnapBehavior {
 		const edgeInfo = calculateEdgesInfoWithSizing(element, 1, scale, 'x');
 
         
-        const top = edgeInfo.top.siblingEdge ? edgeInfo.top.siblingEdge.edgeLocation + getNonWorkableGap(edgeInfo.top.siblingEdge.gapTypes) : edgeInfo.top.parentEdge.edgeLocation + getNonWorkableGap(edgeInfo.top.parentEdge.gapTypes);
-        const bottom = edgeInfo.bottom.siblingEdge ? edgeInfo.bottom.siblingEdge.edgeLocation - (edgeInfo.heightType === 'content' ? getNonWorkableGap(edgeInfo.bottom.siblingEdge.gapTypes) : 0) : edgeInfo.bottom.parentEdge.edgeLocation - (edgeInfo.heightType === 'content' ? getNonWorkableGap(edgeInfo.bottom.parentEdge.gapTypes) : 0);
+        const top = edgeInfo.top.siblingEdge ? edgeInfo.top.siblingEdge.edgeLocation //+ getNonWorkableGap(edgeInfo.top.siblingEdge.gapTypes) 
+			: edgeInfo.top.parentEdge.edgeLocation //+ getNonWorkableGap(edgeInfo.top.parentEdge.gapTypes);
+        const bottom = edgeInfo.bottom.siblingEdge ? edgeInfo.bottom.siblingEdge.edgeLocation //- (edgeInfo.heightType === 'content' ? getNonWorkableGap(edgeInfo.bottom.siblingEdge.gapTypes) : 0) 
+			: edgeInfo.bottom.parentEdge.edgeLocation //- (edgeInfo.heightType === 'content' ? getNonWorkableGap(edgeInfo.bottom.parentEdge.gapTypes) : 0);
         const left = edgeInfo.left.parentEdge.edgeLocation //+ getNonWorkableGap(edgeInfo.left.parentEdge.gapTypes)//edgeInfo.left.siblingEdge ? edgeInfo.left.siblingEdge.edgeLocation : edgeInfo.left.parentEdge.edgeLocation;
         const right = edgeInfo.right.parentEdge.edgeLocation //- getNonWorkableGap(edgeInfo.right.parentEdge.gapTypes);//edgeInfo.right.siblingEdge ? edgeInfo.right.siblingEdge.edgeLocation : edgeInfo.right.parentEdge.edgeLocation;
 
@@ -1825,7 +1827,10 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 	  
 	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
 		//TODO: Remove dependency on selected
-		if (!element || !canDrag(element)) return;
+		if (!element || !canDrag(element)) {
+			setIsDragging(false);
+			return;
+		};
         const rect = getOffsetRect(element);
         rect.left += event.dx / scale;
         rect.right += event.dx / scale;
@@ -1836,9 +1841,10 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 	});
 	
 	const stopDragging = useEffectEvent((e: InteractEvent<'drag', 'move'>) => {
-		setIsDragging(false);
-		if (!element) return;
 		$parent.children().remove();
+		if (!element || !isDragging) return;
+		
+		setIsDragging(false)
 		onDragFinish && onDragFinish(element);
 	});
 

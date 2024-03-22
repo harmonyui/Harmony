@@ -278,6 +278,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const children = Array.from(element.childNodes);
 		const textNodes = children.filter(child => child.nodeType === Node.TEXT_NODE);
 		const styles = getComputedStyle(element);
+		//Sticky elements behavior weirdly in the editor (follow us down the screen at a slow pace), so let's make them not sticky
+		if (styles.position === 'sticky') {
+			element.style.position = 'relative';
+		}
 
 		//TODO: Do this better so there is no dependency on this action in this function
 		//If there are text nodes and non-text nodes inside of an element, wrap the text nodes in
@@ -512,7 +516,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	});
 	
 	useBackgroundLoop(() => {
-		if (saveStack.length && !isSaving && !isPublished) {
+		if (saveStack.length && !isSaving && !isPublished && false) {
 			save();
 		}
 	}, 10);
