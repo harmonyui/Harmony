@@ -375,13 +375,13 @@ function isElementFluid(elm: HTMLElement, side: 'width' | 'height', useFlexForHe
 		clone.style.padding = padding;
 		if (clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'] != ow ) {
 			elm.parentElement?.removeChild(wrapper);
-			elm.dataset[harmonyFixed] = 'false';
+			//elm.dataset[harmonyFixed] = 'false';
 			return true;
 		}
 
         /// tidy up
         elm.parentNode?.removeChild(wrapper);
-		elm.dataset[harmonyFixed] = 'true';
+		//elm.dataset[harmonyFixed] = 'true';
         return false;
       }
       /// otherwise, calculate the percentages each time - if they
@@ -392,22 +392,22 @@ function isElementFluid(elm: HTMLElement, side: 'width' | 'height', useFlexForHe
         /// tidy up
         elm.parentNode?.removeChild(wrapper);
 		const val = (p1 == p2) ? Math.round(p1)+'%' : false;
-		if (val) {
-			elm.dataset[harmonyFixed] = 'false';
-		} else {
-			elm.dataset[harmonyFixed] = 'true';
-		}
+		// if (val) {
+		// 	elm.dataset[harmonyFixed] = 'false';
+		// } else {
+		// 	elm.dataset[harmonyFixed] = 'true';
+		// }
         return val;
       }
     }
     else {
       p1 = (value && String(value).indexOf('%') != -1);
 	  const val = p1 ? value : false;
-		if (val) {
-			elm.dataset[harmonyFixed] = 'false';
-		} else {
-			elm.dataset[harmonyFixed] = 'true';
-		}
+		// if (val) {
+		// 	elm.dataset[harmonyFixed] = 'false';
+		// } else {
+		// 	elm.dataset[harmonyFixed] = 'true';
+		// }
       return val;
     }
 }
@@ -454,13 +454,13 @@ export function getFitContentSize(element: HTMLElement, keepPadding=false): {wid
 		// Remove the clone from the DOM
 		element.parentNode?.removeChild(clone);
 
-		if (keepPadding) {
-			element.dataset.harmonyMinWidthPadding = `${naturalWidth}`;
-			element.dataset.harmonyMinHeightPadding = `${naturalHeight}`;
-		} else {
-			element.dataset.harmonyMinWidth = `${naturalWidth}`;
-			element.dataset.harmonyMinHeight = `${naturalHeight}`;
-		}
+		// if (keepPadding) {
+		// 	element.dataset.harmonyMinWidthPadding = `${naturalWidth}`;
+		// 	element.dataset.harmonyMinHeightPadding = `${naturalHeight}`;
+		// } else {
+		// 	element.dataset.harmonyMinWidth = `${naturalWidth}`;
+		// 	element.dataset.harmonyMinHeight = `${naturalHeight}`;
+		// }
 	
 		return { width: naturalWidth, height: naturalHeight };
 	} else {
@@ -665,29 +665,8 @@ export function calculateAxisEdgeInfo(element: HTMLElement, parent: HTMLElement,
         edgeLocationRelative: getBoundingClientRectParent(parent, axis, side, scale, getRectOverride(parent)) - getBoundingClientRectParent(parent, axis, otherSide, scale, getRectOverride(parent)),
     }
 
-    // if (axis === 'x') {
-    //     return {close, far};
-    // }
     let siblingEdge: EdgeInfo | undefined = undefined;
-	// const rectSide = axis === 'x' ? (side === 'close' ? 'left' : 'right') : (side === 'close' ? 'top' : 'bottom');
-	// const sibling = getSibling(element, children, rectSide, scale, getRectOverride(element));
-	// if (sibling) {
-	// 	siblingEdge = side === 'close' ? {
-	// 		gap: getBoundingClientRect(element, axis, side, scale, getRectOverride(element)) - getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
-	// 		relation: 'sibling',
-	// 		edgeElement: sibling,
-	// 		gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scale),
-	// 		edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
-	// 		edgeLocationRelative: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - parentEdge.edgeLocation
-	// 	} : {
-	// 		gap: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - getBoundingClientRect(element, axis, side, scale, getRectOverride(element)),
-	// 		relation: 'sibling',
-	// 		edgeElement: sibling,
-	// 		gapTypes: getGapTypesToSibiling(element, sibling, axis, side, scale),
-	// 		edgeLocation: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)),
-	// 		edgeLocationRelative: getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling)) - parentEdge.edgeLocation
-	// 	}
-	// }
+	
     if (selfIndex > 0 && side === 'close') {
         const sibling = children[selfIndex - 1] as HTMLElement;
         const newStart = getBoundingClientRect(element, axis, side, scale, getRectOverride(element)) - getBoundingClientRect(sibling, axis, otherSide, scale, getRectOverride(sibling));

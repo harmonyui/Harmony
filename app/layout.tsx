@@ -23,7 +23,7 @@ export default function RootLayout({
 				<html className="hw-h-full hw-bg-white" lang="en">
 					<body className={`${mulish.className} hw-h-full hw-bg-white`}>
 						{children}
-						{process.env.ENV === 'production' ? <HarmonySetup repositoryId="da286f25-b5de-4003-94ed-2944162271ed" fonts={fonts}/> : <HarmonySetup repositoryId='1835aae7-f749-4640-b958-1404ef4b2801' local fonts={fonts}/> }
+						{process.env.ENV === 'production' ? <HarmonySetup repositoryId="da286f25-b5de-4003-94ed-2944162271ed" fonts={fonts}/> : <HarmonySetup repositoryId='fbefdac4-8370-4d6d-b440-0307882f0102' local fonts={fonts}/> }
 							{/* <Script id="harmony-tag" src="bundle.js"></Script>
 							<Script>
 							{`(function() {

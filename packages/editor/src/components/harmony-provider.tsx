@@ -71,22 +71,16 @@ export const useHarmonyContext = () => {
 export interface HarmonyProviderProps {
 	repositoryId: string;
 	branchId: string;
-	//rootElement: HTMLElement;
 	children: React.ReactNode;
-	//bodyObserver: MutationObserver;
 	setup: Setup;
 	fonts?: Font[];
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, children, branchId, fonts, setup}) => {
 	const [isToggled, setIsToggled] = useState(true);
 	const [selectedComponent, _setSelectedComponent] = useState<HTMLElement>();
-	const [selectedComponentText, setSelectedComponentText] = useState<string>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
 	const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
-	//const [rootElement, setRootElement] = useState<HTMLElement>(_rootElement);
-	const ref = useRef<HTMLDivElement>(null);
 	const harmonyContainerRef = useRef<HTMLDivElement | null>(null);
-	//const [harmonyContainer, setHarmonyContainer] = useState<HTMLElement>();
 	const [mode, setMode] = useState<SelectMode>('tweezer');
 	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>();
 	const [errorElements, setErrorElements] = useState<ComponentError[]>();
@@ -159,20 +153,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		return () => window.removeEventListener('popstate', onHistoryChange);
 	}, []);
 
-	// useEffect(() => {
-	// 	bodyObserverRef.current = bodyObserver
-	// }, [bodyObserver, bodyObserverRef])
-
 	useEffect(() => {
 		if (displayMode?.includes('preview')) {
 			setIsToggled(false);
 			setScale(0.5, {x: 0, y: 0});
-
-			// if (displayMode === 'preview-full') {
-			// 	const harmonyContainer = document.getElementById('harmony-container') as HTMLElement;
-			// 	setupNormalMode(rootElement, harmonyContainer, document.body as HTMLBodyElement, bodyObserverRef.current);
-			// 	rootComponent !== document.body && setRootComponent(document.body);
-			// }
 		}
 
 		if (displayMode === 'designer') {
@@ -182,10 +166,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const onToggle = useEffectEvent(() => {
 		setIsToggled(!isToggled);
-
-		// if (!isToggled && rootComponent) {
-		// 	assignIds(rootComponent);
-		// }
 	});
 
 	const onScaleIn = useEffectEvent((e: KeyboardEvent) => {
@@ -230,7 +210,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	useEffect(() => {
 		const scrollContainer = document.getElementById("harmony-scroll-container")
 		if (scrollContainer) {
-			//TODO: Hacky beyon hacky (went want to center the screen)
+			//TODO: Hacky beyond hacky (we want to center the screen)
 			scrollContainer.scrollLeft = 150;
 		}
 	}, [rootComponent]);
@@ -300,6 +280,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const setScale = useCallback((newScale: number, {x, y}: {x: number, y: number}) => {
 		const scrollContainer = document.getElementById("harmony-scroll-container");
+
+		//Adjust the scroll so that it zooms with the pointer
 		if (rootComponent && scrollContainer) {
 			const currScrollLeft = scrollContainer.scrollLeft;
 			const currScrollTop = scrollContainer.scrollTop;
@@ -396,15 +378,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const setSelectedComponent = (component: HTMLElement | undefined): void => {
 		_setSelectedComponent(component);
-		selectedComponent !== component && setSelectedComponentText(component?.textContent || '');
 	}
 	
 	const changeMode = (mode: DisplayMode) => {
 		const url = new URL(window.location.href);
 		url.searchParams.set('mode', mode);
 
-		//TODO: Change to history.pushState so the transition is smooth
-		//window.location.replace(url.href);
 		window.history.pushState(publishState, 'mode', url.href);
 		window.sessionStorage.setItem('harmony-mode', mode);
 		onHistoryChange();
@@ -421,20 +400,21 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	return (
 		<>
 			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError}}>
-				{displayMode && displayMode !== 'preview-full' ? <><HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
-				<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
-					<div id="harmony-scaled" ref={(d) => {
-						if (d && d !== harmonyContainerRef.current) {
-							harmonyContainerRef.current = d
-							setRootComponent(harmonyContainerRef.current);
-							//harmonyContainerRef.current.appendChild(rootElement);
-						}
-					}} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
-					{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
-					{children}
-					</div>
-				</div>
-				</HarmonyPanel></> : <div className="hw-fixed hw-z-[100] hw-group hw-p-2">
+				{displayMode && displayMode !== 'preview-full' ? <>
+					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
+						<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
+							<div id="harmony-scaled" ref={(d) => {
+								if (d && d !== harmonyContainerRef.current) {
+									harmonyContainerRef.current = d
+									setRootComponent(harmonyContainerRef.current);
+								}
+							}} style={{width: `${WIDTH}px`, height: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
+							{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
+							{children}
+							</div>
+						</div>
+					</HarmonyPanel>
+				</> : <div className="hw-fixed hw-z-[100] hw-group hw-p-2">
 					<button className="hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2" onClick={onMinimize}>
 						<MinimizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
 					</button>
@@ -785,124 +765,5 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				}
 			}
 		}
-	}
-}
-
-interface AttributeTranslator {
-	translateCSSClass: (attributes: Attribute[]) => string;
-	translateCSSAttributes: (className: string) => Attribute[];
-}
-
-const spacingMapping: Record<string, string> = {
-	'padding': 'p',
-	'margin': 'm',
-	'border': 'border'
-}
-const directionMapping: Record<string, string> = {
-	'left': 'l',
-	'right': 'r',
-	'top': 't',
-	'bottom': 'b'
-}
-
-const spacingDirections = ['left', 'right', 'top', 'bottom'];
-
-export const TailwindAttributeTranslator: AttributeTranslator = {
-	translateCSSClass(attributes: Attribute[]): string {
-		const classes: Set<string> = new Set();
-		
-		// //Any class that is available, let's use that and leave what is left
-		// const left: Attribute[] = [];
-		// for (const attr of attributes) {
-		// 	if (attr.className === undefined) {
-		// 		left.push(attr);
-		// 	} else {
-		// 		classes.add(attr.className);
-		// 	}
-		// }
-
-		// const condensed = left.reduce<Attribute[]>((prev, curr) => {
-		// 	const [type, direction] = curr.id.split('-');
-		// 	const sameType = prev.find(d => d.id.includes(type) && d.value === curr.value);
-		// 	if (sameType) {
-		// 		sameType.id += `-${direction}`;
-		// 	} else {
-		// 		prev.push({...curr});
-		// 	}
-
-		// 	return prev;
-		// }, [])
-		// for (const attribute of condensed) {
-		// 	const [spacingType, ...directions] = attribute.id.split('-');
-
-		// 	if (directions.length === 4) {
-		// 		classes.add(`${spacingMapping[spacingType]}-${attribute.value}`)
-		// 	} else {
-		// 		for (const direction of directions) {
-		// 			classes.add(`${spacingMapping[spacingType] === 'border' ? 'border-' : spacingMapping[spacingType]}${directionMapping[direction]}-${attribute.value}`);
-		// 		}
-		// 	}
-		// }
-
-		const classNames: string[] = [];
-		classes.forEach(klass => classNames.push(klass));
-
-		return classNames.join(' ');
-	},
-	translateCSSAttributes(className): Attribute[] {
-		const spacingReverse = reverse(spacingMapping);
-		const directionReverse = reverse(directionMapping);
-
-		const attributes: Attribute[] = [];
-		// className.split(' ').forEach(name => {
-		// 	Object.keys(spacingReverse).forEach(key => {
-		// 		const keySplit = key === 'border' ? 'border-' : key;
-		// 		const [type, next] = name.split(keySplit);
-		// 		if (!type && next) {
-		// 			const [direction, value] = next.split('-');
-		// 			const directionName = directionReverse[direction];
-		// 			//This is a false positive (like min-h-screen)
-		// 			if ((direction && !directionName)) {
-		// 				return;
-		// 			}
-
-		// 			const numValue = Number(value ?? (key === 'border' ? 1 : ''));
-		// 			if (isNaN(numValue)) throw new Error('Invalid value for class ' + name);
-		// 			const type = spacingReverse[key];
-
-		// 			if (directionName) {
-		// 				attributes.push({id: `${type}-${directionName}`, type: 'className', name: `${type} ${directionName}`, value: String(numValue), className: name});
-		// 			} else {
-		// 				attributes.push(...spacingDirections.map(direction => ({id: `${type}-${direction}`, type: 'className', name: `${type} ${direction}`, value: String(numValue), className: name})));
-		// 			}
-		// 		}
-		// 	})
-		// })
-
-		return attributes;
-	},
-}
-
-const reverse = (records: Record<string, string>): Record<string, string> => {
-	return Object.entries(records).reduce((prev, [key, value]) => ({...prev, [value]: key}), {});
-}
-
-//const componentUpdator = new ComponentUpdator(TailwindAttributeTranslator);
-
-
-class Stack<T> {
-	private arr: T[] = [];
-
-	public push(item: T) {
-		this.arr.push(item);
-	}
-
-	public pop(): T | undefined {
-		if (this.arr.length === 0) return undefined;
-
-		const lastItem = this.arr[this.arr.length - 1];
-		this.arr.splice(this.arr.length - 1);
-
-		return lastItem;
 	}
 }

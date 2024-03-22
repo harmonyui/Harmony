@@ -1,5 +1,5 @@
 import { Rect, selectDesignerElementReverse } from "../inspector/inspector";
-import { RectSide, calculateFlexParentEdgeInfo, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
+import { RectSide, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
 import {close, round} from '@harmony/util/src/index'
 import { isSelectable } from "./snapping";
 
@@ -68,12 +68,7 @@ const updateElementValues = (element: HTMLElement, properties: string[], updated
 }
 
 export const absoluteUpdator: PositionUpdator = {
-	updateRects({parentUpdate, childrenUpdates}, scale, scaleActual) {
-		// const scale = 1;
-		// const scaledContainer = document.getElementById('harmony-scaled');
-		// if (!scaledContainer) throw new Error("Cannot find scaled container");
-		// scaledContainer.style.transform = '';
-
+	updateRects({parentUpdate, childrenUpdates}, scale) {
 		const updatedElements: UpdatedElement[] = [];
 		
 		const updateTransform = (element: HTMLElement, rect: Rect) => {
@@ -114,8 +109,6 @@ export const absoluteUpdator: PositionUpdator = {
 			updateTransform(childUpdate.element, childUpdate.rect);
 		}
 
-		//scaledContainer.style.transform = `scale(${_scale})`
-
 		return updatedElements;
 	},
 }
@@ -151,9 +144,7 @@ export const elementUpdator: PositionUpdator = {
 			const isChildXCenter = close(info.midpointX, parentInfo.midpointXRelative, 0.1) && close(parentInfo.edges.left.parentEdge.gap, parentInfo.edges.right.parentEdge.gap, 0.1);
 			const startXSide: RectSide = !isBlock || info.midpointX <= parentInfo.midpointXRelative ? left : right;
 			const endXSide = startXSide === left ? right : left;
-			// const startYSide = info.midpointY <= parentInfo.midpointY ? top : bottom;
-			// const endYSide = startYSide === top ? bottom : top;
-
+			
 			//left 
 			if (startXSide === right) {
 				setSpaceForElement(info[endXSide].element, 'margin', endXSide, 'auto');
@@ -273,7 +264,6 @@ export const flexUpdator: PositionUpdator = {
 
 		const updates: UpdateRect[] = childrenUpdates;
 		updates.push(parentUpdate);
-		//updates.push(...Array.from(parentReal.children).map(child => ({element: child as HTMLElement, rect: getBoundingRect(child as HTMLElement)})));
 		const parentInfo = calculateFlexParentEdgeInfoWithSizing(parentReal, scale, scale, false, 'x', updates);
 		if (!parentInfo.edges) return [];
 

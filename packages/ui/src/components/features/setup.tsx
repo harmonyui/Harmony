@@ -276,7 +276,7 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
     }  
 
     useEffect(() => {
-        const access_token = localStorage.getItem("access_token");
+        const access_token = sessionStorage.getItem("access_token");
         if (access_token) {
             setAccessToken(access_token);
         }
@@ -285,8 +285,8 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({re
     useEffect(() => {
         if (accessToken) {
             setPage(1);
-            if (!localStorage.getItem('access_token')) {
-                localStorage.setItem('access_token', accessToken);
+            if (!sessionStorage.getItem('access_token')) {
+                sessionStorage.setItem('access_token', accessToken);
             }
         }
     }, [accessToken])

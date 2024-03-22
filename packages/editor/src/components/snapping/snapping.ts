@@ -6,9 +6,7 @@ import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import {InteractEvent, ResizeEvent, EdgeOptions} from '@interactjs/types'
 import {Modifier} from '@interactjs/modifiers/types'
 import {AspectRatioOptions, AspectRatioState} from '@interactjs/modifiers/aspectRatio'
-import {SnapPosition} from '@interactjs/modifiers/snap/pointer'
 import $ from 'jquery';
-import { info } from "console";
 import { Axis, ChildEdgeInfo, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateEdgesInfoWithSizing, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
 import { PositionUpdator, UpdateRect, UpdateRectsProps, UpdatedElement, absoluteUpdator, elementUpdator, flexUpdator } from "./position-updator";
 
@@ -40,15 +38,6 @@ type SnapPoint = {
 interface StyleValue {
 	name: string;
 	value: string;
-}
-interface UpdateRectInfo {
-	width: StyleValue;
-	height: StyleValue;
-	spacingTop: StyleValue;
-	spacingBottom: StyleValue;
-	spacingLeft: StyleValue;
-	spacingRight: StyleValue;
-	childrenGaps: StyleValue[]
 }
 
 interface GuidePoint {
@@ -203,15 +192,6 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
 					edge
 				})
 			}
-            // addGuideFunction(func: () => AddGuide) {
-            //     const callback = () => {
-            //         const props = func();
-            //         const result = createGuide(props);
-
-            //         return result;
-            //     }
-            //     newResult.snapGuides.push(callback);
-            // }
         }
     }
 
@@ -664,47 +644,6 @@ class FlexSnapping implements SnapBehavior {
 						}
 					}
 				} 
-				// if (selfIndex === 0) {
-				// 	if (currParentInfo[minGapBetweenX] > minGap || ds < 0) {
-				// 		const last = currParentInfo.children[currParentInfo.children.length - 1] as HTMLElement;
-				// 		if (currParentInfo.edges![right].parentEdge.gap === 0 && ds < 0) {
-				// 			// if (currParentInfo.edges.left.parentEdge.gap <= 0) {
-				// 			// 	return;
-				// 			// }
-				// 			addChildRects([element, last], ds / (currParentInfo.children.length - 1))
-				// 		} else {
-				// 			addDs(last, -ds);
-				// 		}
-				// 	} else {
-				// 		// if (currParentInfo.edges.right.parentEdge.gap <= 0) {
-				// 		// 	return;
-				// 		// }
-				// 		addChildRects([element], ds)
-				// 	}
-				// } else if (selfIndex === currParentInfo.children.length - 1) {
-				// 	if (currParentInfo[minGapBetweenX] > minGap || ds > 0) {
-				// 		const first = currParentInfo.children[0] as HTMLElement;
-				// 		if (currParentInfo.edges![left].parentEdge.gap === 0 && ds > 0) {
-				// 			// if (currParentInfo.edges.right.parentEdge.gap <= 0) {
-				// 			// 	return;
-				// 			// }
-				// 			addChildRects([element, first], ds / (currParentInfo.children.length - 1))
-				// 		} else {
-				// 			addDs(first, -ds);
-				// 		}
-				// 	} else {
-				// 		// if (currParentInfo.edges.left.parentEdge.gap <= 0) {
-				// 		// 	return;
-				// 		// }
-				// 		addChildRects([element], ds)
-				// 	}
-				// } else {
-				// 	if (currParentInfo.edges![left].parentEdge.gap <= 0 && currParentInfo.edges![right].parentEdge.gap <= 0) {
-						
-				// 	} else {
-				// 		addChildRects([element], ds)
-				// 	}
-				// }
 			}
 		}
 	
@@ -1003,26 +942,16 @@ class FlexSnapping implements SnapBehavior {
 		
 		
 		if (selfIndex > 0 && selfIndex < parentInfo.children.length - 1) {
-			//if (parentInfo.edges[right].parentEdge.gap > 0)
 			parentRect[left] = parentInfo.childEdgeInfo[selfIndex][left].elementLocation - parentInfo.edges[left].parentEdge.gap;
 			
-			//if (parentInfo.edges[left].parentEdge.gap > 0)
 			parentRect[right] = parentInfo.childEdgeInfo[selfIndex][right].elementLocation + parentInfo.edges[right].parentEdge.gap;
 		}
 		
 		if (selfIndex === 0 && parentInfo.childEdgeInfo.length > 1) {
-			// if (parentInfo.edges[right].parentEdge.gap < parentInfo.edges[left].parentEdge.gap) {
-			// 	parentRect[left] += parentInfo.edges[left].parentEdge.gap - parentInfo.edges[right].parentEdge.gap;
-			// }
-
 			parentRect[right] = parentInfo.childEdgeInfo[selfIndex][right].elementLocation + (parentInfo[minGapBetween] - minGap) * (parentInfo.children.length - 1) + parentInfo.edges[right].parentEdge.gap;
 		}
 
 		if (selfIndex === parentInfo.children.length - 1 && parentInfo.childEdgeInfo.length > 1) {
-			// if (parentInfo.edges[left].parentEdge.gap < parentInfo.edges[right].parentEdge.gap) {
-			// 	parentRect[right] -= parentInfo.edges[right].parentEdge.gap - parentInfo.edges[left].parentEdge.gap;
-			// }
-
 			parentRect[left] = parentInfo.childEdgeInfo[selfIndex][left].elementLocation - (parentInfo[minGapBetween] - minGap) * (parentInfo.children.length - 1) - parentInfo.edges[left].parentEdge.gap;
 		}
 
@@ -1053,38 +982,6 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 	const elementsRef = useRef<HTMLElement[]>([]);
 
 	const snappingBehavior = useMemo(() => getSnappingBehavior(element?.parentElement || undefined), [element]);
-
-	//TODO: Super hacky fix to fix the space that exists between inline elements
-	useEffect(() => {
-		const hackyInlineSpaceFix = (parent: HTMLElement) => {
-			const recurse = (element: HTMLElement) => {
-				for (const child of Array.from(element.childNodes)) {
-					if (child.nodeType === Node.TEXT_NODE) {
-						const style = getComputedStyle(element);
-						element.style.fontSize = style.fontSize;
-					} else {
-						recurse(child as HTMLElement);
-					}
-				}
-			}
-			if (parent.children.length > 0) {
-				recurse(parent);
-
-				parent.style.fontSize = '0px';
-			}
-		}
-
-		if (element) {
-			const parent = element.parentElement!;
-			// hackyInlineSpaceFix(element);
-			// hackyInlineSpaceFix(parent as HTMLElement);
-			
-		}
-	}, [element])
-
-    const restrictions = useMemo(() => {
-		return element ? snappingBehavior.getRestrictions(element, scale) : [];
-	}, [element, snappingBehavior, scale]);
 
     function normalizeSnappingResults({x, y, resultsX, resultsY}: {x: number, y: number, resultsX: SnappingResult[], resultsY: SnappingResult[]}) {
         const parent = element!.parentElement!;
@@ -1559,42 +1456,6 @@ const handleGuides = (rect: RectBox, snapPoints: SnapPoint[], scale: number) => 
                 createGuide(copy);
             });
         }
-
-        // const posX = rect.left;
-        // const left = point.x as number;
-        // if (close(left, posX, 0.1)) {
-        //     guides && guides.forEach((guide) => {
-        //         const offset = guide.offset ? setOffset(guide.offset) : offsetParent || {x: 0, y: 0, w: 0, h: 0};
-        //         const copy = {...guide};
-        //         copy.relative.forEach(p => {
-        //             const sizeY = guide.rotate ? offset.w : offset.h;
-        //             const sizeX = guide.rotate ? offset.h : offset.w;
-        //             const sizeOffset = p.includes('y') ? sizeY : sizeX;
-        //             copy[p] *= sizeOffset;
-        //         });
-
-        //         if (guide.rotate) {
-        //             const temp0 = copy.x0;
-        //             copy.x0 = copy.y0;
-        //             copy.y0 = temp0;
-        //             const temp1 = copy.x1;
-        //             copy.x1 = copy.y1;
-        //             copy.y1 = temp1;
-        //         }
-
-        //         copy.x0 += offset.x;
-        //         copy.y0 += offset.y;
-        //         copy.y1 += offset.y;
-        //         copy.x1 += offset.x;
-
-        //         copy.x0 /= scale;
-        //         copy.y0 /= scale;
-        //         copy.y1 /= scale;
-        //         copy.x1 /= scale;
-
-        //         createGuide(copy);
-        //     });
-        // }
     })
 }
 
@@ -1696,19 +1557,10 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 				}),
 			];
 			if (restrictToParent) {
-				//const parentInfo = calculateParentEdgeInfo(element.parentElement!, scale, scale, false, 'x');
 				modifiers.push(interact.modifiers.restrict({
 					restriction: 'parent',
 					elementRect: { top: 0, left: 0, bottom: 1, right: 1 }, // Restrict to the parent element
 				}));
-				// parentInfo.edges && modifiers.push(interact.modifiers.restrictEdges({
-				// 	outer: {
-				// 		left: parentInfo.edges.left.parentEdge.edgeLocation,
-				// 		right: parentInfo.edges.right.parentEdge.edgeLocation,
-				// 		top: parentInfo.edges.top.parentEdge.edgeLocation,
-				// 		bottom: parentInfo.edges.bottom.parentEdge.edgeLocation,
-				// 	}
-				// }))
 			}
 
 			modifiers.push(interact.modifiers.restrict({
@@ -1803,14 +1655,6 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 	})
 
 	const startDragging = useEffectEvent((event: InteractEvent<'drag', 'start'>) => {
-        // if (!element) return;
-		// const clone = element.cloneNode(true);
-		// (clone as HTMLElement).style.visibility = 'hidden';
-		// element.parentNode?.insertBefore(clone, element);
-
-		// const cloneParent = element.parentNode!.cloneNode(true);
-		// (cloneParent as HTMLElement).style.visibility = 'hidden';
-		// element.parentNode?.parentNode?.insertBefore(cloneParent, element.parentNode);
 	});
 
 	const handleTheDragging = (event: DraggingEvent) => {
@@ -1826,7 +1670,6 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 	}
 	  
 	const drag = useEffectEvent((event: InteractEvent<'drag', 'move'>) => {
-		//TODO: Remove dependency on selected
 		if (!element || !canDrag(element)) {
 			setIsDragging(false);
 			return;
@@ -1906,11 +1749,6 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 				const parent = element.parentElement!;
 				const parentStyle = getComputedStyle(parent);
 				const style = getComputedStyle(element);
-				const axis = parentStyle.display.includes('flex') && parentStyle.flexDirection === 'column' ? 'y' : 'x';
-				// const parentInfo = calculateParentEdgeInfo(parent, 1, scale, false, 'x');
-				// const myInfo = parentInfo.childEdgeInfo.find(info => info.element === element);
-				// if (!myInfo) throw new Error("Cannot find my info");
-
 				const toMeasure = selectDesignerElementReverse(element);
 				
 				
