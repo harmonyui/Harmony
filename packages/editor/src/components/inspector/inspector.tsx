@@ -150,7 +150,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				const float = parseFloat(propValue);
 				if (isNaN(float)) return;
 
-				const num = round(float, 0, true);
+				const num = float//round(float, 0, true);
 				let unit = propValue.replace(String(float), '');
 				if (unit === propValue) {
 					unit = 'px';

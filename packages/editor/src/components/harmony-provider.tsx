@@ -496,7 +496,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	});
 	
 	useBackgroundLoop(() => {
-		if (saveStack.length && !isSaving && !isPublished && false) {
+		if (saveStack.length && !isSaving && !isPublished) {
 			save();
 		}
 	}, 10);
