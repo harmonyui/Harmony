@@ -1,12 +1,10 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '../../../../src/server/db';
-import { ComponentUpdate, updateSchema } from '@harmony/ui/src/types/component';
+import { ComponentUpdate } from '@harmony/ui/src/types/component';
 import { LoadResponse, loadResponseSchema } from '@harmony/ui/src/types/network';
 import { GithubRepository } from '../../../../src/server/api/repository/github';
-import { getBranch, getRepository } from '../../../../src/server/api/routers/branch';
-import { getLocationFromComponentId } from '../../update/[branchId]/route';
-import {diffChars, diffLines} from 'diff';
-import { hashComponentId, updateLocationFromDiffs } from '@harmony/util/src';
+import { getRepository } from '../../../../src/server/api/routers/branch';
+import { updateComponentIdsFromUpdates } from '../../../../src/server/api/services/updator/local';
 
 
 export async function GET(req: NextRequest, {params}: {params: {repositoryId: string}}): Promise<Response> {
@@ -57,85 +55,11 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 	const githubRepository = new GithubRepository(repository);
 	const ref = await githubRepository.getBranchRef(repository.branch);
 
-	const getNewComponentId = async (oldId: string, ref: string) => {
-		const location = getLocationFromComponentId(oldId);
-		const diffs = await githubRepository.diffFiles(repository.branch, ref, location.file);
-		
-		const newLocation = updateLocationFromDiffs(location, diffs);
-		if (!newLocation) return undefined;
-
-		const newId = hashComponentId(newLocation);
-
-		return newId;
-	}
-	
+	//If the current repository ref is out of date, that means we have some
+	//new commits that might affect our previously indexed component elements.
+	//Let's go through the diffs and update those component ids
 	if (ref !== repository.ref) {
-		for (const update of updates) {
-			const oldId = update.componentId;
-			const oldParentId = update.parentId;
-			const newComponentId = await getNewComponentId(oldId, repository.ref);
-			const newParentId = await getNewComponentId(oldParentId, repository.ref);
-
-			if (newComponentId === undefined || newParentId === undefined) {
-				console.log(`Conflict in a saved component: ${newComponentId ? oldParentId : oldId}`);
-				continue;
-			}
-
-			if (newComponentId !== oldId) {
-				await prisma.componentElement.updateMany({
-					where: {
-						parent_id: oldId
-					},
-					data: {
-						parent_id: newComponentId
-					}
-				});
-				await prisma.componentElement.updateMany({
-					where: {
-						id: oldId
-					},
-					data: {
-						id: newComponentId
-					}
-				});
-				updates.forEach(up => {
-					if (up.componentId === oldId) {
-						up.componentId = newComponentId;
-					}
-
-					if (up.parentId === oldId) {
-						up.parentId = newComponentId
-					}
-				})
-			}
-			if (newParentId !== oldParentId) {
-				await prisma.componentElement.updateMany({
-					where: {
-						parent_id: oldParentId
-					},
-					data: {
-						parent_id: newParentId
-					}
-				});
-				await prisma.componentElement.updateMany({
-					where: {
-						id: oldParentId
-					},
-					data: {
-						id: newParentId
-					}
-				});
-				updates.forEach(up => {
-					if (up.componentId === oldParentId) {
-						up.componentId = newComponentId;
-					}
-
-					if (up.parentId === oldParentId) {
-						up.parentId = newComponentId
-					}
-				})
-			}
-		}
+		await updateComponentIdsFromUpdates(updates, ref, githubRepository);
 
 		await prisma.repository.update({
 			where: {
@@ -146,6 +70,7 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 			}
 		})
 	}
+	
 
 	const branches = await prisma.branch.findMany({
 		where: {

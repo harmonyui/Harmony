@@ -331,6 +331,11 @@ export function updateLocationFromDiffs({file, startLine, startColumn, endLine, 
         //   }
         // }
       }
+
+      //Make sure we account for things that are getting replaced in our curr line calculation
+      if (diff.removed && diffs[i + 1].added) {
+        currLine += diff.count;
+      }
     } else {
       currLine += lineCount;
     }

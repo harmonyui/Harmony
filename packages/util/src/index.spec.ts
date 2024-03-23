@@ -4,16 +4,7 @@ import { getLineAndColumn, updateLocationFromDiffs } from ".";
 
 describe("index", () => {
     describe("updateLocationFromDiffs", () => {
-        const setup = (name: keyof (typeof testCases), target: string) => {
-            const {oldContent, newContent} = testCases[name];
-            const diffs = diffLines(oldContent, newContent);
-			const diffChar = diffChars(oldContent, newContent);
-            const targetIndex = oldContent.indexOf(target);
-			expect(targetIndex).toBeGreaterThan(-1);
-            const {line: startLine, column: startColumn} = getLineAndColumn(oldContent, targetIndex);
-            const {line: endLine, column: endColumn} = getLineAndColumn(oldContent, targetIndex + target.length);
-            return {diffs, diffChars: diffChar, location: {file: '', startLine, startColumn, endLine, endColumn}};
-        }
+        
 
         it("Should update startLine and endLine when adding near the top of the file", () => {
 const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
@@ -29,6 +20,20 @@ const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
             expect(endLine).toBe(81);
 			expect(endColumn).toBe(12);
         })
+
+		it("Should update startLine and endLine when deleting after the target", () => {
+			const target = `<span>{item.label}</span>`
+			const {diffs, diffChars, location} = setup('add-to-top-file', target);
+
+			const newLocation = updateLocationFromDiffs(location, diffs, diffChars);
+			expect(newLocation).toBeDefined();
+			const {startLine, startColumn, endLine, endColumn} = newLocation!;
+			expect(startLine).toBe(129);
+			expect(startColumn).toBe(20);
+			expect(endLine).toBe(129);
+			expect(endColumn).toBe(45);
+		})
+
 
 		it("Should not update startLine and endLine when adding near bottom of the file", () => {
 const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
@@ -91,7 +96,24 @@ const target = `<Label label="Hello there">
     })
 });
 
-const testCases = {
+export const setup = (name: keyof (typeof testCases), target: string) => {
+	const {oldContent, newContent} = testCases[name];
+	const diffs = diffLines(oldContent, newContent);
+	const diffChar = diffChars(oldContent, newContent);
+	const location = getLocationFromContent(oldContent, target);
+	return {diffs, diffChars: diffChar, location};
+}
+
+export const getLocationFromContent = (content: string, target: string) => {
+	const targetIndex = content.indexOf(target);
+	expect(targetIndex).toBeGreaterThan(-1);
+	const {line: startLine, column: startColumn} = getLineAndColumn(content, targetIndex);
+	const {line: endLine, column: endColumn} = getLineAndColumn(content, targetIndex + target.length);
+
+	return {file: '', startLine, startColumn, endLine, endColumn}
+}
+
+export const testCases = {
     'add-to-top-file': {
         oldContent: `'use client';
 import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";

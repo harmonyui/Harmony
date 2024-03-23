@@ -33,7 +33,7 @@ export class GithubRepository {
         return this.octokit;
     }
     
-    constructor(private repository: Repository) {
+    constructor(public repository: Repository) {
     }
 
     public async getContentOrDirectory(filePath: string, branchName?: string) {
