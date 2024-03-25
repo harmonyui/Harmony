@@ -766,8 +766,8 @@ export function calculateParentEdgeInfo<T extends ChildEdgeInfo = ChildEdgeInfo>
 	const midpointY = (getBoundingClientRectParent(parent, otherAxis, 'close', scale, getRectOverride(parent)) + getBoundingClientRectParent(parent, otherAxis, 'size', scale, getRectOverride(parent)) / 2);
 	const midpointXRelative = midpointX - getBoundingClientRectParent(parent, axis, 'close', scale, getRectOverride(parent));
     const midpointYRelative = midpointY - getBoundingClientRectParent(parent, otherAxis, 'close', scale, getRectOverride(parent));
-	const childrenWidth = children.reduce((prev, curr) => prev + curr.clientWidth, 0);
-	const childrenHeight = children.reduce((prev, curr) => prev + curr.clientHeight, 0);
+	const childrenWidth = children.reduce((prev, curr) => prev + getBoundingClientRect(curr, 'x', 'size', scale), 0);
+	const childrenHeight = children.reduce((prev, curr) => prev + getBoundingClientRect(curr, 'y', 'size', scale), 0);
 	const childrenMidpointX = lastChild && firstChild ? (getBoundingClientRect(lastChild, axis, 'far', scale, getRectOverride(lastChild)) + getBoundingClientRect(firstChild, axis, 'close', scale, getRectOverride(firstChild))) / 2 : 0;
 	const childrenMidpointY = lastChild && firstChild ? (getBoundingClientRect(lastChild, otherAxis, 'far', scale, getRectOverride(lastChild)) + getBoundingClientRect(firstChild, otherAxis, 'close', scale, getRectOverride(firstChild))) / 2 : 0;
 	

@@ -1157,7 +1157,24 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 				removeTextContentSpans(curr.parentUpdate.element);
 			}
 
-			prev.push(...updates.filter(([element]) => element.dataset.harmonyText !== 'true'));
+			const noHarmonyText = updates.filter(([element]) => element.dataset.harmonyText !== 'true');
+
+			for (const update of noHarmonyText) {
+				const oldValues = prev.find(([element]) => element === update[0]);
+				if (oldValues) {
+					const propertiesCopy = {...oldValues[1]};
+					Object.entries(update[1]).forEach(([property, value]) => {
+						const old = propertiesCopy[property];
+						if (!old) {
+							propertiesCopy[property] = value;
+						}
+					});
+
+					oldValues[1] = propertiesCopy;
+				} else {
+					prev.push(update);
+				}
+			}
 
 			return prev;
 		}, []);

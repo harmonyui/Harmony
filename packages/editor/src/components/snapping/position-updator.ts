@@ -208,8 +208,8 @@ export const elementUpdator: PositionUpdator = {
 			//bottom - height fits content naturally
 			if (parentInfo.children.length === 1 && [0.5, 1].some(percentage => close(heightPercentage, percentage, 0.001)) && parentInfo.heightType !== 'content') {
 				const toResize = selectDesignerElementReverse(info.element);
-				toResize.style.height = `${round(heightPercentage * 100, 0)}%`;
 				updateElementValues(toResize, ['height'], updatedElements);
+				toResize.style.height = `${round(heightPercentage * 100, 0)}%`;
 			}
 			else if (info.heightType === 'fixed') {
 				//TODO: hacky fix to resize the image but not the wrapper
@@ -362,7 +362,7 @@ export const flexUpdator: PositionUpdator = {
 				const spaceDiff = info[left].siblingEdge!.gap - minSpace;
 				parentInfo.element.style.gap = `${minSpace}px`;
 				if (spaceDiff > 0.1) {
-					setSpaceForElement(info[left].element, 'margin', left, spaceDiff);
+					//setSpaceForElement(info[left].element, 'margin', left, spaceDiff);
 				}
 			}
 			if (isXCenter && parentInfo[widthType] !== 'content') {
@@ -397,7 +397,7 @@ export const flexUpdator: PositionUpdator = {
 				const minGap = parentInfo[minGapBetweenX];
 				const remainingGap = info[endXSide].siblingEdge ? info[endXSide].siblingEdge!.gap - minGap : info[endXSide].parentEdge.gap - parentGap;
 				if (remainingGap > 0.1) {
-					setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
+					//setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
 				}
 				setSpaceForElement(parentInfo.element, 'padding', endXSide, parentGap);
 			}

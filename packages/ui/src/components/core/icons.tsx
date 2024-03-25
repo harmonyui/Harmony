@@ -405,7 +405,7 @@ export const UsersGroupIcon: IconComponent = (props) => {
 export const UserCircleIcon: IconComponent = (props) => {
   return (
     <svg {...props} viewBox="0 0 83 80" fill="none" xmlns="http://www.w3.org/2000/svg">
-      <g clip-path="url(#clip0_634_457)">
+      <g clipPath="url(#clip0_634_457)">
       <mask id="mask0_634_457" style={{maskType:"luminance"}} maskUnits="userSpaceOnUse" x="5" y="2" width="75" height="76">
       <path d="M5.3374 2.08691H79.7274V77.2174H5.3374V2.08691Z" fill="white"/>
       </mask>
