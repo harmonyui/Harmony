@@ -32,8 +32,11 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 	}
 
 	const onDelete = (item: BranchItem) => {
-		deleteItem({branchId: item.id});
-		router.refresh();
+		deleteItem({branchId: item.id}, {
+			onSuccess() {
+				router.refresh();
+			}
+		});
 	}
 
 	return <ModalProvider>
