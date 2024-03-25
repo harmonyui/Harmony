@@ -359,6 +359,18 @@ export function updateLocationFromDiffs({file, startLine, startColumn, endLine, 
   return {file, startLine: newLineStart, endLine: newLineEnd, startColumn: newColumnStart, endColumn: newColumnEnd};
 }
 
+export type Environment = 'production' | 'staging' | 'development';
+
+export function getWebUrl(environment: Environment) {
+    if (environment === 'production') {
+        return 'https://dashboard.harmonyui.app'
+    } else if (environment === 'staging') {
+        return 'https://harmony-xi.vercel.app'
+    }
+
+    return 'http://localhost:3000';
+}
+
 export function getLineAndColumn(text: string, index: number): { line: number; column: number } {
   const lines = text.split("\n");
   let currentLine = 0;

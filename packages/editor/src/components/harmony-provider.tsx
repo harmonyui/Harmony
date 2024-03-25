@@ -1,5 +1,5 @@
 "use client";
-import { createContext, useCallback, useContext, useEffect, useRef, useState } from "react";
+import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentError, ComponentUpdate } from "@harmony/ui/src/types/component";
 import {PublishRequest, loadResponseSchema, updateResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
@@ -9,7 +9,6 @@ import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import React from "react";
-import {WEB_URL} from '@harmony/util/src/constants';
 
 import { Setup } from "./harmony-setup";
 import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
@@ -18,6 +17,7 @@ import { Font } from "@harmony/util/src/fonts";
 import $ from 'jquery';
 import { getBoundingRect } from "./snapping/calculations";
 import { reverseUpdates } from "@harmony/util/src";
+import { Environment, getWebUrl } from "@harmony/util/src/index";
 
 const WIDTH = 1960;
 const HEIGHT = 1080;
@@ -59,8 +59,9 @@ interface HarmonyContextProps {
 	onClose: () => void;
 	error: string | undefined;
 	setError: (value: string | undefined) => void;
+	environment: Environment;
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined, onFlexToggle: () => undefined, scale: 1, onScaleChange: () => undefined, onClose: () => undefined, error: undefined, setError: () => undefined});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined, onFlexToggle: () => undefined, scale: 1, onScaleChange: () => undefined, onClose: () => undefined, error: undefined, setError: () => undefined, environment: 'production'});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -74,8 +75,9 @@ export interface HarmonyProviderProps {
 	children: React.ReactNode;
 	setup: Setup;
 	fonts?: Font[];
+	environment?: Environment
 }
-export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, children, branchId, fonts, setup}) => {
+export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({repositoryId, children, branchId, fonts, setup, environment='production'}) => {
 	const [isToggled, setIsToggled] = useState(true);
 	const [selectedComponent, _setSelectedComponent] = useState<HTMLElement>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
@@ -97,8 +99,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [oldScale, setOldSclae] = useState(scale);
 	const [forceSave, setForceSave] = useState(0);
 	const [error, setError] = useState<string | undefined>();
+
+	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
 	
-	const executeCommand = useComponentUpdator({isSaving, setIsSaving, fonts, isPublished, branchId, repositoryId, rootComponent, forceSave, onChange() {
+	const executeCommand = useComponentUpdator({isSaving, environment, setIsSaving, fonts, isPublished, branchId, repositoryId, rootComponent, forceSave, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}, onError: setError});
 
@@ -399,7 +403,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	return (
 		<>
-			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError}}>
+			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment}}>
 				{displayMode && displayMode !== 'preview-full' ? <>
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 						<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
@@ -458,12 +462,15 @@ interface ComponentUpdatorProps {
 	//TODO: This is super hacky 
 	forceSave: number;
 	onError: (error: string) => void;
+	environment: Environment;
 }
-const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPublished, setIsSaving, rootComponent, fonts, forceSave, onError}: ComponentUpdatorProps) => {
+const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPublished, setIsSaving, rootComponent, fonts, forceSave, onError, environment}: ComponentUpdatorProps) => {
 	const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([]);
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
 	const [saveStack, setSaveStack] = useState<HarmonyCommand[]>([]);
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
+
+	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
 
 	const save = useEffectEvent(() => {
 		return new Promise<void>((resolve, reject) => {

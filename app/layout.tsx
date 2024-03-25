@@ -5,7 +5,7 @@ import { ClerkProvider } from '@clerk/nextjs'
 import { TrpcProvider } from '../utils/trpc-provider'
 import {fonts, mulish} from '@harmony/util/src/fonts';
 
-
+const repositoryId = process.env.REPOSITORY_ID || 'fbefdac4-8370-4d6d-b440-0307882f0102'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -23,8 +23,8 @@ export default function RootLayout({
 				<html className="hw-h-full hw-bg-white" lang="en">
 					<body className={`${mulish.className} hw-h-full hw-bg-white`}>
 						{children}
-						{process.env.ENV === 'staging' ? <HarmonySetup repositoryId="da286f25-b5de-4003-94ed-2944162271ed" fonts={fonts}/> : null }
-						{process.env.ENV === 'development' ? <HarmonySetup repositoryId='fbefdac4-8370-4d6d-b440-0307882f0102' local fonts={fonts}/> : null }
+						{process.env.ENV === 'staging' ? <HarmonySetup repositoryId="da286f25-b5de-4003-94ed-2944162271ed" fonts={fonts} environment='staging'/> : null }
+						{process.env.ENV === 'development' ? <HarmonySetup repositoryId={repositoryId} local fonts={fonts} environment='development'/> : null }
 							{/* <Script id="harmony-tag" src="bundle.js"></Script>
 							<Script>
 							{`(function() {

@@ -8,7 +8,7 @@ import { Fiber } from "react-reconciler";
 
 var harmonyArguments = [{'data-harmony-id': 0}]
     
-export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts'> & {local?: boolean}> = ({local=false, ...options}) => {
+export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts' | 'environment'> & {local?: boolean}> = ({local=false, ...options}) => {
 	const setBranchId = (branchId: string) => {
 		const url = new URL(window.location.href);
 		if (!url.searchParams.has('branch-id')) {
