@@ -30,6 +30,7 @@ model Account {
 	contact			  String
 	team_id			  String
 	team Team @relation(fields: [team_id], references: [id])
+	branch Branch[]
 }
 
 model Branch {
@@ -42,6 +43,8 @@ model Branch {
 	pullRequest PullRequest?
 	date_modified DateTime @default(now())
 	is_deleted Boolean @default(false)
+	account_id String
+	account Account @relation(fields: [account_id], references: [id])
 }
 
 model ComponentUpdate {
@@ -140,6 +143,7 @@ model Repository {
 	ref String
 	team Team @relation(fields: [team_id], references: [id])
 	css_framework String
+	default_url String
 	//TODO: We don't need this in the future hopefully
 	tailwind_prefix String?
 }

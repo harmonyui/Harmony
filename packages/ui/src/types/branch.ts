@@ -38,7 +38,8 @@ export const repositorySchema = z.object({
 	ref: z.string(),
 	installationId: z.number(),
 	cssFramework: z.string(),
-	tailwindPrefix: z.optional(z.string())
+	tailwindPrefix: z.optional(z.string()),
+	defaultUrl: z.string()
 })
 
 export type Repository = z.infer<typeof repositorySchema>;

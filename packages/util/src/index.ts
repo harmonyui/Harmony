@@ -422,3 +422,7 @@ export const reverseUpdates = <T extends ComponentUpdate>(updates: T[]): T[] => 
 
   return reversed
 }
+
+export const wordToKebabCase = (str: string): string => {
+  return str.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
+}

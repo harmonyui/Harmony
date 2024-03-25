@@ -11,7 +11,7 @@ import { ClosableContent } from "../core/closable-content";
 import { Header } from "../core/header";
 import { Label } from "../core/label";
 import { ModalPortal } from "../core/modal";
-import { displayDate, displayTime } from "../../../../util/src/index";
+import { displayDate, displayTime, wordToKebabCase } from "../../../../util/src/index";
 import { CreateNewPullRequestModal } from "./pull-request";
 
 
@@ -68,7 +68,7 @@ const CreateNewBranchModal: React.FunctionComponent<CreateNewBranchModalProps> =
 	const [loading, setLoading] = useState(false);
 
 	const onNewBranch = () => {
-		const name = branch.label.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
+		const name = wordToKebabCase(branch.label);
 		setLoading(true);
 		mutate({branch: {...branch, name}}, {
 			onSuccess(data) {
