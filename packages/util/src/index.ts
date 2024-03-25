@@ -266,6 +266,19 @@ export function hashComponentId({file, startLine, startColumn, endLine, endColum
   return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
 }
 
+export function getLocationFromComponentId(id: string): {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number} {
+	const stuff = atob(id);
+	const [file, startLine, startColumn, endLine, endColumn] = stuff.split(':');
+
+	return {
+		file, 
+		startLine: Number(startLine), 
+		startColumn: Number(startColumn), 
+		endLine: Number(endLine), 
+		endColumn: Number(endColumn)
+	};
+}
+
 export function updateLocationFromDiffs({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}, diffs: Change[], diffCharsd?: Change[]) {
   let currLine = 1;
   let currColumn = 0;

@@ -1,8 +1,7 @@
 import { ComponentElementBase, ComponentUpdate } from "../../../../../packages/ui/src/types/component";
 import { z } from "zod";
 import fs from 'node:fs';
-import { hashComponentId, replaceByIndex, updateLocationFromDiffs } from "@harmony/util/src";
-import { getLocationFromComponentId } from "../../../../../app/api/update/[branchId]/route";
+import { getLocationFromComponentId, hashComponentId, replaceByIndex, updateLocationFromDiffs } from "@harmony/util/src";
 import { prisma } from "../../../db";
 import { GithubRepository } from "../../repository/github";
 import { diffLines } from "diff";

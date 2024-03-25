@@ -3,8 +3,7 @@ import { getLocationFromContent, testCases } from "@harmony/util/src/index.spec"
 import { Change } from "diff";
 import { describe, it, expect } from "vitest";
 import { ComponentIdUpdator, FileContentRetriever, updateComponentIdsFromUpdates } from "./local";
-import { hashComponentId } from "@harmony/util/src";
-import { getLocationFromComponentId } from "../../../../../app/api/update/[branchId]/route";
+import { getLocationFromComponentId, hashComponentId } from "@harmony/util/src";
 
 describe("Component Id Updator", () => {
     const setup = (name: keyof (typeof testCases), targets: string[]) => {
