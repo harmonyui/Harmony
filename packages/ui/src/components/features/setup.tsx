@@ -455,7 +455,7 @@ const AdditionalRepositoryInfo: React.FunctionComponent<AdditionalRepositoryInfo
                 </Label>
                 <Label className="sm:hw-col-span-full" label="Default Url">
                     <p className="hw-text-sm hw-text-gray-400">Enter the url of your deployed app (probably a staging url).</p>
-                    <Input className="hw-w-full" value={repository.branch} onChange={changeProperty.formFunc('defaultUrl', repository)}/>
+                    <Input className="hw-w-full" value={repository.defaultUrl} onChange={changeProperty.formFunc('defaultUrl', repository)}/>
                 </Label>
                 <Label className="sm:hw-col-span-3" label="CSS Framework:">
                     <Dropdown className="hw-w-full" items={items} initialValue={repository.cssFramework} onChange={(item) => {changeProperty(repository, 'cssFramework', item.id)}}>

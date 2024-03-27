@@ -489,10 +489,10 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 				resolve();
 			}).catch(() => {
 				//TODO: Test this
-				for (const update of copy) {
+				for (let i = copy.length - 1; i >= 0; i--) {
+					const update = copy[i];
 					change({name: update.name, update: reverseUpdates(update.update)});
 				}
-				setSaveStack([]);
 				onError("There was an error saving the project");
 				resolve();
 			});
