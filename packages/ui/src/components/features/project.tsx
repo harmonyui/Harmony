@@ -20,7 +20,7 @@ import { ConfirmModal } from "../core/confirm";
 import { useRouter } from "next/navigation";
 
 
-export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> = ({Projectes}) => {
+export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[], defaultUrl: string}> = ({Projectes, defaultUrl}) => {
 	const [showNewProject, setShowNewProject] = useState(false);
 	const {mutate: deleteItem} = api.branch.deleteBranch.useMutation();
 	const router = useRouter();
@@ -32,8 +32,11 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 	}
 
 	const onDelete = (item: BranchItem) => {
-		deleteItem({branchId: item.id});
-		router.refresh();
+		deleteItem({branchId: item.id}, {
+			onSuccess() {
+				router.refresh();
+			}
+		});
 	}
 
 	return <ModalProvider>
@@ -43,7 +46,7 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[]}> 
 				{Projectes.length ? <div className="hw-flex hw-gap-16 hw-flex-wrap hw-overflow-auto">
 					{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)} onDelete={() => onDelete(item)}/>)}
 				</div> : <div className="hw-h-full hw-items-center hw-justify-center hw-flex hw-text-lg hw-mb-48 hw-text-[#88939D]">No Projects Yet!</div>}
-				<CreateNewProjectModal show={showNewProject} onClose={() => setShowNewProject(false)} onSuccessfulCreation={openProject}/>
+				<CreateNewProjectModal show={showNewProject} onClose={() => setShowNewProject(false)} onSuccessfulCreation={openProject} defaultUrl={defaultUrl}/>
 			</> : null}
 		</div>
 	</ModalProvider>
@@ -53,10 +56,11 @@ interface CreateNewProjectModalProps {
 	show: boolean,
 	onClose: () => void,
 	onSuccessfulCreation: (item: BranchItem) => void;
+	defaultUrl: string;
 }
-const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps> = ({show, onClose, onSuccessfulCreation}) => {
+const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps> = ({show, onClose, onSuccessfulCreation, defaultUrl}) => {
 	const {mutate, ...createUtils} = api.branch.createBranch.useMutation()
-	const [project, setProject] = useState<BranchItem>({id: '', name: '', label: '', url: '', commits: [], lastUpdated: new Date()});
+	const [project, setProject] = useState<BranchItem>({id: '', name: '', label: '', url: defaultUrl, commits: [], lastUpdated: new Date()});
 	const changeProperty = useChangeProperty<BranchItem>(setProject);
 	const [loading, setLoading] = useState(false);
     const [error, setError] = useState('');

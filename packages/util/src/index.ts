@@ -266,6 +266,19 @@ export function hashComponentId({file, startLine, startColumn, endLine, endColum
   return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
 }
 
+export function getLocationFromComponentId(id: string): {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number} {
+	const stuff = atob(id);
+	const [file, startLine, startColumn, endLine, endColumn] = stuff.split(':');
+
+	return {
+		file, 
+		startLine: Number(startLine), 
+		startColumn: Number(startColumn), 
+		endLine: Number(endLine), 
+		endColumn: Number(endColumn)
+	};
+}
+
 export function updateLocationFromDiffs({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}, diffs: Change[], diffCharsd?: Change[]) {
   let currLine = 1;
   let currColumn = 0;
@@ -346,6 +359,18 @@ export function updateLocationFromDiffs({file, startLine, startColumn, endLine, 
   return {file, startLine: newLineStart, endLine: newLineEnd, startColumn: newColumnStart, endColumn: newColumnEnd};
 }
 
+export type Environment = 'production' | 'staging' | 'development';
+
+export function getWebUrl(environment: Environment) {
+    if (environment === 'production') {
+        return 'https://dashboard.harmonyui.app'
+    } else if (environment === 'staging') {
+        return 'https://harmony-xi.vercel.app'
+    }
+
+    return 'http://localhost:3000';
+}
+
 export function getLineAndColumn(text: string, index: number): { line: number; column: number } {
   const lines = text.split("\n");
   let currentLine = 0;
@@ -396,4 +421,8 @@ export const reverseUpdates = <T extends ComponentUpdate>(updates: T[]): T[] => 
   }
 
   return reversed
+}
+
+export const wordToKebabCase = (str: string): string => {
+  return str.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
 }

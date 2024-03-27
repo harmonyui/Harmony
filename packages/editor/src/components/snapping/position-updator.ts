@@ -72,15 +72,19 @@ export const absoluteUpdator: PositionUpdator = {
 		const updatedElements: UpdatedElement[] = [];
 		
 		const updateTransform = (element: HTMLElement, rect: Rect) => {
-			updateElementValues(element, ['width', 'height', 'position', 'left', 'top', 'margin'], updatedElements);
+			const toResize = selectDesignerElementReverse(element);
+			updateElementValues(element, ['position', 'left', 'top', 'margin', 'width', 'height'], updatedElements);
+			updateElementValues(toResize, ['width', 'height'], updatedElements);
 			
 			element.style.position = 'absolute';
 			element.style.left = `${(rect.left - containerRect.left) / scale}px`;
 			element.style.top = `${(rect.top - containerRect.top) / scale}px`
-			element.style.width = `${rect.width / scale}px`
-			element.style.height = `${rect.height / scale}px`;
 			element.style.margin = '0px';
 			element.dataset.harmonyForceSelectable = 'true';
+			element.style.width = `${rect.width / scale}px`
+			element.style.height = `${rect.height / scale}px`;
+			toResize.style.width = `${rect.width / scale}px`
+			toResize.style.height = `${rect.height / scale}px`;
 		}
 
 		const container = document.getElementById('harmony-section');
@@ -95,7 +99,6 @@ export const absoluteUpdator: PositionUpdator = {
 
 			childrenUpdates.push({element, rect: getBoundingRect(element)});
 		}
-
 
 		updateElementValues(parentUpdate.element, ['position', 'width', 'height'], updatedElements);
 

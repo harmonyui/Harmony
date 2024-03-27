@@ -58,7 +58,7 @@ fn has_default_params_pat(params: &[Pat]) -> bool {
 }
 
 fn valid_path(path: &str) -> bool {
-    let regex = Regex::new(r"^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$").unwrap();
+    let regex = Regex::new(r"^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx)$").unwrap();
     regex.is_match(path).unwrap()
 }
 

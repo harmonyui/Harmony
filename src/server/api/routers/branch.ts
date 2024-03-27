@@ -16,7 +16,7 @@ const branchPayload = {
 			orderBy: {
 				date_modified: 'desc'
 			}
-		}
+		},
 	}
 } satisfies Prisma.BranchDefaultArgs
 type Branch = Prisma.BranchGetPayload<typeof branchPayload>;
@@ -28,7 +28,7 @@ export const branchRoute = createTRPCRouter({
 				return undefined;
 			}
 
-			return getBranches({prisma: ctx.prisma, repositoryId: ctx.session.account.repository.id}, new GithubRepository(ctx.session.account.repository))
+			return getBranches({prisma: ctx.prisma, repositoryId: ctx.session.account.repository.id})
 		}),
 	createBranch: protectedProcedure
 		.input(z.object({branch: branchItemSchema}))
@@ -37,26 +37,7 @@ export const branchRoute = createTRPCRouter({
 				throw new Error("Cannot create a branch without a repository");
 			}
 			
-			const newBranch = await ctx.prisma.branch.create({
-				data: {
-					repository_id: ctx.session.account.repository.id,
-					label: input.branch.label,
-					name: input.branch.name,
-					url: input.branch.url
-				},
-				...branchPayload
-			});
-
-			const lastUpdated = getLastUpdated(newBranch);
-
-			return {
-				id: newBranch.id,
-				label: newBranch.label,
-				name: newBranch.name,
-				url: newBranch.url, 
-				commits: [], 
-				lastUpdated
-			} satisfies BranchItem;
+			return createBranch({prisma: ctx.prisma, branch: input.branch, repositoryId: ctx.session.account.repository.id, accountId: ctx.session.account.id})
 		}),
 	deleteBranch: protectedProcedure
 		.input(z.object({branchId: z.string()}))
@@ -124,15 +105,17 @@ export const getRepository = async ({prisma, repositoryId}: {prisma: Db, reposit
 		ref: repository.ref,
 		installationId: repository.installationId,
 		cssFramework: repository.css_framework,
-		tailwindPrefix: repository.tailwind_prefix || undefined
+		tailwindPrefix: repository.tailwind_prefix || undefined,
+		defaultUrl: repository.default_url
 	}
 }
 
-export const getBranches = async ({prisma, repositoryId}: {prisma: Db, repositoryId: string}, githubRepository: GithubRepository): Promise<BranchItem[]> => {
+export const getBranches = async ({prisma, repositoryId, accountId}: {prisma: Db, repositoryId: string, accountId?: string}): Promise<BranchItem[]> => {
 	const branches = await prisma.branch.findMany({
 		where: {
 			repository_id: repositoryId,
-			is_deleted: false
+			is_deleted: false,
+			account_id: accountId
 		},
 		orderBy: {
 			date_modified: 'desc'
@@ -200,6 +183,34 @@ export const getBranch = async({prisma, branchId}: {prisma: Db, branchId: string
 		})),
 		old: branch.updates.map(update => update.old_value)
 	} satisfies BranchItem & {repositoryId: string, updates: ComponentUpdate[], old: string[]};
+}
+
+export const createBranch = async ({prisma, branch, accountId, repositoryId}: {prisma: Db, branch: BranchItem, accountId: string, repositoryId: string}) => {
+	const newBranch = await prisma.branch.create({
+		data: {
+			repository_id: repositoryId,
+			label: branch.label,
+			name: branch.name,
+			url: branch.url,
+			account: {
+				connect: {
+					id: accountId
+				}
+			}
+		},
+		...branchPayload
+	});
+
+	const lastUpdated = getLastUpdated(newBranch);
+
+	return {
+		id: newBranch.id,
+		label: newBranch.label,
+		name: newBranch.name,
+		url: newBranch.url, 
+		commits: [], 
+		lastUpdated
+	} satisfies BranchItem;
 }
 
 const harmonySVG = `<svg width='177' height='179' viewBox='0 0 177 179' fill='none' xmlns='http://www.w3.org/2000/svg'>

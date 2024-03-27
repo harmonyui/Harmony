@@ -6,6 +6,7 @@ import { prisma } from "./db";
 import { GithubRepository } from "./api/repository/github";
 import { Repository, repositorySchema } from "../../packages/ui/src/types/branch";
 import { emailSchema } from "@harmony/ui/src/types/utils";
+import { Prisma } from "@prisma/client";
 
 export interface User {
   id: string;
@@ -43,6 +44,22 @@ export type Session = {
 	account: Account | undefined
 } | FullSession;
 
+const teamPayload = {include: {repository: true}}
+
+export const getRepositoryFromTeam = (team: Prisma.TeamGetPayload<typeof teamPayload>): Repository | undefined => {
+	return team.repository.length > 0 ? {
+		id: team.repository[0].id,
+		branch: team.repository[0].branch,
+		name: team.repository[0].name,
+		owner: team.repository[0].owner,
+		ref: team.repository[0].ref,
+		installationId: team.repository[0].installationId,
+		cssFramework: team.repository[0].css_framework,
+		tailwindPrefix: team.repository[0].tailwind_prefix || undefined,
+		defaultUrl: team.repository[0].default_url
+	} : undefined;
+}
+
 export const getAccount = async (userId: string): Promise<Account | undefined> => {
 	const account = await prisma.account.findFirst({
 		where: {
@@ -59,16 +76,7 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 
 	if (account === null) return undefined;
 
-	const repository: Repository | undefined = account.team.repository.length > 0 ? {
-		id: account.team.repository[0].id,
-		branch: account.team.repository[0].branch,
-		name: account.team.repository[0].name,
-		owner: account.team.repository[0].owner,
-		ref: account.team.repository[0].ref,
-		installationId: account.team.repository[0].installationId,
-		cssFramework: account.team.repository[0].css_framework,
-		tailwindPrefix: account.team.repository[0].tailwind_prefix || undefined
-	} : undefined
+	const repository: Repository | undefined = getRepositoryFromTeam(account.team);
 
 	return {
 		id: account.id,

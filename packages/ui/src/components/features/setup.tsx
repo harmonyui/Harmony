@@ -104,7 +104,7 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({data, onConti
 interface DesignerSetupProps {
 	teamId: string
 }
-const DesignerSetup: React.FunctionComponent<DesignerSetupProps> = ({teamId}) => {
+export const DesignerSetup: React.FunctionComponent<DesignerSetupProps> = ({teamId}) => {
 	const [email, setEmail] = useState('');
 	const [error, setError] = useState('');
     const router = useRouter();
@@ -452,6 +452,10 @@ const AdditionalRepositoryInfo: React.FunctionComponent<AdditionalRepositoryInfo
                 <Label className="sm:hw-col-span-full" label="Branch">
                     <p className="hw-text-sm hw-text-gray-400">Enter the name of the branch that pull requests will be merged into (probably a staging branch).</p>
                     <Input className="hw-w-full" value={repository.branch} onChange={changeProperty.formFunc('branch', repository)}/>
+                </Label>
+                <Label className="sm:hw-col-span-full" label="Default Url">
+                    <p className="hw-text-sm hw-text-gray-400">Enter the url of your deployed app (probably a staging url).</p>
+                    <Input className="hw-w-full" value={repository.defaultUrl} onChange={changeProperty.formFunc('defaultUrl', repository)}/>
                 </Label>
                 <Label className="sm:hw-col-span-3" label="CSS Framework:">
                     <Dropdown className="hw-w-full" items={items} initialValue={repository.cssFramework} onChange={(item) => {changeProperty(repository, 'cssFramework', item.id)}}>

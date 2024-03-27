@@ -8,7 +8,7 @@ import { UpdateResponse, updateRequestBodySchema, updateResponseSchema } from '@
 import { indexFilesAndFollowImports } from '../../../../src/server/api/services/indexor/indexor';
 import { getRepository } from '../../../../src/server/api/routers/branch';
 import { Repository } from '@harmony/ui/src/types/branch';
-import { reverseUpdates } from '@harmony/util/src';
+import { getLocationFromComponentId, reverseUpdates } from '@harmony/util/src';
 
 export const maxDuration = 300;
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
@@ -169,19 +169,6 @@ export async function indexForComponent(componentId: string, parentId: string, r
 	const {file: elementFile} = getLocationFromComponentId(componentId);
 	const {file: parentFile} = getLocationFromComponentId(parentId);
 	await indexFilesAndFollowImports([elementFile, parentFile], readFile, repository.id)
-}
-
-export function getLocationFromComponentId(id: string): {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number} {
-	const stuff = atob(id);
-	const [file, startLine, startColumn, endLine, endColumn] = stuff.split(':');
-
-	return {
-		file, 
-		startLine: Number(startLine), 
-		startColumn: Number(startColumn), 
-		endLine: Number(endLine), 
-		endColumn: Number(endColumn)
-	};
 }
 
 // const getResponseFromGPT = async (body: RequestBody, githubRepository: GithubRepository, possibleComponents: ComponentLocation[], branch: string) => {

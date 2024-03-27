@@ -69,9 +69,10 @@ export function replaceTextContentWithSpans(element: HTMLElement) {
 		if (!node.textContent?.trim()) return;
 		const span = document.createElement('span');
 		span.dataset.harmonyText = 'true';
+		
+		const beforeNode = i < children.length - 1 ? children[i + 1] : undefined;
 		span.appendChild(node);
 
-		const beforeNode = i < children.length - 1 ? children[i + 1] : undefined;
 		if (beforeNode) {
 			element.insertBefore(span, beforeNode);
 		} else {
@@ -355,7 +356,10 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			return false;
 		}
 
-		
+		if (element !== selectedComponent) {
+			event.preventDefault();
+			event.stopPropagation();
+		}
 
 		onSelect(element);
 		

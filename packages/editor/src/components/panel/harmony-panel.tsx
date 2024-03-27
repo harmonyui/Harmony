@@ -21,7 +21,7 @@ import {PullRequest} from '@harmony/ui/src/types/branch';
 import { useHarmonyContext, usePinchGesture } from "../harmony-provider";
 import { PublishRequest } from "@harmony/ui/src/types/network";
 import { Font } from "@harmony/util/src/fonts";
-import { WEB_URL } from "@harmony/util/src/constants";
+import { getWebUrl } from "@harmony/util/src/index";
 
 export type SelectMode = 'scope' | 'tweezer';
 
@@ -90,9 +90,12 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 }
 
 const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches}) => {
+	const {environment} = useHarmonyContext();
+
 	//TODO: Remove dependency on harmony text
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement.dataset.harmonyText === 'true' ? selectedElement.parentElement! : selectedElement) : undefined;
-	
+	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
+
 	return (
 		<div className="hw-flex hw-w-full hw-items-center hw-shadow-2xl">
 			<div className="hw-h-10 hw-ml-4">

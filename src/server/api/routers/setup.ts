@@ -1,6 +1,6 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure, registerdProcedure } from "../trpc";
-import { Account, accountSchema, getAccount, getServerAuthSession } from "../../../../src/server/auth";
+import { Account, accountSchema, getAccount, getRepositoryFromTeam, getServerAuthSession } from "../../../../src/server/auth";
 import { indexCodebase } from "../services/indexor/indexor";
 import { fromDir } from "../services/indexor/local";
 import { fromGithub } from "../services/indexor/github";
@@ -9,9 +9,13 @@ import { Repository, repositorySchema } from "../../../../packages/ui/src/types/
 import {components} from '@octokit/openapi-types/types'
 import { emailSchema } from "@harmony/ui/src/types/utils";
 import { cookies } from "next/headers";
+import { Db } from "../../db";
+
+const accountCreateSchema = z.object({firstName: z.string(), lastName: z.string(), role: z.string()});
+type AccountCreate = z.infer<typeof accountCreateSchema>;
 
 const createSetupSchema = z.object({
-	account: z.object({firstName: z.string(), lastName: z.string(), role: z.string()}),  
+	account: accountCreateSchema,  
 	teamId: z.optional(z.string())
 })
 
@@ -38,39 +42,12 @@ export const setupRoute = createTRPCRouter({
 		.input(createSetupSchema)
 		.mutation(async ({ctx, input}) => {
 			const userId = ctx.session.auth.userId;
-			
-			const newAccount = await ctx.prisma.account.create({
-				data: {
-					firstName: input.account.firstName,
-					lastName: input.account.lastName,
-					role: input.account.role,
-					userId,
-					contact: ctx.session.auth.user.email,
-					team: {
-						connectOrCreate: {
-							where: {
-								id: input.teamId || '',
-							},
-							create: {
-								id: input.teamId,
-							}
-						}
-					}
-				}
-			});
 
 			const cookie = cookies();
 			cookie.set('harmony-user-id', userId);
-		
-			return {
-				id: newAccount.id,
-				firstName: newAccount.firstName,
-				lastName: newAccount.lastName,
-				role: newAccount.role,
-				repository: undefined,
-				teamId: newAccount.team_id,
-				contact: emailSchema.parse(newAccount.contact)
-			} satisfies Account
+
+			
+			return createNewAccount({prisma: ctx.prisma, email: ctx.session.auth.user.email, account: input.account, teamId: input.teamId, userId})
 		}),
 	sendDeveloperEmail: protectedProcedure
 		.input(z.object({email: z.string()}))
@@ -92,7 +69,8 @@ export const setupRoute = createTRPCRouter({
 					installationId: input.repository.installationId,
 					team_id: teamId,
 					css_framework: input.repository.cssFramework,
-					tailwind_prefix: input.repository.tailwindPrefix
+					tailwind_prefix: input.repository.tailwindPrefix,
+					default_url: input.repository.defaultUrl
 				}
 			});
 
@@ -105,6 +83,7 @@ export const setupRoute = createTRPCRouter({
 				ref: newRepository.ref,
 				tailwindPrefix: newRepository.tailwind_prefix || undefined,
 				cssFramework: newRepository.css_framework,
+				defaultUrl: newRepository.default_url
 			} satisfies Repository
 		}),
 	// importRepository: protectedProcedure
@@ -161,7 +140,7 @@ export const setupRoute = createTRPCRouter({
 				}
 			}).then(response => response.json().then(json => ({...octokitRepositorySchema.parse(json), auth_token: accessToken.data.token, installation_id: accessToken.data.installation_id})))));
 			
-			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: crypto.randomUUID(), name: repo.name, owner: repo.owner.login, branch: repo.default_branch, ref: repo.git_refs_url, oauthToken: curr.auth_token, installationId: curr.installation_id, cssFramework: 'other', tailwindPrefix: undefined})))]), []);
+			return repositories.reduce<(Repository)[]>((prev, curr) => ([...prev, ...(curr.repositories.map(repo => ({id: crypto.randomUUID(), name: repo.name, owner: repo.owner.login, branch: repo.default_branch, ref: repo.git_refs_url, oauthToken: curr.auth_token, installationId: curr.installation_id, cssFramework: 'other', tailwindPrefix: undefined, defaultUrl: ''})))]), []);
 		})
 });
 
@@ -176,8 +155,42 @@ const octokitRepositorySchema = z.object({
 	}))
 })
 
-function getOauthToken() {
-	
-}
+export async function createNewAccount({prisma, account, userId, teamId, email}: {prisma: Db, account: AccountCreate, userId: string, teamId: string | undefined, email: string}) {
+	const newAccount = await prisma.account.create({
+		data: {
+			firstName: account.firstName,
+			lastName: account.lastName,
+			role: account.role,
+			userId,
+			contact: email,
+			team: {
+				connectOrCreate: {
+					where: {
+						id: teamId || '',
+					},
+					create: {
+						id: teamId,
+					}
+				}
+			}
+		},
+		include: {
+			team: {
+				include: {
+					repository: true
+				}
+			}
+		}
+	});
 
-//https://neutral-mink-38.clerk.accounts.dev/v1/oauth_callback
+	
+	return {
+		id: newAccount.id,
+		firstName: newAccount.firstName,
+		lastName: newAccount.lastName,
+		role: newAccount.role,
+		repository: getRepositoryFromTeam(newAccount.team),
+		teamId: newAccount.team_id,
+		contact: emailSchema.parse(newAccount.contact)
+	} satisfies Account
+}
