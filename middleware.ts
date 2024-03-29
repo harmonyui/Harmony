@@ -1,4 +1,4 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { auth, authMiddleware, redirectToSignIn } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
  
 const allowedOrigins: string[] = [];
@@ -38,6 +38,21 @@ export default authMiddleware({
     )
 
     return res
+  },
+  afterAuth(auth, req) {
+    if (!auth.userId && !auth.isPublicRoute) {
+      const res: NextResponse = redirectToSignIn({ returnBackUrl: req.url });
+      res.cookies.delete('harmony-user-id');
+
+      return res;
+    }
+
+    // If the user is signed in and trying to access a protected route, allow them to access route
+    if (auth.userId && !auth.isPublicRoute) {
+      return NextResponse.next();
+    }
+
+    return NextResponse.next();
   },
   apiRoutes(req) {
     if (publicApis.some(matcher => matcher.test(req.url))) {

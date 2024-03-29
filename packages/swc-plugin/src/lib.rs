@@ -354,7 +354,7 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
             .expect("rootDir is expected"),
     );
 		
-		let start = Path::to_slash(Path::new(filename.as_str())).unwrap();
+	let start = Path::to_slash(Path::new(filename.as_str())).unwrap();
 		
     let result = start.strip_prefix(root_dir.to_str().unwrap());
 		console_error_panic_hook::set_once();

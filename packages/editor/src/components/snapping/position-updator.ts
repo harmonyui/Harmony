@@ -1,5 +1,5 @@
 import { Rect, selectDesignerElementReverse } from "../inspector/inspector";
-import { RectSide, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getSiblingGap, setSpaceForElement } from "./calculations";
+import { RectSide, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getProperty, getSiblingGap, setSpaceForElement } from "./calculations";
 import {close, round} from '@harmony/util/src/index'
 import { isSelectable } from "./snapping";
 
@@ -77,8 +77,8 @@ export const absoluteUpdator: PositionUpdator = {
 			updateElementValues(toResize, ['width', 'height'], updatedElements);
 			
 			element.style.position = 'absolute';
-			element.style.left = `${(rect.left - containerRect.left) / scale}px`;
-			element.style.top = `${(rect.top - containerRect.top) / scale}px`
+			element.style.left = `${(rect.left - containerRect.left) / scale - getProperty(parentUpdate.element, 'border', 'left')}px`;
+			element.style.top = `${(rect.top - containerRect.top) / scale - getProperty(parentUpdate.element, 'border', 'top')}px`
 			element.style.margin = '0px';
 			element.dataset.harmonyForceSelectable = 'true';
 			element.style.width = `${rect.width / scale}px`
@@ -338,7 +338,10 @@ export const flexUpdator: PositionUpdator = {
 			}
 
 			//bottom - set by height or align-items (to fit content)
-			if (info[heightType] === 'expand') {
+			//TODO: get rid of alignitems check here. The idea is that children heights naturally expand,
+			//and so in a scenario where it says a child is content, it is actually expand and we need this extra margin
+			//to keep the parent the same size
+			if (info[heightType] === 'expand' || (parentInfo[heightType] === 'content' && info[heightType] !== 'fixed' && parentInfo.element.style.alignItems === 'normal')) {
 				const parentGap = parentInfo.edges[endYSide].parentEdge.gap;
 				const remainingGap = info[endYSide].parentEdge.gap - parentGap;
 				setSpaceForElement(info[endYSide].element, 'margin', endYSide, remainingGap);
@@ -365,7 +368,7 @@ export const flexUpdator: PositionUpdator = {
 				const spaceDiff = info[left].siblingEdge!.gap - minSpace;
 				parentInfo.element.style.gap = `${minSpace}px`;
 				if (spaceDiff > 0.1) {
-					//setSpaceForElement(info[left].element, 'margin', left, spaceDiff);
+					setSpaceForElement(info[left].element, 'margin', left, spaceDiff);
 				}
 			}
 			if (isXCenter && parentInfo[widthType] !== 'content') {
@@ -400,7 +403,7 @@ export const flexUpdator: PositionUpdator = {
 				const minGap = parentInfo[minGapBetweenX];
 				const remainingGap = info[endXSide].siblingEdge ? info[endXSide].siblingEdge!.gap - minGap : info[endXSide].parentEdge.gap - parentGap;
 				if (remainingGap > 0.1) {
-					//setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
+					setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
 				}
 				setSpaceForElement(parentInfo.element, 'padding', endXSide, parentGap);
 			}

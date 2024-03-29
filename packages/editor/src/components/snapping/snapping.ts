@@ -450,7 +450,7 @@ class ElementSnapping implements SnapBehavior {
 		return element;
 	}
     public getRestrictions(element: HTMLElement, scale: number) {
-		const edgeInfo = calculateEdgesInfoWithSizing(element, 1, scale, 'x');
+		const edgeInfo = calculateEdgesInfo(element, 1, scale, 'x');
 
         
         const top = edgeInfo.top.siblingEdge ? edgeInfo.top.siblingEdge.edgeLocation //+ getNonWorkableGap(edgeInfo.top.siblingEdge.gapTypes) 
@@ -926,7 +926,7 @@ class FlexSnapping implements SnapBehavior {
 		}
 		const selfIndex = myChildInfo.index;
 
-		if (parent.dataset.harmonyFlex === 'false') {
+		if (!parent.dataset.harmonyFlex || parent.dataset.harmonyFlex === 'false') {
 			const _left = myChildInfo[left].siblingEdge ? myChildInfo[left].siblingEdge!.edgeLocation : myChildInfo[left].parentEdge.edgeLocation
 			const _right = myChildInfo[right].siblingEdge ? myChildInfo[right].siblingEdge!.edgeLocation : myChildInfo[right].parentEdge.edgeLocation
 			const _top = myChildInfo[top].parentEdge.edgeLocation //+ getNonWorkableGap(myChildInfo.left.parentEdge.gapTypes)//myChildInfo.left.siblingEdge ? myChildInfo.left.siblingEdge.edgeLocation : myChildInfo.left.parentEdge.edgeLocation;
@@ -1304,7 +1304,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 			}
 		}
 		updatedFirst.push(...updatedSecond);
-		updateOldValues(updatedFirst);
+		updateOldValues(updatedFirst.filter(val => val.element.dataset.harmonyText !== 'true'));
 
 		onIsDragging && onIsDragging(event, element);
     }, onCalculateSnapping(element, x, y, currentX, currentY) {
@@ -1834,7 +1834,7 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 				const toMeasureRect = {width: toMeasure.clientWidth, height: toMeasure.clientHeight}//getBoundingRect(toMeasure);
 				modifiers.push(interact.modifiers.restrictSize({
 					//TODO: Hacky fix for when a flex-basis flex-col item is measured, it comes out all wrong
-					min: {width: (width <= toMeasureRect.width && width > 0 ? minWidth < Infinity ? minWidth : Math.min(width, 20 * scale, minWidth) : 20 * scale), height: (height <= toMeasureRect.height ? Math.max(height, 20 * scale, minHeight) : 20 * scale)},
+					min: {width: (width <= toMeasureRect.width && width > 0 ? minWidth < Infinity ? minWidth : Math.min(width, minWidth) : 20 * scale), height: (height <= toMeasureRect.height ? Math.max(height, minHeight) : 20 * scale)},
 					max: {width: maxWidth, height: maxHeight}
 				}))
 			}

@@ -14,17 +14,34 @@ import { FlexValues, MarginValues, useSnapping } from "../snapping/snapping";
 import { usePrevious } from "@harmony/ui/src/hooks/previous";
 import {Alert} from '@harmony/ui/src/components/core/alert';
 import { useHarmonyContext } from "../harmony-provider";
+import { getProperty } from "../snapping/calculations";
 
 export const componentIdentifier = new ReactComponentIdentifier();
+
+interface RectSize {
+	width: number, 
+	height: number,
+}
 
 //Returns the element as understood from a designer (no nested containers with one child and no padding)
 export function selectDesignerElement(element: HTMLElement): HTMLElement {
 	let target = element;
+
+	const getClientSize = (element: HTMLElement, withBorder=false): RectSize => {
+		const width = element.clientWidth + (withBorder ? getProperty(element, 'border', 'left') + getProperty(element, 'border', 'right') : 0);
+		const height = element.clientHeight + (withBorder ? getProperty(element, 'border', 'top') + getProperty(element, 'border', 'bottom') : 0);
+
+		return {width, height};
+	}
+
+	const sizesAreEqual = (size1: RectSize, size2: RectSize): boolean => {
+		return size1.width === size2.width && size1.height === size2.height;
+	}
 	
 	const isSelectable = (element: HTMLElement | null): element is HTMLElement => {
 		if (!element) return false;
 
-		return element.children.length === 1 && ['Bottom', 'Top', 'Left', 'Right'].every(d => parseFloat($(element).css(`padding${d}`)) === 0) && element.children[0].clientWidth === element.clientWidth && element.children[0].clientHeight === element.clientHeight;
+		return element.children.length === 1 && (['bottom', 'top', 'left', 'right'] as const).every(d => getProperty(element, 'padding', d) === 0) && sizesAreEqual(getClientSize(element.children[0] as HTMLElement, true), getClientSize(element));
 	}
 
 	while(isSelectable(target.parentElement)) {
@@ -69,7 +86,7 @@ export function replaceTextContentWithSpans(element: HTMLElement) {
 		if (!node.textContent?.trim()) return;
 		const span = document.createElement('span');
 		span.dataset.harmonyText = 'true';
-		
+
 		const beforeNode = i < children.length - 1 ? children[i + 1] : undefined;
 		span.appendChild(node);
 
