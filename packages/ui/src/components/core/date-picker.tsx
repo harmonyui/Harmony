@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary -- We will let this go for now... */
-import React, { useRef } from "react";
+import React, { FocusEventHandler, PointerEventHandler, useRef } from "react";
 import {
   CalendarDate,
   createCalendar,
@@ -480,15 +480,23 @@ export const Popover = (props: PopoverProps): JSX.Element => {
     state,
   );
 
+  const onBlur: FocusEventHandler<HTMLDivElement> = (e) => {
+    const parentPopover = e.currentTarget.closest('[data-popover]');
+    if (!parentPopover) {
+      popoverProps.onBlur && popoverProps.onBlur(e);
+    }
+  }
   return (
     createPortal(<>
       <div {...underlayProps} className="fixed inset-0" />
       <div
         {...popoverProps}
+        onBlur={onBlur}
         className={`hw-absolute hw-bg-white hw-border hw-border-gray-400 hw-rounded-[3px] hw-shadow-lg hw-mt-2 hw-z-10 ${
           props.className || ""
         }`}
         ref={ref}
+        data-popover="true"
       >
         <DismissButton onDismiss={state.close.bind(state)} />
         {children}

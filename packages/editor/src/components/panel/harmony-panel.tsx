@@ -329,13 +329,16 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			)
 		},
 		'color': ({data, onChange}) => {
+			//A black transparent looks like a white
+			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
-				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'background': ({data, onChange}) => {
+			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
-				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'textAlign': ({data: raw, onChange}) => {
@@ -412,6 +415,17 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				<div className="hw-px-4">
 					<ComponentTools tools={currTools} components={currTools.reduce<Record<string, ComponentTool | undefined>>((prev, curr) => {prev[curr] = commonTools[curr]; return prev}, {})} data={data} onChange={changeData}/>
 				</div>
+				{currTools !== textTools ? <div className="hw-px-4">
+					<Popover button={<button className="hw-text-base hw-font-light">Text</button>} container={document.getElementById('harmony-container') || undefined}>
+						<div className="hw-flex hw-flex-col hw-gap-2">
+							<div className="hw-flex hw-justify-around">
+								<ComponentToolComponent ToolComponent={commonTools.color} tool='color' data={data} onChange={changeData}/>
+								<ComponentToolComponent ToolComponent={commonTools.fontSize} tool='fontSize' data={data} onChange={changeData}/>
+							</div>
+							<ComponentToolComponent ToolComponent={commonTools.font} tool='font' data={data} onChange={changeData}/>
+						</div>
+					</Popover>
+				</div> : null}
 				{/* <div className="hw-px-4">
 					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
 						<div>Behavior coming soon!</div>
@@ -598,9 +612,9 @@ const ShareButton = () => {
 	</>)
 }
 
-const buttonTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
-const textTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
-const componentTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
+const buttonTools = ['background'] as const;
+const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
+const componentTools = ['background'] as const;
 type TextTools = typeof textTools[number];
 type ButtonTools = typeof buttonTools[number];
 type ComponentTools = typeof componentTools[number];
@@ -617,19 +631,22 @@ interface ComponentToolsProps {
 const ComponentTools = ({tools, components, data, onChange}: ComponentToolsProps) => {
 	return (<div className="hw-flex hw-gap-4 hw-items-center">
 		{tools.map((tool: CommonTools) => {
-			const Component = components[tool] as ComponentTool | undefined;
-			if (!Component) return undefined;
-
-			const index = data.findIndex(d => d.name === tool);
-
-			const onComponentChange = (value: string): void => {
-				const update = data[index];
-
-				onChange({...update, value});
-			}
-			return <Component data={data[index].value} onChange={onComponentChange}/>
+			return <ComponentToolComponent ToolComponent={components[tool]} tool={tool} data={data} onChange={onChange}/>;
 		})}
 	</div>)
+}
+
+const ComponentToolComponent: React.FunctionComponent<{ToolComponent: ComponentTool | undefined, tool: CommonTools, data: ComponentToolData[], onChange: (data: ComponentToolData) => void}> = ({ToolComponent: Component, tool, data, onChange}) => {
+	if (!Component) return undefined;
+
+	const index = data.findIndex(d => d.name === tool);
+
+	const onComponentChange = (value: string): void => {
+		const update = data[index];
+
+		onChange({...update, value});
+	}
+	return <Component data={data[index].value} onChange={onComponentChange}/>
 }
 
 interface AttributePanelProps {
