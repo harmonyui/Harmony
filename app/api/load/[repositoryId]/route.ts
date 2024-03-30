@@ -28,7 +28,19 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 		}
 	});
 
-	const isPublished = Boolean(pullRequest);
+	const accountTiedToBranch = await prisma.account.findFirst({
+		where: {
+			branch: {
+				some: {
+					id: branchId
+				}
+			}
+		}
+	});
+
+	if (!accountTiedToBranch) {
+		throw new Error("Cannot find account tied to branch " + branchId);
+	}
 
 	//await indexCodebase(process.cwd(), fromDir, repositoryId);
 
@@ -91,6 +103,8 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 			name: branch.label
 		})),
 		errorElements: errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
-		isPublished
+		pullRequest: pullRequest || undefined,
+		showWelcomeScreen: !accountTiedToBranch.seen_welcome_screen,
+		isDemo: accountTiedToBranch.role === 'quick'
 	} satisfies LoadResponse)));
 }

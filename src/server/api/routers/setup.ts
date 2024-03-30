@@ -191,6 +191,7 @@ export async function createNewAccount({prisma, account, userId, teamId, email}:
 		role: newAccount.role,
 		repository: getRepositoryFromTeam(newAccount.team),
 		teamId: newAccount.team_id,
-		contact: emailSchema.parse(newAccount.contact)
+		contact: emailSchema.parse(newAccount.contact),
+		seenWelcomeScreen: newAccount.seen_welcome_screen
 	} satisfies Account
 }

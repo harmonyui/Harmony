@@ -355,11 +355,10 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
     );
 		
 	let start = Path::to_slash(Path::new(filename.as_str())).unwrap();
-		
-    let result = start.strip_prefix(root_dir.to_str().unwrap());
+	let result = start.strip_prefix(root_dir.to_str().unwrap());
 		console_error_panic_hook::set_once();
-    let path = format!("{}", result.expect("Expect valid path"));
+    //Striping the prefix leaves a '/' at the beginning, so let's get rid of that
+    let path = format!("{}", &result.expect("Expect valid path")[1..]);
     let source_map = std::sync::Arc::new(data.source_map);
-    
     program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), path, filename)))
 }

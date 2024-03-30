@@ -38,12 +38,35 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 		throw new Error("Cannot find repository with id " + branch.repository_id)
 	}
 
+	const accountTiedToBranch = await prisma.account.findFirst({
+		where: {
+			branch: {
+				some: {
+					id: branchId
+				}
+			}
+		}
+	});
+
+	if (!accountTiedToBranch) {
+		throw new Error("Cannot find account tied to branch " + branchId);
+	}
+
 	const json = await req.json();
 	const parseResult = updateRequestBodySchema.safeParse(json);
 	if (!parseResult.success) {
 		throw new Error("Invalid parsing");
 	}
 	const body = parseResult.data;
+
+	await prisma.account.update({
+		where: {
+			id: accountTiedToBranch.id
+		},
+		data: {
+			seen_welcome_screen: true
+		}
+	})
 
 	const updates: ComponentUpdate[] = [];
 	const errorUpdates: (ComponentUpdate & {errorType: string})[] = [];

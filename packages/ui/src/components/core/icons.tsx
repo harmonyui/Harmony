@@ -1,7 +1,7 @@
 import { getClass } from "../../../../util/src/index";
 import React from "react";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {faAlignCenter, faAlignJustify, faAlignLeft, faAlignRight, faArrowUpRightFromSquare, faCirclePlay, faCodeBranch, faCodePullRequest, faRectangleList, faSquareShareNodes, faUserGroup} from '@fortawesome/free-solid-svg-icons'
+import {faAlignCenter, faAlignJustify, faAlignLeft, faAlignRight, faArrowUpRightFromSquare, faCirclePlay, faCircleQuestion, faCodeBranch, faCodePullRequest, faRectangleList, faSquareShareNodes, faUserGroup} from '@fortawesome/free-solid-svg-icons'
 
 export type IconComponent = (
   props: React.ComponentPropsWithoutRef<"svg">,
@@ -953,5 +953,11 @@ export const SendIcon: IconComponent = (props) => {
       </defs>
     </svg>
 
+  )
+}
+
+export const QuestionMarkIcon: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon className={props.className} icon={faCircleQuestion} />
   )
 }
