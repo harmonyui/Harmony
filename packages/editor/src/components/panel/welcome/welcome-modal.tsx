@@ -6,7 +6,6 @@ import { getWebUrl } from "@harmony/util/src";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { Alert, InfoBox } from "@harmony/ui/src/components/core/alert";
 import { IconComponent } from "@harmony/ui/src/components/core/icons";
-import { cooper } from "@harmony/util/src/fonts";
 
 export const WelcomeModal: React.FunctionComponent = () => {
     const {setShowWelcomeScreen, showWelcomeScreen} = useHarmonyContext();
@@ -47,9 +46,8 @@ type PageComponent = React.FunctionComponent<{onNext: () => void;}>;
 const WelcomeScreen: PageComponent = ({onNext}) => {
     const {environment} = useHarmonyContext();
     const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
-
     return (<>
-        <Header className={cooper.className} level={1}>Welcome to Harmony</Header>
+        <Header level={1}>Welcome to Harmony</Header>
         <p>You are one of the world’s first visual developers. You have as much freedom as a dev with access to the codebase, without needing any technical experience.</p>
         <div className="hw-h-40 hw-mx-auto">
             <img className="hw-h-full" src={`${WEB_URL}/Harmony_logo.svg`}/>
@@ -66,7 +64,7 @@ const WelcomeScreen: PageComponent = ({onNext}) => {
 export const ControlModal: React.FunctionComponent<{show: boolean, onClose: () => void;}> = ({show, onClose}) => {
     return <HarmonyModal maxWidthClassName="hw-max-w-5xl" show={show} onClose={onClose} editor>
         <div className="hw-flex hw-flex-col hw-text-center hw-gap-4">
-            <Header className={cooper.className} level={1}>Harmony Control Guide:</Header>
+            <Header level={1}>Harmony Control Guide:</Header>
             <ControlGrid/>
         </div>
     </HarmonyModal>
@@ -74,7 +72,7 @@ export const ControlModal: React.FunctionComponent<{show: boolean, onClose: () =
 
 const ControlScreen: PageComponent = ({onNext}) => {
     return (<>
-        <Header className={cooper.className} level={1}>Harmony Control Guide:</Header>
+        <Header level={1}>Harmony Control Guide:</Header>
         <ControlGrid/>
         <div className="hw-flex hw-gap-4 hw-items-center hw-justify-around">
             <p>We have loaded a sample project for you to play around with. Let’s get started with the ultra-simple controls!</p>
