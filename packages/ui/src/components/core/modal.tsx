@@ -4,6 +4,7 @@ import { usePrevious } from "../../hooks/previous";
 import { ReplaceWithName } from "../../types/utils";
 import { createPortal } from "react-dom";
 import { ClosableContent } from "./closable-content";
+import { getClass } from "@harmony/util/src";
 
 interface ModalContextType {
 	addModal: (newModal: React.ReactNode) => void,
@@ -83,12 +84,13 @@ interface HarmonyModalProps {
 	show: boolean,
 	onClose: () => void,
 	editor?: boolean;
+	maxWidthClassName?: string;
 }
-export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({children, show, onClose, editor=false}) => {
+export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({children, show, onClose, maxWidthClassName, editor=false}) => {
 	return (
 		<ModalPortal show={show} container={editor ? document.getElementById('harmony-container') || undefined : undefined}>
 			<div className="hw-flex hw-justify-center hw-items-center hw-h-full hw-w-full">
-				<ClosableContent className="hw-mx-auto hw-max-w-3xl hw-w-full" onClose={onClose}>
+				<ClosableContent className={getClass("hw-mx-auto hw-w-full", maxWidthClassName || 'hw-max-w-3xl')} onClose={onClose}>
 					<div className="hw-bg-white hw-shadow sm:hw-rounded-lg">
 						<div className="hw-px-4 hw-py-5 sm:hw-p-6">
 							{children}

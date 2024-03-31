@@ -55,7 +55,7 @@ const getExtraD = (element: HTMLElement, type: 'top' | 'bottom' | 'left' | 'righ
 	return parseFloat($(element).css(`margin${upper}`) || '0')// + parseFloat($(element).css(`border${upper}`) || '0');
 }
 
-const getProperty = (element: HTMLElement, property: 'margin' | 'border' | 'padding', type: 'top' | 'bottom' | 'left' | 'right') => {
+export const getProperty = (element: HTMLElement, property: 'margin' | 'border' | 'padding', type: 'top' | 'bottom' | 'left' | 'right') => {
 	const upper = capitalizeFirstLetter(type);
 	return parseFloat($(element).css(`${property}${upper}`) || '0')// + parseFloat($(element).css(`border${upper}`) || '0');
 }

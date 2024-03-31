@@ -44,7 +44,7 @@ export const WelcomeDisplay: React.FunctionComponent<{teamId: string | undefined
     }
 
 	return (<SetupLayout>
-			<WelcomeSetup key={0} data={account || {id: '', firstName: '', lastName: '', role: '', teamId: '', contact: 'example@gmail.com'}} onContinue={onWelcomeContinue}/>
+			<WelcomeSetup key={0} data={account || {id: '', firstName: '', lastName: '', role: '', teamId: '', contact: 'example@gmail.com', seenWelcomeScreen: false}} onContinue={onWelcomeContinue}/>
 		</SetupLayout>)
 }
 

@@ -2,7 +2,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
 import { Attribute, ComponentElement, ComponentError, ComponentUpdate } from "@harmony/ui/src/types/component";
-import {PublishRequest, loadResponseSchema, updateResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
+import {PublishRequest, PublishResponse, loadResponseSchema, publishResponseSchema, updateResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
 import {translateUpdatesToCss} from '@harmony/util/src/component';
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
@@ -12,12 +12,14 @@ import React from "react";
 
 import { Setup } from "./harmony-setup";
 import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
-import { PullRequest } from "@harmony/ui/src/types/branch";
+import { BranchItem, PullRequest } from "@harmony/ui/src/types/branch";
 import { Font } from "@harmony/util/src/fonts";
 import $ from 'jquery';
 import { getBoundingRect } from "./snapping/calculations";
 import { reverseUpdates } from "@harmony/util/src";
 import { Environment, getWebUrl } from "@harmony/util/src/index";
+import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
+import { WelcomeModal } from "./panel/welcome/welcome-modal";
 
 const WIDTH = 1960;
 const HEIGHT = 1080;
@@ -41,13 +43,17 @@ export function findElementsFromId(componentId: string, parentId: string): HTMLE
 const viewModes = ['designer', 'preview', 'preview-full'] as const;
 export type DisplayMode = typeof viewModes[number];
 
+const noop = () => undefined;
+
+const asyncnoop = async () => undefined;
+
 interface HarmonyContextProps {
 	branchId: string;
 	isSaving: boolean;
 	setIsSaving: (isSaving: boolean) => void;
-	publish: (request: PublishRequest) => Promise<boolean>;
-	isPublished: boolean;
-	setIsPublished: (value: boolean) => void;
+	publish: (request: PublishRequest) => Promise<PublishResponse | undefined>;
+	pullRequest: PullRequest | undefined;
+	setPullRequest: (value: PullRequest) => void;
 	displayMode: DisplayMode;
 	changeMode: (mode: DisplayMode) => void;
 	publishState: PullRequest | undefined;
@@ -60,8 +66,14 @@ interface HarmonyContextProps {
 	error: string | undefined;
 	setError: (value: string | undefined) => void;
 	environment: Environment;
+	showWelcomeScreen: boolean;
+	setShowWelcomeScreen: (value: boolean) => void;
+	showGiveFeedback: boolean;
+	setShowGiveFeedback: (value: boolean) => void;
+	isDemo: boolean;
+	currentBranch: {id: string, name: string} | undefined;
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', isPublished: false, publish: async () => true, isSaving: false, setIsSaving: () => undefined, setIsPublished: () => undefined, displayMode: 'designer', changeMode: () => undefined, publishState: undefined, setPublishState: () => undefined, onFlexToggle: () => undefined, scale: 1, onScaleChange: () => undefined, onClose: () => undefined, error: undefined, setError: () => undefined, environment: 'production'});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', pullRequest: undefined, publish: asyncnoop, isSaving: false, setIsSaving: noop, setPullRequest: noop, displayMode: 'designer', changeMode: noop, publishState: undefined, setPublishState: noop, onFlexToggle: noop, scale: 1, onScaleChange: noop, onClose: noop, error: undefined, setError: noop, environment: 'production', showWelcomeScreen: false, setShowWelcomeScreen: noop, showGiveFeedback: false, setShowGiveFeedback: noop, isDemo: false, currentBranch: undefined});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -91,7 +103,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [isDirty, setIsDirty] = useState(false);
 	const [updateOverlay, setUpdateOverlay] = useState(0);
 	const [isSaving, setIsSaving] = useState(false);
-	const [isPublished, setIsPublished] = useState(false);
+	const [pullRequest, setPullRequest] = useState<PullRequest | undefined>();
 	const [displayMode, setDisplayMode] = useState<DisplayMode>();
 	const [publishState, setPublishState] = useState<PullRequest | undefined>();
 	const [cursorX, setCursorX] = useState(0);
@@ -99,10 +111,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [oldScale, setOldSclae] = useState(scale);
 	const [forceSave, setForceSave] = useState(0);
 	const [error, setError] = useState<string | undefined>();
+	const [showWelcomeScreen, setShowWelcomeScreen] = useState<boolean>(false);
+	const [showGiveFeedback, setShowGiveFeedback] = useState(false);
+	const [isDemo, setIsDemo] = useState(false);
 
 	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
 	
-	const executeCommand = useComponentUpdator({isSaving, environment, setIsSaving, fonts, isPublished, branchId, repositoryId, rootComponent, forceSave, onChange() {
+	const executeCommand = useComponentUpdator({isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}, onError: setError});
 
@@ -139,11 +154,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					},
 				});
 
-				const {updates, branches, isPublished, errorElements} = loadResponseSchema.parse(await response.json());
+				const {updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo} = loadResponseSchema.parse(await response.json());
 				setAvailableIds(updates);
 				setBranches(branches);
-				setIsPublished(isPublished);
+				setPullRequest(pullRequest);
 				setErrorElements(errorElements);
+				setShowWelcomeScreen(showWelcomeScreen);
+				setIsDemo(isDemo);
 			} catch(err) {
 				console.log(err);
 			}
@@ -367,16 +384,26 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		onAttributesChange(component, update, execute);
 	}
 
-	const onPublish = async (request: PublishRequest): Promise<boolean> => {
+	const onPublish = async (request: PublishRequest): Promise<PublishResponse | undefined> => {
 		try {
-			await fetch(`${WEB_URL}/api/publish`, {
+			const response = await fetch(`${WEB_URL}/api/publish`, {
 				method: 'POST',
 				body: JSON.stringify(request)
 			});
+			if (!response.ok) {
+				return undefined;
+			}
 
-			return true;
+			const parsed = publishResponseSchema.safeParse(await response.json());
+			if (!parsed.success) {
+				return undefined;
+			}
+
+			setPullRequest(parsed.data.pullRequest);
+
+			return parsed.data;
 		} catch(err) {
-			return false
+			return undefined
 		}
 	}
 
@@ -403,7 +430,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	return (
 		<>
-			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, isPublished, setIsPublished, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment}}>
+			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, pullRequest, setPullRequest, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showWelcomeScreen, setShowWelcomeScreen, showGiveFeedback, setShowGiveFeedback, isDemo, currentBranch: branches.find(branch => branch.id === branchId)}}>
 				{displayMode && displayMode !== 'preview-full' ? <>
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 						<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
@@ -423,6 +450,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 						<MinimizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none"/>
 					</button>
 				</div>}
+				<WelcomeModal />
 			</HarmonyContext.Provider>}
 		</>
 	)

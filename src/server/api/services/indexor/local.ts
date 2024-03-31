@@ -19,3 +19,19 @@ export const fromDir: ReadFiles = async (startPath: string, filter: RegExp, call
 			}
 	};
 };
+
+export const getFile = async (path: string): Promise<string> => {
+	if (!fs.existsSync(path)) {
+		throw new Error("Invalid path " + path);
+	}
+
+	return new Promise<string>((resolve, reject) => {
+		fs.readFile(path, 'utf-8', (err, data) => {
+			if (err) {
+				reject(err.message);
+			}
+
+			resolve(data);
+		})
+	});
+}

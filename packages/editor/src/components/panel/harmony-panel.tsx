@@ -22,6 +22,7 @@ import { useHarmonyContext, usePinchGesture } from "../harmony-provider";
 import { PublishRequest } from "@harmony/ui/src/types/network";
 import { Font } from "@harmony/util/src/fonts";
 import { getWebUrl } from "@harmony/util/src/index";
+import { GiveFeedbackModal, HelpGuide } from "./welcome/help-guide";
 
 export type SelectMode = 'scope' | 'tweezer';
 
@@ -42,7 +43,7 @@ export interface HarmonyPanelProps {
 	branches: {id: string, name: string}[];
 }
 export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) => {
-	const {displayMode, onScaleChange, scale} = useHarmonyContext();
+	const {displayMode, onScaleChange, scale, showGiveFeedback, setShowGiveFeedback, isDemo} = useHarmonyContext();
 	const {onTouch} = usePinchGesture({scale, onTouching(newScale, cursorPos) {
 		onScaleChange(newScale, cursorPos);
 	}})
@@ -78,7 +79,14 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 					<Slider value={scale * 100} onChange={(value) => onScaleChange(value/100, {x: 0, y: 0})} max={500}/>
 				</div> */}
 			</div>
-		
+			<div className="hw-fixed hw-left-4 hw-bottom-4">
+				{isDemo ? <Button as='a' href='https://j48inpgngmc.typeform.com/to/Ch60XpCt' className="hw-mr-4" target="_blank">Join Beta</Button> : null}
+				<Button mode='secondary' onClick={() => setShowGiveFeedback(true)}>Give us feedback</Button>
+			</div>
+			<div className="hw-fixed hw-right-0 hw-bottom-0">
+				<HelpGuide className="hw-mr-4 hw-mb-4"/>
+			</div>
+			<GiveFeedbackModal show={showGiveFeedback} onClose={() => setShowGiveFeedback(false)}/>
 			{/* <ToolbarPanel mode={mode} onModeChange={onModeChange}/>
 			<div className="hw-text-center">
 				
@@ -283,9 +291,8 @@ interface ToolbarPanelProps {
 	branches: {id: string, name: string}[];
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, selectedElement, onChange, isDirty, branchId, branches}) => {
-	const {isSaving, isPublished, changeMode, fonts, onFlexToggle, onClose} = useHarmonyContext();
+	const {isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo} = useHarmonyContext();
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined;
-	const currBranch = branches.find(b => b.id === branchId);
 	const changeData = (values: ComponentToolData) => {
 		if (selectedComponent === undefined || data === undefined) return;
 		const componentId = selectedComponent.id;
@@ -307,7 +314,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		changeMode('preview')
 	}
 
-	const savingText = isSaving ? 'Saving...' : isPublished ? 'Published' : null;
+	const savingText = isSaving ? 'Saving...' : Boolean(pullRequest) ? 'Published' : null;
 
 	const commonTools: Record<CommonTools, ComponentTool | undefined> = useMemo(() => ({
 		'font': fonts ? ({data, onChange}) => {
@@ -322,13 +329,16 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			)
 		},
 		'color': ({data, onChange}) => {
+			//A black transparent looks like a white
+			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
-				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'background': ({data, onChange}) => {
+			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
-				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'textAlign': ({data: raw, onChange}) => {
@@ -399,12 +409,23 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-divide-x">
 			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
-				<Header className="hw-font-normal" level={3}>{currBranch ? currBranch.name : 'Invalid Branch'}</Header>
+				<Header className="hw-font-normal" level={3}>{currentBranch ? currentBranch.name : 'Invalid Branch'}</Header>
 			</div>
 			{data ? <>
 				<div className="hw-px-4">
 					<ComponentTools tools={currTools} components={currTools.reduce<Record<string, ComponentTool | undefined>>((prev, curr) => {prev[curr] = commonTools[curr]; return prev}, {})} data={data} onChange={changeData}/>
 				</div>
+				{currTools !== textTools ? <div className="hw-px-4">
+					<Popover button={<button className="hw-text-base hw-font-light">Text</button>} container={document.getElementById('harmony-container') || undefined}>
+						<div className="hw-flex hw-flex-col hw-gap-2">
+							<div className="hw-flex hw-justify-around">
+								<ComponentToolComponent ToolComponent={commonTools.color} tool='color' data={data} onChange={changeData}/>
+								<ComponentToolComponent ToolComponent={commonTools.fontSize} tool='fontSize' data={data} onChange={changeData}/>
+							</div>
+							<ComponentToolComponent ToolComponent={commonTools.font} tool='font' data={data} onChange={changeData}/>
+						</div>
+					</Popover>
+				</div> : null}
 				{/* <div className="hw-px-4">
 					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
 						<div>Behavior coming soon!</div>
@@ -428,9 +449,9 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				<button className="hw-text-[#11283B] hover:hw-text-[#11283B]/80" onClick={onPreview}>
 					<PlayIcon className="hw-h-7 hw-w-7 hw-fill-white hw-stroke-none"/>
 				</button>
-				<button className="hover:hw-fill-slate-400 hw-group" onClick={onClose}>
+				{!isDemo ? <button className="hover:hw-fill-slate-400 hw-group" onClick={onClose}>
 					<XMarkIcon className="group-hover:hw-fill-gray-500 hw-h-6 hw-w-6"/>
-				</button>
+				</button> : null}
 			</div>
 			
 			{/* <Button className="hw-p-1" mode={mode === 'scope' ? 'primary' : 'secondary'} onClick={() => onModeChange('scope')}>
@@ -444,32 +465,37 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 }
 
 const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=false}) => {
-	const {publishState, setPublishState, changeMode} = useHarmonyContext();
+	const {publishState, setPublishState, changeMode, isDemo, currentBranch, setError: setErrorProps} = useHarmonyContext();
 	const [show, setShow] = useState(false);
 	const changeProperty = useChangeProperty<PullRequest>(setPublishState);
 	const [loading, setLoading] = useState(false);
-	const {branchId, publish, setIsPublished, isPublished} = useHarmonyContext();
+	const {branchId, publish, pullRequest: pullRequestProps} = useHarmonyContext();
 	const [error, setError] = useState('');
 
 	const pullRequest: PullRequest = publishState || {id: '', title: '', body: '', url: ''}
 
+	const isPublished = Boolean(pullRequestProps)
+
 	const onNewPullRequest = () => {
 		if (!validate()) return;
 
-        setLoading(true);
+        sendPullRequest(pullRequest);
+	}
 
+	const sendPullRequest = async (pullRequest: PullRequest) => {
+		setLoading(true);
 		const request: PublishRequest = {
 			branchId,
 			pullRequest
 		}
-		publish(request).then((published) => {
-			setLoading(false);
-			setIsPublished(published);
-			if (!published) {
-				setError('There was an error when publishing');
-			}
-			setShow(false);
-		})
+		const published = await publish(request);
+		setLoading(false);
+		setShow(false);
+		if (!published) {
+			setError('There was an error when publishing');
+		}
+		
+		return published;
 	}
 
 	const onPreview = () => {
@@ -489,6 +515,32 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 	const onClose = () => {
 		setShow(false);
 		setError('');
+	}
+
+	const onViewCode = () => {
+		if (!currentBranch) return;
+
+		const pullRequest: PullRequest = {
+			id: '',
+			title: currentBranch.name,
+			body: '',
+			url: ''
+		}
+		if (!pullRequestProps) {
+			sendPullRequest(pullRequest).then((published) => {
+				if (published) {
+					window.open(published.pullRequest.url, '_blank')?.focus();
+				} else {
+					setErrorProps('There was an error viewing the code');
+				}
+			})
+		} else {
+			window.open(pullRequestProps.url, '_blank')?.focus();
+		}
+	}
+
+	if (isDemo) {
+		return <Button mode="dark" className="hw-h-7 hw-px-8" onClick={onViewCode} loading={loading} disabled={!Boolean(currentBranch)}>View Code</Button>
 	}
 
 	return <>
@@ -560,9 +612,9 @@ const ShareButton = () => {
 	</>)
 }
 
-const buttonTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
-const textTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
-const componentTools = ['font', 'fontSize', 'background', 'color', 'textAlign', 'spacing'] as const;
+const buttonTools = ['background'] as const;
+const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
+const componentTools = ['background'] as const;
 type TextTools = typeof textTools[number];
 type ButtonTools = typeof buttonTools[number];
 type ComponentTools = typeof componentTools[number];
@@ -579,19 +631,22 @@ interface ComponentToolsProps {
 const ComponentTools = ({tools, components, data, onChange}: ComponentToolsProps) => {
 	return (<div className="hw-flex hw-gap-4 hw-items-center">
 		{tools.map((tool: CommonTools) => {
-			const Component = components[tool] as ComponentTool | undefined;
-			if (!Component) return undefined;
-
-			const index = data.findIndex(d => d.name === tool);
-
-			const onComponentChange = (value: string): void => {
-				const update = data[index];
-
-				onChange({...update, value});
-			}
-			return <Component data={data[index].value} onChange={onComponentChange}/>
+			return <ComponentToolComponent ToolComponent={components[tool]} tool={tool} data={data} onChange={onChange}/>;
 		})}
 	</div>)
+}
+
+const ComponentToolComponent: React.FunctionComponent<{ToolComponent: ComponentTool | undefined, tool: CommonTools, data: ComponentToolData[], onChange: (data: ComponentToolData) => void}> = ({ToolComponent: Component, tool, data, onChange}) => {
+	if (!Component) return undefined;
+
+	const index = data.findIndex(d => d.name === tool);
+
+	const onComponentChange = (value: string): void => {
+		const update = data[index];
+
+		onChange({...update, value});
+	}
+	return <Component data={data[index].value} onChange={onComponentChange}/>
 }
 
 interface AttributePanelProps {

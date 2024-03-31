@@ -1,9 +1,13 @@
+extern crate console_error_panic_hook;
+use std::panic;
 use std::sync::Arc;
 use base64::prelude::*;
 use fancy_regex::Regex;
 use swc_ecma_ast::{op, BinExpr, BindingIdent, BlockStmt, ComputedPropName, CondExpr, Decl, Expr, Function, JSXExprContainer, MemberExpr, MemberProp, Null, OptChainExpr, Param, Pat, RestPat, ReturnStmt, Stmt, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator};
 
 use std::path::Path;
+use path_slash::PathExt as _;
+
 use serde_json::Value;
 use swc_common::{Mark,SourceMapper, plugin::metadata::TransformPluginMetadataContextKind, DUMMY_SP};
 use swc_core::{
@@ -329,6 +333,7 @@ impl VisitMut for TransformVisitor {
 
 #[plugin_transform]
 fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata) -> Program {
+		panic::set_hook(Box::new(console_error_panic_hook::hook));
     let filename = if let Some(filename) =
         data.get_context(&TransformPluginMetadataContextKind::Filename)
     {
@@ -348,10 +353,12 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
             .as_str()
             .expect("rootDir is expected"),
     );
-    let result = Path::new(filename.as_str()).strip_prefix(root_dir);
-    let path = format!("{}", result.ok().expect("Expect valid path").display());
-    
+		
+	let start = Path::to_slash(Path::new(filename.as_str())).unwrap();
+	let result = start.strip_prefix(root_dir.to_str().unwrap());
+		console_error_panic_hook::set_once();
+    //Striping the prefix leaves a '/' at the beginning, so let's get rid of that
+    let path = format!("{}", &result.expect("Expect valid path")[1..]);
     let source_map = std::sync::Arc::new(data.source_map);
-    
     program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), path, filename)))
 }

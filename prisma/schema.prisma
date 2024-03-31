@@ -29,6 +29,7 @@ model Account {
 	role			  String
 	contact			  String
 	team_id			  String
+	seen_welcome_screen Boolean @default(false)
 	team Team @relation(fields: [team_id], references: [id])
 	branch Branch[]
 }

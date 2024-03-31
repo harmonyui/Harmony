@@ -1,4 +1,4 @@
-import { publishRequestSchema } from "@harmony/ui/src/types/network";
+import { publishRequestSchema, PublishResponse } from "@harmony/ui/src/types/network";
 import { prisma } from "../../../src/server/db";
 import { createPullRequest } from "../../../src/server/api/routers/pull-request";
 import { getBranch, getRepository } from "../../../src/server/api/routers/branch";
@@ -108,8 +108,9 @@ export async function POST(req: Request): Promise<Response> {
     await findAndCommitUpdates(updates, repository, branch);
 
     const newPullRequest = await createPullRequest({branch, pullRequest, repository})
-
-    return new Response(JSON.stringify({pullRequest: newPullRequest}), {
+	const response: PublishResponse = {pullRequest: newPullRequest};
+	
+    return new Response(JSON.stringify(response), {
         status: 200
     })
 }

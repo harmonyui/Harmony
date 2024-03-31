@@ -41,10 +41,10 @@ export function Button <T extends React.ElementType>({
   }, [ref]);
   const Component = as || "button";
   const buttonClasses: { [key in ButtonType]: string } = {
-    primary: "hw-bg-[#0B4F6C] hw-border-none hw-text-white hover:hw-bg-[#0B4F6C]/80 hw-fill-white",
-    secondary: "hover:hw-bg-gray-50",
-    other: `hw-text-secondary hover:hw-opacity-80`,
-    dark: `hw-bg-[#11283B] hw-text-white hw-border-none hover:hw-bg-[#11283B]/80 hw-fill-white`,
+    primary: "hw-bg-[#0B4F6C] hw-border-none hw-text-white enabled:hover:hw-bg-[#0B4F6C]/80 hw-fill-white",
+    secondary: "enabled:hover:hw-bg-gray-50 hw-bg-white",
+    other: `hw-text-secondary enabled:hover:hw-opacity-80`,
+    dark: `hw-bg-[#11283B] hw-text-white hw-border-none enabled:hover:hw-bg-[#11283B]/80 hw-fill-white`,
 		none: `hw-text-sm hw-font-semibold hw-leading-6 hw-text-gray-900`
   };
   const style = mode === "other" ? { backgroundColor } : undefined;

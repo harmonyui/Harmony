@@ -450,7 +450,7 @@ try {
 						
 						//For now, if we cannot find where to update the text in a string property then just 
 						//delete the attribute so we can say 'We cannot updat the text'
-						instance.attributes.splice(j);
+						instance.attributes.splice(j, 1);
 						j--;
 					}
 				}

@@ -1,9 +1,9 @@
-import { authMiddleware } from "@clerk/nextjs";
+import { auth, authMiddleware, redirectToSignIn } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
  
 const allowedOrigins: string[] = [];
 
-const publicApis = [/\/api\/load/, /\/api\/update/, /\/api\/publish/, /\/api\/github\/callback/, /\/api\/trpc\/setup\.getRepositories/, /\/api\/trpc\/setup\.connectRepository/];
+const publicApis = [/\/api\/load/, /\/api\/update/, /\/api\/publish/, /\/api\/github\/callback/, /\/api\/trpc\/setup\.getRepositories/, /\/api\/email/, /\/api\/trpc\/setup\.connectRepository/];
 
 // This example protects all routes including api/trpc routes
 // Please edit this to allow other routes to be public as needed.
@@ -38,6 +38,21 @@ export default authMiddleware({
     )
 
     return res
+  },
+  afterAuth(auth, req) {
+    if (!auth.userId && !auth.isPublicRoute) {
+      const res: NextResponse = redirectToSignIn({ returnBackUrl: req.url });
+      res.cookies.delete('harmony-user-id');
+
+      return res;
+    }
+
+    // If the user is signed in and trying to access a protected route, allow them to access route
+    if (auth.userId && !auth.isPublicRoute) {
+      return NextResponse.next();
+    }
+
+    return NextResponse.next();
   },
   apiRoutes(req) {
     if (publicApis.some(matcher => matcher.test(req.url))) {

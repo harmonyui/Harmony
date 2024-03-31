@@ -211,9 +211,10 @@ export function convertRgbToHex(rgb: string) {
   let match = rgb.match(/^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/); 
   if (match === null) {
     match = rgb.match(/^rgba\((\d+), \s*(\d+), \s*(\d+), \s*(\d+(?:\.\d+)?)\)$/)
-    if (!match)
+    if (!match) {
       console.error('Invalid rgb ' + rgb);
       return '#000000';
+    }
   }
   function hexCode(i: string) { 
         
@@ -221,6 +222,7 @@ export function convertRgbToHex(rgb: string) {
       // them to Hexadecimal. 
       return ("0" + parseInt(i).toString(16)).slice(-2); 
   } 
+  
   return "#" + hexCode(match[1]) + hexCode(match[2]) 
                   + hexCode(match[3]) + (match[4] ? hexCode(`${parseFloat(match[4]) * 255}`) : ''); 
 }

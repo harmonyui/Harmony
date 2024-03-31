@@ -25,5 +25,7 @@ swc_plugin_macro = "0.9.15"
 base64 = "0.21.7"
 pathdiff = "0.1.0"
 fancy-regex = "0.13.0"
+console_error_panic_hook = "0.1.7"
+path-slash = "0.2.1"
 
 [dev-dependencies]

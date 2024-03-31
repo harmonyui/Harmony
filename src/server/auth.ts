@@ -22,7 +22,8 @@ export const accountSchema = z.object({
 	role: z.string(),
 	repository: z.optional(repositorySchema),
 	teamId: z.string(),
-	contact: emailSchema
+	contact: emailSchema,
+	seenWelcomeScreen: z.boolean()
 })
 
 export type Account = z.infer<typeof accountSchema>;
@@ -85,7 +86,8 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 		repository,
 		role: account.role,
 		teamId: account.team_id,
-		contact: emailSchema.parse(account.contact)
+		contact: emailSchema.parse(account.contact),
+		seenWelcomeScreen: account.seen_welcome_screen
 	}
 }
 

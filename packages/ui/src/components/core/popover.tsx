@@ -1,4 +1,4 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import type { AllOrNothing } from "../../types/utils";
 import {getClass} from "../../../../util/src/index"
 
@@ -10,6 +10,7 @@ type PopoverProps = React.PropsWithChildren<
     className?: string;
     buttonClass?: string;
     container?: HTMLElement;
+    closeTrigger?: number;
   } & AllOrNothing<{ isOpen: boolean; setIsOpen: (value: boolean) => void }>
 >;
 export const Popover: React.FunctionComponent<PopoverProps> = ({
@@ -20,6 +21,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
   container,
   buttonClass,
   className = "hw-p-2",
+  closeTrigger
 }) => {
   const [isOpenState, setIsOpenState] = useState<boolean | undefined>(
     isOpen === undefined ? false : undefined,
@@ -44,6 +46,12 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
       setIsOpenActual(!isOpenActual);
     },
   };
+
+  useEffect(() => {
+    if (closeTrigger) {
+      setIsOpenActual(false);
+    }
+  }, [closeTrigger]);
   return (
     <>
       <div

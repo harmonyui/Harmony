@@ -1,6 +1,7 @@
 import { z } from "zod";
 import { componentErrorSchema, updateSchema } from "./component";
 import { pullRequestSchema } from "./branch";
+import { emailSchema } from "./utils";
 
 export const updateRequestBodySchema = z.object({
 	values: z.array(z.object({
@@ -23,7 +24,9 @@ export const loadResponseSchema = z.object({
 		name: z.string()
 	})),
 	errorElements: z.array(componentErrorSchema),
-	isPublished: z.boolean()
+	pullRequest: z.optional(pullRequestSchema),
+	showWelcomeScreen: z.boolean(),
+	isDemo: z.boolean()
 });
 export type LoadResponse = z.infer<typeof loadResponseSchema>;
 
@@ -35,3 +38,21 @@ export const publishRequestSchema = z.object({
 	branchId: z.string(),
 })
 export type PublishRequest = z.infer<typeof publishRequestSchema>;
+
+export const publishResponseSchema = z.object({
+	pullRequest: pullRequestSchema
+});
+export type PublishResponse = z.infer<typeof publishResponseSchema>;
+
+export const emailFeedbackRequestSchema = z.object({
+	name: z.string(),
+	comments: z.string()
+});
+export type EmailFeedbackRequest = z.infer<typeof emailFeedbackRequestSchema>;
+
+export const emailMeetingRequestSchema = z.object({
+	name: z.string(),
+	email: emailSchema,
+	comments: z.string()
+});
+export type EmailMeetingRequest = z.infer<typeof emailMeetingRequestSchema>;
