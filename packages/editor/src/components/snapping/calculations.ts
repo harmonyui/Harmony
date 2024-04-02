@@ -574,7 +574,7 @@ export function calculateEdgesInfoWithSizing(element: HTMLElement, scale: number
 		minHeightContent = _minHeightContent;
 	} //Basically svg's will have a min width and height of 20
 	
-	const rect = getBoundingRect(elementReal);
+	const rect = getBoundingRect(sizingElement);
 	const heightReal = rect.height;//bottom.bottom.parentEdge.edgeLocation - top.top.parentEdge.edgeLocation;
 	const widthReal = rect.width//right.right.parentEdge.edgeLocation - left.left.parentEdge.edgeLocation;
 	const height = edgeInfo.bottom.elementLocation - edgeInfo.top.elementLocation;

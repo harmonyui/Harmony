@@ -1304,7 +1304,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 			}
 		}
 		updatedFirst.push(...updatedSecond);
-		updateOldValues(updatedFirst.filter(val => val.element.dataset.harmonyText !== 'true'));
+		//Filter out any of the above 'replacetextcontentwithspans' that are no longer in the dom
+		updateOldValues(updatedFirst.filter(val => document.body.contains(val.element)));
 
 		onIsDragging && onIsDragging(event, element);
     }, onCalculateSnapping(element, x, y, currentX, currentY) {
@@ -1609,9 +1610,10 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 					selectDesignerElementReverse(e as HTMLElement).style.cursor = cursor;
 
 					return cursor;
-				}
+				},
+				
 				//inertia: true
-			});
+			}).on('move', startIt);
 
 			document.addEventListener('keydown', onKeyDown);
 			document.addEventListener('keyup', onKeyUp);
@@ -1622,6 +1624,20 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 			document.addEventListener('keyup', onKeyUp);
 		}
 	}, [element, scale, shiftSnapper]);
+
+	function startIt(event: InteractEvent<'drag', 'start'>) {
+		var interaction = event.interaction
+
+		if (!interaction.interacting()) {
+			interaction.start(
+				{ name: 'drag' },
+				event.interactable,
+				event.currentTarget,
+			)
+		}
+
+		event.interactable.off('move', startIt);
+	}
 
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
 		//TODO: Dependency on contentEditable. This hook should not know about that
@@ -1858,7 +1874,7 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 					end: stopResizing
 				},
 				modifiers: [aspectRef.current, ...modifiers],
-				margin: 6 / scale,
+				margin: 6 * scale,
 				cursorChecker: function(action, b, element,d) {
 					if (!action.edges) return 'default';
 
@@ -1868,7 +1884,7 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 						}
 	
 						if (edges.top && edges.left || edges.bottom && edges.right) {
-							return 'nesw-resize';
+							return 'nwse-resize';
 						}
 	
 						if (edges.left || edges.right) {

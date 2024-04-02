@@ -69,7 +69,11 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
 	if (style.position === 'absolute') {
 		return false;
 	}
-	const sizeThreshold = 15;
+
+	//We don't want to select the inner workings of an svg
+	if (['rect', 'g', 'path', 'circle', 'line'].includes(element.tagName.toLowerCase())) return false;
+
+	const sizeThreshold = 10;
 	const rect = element.getBoundingClientRect();
 	if (rect.height * scale < sizeThreshold || rect.width < sizeThreshold) {
 		return false;
@@ -135,7 +139,7 @@ export interface InspectorProps {
 export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onReorder, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
-	const {onFlexToggle: onFlexClick, error, setError} = useHarmonyContext();
+	const {onFlexToggle: onFlexClick, error, setError, isDemo} = useHarmonyContext();
 	const previousError = usePrevious(error);
 
 	const {isDragging: isDraggingSelf} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
@@ -292,7 +296,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		if (selectedComponent) {
 			const parent = selectDesignerElement(selectedComponent).parentElement;
 			if (parent && getComputedStyle(parent).display.includes('flex') && Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 2) {
-				if (!parent.dataset.harmonyFlex) {
+				if (!parent.dataset.harmonyFlex && !isDemo) {
 					parent.dataset.harmonyFlex = 'true';
 				}
 			}
@@ -373,10 +377,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			return false;
 		}
 
-		if (element !== selectedComponent) {
-			event.preventDefault();
-			event.stopPropagation();
-		}
 
 		onSelect(element);
 		

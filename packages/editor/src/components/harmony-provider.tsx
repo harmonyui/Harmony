@@ -24,8 +24,9 @@ import { WelcomeModal } from "./panel/welcome/welcome-modal";
 const WIDTH = 1960;
 const HEIGHT = 1080;
 
-export function findElementFromId(componentId: string, parentId: string, childIndex: number): HTMLElement | undefined {
-	const elements = document.querySelectorAll(`[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]`);
+export function findElementFromId(componentId: string, parentId: string | undefined, childIndex: number): HTMLElement | undefined {
+	const selector = parentId ? `[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]` : `[data-harmony-id="${componentId}"]`;
+	const elements = document.querySelectorAll(selector);
 	for (const element of Array.from(elements)) {
 		const elementChildIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (elementChildIndex === childIndex) return element as HTMLElement;
@@ -34,8 +35,9 @@ export function findElementFromId(componentId: string, parentId: string, childIn
 	return undefined;
 }
 
-export function findElementsFromId(componentId: string, parentId: string): HTMLElement[] {
-	const elements = document.querySelectorAll(`[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]`);
+export function findElementsFromId(componentId: string, parentId: string | undefined): HTMLElement[] {
+	const selector = parentId ? `[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]` : `[data-harmony-id="${componentId}"]`;
+	const elements = document.querySelectorAll(selector);
 	return Array.from(elements) as HTMLElement[];
 }
 
@@ -719,7 +721,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 	let alreadyDoneText = false;
 	const id = el.dataset.harmonyId;
 	const parentId = el.dataset.harmonyParentId;
-	if (!id || !parentId) {
+	if (!id) {
 		return;
 	}
 
@@ -774,12 +776,13 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 	}
 
 	//Updates that should happen for every element in a component
-	const sameElements = rootComponent.querySelectorAll(`[data-harmony-id="${id}"][data-harmony-parent-id="${parentId}"]`);
+	const sameElements = findElementsFromId(id, parentId);
 	for (const element of Array.from(sameElements)) {
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		const htmlElement = element as HTMLElement;
 		for (const update of translated) {
-			if (update.childIndex !== childIndex) continue;
+			//Setting childIndex to -1 means that we want to update all items in a list
+			if (update.childIndex > -1 && update.childIndex !== childIndex) continue;
 
 			if (update.type === 'className') {
 				if (update.name === 'font') {
