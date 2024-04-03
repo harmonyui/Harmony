@@ -11,6 +11,7 @@ import { TailwindConverter } from 'css-to-tailwindcss';
 import { twMerge } from 'tailwind-merge'
 import { indexForComponent } from "../update/[branchId]/route";
 import { translateUpdatesToCss } from "@harmony/util/src/component";
+import { round } from "@harmony/util/src";
 
 const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
@@ -170,6 +171,14 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 		if (curr.type === 'className') {
 			if (curr.name !== 'font') {
 				const cssName = camelToKebab(curr.name);
+
+				//Round the pixel values
+				const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(curr.value);
+				if (match) {
+					const value = parseFloat(match[1]);
+					const unit = match[2];
+					curr.value = `${round(value)}${unit}`;
+				}
 				curr.value = `${cssName}:${curr.value};`
 				curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`;
 			}
@@ -194,7 +203,17 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 			const font = curr.type === 'className' && curr.name === 'font' ? curr.value : undefined;
 			const value = curr.type === 'className' && curr.name === 'font' ? '' : curr.value;
 
-			prev.push({update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font});
+			const sameComponent = curr.type === 'className' ? prev.find(({component: other}) => other.id === component.id && other.parent_id === component.parent_id) : undefined;
+			if (sameComponent) {
+				if (curr.name !== 'font') {
+					sameComponent.value += curr.value;
+					sameComponent.oldValue += curr.oldValue;
+				} else {
+					sameComponent.font = curr.value;
+				}
+			} else {
+				prev.push({update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font});
+			}
 		}
 		return prev;
 	}, []);
