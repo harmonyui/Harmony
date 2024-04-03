@@ -5,6 +5,7 @@ import { DisplayMode, HarmonyProvider, HarmonyProviderProps } from "./harmony-pr
 import { FiberHTMLElement, getElementFiber } from "./inspector/inspector-dev";
 import { getComponentElementFiber } from "./inspector/component-identifier";
 import { Fiber } from "react-reconciler";
+import { getWebUrl } from "@harmony/util/src";
 
 var harmonyArguments = [{'data-harmony-id': 0}]
     
@@ -44,9 +45,10 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 	return (<></>)
 }
 
-function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId'>, branchId: string, harmonyContainer: HTMLDivElement, setup: Setuper) {
+function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId' | 'environment'>, branchId: string, harmonyContainer: HTMLDivElement, setup: Setuper) {
     const script = document.createElement('script');
-    script.src = 'https://unpkg.com/harmony-ai-editor/dist/editor/bundle.js';
+    const src = options.environment === 'development' ? `${getWebUrl('development')}/bundle.js` : 'https://unpkg.com/harmony-ai-editor/dist/editor/bundle.js'
+    script.src = src;
     script.addEventListener('load', function() {
         window.HarmonyProvider({...options, branchId, setup}, harmonyContainer);
     });

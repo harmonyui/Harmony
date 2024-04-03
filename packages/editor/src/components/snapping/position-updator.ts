@@ -70,21 +70,37 @@ const updateElementValues = (element: HTMLElement, properties: string[], updated
 export const absoluteUpdator: PositionUpdator = {
 	updateRects({parentUpdate, childrenUpdates}, scale) {
 		const updatedElements: UpdatedElement[] = [];
+
+		const updateSize = (element: HTMLElement, rect: Rect) => {
+			const toResize = selectDesignerElementReverse(element);
+			updateElementValues(element, ['width', 'height'], updatedElements);
+			updateElementValues(toResize, ['width', 'height'], updatedElements);
+
+			const updateSide = (element: HTMLElement, side: 'width' | 'height') => {
+				const currSize = parseFloat(element.style[side]);
+				const size = rect[side] / scale
+				//For some reason, the sizes are not 100% accurate so they go down by 0.001 place increments when you moving things.
+				//This affects the text by making it wrap. So only apply the size if we need to
+				if (isNaN(currSize) || !/px/.test(element.style.width) || !close(currSize, size, 0.1)) {
+					element.style[side] = `${size}px`;
+				}
+			}
+			
+			updateSide(element, 'width');
+			updateSide(element, 'height');
+			updateSide(toResize, 'width');
+			updateSide(toResize, 'height');
+		}
 		
 		const updateTransform = (element: HTMLElement, rect: Rect) => {
-			const toResize = selectDesignerElementReverse(element);
 			updateElementValues(element, ['position', 'left', 'top', 'margin', 'width', 'height'], updatedElements);
-			updateElementValues(toResize, ['width', 'height'], updatedElements);
 			
 			element.style.position = 'absolute';
 			element.style.left = `${(rect.left - containerRect.left) / scale - getProperty(parentUpdate.element, 'border', 'left')}px`;
 			element.style.top = `${(rect.top - containerRect.top) / scale - getProperty(parentUpdate.element, 'border', 'top')}px`
 			element.style.margin = '0px';
 			element.dataset.harmonyForceSelectable = 'true';
-			element.style.width = `${rect.width / scale}px`
-			element.style.height = `${rect.height / scale}px`;
-			toResize.style.width = `${rect.width / scale}px`
-			toResize.style.height = `${rect.height / scale}px`;
+			updateSize(element, rect);
 		}
 
 		const container = document.getElementById('harmony-section');
@@ -277,7 +293,9 @@ export const flexUpdator: PositionUpdator = {
 
 
 		const childrenWidthFixed = parentInfo.childEdgeInfo.every(child => child[widthType] !== 'expand');
-		const childrenHeightFixed = parentInfo.childEdgeInfo.every(child => child[heightType] !== 'expand');
+		//The fixed and min height is because with text elements inside of a flex, resizing them means we need to turn off
+		//alignitems, but they will sometimes show up as content type instead of expand type. Expand is the default for height in a flex
+		const childrenHeightFixed = parentInfo.childEdgeInfo.every(child => child[heightType] === 'fixed' || close(child[height], child[minHeight], 0.1));
 		
 		let startXSide: RectSide = parentInfo.edges[left].parentEdge.gap <= parentInfo.edges[right].parentEdge.gap ? left : right;
 		//Start X Side being right assumes we will have a flex-end, but that won't happen if one of the children has
@@ -286,7 +304,8 @@ export const flexUpdator: PositionUpdator = {
 			startXSide = left;
 		}
 		const endXSide = startXSide === left ? right : left;
-		const startYSide = parentInfo.edges[top].parentEdge.gap <= parentInfo.edges[bottom].parentEdge.gap ? top : bottom;
+		//This startYside = bottom is only a thing if we are flex-end, and flex-end shouldn't be a thing if we don't have fixed children height
+		const startYSide = parentInfo.edges[top].parentEdge.gap <= parentInfo.edges[bottom].parentEdge.gap || !childrenHeightFixed ? top : bottom;
 		const endYSide = startYSide === top ? bottom : top;
 		
 
@@ -341,7 +360,7 @@ export const flexUpdator: PositionUpdator = {
 			//TODO: get rid of alignitems check here. The idea is that children heights naturally expand,
 			//and so in a scenario where it says a child is content, it is actually expand and we need this extra margin
 			//to keep the parent the same size
-			if (info[heightType] === 'expand' || (parentInfo[heightType] === 'content' && info[heightType] !== 'fixed' && parentInfo.element.style.alignItems === 'normal')) {
+			if (info[heightType] === 'expand' || (info[heightType] !== 'fixed' && parentInfo.element.style.alignItems === 'normal')) {
 				const parentGap = parentInfo.edges[endYSide].parentEdge.gap;
 				const remainingGap = info[endYSide].parentEdge.gap - parentGap;
 				setSpaceForElement(info[endYSide].element, 'margin', endYSide, remainingGap);
@@ -402,9 +421,9 @@ export const flexUpdator: PositionUpdator = {
 				const parentGap = parentInfo.edges[endXSide].parentEdge.gap;
 				const minGap = parentInfo[minGapBetweenX];
 				const remainingGap = info[endXSide].siblingEdge ? info[endXSide].siblingEdge!.gap - minGap : info[endXSide].parentEdge.gap - parentGap;
-				if (remainingGap > 0.1) {
-					setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
-				}
+				// if (remainingGap > 0.1) {
+				// 	setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
+				// }
 				setSpaceForElement(parentInfo.element, 'padding', endXSide, parentGap);
 			}
 			// else if (info[widthType] === 'expand') {

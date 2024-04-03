@@ -3,15 +3,13 @@ const path = require('path');
 module.exports = {
     entry: './src/index.prod.tsx',
     output: {
-        path: path.resolve(__dirname, 'dist/editor'),
+        path: path.resolve(__dirname, 'dev'),
         filename: 'bundle.js',
-        //library: 'HarmonySetup',
         libraryTarget: 'umd',
-        // publicPath: '/dist',
         globalObject: 'this',
-        //libraryTarget: 'umd',
     },
     target: 'web',
+    devtool: "eval-source-map",
     resolve: {
         extensions: ['.tsx', '.ts', '.js', '.jsx'],
         alias: {
@@ -45,25 +43,4 @@ module.exports = {
             },
         ],
     },
-    // externals: {
-    //     react: {
-    //       commonjs: "react",
-    //       commonjs2: "react",
-    //       amd: "React",
-    //       root: "React"
-    //     },
-    //     "react-dom": {
-    //       commonjs: "react-dom",
-    //       commonjs2: "react-dom",
-    //       amd: "ReactDOM",
-    //       root: "ReactDOM"
-    //     },
-    //     url: 'url'
-    //   },
-    // externals: {
-    //     'react-dom': 'ReactDOM'
-    // }
-    // output: {
-    //     globalObject: 'this'
-    // }
 }
