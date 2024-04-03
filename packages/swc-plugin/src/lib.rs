@@ -349,16 +349,23 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
     .expect("Should provide plugin config");
 
     let root_dir = Path::new(
+
         plugin_config["rootDir"]
             .as_str()
-            .expect("rootDir is expected"),
+            .expect("rootDir is expected")
     );
 		
-	let start = Path::to_slash(Path::new(filename.as_str())).unwrap();
-	let result = start.strip_prefix(root_dir.to_str().unwrap());
-		console_error_panic_hook::set_once();
+    let start = Path::to_slash(Path::new(filename.as_str())).unwrap();
+
+    // Strip the prefix and replace backslashes with forward slashes
+    let result = start.strip_prefix(root_dir.to_str().unwrap()).unwrap_or_else(|| {
+        panic!("Failed to strip prefix from path: {:?}", start);
+    });
+
+    let cleaned_path = result.to_string().replace("\\", "/");
+
+    console_error_panic_hook::set_once();
     //Striping the prefix leaves a '/' at the beginning, so let's get rid of that
-    let path = format!("{}", &result.expect("Expect valid path")[1..]);
     let source_map = std::sync::Arc::new(data.source_map);
-    program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), path, filename)))
+    program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), cleaned_path, filename)))
 }
