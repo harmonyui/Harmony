@@ -362,10 +362,10 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
         panic!("Failed to strip prefix from path: {:?}", start);
     });
 
-    let cleaned_path = result.to_string().replace("\\", "/");
+		//Striping the prefix leaves a '/' at the beginning, so let's get rid of that
+    let cleaned_path = format!("{}", &result.to_string().replace("\\", "/")[1..]);
 
     console_error_panic_hook::set_once();
-    //Striping the prefix leaves a '/' at the beginning, so let's get rid of that
     let source_map = std::sync::Arc::new(data.source_map);
     program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), cleaned_path, filename)))
 }
