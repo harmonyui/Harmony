@@ -287,7 +287,7 @@ class ElementSnapping implements SnapBehavior {
 
 		const style = getComputedStyle(parent);
 		if (!['block', 'list-item'].includes(style.display)) {
-			return 'This is not a block element';
+			return `Harmony does not currently support display ${style.display}`;
 		}
 
 		if (element.dataset.harmonyText === 'true') {
@@ -553,7 +553,7 @@ class FlexSnapping implements SnapBehavior {
 		}
 
 		const parentStyle = getComputedStyle(parent);
-		if (parentStyle?.display.includes('flex')) {
+		if (['flex', 'inline-flex'].includes(parentStyle?.display)) {
 			if (parentStyle.flexWrap === 'wrap') {
 				return 'Harmony does not currently support flex-wrap';
 			}
@@ -964,7 +964,7 @@ const flexSnapping = new FlexSnapping(absoluteUpdator, flexUpdator);
 
 const getSnappingBehavior = (parent: HTMLElement | undefined) => {
 	let snappingBehavior: SnapBehavior = elementSnapBehavior;
-	if (parent && getComputedStyle(parent).display.includes('flex')) {
+	if (parent && ['flex', 'inline-flex'].includes(getComputedStyle(parent).display)) {
 		snappingBehavior = flexSnapping;
 	}
 
