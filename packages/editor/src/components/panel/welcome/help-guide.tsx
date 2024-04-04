@@ -138,7 +138,7 @@ const TalkWithUs: React.FunctionComponent<{onAfterSend: () => void;}> = ({onAfte
             <Input type='textarea' className="hw-w-full" value={comments} onChange={setComments}/>
         </Label>
         {error ? <p className="hw-text-sm hw-text-red-400">{error}</p> : null}
-        <Button className="hw-ml-auto" onClick={onSend} loading={loading}>Send Feedback <SendIcon className="hw-h-5 hw-w-5"/></Button>
+        <Button className="hw-ml-auto" onClick={onSend} loading={loading}>Request <SendIcon className="hw-h-5 hw-w-5"/></Button>
     </div>)
 }
 

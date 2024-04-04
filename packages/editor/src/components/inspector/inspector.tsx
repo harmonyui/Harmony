@@ -396,12 +396,17 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				return true;
 			},
 			onDoubleClick(_, clientX, clientY) {
+				const isTextError = (element: HTMLElement): boolean => {
+					const trueElement = element.dataset.harmonyText === 'true' ? element.parentElement! : element;
+
+					return trueElement.dataset.harmonyError === 'text';
+				}
 				if (selectedComponent) {
 					// if (!selectedComponent.dataset.selected) {
 					// 	selectedComponent.dataset.selected = 'true';
 					// } else 
 					if (!isDragging && isTextElement(selectedComponent) && selectedComponent.contentEditable !== 'true') {
-						if (selectedComponent.dataset.harmonyError === 'text') {
+						if (isTextError(selectedComponent)) {
 							setError('Element\'s text is not yet editable');
 							return true;
 						}

@@ -97,10 +97,12 @@ export class GithubRepository {
     public async getContent(file: string, ref?: string) {
         const octokit = await this.getOctokit();
 
+        const cleanFile = file.startsWith('/') ? file.substring(1) : file;
+
         const { data: fileInfo } = await octokit.rest.repos.getContent({
             owner: this.repository.owner,
             repo: this.repository.name,
-            path: file,
+            path: cleanFile,
             ref: ref,
         });
 
@@ -140,22 +142,8 @@ export class GithubRepository {
         // Iterate through each change and update the files
         for (const change of changes) {
             // Get the content SHA of the existing file
-            const { data: fileInfo } = await octokit.rest.repos.getContent({
-                owner: this.repository.owner,
-                repo: this.repository.name,
-                path: change.filePath,
-                ref: branch,
-            });
-    
-            if (Array.isArray(fileInfo)) {
-                throw new Error('The given file path is a directory');
-            }
-    
-            if (!('content' in fileInfo)) {
-                throw new Error('File info does not have content');
-            }
-    
-            let contentText = atob(fileInfo.content);
+            let contentText = await this.getContent(change.filePath, branch);
+
             for (const location of change.locations) {
                 contentText = replaceByIndex(contentText, location.snippet, location.start, location.end);
             }

@@ -1,7 +1,7 @@
-import { Attribute, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component"
+import { Attribute, BehaviorType, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
-import { Input, InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
+import { CheckboxInput, Input, InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon, XMarkIcon, SendIcon, PreviewIcon, AlignCenterIcon, AlignJustifyIcon, AlignLeftIcon, AlignRightIcon } from "@harmony/ui/src/components/core/icons";
 import { arrayOfAll, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
@@ -291,7 +291,7 @@ interface ToolbarPanelProps {
 	branches: {id: string, name: string}[];
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, selectedElement, onChange, isDirty, branchId, branches}) => {
-	const {isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo} = useHarmonyContext();
+	const {isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo, behaviors, setBehaviors} = useHarmonyContext();
 	const data = selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined;
 	const changeData = (values: ComponentToolData) => {
 		if (selectedComponent === undefined || data === undefined) return;
@@ -406,6 +406,22 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		return componentTools;
 	}, [selectedElement]);
 
+	const onChangeBehavior = (behavior: BehaviorType) => (value: boolean) => {
+		const copy = behaviors.slice();
+		if (value) {
+			if (!copy.includes(behavior)) {
+				copy.push(behavior);
+			}
+		} else {
+			const currIndex = copy.indexOf(behavior);
+			if (currIndex > -1) {
+				copy.splice(currIndex, 1);
+			}
+		}
+
+		setBehaviors(copy);
+	}
+
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-divide-x">
 			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
@@ -428,7 +444,9 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				</div> : null}
 				{/* <div className="hw-px-4">
 					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
-						<div>Behavior coming soon!</div>
+						<Label label="Dark Mode:" sameLine>
+							<CheckboxInput value={behaviors.includes('dark')} onChange={onChangeBehavior('dark')}/>
+						</Label>
 					</Popover>
 				</div> */}
 				{selectedComponent?.element && selectDesignerElement(selectedComponent.element).parentElement?.dataset.harmonyFlex ? <div className="hw-px-4">

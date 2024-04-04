@@ -9,6 +9,7 @@ import { indexFilesAndFollowImports } from '../../../../src/server/api/services/
 import { getRepository } from '../../../../src/server/api/routers/branch';
 import { Repository } from '@harmony/ui/src/types/branch';
 import { getLocationFromComponentId, reverseUpdates } from '@harmony/util/src';
+import { getFile } from '../../../../src/server/api/services/indexor/local';
 
 export const maxDuration = 300;
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {
@@ -73,7 +74,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	for (const value of body.values) {
 		for (let i = 0; i < value.update.length; i++) {
 			const update = value.update[i];
-			if (!update.componentId || !update.parentId) continue;
+			if (!update.componentId) continue;
 			
 			let element = await prisma.componentElement.findFirst({
 				where: {
@@ -182,7 +183,8 @@ export async function indexForComponent(componentId: string, parentId: string, r
 
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
-		const content = await getFileContent(githubRepository, filepath, repository.branch);
+		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
+		await getFileContent(githubRepository, filepath, repository.branch);
 
 		return content;
 	}
@@ -191,7 +193,11 @@ export async function indexForComponent(componentId: string, parentId: string, r
 	// all of the possible locations an attribute can be saved. Find a better way to do this
 	const {file: elementFile} = getLocationFromComponentId(componentId);
 	const {file: parentFile} = getLocationFromComponentId(parentId);
-	await indexFilesAndFollowImports([elementFile, parentFile], readFile, repository.id)
+	const paths = [elementFile];
+	if (parentFile) {
+		paths.push(parentFile);
+	}
+	await indexFilesAndFollowImports(paths, readFile, repository.id)
 }
 
 // const getResponseFromGPT = async (body: RequestBody, githubRepository: GithubRepository, possibleComponents: ComponentLocation[], branch: string) => {

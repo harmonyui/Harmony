@@ -1,4 +1,9 @@
+import { stringUnionSchema } from "@harmony/util/src";
 import { z } from "zod";
+
+const behaviorTypes = ['dark'] as const;
+const behaviorTypesSchema = stringUnionSchema(behaviorTypes);
+export type BehaviorType = z.infer<typeof behaviorTypesSchema>;
 
 //type: className, name: size
 export const updateSchema = z.object({
@@ -9,7 +14,8 @@ export const updateSchema = z.object({
 	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]), 
 	name: z.string(),
 	value: z.string(),
-	oldValue: z.string()
+	oldValue: z.string(),
+	behavior: z.optional(z.array(behaviorTypesSchema))
 })
 export type ComponentUpdate = z.infer<typeof updateSchema>;
 
