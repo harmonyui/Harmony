@@ -69,6 +69,7 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({data, onConti
 
 	const onContinueClick = () => {
         if (!account.firstName || !account.lastName || !account.role) {
+            console.log(account);
             setError("Please fill out all fields");
             return;
         }
@@ -92,7 +93,11 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({data, onConti
 					<Input className="hw-w-full" value={account.lastName} onChange={changeProperty.formFunc('lastName', account)}/>
 				</Label>
 				<Label className="sm:hw-col-span-3" label="What best describes your role?">
-					<Input className="hw-w-full" value={account.role} onChange={changeProperty.formFunc('role', account)} />
+                    <select defaultValue={account.role} onChange={(e) => changeProperty.formFunc('role',account)(e.target.value)}>
+                        <option value="">Please Select</option>
+                        <option value="developer">Developer</option>
+                        <option value="designer">Designer</option>
+                    </select>
 				</Label>
 			</div>
             {error ? <p className="hw-text-sm hw-text-red-400">{error}</p> : null}
