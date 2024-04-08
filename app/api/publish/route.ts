@@ -240,7 +240,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 		const last = change.locations[change.locations.length - 1];
 		if (last) {
 			const diff = last.updatedTo - last.end + last.diff;
-			if (last.end > newLocation.start + diff) {
+			if (last.updatedTo > newLocation.start + diff) {
 				throw new Error("Conflict in changes")
 				//console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`);
 			}

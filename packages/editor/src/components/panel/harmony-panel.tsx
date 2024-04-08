@@ -266,7 +266,7 @@ const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | u
 			value: `${getAttr('lineHeight')}-${getAttr('letterSpacing')}`
 		},
 		{
-			name: 'background',
+			name: 'backgroundColor',
 			value: convertRgbToHex(getAttr('backgroundColor')),
 		}
 	]);
@@ -335,7 +335,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
-		'background': ({data, onChange}) => {
+		'backgroundColor': ({data, onChange}) => {
 			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
 				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
@@ -630,9 +630,9 @@ const ShareButton = () => {
 	</>)
 }
 
-const buttonTools = ['background'] as const;
+const buttonTools = ['backgroundColor'] as const;
 const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
-const componentTools = ['background'] as const;
+const componentTools = ['backgroundColor'] as const;
 type TextTools = typeof textTools[number];
 type ButtonTools = typeof buttonTools[number];
 type ComponentTools = typeof componentTools[number];
