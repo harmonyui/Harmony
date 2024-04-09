@@ -974,8 +974,9 @@ const getSnappingBehavior = (parent: HTMLElement | undefined) => {
 type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
 	onDragFinish: (element: HTMLElement, oldValues: [HTMLElement, Record<string, string>][]) => void;
 	onError: (error: string | undefined) => void;
+	enabled: boolean;
 };
-export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale}: SnappableProps) => {
+export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale, enabled}: SnappableProps) => {
 	const [oldValues, setOldValues] = useState<[HTMLElement, Record<string, string>][]>([]);
 	const resX = useRef(0);
 	const resY = useRef(0);
@@ -1183,6 +1184,10 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		scrollContainer.scrollTop = scrollTop;
 
 		return values;
+	}
+
+	if (!enabled) {
+		return {isDragging: false};
 	}
 
 	const result = useDraggable({element, onIsDragging(event) {

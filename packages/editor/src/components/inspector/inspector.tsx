@@ -142,7 +142,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const {onFlexToggle: onFlexClick, error, setError, isDemo} = useHarmonyContext();
 	const previousError = usePrevious(error);
 
-	const {isDragging: isDraggingSelf} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
+	const {isDragging} = useSnapping({enabled: false, element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -222,8 +222,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 		setError(error);
 	}, scale});
-
-	const isDragging = isDraggingSelf;
 
 	useEffect(() => {
 		const container = containerRef.current;

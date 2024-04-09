@@ -11,7 +11,7 @@ import { TailwindConverter } from 'css-to-tailwindcss';
 import { twMerge } from 'tailwind-merge'
 import { indexForComponent } from "../update/[branchId]/route";
 import { translateUpdatesToCss } from "@harmony/util/src/component";
-import { round } from "@harmony/util/src";
+import { camelToKebab, round } from "@harmony/util/src";
 
 const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
@@ -147,10 +147,6 @@ interface UpdateInfo {
 async function createGithubBranch(repository: Repository, branchName: string): Promise<void> {
     const githubRepository = new GithubRepository(repository);
 	await githubRepository.createBranch(branchName);
-}
-
-const camelToKebab = (camelCase: string): string => {
-	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }
 
 async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repository, branch: BranchItem) {
