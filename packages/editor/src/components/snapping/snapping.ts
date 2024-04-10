@@ -976,11 +976,14 @@ type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'>
 	onError: (error: string | undefined) => void;
 	enabled: boolean;
 };
-export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale, enabled}: SnappableProps) => {
+export const useSnapping = ({element: elementProps, onIsDragging, onDragFinish, onError, scale, enabled}: SnappableProps) => {
 	const [oldValues, setOldValues] = useState<[HTMLElement, Record<string, string>][]>([]);
 	const resX = useRef(0);
 	const resY = useRef(0);
 	const elementsRef = useRef<HTMLElement[]>([]);
+
+	//Disables the snapping by setting to undefined
+	const element = useMemo(() => enabled ? elementProps : undefined, [elementProps, enabled]);
 
 	const snappingBehavior = useMemo(() => getSnappingBehavior(element?.parentElement || undefined), [element]);
 
@@ -1186,9 +1189,7 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		return values;
 	}
 
-	if (!enabled) {
-		return {isDragging: false};
-	}
+	
 
 	const result = useDraggable({element, onIsDragging(event) {
 		if (!element) return;

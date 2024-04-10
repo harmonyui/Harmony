@@ -410,7 +410,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 	}
 
 	const onPositionClick = () => {
-		setPanel({id: 'attribute', content: <ComponentAttributePanel/>});
+		!isDemo && setPanel({id: 'attribute', content: <ComponentAttributePanel/>});
 	}
 
 	return (
@@ -433,9 +433,9 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 						</div>
 					</Popover>
 				</div> : null}
-				<div className="hw-px-4">
+				{!isDemo ? <div className="hw-px-4">
 					<button className="hw-text-base hw-font-light" onClick={onPositionClick}>Layout</button>
-				</div>
+				</div> : null}
 				{/* <div className="hw-px-4">
 					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
 						<Label label="Dark Mode:" sameLine>
