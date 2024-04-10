@@ -201,7 +201,11 @@ export function isDateInBetween(
 }
 
 export const arrayOfAll = <T,>() => <U extends T[]>(
-  array: U & ([T] extends [U[number]] ? unknown : Exclude<T, U[number]>)
+  array: U & (T extends U[number] ? unknown : Exclude<T, U[number]>)
+) => array;
+
+export const constArray = <T,>() => <U extends T[]>(
+  array: U
 ) => array;
 
 export const stringUnionSchema = <T extends readonly string[]>(array: T) => z.custom<T[number]>((data) => typeof data === 'string' && array.includes(data));
@@ -418,4 +422,8 @@ export const reverseUpdates = <T extends ComponentUpdate>(updates: T[]): T[] => 
 
 export const wordToKebabCase = (str: string): string => {
   return str.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
+}
+
+export const camelToKebab = (camelCase: string): string => {
+	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }

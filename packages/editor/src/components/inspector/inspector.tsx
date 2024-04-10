@@ -15,6 +15,7 @@ import { usePrevious } from "@harmony/ui/src/hooks/previous";
 import {Alert} from '@harmony/ui/src/components/core/alert';
 import { useHarmonyContext } from "../harmony-provider";
 import { getProperty } from "../snapping/calculations";
+import { useSidePanel } from "../panel/side-panel";
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -141,8 +142,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	const overlayRef = useRef<Overlay>();
 	const {onFlexToggle: onFlexClick, error, setError, isDemo} = useHarmonyContext();
 	const previousError = usePrevious(error);
+	const {panel} = useSidePanel();
 
-	const {isDragging: isDraggingSelf} = useSnapping({element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
+	const inspectorState: InspectorState = useMemo(() => ({showingLayoutPanel: panel?.id === 'attribute'}), [panel]);
+
+	const {isDragging} = useSnapping({enabled: isDemo, element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -151,7 +155,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(element, scale, false, {onFlexClick});
+			overlayRef.current.select(element, scale, false, inspectorState, {onFlexClick},);
 		} else {
 			overlayRef.current.remove('select');
 		}
@@ -216,14 +220,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, true, {onFlexClick});
+			overlayRef.current.select(selectedComponent, scale, true, inspectorState, {onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
 		setError(error);
 	}, scale});
-
-	const isDragging = isDraggingSelf;
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -234,12 +236,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 		if (selectedComponent) {
-			overlayRef.current.select(selectedComponent, scale, false, {onFlexClick});
+			overlayRef.current.select(selectedComponent, scale, false, inspectorState, {onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
 		overlayRef.current.remove('hover');
-	}, [updateOverlay, scale]);
+	}, [updateOverlay, scale, inspectorState]);
 
 	useEffect(() => {
 		const onEscape = () => {
@@ -300,11 +302,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 					parent.dataset.harmonyFlex = 'true';
 				}
 			}
-			overlayRef.current.select(selectedComponent, scale, false, {onTextChange: onElementTextChange, onFlexClick});
+			overlayRef.current.select(selectedComponent, scale, false, inspectorState, {onTextChange: onElementTextChange, onFlexClick});
 		} else {
 			overlayRef.current.remove('select');
 		}
-	}, [selectedComponent, scale])
+	}, [selectedComponent, scale, inspectorState])
 
 	useEffect(() => {
 		const container = containerRef.current;
@@ -314,11 +316,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			overlayRef.current = new Overlay(container, parentElement);
 		}
 		if (hoveredComponent && !isDragging) {
-			overlayRef.current.hover(hoveredComponent, scale);
+			overlayRef.current.hover(hoveredComponent, scale, inspectorState);
 		} else {
 			overlayRef.current.remove('hover');
 		}
-	}, [hoveredComponent, scale, isDragging]);
+	}, [hoveredComponent, scale, isDragging, inspectorState]);
 
 	useEffect(() => {
 		if (error !== previousError && error) {
@@ -555,13 +557,13 @@ class Overlay {
 		return name;
 	}
 
-	hover(element: HTMLElement, scale: number) {
+	hover(element: HTMLElement, scale: number, inspectorState: InspectorState,) {
 		//element.style.cursor = 'default';	
-		this.inspect(element, 'hover', scale, false);
+		this.inspect(element, 'hover', scale, false, inspectorState);
 	}
 
-	select(element: HTMLElement, scale: number, error: boolean, listeners: {onTextChange?: (value: string, oldValue: string) => void, onFlexClick: () => void}) {
-		this.inspect(element, 'select', scale, error);
+	select(element: HTMLElement, scale: number, error: boolean, inspectorState: InspectorState, listeners: {onTextChange?: (value: string, oldValue: string) => void, onFlexClick: () => void}) {
+		this.inspect(element, 'select', scale, error, inspectorState);
 
 		const stuff = this.rects.get('select');
 		if (!stuff) throw new Error("What happend??");
@@ -581,7 +583,7 @@ class Overlay {
 		const parent = designerElement.parentElement;
 		if (parent) {
 			const [box, dims] = this.getSizing(parent);
-			const rect = new OverlayRect(this.window.document, parent, this.container, scale, listeners.onFlexClick);
+			const rect = new OverlayRect(this.window.document, parent, this.container, scale, inspectorState, listeners.onFlexClick);
 			dims.borderBottom = 2 / scale;
 			dims.borderLeft = 2 / scale;
 			dims.borderRight = 2 / scale;
@@ -591,7 +593,7 @@ class Overlay {
 		}
 	}
 
-	inspect(element: HTMLElement, method: 'select' | 'hover', scale: number, error: boolean) {
+	inspect(element: HTMLElement, method: 'select' | 'hover', scale: number, error: boolean, inspectorState: InspectorState) {
 		
 		//
 		
@@ -602,7 +604,7 @@ class Overlay {
 		}
 
 		const [box, dims] = this.getSizing(element);
-		const rect = new OverlayRect(this.window.document, element, this.container, scale);
+		const rect = new OverlayRect(this.window.document, element, this.container, scale, inspectorState);
 		rect[method](box, dims, scale, error);
 
 		this.remove(method);
@@ -647,7 +649,7 @@ class Overlay {
   	}
 }
 
-const overlayStyles = {
+export const overlayStyles = {
   background: '#0094FF',
   error: '#ef4444',
   resize: 'rgba(120, 170, 210, 1)',
@@ -662,6 +664,9 @@ function addAlpha(color: string, opacity: number): string {
     return color + _opacity.toString(16).toUpperCase();
 }
 
+interface InspectorState {
+	showingLayoutPanel: boolean;
+}
 
 interface OverlayProps {
 	box: Rect,
@@ -682,7 +687,7 @@ export class OverlayRect {
 	resizeHandles: HTMLElement[] = [];
 	onFlexClick: (() => void) | undefined;
 
-  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, scale: number, onFlexClick?: () => void) {
+  	constructor(doc: Document, private element: HTMLElement, container: HTMLElement, scale: number, private inspectorState: InspectorState, onFlexClick?: () => void) {
 		this.node = doc.createElement('div')
 		this.border = doc.createElement('div')
 		this.padding = doc.createElement('div')
@@ -780,13 +785,13 @@ export class OverlayRect {
 		dims.borderLeft = 2 / scale;
 		dims.borderRight = 2 / scale;
 		dims.borderTop = 2 / scale;
-		this.update({box, dims, borderSize: 2, error, drag: true}, scale);
+		this.update({box, dims, borderSize: 2, error, drag: true, padding: this.inspectorState.showingLayoutPanel}, scale);
 	}
 
   	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle, error=false, drag=false}: OverlayProps, scale: number) {
 		boxWrap(dims, 'border', this.border)
 		
-		//boxWrap(dims, 'margin', this.node)
+		boxWrap(dims, 'margin', this.node)
 		boxWrap(dims, 'padding', this.padding);
 
 		const resizeThreshold = 30;
@@ -922,8 +927,8 @@ export class OverlayRect {
 		}
 
 		Object.assign(this.node.style, {
-		top: `${box.top - borderSize}px`,
-		left: `${box.left - borderSize}px`,
+		top: `${box.top - borderSize - dims.marginTop}px`,
+		left: `${box.left - borderSize - dims.marginLeft}px`,
 		})
 	}
 }

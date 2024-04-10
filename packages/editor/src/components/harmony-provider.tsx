@@ -448,7 +448,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 									harmonyContainerRef.current = d
 									setRootComponent(harmonyContainerRef.current);
 								}
-							}} style={{width: `${WIDTH}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
+							}} style={{width: `${WIDTH}px`, minHeight: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})`}}>
 							{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange}/> : null}	
 							{children}
 							</div>

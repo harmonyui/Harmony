@@ -2,6 +2,7 @@ import React, { useEffect, useState } from "react";
 import { CheckmarkIcon } from "./icons";
 import { Label } from "./label";
 import { Button } from "./button";
+import { usePrevious } from "../../hooks/previous";
 
 interface InputProps {
   onChange?: (value: string) => void;
@@ -64,6 +65,13 @@ export const Input: React.FunctionComponent<InputProps> = ({
 
 export const InputBlur: React.FunctionComponent<Omit<InputProps, 'onBlur'>> = ({onChange, value: valueProps, ...rest}) => {
 	const [value, setValue] = useState(valueProps);
+  const prevValue = usePrevious(valueProps);
+
+  useEffect(() => {
+    if (prevValue !== valueProps) {
+      setValue(valueProps);
+    }
+  }, [prevValue, valueProps])
 
 	const onInputChange = (value: string): void => {
 		setValue(value);
