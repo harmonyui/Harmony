@@ -20,9 +20,7 @@ import { reverseUpdates } from "@harmony/util/src";
 import { Environment, getWebUrl } from "@harmony/util/src/index";
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
-
-const WIDTH = 1960;
-const HEIGHT = 1080;
+import {DEFAULT_WIDTH as WIDTH, DEFAULT_HEIGHT as HEIGHT} from '@harmony/util/src/constants';
 
 export function findElementFromId(componentId: string, parentId: string | undefined, childIndex: number): HTMLElement | undefined {
 	const selector = parentId ? `[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]` : `[data-harmony-id="${componentId}"]`;

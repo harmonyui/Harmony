@@ -12,6 +12,8 @@ import { twMerge } from 'tailwind-merge'
 import { indexForComponent } from "../update/[branchId]/route";
 import { translateUpdatesToCss } from "@harmony/util/src/component";
 import { camelToKebab, round } from "@harmony/util/src";
+import { mergeClassesWithScreenSize } from "@harmony/util/src/tailwind-merge";
+import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
 
 const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
@@ -376,7 +378,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					//TODO: Make the tailwind prefix part dynamic
 					let oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
 					
-					const mergedIt = twMerge(oldClasses, newClasses);
+					const mergedIt = mergeClassesWithScreenSize(oldClasses, newClasses, DEFAULT_WIDTH);
 					let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 
 					let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
