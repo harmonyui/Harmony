@@ -7,7 +7,7 @@ import { ProjectDisplay } from "@harmony/ui/src/components/features/project";
 
 
 const ProjectsPage = withAuth(async ({ctx}) => {
-	const branches = ctx.session.account.repository ? await getBranches({prisma: ctx.prisma, repositoryId: ctx.session.account.repository.id}) : undefined;
+	const branches = ctx.session.account.repository ? await getBranches({prisma: ctx.prisma, repositoryId: ctx.session.account.repository.id, accountId: ctx.session.account.id}) : undefined;
 
 	return (
 		<ModalProvider>
