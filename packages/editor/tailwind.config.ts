@@ -21,7 +21,7 @@ const config: Config = {
     },
   },
   plugins: [
-		forms
+		//forms
 	],
   corePlugins: {
     preflight: false

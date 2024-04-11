@@ -19,7 +19,7 @@ export const WelcomeModal: React.FunctionComponent = () => {
 
     const pages: PageComponent[] = [
         WelcomeScreen,
-        ControlScreen
+        VideoScreen
     ];
     const onNext = () => {
         const nextPage = page + 1;
@@ -68,6 +68,20 @@ export const ControlModal: React.FunctionComponent<{show: boolean, onClose: () =
             <ControlGrid/>
         </div>
     </HarmonyModal>
+}
+
+const VideoScreen: PageComponent = ({onNext}) => {
+    return (<>
+        <Header level={1}>Harmony Demo Video:</Header>
+        <div className="mx-auto">
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/Irhfe1aME0s?si=uFEtL0JbGAdI13d2" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
+        </div>
+        <div className="hw-flex hw-gap-4 hw-items-center hw-justify-end">
+            <div>
+                <Button className="hw-h-fit" onClick={onNext}>Get Started</Button>
+            </div>
+        </div>
+    </>)
 }
 
 const ControlScreen: PageComponent = ({onNext}) => {

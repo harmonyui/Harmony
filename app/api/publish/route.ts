@@ -11,7 +11,9 @@ import { TailwindConverter } from 'css-to-tailwindcss';
 import { twMerge } from 'tailwind-merge'
 import { indexForComponent } from "../update/[branchId]/route";
 import { translateUpdatesToCss } from "@harmony/util/src/component";
-import { round } from "@harmony/util/src";
+import { camelToKebab, round } from "@harmony/util/src";
+import { mergeClassesWithScreenSize } from "@harmony/util/src/tailwind-merge";
+import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
 
 const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
@@ -149,10 +151,6 @@ async function createGithubBranch(repository: Repository, branchName: string): P
 	await githubRepository.createBranch(branchName);
 }
 
-const camelToKebab = (camelCase: string): string => {
-	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-}
-
 async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repository, branch: BranchItem) {
 	const elementInstances = await prisma.componentElement.findMany({
 		where: {
@@ -240,7 +238,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 		const last = change.locations[change.locations.length - 1];
 		if (last) {
 			const diff = last.updatedTo - last.end + last.diff;
-			if (last.end > newLocation.start + diff) {
+			if (last.updatedTo > newLocation.start + diff) {
 				throw new Error("Conflict in changes")
 				//console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`);
 			}
@@ -380,7 +378,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					//TODO: Make the tailwind prefix part dynamic
 					let oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
 					
-					const mergedIt = twMerge(oldClasses, newClasses);
+					const mergedIt = mergeClassesWithScreenSize(oldClasses, newClasses, DEFAULT_WIDTH);
 					let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 
 					let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;

@@ -21,16 +21,19 @@ export interface UpdateRectsProps {
     childrenUpdates: UpdateRect[]
 }
 
-export const getComputedValue = (element: HTMLElement | StylePropertyMapReadOnly, property: string) => {
+export const getComputedValue = (element: HTMLElement | StylePropertyMapReadOnly, property: string): string => {
 	const styleMap = element instanceof Element ? element.computedStyleMap() : element;
 	const styleValue = styleMap.get(property);
+	if (!styleValue) return '';
+
 	if (styleValue instanceof CSSKeywordValue) {
 		return styleValue.value;
 	} else if (styleValue instanceof CSSUnitValue) {
 		const unit = styleValue.unit === 'percent' ? '%' : styleValue.unit;
 		return `${styleValue.value}${unit}`;
 	} else {
-		throw new Error("I'm not sure what to do this get-the-old-value scenario...");
+		//console.log("I'm not sure what to do this get-the-old-value scenario...");
+		return styleValue?.toString();
 	}
 }
 

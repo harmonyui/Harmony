@@ -71,6 +71,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 
 	const updates: ComponentUpdate[] = [];
 	const errorUpdates: (ComponentUpdate & {errorType: string})[] = [];
+	//Indexes the files of these component updates
 	for (const value of body.values) {
 		for (let i = 0; i < value.update.length; i++) {
 			const update = value.update[i];
