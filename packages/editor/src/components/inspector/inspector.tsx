@@ -146,7 +146,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	const inspectorState: InspectorState = useMemo(() => ({showingLayoutPanel: panel?.id === 'attribute'}), [panel]);
 
-	const {isDragging} = useSnapping({enabled: isDemo, element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
+	const {isDragging} = useSnapping({enabled: true, element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 

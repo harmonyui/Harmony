@@ -113,7 +113,8 @@ const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElem
 	return (
 		<div className="hw-flex hw-w-full hw-items-center hw-shadow-2xl">
 			<div className="hw-h-10 hw-ml-4">
-				<img className="hw-h-full" src={`${WEB_URL}/Harmony_logo.svg`}/>
+				{/*eslint-disable-next-line @next/next/no-img-element */}
+				<img alt="Harmony Logo" className="hw-h-full" src={`${WEB_URL}/Harmony_logo.svg`}/>
 			</div>
 			<div className="hw-pl-4 hw-pr-2 hw-py-2 hw-w-full">
 				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} selectedElement={selectedElement} isDirty={isDirty} branchId={branchId} branches={branches}/>
@@ -474,7 +475,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 
 
 const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=false}) => {
-	const {publishState, setPublishState, changeMode, isDemo, currentBranch, setError: setErrorProps} = useHarmonyContext();
+	const {publishState, setPublishState, changeMode, isDemo, currentBranch, isSaving, setError: setErrorProps} = useHarmonyContext();
 	const [show, setShow] = useState(false);
 	const changeProperty = useChangeProperty<PullRequest>(setPublishState);
 	const [loading, setLoading] = useState(false);
@@ -488,7 +489,13 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 	const onNewPullRequest = () => {
 		if (!validate()) return;
 
-        sendPullRequest(pullRequest);
+        sendPullRequest(pullRequest).then((published) => {
+			if (published) {
+				window.open(published.pullRequest.url, '_blank')?.focus();
+			} else {
+				setErrorProps('There was an error when publishing');
+			}
+		})
 	}
 
 	const sendPullRequest = async (pullRequest: PullRequest) => {
@@ -529,6 +536,11 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 	const onViewCode = () => {
 		if (!currentBranch) return;
 
+		if (isSaving) {
+			setErrorProps("Please wait to finish saving before publishing");
+			return;
+		}
+
 		const pullRequest: PullRequest = {
 			id: '',
 			title: currentBranch.name,
@@ -548,12 +560,20 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 		}
 	}
 
-	if (isDemo) {
+	const onPublishClick = () => {
+		if (isSaving) {
+			setErrorProps("Please wait to finish saving before publishing");
+			return;
+		}
+		setShow(true);
+	}
+
+	if (isDemo || isPublished) {
 		return <Button mode="dark" className="hw-h-7 hw-px-8" onClick={onViewCode} loading={loading} disabled={!Boolean(currentBranch)}>View Code</Button>
 	}
 
 	return <>
-		<Button mode="dark" className="hw-h-7 hw-px-8" onClick={() => setShow(true)} disabled={isPublished}>Publish</Button>
+		<Button mode="dark" className="hw-h-7 hw-px-8" onClick={onPublishClick} disabled={isPublished}>Publish</Button>
 		<HarmonyModal show={show} onClose={onClose} editor>
 			<div className="hw-flex hw-gap-2 hw-items-center">
 				<GitBranchIcon className="hw-w-6 hw-h-6"/>
@@ -649,7 +669,7 @@ interface ComponentToolsProps {
 const ComponentTools = ({tools, components, data, onChange}: ComponentToolsProps) => {
 	return (<div className="hw-flex hw-gap-4 hw-items-center">
 		{tools.map((tool: CommonTools) => {
-			return <ComponentToolComponent ToolComponent={components[tool]} tool={tool} data={data} onChange={onChange}/>;
+			return <ComponentToolComponent key={tool} ToolComponent={components[tool]} tool={tool} data={data} onChange={onChange}/>;
 		})}
 	</div>)
 }

@@ -196,7 +196,8 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 			// level not the component level
 			const component = curr.type === 'className' && numSameComponentsButDifferentParents > 0 ? elementInstances.find(el => el.id === curr.parentId) : elementInstances.find(el => el.id === curr.componentId && el.parent_id === curr.parentId);
 			if (!component) {
-				throw new Error('Cannot find component with id ' + curr.componentId);
+				return prev;
+				//throw new Error('Cannot find component with id ' + curr.componentId);
 			}
 			const font = curr.type === 'className' && curr.name === 'font' ? curr.value : undefined;
 			const value = curr.type === 'className' && curr.name === 'font' ? '' : curr.value;

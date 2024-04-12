@@ -1543,19 +1543,19 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 			setOffsetY(refY.current);
 
 			const modifiers: Modifier[] = [
-				interact.modifiers.snap({
-					targets: [function() {
-						if (shiftSnapper.current) {
-							return {x: shiftSnapper.current.x};
-						}
-					}, function() {
-						if (shiftSnapper.current) {
-							return {y: shiftSnapper.current.y};
-						}
-					}],
-					range: Infinity,
-					relativePoints: [{x: 0, y: 0}],
-				}),
+				// interact.modifiers.snap({
+				// 	targets: [function() {
+				// 		if (shiftSnapper.current) {
+				// 			return {x: shiftSnapper.current.x};
+				// 		}
+				// 	}, function() {
+				// 		if (shiftSnapper.current) {
+				// 			return {y: shiftSnapper.current.y};
+				// 		}
+				// 	}],
+				// 	range: Infinity,
+				// 	relativePoints: [{x: 0, y: 0}],
+				// }),
 				interact.modifiers.snap({
 					targets: [interact.createSnapGrid({x: 2 / scale, y: 2 / scale})],
 					// Control the snapping behavior

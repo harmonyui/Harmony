@@ -104,7 +104,7 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 			id: branch.id,
 			name: branch.label
 		})),
-		errorElements: errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
+		errorElements: [],//errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
 		pullRequest: pullRequest || undefined,
 		showWelcomeScreen: !accountTiedToBranch.seen_welcome_screen,
 		isDemo: accountTiedToBranch.role === 'quick'
