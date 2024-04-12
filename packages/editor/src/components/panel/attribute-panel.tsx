@@ -24,7 +24,7 @@ type ComponentAttributeProviderProps = ComponentAttributePanelProps & {
 }
 export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttributeProviderProps> = ({selectedComponent, children, onChange}) => {
     const {fonts} = useHarmonyContext();
-    const data = useMemo(() => selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined, [selectedComponent]);
+    const data = useMemo(() => selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined, [selectedComponent, fonts]);
     
     const onAttributeChange = (values: {name: string, value: string}) => {
 		if (!data || !selectedComponent) return;
@@ -43,6 +43,8 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
 		onChange(selectedComponent, [update]);
 	}
 
+    const selectedElement = selectedComponent?.element;
+
     const getAttribute = useCallback((attribute: CommonTools, isComputed=false): string => {
         if (isComputed && selectedElement) {
             return getComputedValue(selectedElement, camelToKebab(attribute));
@@ -55,9 +57,7 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
         }
 
         return '';
-    }, [data]);
-
-    const selectedElement = selectedComponent?.element;
+    }, [data, selectedElement]);
     
     return (
         <ComponentAttributeContext.Provider value={{selectedComponent: selectedComponent?.element, onAttributeChange, data, getAttribute}}>
