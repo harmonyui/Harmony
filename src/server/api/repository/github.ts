@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { CommitItem, Repository } from "../../../../packages/ui/src/types/branch";
 import { replaceByIndex } from "@harmony/util/src";
 import {Change, diffChars, diffLines} from 'diff';
+import { getFileContentsFromCache, setFileCache } from "./cache";
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const privateKeyRaw = privateKeyPath ? fs.readFileSync(privateKeyPath) : atob(process.env.PRIVATE_KEY || '');
@@ -99,6 +100,14 @@ export class GithubRepository {
 
         const cleanFile = file.startsWith('/') ? file.substring(1) : file;
 
+        const refKey = ref ? ref : await this.getBranchRef(this.repository.branch);
+        const cacheKey = {repo: this.repository.name, path: cleanFile, ref: refKey}
+        
+        const cachedFile = await getFileContentsFromCache(cacheKey);
+        if (cachedFile) {
+            return cachedFile;
+        }
+
         const { data: fileInfo } = await octokit.rest.repos.getContent({
             owner: this.repository.owner,
             repo: this.repository.name,
@@ -115,6 +124,8 @@ export class GithubRepository {
         }
 
         const contentText = atob(fileInfo.content);
+
+        await setFileCache(cacheKey, contentText);
 
         return contentText;
     }
