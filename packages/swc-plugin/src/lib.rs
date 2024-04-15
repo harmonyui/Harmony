@@ -3,7 +3,6 @@ use std::panic;
 use std::sync::Arc;
 use base64::prelude::*;
 use fancy_regex::Regex;
-use swc_ecma_ast::{op, BinExpr, BindingIdent, BlockStmt, ComputedPropName, CondExpr, Decl, Expr, Function, JSXExprContainer, MemberExpr, MemberProp, Null, OptChainExpr, Param, Pat, RestPat, ReturnStmt, Stmt, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator};
 
 use std::path::Path;
 use path_slash::PathExt as _;
@@ -11,11 +10,10 @@ use path_slash::PathExt as _;
 use serde_json::Value;
 use swc_common::{Mark,SourceMapper, plugin::metadata::TransformPluginMetadataContextKind, DUMMY_SP};
 use swc_core::{
-    ecma::{
-        ast::{Program, JSXElement, JSXAttrName, Str, Lit, Number, Ident, JSXAttrValue, JSXAttr}, 
+    atoms::js_word, ecma::{
+        ast::{op, BinExpr, BindingIdent, BlockStmt, BlockStmtOrExpr, ComputedPropName, CondExpr, Decl, Expr, Function, Ident, JSXAttr, JSXAttrName, JSXAttrValue, JSXElement, JSXExpr, JSXExprContainer, Lit, MemberExpr, MemberProp, Null, Number, OptChainBase, OptChainExpr, Param, Pat, Program, RestPat, ReturnStmt, Stmt, Str, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator}, 
         visit::{as_folder, FoldWith, VisitMut, VisitMutWith}
-    },atoms::js_word, 
-    plugin::{plugin_transform, proxies::{TransformPluginProgramMetadata,PluginSourceMapProxy}},
+    }, plugin::{plugin_transform, proxies::{PluginSourceMapProxy, TransformPluginProgramMetadata}}
 };
 
 
@@ -67,7 +65,7 @@ fn valid_path(path: &str) -> bool {
 }
 
 impl VisitMut for TransformVisitor {
-    fn visit_mut_arrow_expr(&mut self,node: &mut swc_ecma_ast::ArrowExpr) {
+    fn visit_mut_arrow_expr(&mut self,node: &mut swc_core::ecma::ast::ArrowExpr) {
         if valid_path(&self.filename[1..]) && node.params.len() < 2 && !has_spread_operator_pat(&node.params) && !has_default_params_pat(&node.params) {
             let params = node.params.clone();
 
@@ -135,7 +133,7 @@ impl VisitMut for TransformVisitor {
 
                 if node.body.is_expr() {
                     let expr = node.body.clone().expect_expr();
-                    node.body = Box::new(swc_ecma_ast::BlockStmtOrExpr::BlockStmt(BlockStmt {
+                    node.body = Box::new(BlockStmtOrExpr::BlockStmt(BlockStmt {
                         span: DUMMY_SP,
                         stmts: vec![Stmt::Return(ReturnStmt {
                             arg: Some(expr),
@@ -148,7 +146,7 @@ impl VisitMut for TransformVisitor {
 
                 body.stmts.insert(0, Stmt::Decl(Decl::Var(Box::new(const_declaration.clone()))));
 
-                node.body = Box::new(swc_ecma_ast::BlockStmtOrExpr::BlockStmt(body));
+                node.body = Box::new(BlockStmtOrExpr::BlockStmt(body));
             }
         }
 
@@ -265,7 +263,7 @@ impl VisitMut for TransformVisitor {
             // Create the attribute value: typeof harmonyArguments !== 'undefined' ? harmonyArguments[0]?["data-harmony-id"] : undefined
             let parent_attr_value = JSXAttrValue::JSXExprContainer(JSXExprContainer {
                 span: swc_common::DUMMY_SP,
-                expr: swc_ecma_ast::JSXExpr::Expr(Box::new(Expr::Cond(CondExpr {
+                expr: JSXExpr::Expr(Box::new(Expr::Cond(CondExpr {
                     span: DUMMY_SP,
                     test: Box::new(Expr::Bin(BinExpr {
                         span: DUMMY_SP,
@@ -283,7 +281,7 @@ impl VisitMut for TransformVisitor {
                     })),
                     cons: Box::new(Expr::OptChain(OptChainExpr {
                         span: DUMMY_SP,
-                        base: Box::new(swc_ecma_ast::OptChainBase::Member(MemberExpr {
+                        base: Box::new(OptChainBase::Member(MemberExpr {
                             span: swc_common::DUMMY_SP,
                             obj: (Box::new(Expr::Member(MemberExpr {
                                 span: swc_common::DUMMY_SP,
