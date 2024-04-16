@@ -156,7 +156,6 @@ impl VisitMut for TransformVisitor {
 
     fn visit_mut_function(&mut self, node: &mut Function) {
         if valid_path(&self.filename[1..]) && node.params.len() < 2 && !has_spread_operator(&node.params) && !has_default_params(&node.params) {
-            println!("{}", self.filename);
             let params = node.params.clone();
 
             // Create a new parameter with the identifier '...harmonyArguments'
@@ -360,9 +359,17 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
         panic!("Failed to strip prefix from path: {:?}", start);
     });
 
-		//Striping the prefix leaves a '/' at the beginning, so let's get rid of that
-    let cleaned_path = format!("{}", &result.to_string().replace("\\", "/")[1..]);
-
+    let modified_result = {
+        let mut result_string = result.to_string().replace("\\", "/");
+        if result_string.starts_with("/") {
+            result_string = result_string[1..].to_string();
+        }
+        result_string
+    };
+	//Striping the prefix leaves a '/' at the beginning, so let's get rid of that
+    let cleaned_path = format!("{}", modified_result);
+    println!("{}", cleaned_path);
+    
     console_error_panic_hook::set_once();
     let source_map = std::sync::Arc::new(data.source_map);
     program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), cleaned_path, filename)))

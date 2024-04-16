@@ -123,7 +123,11 @@ export class GithubRepository {
             throw new Error('File info does not have content');
         }
 
-        const contentText = atob(fileInfo.content);
+        //We have to do this fancy decoding because some special characters do not decode right 
+        //with atob
+        const contentText = decodeURIComponent(atob(fileInfo.content).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
 
         await setFileCache(cacheKey, contentText);
 
