@@ -285,8 +285,14 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		...attributePayload
 	});
 
-	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined, component: ComponentElementPrisma): {location: ComponentLocation, value: string | undefined} => {
-		return {location: attribute?.location || component.location, value: attribute?.name === 'string' ? attribute.value : undefined};
+	interface LocationValue {
+		location: ComponentLocation,
+		value: string | undefined,
+		isDefinedAndDynamic: boolean
+	}
+	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined, component: ComponentElementPrisma): LocationValue => {
+		const isDefinedAndDynamic = attribute?.name === 'property';
+		return {location: attribute?.location || component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic};
 	}
 
 	let result: FileUpdate | undefined;
@@ -308,11 +314,20 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: value, update: update.update, dbLocation: location, attribute};
 	}
 
+	interface AddClassName {
+		location: ComponentLocation, 
+		code: string, 
+		newClass: string, 
+		oldClass: string | undefined, 
+		commentValue: string, 
+		attribute: ComponentAttributePrisma | undefined,
+		isDefinedAndDynamic: boolean;
+	}
 	//This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
-	const addNewClassOrComment = ({location, code, newClass, oldClass, commentValue, attribute}: {location: ComponentLocation, code: string, newClass: string, oldClass: string | undefined, commentValue: string, attribute: ComponentAttributePrisma | undefined}) => {
+	const addNewClassOrComment = ({location, code, newClass, oldClass, commentValue, attribute, isDefinedAndDynamic}: AddClassName) => {
 		if (oldClass === undefined) {
-			//If we have a className that means it is a dynamic property, so just add a comment
-			if (/^<([a-zA-Z0-9]*)(\s[^>]*)?className=([^>]*)?(\/?)>/.test(code)) {
+			//If this is a dynamic property then just add a comment
+			if (isDefinedAndDynamic) {
 				return addCommentToJSXElement({location, code, commentValue, attribute});
 			}
 
@@ -364,7 +379,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 				const locationAndValue = getLocationAndValue(classNameAttribute, component);
 				//TODO: This is temporary. It shouldn't have 'className:'
 				locationAndValue.value = locationAndValue.value?.replace('className:', '');
-				const {location, value} = locationAndValue;
+				const {location, value, isDefinedAndDynamic} = locationAndValue;
 				
 				const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
 
@@ -386,7 +401,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					mergedClasses = update.font ? `${update.font} ${mergedClasses}` : mergedClasses;
 					withPrefix = update.font ? `${update.font} ${withPrefix}` : withPrefix;
 					
-					result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute});
+					result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute, isDefinedAndDynamic});
 				} else {
 					let valuesNewLined = update.value.replaceAll(';', ';\n');
 					valuesNewLined = update.font ? `font className: ${update.value}\n\n${valuesNewLined}` : valuesNewLined;

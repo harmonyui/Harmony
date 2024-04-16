@@ -17,7 +17,7 @@ serde = "1"
 serde_json = "1"
 swc_common = { version = "0.33.12", features = ["concurrent"] }
 tracing = { version = "0.1.37", features = ["release_max_level_off"] }
-swc_core = { version = "0.87.3", features = ["common", "ecma_utils", "ecma_plugin_transform"] }
+swc_core = { version = "0.90.30", features = ["common", "ecma_utils", "ecma_plugin_transform"] }
 swc_ecma_ast = "0.110.15"
 swc_ecma_utils = "0.125.0"
 swc_ecma_visit = "0.96.15"
