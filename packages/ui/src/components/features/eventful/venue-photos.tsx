@@ -9,7 +9,7 @@ export const VenuePhotos: React.FunctionComponent<VenuePhotosProps> = ({mainImag
             <div className="relative aspect-square w-1/2 overflow-hidden rounded-l-lg rounded-r-none">
                 <img alt="Main Image" src={mainImage}/>
             </div>
-            <div className="relative grid aspect-square w-1/2 grid-cols-2 grid-rows-2 overflow-hidden rounded-r-xl">
+            <div className="relative grid aspect-square w-1/2 grid-cols-2 grid-rows-2 gap-1 overflow-hidden rounded-r-xl">
                 {images.map(image => <div className="relative h-full w-full bg-black" key={image}>
                     <img alt="Image" className="bg-gray-100 object-cover" src={image}/>
                 </div>)}
