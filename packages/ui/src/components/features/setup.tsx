@@ -65,11 +65,11 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({ data, onCont
     const [account, setAccount] = useState(data);
     const changeProperty = useChangeProperty<Account>(setAccount);
     const [error, setError] = useState('');
+    const [isOther, setIsOther] = useState(false);
     const [loading, setLoading] = useState(false);
 
     const onContinueClick = () => {
         if (!account.firstName || !account.lastName || !account.role) {
-            console.log(account);
             setError("Please fill out all fields");
             return;
         }
@@ -98,12 +98,20 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({ data, onCont
                     <Input className="hw-w-full" value={account.lastName} onChange={changeProperty.formFunc('lastName', account)} />
                 </Label>
                 <Label className="sm:hw-col-span-3" label="What best describes your role">
-                    <Dropdown className="hw-w-full" items={items} initialValue={account.role} onChange={(item) => { changeProperty(account, 'role', item.id) }}>
+                    <Dropdown className="hw-w-full" items={items} initialValue={isOther ? "other" : account.role} onChange={(item) => {
+                        changeProperty(account, 'role', item.id);
+                        setIsOther(item.id == 'other');
+                    }}>
                         Select Role
                     </Dropdown>
                 </Label>
-            </div>
-            {error ? <p className="hw-text-sm hw-text-red-400">{error}</p> : null}
+                {isOther ?
+                    <Label className="sm:hw-col-span-3" label="Other Role">
+                        <Input className="hw-w-full" onChange={changeProperty.formFunc('role', account)} />
+                    </Label> : null}
+            </div >
+            {error ? <p className="hw-text-sm hw-text-red-400">{error}</p> : null
+            }
             <Button className="hw-w-fit hw-ml-auto" onClick={onContinueClick} loading={loading}>Create Account</Button>
         </>
     )
