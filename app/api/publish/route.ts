@@ -11,6 +11,9 @@ import { TailwindConverter } from 'css-to-tailwindcss';
 import { twMerge } from 'tailwind-merge'
 import { indexForComponent } from "../update/[branchId]/route";
 import { translateUpdatesToCss } from "@harmony/util/src/component";
+import { camelToKebab, round } from "@harmony/util/src";
+import { mergeClassesWithScreenSize } from "@harmony/util/src/tailwind-merge";
+import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
 
 const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
@@ -148,10 +151,6 @@ async function createGithubBranch(repository: Repository, branchName: string): P
 	await githubRepository.createBranch(branchName);
 }
 
-const camelToKebab = (camelCase: string): string => {
-	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-}
-
 async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repository, branch: BranchItem) {
 	const elementInstances = await prisma.componentElement.findMany({
 		where: {
@@ -170,6 +169,14 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 		if (curr.type === 'className') {
 			if (curr.name !== 'font') {
 				const cssName = camelToKebab(curr.name);
+
+				//Round the pixel values
+				const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(curr.value);
+				if (match) {
+					const value = parseFloat(match[1]);
+					const unit = match[2];
+					curr.value = `${round(value)}${unit}`;
+				}
 				curr.value = `${cssName}:${curr.value};`
 				curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`;
 			}
@@ -189,12 +196,23 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 			// level not the component level
 			const component = curr.type === 'className' && numSameComponentsButDifferentParents > 0 ? elementInstances.find(el => el.id === curr.parentId) : elementInstances.find(el => el.id === curr.componentId && el.parent_id === curr.parentId);
 			if (!component) {
-				throw new Error('Cannot find component with id ' + curr.componentId);
+				return prev;
+				//throw new Error('Cannot find component with id ' + curr.componentId);
 			}
 			const font = curr.type === 'className' && curr.name === 'font' ? curr.value : undefined;
 			const value = curr.type === 'className' && curr.name === 'font' ? '' : curr.value;
 
-			prev.push({update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font});
+			const sameComponent = curr.type === 'className' ? prev.find(({component: other}) => other.id === component.id && other.parent_id === component.parent_id) : undefined;
+			if (sameComponent) {
+				if (curr.name !== 'font') {
+					sameComponent.value += curr.value;
+					sameComponent.oldValue += curr.oldValue;
+				} else {
+					sameComponent.font = curr.value;
+				}
+			} else {
+				prev.push({update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font});
+			}
 		}
 		return prev;
 	}, []);
@@ -221,7 +239,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 		const last = change.locations[change.locations.length - 1];
 		if (last) {
 			const diff = last.updatedTo - last.end + last.diff;
-			if (last.end > newLocation.start + diff) {
+			if (last.updatedTo > newLocation.start + diff) {
 				throw new Error("Conflict in changes")
 				//console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`);
 			}
@@ -267,8 +285,14 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		...attributePayload
 	});
 
-	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined, component: ComponentElementPrisma): {location: ComponentLocation, value: string | undefined} => {
-		return {location: attribute?.location || component.location, value: attribute?.name === 'string' ? attribute.value : undefined};
+	interface LocationValue {
+		location: ComponentLocation,
+		value: string | undefined,
+		isDefinedAndDynamic: boolean
+	}
+	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined, component: ComponentElementPrisma): LocationValue => {
+		const isDefinedAndDynamic = attribute?.name === 'property';
+		return {location: attribute?.location || component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic};
 	}
 
 	let result: FileUpdate | undefined;
@@ -290,11 +314,20 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: value, update: update.update, dbLocation: location, attribute};
 	}
 
+	interface AddClassName {
+		location: ComponentLocation, 
+		code: string, 
+		newClass: string, 
+		oldClass: string | undefined, 
+		commentValue: string, 
+		attribute: ComponentAttributePrisma | undefined,
+		isDefinedAndDynamic: boolean;
+	}
 	//This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
-	const addNewClassOrComment = ({location, code, newClass, oldClass, commentValue, attribute}: {location: ComponentLocation, code: string, newClass: string, oldClass: string | undefined, commentValue: string, attribute: ComponentAttributePrisma | undefined}) => {
+	const addNewClassOrComment = ({location, code, newClass, oldClass, commentValue, attribute, isDefinedAndDynamic}: AddClassName) => {
 		if (oldClass === undefined) {
-			//If we have a className that means it is a dynamic property, so just add a comment
-			if (/^<([a-zA-Z0-9]*)(\s[^>]*)?className=([^>]*)?(\/?)>/.test(code)) {
+			//If this is a dynamic property then just add a comment
+			if (isDefinedAndDynamic) {
 				return addCommentToJSXElement({location, code, commentValue, attribute});
 			}
 
@@ -346,7 +379,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 				const locationAndValue = getLocationAndValue(classNameAttribute, component);
 				//TODO: This is temporary. It shouldn't have 'className:'
 				locationAndValue.value = locationAndValue.value?.replace('className:', '');
-				const {location, value} = locationAndValue;
+				const {location, value, isDefinedAndDynamic} = locationAndValue;
 				
 				const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
 
@@ -361,14 +394,14 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					//TODO: Make the tailwind prefix part dynamic
 					let oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
 					
-					const mergedIt = twMerge(oldClasses, newClasses);
+					const mergedIt = mergeClassesWithScreenSize(oldClasses, newClasses, DEFAULT_WIDTH);
 					let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 
 					let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
 					mergedClasses = update.font ? `${update.font} ${mergedClasses}` : mergedClasses;
 					withPrefix = update.font ? `${update.font} ${withPrefix}` : withPrefix;
 					
-					result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute});
+					result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute, isDefinedAndDynamic});
 				} else {
 					let valuesNewLined = update.value.replaceAll(';', ';\n');
 					valuesNewLined = update.font ? `font className: ${update.value}\n\n${valuesNewLined}` : valuesNewLined;

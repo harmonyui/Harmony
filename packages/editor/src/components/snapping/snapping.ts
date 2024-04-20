@@ -287,7 +287,7 @@ class ElementSnapping implements SnapBehavior {
 
 		const style = getComputedStyle(parent);
 		if (!['block', 'list-item'].includes(style.display)) {
-			return 'This is not a block element';
+			return `Harmony does not currently support display ${style.display}`;
 		}
 
 		if (element.dataset.harmonyText === 'true') {
@@ -553,7 +553,7 @@ class FlexSnapping implements SnapBehavior {
 		}
 
 		const parentStyle = getComputedStyle(parent);
-		if (parentStyle?.display.includes('flex')) {
+		if (['flex', 'inline-flex'].includes(parentStyle?.display)) {
 			if (parentStyle.flexWrap === 'wrap') {
 				return 'Harmony does not currently support flex-wrap';
 			}
@@ -964,7 +964,7 @@ const flexSnapping = new FlexSnapping(absoluteUpdator, flexUpdator);
 
 const getSnappingBehavior = (parent: HTMLElement | undefined) => {
 	let snappingBehavior: SnapBehavior = elementSnapBehavior;
-	if (parent && getComputedStyle(parent).display.includes('flex')) {
+	if (parent && ['flex', 'inline-flex'].includes(getComputedStyle(parent).display)) {
 		snappingBehavior = flexSnapping;
 	}
 
@@ -974,12 +974,16 @@ const getSnappingBehavior = (parent: HTMLElement | undefined) => {
 type SnappableProps = Pick<DraggableProps, 'element' | 'onIsDragging' | 'scale'> & {
 	onDragFinish: (element: HTMLElement, oldValues: [HTMLElement, Record<string, string>][]) => void;
 	onError: (error: string | undefined) => void;
+	enabled: boolean;
 };
-export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale}: SnappableProps) => {
+export const useSnapping = ({element: elementProps, onIsDragging, onDragFinish, onError, scale, enabled}: SnappableProps) => {
 	const [oldValues, setOldValues] = useState<[HTMLElement, Record<string, string>][]>([]);
 	const resX = useRef(0);
 	const resY = useRef(0);
 	const elementsRef = useRef<HTMLElement[]>([]);
+
+	//Disables the snapping by setting to undefined
+	const element = useMemo(() => enabled ? elementProps : undefined, [elementProps, enabled]);
 
 	const snappingBehavior = useMemo(() => getSnappingBehavior(element?.parentElement || undefined), [element]);
 
@@ -1185,6 +1189,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 		return values;
 	}
 
+	
+
 	const result = useDraggable({element, onIsDragging(event) {
 		if (!element) return;
 
@@ -1304,7 +1310,8 @@ export const useSnapping = ({element, onIsDragging, onDragFinish, onError, scale
 			}
 		}
 		updatedFirst.push(...updatedSecond);
-		updateOldValues(updatedFirst.filter(val => val.element.dataset.harmonyText !== 'true'));
+		//Filter out any of the above 'replacetextcontentwithspans' that are no longer in the dom
+		updateOldValues(updatedFirst.filter(val => document.body.contains(val.element)));
 
 		onIsDragging && onIsDragging(event, element);
     }, onCalculateSnapping(element, x, y, currentX, currentY) {
@@ -1536,19 +1543,19 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 			setOffsetY(refY.current);
 
 			const modifiers: Modifier[] = [
-				interact.modifiers.snap({
-					targets: [function() {
-						if (shiftSnapper.current) {
-							return {x: shiftSnapper.current.x};
-						}
-					}, function() {
-						if (shiftSnapper.current) {
-							return {y: shiftSnapper.current.y};
-						}
-					}],
-					range: Infinity,
-					relativePoints: [{x: 0, y: 0}],
-				}),
+				// interact.modifiers.snap({
+				// 	targets: [function() {
+				// 		if (shiftSnapper.current) {
+				// 			return {x: shiftSnapper.current.x};
+				// 		}
+				// 	}, function() {
+				// 		if (shiftSnapper.current) {
+				// 			return {y: shiftSnapper.current.y};
+				// 		}
+				// 	}],
+				// 	range: Infinity,
+				// 	relativePoints: [{x: 0, y: 0}],
+				// }),
 				interact.modifiers.snap({
 					targets: [interact.createSnapGrid({x: 2 / scale, y: 2 / scale})],
 					// Control the snapping behavior
@@ -1609,9 +1616,10 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 					selectDesignerElementReverse(e as HTMLElement).style.cursor = cursor;
 
 					return cursor;
-				}
+				},
+				
 				//inertia: true
-			});
+			}).on('move', startIt);
 
 			document.addEventListener('keydown', onKeyDown);
 			document.addEventListener('keyup', onKeyUp);
@@ -1622,6 +1630,20 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 			document.addEventListener('keyup', onKeyUp);
 		}
 	}, [element, scale, shiftSnapper]);
+
+	function startIt(event: InteractEvent<'drag', 'start'>) {
+		var interaction = event.interaction
+
+		if (!interaction.interacting()) {
+			interaction.start(
+				{ name: 'drag' },
+				event.interactable,
+				event.currentTarget,
+			)
+		}
+
+		event.interactable.off('move', startIt);
+	}
 
 	const onKeyDown = useEffectEvent((e: KeyboardEvent) => {
 		//TODO: Dependency on contentEditable. This hook should not know about that
@@ -1858,7 +1880,7 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 					end: stopResizing
 				},
 				modifiers: [aspectRef.current, ...modifiers],
-				margin: 6 / scale,
+				margin: 6 * scale,
 				cursorChecker: function(action, b, element,d) {
 					if (!action.edges) return 'default';
 
@@ -1868,7 +1890,7 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 						}
 	
 						if (edges.top && edges.left || edges.bottom && edges.right) {
-							return 'nesw-resize';
+							return 'nwse-resize';
 						}
 	
 						if (edges.left || edges.right) {

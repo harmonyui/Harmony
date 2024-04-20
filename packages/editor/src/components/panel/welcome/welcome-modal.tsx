@@ -19,7 +19,7 @@ export const WelcomeModal: React.FunctionComponent = () => {
 
     const pages: PageComponent[] = [
         WelcomeScreen,
-        ControlScreen
+        VideoScreen
     ];
     const onNext = () => {
         const nextPage = page + 1;
@@ -70,6 +70,20 @@ export const ControlModal: React.FunctionComponent<{show: boolean, onClose: () =
     </HarmonyModal>
 }
 
+const VideoScreen: PageComponent = ({onNext}) => {
+    return (<>
+        <Header level={1}>Harmony Demo Video:</Header>
+        <div className="mx-auto">
+            <iframe width="560" height="315" src="https://www.youtube.com/embed/Irhfe1aME0s?si=uFEtL0JbGAdI13d2" title="YouTube video player" frameBorder="0" allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share" referrerPolicy="strict-origin-when-cross-origin" allowFullScreen></iframe>
+        </div>
+        <div className="hw-flex hw-gap-4 hw-items-center hw-justify-end">
+            <div>
+                <Button className="hw-h-fit" onClick={onNext}>Get Started</Button>
+            </div>
+        </div>
+    </>)
+}
+
 const ControlScreen: PageComponent = ({onNext}) => {
     return (<>
         <Header level={1}>Harmony Control Guide:</Header>
@@ -91,7 +105,7 @@ const ControlGrid = () => {
             </div>
         </InfoBox>
         <div className="hw-grid hw-grid-cols-6 hw-gap-y-4 hw-text-left">
-            <ControlGridRow title="Select, Drag, Resize, Zoom" description="You can select, drag, resize, and zoom in Harmony with your cursor and touchpad, much like Figma and Canva." control="[Control]"/>
+            <ControlGridRow title="Select, Drag, Resize, Zoom" description="You can select, drag, resize, and zoom in Harmony with your cursor and touchpad, much like Figma and Canva." control="[Cursor]"/>
             <ControlGridRow title="Toggle Navigation/Designer modes" description="Use T to toggle between Harmony’s two modes. Navigation allows you to navigate the site as normal, and designer mode allows you to make changes." control="[T]"/>
             <ControlGridRow title="Move to parent component" description="Press Esc to move from the selected component to its parent. Use this to help you understand how the site is constructed." control="[Esc]"/>
             <ControlGridRow title="Interact with selected component" description="As custom sites can get complex, press alt or option if you need to drag or resize a selected element whose boundaries are too close to its parent or child." control="[Alt]"/>

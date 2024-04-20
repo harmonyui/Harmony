@@ -13,13 +13,14 @@ export const indexFilesAndFollowImports = async (files: string[], readFile: (fil
 	const instances: ComponentElement[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
 	const visitedFiles: Set<string> = new Set();
+	const fileContents: FileAndContent[] = [];
 
 	const visitPaths = async (filepath: string) => {
 		if (visitedFiles.has(filepath)) return;
 
 		visitedFiles.add(filepath);
 		const content = await readFile(filepath);
-		getCodeInfoFromFile(filepath, content, componentDefinitions, instances, importDeclarations);
+		fileContents.push({file: filepath, content});
 		// for (const componentName in importDeclarations) {
 		// 	const {path: importPath, name} = importDeclarations[componentName];
 		// 	const fullPath = path.join(filepath, importPath);
@@ -31,21 +32,42 @@ export const indexFilesAndFollowImports = async (files: string[], readFile: (fil
 		await visitPaths(filepath);	
 	}
 
-	await normalizeCodeInfoAndUpdateDatabase(componentDefinitions, instances, repositoryId);
+	const elementInstance = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, importDeclarations);
+	if (elementInstance) {
+		await updateDatabase(componentDefinitions, elementInstance, repositoryId);
+	}
 }
 
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: ComponentElement[] = [];
+	const fileContents: FileAndContent[] = [];
 
 	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename, content) => {
-		getCodeInfoFromFile(filename, content, componentDefinitions, instances, {});
+		fileContents.push({file: filename, content});
 	});
 
-	await normalizeCodeInfoAndUpdateDatabase(componentDefinitions, instances, repoId, onProgress);
+	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
+	if (elementInstances) {
+		await updateDatabase(componentDefinitions, elementInstances, repoId);
+	}
 }
 
-function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
+interface FileAndContent {
+	file: string;
+	content: string;
+}
+export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], importDeclarations: Record<string, {name: string, path: string}>): ComponentElement[] | false {
+	for (const {file, content} of files) {
+		if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
+			return false;
+		}
+	}
+
+	return normalizeCodeInfo(componentDefinitions, elementInstances);
+}
+
+export function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
   const ast = parse(originalCode, {
     sourceType: 'module',
  		plugins: ['jsx', 'typescript'],
@@ -160,15 +182,18 @@ function getCodeInfoFromFile(file: string, originalCode: string, componentDefini
 						const parentComponent = containingComponent;
 						if (jsxElementDefinition) {
 							const node = jsPath.node;
+							const textAttributes: Attribute[] = [];
 							const nonWhiteSpaceChildren = node.children.filter(n => !t.isJSXText(n) || n.value.trim().length > 0);
-							if (nonWhiteSpaceChildren.length === 1) {
-								const child = nonWhiteSpaceChildren[0];
+							for (const child of nonWhiteSpaceChildren) {
 								if (t.isJSXText(child)) {
-									jsxElementDefinition.attributes.push({id: '', type: 'text', name: 'string', value: child.extra?.raw as string || child.value, reference: jsxElementDefinition})
+									textAttributes.push({id: '', type: 'text', name: 'string', value: child.extra?.raw as string || child.value, reference: jsxElementDefinition})
 								} else if (t.isJSXExpressionContainer(child)) {
 									const value = t.isIdentifier(child.expression) ? child.expression.name : '';
-									jsxElementDefinition.attributes.push({id: '', type: 'text', name: 'property', value, reference: jsxElementDefinition});
+									value && textAttributes.push({id: '', type: 'text', name: 'property', value, reference: jsxElementDefinition});
 								}
+							}
+							if (textAttributes.length === 1) {
+								jsxElementDefinition.attributes.push(...textAttributes);
 							}
 							for (const attr of node.openingElement.attributes) {
 								if (t.isJSXAttribute(attr)) {
@@ -215,35 +240,34 @@ function getCodeInfoFromFile(file: string, originalCode: string, componentDefini
 	return true;
 }
 
-//For future when mapping path alias will be a need
-// function readTsConfig(tsConfigPath) {
-// 	const tsConfig = JSON.parse(fs.readFileSync(tsConfigPath, 'utf-8'));
-// 	return tsConfig.compilerOptions.paths || {};
-//   }
-  
-//   // Function to resolve path alias
-//   function resolvePathAlias(alias, pathMappings) {
-// 	// Find the alias in the pathMappings
-// 	for (const [aliasKey, paths] of Object.entries(pathMappings)) {
-// 	  if (alias.startsWith(aliasKey)) {
-// 		const resolvedPath = alias.replace(aliasKey, paths[0]); // Use the first path mapping
-// 		return path.resolve(resolvedPath);
-// 	  }
-// 	}
-// 	return alias; // Return original alias if no mapping found
-//   }
-// const tsConfigPath = '/path/to/tsconfig.json';
-// const aliasMappings = readTsConfig(tsConfigPath);
+function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, instances: ComponentElement[]) {
+	const findAttributeLocation = (curr: ComponentElement, instance: ComponentElement, propertyName: string): {attribute: Attribute, reference: ComponentElement | HarmonyComponent} | undefined => {
+		const attribute = curr.attributes.find(a => a.type === 'property' && a.value.split(':')[0] === propertyName || a.type === 'text' &&  propertyName === 'children');
+		if (attribute) {
+			if (attribute.name === 'string') {
+				return {reference: curr, attribute};
+				
+			} else {
+				const parent = curr.getParent();
+				if (parent) {
+					const reference = findAttributeLocation(parent, instance, propertyName);
 
-// // Resolve an alias
-// const alias = '@harmony/ui/src/component';
-// const resolvedPath = resolvePathAlias(alias, aliasMappings);
+					//TODO: find the text in the containing component
+					// if (reference === undefined) {
+					// 	return {reference: curr.containingComponent, attribute};
+					// }
 
-function randomId(): string {
-	return String(Math.random()).hashCode().toString();
-}
+					return reference;
+				}
 
-const normalizeCodeInfoAndUpdateDatabase = async (componentDefinitions: Record<string, HarmonyComponent>, instances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) => {
+				//TODO: find the text in the containing component
+				//return {reference: curr.containingComponent, attribute}
+			}
+		}  
+
+		return undefined;
+	}
+
 	const isComponentInstance = (instance: ComponentElement): boolean => {
 		return instance.name[0] === instance.name[0].toUpperCase();
 	}
@@ -272,6 +296,79 @@ const normalizeCodeInfoAndUpdateDatabase = async (componentDefinitions: Record<s
 		}
 	}
 
+	for (let i = 0; i < elementInstances.length; i++) {
+		const instance = elementInstances[i];
+		for (let j = 0; j < instance.attributes.length; j++) {
+			const attribute = instance.attributes[j];
+			if (attribute.type === 'text' && attribute.name === 'property') {
+				const parent = instance.getParent();
+				if (parent) {
+					const results = findAttributeLocation(parent, instance, attribute.value);
+					if (results) {
+						attribute.reference = results.reference;
+						attribute.name = results.attribute.name;
+						attribute.value = results.attribute.value;
+
+						if (attribute.name !== 'string') {
+							throw new Error("Attribute should be a string!");
+						}
+						
+						//For a string text property, we need to make sure the value is just the text. 
+						//However, getting the info from a 'property' means the value is {name}:{value}. 
+						//We must get rid of this and leave just {value}
+						if (results.attribute.type === 'property' && attribute.type === 'text' && attribute.name === 'string') {
+							const splitIndex = attribute.value.indexOf(':');
+							if (splitIndex < 0) {
+								throw new Error("Invalid property " + attribute.value);
+							}
+
+							attribute.value = attribute.value.substring(splitIndex + 1);
+						}
+					} else {
+						//attribute.reference = instance.containingComponent;
+						
+						//For now, if we cannot find where to update the text in a string property then just 
+						//delete the attribute so we can say 'We cannot updat the text'
+						instance.attributes.splice(j, 1);
+						j--;
+					}
+				}
+			}
+		}
+	}
+
+	return elementInstances;
+}
+
+//For future when mapping path alias will be a need
+// function readTsConfig(tsConfigPath) {
+// 	const tsConfig = JSON.parse(fs.readFileSync(tsConfigPath, 'utf-8'));
+// 	return tsConfig.compilerOptions.paths || {};
+//   }
+  
+//   // Function to resolve path alias
+//   function resolvePathAlias(alias, pathMappings) {
+// 	// Find the alias in the pathMappings
+// 	for (const [aliasKey, paths] of Object.entries(pathMappings)) {
+// 	  if (alias.startsWith(aliasKey)) {
+// 		const resolvedPath = alias.replace(aliasKey, paths[0]); // Use the first path mapping
+// 		return path.resolve(resolvedPath);
+// 	  }
+// 	}
+// 	return alias; // Return original alias if no mapping found
+//   }
+// const tsConfigPath = '/path/to/tsconfig.json';
+// const aliasMappings = readTsConfig(tsConfigPath);
+
+// // Resolve an alias
+// const alias = '@harmony/ui/src/component';
+// const resolvedPath = resolvePathAlias(alias, aliasMappings);
+
+function randomId(): string {
+	return String(Math.random()).hashCode().toString();
+}
+
+async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
 	const alreadyCreated: string[] = [];
 	const createElement = async (instance: ComponentElement) => {
 		if (alreadyCreated.includes(`${instance.id}${instance.parentId}`)) return;
@@ -391,71 +488,8 @@ try {
 		alreadyCreated.push(`${instance.id}${instance.parentId}`);
 	}
 
-	const findAttributeLocation = (curr: ComponentElement, instance: ComponentElement, propertyName: string): {attribute: Attribute, reference: ComponentElement | HarmonyComponent} | undefined => {
-		const attribute = curr.attributes.find(a => a.type === 'property' && a.value.split(':')[0] === propertyName || a.type === 'text' &&  propertyName === 'children');
-		if (attribute) {
-			if (attribute.name === 'string') {
-				return {reference: curr, attribute};
-				
-			} else {
-				const parent = curr.getParent();
-				if (parent) {
-					const reference = findAttributeLocation(parent, instance, propertyName);
-
-					//TODO: find the text in the containing component
-					// if (reference === undefined) {
-					// 	return {reference: curr.containingComponent, attribute};
-					// }
-
-					return reference;
-				}
-
-				//TODO: find the text in the containing component
-				//return {reference: curr.containingComponent, attribute}
-			}
-		}  
-
-		return undefined;
-	}
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
-		for (let j = 0; j < instance.attributes.length; j++) {
-			const attribute = instance.attributes[j];
-			if (attribute.type === 'text' && attribute.name === 'property') {
-				const parent = instance.getParent();
-				if (parent) {
-					const results = findAttributeLocation(parent, instance, attribute.value);
-					if (results) {
-						attribute.reference = results.reference;
-						attribute.name = results.attribute.name;
-						attribute.value = results.attribute.value;
-
-						if (attribute.name !== 'string') {
-							throw new Error("Attribute should be a string!");
-						}
-						
-						//For a string text property, we need to make sure the value is just the text. 
-						//However, getting the info from a 'property' means the value is {name}:{value}. 
-						//We must get rid of this and leave just {value}
-						if (results.attribute.type === 'property' && attribute.type === 'text' && attribute.name === 'string') {
-							const splitIndex = attribute.value.indexOf(':');
-							if (splitIndex < 0) {
-								throw new Error("Invalid property " + attribute.value);
-							}
-
-							attribute.value = attribute.value.substring(splitIndex + 1);
-						}
-					} else {
-						//attribute.reference = instance.containingComponent;
-						
-						//For now, if we cannot find where to update the text in a string property then just 
-						//delete the attribute so we can say 'We cannot updat the text'
-						instance.attributes.splice(j, 1);
-						j--;
-					}
-				}
-			}
-		}
 		await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)
 	}

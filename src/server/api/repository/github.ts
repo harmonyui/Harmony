@@ -4,6 +4,7 @@ import crypto from 'node:crypto';
 import { CommitItem, Repository } from "../../../../packages/ui/src/types/branch";
 import { replaceByIndex } from "@harmony/util/src";
 import {Change, diffChars, diffLines} from 'diff';
+import { getFileContentsFromCache, setFileCache } from "./cache";
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const privateKeyRaw = privateKeyPath ? fs.readFileSync(privateKeyPath) : atob(process.env.PRIVATE_KEY || '');
@@ -97,10 +98,20 @@ export class GithubRepository {
     public async getContent(file: string, ref?: string) {
         const octokit = await this.getOctokit();
 
+        const cleanFile = file.startsWith('/') ? file.substring(1) : file;
+
+        const refKey = ref ? ref : await this.getBranchRef(this.repository.branch);
+        const cacheKey = {repo: this.repository.name, path: cleanFile, ref: refKey}
+        
+        const cachedFile = await getFileContentsFromCache(cacheKey);
+        if (cachedFile) {
+            return cachedFile;
+        }
+
         const { data: fileInfo } = await octokit.rest.repos.getContent({
             owner: this.repository.owner,
             repo: this.repository.name,
-            path: file,
+            path: cleanFile,
             ref: ref,
         });
 
@@ -112,7 +123,13 @@ export class GithubRepository {
             throw new Error('File info does not have content');
         }
 
-        const contentText = atob(fileInfo.content);
+        //We have to do this fancy decoding because some special characters do not decode right 
+        //with atob
+        const contentText = decodeURIComponent(atob(fileInfo.content).split('').map(function(c) {
+            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+        }).join(''));
+
+        await setFileCache(cacheKey, contentText);
 
         return contentText;
     }
@@ -140,22 +157,8 @@ export class GithubRepository {
         // Iterate through each change and update the files
         for (const change of changes) {
             // Get the content SHA of the existing file
-            const { data: fileInfo } = await octokit.rest.repos.getContent({
-                owner: this.repository.owner,
-                repo: this.repository.name,
-                path: change.filePath,
-                ref: branch,
-            });
-    
-            if (Array.isArray(fileInfo)) {
-                throw new Error('The given file path is a directory');
-            }
-    
-            if (!('content' in fileInfo)) {
-                throw new Error('File info does not have content');
-            }
-    
-            let contentText = atob(fileInfo.content);
+            let contentText = await this.getContent(change.filePath, branch);
+
             for (const location of change.locations) {
                 contentText = replaceByIndex(contentText, location.snippet, location.start, location.end);
             }

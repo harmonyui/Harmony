@@ -1,5 +1,5 @@
 import dayjs from "dayjs";
-import { Change } from "diff";
+import { Change, diffLines } from "diff";
 import { z } from "zod";
 import { diffChars } from "diff";
 import { ComponentUpdate } from "@harmony/ui/src/types/component";
@@ -201,7 +201,11 @@ export function isDateInBetween(
 }
 
 export const arrayOfAll = <T,>() => <U extends T[]>(
-  array: U & ([T] extends [U[number]] ? unknown : Exclude<T, U[number]>)
+  array: U & (T extends U[number] ? unknown : Exclude<T, U[number]>)
+) => array;
+
+export const constArray = <T,>() => <U extends T[]>(
+  array: U
 ) => array;
 
 export const stringUnionSchema = <T extends readonly string[]>(array: T) => z.custom<T[number]>((data) => typeof data === 'string' && array.includes(data));
@@ -281,28 +285,44 @@ export function getLocationFromComponentId(id: string): {file: string, startLine
 	};
 }
 
-export function updateLocationFromDiffs({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}, diffs: Change[], diffCharsd?: Change[]) {
-  let currLine = 1;
-  let currColumn = 0;
-  let newLineStart = startLine;
-  let newLineEnd = endLine;
-  let newColumnStart = startColumn;
-  let newColumnEnd = endColumn;
+export function updateLocationFromContent({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}, oldContent: string, newContent: string) {
+  const diffs = diffChars(oldContent, newContent);
+  
+  const startIndex = getIndexFromLineAndColumn(oldContent, startLine, startColumn);
+  if (startIndex === undefined) throw new Error(`Invalid line and column ${startLine} ${startColumn} of content ${oldContent}`);
 
+  const newStartIndex = updateIndexFromDiffs(startIndex, diffs);
+  if (newStartIndex === undefined) return undefined;
+  
+  const endIndex = getIndexFromLineAndColumn(oldContent, endLine, endColumn);
+  if (endIndex === undefined) throw new Error(`Invalid line and column ${endLine} ${endColumn} of content ${oldContent}`);
+
+  const newEndIndex = updateIndexFromDiffs(endIndex, diffs);
+  if (newEndIndex === undefined) return undefined;
+
+  const {line: newLineStart, column: newColumnStart} = getLineAndColumn(newContent, newStartIndex);
+  const {line: newLineEnd, column: newColumnEnd} = getLineAndColumn(newContent, newEndIndex);
+
+  return {file, startLine: newLineStart, endLine: newLineEnd, startColumn: newColumnStart, endColumn: newColumnEnd};
+}
+
+export function updateIndexFromDiffs(index: number, diffs: Change[]): number | undefined {
+  let currIndex = 0;
+  let newIndex = index;
   for (let i = 0; i < diffs.length; i++) {
     const diff = diffs[i];
     if (diff.count === undefined) throw new Error("Why is there no line count?");
-    const lineCount = diff.count;
-    const columnCount = 0;
-
+    //const lineCount = diff.count;
+    const valueCount = diff.value.length;
     
-    if (currLine > endLine) break;
+    
+    if (currIndex > index) break;
 
     if (diff.added || diff.removed) {
       let sign = diff.added ? 1 : -1;
-      if (currLine < startLine) {
-        newLineStart += lineCount * sign;
-      } else if (currLine === startLine) {
+      if (currIndex < index) {
+        newIndex += valueCount * sign;
+      } else if (currIndex === index) {
         return undefined;
         // if (diff.removed && i < diffs.length - 1 && diffs[i+1].added) {
         //   const diffsChared = diffChars(diff.value, diffs[i+1].value);
@@ -323,42 +343,17 @@ export function updateLocationFromDiffs({file, startLine, startColumn, endLine, 
         //   continue;
         // }
       }
-      if (currLine < endLine) {
-        newLineEnd += lineCount * sign;
-      } else if (currLine === endLine) {
-        return undefined;
-        // if (diff.removed && i < diffs.length - 1 && diffs[i+1].added) {
-        //   const diffsChared = diffChars(diff.value, diffs[i+1].value);
-        //   currColumn = 0;
-        //   for (const diffChar of diffsChared) {
-        //     if (currColumn > endColumn) break;
-        //     if (diffChar.count === undefined) throw new Error("Why is there no char count?");
-        //     if (diffChar.added || diffChar.removed) {
-        //       let sign = diffChar.added ? 1 : -1;
-        //       if (currColumn < endColumn) {
-        //         newColumnEnd += diffChar.count * sign;
-        //       } else if (currColumn === endColumn) {
-        //         throw new Error("What is this")
-        //       }
-        //     } else {
-        //       currColumn += diffChar.count;
-        //     }
-        //   }
-        // }
-      }
 
       //Make sure we account for things that are getting replaced in our curr line calculation
       if (diff.removed && diffs[i + 1].added) {
-        currLine += diff.count;
+        currIndex += valueCount;
       }
     } else {
-      currLine += lineCount;
+      currIndex += valueCount;
     }
-
-    currColumn += columnCount;
   }
 
-  return {file, startLine: newLineStart, endLine: newLineEnd, startColumn: newColumnStart, endColumn: newColumnEnd};
+  return newIndex;
 }
 
 export type Environment = 'production' | 'staging' | 'development';
@@ -395,7 +390,7 @@ export function getIndexFromLineAndColumn(text: string, line: number, column: nu
   const lines = text.split("\n");
   let currentIndex = 0;
 
-  for (let i = 0; i < line; i++) {
+  for (let i = 0; i < line - 1; i++) {
     if (i < lines.length) {
       currentIndex += lines[i].length + 1; // Add 1 for the newline character
     } else {
@@ -403,7 +398,7 @@ export function getIndexFromLineAndColumn(text: string, line: number, column: nu
     }
   }
 
-  if (column < lines[line].length) {
+  if (column <= lines[line - 1].length) {
     currentIndex += column;
     return currentIndex;
   }
@@ -427,4 +422,8 @@ export const reverseUpdates = <T extends ComponentUpdate>(updates: T[]): T[] => 
 
 export const wordToKebabCase = (str: string): string => {
   return str.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
+}
+
+export const camelToKebab = (camelCase: string): string => {
+	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
 }

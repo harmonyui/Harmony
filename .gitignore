@@ -45,4 +45,6 @@ next-env.d.ts
 target
 .cargo
 
+#editor
 bundle.js
+dev

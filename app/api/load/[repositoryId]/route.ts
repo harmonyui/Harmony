@@ -5,6 +5,8 @@ import { LoadResponse, loadResponseSchema } from '@harmony/ui/src/types/network'
 import { GithubRepository } from '../../../../src/server/api/repository/github';
 import { getRepository } from '../../../../src/server/api/routers/branch';
 import { updateComponentIdsFromUpdates } from '../../../../src/server/api/services/updator/local';
+import { indexCodebase } from '../../../../src/server/api/services/indexor/indexor';
+import { fromDir } from '../../../../src/server/api/services/indexor/local';
 
 
 export async function GET(req: NextRequest, {params}: {params: {repositoryId: string}}): Promise<Response> {
@@ -42,7 +44,7 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 		throw new Error("Cannot find account tied to branch " + branchId);
 	}
 
-	//await indexCodebase(process.cwd(), fromDir, repositoryId);
+	//await indexCodebase('/Users/braydonjones/Documents/Projects/formbricks', fromDir, repositoryId);
 
 	let updates: ComponentUpdate[] = [];
 
@@ -71,7 +73,7 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 	//new commits that might affect our previously indexed component elements.
 	//Let's go through the diffs and update those component ids
 	if (ref !== repository.ref) {
-		await updateComponentIdsFromUpdates(updates, ref, githubRepository);
+		await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
 
 		await prisma.repository.update({
 			where: {
@@ -102,7 +104,7 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 			id: branch.id,
 			name: branch.label
 		})),
-		errorElements: errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
+		errorElements: [],//errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
 		pullRequest: pullRequest || undefined,
 		showWelcomeScreen: !accountTiedToBranch.seen_welcome_screen,
 		isDemo: accountTiedToBranch.role === 'quick'

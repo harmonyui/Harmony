@@ -11,7 +11,7 @@ module.exports = {
         globalObject: 'this',
         //libraryTarget: 'umd',
     },
-    target: 'node',
+    target: 'web',
     resolve: {
         extensions: ['.tsx', '.ts', '.js', '.jsx'],
         alias: {
