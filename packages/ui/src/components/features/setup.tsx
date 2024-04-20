@@ -82,6 +82,11 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({ data, onCont
         });
     }
 
+    const items: DropdownItem<string>[] =
+        [{ id: 'developer', name: 'Developer' },
+        { id: 'designer', name: 'Designer' },
+        { id: 'other', name: 'Other' }];
+
     return (
         <>
             <Header level={4}>Please enter your account details:</Header>
@@ -92,12 +97,10 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({ data, onCont
                 <Label className="sm:hw-col-span-3" label="Last Name:">
                     <Input className="hw-w-full" value={account.lastName} onChange={changeProperty.formFunc('lastName', account)} />
                 </Label>
-                <Label className="sm:hw-col-span-3" label="What best describes your role?">
-                    <select defaultValue={account.role} onChange={(e) => changeProperty.formFunc('role', account)(e.target.value)}>
-                        <option value="">Please Select</option>
-                        <option value="developer">Developer</option>
-                        <option value="designer">Designer</option>
-                    </select>
+                <Label className="sm:hw-col-span-3" label="What best describes your role">
+                    <Dropdown className="hw-w-full" items={items} initialValue={account.role} onChange={(item) => { changeProperty(account, 'role', item.id) }}>
+                        Select Role
+                    </Dropdown>
                 </Label>
             </div>
             {error ? <p className="hw-text-sm hw-text-red-400">{error}</p> : null}
