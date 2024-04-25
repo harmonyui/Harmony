@@ -1,0 +1,88 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`babel-plugin > Should add harmony data tags to arrow and function components 1`] = `
+""use strict";
+
+Object.defineProperty(exports, "__esModule", {
+  value: true
+});
+exports["default"] = SummaryMetadata;
+var _react = _interopRequireDefault(require("react"));
+var _cn = require("@formbricks/lib/cn");
+function _interopRequireDefault() { var obj = arguments.length <= 0 ? undefined : arguments[0]; return obj && obj.__esModule ? obj : { "default": obj }; }
+var StatCard = function StatCard() {
+  var _harmonyArguments$2, _harmonyArguments$3, _harmonyArguments$4, _harmonyArguments$5;
+  for (var _len = arguments.length, harmonyArguments = new Array(_len), _key = 0; _key < _len; _key++) {
+    harmonyArguments[_key] = arguments[_key];
+  }
+  var _harmonyArguments$ = harmonyArguments[0],
+    label = _harmonyArguments$.label,
+    percentage = _harmonyArguments$.percentage,
+    value = _harmonyArguments$.value,
+    className = _harmonyArguments$.className;
+  return /*#__PURE__*/_react["default"].createElement("div", {
+    className: (0, _cn.cn)("flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm", className),
+    "data-harmony-id": "dGVzdC50c3g6MTU6NDoyNjoxMA==",
+    "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$2 = harmonyArguments[0]) === null || _harmonyArguments$2 === void 0 ? void 0 : _harmonyArguments$2["data-harmony-id"] : null
+  }, /*#__PURE__*/_react["default"].createElement("p", {
+    className: "flex text-sm text-slate-600",
+    "data-harmony-id": "dGVzdC50c3g6MTk6NDoyNDo4",
+    "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$3 = harmonyArguments[0]) === null || _harmonyArguments$3 === void 0 ? void 0 : _harmonyArguments$3["data-harmony-id"] : null
+  }, label, percentage && percentage !== "NaN%" && /*#__PURE__*/_react["default"].createElement("span", {
+    className: "ml-1 rounded-xl bg-slate-100 px-2 py-1 text-xs",
+    "data-harmony-id": "dGVzdC50c3g6MjI6ODoyMjo5Mg==",
+    "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$4 = harmonyArguments[0]) === null || _harmonyArguments$4 === void 0 ? void 0 : _harmonyArguments$4["data-harmony-id"] : null
+  }, percentage)), /*#__PURE__*/_react["default"].createElement("p", {
+    className: "px-0.5 text-2xl font-bold text-slate-800",
+    "data-harmony-id": "dGVzdC50c3g6MjU6NDoyNTo3MQ==",
+    "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$5 = harmonyArguments[0]) === null || _harmonyArguments$5 === void 0 ? void 0 : _harmonyArguments$5["data-harmony-id"] : null
+  }, value));
+};
+function SummaryMetadata() {
+  var _harmonyArguments$6, _harmonyArguments$7, _harmonyArguments$8, _harmonyArguments$9, _harmonyArguments$10, _harmonyArguments$11, _harmonyArguments$12;
+  for (var _len2 = arguments.length, harmonyArguments = new Array(_len2), _key2 = 0; _key2 < _len2; _key2++) {
+    harmonyArguments[_key2] = arguments[_key2];
+  }
+  var surveySummary = harmonyArguments[0].surveySummary;
+  var completedPercentage = surveySummary.completedPercentage,
+    completedResponses = surveySummary.completedResponses,
+    displayCount = surveySummary.displayCount,
+    startsPercentage = surveySummary.startsPercentage,
+    totalResponses = surveySummary.totalResponses;
+  return /*#__PURE__*/_react["default"].createElement("div", {
+    className: "flex flex-col-reverse gap-y-2 py-4 lg:flex-row lg:gap-x-2",
+    "data-harmony-id": "dGVzdC50c3g6MzQ6NDo1MzoxMA==",
+    "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$6 = harmonyArguments[0]) === null || _harmonyArguments$6 === void 0 ? void 0 : _harmonyArguments$6["data-harmony-id"] : null
+  }, /*#__PURE__*/_react["default"].createElement(StatCard, {
+    label: "Displays",
+    percentage: "100%",
+    value: displayCount === 0 ? /*#__PURE__*/_react["default"].createElement("span", {
+      "data-harmony-id": "dGVzdC50c3g6Mzg6MzY6Mzg6NTA=",
+      "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$7 = harmonyArguments[0]) === null || _harmonyArguments$7 === void 0 ? void 0 : _harmonyArguments$7["data-harmony-id"] : null
+    }, "-") : displayCount,
+    tooltipText: "Number of times the survey has been viewed.",
+    "data-harmony-id": "dGVzdC50c3g6MzU6ODo0MDoxMA==",
+    "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$8 = harmonyArguments[0]) === null || _harmonyArguments$8 === void 0 ? void 0 : _harmonyArguments$8["data-harmony-id"] : null
+  }), /*#__PURE__*/_react["default"].createElement(StatCard, {
+    label: "Starts",
+    percentage: "".concat(Math.round(startsPercentage), "%"),
+    value: totalResponses === 0 ? /*#__PURE__*/_react["default"].createElement("span", {
+      "data-harmony-id": "dGVzdC50c3g6NDQ6Mzg6NDQ6NTI=",
+      "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$9 = harmonyArguments[0]) === null || _harmonyArguments$9 === void 0 ? void 0 : _harmonyArguments$9["data-harmony-id"] : null
+    }, "-") : totalResponses,
+    tooltipText: "Number of times the survey has been started.",
+    "data-harmony-id": "dGVzdC50c3g6NDE6ODo0NjoxMA==",
+    "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$10 = harmonyArguments[0]) === null || _harmonyArguments$10 === void 0 ? void 0 : _harmonyArguments$10["data-harmony-id"] : null
+  }), /*#__PURE__*/_react["default"].createElement(StatCard, {
+    label: "Responses",
+    percentage: "".concat(Math.round(completedPercentage), "%"),
+    value: completedResponses === 0 ? /*#__PURE__*/_react["default"].createElement("span", {
+      "data-harmony-id": "dGVzdC50c3g6NTA6NDI6NTA6NTY=",
+      "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$11 = harmonyArguments[0]) === null || _harmonyArguments$11 === void 0 ? void 0 : _harmonyArguments$11["data-harmony-id"] : null
+    }, "-") : completedResponses,
+    tooltipText: "Number of times the survey has been completed.",
+    "data-harmony-id": "dGVzdC50c3g6NDc6ODo1MjoxMA==",
+    "data-harmony-parent-id": typeof harmonyArguments !== "undefined" ? (_harmonyArguments$12 = harmonyArguments[0]) === null || _harmonyArguments$12 === void 0 ? void 0 : _harmonyArguments$12["data-harmony-id"] : null
+  }));
+}"
+`;

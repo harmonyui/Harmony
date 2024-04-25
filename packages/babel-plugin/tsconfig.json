@@ -1,0 +1,23 @@
+{
+    "compilerOptions": {
+      "target": "esnext",
+      "lib": ["dom", "dom.iterable", "esnext"],
+      "allowJs": true,
+      "skipLibCheck": true,
+      "esModuleInterop": true,
+      "strict": true,
+      "forceConsistentCasingInFileNames": true,
+      "module": "esnext",
+      "moduleResolution": "node",
+      "declaration": true,
+      "rootDir": "../..",
+      "outDir": "./dist/esm",
+      "composite": true
+    },
+    "exclude": [
+      "webpack.config.js","dist", "*.spec.ts", "__snapshots__"
+    ]
+    // "references": [
+    //   {"path": "../ui"}
+    // ]
+}
