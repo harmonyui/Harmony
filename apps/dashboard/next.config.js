@@ -1,10 +1,12 @@
+const path = require('node:path');
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     experimental: {
         swcPlugins: process.env.ENV !== 'production' ? [
             [
                 require.resolve('harmony-ai-plugin'), 
-                {rootDir: __dirname}
+                {rootDir: path.join(__dirname, '../..')}
             ],
         ] : undefined,
     },

@@ -1,17 +1,16 @@
 'use client';
 import { useState } from "react";
-import { Account } from "../../../../../src/server/auth"
-import { Button } from "../core/button";
-import { TableGrid, TableGridColumn } from "../core/table-grid"
-import { HarmonyModal } from "../core/modal";
-import { Header } from "../core/header";
-import { Label } from "../core/label";
-import { Input } from "../core/input";
-import { api } from "../../../../../utils/api";
-import { useChangeProperty } from "../../hooks/change-property";
-import { emailSchema } from "../../types/utils";
-import { TeamMember as TeamMemberServer} from "../../types/branch";
-import { PlusIcon } from "../core/icons";
+import { Button } from "@harmony/ui/src/components/core/button";
+import { TableGrid, TableGridColumn } from "@harmony/ui/src/components/core/table-grid"
+import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
+import { Header } from "@harmony/ui/src/components/core/header";
+import { Label } from "@harmony/ui/src/components/core/label";
+import { Input } from "@harmony/ui/src/components/core/input";
+import { api } from "../../../utils/api";
+import { useChangeProperty } from "@harmony/ui/src/hooks/change-property";
+import { emailSchema } from "@harmony/ui/src/types/utils";
+import { TeamMember as TeamMemberServer} from "@harmony/ui/src/types/branch";
+import { PlusIcon } from "@harmony/ui/src/components/core/icons";
 
 type TeamMember = Omit<TeamMemberServer, 'contact'> & {contact: string}
 

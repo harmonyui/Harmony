@@ -1,7 +1,7 @@
 'use client'
 import { useClerk } from "@clerk/nextjs";
-import { ToggleIcon, GitBranchIcon, GitPullRequestIcon, UserGroupIcon } from "../packages/ui/src/components/core/icons"
-import { SidePanelItems, SidePanel, ProfileItem } from "../packages/ui/src/components/core/side-panel"
+import { GitBranchIcon, GitPullRequestIcon, UserGroupIcon } from "@harmony/ui/src/components/core/icons"
+import { SidePanelItems, SidePanel, ProfileItem } from "@harmony/ui/src/components/core/side-panel"
 import { useRouter, usePathname } from "next/navigation";
 
 interface SideNavProps {

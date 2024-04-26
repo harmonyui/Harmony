@@ -1,10 +1,9 @@
-import { prisma } from "../../../../../src/server/db";
-import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "../../../../../packages/ui/src/types/component";
-import { getLineAndColumn, hashComponentId } from "../../../../../packages/util/src/index";
+import { prisma } from "@harmony/db/lib/prisma";
+import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/ui/src/types/component";
+import { getLineAndColumn, hashComponentId } from "@harmony/util/src/index";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import path from 'node:path';
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
@@ -12,7 +11,7 @@ export const indexFilesAndFollowImports = async (files: string[], readFile: (fil
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: ComponentElement[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
-	const visitedFiles: Set<string> = new Set();
+	const visitedFiles: Set<string> = new Set<string>();
 	const fileContents: FileAndContent[] = [];
 
 	const visitPaths = async (filepath: string) => {

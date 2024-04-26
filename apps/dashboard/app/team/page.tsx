@@ -1,10 +1,8 @@
-import { Header } from "@harmony/ui/src/components/core/header";
-import { NextPage } from "next";
-import { SideNav } from "../../../../utils/side-nav";
-import { withAuth } from "../../../../utils/protected-routes-hoc";
-import { TeamDisplay } from "@harmony/ui/src/components/features/team";
+import { SideNav } from "../../utils/side-nav";
+import { withAuth } from "../../utils/protected-routes-hoc";
 import { emailSchema } from "@harmony/ui/src/types/utils";
 import { TeamMember } from "@harmony/ui/src/types/branch";
+import { TeamDisplay } from "./components/team";
 
 const TeamPage = withAuth(async ({ctx}) => {
 	const team = await ctx.prisma.team.findUnique({

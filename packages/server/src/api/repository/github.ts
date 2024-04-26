@@ -1,9 +1,9 @@
 import { Octokit, App } from "octokit";
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import { CommitItem, Repository } from "../../../../packages/ui/src/types/branch";
+import { CommitItem, Repository } from "@harmony/ui/src/types/branch";
 import { replaceByIndex } from "@harmony/util/src";
-import {Change, diffChars, diffLines} from 'diff';
+import {Change, diffLines} from 'diff';
 import { getFileContentsFromCache, setFileCache } from "./cache";
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
@@ -20,7 +20,7 @@ const app = new App({
     privateKey: privateKey,
 });
 
-export const appOctokit = app.octokit;
+export const appOctokit: Octokit = app.octokit;
 
 export class GithubRepository {
     private octokit: Octokit | undefined;

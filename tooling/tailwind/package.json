@@ -1,5 +1,5 @@
 {
-  "name": "tailwind-config",
+  "name": "@harmony/tailwind-config",
   "private": true,
   "version": "0.0.0",
   "main": "index.ts",
@@ -9,10 +9,10 @@
   "eslint": {
     "root": true,
     "extends": [
-      "eslint-config-custom/library"
+      "@harmony/eslint-config-custom/library"
     ]
   },
-  "prettier": "prettier-config",
+  "prettier": "@harmony/prettier-config",
   "dependencies": {
     "@tailwindcss/forms": "^0.5.6",
     "postcss": "^8.4.30",
@@ -20,6 +20,6 @@
   },
   "devDependencies": {
     "autoprefixer": "^10.4.14",
-    "prettier-config": "workspace:^"
+    "@harmony/prettier-config": "workspace:^"
   }
 }

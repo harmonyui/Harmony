@@ -1,12 +1,12 @@
 import { NextRequest } from 'next/server';
-import { prisma } from '../../../../../../src/server/db';
+import { prisma } from '@harmony/db/lib/prisma';
 import { ComponentUpdate } from '@harmony/ui/src/types/component';
 import { LoadResponse, loadResponseSchema } from '@harmony/ui/src/types/network';
-import { GithubRepository } from '../../../../../../src/server/api/repository/github';
-import { getRepository } from '../../../../../../src/server/api/routers/branch';
-import { updateComponentIdsFromUpdates } from '../../../../../../src/server/api/services/updator/local';
-import { indexCodebase } from '../../../../../../src/server/api/services/indexor/indexor';
-import { fromDir } from '../../../../../../src/server/api/services/indexor/local';
+import { GithubRepository } from '@harmony/server/src/api/repository/github';
+import { getRepository } from '@harmony/server/src/api/routers/branch';
+import { updateComponentIdsFromUpdates } from '@harmony/server/src/api/services/updator/local';
+// import { indexCodebase } from '@harmony/server/src/api/services/indexor/indexor';
+// import { fromDir } from '@harmony/server/src/api/services/indexor/local';
 
 
 export async function GET(req: NextRequest, {params}: {params: {repositoryId: string}}): Promise<Response> {

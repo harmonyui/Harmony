@@ -1,4 +1,4 @@
-import { DeveloperSetup } from "@harmony/ui/src/components/features/setup";
+import { DeveloperSetup } from "../../components/setup";
 
 const clientId = process.env.GITHUB_APP_CLIENT_ID || '';
 const DeveloperSetupPage = ({params}: {params: {teamId: string}}) => {

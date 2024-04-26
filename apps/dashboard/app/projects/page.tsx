@@ -1,12 +1,12 @@
-import { SideNav } from "../../../../utils/side-nav";
+import { SideNav } from "../../utils/side-nav";
 import { ModalProvider } from "@harmony/ui/src/components/core/modal";
-import React, { useRef } from "react";
-import { withAuth } from "../../../../utils/protected-routes-hoc";
-import { getBranches } from "../../../../src/server/api/routers/branch";
-import { ProjectDisplay } from "@harmony/ui/src/components/features/project";
+import React from "react";
+import { withAuth } from "../../utils/protected-routes-hoc";
+import { getBranches } from "@harmony/server/src/api/routers/branch";
 
 import { redirect } from "next/navigation";
-import { ProjectSetUp } from "./setup";
+import { ProjectSetUp } from "./components/setup";
+import { ProjectDisplay } from "./components/project";
 
 
 const ProjectsPage = withAuth(async ({ ctx }) => {

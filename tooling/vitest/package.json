@@ -1,5 +1,5 @@
 {
-  "name": "vitest-config",
+  "name": "@harmony/vitest-config",
   "private": true,
   "version": "0.0.0",
   "main": "vitest.config.ts",
@@ -9,13 +9,14 @@
   "eslint": {
     "root": true,
     "extends": [
-      "eslint-config-custom/library"
+      "@harmony/eslint-config-custom/library"
     ]
   },
-  "prettier": "prettier-config",
+  "prettier": "@harmony/prettier-config",
   "dependencies": {
     
   },
   "devDependencies": {
+    "@harmony/tsconfig": "workspace:*"
   }
 }

@@ -14,10 +14,10 @@
     "eslint": {
       "root": true,
       "extends": [
-        "eslint-config-custom/library"
+        "@harmony/eslint-config-custom/library"
       ]
     },
-    "prettier": "prettier-config",
+    "prettier": "@harmony/prettier-config",
     "dependencies": {
       "@prisma/client": "^5.3.1",
       "dotenv-cli": "^7.3.0",
@@ -26,10 +26,10 @@
     "devDependencies": {
       "@types/node": "^20.6.2",
       "eslint": "^8.48.0",
-      "eslint-config-custom": "workspace:^",
+      "@harmony/eslint-config-custom": "workspace:^",
       "prettier": "^3.0.3",
-      "prettier-config": "workspace:^",
-      "tsconfig": "workspace:^",
+      "@harmony/prettier-config": "workspace:^",
+      "@harmony/tsconfig": "workspace:^",
       "typescript": "^5.2.2"
     }
   }

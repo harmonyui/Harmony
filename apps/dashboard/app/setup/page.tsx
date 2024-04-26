@@ -1,9 +1,9 @@
-import { useSearchParams, useRouter, notFound } from "next/navigation";
-import React, { useState } from "react";
-import { WelcomeDisplay } from "@harmony/ui/src/components/features/setup";
-import { prisma } from "../../../../src/server/db";
-import { getServerAuthSession } from "../../../../src/server/auth";
+import { notFound } from "next/navigation";
+import React from "react";
+import { prisma } from "@harmony/db/lib/prisma";
+import { getServerAuthSession } from "@harmony/server/src/auth";
 import { cookies } from "next/headers";
+import { WelcomeDisplay } from "./components/setup";
 
 export default async function SetupPage({searchParams}: {searchParams?: { [key: string]: string | string[] | undefined }}) {
 	const teamId = searchParams?.teamId || undefined;

@@ -1,10 +1,7 @@
 "use server"
-import { TableGrid, TableGridColumn } from "@harmony/ui/src/components/core/table-grid";
-import { prisma } from "../../../../src/server/db";
-import { withAuth } from "../../../../utils/protected-routes-hoc";
-import { TeamMirrorDisplay } from "@harmony/ui/src/components/features/team";
-import { SideNav } from "../../../../utils/side-nav";
+import { withAuth } from "../../utils/protected-routes-hoc";
 import { redirect } from "next/navigation";
+import { TeamMirrorDisplay } from "../team/components/team";
 
 
 const MirrorPage = withAuth(async ({ctx}) => {

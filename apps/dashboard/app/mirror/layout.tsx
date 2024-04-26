@@ -1,5 +1,4 @@
-import { withAuth } from "../../../../utils/protected-routes-hoc"
-import { SideNav } from "../../../../utils/side-nav"
+import { SideNav } from "../../utils/side-nav"
 
 const MirrorLayout = ({
     children,

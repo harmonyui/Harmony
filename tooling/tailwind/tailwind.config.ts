@@ -2,10 +2,10 @@ import type { Config } from 'tailwindcss'
 import forms from '@tailwindcss/forms';
 
 export const files = [
-  './utils/**/*.{js,ts,jsx,tsx,mdx}',
-  './src/**/*.{js,ts,jsx,tsx,mdx}',
-  './app/**/*.{js,ts,jsx,tsx,mdx}',
-  './packages/**/*.{js,ts,jsx,tsx,mdx}'
+  "../../packages/ui/src/**/*.{ts,tsx}",
+  "../../apps/dashboard/app/**/*.{ts,tsx}",
+  "../../apps/dashboard/utils/**/*.{ts,tsx}",
+  "../../packages/editor/src/**/*.{ts,tsx}",
 ]
 
 const config: Config = {

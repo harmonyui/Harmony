@@ -1,5 +1,5 @@
 {
-  "name": "prettier-config",
+  "name": "@harmony/prettier-config",
   "private": true,
   "version": "0.0.0",
   "main": "index.mjs",
@@ -12,7 +12,7 @@
   },
   "devDependencies": {
     "prettier-plugin-prisma": "^5.0.0",
-    "tsconfig": "workspace:^",
+    "@harmony/tsconfig": "workspace:^",
     "typescript": "^5.2.2"
   },
   "prettier": "./index.mjs"

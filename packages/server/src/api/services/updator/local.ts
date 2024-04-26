@@ -1,10 +1,9 @@
-import { ComponentElementBase, ComponentUpdate } from "../../../../../packages/ui/src/types/component";
+import { ComponentElementBase, ComponentUpdate } from "@harmony/ui/src/types/component";
 import { z } from "zod";
 import fs from 'node:fs';
 import { getLocationFromComponentId, hashComponentId, replaceByIndex, updateLocationFromContent } from "@harmony/util/src";
-import { prisma } from "../../../db";
+import { prisma } from "@harmony/db/lib/prisma";
 import { GithubRepository } from "../../repository/github";
-import { diffLines } from "diff";
 
 export const changesSchema = z.object({
 	oldCode: z.string(),

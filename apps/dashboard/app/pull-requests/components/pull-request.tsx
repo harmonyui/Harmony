@@ -1,16 +1,16 @@
 'use client';
-import { GitBranchIcon, GitPullRequestIcon } from "../core/icons";
-import {Button} from '../core/button';
+import { GitBranchIcon, GitPullRequestIcon } from "@harmony/ui/src/components/core/icons";
+import {Button} from '@harmony/ui/src/components/core/button';
 import { useState } from "react";
-import { BranchItem, PullRequest } from "../../types/branch";
+import { BranchItem, PullRequest } from "@harmony/ui/src/types/branch";
 import { ModalProvider } from "react-aria";
-import { useChangeProperty } from "../../hooks/change-property";
-import { api } from "../../../../../utils/api";
-import { Input } from "../core/input";
-import { Header } from "../core/header";
-import { Label } from "../core/label";
-import { HarmonyModal } from "./branch";
-import { Dropdown, DropdownItem } from "../core/dropdown";
+import { useChangeProperty } from "@harmony/ui/src/hooks/change-property";
+import { api } from "../../../utils/api";
+import { Input } from "@harmony/ui/src/components/core/input";
+import { Header } from "@harmony/ui/src/components/core/header";
+import { Label } from "@harmony/ui/src/components/core/label";
+import { Dropdown, DropdownItem } from "@harmony/ui/src/components/core/dropdown";
+import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
 
 
 export const PullRequestDisplay: React.FunctionComponent<{items: PullRequest[]}> = ({items}) => {

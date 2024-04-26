@@ -1,15 +1,15 @@
-import { repositorySchema } from "@harmony/ui/src/types/branch";
-import { z } from "zod";
-import { getServerAuthSession } from "../../../../../src/server/auth";
-import { GithubRepository } from "../../../../../src/server/api/repository/github";
-import { fromGithub } from "../../../../../src/server/api/services/indexor/github";
-import { indexCodebase } from "../../../../../src/server/api/services/indexor/indexor";
+// import { repositorySchema } from "@harmony/ui/src/types/branch";
+// import { z } from "zod";
+// import { getServerAuthSession } from "../../../../../src/server/auth";
+// import { GithubRepository } from "../../../../../src/server/api/repository/github";
+// import { fromGithub } from "../../../../../src/server/api/services/indexor/github";
+// import { indexCodebase } from "../../../../../src/server/api/services/indexor/indexor";
 
 //export const runtime = 'edge'; // 'nodejs' is the default
 //export const dynamic = 'force-dynamic'; // static by default, unless reading the request
 //export const maxDuration = 300;
 
-export async function POST(req: Request): Promise<Response> {
+export function POST(_req: Request): Promise<Response> {
     throw new Error("This is not implemented");
     // const session = await getServerAuthSession();
     // if (session === undefined || session.account === undefined) {

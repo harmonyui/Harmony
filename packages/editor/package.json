@@ -17,7 +17,15 @@
     "build:esm": "tsc && tsc-alias",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs && tsc-alias"
   },
+  "dependencies": {
+    "@harmony/ui": "workspace:*",
+    "@harmony/util": "workspace:*",
+    "react": "^18",
+    "jquery": "^3.7.1",
+    "interactjs": "^1.10.26"
+  },
   "peerDependencies": {
+    "@headlessui/react": "^1.7.18",
     "dayjs": "^1.11.10",
     "hotkeys-js": "^3.13.2",
     "react": "^18",
@@ -33,12 +41,28 @@
     "@babel/core": "^7.23.7",
     "@babel/preset-env": "^7.23.8",
     "@babel/preset-react": "^7.23.3",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "@types/jquery": "^3.5.29",
     "css-loader": "^6.9.0",
     "postcss-loader": "^8.0.0",
     "style-loader": "^3.3.4",
     "ts-loader": "^9.5.1",
     "webpack": "^5.90.0",
-    "webpack-cli": "^5.1.4"
+    "webpack-cli": "^5.1.4",
+    "prettier": "^3.0.3",
+    "tailwindcss": "^3.4.1",
+    "@harmony/eslint-config-custom": "workspace:*",
+    "@harmony/prettier-config": "workspace:^",
+    "@harmony/tailwind-config": "workspace:^",
+    "@harmony/tsconfig": "workspace:*"
   },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@harmony/eslint-config-custom/library"
+    ]
+  },
+  "prettier": "@harmony/prettier-config",
   "version": "0.11.6"
 }

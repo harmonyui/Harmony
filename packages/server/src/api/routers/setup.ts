@@ -1,15 +1,12 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure, registerdProcedure } from "../trpc";
-import { Account, accountSchema, getAccount, getRepositoryFromTeam, getServerAuthSession } from "../../../../src/server/auth";
-import { indexCodebase } from "../services/indexor/indexor";
-import { fromDir } from "../services/indexor/local";
-import { fromGithub } from "../services/indexor/github";
-import { GithubRepository, appOctokit } from "../repository/github";
-import { Repository, repositorySchema } from "../../../../packages/ui/src/types/branch";
+import { Account, accountSchema, getAccount, getRepositoryFromTeam } from "../../auth";
+import { appOctokit } from "../repository/github";
+import { Repository, repositorySchema } from "@harmony/ui/src/types/branch";
 import {components} from '@octokit/openapi-types/types'
 import { emailSchema } from "@harmony/ui/src/types/utils";
 import { cookies } from "next/headers";
-import { Db } from "../../db";
+import type { Db } from "@harmony/db/lib/prisma";
 
 const accountCreateSchema = z.object({firstName: z.string(), lastName: z.string(), role: z.string()});
 type AccountCreate = z.infer<typeof accountCreateSchema>;

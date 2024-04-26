@@ -1,5 +1,5 @@
 {
-  "extends": "tsconfig/base.json",
+  "extends": "@harmony/tsconfig/base.json",
   "include": ["."],
   "exclude": [
     "webpack.config.js","dist", "*.spec.ts", "__snapshots__"

@@ -1,8 +1,8 @@
-import { GetServerSidePropsContext, type GetServerSideProps } from "next";
-import { FullSession, Session, getServerAuthSession } from "../src/server/auth";
+import { type GetServerSideProps } from "next";
+import { FullSession, Session, getServerAuthSession } from "@harmony/server/src/auth";
 import { redirect } from "next/navigation";
-import { AuthContext, mailer } from "../src/server/api/trpc";
-import { prisma } from "../src/server/db";
+import { AuthContext, mailer } from "@harmony/server/src/api/trpc";
+import { prisma } from "@harmony/db/lib/prisma";
 import {cookies} from 'next/headers';
 
 interface RequireRouteProps {
@@ -41,7 +41,7 @@ export const requireAuth = requireRoute({ redirect: "/setup", check: (session) =
 	return session.account === undefined;
 } });
 
-type AuthProps = {ctx: AuthContext}
+interface AuthProps {ctx: AuthContext}
 export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.FunctionComponent<AuthProps> => 
 	async (props) => {
     const cookie = cookies();

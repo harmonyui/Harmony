@@ -1,5 +1,5 @@
 import { emailMeetingRequestSchema } from "@harmony/ui/src/types/network";
-import { NodeMailerEmailService } from "../../../../../../src/server/api/services/email-service";
+import { NodeMailerEmailService } from "@harmony/server/src/api/services/email-service";
 
 export async function POST(req: Request): Promise<Response> {
     const request = emailMeetingRequestSchema.parse(await req.json());

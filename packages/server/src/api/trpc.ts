@@ -8,10 +8,9 @@
  */
 
 import { initTRPC, TRPCError } from "@trpc/server";
-import { type CreateNextContextOptions } from "@trpc/server/adapters/next";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import { Db, prisma } from "../db";
+import { Db, prisma } from "@harmony/db/lib/prisma";
 import { FullSession, getServerAuthSession, Session } from "../auth";
 import { EmailService, NodeMailerEmailService } from "./services/email-service";
 

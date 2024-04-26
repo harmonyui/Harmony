@@ -2,8 +2,8 @@ import type { Metadata } from 'next'
 import '@harmony/ui/styles.css'
 import {HarmonySetup} from 'harmony-ai-editor/src';
 import { ClerkProvider } from '@clerk/nextjs'
-import { TrpcProvider } from '../../../utils/trpc-provider'
 import {fonts, mulish} from '@harmony/util/src/fonts';
+import { TrpcProvider } from '../utils/trpc-provider'
 
 const repositoryId = process.env.REPOSITORY_ID || 'fbefdac4-8370-4d6d-b440-0307882f0102'
 

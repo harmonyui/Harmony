@@ -8,13 +8,13 @@ import CodeSnippet from "@harmony/ui/src/components/core/code-snippet";
 import { LoadingScreen } from "@harmony/ui/src/components/features/loading-screen";
 import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
-import { api } from "../../../../../utils/api";
-import { useChangeProperty } from "../../hooks/change-property";
-import { emailSchema } from "../../types/utils";
-import { Account as AccountServer } from "../../../../../src/server/auth";
-import { Dropdown, DropdownItem } from "../core/dropdown";
+import { api } from "../../../utils/api";
+import { useChangeProperty } from "@harmony/ui/src/hooks/change-property";
+import { emailSchema } from "@harmony/ui/src/types/utils";
+import { Account as AccountServer } from "@harmony/server/src/auth";
+import { Dropdown, DropdownItem } from "@harmony/ui/src/components/core/dropdown";
 import { WEB_URL } from '@harmony/util/src/constants';
-import { CopyText } from "../core/copy-text";
+import { CopyText } from "@harmony/ui/src/components/core/copy-text";
 
 type Account = AccountServer
 

@@ -1,15 +1,13 @@
-import { ComponentLocation, ComponentUpdate } from '@harmony/ui/src/types/component';
-import { prisma } from '../../../../../../src/server/db';
-import { Branch, Prisma } from '@prisma/client';
-import { getCodeSnippet, getFileContent } from '../../../../../../src/server/api/services/indexor/github';
-import { GithubRepository } from '../../../../../../src/server/api/repository/github';
+import { ComponentUpdate } from '@harmony/ui/src/types/component';
+import { prisma } from '@harmony/db/lib/prisma';
+import { getFileContent } from '@harmony/server/src/api/services/indexor/github';
+import { GithubRepository } from '@harmony/server/src/api/repository/github';
 
 import { UpdateResponse, updateRequestBodySchema, updateResponseSchema } from '@harmony/ui/src/types/network';
-import { indexFilesAndFollowImports } from '../../../../../../src/server/api/services/indexor/indexor';
-import { getRepository } from '../../../../../../src/server/api/routers/branch';
+import { indexFilesAndFollowImports } from '@harmony/server/src/api/services/indexor/indexor';
+import { getRepository } from '@harmony/server/src/api/routers/branch';
 import { Repository } from '@harmony/ui/src/types/branch';
 import { getLocationFromComponentId, reverseUpdates } from '@harmony/util/src';
-import { getFile } from '../../../../../../src/server/api/services/indexor/local';
 
 export const maxDuration = 300;
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {

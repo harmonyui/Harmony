@@ -3,7 +3,7 @@ import interact from "interactjs";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Rect, RectBox, isImageElement, isSelectable as isSelectableInspector, isTextElement, removeTextContentSpans, replaceTextContentWithSpans, selectDesignerElement, selectDesignerElementReverse } from "../inspector/inspector";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import {InteractEvent, ResizeEvent, EdgeOptions} from '@interactjs/types'
+import {InteractEvent, ResizeEvent, EdgeOptions} from '@interactjs/types/index'
 import {Modifier} from '@interactjs/modifiers/types'
 import {AspectRatioOptions, AspectRatioState} from '@interactjs/modifiers/aspectRatio'
 import $ from 'jquery';

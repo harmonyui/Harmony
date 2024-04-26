@@ -13,18 +13,44 @@
   "eslintConfig": {
     "root": true,
     "extends": [
-      "eslint-config-custom/library"
+      "@harmony/eslint-config-custom/library"
     ]
   },
-  "prettier": "prettier-config",
+  "prettier": "@harmony/prettier-config",
   "dependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/parser": "^7.23.6",
+    "@babel/preset-env": "^7.23.7",
+    "@babel/preset-react": "^7.23.3",
+    "@babel/preset-typescript": "^7.23.3",
+    "@babel/traverse": "^7.23.7",
+    "@babel/types": "^7.24.0",
+    "@clerk/nextjs": "^4.29.2",
+    "@harmony/db": "workspace:*",
+    "@harmony/ui": "workspace:*",
+    "@harmony/util": "workspace:*",
+    "@octokit/openapi-types": "^22.1.0",
+    "@trpc/server": "^10.45.0",
+    "cheerio": "^1.0.0-rc.12",
+    "diff": "^5.2.0",
+    "next": "14.2.1",
+    "nodemailer": "^6.9.9",
+    "octokit": "^3.1.2",
+    "openai": "^4.24.1",
+    "superjson": "^2.2.1",
+    "woodpile": "^0.0.5",
+    "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@harmony/eslint-config-custom": "workspace:^",
+    "@harmony/prettier-config": "workspace:^",
+    "@harmony/tsconfig": "workspace:^",
+    "@types/babel__core": "^7.20.5",
+    "@types/diff": "^5.0.9",
+    "@types/node": "^20",
+    "@types/nodemailer": "^6.4.14",
     "eslint": "^8.48.0",
-    "eslint-config-custom": "workspace:^",
     "prettier": "^3.0.3",
-    "prettier-config": "workspace:^",
-    "tsconfig": "workspace:^",
     "typescript": "^5.2.2"
   }
 }

@@ -1,5 +1,5 @@
 {
-    "extends": "tsconfig/nextjs.json",
+    "extends": "@harmony/tsconfig/nextjs.json",
     "compilerOptions": {
       "plugins": [
         {

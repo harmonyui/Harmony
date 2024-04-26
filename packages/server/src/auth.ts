@@ -1,12 +1,8 @@
 import { auth, clerkClient } from "@clerk/nextjs";
-import { getAuth } from '@clerk/nextjs/server';
-import { NextApiRequest, NextApiResponse } from "next";
 import { z } from "zod";
-import { prisma } from "./db";
-import { GithubRepository } from "./api/repository/github";
-import { Repository, repositorySchema } from "../../packages/ui/src/types/branch";
+import { prisma, Prisma } from "@harmony/db/lib/prisma";
+import { Repository, repositorySchema } from "@harmony/ui/src/types/branch";
 import { emailSchema } from "@harmony/ui/src/types/utils";
-import { Prisma } from "@prisma/client";
 
 export interface User {
   id: string;
@@ -28,14 +24,14 @@ export const accountSchema = z.object({
 
 export type Account = z.infer<typeof accountSchema>;
 
-export type AuthContext = {
+export interface AuthContext {
 	userId: string;
 	//oauthToken: string;
 	user: User,
 	role: string
 };
 
-export type FullSession = {
+export interface FullSession {
 	auth: AuthContext,
 	account: Account
 }
