@@ -5,8 +5,9 @@
   "main": "index.js",
   "devDependencies": {},
   "scripts": {
-    
+    "format": "prettier --write \"**/*.{prisma,ts,tsx,md,json}\" && eslint --fix"
   },
+  "prettier": "prettier-config",
   "keywords": [],
   "author": "",
   "license": "ISC"

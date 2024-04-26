@@ -1,4 +1,3 @@
-/* eslint-disable import/no-default-export -- allow default*/
 import baseConfig from "tailwind-config/tailwind.config";
 import type { Config } from "tailwindcss";
 

@@ -5,13 +5,20 @@
   "main": "index.js",
   "devDependencies": {},
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "withenv": "dotenv -e ../../.env --",
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "eslint .",
+    "format": "prettier --write \"**/*.{ts,md,json}\" && eslint --fix .",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "peerDependencies": {
-    "dayjs": "^1.11.10",
-    "zod": "^3.22.4"
-  }
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "eslint-config-custom/library"
+    ]
+  },
+  "prettier": "prettier-config"
 }

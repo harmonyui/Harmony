@@ -1,0 +1,19 @@
+{
+  "name": "prettier-config",
+  "private": true,
+  "version": "0.0.0",
+  "main": "index.mjs",
+  "scripts": {
+    "format": "prettier --write \"**/*.{mjs,ts,md,json}\" && eslint --fix"
+  },
+  "dependencies": {
+    "@ianvs/prettier-plugin-sort-imports": "^4.1.0",
+    "prettier": "^3.0.3"
+  },
+  "devDependencies": {
+    "prettier-plugin-prisma": "^5.0.0",
+    "tsconfig": "workspace:^",
+    "typescript": "^5.2.2"
+  },
+  "prettier": "./index.mjs"
+}

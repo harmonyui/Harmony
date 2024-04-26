@@ -1,0 +1,21 @@
+{
+  "name": "vitest-config",
+  "private": true,
+  "version": "0.0.0",
+  "main": "vitest.config.ts",
+  "scripts": {
+    "format": "prettier --write \"**/*.{prisma,ts,md,json}\" && eslint --fix"
+  },
+  "eslint": {
+    "root": true,
+    "extends": [
+      "eslint-config-custom/library"
+    ]
+  },
+  "prettier": "prettier-config",
+  "dependencies": {
+    
+  },
+  "devDependencies": {
+  }
+}
