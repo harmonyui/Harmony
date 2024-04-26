@@ -1,5 +1,5 @@
 {
-  "name": "@harmony/dashboard",
+  "name": "dashboard",
   "version": "0.1.1",
   "private": true,
   "scripts": {
@@ -61,7 +61,6 @@
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
-    "@types/react-reconciler": "^0.28.8",
     "@types/react-syntax-highlighter": "^15.5.11",
     "@vitejs/plugin-react": "^4.2.1",
     "autoprefixer": "^10.0.1",

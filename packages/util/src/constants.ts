@@ -1,5 +1,4 @@
-import { Environment } from ".";
-import { getWebUrl } from ".";
+import { Environment, getWebUrl } from "./utils/component";
 
 export const WEB_URL = getWebUrl(typeof process !== 'undefined' && process.env.ENV as Environment || 'production');
 

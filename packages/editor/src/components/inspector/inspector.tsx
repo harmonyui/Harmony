@@ -5,10 +5,10 @@ import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import { ReactComponentIdentifier } from "./component-identifier";
 import hotkeys from 'hotkeys-js';
 import { SelectMode } from "../panel/harmony-panel";
-import { getClass, getNumberFromString, round } from "@harmony/util/src";
+import { getClass, getNumberFromString, round } from "@harmony/util/src/utils/common";
 import $ from 'jquery';
 
-import { ComponentUpdate } from "@harmony/ui/src/types/component";
+import { ComponentUpdate } from "@harmony/util/src/types/component";
 import { ResizeValue, useResize, ResizeRect, ResizeDirection, ResizeCoords } from "@harmony/ui/src/hooks/resize";
 import { FlexValues, MarginValues, useSnapping } from "../snapping/snapping";
 import { usePrevious } from "@harmony/ui/src/hooks/previous";

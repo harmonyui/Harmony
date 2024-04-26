@@ -1,4 +1,4 @@
-import { getClass } from "../../../../util/src/index";
+import { getClass } from "@harmony/util/src/utils/common";
 import React from "react";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
 import {faAlignCenter, faAlignJustify, faAlignLeft, faAlignRight, faArrowUpRightFromSquare, faCirclePlay, faCircleQuestion, faCodeBranch, faCodePullRequest, faRectangleList, faSquareShareNodes, faUserGroup} from '@fortawesome/free-solid-svg-icons'

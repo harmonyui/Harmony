@@ -1,4 +1,4 @@
-import { getClass } from "../../../../util/src/index";
+import { getClass } from "@harmony/util/src/utils/common";
 import { XMarkIcon } from "./icons";
 
 export interface ClosableContentProps {

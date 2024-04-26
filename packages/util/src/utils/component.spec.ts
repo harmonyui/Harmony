@@ -1,6 +1,5 @@
 import { beforeEach, describe, it, expect } from "vitest"
-import {Change, diffChars, diffLines} from 'diff';
-import { getLineAndColumn, getWebUrl, updateLocationFromContent } from ".";
+import { getLineAndColumn, getWebUrl, updateLocationFromContent } from "./component";
 
 describe("index", () => {
     describe("updateLocationFromDiffs", () => {

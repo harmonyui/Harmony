@@ -5,7 +5,7 @@ import { DisplayMode, HarmonyProvider, HarmonyProviderProps } from "./harmony-pr
 import { FiberHTMLElement, getElementFiber } from "./inspector/inspector-dev";
 import { getComponentElementFiber } from "./inspector/component-identifier";
 import { Fiber } from "react-reconciler";
-import { getWebUrl } from "@harmony/util/src";
+import { getWebUrl } from "@harmony/util/src/utils/component";
 
 var harmonyArguments = [{'data-harmony-id': 0}]
     

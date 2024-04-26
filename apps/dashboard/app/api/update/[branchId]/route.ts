@@ -1,13 +1,13 @@
-import { ComponentUpdate } from '@harmony/ui/src/types/component';
+import { ComponentUpdate } from '@harmony/util/src/types/component';
 import { prisma } from '@harmony/db/lib/prisma';
 import { getFileContent } from '@harmony/server/src/api/services/indexor/github';
 import { GithubRepository } from '@harmony/server/src/api/repository/github';
 
-import { UpdateResponse, updateRequestBodySchema, updateResponseSchema } from '@harmony/ui/src/types/network';
+import { UpdateResponse, updateRequestBodySchema } from '@harmony/util/src/types/network';
 import { indexFilesAndFollowImports } from '@harmony/server/src/api/services/indexor/indexor';
 import { getRepository } from '@harmony/server/src/api/routers/branch';
-import { Repository } from '@harmony/ui/src/types/branch';
-import { getLocationFromComponentId, reverseUpdates } from '@harmony/util/src';
+import { Repository } from '@harmony/util/src/types/branch';
+import { getLocationFromComponentId, reverseUpdates } from '@harmony/util/src/utils/component';
 
 export const maxDuration = 300;
 export async function POST(req: Request, {params}: {params: {branchId: string}}): Promise<Response> {

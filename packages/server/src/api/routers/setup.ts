@@ -2,9 +2,9 @@ import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure, registerdProcedure } from "../trpc";
 import { Account, accountSchema, getAccount, getRepositoryFromTeam } from "../../auth";
 import { appOctokit } from "../repository/github";
-import { Repository, repositorySchema } from "@harmony/ui/src/types/branch";
+import { Repository, repositorySchema } from "@harmony/util/src/types/branch";
 import {components} from '@octokit/openapi-types/types'
-import { emailSchema } from "@harmony/ui/src/types/utils";
+import { emailSchema } from "@harmony/util/src/types/utils";
 import { cookies } from "next/headers";
 import type { Db } from "@harmony/db/lib/prisma";
 

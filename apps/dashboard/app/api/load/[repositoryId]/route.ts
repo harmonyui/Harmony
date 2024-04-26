@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server';
 import { prisma } from '@harmony/db/lib/prisma';
-import { ComponentUpdate } from '@harmony/ui/src/types/component';
-import { LoadResponse, loadResponseSchema } from '@harmony/ui/src/types/network';
+import { ComponentUpdate } from '@harmony/util/src/types/component';
+import { LoadResponse, loadResponseSchema } from '@harmony/util/src/types/network';
 import { GithubRepository } from '@harmony/server/src/api/repository/github';
 import { getRepository } from '@harmony/server/src/api/routers/branch';
 import { updateComponentIdsFromUpdates } from '@harmony/server/src/api/services/updator/local';

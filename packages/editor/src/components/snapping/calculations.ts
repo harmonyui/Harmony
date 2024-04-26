@@ -1,4 +1,4 @@
-import { capitalizeFirstLetter, close } from "@harmony/util/src";
+import { capitalizeFirstLetter, close } from "@harmony/util/src/utils/common";
 import { Rect, isImageElement, selectDesignerElementReverse } from "../inspector/inspector";
 import { UpdateRect } from "./position-updator";
 import { isSelectable } from "./snapping";

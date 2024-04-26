@@ -3,7 +3,7 @@ import { getServerAuthSession } from "@harmony/server/src/auth";
 import { prisma } from "@harmony/db/lib/prisma";
 import { createNewAccount } from "@harmony/server/src/api/routers/setup";
 import { createBranch, getBranches } from "@harmony/server/src/api/routers/branch";
-import { wordToKebabCase } from "@harmony/util/src";
+import { wordToKebabCase } from "@harmony/util/src/utils/common";
 import { DesignerSetup } from "../components/setup";
 
 async function QuickPage({searchParams}: {searchParams?: { [key: string]: string | string[] | undefined }}) {

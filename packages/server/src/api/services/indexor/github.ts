@@ -1,4 +1,4 @@
-import { ComponentLocation } from "@harmony/ui/src/types/component";
+import { ComponentLocation } from "@harmony/util/src/types/component";
 import { ReadFiles } from "./indexor";
 import { GithubRepository } from "../../repository/github";
 

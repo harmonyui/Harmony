@@ -1,7 +1,7 @@
 import { SideNav } from "../../utils/side-nav";
 import { withAuth } from "../../utils/protected-routes-hoc";
-import { emailSchema } from "@harmony/ui/src/types/utils";
-import { TeamMember } from "@harmony/ui/src/types/branch";
+import { emailSchema } from "@harmony/util/src/types/utils";
+import { TeamMember } from "@harmony/util/src/types/branch";
 import { TeamDisplay } from "./components/team";
 
 const TeamPage = withAuth(async ({ctx}) => {

@@ -1,4 +1,4 @@
-import { emailFeedbackRequestSchema } from "@harmony/ui/src/types/network";
+import { emailFeedbackRequestSchema } from "@harmony/util/src/types/network";
 import { NodeMailerEmailService } from "@harmony/server/src/api/services/email-service";
 
 export async function POST(req: Request): Promise<Response> {

@@ -1,5 +1,5 @@
 {
   "extends": "@harmony/tsconfig/react-library.json",
-  "include": ["."],
+  "include": [".", "../util/src/types/branch.ts", "../util/src/types/change-log.ts", "../util/src/types/colors.ts", "../util/src/types/component.ts", "../util/src/types/network.ts", "../util/src/types/polymorphics.ts", "../util/src/types/utils.ts"],
   "exclude": ["dist", "build", "node_modules"]
 }

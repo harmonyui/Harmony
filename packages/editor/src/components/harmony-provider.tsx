@@ -1,9 +1,9 @@
 "use client";
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
-import { Attribute, BehaviorType, ComponentElement, ComponentError, ComponentUpdate } from "@harmony/ui/src/types/component";
-import {PublishRequest, PublishResponse, loadResponseSchema, publishResponseSchema, updateResponseSchema, type UpdateRequest} from "@harmony/ui/src/types/network";
-import {translateUpdatesToCss} from '@harmony/util/src/component';
+import { Attribute, BehaviorType, ComponentElement, ComponentError, ComponentUpdate } from "@harmony/util/src/types/component";
+import {PublishRequest, PublishResponse, loadResponseSchema, publishResponseSchema, updateResponseSchema, type UpdateRequest} from "@harmony/util/src/types/network";
+import {translateUpdatesToCss} from '@harmony/util/src/utils/component';
 
 import { HarmonyPanel, SelectMode} from "./panel/harmony-panel";
 import hotkeys from 'hotkeys-js';
@@ -12,12 +12,12 @@ import React from "react";
 
 import { Setup } from "./harmony-setup";
 import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
-import { BranchItem, PullRequest } from "@harmony/ui/src/types/branch";
+import { BranchItem, PullRequest } from "@harmony/util/src/types/branch";
 import { Font } from "@harmony/util/src/fonts";
 import $ from 'jquery';
 import { getBoundingRect } from "./snapping/calculations";
-import { reverseUpdates } from "@harmony/util/src";
-import { Environment, getWebUrl } from "@harmony/util/src/index";
+import { reverseUpdates } from "@harmony/util/src/utils/component";
+import { Environment, getWebUrl } from "@harmony/util/src/utils/component";
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import {DEFAULT_WIDTH as WIDTH, DEFAULT_HEIGHT as HEIGHT} from '@harmony/util/src/constants';

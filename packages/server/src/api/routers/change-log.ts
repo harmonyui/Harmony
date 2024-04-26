@@ -1,4 +1,4 @@
-import { ChangeLog } from "@harmony/ui/src/types/change-log";
+import { ChangeLog } from "@harmony/util/src/types/change-log";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 
 export const changeLogRouter = createTRPCRouter({

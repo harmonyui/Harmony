@@ -1,8 +1,8 @@
 import { auth, clerkClient } from "@clerk/nextjs";
 import { z } from "zod";
 import { prisma, Prisma } from "@harmony/db/lib/prisma";
-import { Repository, repositorySchema } from "@harmony/ui/src/types/branch";
-import { emailSchema } from "@harmony/ui/src/types/utils";
+import { Repository, repositorySchema } from "@harmony/util/src/types/branch";
+import { emailSchema } from "@harmony/util/src/types/utils";
 
 export interface User {
   id: string;

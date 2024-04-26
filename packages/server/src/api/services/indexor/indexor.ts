@@ -1,9 +1,10 @@
 import { prisma } from "@harmony/db/lib/prisma";
-import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/ui/src/types/component";
-import { getLineAndColumn, hashComponentId } from "@harmony/util/src/index";
+import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/util/src/types/component";
+import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
+import { hashCode } from "@harmony/util/src/utils/common";
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
@@ -364,7 +365,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 // const resolvedPath = resolvePathAlias(alias, aliasMappings);
 
 function randomId(): string {
-	return String(Math.random()).hashCode().toString();
+	return hashCode(String(Math.random())).toString();
 }
 
 async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {

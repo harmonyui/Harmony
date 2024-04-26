@@ -1,12 +1,12 @@
 import { Button } from "@harmony/ui/src/components/core/button";
 import { Dropdown, DropdownItem } from "@harmony/ui/src/components/core/dropdown";
 import { CheckboxInput, Input, InputBlur } from "@harmony/ui/src/components/core/input";
-import { ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
-import { camelToKebab, capitalizeFirstLetter } from "@harmony/util/src";
+import { ComponentElement, ComponentUpdate } from "@harmony/util/src/types/component";
+import { camelToKebab, capitalizeFirstLetter } from "@harmony/util/src/utils/common";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { CommonTools, getTextToolsFromAttributes } from "./harmony-panel";
 import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-provider";
-import {close} from '@harmony/util/src';
+import {close} from '@harmony/util/src/utils/common';
 import { getComputedValue } from "../snapping/position-updator";
 import { overlayStyles } from "../inspector/inspector";
 

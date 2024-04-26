@@ -8,8 +8,8 @@ import { Label } from "@harmony/ui/src/components/core/label";
 import { Input } from "@harmony/ui/src/components/core/input";
 import { api } from "../../../utils/api";
 import { useChangeProperty } from "@harmony/ui/src/hooks/change-property";
-import { emailSchema } from "@harmony/ui/src/types/utils";
-import { TeamMember as TeamMemberServer} from "@harmony/ui/src/types/branch";
+import { emailSchema } from "@harmony/util/src/types/utils";
+import { TeamMember as TeamMemberServer} from "@harmony/util/src/types/branch";
 import { PlusIcon } from "@harmony/ui/src/components/core/icons";
 
 type TeamMember = Omit<TeamMemberServer, 'contact'> & {contact: string}

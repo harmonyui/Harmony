@@ -2,14 +2,14 @@
 import { EllipsisHorizontalIcon, GitBranchIcon, PlusIcon } from "@harmony/ui/src/components/core/icons";
 import {Button} from '@harmony/ui/src/components/core/button';
 import { useState } from "react";
-import type { BranchItem } from "@harmony/ui/src/types/branch";
+import type { BranchItem } from "@harmony/util/src/types/branch";
 import { ModalProvider } from "react-aria";
 import { useChangeProperty } from "@harmony/ui/src/hooks/change-property";
 import { Input } from "@harmony/ui/src/components/core/input";
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
-import { displayElapsedTime } from "@harmony/util/src";
+import { displayElapsedTime } from "@harmony/util/src/utils/common";
 import { DropdownIcon } from "@harmony/ui/src/components/core/dropdown";
 import { ConfirmModal } from "@harmony/ui/src/components/core/confirm";
 import { useRouter } from "next/navigation";

@@ -2,7 +2,7 @@ import { ChangeLogList } from "@harmony/ui/src/components/features/change-log";
 import { withAuth } from "../../utils/protected-routes-hoc";
 import { SideNav } from "../../utils/side-nav";
 import { prisma } from "@harmony/db/lib/prisma";
-import { ChangeLog } from "@harmony/ui/src/types/change-log";
+import { ChangeLog } from "@harmony/util/src/types/change-log";
 
 const ReleasePage = withAuth(async () => {
     const changeLog = await prisma.changeLog.findMany({

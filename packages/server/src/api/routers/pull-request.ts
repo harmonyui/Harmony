@@ -1,8 +1,8 @@
-import { BranchItem, Repository, branchItemSchema, pullRequestSchema } from "@harmony/ui/src/types/branch";
+import { BranchItem, Repository, branchItemSchema, pullRequestSchema } from "@harmony/util/src/types/branch";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { GithubRepository } from "../repository/github";
 import { z } from "zod";
-import { PullRequest } from "@harmony/ui/src/types/branch";
+import { PullRequest } from "@harmony/util/src/types/branch";
 import { prisma } from "@harmony/db/lib/prisma";
 
 export const pullRequestRouter = createTRPCRouter({

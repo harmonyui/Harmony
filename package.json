@@ -5,6 +5,7 @@
     "dev": "turbo run dev --concurrency 20",
     "lint": "turbo run lint",
     "format": "turbo run format",
+    "test": "turbo run test",
 		"compose": "docker compose -f devops/docker-compose.yml -p my-app up --build -d",
 		"db:generate": "turbo run db:generate",
     "db:push": "turbo run db:push",

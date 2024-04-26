@@ -1,6 +1,6 @@
 import { Fiber } from "react-reconciler";
 import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementFiberUpward, getElementInspect, getFiberName, getNamedFiber, getReferenceFiber } from "./inspector-dev";
-import { Attribute, ComponentElement } from "@harmony/ui/src/types/component";
+import { Attribute, ComponentElement } from "@harmony/util/src/types/component";
 
 export interface ComponentIdentifier {
 	getComponentFromElement: (element: HTMLElement) => ComponentElement | undefined;

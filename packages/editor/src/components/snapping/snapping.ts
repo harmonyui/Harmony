@@ -1,4 +1,4 @@
-import { capitalizeFirstLetter, groupBy, groupByDistinct, round, close } from "@harmony/util/src";
+import { capitalizeFirstLetter, groupBy, groupByDistinct, round, close } from "@harmony/util/src/utils/common";
 import interact from "interactjs";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Rect, RectBox, isImageElement, isSelectable as isSelectableInspector, isTextElement, removeTextContentSpans, replaceTextContentWithSpans, selectDesignerElement, selectDesignerElementReverse } from "../inspector/inspector";

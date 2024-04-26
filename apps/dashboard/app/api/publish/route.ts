@@ -1,16 +1,16 @@
-import { publishRequestSchema, PublishResponse } from "@harmony/ui/src/types/network";
+import { publishRequestSchema, PublishResponse } from "@harmony/util/src/types/network";
 import { prisma } from "@harmony/db/lib/prisma";
 import { createPullRequest } from "@harmony/server/src/api/routers/pull-request";
 import { getBranch, getRepository } from "@harmony/server/src/api/routers/branch";
-import { ComponentLocation, ComponentUpdate } from "@harmony/ui/src/types/component";
+import { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
 import { Prisma } from "@harmony/db/lib/prisma";
 import { GithubRepository } from "@harmony/server/src/api/repository/github";
 import { getCodeSnippet } from "@harmony/server/src/api/services/indexor/github";
-import { BranchItem, Repository } from "@harmony/ui/src/types/branch";
+import { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
-import { translateUpdatesToCss } from "@harmony/util/src/component";
-import { camelToKebab, round } from "@harmony/util/src";
-import { mergeClassesWithScreenSize } from "@harmony/util/src/tailwind-merge";
+import { translateUpdatesToCss } from "@harmony/util/src/utils/component";
+import { camelToKebab, round } from "@harmony/util/src/utils/common";
+import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
 
 const converter = new TailwindConverter({

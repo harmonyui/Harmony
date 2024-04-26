@@ -1,25 +1,25 @@
-import { Attribute, BehaviorType, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component"
+import { Attribute, BehaviorType, ComponentElement, ComponentUpdate } from "@harmony/util/src/types/component"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { CheckboxInput, Input, InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
 import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon, XMarkIcon, SendIcon, PreviewIcon, AlignCenterIcon, AlignJustifyIcon, AlignLeftIcon, AlignRightIcon } from "@harmony/ui/src/components/core/icons";
-import { arrayOfAll, camelToKebab, constArray, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
+import { arrayOfAll, camelToKebab, constArray, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/utils/common";
 import { createContext, Fragment, useContext, useEffect, useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { componentIdentifier, isTextElement, selectDesignerElement } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import {Dropdown, DropdownIcon, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import ColorPicker from '@harmony/ui/src/components/core/color-picker';
-import { HexColorSchema } from "@harmony/ui/src/types/colors";
+import { HexColorSchema } from "@harmony/util/src/types/colors";
 import {useChangeProperty} from '@harmony/ui/src/hooks/change-property';
 import { Popover } from "@harmony/ui/src/components/core/popover";
 import {HarmonyModal} from '@harmony/ui/src/components/core/modal';
-import {PullRequest} from '@harmony/ui/src/types/branch';
+import {PullRequest} from '@harmony/util/src/types/branch';
 import { ComponentUpdateWithoutGlobal, useHarmonyContext, usePinchGesture } from "../harmony-provider";
-import { PublishRequest } from "@harmony/ui/src/types/network";
+import { PublishRequest } from "@harmony/util/src/types/network";
 import { Font } from "@harmony/util/src/fonts";
-import { getWebUrl } from "@harmony/util/src/index";
+import { getWebUrl } from "@harmony/util/src/utils/component";
 import { GiveFeedbackModal, HelpGuide } from "./welcome/help-guide";
 import { SidePanel, SidePanelProvider, useSidePanel } from "./side-panel";
 import { ComponentAttributePanel, ComponentAttributeProvider, useComponentAttribute } from "./attribute-panel";
@@ -318,13 +318,13 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			//A black transparent looks like a white
 			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
-				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker<`#${string}`> className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'backgroundColor': ({data, onChange}) => {
 			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
-				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker<`#${string}`> className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'textAlign': ({data: raw, onChange}) => {

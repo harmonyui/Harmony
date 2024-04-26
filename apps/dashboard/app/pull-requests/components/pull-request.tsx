@@ -2,7 +2,7 @@
 import { GitBranchIcon, GitPullRequestIcon } from "@harmony/ui/src/components/core/icons";
 import {Button} from '@harmony/ui/src/components/core/button';
 import { useState } from "react";
-import { BranchItem, PullRequest } from "@harmony/ui/src/types/branch";
+import { BranchItem, PullRequest } from "@harmony/util/src/types/branch";
 import { ModalProvider } from "react-aria";
 import { useChangeProperty } from "@harmony/ui/src/hooks/change-property";
 import { api } from "../../../utils/api";

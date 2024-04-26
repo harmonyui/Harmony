@@ -3,7 +3,7 @@ import ReactDOM from 'react-dom';
 import {HarmonyProvider, HarmonyProviderProps} from './components/harmony-provider';
 import { HarmonySetup } from './components/harmony-setup';
 import { useEffect, useRef } from 'react';
-import { getClass } from '@harmony/util/src';
+import { getClass } from '@harmony/util/src/utils/common';
 
 type HarmonyProvider = (options: Omit<HarmonyProviderProps, 'children'>, harmonyContainer: HTMLDivElement) => void;
 

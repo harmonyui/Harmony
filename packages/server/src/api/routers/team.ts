@@ -1,4 +1,4 @@
-import { teamMemberSchema } from "@harmony/ui/src/types/branch";
+import { teamMemberSchema } from "@harmony/util/src/types/branch";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
 import { z } from "zod";
 import { WEB_URL } from "@harmony/util/src/constants";

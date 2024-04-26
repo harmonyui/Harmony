@@ -1,6 +1,6 @@
 import { Rect, selectDesignerElementReverse } from "../inspector/inspector";
 import { RectSide, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getProperty, getSiblingGap, setSpaceForElement } from "./calculations";
-import {close, round} from '@harmony/util/src/index'
+import {close, round} from '@harmony/util/src/utils/common'
 import { isSelectable } from "./snapping";
 
 export interface UpdatedElement {

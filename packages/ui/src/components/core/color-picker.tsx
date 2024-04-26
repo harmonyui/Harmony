@@ -9,7 +9,7 @@ import {
   type ColorAreaProps,
 } from "@react-stately/color";
 import { type ColorSliderProps } from "@react-types/color";
-import { HexColor, HexColorSchema } from "../../types/colors";
+import { HexColor, HexColorSchema } from "@harmony/util/src/types/colors";
 import { useLocale, VisuallyHidden } from "react-aria";
 
 import { Popover } from "./popover";

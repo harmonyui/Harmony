@@ -1,4 +1,4 @@
-import { stringUnionSchema } from "@harmony/util/src";
+import { stringUnionSchema } from "../utils/common";
 import { z } from "zod";
 
 const behaviorTypes = ['dark'] as const;

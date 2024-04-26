@@ -1,9 +1,9 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
-import { BranchItem, Repository, branchItemSchema } from "@harmony/ui/src/types/branch";
+import { BranchItem, Repository, branchItemSchema } from "@harmony/util/src/types/branch";
 import { Db, Prisma } from "@harmony/db/lib/prisma";
-import { compare } from "@harmony/util/src";
-import { ComponentUpdate } from "@harmony/ui/src/types/component";
+import { compare } from "@harmony/util/src/utils/common";
+import { ComponentUpdate } from "@harmony/util/src/types/component";
 import {load} from 'cheerio';
 
 const branchPayload = {

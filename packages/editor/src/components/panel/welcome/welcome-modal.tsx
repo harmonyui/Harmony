@@ -2,7 +2,7 @@ import { HarmonyModal } from "@harmony/ui/src/components/core/modal"
 import { useHarmonyContext } from "../../harmony-provider"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { useEffect, useMemo, useState } from "react";
-import { getWebUrl } from "@harmony/util/src";
+import { getWebUrl } from "@harmony/util/src/utils/component";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { Alert, InfoBox } from "@harmony/ui/src/components/core/alert";
 import { IconComponent } from "@harmony/ui/src/components/core/icons";

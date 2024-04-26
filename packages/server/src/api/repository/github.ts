@@ -1,8 +1,8 @@
 import { Octokit, App } from "octokit";
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import { CommitItem, Repository } from "@harmony/ui/src/types/branch";
-import { replaceByIndex } from "@harmony/util/src";
+import { CommitItem, Repository } from "@harmony/util/src/types/branch";
+import { replaceByIndex } from "@harmony/util/src/utils/common";
 import {Change, diffLines} from 'diff';
 import { getFileContentsFromCache, setFileCache } from "./cache";
 

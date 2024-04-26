@@ -1,4 +1,4 @@
-import { getClass } from "@harmony/util/src";
+import { getClass } from "@harmony/util/src/utils/common";
 
 export interface SliderProps {
     value: number,
