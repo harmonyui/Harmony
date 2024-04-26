@@ -3,7 +3,7 @@
 	"globalDependencies": ["**/.env.*local"],
 	"pipeline": {
 	  "build": {
-		"dependsOn": ["^build", "^db:generate"],
+		"dependsOn": ["^db:generate", "^db:deploy"],
 		"outputs": [".next/**", "!.next/cache/**"]
 	  },
 	  "lint": {},
@@ -24,6 +24,9 @@
 	  "db:generate": {
 		"inputs": ["packages/db/prisma/schema.prisma"],
 		"outputs": ["packages/db/lib/generated"]
+	  },
+	  "db:deploy": {
+		"cache": false
 	  }
 	},
 	"globalEnv": ["PORT", "DATABASE_URL", "VERCEL_URL", "NODE_ENV", "SMTP_EMAIL", "SMTP_KEY"]

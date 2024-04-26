@@ -9,7 +9,8 @@
       "db:generate": "pnpm withenv prisma generate",
       "db:push": "pnpm withenv prisma db push --skip-generate",
       "db:makemigration": "pnpm withenv prisma migrate dev --name",
-      "db:studio": "pnpm withenv prisma studio"
+      "db:studio": "pnpm withenv prisma studio",
+      "db:deploy": "pnpm withenv prisma migrate deploy"
     },
     "eslint": {
       "root": true,

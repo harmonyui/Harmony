@@ -178,7 +178,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	})
 }
 
-export async function indexForComponent(componentId: string, parentId: string, repository: Repository) {
+async function indexForComponent(componentId: string, parentId: string, repository: Repository) {
 	const githubRepository = new GithubRepository(repository);
 
 	const readFile = async (filepath: string) => {
