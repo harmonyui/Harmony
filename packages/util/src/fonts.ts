@@ -1,5 +1,5 @@
 import { NextFont } from 'next/dist/compiled/@next/font';
-import {Inter, Roboto, Open_Sans, Alegreya, Montserrat, Lato, Poppins, Mulish, Corben, Nobile} from 'next/font/google';
+import {Inter, Roboto, Open_Sans as OpenSans, Alegreya, Montserrat, Lato, Poppins, Mulish, Corben, Nobile} from 'next/font/google';
 import local from 'next/font/local';
 
 export interface Font {
@@ -16,7 +16,7 @@ export const roboto = Roboto({
     weight: ['100', '300', '400', '500', '700', '900']
 });
 
-export const openSans = Open_Sans({
+export const openSans = OpenSans({
     subsets: ['latin']
 });
 

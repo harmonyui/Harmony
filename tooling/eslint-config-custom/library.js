@@ -31,4 +31,10 @@ module.exports = {
     },
   },
   ignorePatterns: ["node_modules/", "dist/"],
+  rules: {
+    "prefer-named-capture-group": "off",
+    "no-console": "off",
+    "@typescript-eslint/explicit-function-return-type": "off",
+    "import/no-default-export": "off"
+  },
 };

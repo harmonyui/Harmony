@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable no-await-in-loop -- fix this later*/
 import { publishRequestSchema, PublishResponse } from "@harmony/util/src/types/network";
 import { prisma } from "@harmony/db/lib/prisma";
 import { createPullRequest } from "@harmony/server/src/api/routers/pull-request";
@@ -28,22 +31,25 @@ const converter = new TailwindConverter({
 
 function addPrefixToClassName(className: string, prefix: string): string {
 	const classes = className.split(' ');
-	const list_class: [string, string][] = classes.map((classes) => {
-		if (classes.includes(":")) {
-			const [before, after] = classes.split(":");
+	const listClass: [string, string][] = classes.map((klasses) => {
+		if (klasses.includes(":")) {
+			const [before, after] = klasses.split(":");
+			if (!before || !after) {
+				throw new Error("Invalid class " + klasses);
+			}
 			return [`${before}:`, after];
-		} else if (classes.startsWith('-')) {
-			return ['-', classes.substring(1)];
+		} else if (klasses.startsWith('-')) {
+			return ['-', klasses.substring(1)];
 		} else {
-			return ['', classes];
+			return ['', klasses];
 		}
 	});
 
-	const withPrefix: [string, string][] = list_class.map((classes) => {
-		if (!classes.includes(prefix)) {
-			return [classes[0], prefix + classes[1]];
+	const withPrefix: [string, string][] = listClass.map((klasses) => {
+		if (!klasses.includes(prefix)) {
+			return [klasses[0], prefix + klasses[1]];
 		} else {
-			return classes;
+			return klasses;
 		}
 	});
 
@@ -80,7 +86,7 @@ export async function POST(req: Request): Promise<Response> {
 		}
 	})
 
-	if (Boolean(alreadyPublished)) {
+	if (alreadyPublished) {
 		return new Response(JSON.stringify("This project has already been published"), {
 			status: 400
 		});
@@ -88,7 +94,8 @@ export async function POST(req: Request): Promise<Response> {
 
 	const old: string[] = branch.old;
     //Get rid of same type of updates (more recent one wins)
-    const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([{...curr, oldValue: old[i]}]), []);
+    // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- It is necessary
+    const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([{...curr, oldValue: old[i]!}]), []);
 	// const githubRepository = new GithubRepository(repository);
 	// const ref = await githubRepository.getBranchRef(repository.branch);
 	// if (ref !== repository.ref) {
@@ -134,7 +141,7 @@ const attributePayload = {
 }
 type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof elementPayload>
 type ComponentAttributePrisma = Prisma.ComponentAttributeGetPayload<typeof attributePayload>
-type FileUpdate = {update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & {updatedTo: number}), updatedCode: string, attribute?: ComponentAttributePrisma};
+interface FileUpdate {update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & {updatedTo: number}), updatedCode: string, attribute?: ComponentAttributePrisma};
 interface UpdateInfo {
 	component: ComponentElementPrisma, 
 	update: ComponentUpdate, 
@@ -161,9 +168,9 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 	let fileUpdates: FileUpdate[] = [];
 
 	//TODO: old value is not updated properly for size and spacing
-	updates = translateUpdatesToCss(updates) as ComponentUpdate[];
+	const updatesTranslated = translateUpdatesToCss(updates);
 
-	const updateInfo = updates.reduce<UpdateInfo[]>((prev, curr) => {
+	const updateInfo = updatesTranslated.reduce<UpdateInfo[]>((prev, curr) => {
 		if (curr.type === 'className') {
 			if (curr.name !== 'font') {
 				const cssName = camelToKebab(curr.name);
@@ -171,7 +178,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 				//Round the pixel values
 				const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(curr.value);
 				if (match) {
-					const value = parseFloat(match[1]);
+					const value = parseFloat(match[1] || '0');
 					const unit = match[2];
 					curr.value = `${round(value)}${unit}`;
 				}
@@ -188,7 +195,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 				classNameUpdate.font = curr.value;
 			}
 		} else {
-			const numSameComponentsButDifferentParents = updates.filter(update => update.componentId === curr.componentId && update.parentId !== curr.parentId).length;
+			const numSameComponentsButDifferentParents = updatesTranslated.filter(update => update.componentId === curr.componentId && update.parentId !== curr.parentId).length;
 			//We update the parent when we have multiple of the same elements with different updates or the user has specified that it is not a global update
 			const shouldUpdateParent = numSameComponentsButDifferentParents > 0 || !curr.isGlobal;
 
@@ -217,10 +224,10 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 		return prev;
 	}, []);
 
-	for (let i = 0; i < updateInfo.length; i++) {
-        //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
+	for (const info of updateInfo) {
+	    //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
         // in the future we probably will use the actual branch
-		const result = await getChangeAndLocation(updateInfo[i], repository, githubRepository, elementInstances, repository.branch);
+		const result = await getChangeAndLocation(info, repository, githubRepository, elementInstances, repository.branch);
 
         if (result)
 		fileUpdates.push(result);
@@ -290,9 +297,9 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		value: string | undefined,
 		isDefinedAndDynamic: boolean
 	}
-	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined, component: ComponentElementPrisma): LocationValue => {
+	const getLocationAndValue = (attribute: ComponentAttributePrisma | undefined, _component: ComponentElementPrisma): LocationValue => {
 		const isDefinedAndDynamic = attribute?.name === 'property';
-		return {location: attribute?.location || component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic};
+		return {location: attribute?.location || _component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic};
 	}
 
 	let result: FileUpdate | undefined;
@@ -339,7 +346,9 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 			//Here means we do not have a class 
 			let value = match[2] ? `className="${newClass}" ` : ` className="${newClass}" `;
 			value = value.replace('undefined ', '');
+			// eslint-disable-next-line no-param-reassign -- It is ok
 			oldClass = match[0];
+			// eslint-disable-next-line no-param-reassign -- It is ok
 			newClass = `${match[0]}${value}`;
 		}
 
@@ -392,7 +401,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					const newClasses = converted.nodes.reduce((prev, curr) => prev + curr.tailwindClasses.join(' '), '')
 
 					//TODO: Make the tailwind prefix part dynamic
-					let oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
+					const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
 					
 					const mergedIt = mergeClassesWithScreenSize(oldClasses, newClasses, DEFAULT_WIDTH);
 					let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;

@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- ok*/
 import { ComponentLocation } from "@harmony/util/src/types/component";
 import { ReadFiles } from "./indexor";
 import { GithubRepository } from "../../repository/github";

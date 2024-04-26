@@ -1,6 +1,7 @@
+/* eslint-disable @typescript-eslint/no-shadow -- ok */
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure, registerdProcedure } from "../trpc";
-import { Account, accountSchema, getAccount, getRepositoryFromTeam } from "../../auth";
+import { Account, getAccount, getRepositoryFromTeam } from "../../auth";
 import { appOctokit } from "../repository/github";
 import { Repository, repositorySchema } from "@harmony/util/src/types/branch";
 import {components} from '@octokit/openapi-types/types'
@@ -48,8 +49,8 @@ export const setupRoute = createTRPCRouter({
 		}),
 	sendDeveloperEmail: protectedProcedure
 		.input(z.object({email: z.string()}))
-		.mutation(async ({ctx, input}) => {
-			const email = input.email;
+		.mutation(async () => {
+			//const email = input.email;
 
 		}),
 	connectRepository: publicProcedure
@@ -115,8 +116,8 @@ export const setupRoute = createTRPCRouter({
 					authorization: `token ${accessToken}`
 			}});
 			if (!response.ok) {
-				const json = await response.json();
-				throw new Error(json);
+				const json: unknown = await response.json();
+				throw new Error(String(json));
 			}
 			const data = await response.json() as {installations: components["schemas"]["installation"][]}
 			const currentInstallations = data.installations//.filter(inst => inst.account?.login === '');

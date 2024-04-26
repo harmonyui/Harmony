@@ -32,11 +32,11 @@ export function translateUpdatesToCss(updates: ComponentUpdate[]): ComponentUpda
 					w: 'width'
 				}
 				for (const directionStr of directionsStr) {
-					const [direction, value] = directionStr.split('=');
-					if (isNaN(Number(value))) throw new Error("Value must be a number: " + value);
+					const [direction, _value] = directionStr.split('=');
+					if (isNaN(Number(_value))) throw new Error("Value must be a number: " + _value);
 					if (direction.length !== 1 || !'nesw'.includes(direction)) throw new Error("Invalid direction " + direction);
 
-					const valueStyle = `${value}px`;
+					const valueStyle = `${_value}px`;
 					const mapping = useHeight ? mappingHeight : mappingPadding;
 					const spaceUpdate = {...update, name: mapping[direction as ResizeCoords], value: valueStyle};
 					translated.push(spaceUpdate);
@@ -82,14 +82,14 @@ export function getLineAndColumn(text: string, index: number): { line: number; c
     let currentLine = 0;
     let currentColumn = index;
 
-    for (let i = 0; i < lines.length; i++) {
-        const lineLength = lines[i].length + 1; // Include the newline character
-        if (currentColumn <= lineLength) {
+    for (const line of lines) {
+      const lineLength = line.length + 1; // Include the newline character
+      if (currentColumn <= lineLength) {
         break;
-        } else {
+      } else {
         currentLine++;
         currentColumn -= lineLength;
-        }
+      }
     }
 
     return { line: currentLine + 1, column: currentColumn };
@@ -161,7 +161,7 @@ export function updateIndexFromDiffs(index: number, diffs: Change[]): number | u
       if (currIndex > index) break;
   
       if (diff.added || diff.removed) {
-        let sign = diff.added ? 1 : -1;
+        const sign = diff.added ? 1 : -1;
         if (currIndex < index) {
           newIndex += valueCount * sign;
         } else if (currIndex === index) {

@@ -41,8 +41,12 @@ export const requireAuth = requireRoute({ redirect: "/setup", check: (session) =
 	return session.account === undefined;
 } });
 
-interface AuthProps {ctx: AuthContext}
-export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.FunctionComponent<AuthProps> => 
+export interface AuthProps {ctx: AuthContext}
+interface PageProps {
+  params: Record<string, string>;
+  searchParams: { [key: string]: string | string[] | undefined };
+}
+export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.FunctionComponent<PageProps> => 
 	async (props) => {
     const cookie = cookies();
     const mockUserId = cookie.get('harmony-user-id');

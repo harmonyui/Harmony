@@ -11,9 +11,9 @@ const modifiers: [ScreenModifier, number][] = [
 ]
 
 export function mergeClassesWithScreenSize(originalClass: string | undefined, newClass: string, screenSize: number) {
-    const getSizeModifierIndex = (screenSize: number): number => {
+    const getSizeModifierIndex = (): number => {
         for (let i = 0; i < modifiers.length; i++) {
-            const [modifer, size] = modifiers[i];
+            const [_modifer, size] = modifiers[i];
             if (screenSize >= size) {
                 return i;
             }
@@ -24,7 +24,7 @@ export function mergeClassesWithScreenSize(originalClass: string | undefined, ne
 
     if (!originalClass) return newClass;
 
-    const modifierIndex = getSizeModifierIndex(screenSize);
+    const modifierIndex = getSizeModifierIndex();
 
     let newOriginalClass = originalClass;
     const newClasses = newClass.split(' ');

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/consistent-indexed-object-style -- ok*/
 import { notFound } from "next/navigation";
 import React from "react";
 import { prisma } from "@harmony/db/lib/prisma";

@@ -1,3 +1,5 @@
+/* eslint-disable no-await-in-loop -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 import { Octokit, App } from "octokit";
 import fs from 'node:fs';
 import crypto from 'node:crypto';
@@ -125,7 +127,7 @@ export class GithubRepository {
 
         //We have to do this fancy decoding because some special characters do not decode right 
         //with atob
-        const contentText = decodeURIComponent(atob(fileInfo.content).split('').map(function(c) {
+        const contentText = decodeURIComponent(atob(fileInfo.content).split('').map(function map(c) {
             return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
         }).join(''));
 

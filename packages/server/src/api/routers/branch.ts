@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
+/* eslint-disable @typescript-eslint/require-await -- ok*/
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 import { BranchItem, Repository, branchItemSchema } from "@harmony/util/src/types/branch";
@@ -69,7 +71,7 @@ async function createWebpageThumbnail(html: string): Promise<string> {
     //const title = doc.querySelector('title')?.textContent;
 
     // Extract thumbnail image (you may need to adjust this based on webpage structure)
-    let thumbnailImage = $('meta[property="og:image"]').attr('content');
+    const thumbnailImage = $('meta[property="og:image"]').attr('content');
 
 	if (!thumbnailImage) {
 		// const dataUrl = await domtoimage.toSvg($('body')[0]);

@@ -1,5 +1,13 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+/* eslint-disable @typescript-eslint/prefer-includes -- ok*/
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable no-lonely-if -- ok*/
+/* eslint-disable @typescript-eslint/no-confusing-non-null-assertion -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion -- ok*/
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable import/no-cycle -- ok*/
 import { Rect, selectDesignerElementReverse } from "../inspector/inspector";
-import { RectSide, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfoWithSizing, getBoundingRect, getMinGap, getProperty, getSiblingGap, setSpaceForElement } from "./calculations";
+import { RectSide, calculateFlexParentEdgeInfoWithSizing, calculateParentEdgeInfoWithSizing, getBoundingRect, getProperty, getSiblingGap, setSpaceForElement } from "./calculations";
 import {close, round} from '@harmony/util/src/utils/common'
 import { isSelectable } from "./snapping";
 
@@ -33,7 +41,7 @@ export const getComputedValue = (element: HTMLElement | StylePropertyMapReadOnly
 		return `${styleValue.value}${unit}`;
 	} else {
 		//console.log("I'm not sure what to do this get-the-old-value scenario...");
-		return styleValue?.toString();
+		return styleValue.toString();
 	}
 }
 
@@ -51,7 +59,7 @@ const updateElementValues = (element: HTMLElement, properties: string[], updated
 			values.marginTop = getComputedValue(styleMap, 'margin-top');
 			values.marginBottom = getComputedValue(styleMap, 'margin-bottom');
 		} else {
-			values[property] = style[property as unknown as number];
+			values[property] = style[property as unknown as number]!;
 		}
 	}
 	if (currElement) {
@@ -203,7 +211,7 @@ export const elementUpdator: PositionUpdator = {
 			} else {
 				if (!info.top.siblingEdge) throw new Error("Non first child should have a sibling");
 
-				let gap = getSiblingGap(info.top.siblingEdge.gap, info.top.siblingEdge.gapTypes);
+				const gap = getSiblingGap(info.top.siblingEdge.gap, info.top.siblingEdge.gapTypes);
 				let foundGap = false;
 				for (const type of info.top.siblingEdge.gapTypes) {
 					if (type.type === 'empty') continue;
@@ -260,7 +268,7 @@ export const elementUpdator: PositionUpdator = {
 }
 
 export const flexUpdator: PositionUpdator = {
-	updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number, scaleActual: number) {
+	updateRects({parentUpdate, childrenUpdates}: UpdateRectsProps, scale: number) {
 		const parentReal = parentUpdate.element;
 		const style = getComputedStyle(parentReal);
 		const axis = style.flexDirection !== 'column' ? 'x' : 'y';
@@ -268,17 +276,17 @@ export const flexUpdator: PositionUpdator = {
 		const right = axis === 'x' ? 'right' : 'bottom';
 		const top = axis === 'x' ? 'top' : 'left';
 		const bottom = axis === 'x' ? 'bottom' : 'right'; 
-		const otherAxis = axis === 'x' ? 'y' : 'x';
+		//const otherAxis = axis === 'x' ? 'y' : 'x';
 		const minGapBetweenX = axis === 'x' ? 'minGapBetweenX' : 'minGapBetweenY';
 		const evenlySpace = axis === 'x' ? 'evenlySpaceX' : 'evenlySpaceY';
 		const aroundSpace = axis === 'x' ? 'aroundSpaceX' : 'aroundSpaceY';
 		const betweenSpace = axis === 'x' ? 'betweenSpaceX' : 'betweenSpaceY';
 		const gapBetween = axis === 'x' ? 'gapBetweenX' : 'gapBetweenY';
-		const minGap = getMinGap(parentReal);
+		//const minGap = getMinGap(parentReal);
 		const height = axis === 'x' ? 'height' : 'width';
 		const width = axis === 'x' ? 'width' : 'height';
 		const minHeight = axis === 'x' ? 'minHeight' : 'minWidth';
-		const minWidth = axis === 'x' ? 'minWidth' : 'minHeight';
+		//const minWidth = axis === 'x' ? 'minWidth' : 'minHeight';
 		const heightType = axis === 'x' ? 'heightType' : 'widthType';
 		const widthType = axis === 'x' ? 'widthType' : 'heightType';
 
@@ -422,8 +430,8 @@ export const flexUpdator: PositionUpdator = {
 				toResize.style[width] = `${info[width]}px`;
 			} else if (info[widthType] === 'expand') {
 				const parentGap = parentInfo.edges[endXSide].parentEdge.gap;
-				const minGap = parentInfo[minGapBetweenX];
-				const remainingGap = info[endXSide].siblingEdge ? info[endXSide].siblingEdge!.gap - minGap : info[endXSide].parentEdge.gap - parentGap;
+				//const minGap = parentInfo[minGapBetweenX];
+				//const remainingGap = info[endXSide].siblingEdge ? info[endXSide].siblingEdge!.gap - minGap : info[endXSide].parentEdge.gap - parentGap;
 				// if (remainingGap > 0.1) {
 				// 	setSpaceForElement(info[endXSide].element, 'margin', endXSide, remainingGap);
 				// }

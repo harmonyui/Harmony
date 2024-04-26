@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect } from "vitest"
+import { describe, it, expect } from "vitest"
 import { getCodeInfoAndNormalizeFromFiles, getCodeInfoFromFile } from "./indexor";
 import { ComponentElement, HarmonyComponent } from "@harmony/util/src/types/component";
 

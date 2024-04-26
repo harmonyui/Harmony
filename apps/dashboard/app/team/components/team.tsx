@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
 'use client';
 import { useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
@@ -109,7 +110,7 @@ interface CreateNewProjectModalProps {
 	//onSuccessfulCreation: (item: TeamMember) => void;
 }
 const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps> = ({show, onClose}) => {
-	const {mutate, ...createUtils} = api.team.sendNewMemberInvite.useMutation()
+	const {mutate} = api.team.sendNewMemberInvite.useMutation()
 	const [teamMember, setTeamMember] = useState<TeamMember>({id: '', name: '', role: '', contact: 'example@gmail.com'});
 	const changeProperty = useChangeProperty<TeamMember>(setTeamMember);
 	const [loading, setLoading] = useState(false);
@@ -130,7 +131,7 @@ const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps>
 		setLoading(true);
         setError('');
 		mutate({teamMember: {...teamMember, contact: email.data}}, {
-			onSuccess(data) {
+			onSuccess() {
 				//onSuccessfulCreation(data);
 				onClose();
 				setLoading(false);

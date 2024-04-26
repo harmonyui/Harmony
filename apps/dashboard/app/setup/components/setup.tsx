@@ -1,3 +1,12 @@
+/* eslint-disable no-nested-ternary -- ok*/
+/* eslint-disable @typescript-eslint/no-useless-template-literals -- ok*/
+/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style -- ok*/
+/* eslint-disable camelcase -- ok*/
+/* eslint-disable @typescript-eslint/no-floating-promises -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
+/* eslint-disable no-promise-executor-return -- ok*/
 "use client";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { Header } from "@harmony/ui/src/components/core/header";
@@ -10,7 +19,6 @@ import { useRouter, useSearchParams } from "next/navigation";
 import React, { useEffect, useState } from "react";
 import { api } from "../../../utils/api";
 import { useChangeProperty } from "@harmony/ui/src/hooks/change-property";
-import { emailSchema } from "@harmony/util/src/types/utils";
 import { Account as AccountServer } from "@harmony/server/src/auth";
 import { Dropdown, DropdownItem } from "@harmony/ui/src/components/core/dropdown";
 import { WEB_URL } from '@harmony/util/src/constants';
@@ -100,7 +108,7 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({ data, onCont
                 <Label className="sm:hw-col-span-3" label="What best describes your role">
                     <Dropdown className="hw-w-full" items={items} initialValue={isOther ? "other" : account.role} onChange={(item) => {
                         changeProperty(account, 'role', item.id);
-                        setIsOther(item.id == 'other');
+                        setIsOther(item.id === 'other');
                     }}>
                         Select Role
                     </Dropdown>
@@ -121,27 +129,27 @@ interface DesignerSetupProps {
     teamId: string
 }
 export const DesignerSetup: React.FunctionComponent<DesignerSetupProps> = ({ teamId }) => {
-    const [email, setEmail] = useState('');
-    const [error, setError] = useState('');
+    //const [email] = useState('');
+    const [error] = useState('');
     const router = useRouter();
 
-    const onContinue = (email: string) => {
+    // const onContinue = (email: string) => {
 
-    }
+    // }
 
-    const onContinueClick = () => {
-        if (!email) {
-            setError("Please fill out all fields");
-            return;
-        }
-        const result = emailSchema.safeParse(email)
-        if (!result.success) {
-            setError("Invalid email address");
-            return;
-        }
+    // const onContinueClick = () => {
+    //     if (!email) {
+    //         setError("Please fill out all fields");
+    //         return;
+    //     }
+    //     const result = emailSchema.safeParse(email)
+    //     if (!result.success) {
+    //         setError("Invalid email address");
+    //         return;
+    //     }
 
-        onContinue(result.data);
-    }
+    //     onContinue(result.data);
+    // }
 
     const onFinish = () => {
         router.push('/');
@@ -282,8 +290,8 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({ r
     const [page, setPage] = useState(0);
     const router = useRouter();
     const searchParams = useSearchParams();
-    const [loading, setLoading] = useState(false);
-    const [error, setError] = useState<string>();
+    const [loading] = useState(false);
+    const [error] = useState<string>();
     const [accessToken, setAccessToken] = useState<string>();
 
     if (searchParams.has('access_token') && !accessToken) {

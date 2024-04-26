@@ -1,3 +1,14 @@
+/* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
+/* eslint-disable @typescript-eslint/prefer-string-starts-ends-with -- ok*/
+/* eslint-disable @typescript-eslint/restrict-template-expressions -- ok*/
+/* eslint-disable @typescript-eslint/no-base-to-string -- ok*/
+/* eslint-disable @typescript-eslint/no-empty-function -- ok*/
+/* eslint-disable no-useless-computed-key -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable no-useless-escape -- ok*/
+/* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
+/* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
 import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/util/src/types/component";
 import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";

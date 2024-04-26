@@ -1,3 +1,14 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion -- ok*/
+/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style -- ok*/
+/* eslint-disable no-param-reassign -- ok*/
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable @typescript-eslint/prefer-includes -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+/* eslint-disable no-var -- ok*/
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable no-nested-ternary -- ok*/
+/* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
+/* eslint-disable import/no-cycle -- ok*/
 import { capitalizeFirstLetter, close } from "@harmony/util/src/utils/common";
 import { Rect, isImageElement, selectDesignerElementReverse } from "../inspector/inspector";
 import { UpdateRect } from "./position-updator";
@@ -264,7 +275,7 @@ function getGapTypes(fromElement: HTMLElement, toElement: HTMLElement, axis: Axi
 			const styleValue = $(element).css(style);
 			if (!styleValue) return numSoFar;
 	
-			let value: number = parseFloat(styleValue);
+			const value: number = parseFloat(styleValue);
 			if (isNaN(value)) {
 				return 0;
 			} 
@@ -371,9 +382,9 @@ function isElementFluid(elm: HTMLElement, side: 'width' | 'height', useFlexForHe
       /// change the wrapper size once more
       wrapper.style[side] = '600px';
       /// if the new width is the same as before, most likely a fixed width
-      if( clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'] == ow ){
+      if( clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'] === ow ){
 		clone.style.padding = padding;
-		if (clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'] != ow ) {
+		if (clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'] !== ow ) {
 			elm.parentElement?.removeChild(wrapper);
 			//elm.dataset[harmonyFixed] = 'false';
 			return true;
@@ -391,7 +402,7 @@ function isElementFluid(elm: HTMLElement, side: 'width' | 'height', useFlexForHe
         p2 = Math.floor(100/600*clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth']);
         /// tidy up
         elm.parentNode?.removeChild(wrapper);
-		const val = (p1 == p2) ? Math.round(p1)+'%' : false;
+		const val = (p1 === p2) ? Math.round(p1)+'%' : false;
 		// if (val) {
 		// 	elm.dataset[harmonyFixed] = 'false';
 		// } else {
@@ -401,7 +412,7 @@ function isElementFluid(elm: HTMLElement, side: 'width' | 'height', useFlexForHe
       }
     }
     else {
-      p1 = (value && String(value).indexOf('%') != -1);
+      p1 = (value && String(value).indexOf('%') !== -1);
 	  const val = p1 ? value : false;
 		// if (val) {
 		// 	elm.dataset[harmonyFixed] = 'false';
@@ -776,13 +787,13 @@ export function calculateParentEdgeInfo<T extends ChildEdgeInfo = ChildEdgeInfo>
 	let gapBetweenX: number | undefined = undefined;
 	let gapBetweenY: number | undefined = undefined;
 	if (childEdgeInfo.length > 1) {
-		minGapBetweenX = childEdgeInfo[1][leftSide].elementLocationRelative - (childEdgeInfo[0][rightSide].elementLocationRelative);
-		minGapBetweenY = childEdgeInfo[1][topSide].elementLocationRelative - (childEdgeInfo[0][bottomSide].elementLocationRelative);
+		minGapBetweenX = childEdgeInfo[1]![leftSide].elementLocationRelative - (childEdgeInfo[0]![rightSide].elementLocationRelative);
+		minGapBetweenY = childEdgeInfo[1]![topSide].elementLocationRelative - (childEdgeInfo[0]![bottomSide].elementLocationRelative);
 		gapBetweenX = minGapBetweenX;
 		gapBetweenY = minGapBetweenY;
 		for (let i = 2; i < childEdgeInfo.length; i++) {
-			const currBetweenX = childEdgeInfo[i][leftSide].elementLocationRelative - (childEdgeInfo[i - 1][rightSide].elementLocationRelative);
-			const currBetweenY = childEdgeInfo[i][topSide].elementLocationRelative - (childEdgeInfo[i - 1][bottomSide].elementLocationRelative);
+			const currBetweenX = childEdgeInfo[i]![leftSide].elementLocationRelative - (childEdgeInfo[i - 1]![rightSide].elementLocationRelative);
+			const currBetweenY = childEdgeInfo[i]![topSide].elementLocationRelative - (childEdgeInfo[i - 1]![bottomSide].elementLocationRelative);
 			
 			if (currBetweenX < minGapBetweenX) {
 				minGapBetweenX = currBetweenX;

@@ -23,10 +23,10 @@ export async function GET(req: Request): Promise<Response> {
         },
     });
 
-    const { access_token } = await response.json() as {access_token: string};
+    const { access_token: accessToken } = await response.json() as {access_token: string};
 
     const redirect = new URL(callback);
-    redirect.searchParams.append('access_token', access_token);
+    redirect.searchParams.append('access_token', accessToken);
 
     return new Response(null, {
         status: 302,

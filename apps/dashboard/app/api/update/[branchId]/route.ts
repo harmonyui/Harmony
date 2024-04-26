@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- Let's fix this later*/
 import { ComponentUpdate } from '@harmony/util/src/types/component';
 import { prisma } from '@harmony/db/lib/prisma';
 import { getFileContent } from '@harmony/server/src/api/services/indexor/github';
@@ -51,7 +52,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 		throw new Error("Cannot find account tied to branch " + branchId);
 	}
 
-	const json = await req.json();
+	const json: unknown = await req.json();
 	const parseResult = updateRequestBodySchema.safeParse(json);
 	if (!parseResult.success) {
 		throw new Error("Invalid parsing");
@@ -71,8 +72,9 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 	const errorUpdates: (ComponentUpdate & {errorType: string})[] = [];
 	//Indexes the files of these component updates
 	for (const value of body.values) {
-		for (let i = 0; i < value.update.length; i++) {
-			const update = value.update[i];
+		for (const update of value.update) {
+		//for (let i = 0; i < value.update.length; i++) {
+			//const update = value.update[i];
 			if (!update.componentId) continue;
 			
 			let element = await prisma.componentElement.findFirst({

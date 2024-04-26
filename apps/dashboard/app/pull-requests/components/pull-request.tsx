@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
+/* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
 'use client';
 import { GitBranchIcon, GitPullRequestIcon } from "@harmony/ui/src/components/core/icons";
 import {Button} from '@harmony/ui/src/components/core/button';
@@ -18,7 +21,7 @@ export const PullRequestDisplay: React.FunctionComponent<{items: PullRequest[]}>
 
 	return <ModalProvider>
 		<div className="hw-flex hw-flex-col hw-gap-4">
-			{items ? <>
+			{items.length ? <>
 				{items.map(item => <PullRequestLineItem key={item.title} item={item}/>)}
 				<CreateNewPullRequestModal show={showNewPullRequest} onClose={() => setShowNewPullRequest(false)}/>
 			</> : null}
@@ -32,7 +35,7 @@ interface CreateNewBranchModalProps {
 	branch?: BranchItem
 }
 export const CreateNewPullRequestModal: React.FunctionComponent<CreateNewBranchModalProps> = ({show, branch, onClose}) => {
-	const {mutate, ...createUtils} = api.pullRequest.createPullRequest.useMutation();
+	const {mutate} = api.pullRequest.createPullRequest.useMutation();
     const query = api.branch.getBranches.useQuery();
 	const [pullRequest, setPullRequest] = useState<PullRequest>({id: '', title: '', body: '', url: ''});
 	const changeProperty = useChangeProperty<PullRequest>(setPullRequest);
@@ -46,7 +49,7 @@ export const CreateNewPullRequestModal: React.FunctionComponent<CreateNewBranchM
 		setLoading(true);
 
 		mutate({pullRequest: {...pullRequest}, branch: branchItem}, {
-			onSuccess(data) {
+			onSuccess() {
 				onClose();
 				setLoading(false);
 			}

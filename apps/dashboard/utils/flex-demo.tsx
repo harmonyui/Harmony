@@ -115,19 +115,21 @@ export const FlexBoxDemo: React.FunctionComponent<{stretch: boolean}> = ({stretc
     const refChild1 = useRef<HTMLDivElement>(null);
     const refChild2 = useRef<HTMLDivElement>(null);
     const refChild3 = useRef<HTMLDivElement>(null);
-    const [isLooping, setIsLooping] = useState(false);
+    const [isLooping] = useState(false);
     const [timeout, setTheTimeout] = useState<NodeJS.Timeout>();
     const style = useWatchElementStyles(ref);
     const styleChild1 = useWatchElementStyles(refChild1);
     const styleChild2 = useWatchElementStyles(refChild2);
     const styleChild3 = useWatchElementStyles(refChild3);
 
-    const loop = useCallback((index: number) => {
+    const loop = useCallback((_index: number) => {
+        let index = _index;
         if (!ref.current) return;
         if (index >= positions.length) {
             setTheTimeout(setTimeout(() => {
                 ['justify-content', 'align-items', 'gap', 'padding-top', 'padding-bottom', 'padding-left', 'padding-right'].forEach((key) => {
-                    ref.current!.style[key as unknown as number] = '';
+                    if (ref.current)
+                        ref.current.style[key as unknown as number] = '';
                 });
                 loop(0);
             }, 1000));
@@ -135,9 +137,12 @@ export const FlexBoxDemo: React.FunctionComponent<{stretch: boolean}> = ({stretc
         };
 
         const position = positions[index];
+        if (!position) {
+            throw new Error("What happened?");
+        }
         const element = ref.current.children[position.element] as HTMLElement;
         const rect = element.getBoundingClientRect();
-        const timeout = position.timeout || 50;
+        const _timeout = position.timeout || 50;
         setTheTimeout(setTimeout(() => {
             changeByAmount(element, {
                 left: rect.left + position.x,
@@ -146,7 +151,7 @@ export const FlexBoxDemo: React.FunctionComponent<{stretch: boolean}> = ({stretc
                 height: rect.height
             });
             loop(++index);
-        }, timeout));
+        }, _timeout));
     }, [ref]);
 
     useEffect(() => {
@@ -299,11 +304,12 @@ const useWatchElementStyles = (ref: React.RefObject<HTMLElement>, initialValue?:
 
     useEffect(() => {
         if (ref.current) {
-            const observer = new MutationObserver((mutations) => {
+            const observer = new MutationObserver(() => {
                 let str = '';
                 let numKeys = 0;
                 keys.forEach((key) => {
-                    const value = ref.current!.style[key as unknown as number];
+                    if (!ref.current) return;
+                    const value = ref.current.style[key as unknown as number];
                     if (value && parseFloat(value) !== 0 && (!initialValue || value !== initialValue[key])) {
                         str += `${key}: ${value}; `;
                         numKeys++;
@@ -342,7 +348,7 @@ export const SnappingDemo = () => {
 
     return <div>
         <div className="hw-flex">
-        {demos.map(demo => <Button key={demo} onClick={() => setCurrDemo(demos.indexOf(demo))}>{capitalizeFirstLetter(demo)}</Button>)}
+        {demos.map(demo => <Button key={demo} onClick={() => {setCurrDemo(demos.indexOf(demo))}}>{capitalizeFirstLetter(demo)}</Button>)}
         </div>
         {currComponent}
     </div>

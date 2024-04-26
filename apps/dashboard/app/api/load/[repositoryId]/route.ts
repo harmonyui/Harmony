@@ -93,11 +93,11 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 		}
 	});
 
-	const errorElements = await prisma.componentError.findMany({
-		where: {
-			repository_id: repositoryId
-		}
-	})
+	// const errorElements = await prisma.componentError.findMany({
+	// 	where: {
+	// 		repository_id: repositoryId
+	// 	}
+	// })
 
 	return new Response(JSON.stringify(loadResponseSchema.parse({
 		updates,

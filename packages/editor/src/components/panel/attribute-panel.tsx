@@ -1,12 +1,15 @@
+/* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
+/* eslint-disable @typescript-eslint/no-empty-interface -- ok*/
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable import/no-cycle -- ok*/
 import { Button } from "@harmony/ui/src/components/core/button";
 import { Dropdown, DropdownItem } from "@harmony/ui/src/components/core/dropdown";
-import { CheckboxInput, Input, InputBlur } from "@harmony/ui/src/components/core/input";
-import { ComponentElement, ComponentUpdate } from "@harmony/util/src/types/component";
+import { CheckboxInput, InputBlur } from "@harmony/ui/src/components/core/input";
+import { ComponentElement } from "@harmony/util/src/types/component";
 import { camelToKebab, capitalizeFirstLetter } from "@harmony/util/src/utils/common";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { CommonTools, getTextToolsFromAttributes } from "./harmony-panel";
 import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-provider";
-import {close} from '@harmony/util/src/utils/common';
 import { getComputedValue } from "../snapping/position-updator";
 import { overlayStyles } from "../inspector/inspector";
 
@@ -160,7 +163,7 @@ const EditSpacing: React.FunctionComponent<EditSpacingProps> = ({spacing}) => {
 
 type Displays = 'block' | 'inline' | 'flex' | 'grid';
 const EditDisplay: React.FunctionComponent = () => {
-    const {getAttribute, onAttributeChange, selectedComponent} = useComponentAttribute();
+    const {getAttribute, selectedComponent} = useComponentAttribute();
     const items: DropdownItem<Displays>[] = [
         {
             id: 'block',
@@ -180,7 +183,7 @@ const EditDisplay: React.FunctionComponent = () => {
         }
     ];
 
-    const getComponent = (display: Displays): React.ReactNode => {
+    const getComponent = (_display: Displays): React.ReactNode => {
         const components: Record<Displays, React.ReactNode> = {
             block: <></>,
             inline: <></>,
@@ -190,7 +193,7 @@ const EditDisplay: React.FunctionComponent = () => {
 
         const component = components[initialValue];
 
-        if (selectedComponent?.parentElement && getComputedStyle(selectedComponent?.parentElement).display === 'grid') {
+        if (selectedComponent?.parentElement && getComputedStyle(selectedComponent.parentElement).display === 'grid') {
             return <>
                 <EditGridChildAttributes/>
                 {component}
@@ -202,9 +205,9 @@ const EditDisplay: React.FunctionComponent = () => {
 
     
 
-    const onChange = (item: DropdownItem<string>) => {
-        onAttributeChange({name: 'display', value: item.id});
-    }
+    // const onChange = (item: DropdownItem<string>) => {
+    //     onAttributeChange({name: 'display', value: item.id});
+    // }
 
     const display = getAttribute('display');
     const initialValue: Displays = items.find(item => item.id === display) ? display as Displays : 'block';
@@ -239,10 +242,10 @@ const EditFlexAttributes: React.FunctionComponent = () => {
     const getLabel = (value: string): string => {
         const split = value.split('-');
         if (split.length > 1) {
-            return capitalizeFirstLetter(split[1]);
+            return capitalizeFirstLetter(split[1]!);
         }
 
-        return capitalizeFirstLetter(split[0]);
+        return capitalizeFirstLetter(split[0]!);
     }
 
     const getMode = (name: CommonTools) => (value: string) => {
@@ -256,8 +259,8 @@ const EditFlexAttributes: React.FunctionComponent = () => {
 
     const direction = getAttribute('flexDirection') as typeof directionValues[number];
     const gapDirection = direction === 'row' ? 'columnGap' : 'rowGap';
-    const gapX = getAttribute('columnGap');
-    const gapY = getAttribute('rowGap');
+    // const gapX = getAttribute('columnGap');
+    // const gapY = getAttribute('rowGap');
     const gap = getAttribute(gapDirection);
     const wrap = getAttribute('flexWrap');
     const grow = getAttribute('flexGrow');
@@ -370,7 +373,7 @@ const EditGridChildAttributes: React.FunctionComponent = () => {
     }
 
     const cols = getSpan('gridColumn');
-    const rows = getSpan('gridRow');
+    //const rows = getSpan('gridRow');
 
     return (<>
         <EditAttribute label="Column Span" sameLine={<InputBlur className="hw-w-1/4" value={cols} onChange={onChange('gridColumn')}/>}/>

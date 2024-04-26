@@ -156,7 +156,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
             <div className="hw-mt-2">
                 <div className="hw-flex hw-justify-between">
                     <span>{item.label}</span>
-                    <DropdownIcon className="hover:hw-bg-gray-200 hw-rounded-full " icon={EllipsisHorizontalIcon} items={moreItems} mode='none' onChange={(item) => { (item as typeof moreItems[number]).onClick(); }}/>
+                    <DropdownIcon className="hover:hw-bg-gray-200 hw-rounded-full " icon={EllipsisHorizontalIcon} items={moreItems} mode='none' onChange={(_item) => { (_item as typeof moreItems[number]).onClick(); }}/>
                 </div>
                 <div className="hw-text-xs hw-text-gray-400 hw-text-start">Last updated {displayElapsedTime(item.lastUpdated)}</div>
             </div>

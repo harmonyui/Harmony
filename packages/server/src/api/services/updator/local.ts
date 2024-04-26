@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- Let's deal with this one later*/
 import { ComponentElementBase, ComponentUpdate } from "@harmony/util/src/types/component";
 import { z } from "zod";
 import fs from 'node:fs';
@@ -14,6 +15,7 @@ export const changesSchema = z.object({
 
 export type Changes = z.infer<typeof changesSchema>;
 
+// eslint-disable-next-line @typescript-eslint/require-await -- This function is polymorphic so we need the await
 export async function makeChanges(referencedComponent: ComponentElementBase, newSnippet: string): Promise<void> {
 	const file = fs.readFileSync(referencedComponent.location.file, 'utf-8');
 	const updatedFile = replaceByIndex(file, newSnippet, referencedComponent.location.start, referencedComponent.location.end);
@@ -71,9 +73,9 @@ export class GithubFileRetriver implements FileContentRetriever {
 /**
  * Because the component Ids are dependent on the line number of the element, if the line number ever gets out of date
  * because of independent updates to the file, we need to update the component id 
- * @param updates 
- * @param ref 
- * @param githubRepository 
+ * @param updates -- 
+ * @param ref --
+ * @param githubRepository --
  */
 export async function updateComponentIdsFromUpdates(updates: ComponentUpdate[], ref: string, githubRepository: GithubRepository) {
 	const filesRetrieved: string[] = [];
@@ -93,9 +95,9 @@ export async function updateComponentIdsFromUpdates(updates: ComponentUpdate[], 
 		}
 		
 		for (const mapping of componentIdMappings) {
-			const {oldId, newId} = mapping;
+			const {oldId: _oldId, newId} = mapping;
 
-			await updateElementIds(oldId, newId, updates);
+			await updateElementIds(_oldId, newId, updates);
 		}
 	}
 }

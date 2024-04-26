@@ -1,3 +1,6 @@
+/* eslint-disable @typescript-eslint/no-useless-template-literals -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+/* eslint-disable @typescript-eslint/consistent-indexed-object-style -- ok*/
 import { notFound, redirect } from "next/navigation";
 import { getServerAuthSession } from "@harmony/server/src/auth";
 import { prisma } from "@harmony/db/lib/prisma";

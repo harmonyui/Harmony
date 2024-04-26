@@ -1,3 +1,4 @@
+/* eslint-disable no-bitwise -- Allow bitwise for some functions here*/
 import dayjs from "dayjs";
 import { z } from "zod";
 
@@ -118,7 +119,7 @@ export const compare = <T extends string | number | Date>(f1: T, f2: T): number 
 };
 
 export const getClass = (...strings: (string | undefined)[]) => {
-  return strings.filter((x) => !!x).join(" ");
+  return strings.filter((x) => Boolean(x)).join(" ");
 };
 
 export const getNumberFromString = (str: string): number => {
@@ -139,11 +140,11 @@ export const groupBy = function <T extends Pick<T, K>, K extends keyof T>(
 ) {
   return arr.reduce<Record<T[K], T[]>>((prev, curr) => {
     let a: T[] = [];
-    const val = prev[curr[key]];
+    const val = prev[curr[key]] as Record<T[K], T[]>[T[K]] | undefined;
     if (val) {
       a = val;
     }
-    a?.push(curr);
+    a.push(curr);
     prev[curr[key]] = a;
 
     return prev;
@@ -155,7 +156,8 @@ export const groupByDistinct = function <
   K extends keyof T,
 >(arr: T[], key: K) {
   return arr.reduce<Record<T[K], T>>((prev, curr) => {
-    if (prev[curr[key]]) {
+    const a = prev[curr[key]] as Record<T[K], T>[T[K]] | undefined;
+    if (a) {
       throw new DOMException("Each key value in the list must be unique");
     }
 

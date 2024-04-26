@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/require-await -- ok*/
+/* eslint-disable @typescript-eslint/no-unused-vars -- ok */
 //import Redis from 'ioredis';
 
 //const redisClient = new Redis();

@@ -1,4 +1,4 @@
-import { beforeEach, describe, it, expect } from "vitest"
+import { describe, it, expect } from "vitest"
 import { getLineAndColumn, getWebUrl, updateLocationFromContent } from "./component";
 
 describe("index", () => {
@@ -12,8 +12,10 @@ const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
             const {location, oldContent, newContent} = setup('add-to-top-file', target);
 
             const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			expect(newLocation).toBeDefined();
-			const {startLine, startColumn, endLine, endColumn} = newLocation!;
+			if (!newLocation) {
+				throw new Error("New location should be defined")
+			}
+			const {startLine, startColumn, endLine, endColumn} = newLocation;
             expect(startLine).toBe(79);
 			expect(startColumn).toBe(4);
             expect(endLine).toBe(81);
@@ -25,8 +27,10 @@ const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
 			const {location, oldContent, newContent} = setup('add-to-top-file', target);
 
 			const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			expect(newLocation).toBeDefined();
-			const {startLine, startColumn, endLine, endColumn} = newLocation!;
+			if (!newLocation) {
+				throw new Error("New location should be defined")
+			}
+			const {startLine, startColumn, endLine, endColumn} = newLocation;
 			expect(startLine).toBe(129);
 			expect(startColumn).toBe(20);
 			expect(endLine).toBe(129);
@@ -43,8 +47,10 @@ const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
 			const {location, oldContent, newContent} = setup('add-right-before-start', target);
 
 			const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			expect(newLocation).toBeDefined();
-			const {startLine, startColumn, endLine, endColumn} = newLocation!;
+			if (!newLocation) {
+				throw new Error("New location should be defined")
+			}
+			const {startLine, startColumn, endLine, endColumn} = newLocation;
 			expect(startLine).toBe(26);
 			expect(startColumn).toBe(3);
 			expect(endLine).toBe(31);
@@ -59,8 +65,10 @@ const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
             const {location, oldContent, newContent} = setup('add-to-bottom-file', target);
 
             const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			expect(newLocation).toBeDefined();
-			const {startLine, startColumn, endLine, endColumn} = newLocation!;
+			if (!newLocation) {
+				throw new Error("New location should be defined")
+			}
+			const {startLine, startColumn, endLine, endColumn} = newLocation;
             expect(startLine).toBe(77);
 			expect(startColumn).toBe(4);
             expect(endLine).toBe(79);

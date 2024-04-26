@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/require-await -- ok*/
+/* eslint-disable @typescript-eslint/prefer-promise-reject-errors -- ok*/
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable @typescript-eslint/no-floating-promises -- ok*/
+/* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
 import fs from 'node:fs';
 import path from 'node:path';
 import { ReadFiles } from "./indexor";
@@ -8,10 +13,10 @@ export const fromDir: ReadFiles = async (startPath: string, filter: RegExp, call
 		return;
 	}
 
-	var files = fs.readdirSync(startPath);
-	for (var i = 0; i < files.length; i++) {
-			var filename = path.join(startPath, files[i]);
-			var stat = fs.lstatSync(filename);
+	const files = fs.readdirSync(startPath);
+	for (let i = 0; i < files.length; i++) {
+			const filename = path.join(startPath, files[i]);
+			const stat = fs.lstatSync(filename);
 			if (stat.isDirectory()) {
 					fromDir(filename, filter, callback); 
 			} else if (filter.test(filename.substring(1))) {

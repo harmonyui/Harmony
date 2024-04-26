@@ -1,5 +1,5 @@
 import { Fiber } from "react-reconciler";
-import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementFiberUpward, getElementInspect, getFiberName, getNamedFiber, getReferenceFiber } from "./inspector-dev";
+import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementFiberUpward, getFiberName, getReferenceFiber } from "./inspector-dev";
 import { Attribute, ComponentElement } from "@harmony/util/src/types/component";
 
 export interface ComponentIdentifier {
@@ -53,8 +53,8 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		const name = getFiberName(fiber) || '';
 		const codeInfo = getCodeInfoFromFiber(elementFiber);
 		const sourceFile = codeInfo?.absolutePath || '';
-		const lineNumber = !isNaN(Number(codeInfo?.lineNumber)) ? Number(codeInfo?.lineNumber) : -1;
-		const isComponent = !Boolean(fiber?.stateNode);
+		//const lineNumber = !isNaN(Number(codeInfo?.lineNumber)) ? Number(codeInfo?.lineNumber) : -1;
+		const isComponent = !fiber?.stateNode;
 		const attributes: Attribute[] = this.getComponentAttributes(element);
 		
 		//const parent = element.parentElement ? this.getComponentFromElement(element.parentElement) : undefined;
@@ -92,8 +92,7 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 
 	private getComponentAttributes(element: HTMLElement): Attribute[] {
 		const attributes: Attribute[] = [];
-		for (let i = 0; i < element.childNodes.length; i++) {
-			const node = element.childNodes[i];
+		for (const node of Array.from(element.childNodes)) {
 			if (node.nodeType === Node.TEXT_NODE) {
 				//attributes.push({id: `text-${i}`, type: 'text', name: `${i}`, value: node.textContent ?? ''});
 			}
@@ -105,6 +104,7 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 
 	private getComponentChildren(element: HTMLElement): ComponentElement[] {
 		const children: ComponentElement[] = [];
+		// eslint-disable-next-line @typescript-eslint/prefer-for-of -- ok
 		for (let i = 0; i < element.children.length; i++) {
 			const child = element.children[i] as HTMLElement;
 			const childComponent = this.getComponentFromElement(child);
@@ -115,9 +115,4 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 
 		return children;
 	}
-}
-
-let currId = 0;
-const nextId = () => {
-	return String(currId++);
 }

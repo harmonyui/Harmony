@@ -368,7 +368,6 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
     };
 	//Striping the prefix leaves a '/' at the beginning, so let's get rid of that
     let cleaned_path = format!("{}", modified_result);
-    println!("{}", cleaned_path);
     
     console_error_panic_hook::set_once();
     let source_map = std::sync::Arc::new(data.source_map);

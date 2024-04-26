@@ -1,8 +1,9 @@
-import { ComponentLocation } from "@harmony/util/src/types/component";
+/* eslint-disable @typescript-eslint/no-unsafe-argument -- ok*/
+/* eslint-disable @typescript-eslint/no-unsafe-call -- ok*/
+/* eslint-disable @typescript-eslint/require-await -- ok*/
 import { getLocationFromContent, testCases } from "@harmony/util/src/utils/component.spec";
-import { Change } from "diff";
 import { describe, it, expect } from "vitest";
-import { ComponentIdUpdator, FileContentRetriever, updateComponentIdsFromUpdates } from "./local";
+import { ComponentIdUpdator, FileContentRetriever } from "./local";
 import { getLocationFromComponentId, hashComponentId } from "@harmony/util/src/utils/component";
 
 describe("Component Id Updator", () => {

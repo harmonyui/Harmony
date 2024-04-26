@@ -6,7 +6,7 @@
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
     "clean": "rm -rf .turbo node_modules",
-    "lint": "eslint .",
+    "lint": "pnpm withenv eslint .",
     "format": "prettier --write \"**/*.{ts,md,json}\" && eslint --fix .",
     "typecheck": "tsc --noEmit",
     "test": "vitest"
@@ -34,6 +34,7 @@
     "@trpc/server": "^10.45.0",
     "cheerio": "^1.0.0-rc.12",
     "diff": "^5.2.0",
+    "dotenv-cli": "^7.3.0",
     "next": "14.2.1",
     "nodemailer": "^6.9.9",
     "octokit": "^3.1.2",
@@ -43,16 +44,17 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "vitest": "^1.5.0",
     "@harmony/eslint-config-custom": "workspace:^",
     "@harmony/prettier-config": "workspace:^",
     "@harmony/tsconfig": "workspace:^",
     "@types/babel__core": "^7.20.5",
+    "@types/babel__traverse": "^7.20.5",
     "@types/diff": "^5.0.9",
     "@types/node": "^20",
     "@types/nodemailer": "^6.4.14",
     "eslint": "^8.48.0",
     "prettier": "^3.0.3",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^1.5.0"
   }
 }
