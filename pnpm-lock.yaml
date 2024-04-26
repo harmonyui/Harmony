@@ -319,12 +319,18 @@ importers:
       '@types/jquery':
         specifier: ^3.5.29
         version: 3.5.29
+      '@types/node':
+        specifier: ^20
+        version: 20.12.7
       '@types/react':
         specifier: ^18
         version: 18.3.0
       '@types/react-dom':
         specifier: ^18
         version: 18.3.0
+      '@types/react-reconciler':
+        specifier: ^0.28.8
+        version: 0.28.8
       css-loader:
         specifier: ^6.9.0
         version: 6.11.0(webpack@5.91.0)

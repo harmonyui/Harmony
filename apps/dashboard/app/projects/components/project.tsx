@@ -2,19 +2,18 @@
 import { EllipsisHorizontalIcon, GitBranchIcon, PlusIcon } from "@harmony/ui/src/components/core/icons";
 import {Button} from '@harmony/ui/src/components/core/button';
 import { useState } from "react";
-import { BranchItem } from "@harmony/ui/src/types/branch";
+import type { BranchItem } from "@harmony/ui/src/types/branch";
 import { ModalProvider } from "react-aria";
 import { useChangeProperty } from "@harmony/ui/src/hooks/change-property";
-import { api } from "../../../utils/api";
 import { Input } from "@harmony/ui/src/components/core/input";
-import { ClosableContent } from "@harmony/ui/src/components/core/closable-content";
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
-import { HarmonyModal, ModalPortal } from "@harmony/ui/src/components/core/modal";
-import { displayDate, displayElapsedTime, displayTime } from "@harmony/util/src";
+import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
+import { displayElapsedTime } from "@harmony/util/src";
 import { DropdownIcon } from "@harmony/ui/src/components/core/dropdown";
 import { ConfirmModal } from "@harmony/ui/src/components/core/confirm";
 import { useRouter } from "next/navigation";
+import { api } from "../../../utils/api";
 
 
 export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[], defaultUrl: string}> = ({Projectes, defaultUrl}) => {
@@ -38,12 +37,12 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[], d
 
 	return <ModalProvider>
 		<div className="hw-flex hw-flex-col hw-gap-4 hw-h-full">
-			{Projectes ? <>
-				<Button className="hw-w-fit hw-ml-auto" onClick={() => setShowNewProject(true)}>Create Project <PlusIcon className="hw-ml-1 hw-h-5 hw-w-5"/></Button>
+			{Projectes.length ? <>
+				<Button className="hw-w-fit hw-ml-auto" onClick={() => { setShowNewProject(true); }}>Create Project <PlusIcon className="hw-ml-1 hw-h-5 hw-w-5"/></Button>
 				{Projectes.length ? <div className="hw-flex hw-gap-16 hw-flex-wrap hw-overflow-auto">
-					{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => openProject(item)} onDelete={() => onDelete(item)}/>)}
+					{Projectes.map(item => <ProjectLineItem key={item.name} item={item} onOpenHarmony={() => { openProject(item); }} onDelete={() => { onDelete(item); }}/>)}
 				</div> : <div className="hw-h-full hw-items-center hw-justify-center hw-flex hw-text-lg hw-mb-48 hw-text-[#88939D]">No Projects Yet!</div>}
-				<CreateNewProjectModal show={showNewProject} onClose={() => setShowNewProject(false)} onSuccessfulCreation={openProject} defaultUrl={defaultUrl}/>
+				<CreateNewProjectModal show={showNewProject} onClose={() => { setShowNewProject(false); }} onSuccessfulCreation={openProject} defaultUrl={defaultUrl}/>
 			</> : null}
 		</div>
 	</ModalProvider>
@@ -56,7 +55,7 @@ interface CreateNewProjectModalProps {
 	defaultUrl: string;
 }
 const CreateNewProjectModal: React.FunctionComponent<CreateNewProjectModalProps> = ({show, onClose, onSuccessfulCreation, defaultUrl}) => {
-	const {mutate, ...createUtils} = api.branch.createBranch.useMutation()
+	const {mutate} = api.branch.createBranch.useMutation()
 	const [project, setProject] = useState<BranchItem>({id: '', name: '', label: '', url: defaultUrl, commits: [], lastUpdated: new Date()});
 	const changeProperty = useChangeProperty<BranchItem>(setProject);
 	const [loading, setLoading] = useState(false);
@@ -157,12 +156,12 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
             <div className="hw-mt-2">
                 <div className="hw-flex hw-justify-between">
                     <span>{item.label}</span>
-                    <DropdownIcon className="hover:hw-bg-gray-200 hw-rounded-full " icon={EllipsisHorizontalIcon} items={moreItems} mode='none' onChange={(item) => (item as typeof moreItems[number]).onClick()}/>
+                    <DropdownIcon className="hover:hw-bg-gray-200 hw-rounded-full " icon={EllipsisHorizontalIcon} items={moreItems} mode='none' onChange={(item) => { (item as typeof moreItems[number]).onClick(); }}/>
                 </div>
                 <div className="hw-text-xs hw-text-gray-400 hw-text-start">Last updated {displayElapsedTime(item.lastUpdated)}</div>
             </div>
 		</div>
-		<ConfirmModal show={showDeleteConfirm} header="Delete Project" message={`Are you sure you want to delete the project ${item.label}`} onConfirm={onDelete} onCancel={() => setShowDeleteConfirm(false)}/>
+		<ConfirmModal show={showDeleteConfirm} header="Delete Project" message={`Are you sure you want to delete the project ${item.label}`} onConfirm={onDelete} onCancel={() => { setShowDeleteConfirm(false); }}/>
 	</>
 	)
 }
