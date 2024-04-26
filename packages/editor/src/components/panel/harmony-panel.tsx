@@ -18,7 +18,7 @@ import { Transition } from "@headlessui/react";
 import {ToggleSwitch} from '@harmony/ui/src/components/core/toggle-switch';
 import {HarmonyModal} from '@harmony/ui/src/components/core/modal';
 import {PullRequest} from '@harmony/ui/src/types/branch';
-import { useHarmonyContext, usePinchGesture } from "../harmony-provider";
+import { ComponentUpdateWithoutGlobal, useHarmonyContext, usePinchGesture } from "../harmony-provider";
 import { PublishRequest } from "@harmony/ui/src/types/network";
 import { Font } from "@harmony/util/src/fonts";
 import { getWebUrl } from "@harmony/util/src/index";
@@ -32,7 +32,7 @@ export type SelectMode = 'scope' | 'tweezer';
 export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
-	onAttributesChange: (component: ComponentElement, updates: ComponentUpdate[]) => void;
+	onAttributesChange: (component: ComponentElement, updates: ComponentUpdateWithoutGlobal[]) => void;
 	onComponentSelect: (component: HTMLElement) => void;
 	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
@@ -295,7 +295,7 @@ interface ToolbarPanelProps {
 }
 const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, selectedElement, isDirty, branchId, branches}) => {
 	const {data, onAttributeChange} = useComponentAttribute();
-	const {isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo, behaviors, setBehaviors} = useHarmonyContext();
+	const {isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo, behaviors, setBehaviors, isGlobal, setIsGlobal} = useHarmonyContext();
 	const {setPanel} = useSidePanel();
 
 	const onPreview = () => {
@@ -414,6 +414,10 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		!isDemo && setPanel({id: 'attribute', content: <ComponentAttributePanel/>});
 	}
 
+	const onGlobalClick = () => {
+		setIsGlobal(!isGlobal);
+	}
+
 	return (
 		<div className="hw-inline-flex hw-gap-2 hw-items-center hw-h-full hw-w-full hw-bg-white hw-pointer-events-auto hw-divide-x">
 			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
@@ -437,6 +441,9 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				{!isDemo ? <div className="hw-px-4">
 					<button className="hw-text-base hw-font-light" onClick={onPositionClick}>Layout</button>
 				</div> : null}
+				<div className="hw-px-4">
+					<button className="hw-text-base hw-font-light" onClick={onGlobalClick}>{isGlobal ? 'All' : 'Single'}</button>
+				</div>
 				{/* <div className="hw-px-4">
 					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
 						<Label label="Dark Mode:" sameLine>
@@ -647,7 +654,7 @@ const componentTools = ['backgroundColor'] as const;
 const computedTools = ['marginRight', 'marginLeft', 'marginTop', 'marginBottom', 
 				   'paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom', 'width', 'height'] as const;
 const attributeTools = ['display', 
-						'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'flexWrap', 'flexGrow', 'flexShrink',
+						'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'gap', 'flexWrap', 'flexGrow', 'flexShrink',
 						'gridTemplateColumns', 'gridTemplateRows', 'gridColumn', 'gridRow',
 						'position', 'top', 'left', 'right', 'bottom'] as const;
 type TextTools = typeof textTools[number];

@@ -21,10 +21,18 @@ import { Environment, getWebUrl } from "@harmony/util/src/index";
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import {DEFAULT_WIDTH as WIDTH, DEFAULT_HEIGHT as HEIGHT} from '@harmony/util/src/constants';
+import { Header } from "@harmony/ui/src/components/core/header";
+import { Button } from "@harmony/ui/src/components/core/button";
+
+export type ComponentUpdateWithoutGlobal = Omit<ComponentUpdate, 'isGlobal'>
 
 export function findElementFromId(componentId: string, parentId: string | undefined, childIndex: number): HTMLElement | undefined {
 	const selector = parentId ? `[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]` : `[data-harmony-id="${componentId}"]`;
-	const elements = document.querySelectorAll(selector);
+	const container = document.getElementById('harmony-container');
+	if (!container) {
+		throw new Error("Cannot find container harmony-container");
+	}
+	const elements = container.querySelectorAll(selector);
 	for (const element of Array.from(elements)) {
 		const elementChildIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (elementChildIndex === childIndex) return element as HTMLElement;
@@ -35,7 +43,11 @@ export function findElementFromId(componentId: string, parentId: string | undefi
 
 export function findElementsFromId(componentId: string, parentId: string | undefined): HTMLElement[] {
 	const selector = parentId ? `[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]` : `[data-harmony-id="${componentId}"]`;
-	const elements = document.querySelectorAll(selector);
+	const container = document.getElementById('harmony-container');
+	if (!container) {
+		throw new Error("Cannot find container harmony-container");
+	}
+	const elements = container.querySelectorAll(selector);
 	return Array.from(elements) as HTMLElement[];
 }
 
@@ -74,8 +86,10 @@ interface HarmonyContextProps {
 	currentBranch: {id: string, name: string} | undefined;
 	behaviors: BehaviorType[];
 	setBehaviors: (value: BehaviorType[]) => void;
+	isGlobal: boolean;
+	setIsGlobal: (value: boolean) => void;
 }
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', pullRequest: undefined, publish: asyncnoop, isSaving: false, setIsSaving: noop, setPullRequest: noop, displayMode: 'designer', changeMode: noop, publishState: undefined, setPublishState: noop, onFlexToggle: noop, scale: 1, onScaleChange: noop, onClose: noop, error: undefined, setError: noop, environment: 'production', showWelcomeScreen: false, setShowWelcomeScreen: noop, showGiveFeedback: false, setShowGiveFeedback: noop, isDemo: false, currentBranch: undefined, behaviors: [], setBehaviors: noop});
+const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', pullRequest: undefined, publish: asyncnoop, isSaving: false, setIsSaving: noop, setPullRequest: noop, displayMode: 'designer', changeMode: noop, publishState: undefined, setPublishState: noop, onFlexToggle: noop, scale: 1, onScaleChange: noop, onClose: noop, error: undefined, setError: noop, environment: 'production', showWelcomeScreen: false, setShowWelcomeScreen: noop, showGiveFeedback: false, setShowGiveFeedback: noop, isDemo: false, currentBranch: undefined, behaviors: [], setBehaviors: noop, isGlobal: true, setIsGlobal: noop});
 
 export const useHarmonyContext = () => {
 	const context = useContext(HarmonyContext);
@@ -117,6 +131,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [showGiveFeedback, setShowGiveFeedback] = useState(false);
 	const [isDemo, setIsDemo] = useState(false);
 	const [behaviors, setBehaviors] = useState<BehaviorType[]>([]);
+	const [isGlobal, setIsGlobal] = useState(true);
+	//const [currUpdates, setCurrUpdates] = useState<{updates: ComponentUpdateWithoutGlobal[], execute: boolean}>();
 
 	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
 	
@@ -360,7 +376,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'text', name: String(index), action: 'change', value, oldValue, childIndex}
+		const update: ComponentUpdateWithoutGlobal = {componentId: component.id, parentId: component.parentId, type: 'text', name: String(index), action: 'change', value, oldValue, childIndex}
 		onAttributesChange(component, [update], false);
 	});
 
@@ -373,16 +389,17 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdate = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value, oldValue, childIndex};
+		const update: ComponentUpdateWithoutGlobal = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value, oldValue, childIndex};
 		
 		onAttributesChange(component, [update], false);
 	})
 
-	const onAttributesChange = (component: ComponentElement, update: ComponentUpdate[], execute=true) => {
-		executeCommand(component, update, execute);
+	const onAttributesChange = (component: ComponentElement, updates: ComponentUpdateWithoutGlobal[], execute=true) => {
+		executeCommand(updates.map(update => ({...update, isGlobal})), execute);
+		//setCurrUpdates({updates, execute});
 	}
 
-	const onElementChange = (element: HTMLElement, update: ComponentUpdate[], execute=true) => {
+	const onElementChange = (element: HTMLElement, update: ComponentUpdateWithoutGlobal[], execute=true) => {
 		const component = componentIdentifier.getComponentFromElement(element);
 		if (!component) {
 			throw new Error("Error when getting component");
@@ -435,9 +452,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		setForceSave(forceSave + 1);
 	}
 
+	// const onFinishGlobalUpdates = (updates: ComponentUpdate[]) => {
+	// 	executeCommand(updates, currUpdates?.execute);
+	// 	setCurrUpdates(undefined);
+	// }
+
 	return (
 		<>
-			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, pullRequest, setPullRequest, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showWelcomeScreen, setShowWelcomeScreen, showGiveFeedback, setShowGiveFeedback, isDemo, currentBranch: branches.find(branch => branch.id === branchId), behaviors, setBehaviors}}>
+			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, pullRequest, setPullRequest, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showWelcomeScreen, setShowWelcomeScreen, showGiveFeedback, setShowGiveFeedback, isDemo, currentBranch: branches.find(branch => branch.id === branchId), behaviors, setBehaviors, isGlobal, setIsGlobal}}>
 				{displayMode && displayMode !== 'preview-full' ? <>
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 						<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
@@ -458,6 +480,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					</button>
 				</div>}
 				<WelcomeModal />
+				{/* {currUpdates ? <GlobalUpdateModal updates={currUpdates.updates || []} onFinish={onFinishGlobalUpdates}/> : null} */}
 			</HarmonyContext.Provider>}
 		</>
 	)
@@ -566,7 +589,7 @@ const useComponentUpdator = ({onChange, behaviors, branchId, repositoryId, isSav
 		return () => window.removeEventListener('beforeunload', onLeave);
 	}, []);
 
-	const executeCommand = (component: ComponentElement, update: ComponentUpdate[], execute=true): void => {
+	const executeCommand = (update: ComponentUpdate[], execute=true): void => {
 		const newCommand: HarmonyCommand = {
 			name: 'change',
 			update: update.filter(update => update.oldValue !== update.value)//.map(update => ({...update, behaviors})),
@@ -574,8 +597,6 @@ const useComponentUpdator = ({onChange, behaviors, branchId, repositoryId, isSav
 		//TODO: find a better way to do this
 		if (execute)
 			change(newCommand);
-
-		if (component.element === undefined) return;
 
 		const newEdits = undoStack.slice();
 		const newSaves = saveStack.slice();
@@ -782,13 +803,14 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 	}
 
 	//Updates that should happen for every element in a component
-	const sameElements = findElementsFromId(id, parentId);
-	for (const element of Array.from(sameElements)) {
-		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
-		const htmlElement = element as HTMLElement;
-		for (const update of translated) {
+	for (const update of translated) {
+		const sameElements = findElementsFromId(id, update.isGlobal ? undefined : parentId);
+		for (const element of Array.from(sameElements)) {
+			const childIndex = Array.from(element.parentElement!.children).indexOf(element);
+			const htmlElement = element as HTMLElement;
+			
 			//Setting childIndex to -1 means that we want to update all items in a list
-			if (update.childIndex > -1 && update.childIndex !== childIndex) continue;
+			if (!update.isGlobal && update.childIndex !== childIndex) continue;
 
 			if (update.type === 'className') {
 				if (update.name === 'font') {
@@ -810,4 +832,48 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 			}
 		}
 	}
+}
+
+interface GlobalUpdateModalProps {
+	updates: ComponentUpdateWithoutGlobal[]
+	onFinish: (updates: ComponentUpdate[]) => void;
+}
+const GlobalUpdateModal: React.FunctionComponent<GlobalUpdateModalProps> = ({updates, onFinish}) => {
+	const [currUpdates, setCurrUpdates] = useState<ComponentUpdate[]>([]);
+	useEffect(() => {
+		if (updates.length) {
+			setCurrUpdates([]);
+		}
+	}, [updates])
+	const currUpdate = updates[currUpdates.length];
+	const name = currUpdate.componentId;
+
+	const addUpdate = (update: ComponentUpdateWithoutGlobal, isGlobal: boolean) => {
+		const copy = currUpdates.slice();
+		copy.push({...update, isGlobal});
+
+		if (copy.length === updates.length) {
+			onFinish(copy);
+		}
+		setCurrUpdates(copy);
+	}
+
+	const onSingleInstance = useEffectEvent(() => {
+		addUpdate(currUpdate, false);
+	})
+
+	const onAllInstances = useEffectEvent(() => {
+		addUpdate(currUpdate, true);
+	});
+
+	return (
+		<HarmonyModal show={updates.length > 0 && currUpdates.length < updates.length} onClose={onSingleInstance} editor>
+			<Header level={3}>Update {name}</Header>
+			You are updating {name} component. Would you like to make changes for all components or just this one instance?
+			<div className="hw-flex hw-justify-end hw-gap-2">
+				<Button mode="secondary" onClick={onSingleInstance}>Single Instance</Button>
+				<Button mode="primary" onClick={onAllInstances}>All Instances</Button>
+			</div>
+		</HarmonyModal>
+	)
 }

@@ -191,10 +191,12 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 			}
 		} else {
 			const numSameComponentsButDifferentParents = updates.filter(update => update.componentId === curr.componentId && update.parentId !== curr.parentId).length;
+			//We update the parent when we have multiple of the same elements with different updates or the user has specified that it is not a global update
+			const shouldUpdateParent = numSameComponentsButDifferentParents > 0 || !curr.isGlobal;
 
 			//When every we have a component that has a different parent, that means we need to set the classes at this parent
 			// level not the component level
-			const component = curr.type === 'className' && numSameComponentsButDifferentParents > 0 ? elementInstances.find(el => el.id === curr.parentId) : elementInstances.find(el => el.id === curr.componentId && el.parent_id === curr.parentId);
+			const component = curr.type === 'className' && shouldUpdateParent ? elementInstances.find(el => el.id === curr.parentId) : elementInstances.find(el => el.id === curr.componentId && el.parent_id === curr.parentId);
 			if (!component) {
 				return prev;
 				//throw new Error('Cannot find component with id ' + curr.componentId);

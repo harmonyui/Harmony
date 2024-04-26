@@ -156,6 +156,7 @@ export async function POST(req: Request, {params}: {params: {branchId: string}})
 				branch_id: branchId,
 				old_value: up.oldValue,
 				childIndex: up.childIndex,
+				is_global: up.isGlobal
 			}
 		})
 	}

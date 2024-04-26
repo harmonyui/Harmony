@@ -48,8 +48,8 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 
 	let updates: ComponentUpdate[] = [];
 
-	const query = await prisma.$queryRaw<{action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, parentId: string}[]>`
-		SELECT u.action, u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", e.id, e.parent_id as "parentId" FROM "ComponentUpdate" u
+	const query = await prisma.$queryRaw<{action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, parentId: string, isGlobal: boolean}[]>`
+		SELECT u.action, u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", e.id, e.parent_id as "parentId" FROM "ComponentUpdate" u
 		INNER JOIN "ComponentElement" e on e.id = component_id AND e.parent_id = component_parent_id
 		WHERE u.branch_id = ${branchId}
 		ORDER BY u.date_modified ASC`
@@ -63,7 +63,8 @@ export async function GET(req: NextRequest, {params}: {params: {repositoryId: st
 		oldValue: up.oldValue,
 		componentId: up.id,
 		parentId: up.parentId,
-		childIndex: up.childIndex
+		childIndex: up.childIndex,
+		isGlobal: up.isGlobal
 	}));
 
 	const githubRepository = new GithubRepository(repository);

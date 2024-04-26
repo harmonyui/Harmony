@@ -179,7 +179,8 @@ export const getBranch = async({prisma, branchId}: {prisma: Db, branchId: string
 			oldValue: update.old_value,
 			componentId: update.component_id,
 			parentId: update.component_parent_id,
-			childIndex: update.childIndex
+			childIndex: update.childIndex,
+			isGlobal: update.is_global
 		})),
 		old: branch.updates.map(update => update.old_value)
 	} satisfies BranchItem & {repositoryId: string, updates: ComponentUpdate[], old: string[]};

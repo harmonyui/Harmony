@@ -1,6 +1,6 @@
 import { beforeEach, describe, it, expect } from "vitest"
 import {Change, diffChars, diffLines} from 'diff';
-import { getLineAndColumn, updateLocationFromContent } from ".";
+import { getLineAndColumn, getWebUrl, updateLocationFromContent } from ".";
 
 describe("index", () => {
     describe("updateLocationFromDiffs", () => {
@@ -112,6 +112,18 @@ const target = `<Label label="Hello there">
 // 			expect(newLocation).not.toBeDefined();
 // 		})
     })
+
+	describe("getWebUrl", () => {
+		it("Should return http://localhost:3000 when in development mode", () => {
+			const url = getWebUrl('development');
+			expect(url).toBe('http://localhost:3000');
+		})
+
+		it("Should return production url when in production mode", () => {
+			const url = getWebUrl('production');
+			expect(url).toBe('https://dashboard.harmonyui.app');
+		})
+	})
 });
 
 export const setup = (name: keyof (typeof testCases), target: string) => {

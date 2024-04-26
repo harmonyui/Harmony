@@ -13,7 +13,7 @@ import { ResizeValue, useResize, ResizeRect, ResizeDirection, ResizeCoords } fro
 import { FlexValues, MarginValues, useSnapping } from "../snapping/snapping";
 import { usePrevious } from "@harmony/ui/src/hooks/previous";
 import {Alert} from '@harmony/ui/src/components/core/alert';
-import { useHarmonyContext } from "../harmony-provider";
+import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-provider";
 import { getProperty } from "../snapping/calculations";
 import { useSidePanel } from "../panel/side-panel";
 
@@ -133,7 +133,7 @@ export interface InspectorProps {
 	onElementTextChange: (value: string, oldValue: string) => void;
 	mode: SelectMode;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
-	onChange: (component: HTMLElement, update: ComponentUpdate[], execute?: boolean) => void;
+	onChange: (component: HTMLElement, update: ComponentUpdateWithoutGlobal[], execute?: boolean) => void;
 	updateOverlay: number;
 	scale: number;
 }
@@ -146,7 +146,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	const inspectorState: InspectorState = useMemo(() => ({showingLayoutPanel: panel?.id === 'attribute'}), [panel]);
 
-	const {isDragging} = useSnapping({enabled: true, element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
+	const {isDragging} = useSnapping({enabled: isDemo, element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -162,7 +162,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	}, onDragFinish(element, oldValues) {
 		if (!selectedComponent) return;
 
-		const updates: ComponentUpdate[] = [];
+		const updates: ComponentUpdateWithoutGlobal[] = [];
 			
 		for (const oldValue of oldValues) {
 			const [element, oldProperties] = oldValue;
@@ -203,7 +203,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 				if (childIndex < 0) throw new Error("Cannot get right child index");
 
-				const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue, childIndex};
+				const update: ComponentUpdateWithoutGlobal = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue, childIndex};
 
 				
 				updates.push(update);

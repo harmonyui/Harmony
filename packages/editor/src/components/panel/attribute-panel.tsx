@@ -5,7 +5,7 @@ import { ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/compone
 import { camelToKebab, capitalizeFirstLetter } from "@harmony/util/src";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { CommonTools, getTextToolsFromAttributes } from "./harmony-panel";
-import { useHarmonyContext } from "../harmony-provider";
+import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-provider";
 import {close} from '@harmony/util/src';
 import { getComputedValue } from "../snapping/position-updator";
 import { overlayStyles } from "../inspector/inspector";
@@ -20,7 +20,7 @@ const ComponentAttributeContext = createContext<ComponentAttributeContextProps>(
 type ComponentAttributeProviderProps = ComponentAttributePanelProps & {
     selectedComponent: ComponentElement | undefined;
     children: React.ReactNode, 
-    onChange: (component: ComponentElement, update: ComponentUpdate[]) => void;
+    onChange: (component: ComponentElement, update: ComponentUpdateWithoutGlobal[]) => void;
 }
 export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttributeProviderProps> = ({selectedComponent, children, onChange}) => {
     const {fonts} = useHarmonyContext();
@@ -37,7 +37,7 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
 		const childIndex = Array.from(selectedComponent.element!.parentElement!.children).indexOf(selectedComponent.element!);
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdate = {componentId, parentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
+		const update: ComponentUpdateWithoutGlobal = {componentId, parentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
 		
 		
 		onChange(selectedComponent, [update]);
@@ -255,9 +255,10 @@ const EditFlexAttributes: React.FunctionComponent = () => {
     const onChange = (name: CommonTools) => (value: string) => onAttributeChange({name, value});
 
     const direction = getAttribute('flexDirection') as typeof directionValues[number];
-    const gapX = getAttribute('rowGap');
-    const gapY = getAttribute('columnGap');
-    const gap = direction === 'row' ? gapX : gapX;
+    const gapDirection = direction === 'row' ? 'columnGap' : 'rowGap';
+    const gapX = getAttribute('columnGap');
+    const gapY = getAttribute('rowGap');
+    const gap = getAttribute(gapDirection);
     const wrap = getAttribute('flexWrap');
     const grow = getAttribute('flexGrow');
     const shrink = getAttribute('flexShrink');
@@ -279,7 +280,7 @@ const EditFlexAttributes: React.FunctionComponent = () => {
             </div>
         </EditAttribute>
         <EditAttribute label="Gap" sameLine={<EditUnit units={['px']}/>}>
-            <InputBlur value={gap === 'normal' ? '0px' : gap} onChange={onChange('rowGap')}/>
+            <InputBlur value={gap === 'normal' ? '0px' : gap} onChange={onChange(gapDirection)}/>
         </EditAttribute>
         <EditAttribute label="Wrap" sameLine={<CheckboxInput value={wrap === 'wrap'} onChange={(value) => onAttributeChange({name: 'flexWrap', value: value ? 'wrap' : 'nowrap'})}/>}/>
         <EditAttribute label="Size" sameLine={undefined}>
