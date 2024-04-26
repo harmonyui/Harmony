@@ -8,8 +8,8 @@
     "dist"
   ],
   "scripts": {
-    "prepublish": "npm run build",
-    "build": "npm run build:editor && npm run build:setup",
+    "prepublish": "pnpm run build",
+    "build": "pnpm run build:editor && pnpm run build:setup",
     "build:setup": "NODE_ENV=production webpack --mode=production --config ./webpack.config.setup.js",
     "build:editor": "NODE_ENV=production webpack --mode=production --config ./webpack.config.editor.js",
     "dev": "NODE_ENV=development webpack --config ./webpack.config.dev.js && cp ./dev/bundle.js ../../apps/dashboard/public/bundle.js",

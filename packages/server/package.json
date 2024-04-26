@@ -9,7 +9,7 @@
     "lint": "pnpm withenv eslint .",
     "format": "prettier --write \"**/*.{ts,md,json}\" && eslint --fix .",
     "typecheck": "tsc --noEmit",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "eslintConfig": {
     "root": true,

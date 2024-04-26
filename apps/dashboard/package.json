@@ -11,7 +11,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix .",
     "typecheck": "tsc --noEmit",
     "vercel-build": "prisma migrate deploy && pnpm run build",
-    "test": "vitest"
+    "test": "vitest run"
   },
   "dependencies": {
     "@babel/core": "^7.23.7",
