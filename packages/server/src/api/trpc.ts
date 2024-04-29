@@ -13,6 +13,13 @@ import { ZodError } from "zod";
 import { Db, prisma } from "@harmony/db/lib/prisma";
 import { FullSession, getServerAuthSession, Session } from "../auth";
 import { EmailService, NodeMailerEmailService } from "./services/email-service";
+import {FetchCreateContextFnOptions} from '@trpc/server/adapters/fetch';
+import {CreateExpressContextOptions} from '@trpc/server/adapters/express';
+import {
+  WithAuthProp,
+} from '@clerk/clerk-sdk-node';
+import {Request} from 'express';
+import { auth } from "@clerk/nextjs";
 
 
 /**
@@ -25,7 +32,7 @@ import { EmailService, NodeMailerEmailService } from "./services/email-service";
 
 interface CreateContextOptions {
   session: Session | undefined;
-  req: Request;
+  //req: Request;
 }
 
 interface AuthContextOptions {
@@ -69,14 +76,7 @@ const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
 //   })
 // }
 
-/**
- * This is the actual context you will use in your router. It will be used to process every request
- * that goes through your tRPC endpoint.
- *
- * @see https://trpc.io/docs/context
- */
-export const createTRPCContext = async (req: Request) => {
-  const cookies = req.headers.get('cookie');
+const createTRPCContext = async (cookies: string | null | undefined, userId: string | null) => {
   let mockUserId: string | undefined;
   if (cookies) {
     const cookieValues = cookies.split('; ');
@@ -88,13 +88,27 @@ export const createTRPCContext = async (req: Request) => {
     }
   }
   // Get the session from the server using the getServerSession wrapper function
-  const session = await getServerAuthSession(mockUserId);
+  const session = await getServerAuthSession(userId, mockUserId);
 
   return createInnerTRPCContext({
     session,
-    req
+    //req
   });
+}
+
+/**
+ * This is the actual context you will use in your router. It will be used to process every request
+ * that goes through your tRPC endpoint.
+ *
+ * @see https://trpc.io/docs/context
+ */
+export const createTRPCContextFetch = async ({req}: FetchCreateContextFnOptions) => {
+  return createTRPCContext(req.headers.get('cookie'), auth().userId);
 };
+
+export const createTRPCContextExpress = async ({req}: {res: CreateExpressContextOptions['res'], req: WithAuthProp<Request>}) => {
+  return createTRPCContext(req.headers.cookie, req.auth.userId);
+}
 
 /**
  * 2. INITIALIZATION
@@ -104,7 +118,7 @@ export const createTRPCContext = async (req: Request) => {
  * errors on the backend.
  */
 
-const t = initTRPC.context<typeof createTRPCContext>().create({
+const t = initTRPC.context<typeof createTRPCContextFetch>().create({
   transformer: superjson,
   errorFormatter({ shape, error }) {
     return {

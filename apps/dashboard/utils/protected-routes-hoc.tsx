@@ -1,9 +1,13 @@
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable @typescript-eslint/consistent-indexed-object-style -- ok*/
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import { type GetServerSideProps } from "next";
 import { FullSession, Session, getServerAuthSession } from "@harmony/server/src/auth";
 import { redirect } from "next/navigation";
 import { AuthContext, mailer } from "@harmony/server/src/api/trpc";
 import { prisma } from "@harmony/db/lib/prisma";
 import {cookies} from 'next/headers';
+import { auth } from "@clerk/nextjs";
 
 interface RequireRouteProps {
   redirect: string;
@@ -13,7 +17,8 @@ export const requireRoute =
   ({ redirect, check }: RequireRouteProps) =>
   () =>
   async (mockUserId?: string) => {
-    const session = await getServerAuthSession(mockUserId);
+    const {userId} = auth();
+    const session = await getServerAuthSession(userId, mockUserId);
 
     if (!session?.auth || !session.account || (check && check(session))) {
       return {redirect, session: undefined}
@@ -47,7 +52,7 @@ interface PageProps {
   searchParams: { [key: string]: string | string[] | undefined };
 }
 export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.FunctionComponent<PageProps> => 
-	async (props) => {
+	async () => {
     const cookie = cookies();
     const mockUserId = cookie.get('harmony-user-id');
     const response = await requireAuth()(mockUserId?.value);
@@ -56,7 +61,7 @@ export const withAuth = (Component: React.FunctionComponent<AuthProps>): React.F
 			redirect('/setup');
 		}
 
-		return <Component ctx={{prisma, session: response.session as FullSession, mailer}}/>
+		return <Component ctx={{prisma, session: response.session!, mailer}}/>
 	}
 
 // export const requireRole = (role: UserRole) =>

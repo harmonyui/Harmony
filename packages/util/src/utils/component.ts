@@ -124,7 +124,7 @@ export function getWebUrl(environment: Environment) {
         return 'https://harmony-xi.vercel.app'
     }
 
-    return 'http://localhost:3000';
+    return 'http://localhost:4200';
 }
 
 export function updateLocationFromContent({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}, oldContent: string, newContent: string) {

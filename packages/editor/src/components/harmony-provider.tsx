@@ -5,7 +5,6 @@
 "use client";
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
 import type { BehaviorType, ComponentElement, ComponentError, ComponentUpdate } from "@harmony/util/src/types/component";
-import { loadResponseSchema, publishResponseSchema, updateResponseSchema} from "@harmony/util/src/types/network";
 import type {PublishRequest, PublishResponse, UpdateRequest} from "@harmony/util/src/types/network";
 import type { Environment} from '@harmony/util/src/utils/component';
 import {translateUpdatesToCss, reverseUpdates , getWebUrl } from '@harmony/util/src/utils/component';
@@ -22,6 +21,7 @@ import { getBoundingRect } from "./snapping/calculations";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import type { Setup } from "./harmony-setup";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
+import { loadProject, publishProject, saveProject } from "../data-layer";
 
 export type ComponentUpdateWithoutGlobal = Omit<ComponentUpdate, 'isGlobal'>
 
@@ -133,7 +133,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [isGlobal, setIsGlobal] = useState(true);
 	//const [currUpdates, setCurrUpdates] = useState<{updates: ComponentUpdateWithoutGlobal[], execute: boolean}>();
 
-	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
+	//const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
 	
 	const executeCommand = useComponentUpdator({isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
@@ -164,16 +164,17 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			onHistoryChange();
 
 			try {
-				const response = await fetch(`${WEB_URL}/api/load/${repositoryId}${branchId ? `?branchId=${branchId}` : ''}`, {
-					method: 'GET',
-					headers: {
-						'Accept': 'application/json',
-						'Content-Type': 'application/json'
-					},
-				});
+				const response = await loadProject({branchId, repositoryId});
+				// const response = await fetch(`${WEB_URL}/api/load/${repositoryId}${branchId ? `?branchId=${branchId}` : ''}`, {
+				// 	method: 'GET',
+				// 	headers: {
+				// 		'Accept': 'application/json',
+				// 		'Content-Type': 'application/json'
+				// 	},
+				// });
 
 				// eslint-disable-next-line @typescript-eslint/no-shadow -- We are ok here
-				const {updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo} = loadResponseSchema.parse(await response.json());
+				const {updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo} = response;
 				setAvailableIds(updates);
 				setBranches(branches);
 				setPullRequest(pullRequest);
@@ -411,22 +412,25 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const onPublish = async (request: PublishRequest): Promise<PublishResponse | undefined> => {
 		try {
-			const response = await fetch(`${WEB_URL}/api/publish`, {
-				method: 'POST',
-				body: JSON.stringify(request)
-			});
-			if (!response.ok) {
-				return undefined;
-			}
+			// const response = await fetch(`${WEB_URL}/api/publish`, {
+			// 	method: 'POST',
+			// 	body: JSON.stringify(request)
+			// });
+			// if (!response.ok) {
+			// 	return undefined;
+			// }
 
-			const parsed = publishResponseSchema.safeParse(await response.json());
-			if (!parsed.success) {
-				return undefined;
-			}
 
-			setPullRequest(parsed.data.pullRequest);
+			// const parsed = publishResponseSchema.safeParse(await response.json());
+			// if (!parsed.success) {
+			// 	return undefined;
+			// }
 
-			return parsed.data;
+			const response = await publishProject(request);
+
+			setPullRequest(response.pullRequest);
+
+			return response;
 		} catch(err) {
 			return undefined
 		}
@@ -551,7 +555,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 				//TODO: Test this
 				for (let i = copy.length - 1; i >= 0; i--) {
 					const update = copy[i];
-					if (!update) throw new Error("Need to have an update");
+					//if (!update) throw new Error("Need to have an update");
 					change({name: update.name, update: reverseUpdates(update.update)});
 				}
 				onError("There was an error saving the project");
@@ -604,7 +608,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		const newEdits = undoStack.slice();
 		const newSaves = saveStack.slice();
 		const lastEdits = newEdits[newEdits.length - 1];
-		const lastEdit = lastEdits?.update.length === 1 ? lastEdits.update[0] : undefined;
+		const lastEdit = lastEdits.update.length === 1 ? lastEdits.update[0] : undefined;
 		const newEdit = newCommand.update.length === 1 ? newCommand.update[0] : undefined;
 		const isSameCommandType = newEdit && lastEdit && newEdit.type === lastEdit.type && newEdit.name === lastEdit.name && newEdit.componentId === lastEdit.componentId && newEdit.parentId === lastEdit.parentId;
 
@@ -617,7 +621,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		} else {
 			//TODO: Get rid of type = 'component' dependency
 			// eslint-disable-next-line no-lonely-if -- ok
-			if (newEdits.length && newCommand.update.length === 1 && newCommand.update[0] && lastEdits?.update[0] && newCommand.update[0].type !== 'component') {
+			if (newEdits.length && newCommand.update.length === 1 && newCommand.update[0] && lastEdits.update[0] && newCommand.update[0].type !== 'component') {
 				newCommand.update[0].oldValue = lastEdits.update[0].oldValue;
 				newEdits[newEdits.length - 1] = newCommand;
 				//TODO: test this to make sure this works
@@ -650,7 +654,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 		if (fromValue.length === 0) return;
 		const lastEdit = fromValue[fromValue.length - 1];
-		if (!lastEdit) throw new Error("We shouldn't get here");
+		//if (!lastEdit) throw new Error("We shouldn't get here");
 
 		const newUpdates = lastEdit.update.map(up => ({...up, value: up.oldValue, oldValue: up.value}))
 		const newEdit: HarmonyCommand = {name: 'change', update: newUpdates};
@@ -680,18 +684,19 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	const saveCommand = async (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}) => {
 		setIsSaving(true);
 		const cmds = commands.map(cmd => ({update: cmd.update}))
-		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId};
-		const result = await fetch(`${WEB_URL}/api/update/${save.branchId}`, {
-			method: 'POST',
-			body: JSON.stringify(data)
-		});
+		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId, branchId};
+		const resultData = await saveProject(data);
+		// const result = await fetch(`${WEB_URL}/api/update/${save.branchId}`, {
+		// 	method: 'POST',
+		// 	body: JSON.stringify(data)
+		// });
 		setIsSaving(false);
 
-		if (!result.ok) {
-			throw new Error("There was an problem saving the changes");
-		}
+		// if (!result.ok) {
+		// 	throw new Error("There was an problem saving the changes");
+		// }
 
-		const resultData = updateResponseSchema.parse(await result.json());
+		//const resultData = updateResponseSchema.parse(await result.json());
 
 		return resultData.errorUpdates;
 	}
@@ -784,9 +789,9 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				if (fromNum === toNum) continue;
 
 				const fromElement = parent.children[fromNum];
-				if (!fromElement) throw new Error("Need from element");
+				//if (!fromElement) throw new Error("Need from element");
 				//+1 because we need to get the next sibiling for the insertBefore
-				const toElement = parent.children[fromNum < toNum ? toNum + 1 : toNum] || null;
+				const toElement = parent.children[fromNum < toNum ? toNum + 1 : toNum]// || null;
 				parent.insertBefore(fromElement, toElement);
 			}
 		}

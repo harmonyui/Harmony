@@ -1,5 +1,5 @@
 import { appRouter } from '@harmony/server/src/api/root';
-import { createTRPCContext } from '@harmony/server/src/api/trpc';
+import { createTRPCContextFetch } from '@harmony/server/src/api/trpc';
 import { fetchRequestHandler } from '@trpc/server/adapters/fetch';
 
 const handler = (request: Request) => {
@@ -7,7 +7,7 @@ const handler = (request: Request) => {
     endpoint: '/api/trpc',
     req: request,
     router: appRouter,
-    createContext: ({req}) => createTRPCContext(req),
+    createContext: createTRPCContextFetch//({req}) => createTRPCContext(req),
   });
 }
 

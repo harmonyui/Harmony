@@ -88,8 +88,9 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 }
 
 const harmonyAdmins = ['bradofrado@gmail.com', 'braydon.jones28@gmail.com', 'jacobwyliehansen@gmail.com'];
-export const getServerAuthSession = async (mockUserId?: string): Promise<Session | undefined> => {
-	const {userId} = auth()// : {userId: null};
+export const getServerAuthSession = async (userId: string | null, mockUserId?: string): Promise<Session | undefined> => {
+	//const {userId} = auth()// : {userId: null};
+	//const {userId} = _auth;
 	let ourAuth: AuthContext | null = null;
 	
 	if (userId) {

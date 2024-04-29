@@ -6,9 +6,9 @@ import { emailSchema } from "./utils";
 export const updateRequestBodySchema = z.object({
 	values: z.array(z.object({
 		update: z.array(updateSchema),
-		//old: z.array(updateSchema)
 	})),
-	repositoryId: z.string()
+	repositoryId: z.string(),
+	branchId: z.string()
 })
 export type UpdateRequest = z.infer<typeof updateRequestBodySchema>;
 
@@ -17,6 +17,12 @@ export const updateResponseSchema = z.object({
 });
 export type UpdateResponse = z.infer<typeof updateResponseSchema>;
 
+
+export const loadRequestSchema = z.object({
+	repositoryId: z.string(),
+	branchId: z.string()
+})
+export type LoadRequest = z.infer<typeof loadRequestSchema>;
 export const loadResponseSchema = z.object({
 	updates: z.array(updateSchema),
 	branches: z.array(z.object({
