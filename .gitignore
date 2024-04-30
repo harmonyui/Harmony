@@ -12,6 +12,7 @@ package-lock.json
 
 # next.js
 /.next/
+.next
 /out/
 
 # production
@@ -48,3 +49,6 @@ target
 #editor
 bundle.js
 dev
+
+#turbo
+.turbo

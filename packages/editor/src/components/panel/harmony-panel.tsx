@@ -1,27 +1,33 @@
-import { Attribute, BehaviorType, ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component"
+/* eslint-disable @typescript-eslint/no-empty-function  -- ok*/
+/* eslint-disable @typescript-eslint/no-duplicate-type-constituents  -- ok*/
+/* eslint-disable @typescript-eslint/no-shadow  -- ok*/
+/* eslint-disable no-extra-boolean-cast  -- ok*/
+/* eslint-disable no-nested-ternary  -- ok*/
+/* eslint-disable @typescript-eslint/no-floating-promises  -- ok*/
+/* eslint-disable @typescript-eslint/no-confusing-void-expression  -- ok*/
+/* eslint-disable @typescript-eslint/no-non-null-assertion  -- ok*/
+/* eslint-disable import/no-cycle  -- ok*/
+import { ComponentElement } from "@harmony/util/src/types/component"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
-import { CheckboxInput, Input, InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
-import { TabButton, TabItem } from "@harmony/ui/src/components/core/tab";
-import { ArrowDownIcon, ArrowLeftIcon, ArrowRightIcon, ArrowUpIcon, Bars3, Bars3BottomLeft, Bars3BottomRight, Bars3CenterLeft, Bars4Icon, BarsArrowDownIcon, CursorArrowRaysIcon, DocumentTextIcon, EditDocumentIcon, EditIcon, MaximizeIcon, EyeDropperIcon, GitBranchIcon, IconComponent, PlayIcon, ShareArrowIcon, LinkIcon, XMarkIcon, SendIcon, PreviewIcon, AlignCenterIcon, AlignJustifyIcon, AlignLeftIcon, AlignRightIcon } from "@harmony/ui/src/components/core/icons";
-import { arrayOfAll, camelToKebab, constArray, convertRgbToHex, getClass, groupBy } from "@harmony/util/src/index";
-import { createContext, Fragment, useContext, useEffect, useMemo, useState } from "react";
+import { Input, NumberStepperInput } from "@harmony/ui/src/components/core/input";
+import { ArrowLeftIcon, BarsArrowDownIcon, MaximizeIcon, GitBranchIcon, PlayIcon, ShareArrowIcon, LinkIcon, XMarkIcon, SendIcon, PreviewIcon, AlignCenterIcon, AlignJustifyIcon, AlignLeftIcon, AlignRightIcon } from "@harmony/ui/src/components/core/icons";
+import { camelToKebab, constArray, convertRgbToHex, getClass } from "@harmony/util/src/utils/common";
+import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { componentIdentifier, isTextElement, selectDesignerElement } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
-import {Dropdown, DropdownIcon, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
+import {Dropdown, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import ColorPicker from '@harmony/ui/src/components/core/color-picker';
-import { HexColorSchema } from "@harmony/ui/src/types/colors";
-import {useChangeArray, useChangeProperty} from '@harmony/ui/src/hooks/change-property';
+import { HexColorSchema } from "@harmony/util/src/types/colors";
+import {useChangeProperty} from '@harmony/ui/src/hooks/change-property';
 import { Popover } from "@harmony/ui/src/components/core/popover";
-import { Transition } from "@headlessui/react";
-import {ToggleSwitch} from '@harmony/ui/src/components/core/toggle-switch';
 import {HarmonyModal} from '@harmony/ui/src/components/core/modal';
-import {PullRequest} from '@harmony/ui/src/types/branch';
-import { useHarmonyContext, usePinchGesture } from "../harmony-provider";
-import { PublishRequest } from "@harmony/ui/src/types/network";
+import {PullRequest} from '@harmony/util/src/types/branch';
+import { ComponentUpdateWithoutGlobal, useHarmonyContext, usePinchGesture } from "../harmony-provider";
+import { PublishRequest } from "@harmony/util/src/types/network";
 import { Font } from "@harmony/util/src/fonts";
-import { getWebUrl } from "@harmony/util/src/index";
+import { getWebUrl } from "@harmony/util/src/utils/component";
 import { GiveFeedbackModal, HelpGuide } from "./welcome/help-guide";
 import { SidePanel, SidePanelProvider, useSidePanel } from "./side-panel";
 import { ComponentAttributePanel, ComponentAttributeProvider, useComponentAttribute } from "./attribute-panel";
@@ -32,7 +38,7 @@ export type SelectMode = 'scope' | 'tweezer';
 export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
-	onAttributesChange: (component: ComponentElement, updates: ComponentUpdate[]) => void;
+	onAttributesChange: (component: ComponentElement, updates: ComponentUpdateWithoutGlobal[]) => void;
 	onComponentSelect: (component: HTMLElement) => void;
 	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
@@ -103,7 +109,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 	) 
 }
 
-const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElement, selectedComponent: selectedElement, onAttributesChange, onComponentHover, onComponentSelect, mode, onModeChange, toggle, onToggleChange, children, isDirty, setIsDirty, branchId, branches}) => {
+const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({selectedComponent: selectedElement, mode, onModeChange, toggle, onToggleChange, isDirty, branchId, branches}) => {
 	const {environment} = useHarmonyContext();
 
 	//TODO: Remove dependency on harmony text
@@ -113,7 +119,6 @@ const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({root: rootElem
 	return (
 		<div className="hw-flex hw-w-full hw-items-center hw-shadow-2xl">
 			<div className="hw-h-10 hw-ml-4">
-				{/*eslint-disable-next-line @next/next/no-img-element */}
 				<img alt="Harmony Logo" className="hw-h-full" src={`${WEB_URL}/Harmony_logo.svg`}/>
 			</div>
 			<div className="hw-pl-4 hw-pr-2 hw-py-2 hw-w-full">
@@ -144,7 +149,7 @@ const PreviewPanel: React.FunctionComponent = () => {
 		}
 
 		setLoading(true);
-		publish(request).then((published) => {
+		publish(request).then(() => {
 			setLoading(false);
 		})
 	}
@@ -174,56 +179,56 @@ const PreviewPanel: React.FunctionComponent = () => {
 	)
 }
 
-interface SidePanelToolbarItem {
-	id: string,
-	label: string,
-	icon: IconComponent,
-	panel: React.ReactNode
-}
-const SidePanelToolbar: React.FunctionComponent = () => {
-	const {setPanel} = useSidePanel();
-	//const [show, setShow] = useState<SidePanelToolbarItem | undefined>();
-	const items: SidePanelToolbarItem[] = [
-		{
-			id: 'component',
-			label: 'Components',
-			icon: DocumentTextIcon,
-			panel: 'Components coming soon!'
-		},
-		{
-			id: 'element',
-			label: 'Elements',
-			icon: DocumentTextIcon,
-			panel: 'Elements coming soon!'
-		},
-		{
-			id: 'text',
-			label: 'Text',
-			icon: DocumentTextIcon,
-			panel: 'Text coming soon!'
-		},
-	];
-	const onShow = (show: SidePanelToolbarItem | undefined) => {
-		setPanel(show ? {
-				id: show.id,
-				content: <div className="hw-z-10 hw-bg-slate-800 hw-min-w-[300px] hw-h-full hw-top-0 hw-shadow-lg hw-ring-1 hw-ring-gray-900/5 hw-text-white hw-text-xs">
-				<div className="hw-p-4">
-					{show.panel}
-				</div>
-			</div>
-		} : undefined);
-	}
-	return (
-		<div className="hw-flex hw-flex-col hw-text-white/75 hw-h-full hw-text-xs hw-bg-slate-800">
-			{items.map(item => 
-				<button key={item.id} className="hw-flex hw-flex-col hw-items-center hw-gap-1 hw-p-2 hover:hw-bg-slate-700 hover:hw-text-white" onClick={() => onShow(item)}>
-					<item.icon className="hw-h-8 hw-w-8"/>
-					<span>{item.label}</span>
-				</button>
-			)}
-		</div>
-	)
-}
+// interface SidePanelToolbarItem {
+// 	id: string,
+// 	label: string,
+// 	icon: IconComponent,
+// 	panel: React.ReactNode
+// }
+// const SidePanelToolbar: React.FunctionComponent = () => {
+// 	const {setPanel} = useSidePanel();
+// 	//const [show, setShow] = useState<SidePanelToolbarItem | undefined>();
+// 	const items: SidePanelToolbarItem[] = [
+// 		{
+// 			id: 'component',
+// 			label: 'Components',
+// 			icon: DocumentTextIcon,
+// 			panel: 'Components coming soon!'
+// 		},
+// 		{
+// 			id: 'element',
+// 			label: 'Elements',
+// 			icon: DocumentTextIcon,
+// 			panel: 'Elements coming soon!'
+// 		},
+// 		{
+// 			id: 'text',
+// 			label: 'Text',
+// 			icon: DocumentTextIcon,
+// 			panel: 'Text coming soon!'
+// 		},
+// 	];
+// 	const onShow = (show: SidePanelToolbarItem | undefined) => {
+// 		setPanel(show ? {
+// 				id: show.id,
+// 				content: <div className="hw-z-10 hw-bg-slate-800 hw-min-w-[300px] hw-h-full hw-top-0 hw-shadow-lg hw-ring-1 hw-ring-gray-900/5 hw-text-white hw-text-xs">
+// 				<div className="hw-p-4">
+// 					{show.panel}
+// 				</div>
+// 			</div>
+// 		} : undefined);
+// 	}
+// 	return (
+// 		<div className="hw-flex hw-flex-col hw-text-white/75 hw-h-full hw-text-xs hw-bg-slate-800">
+// 			{items.map(item => 
+// 				<button key={item.id} className="hw-flex hw-flex-col hw-items-center hw-gap-1 hw-p-2 hover:hw-bg-slate-700 hover:hw-text-white" onClick={() => onShow(item)}>
+// 					<item.icon className="hw-h-8 hw-w-8"/>
+// 					<span>{item.label}</span>
+// 				</button>
+// 			)}
+// 		</div>
+// 	)
+// }
 
 export const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | undefined) => {
 	if (!element.element) {
@@ -293,9 +298,9 @@ interface ToolbarPanelProps {
 	branchId: string;
 	branches: {id: string, name: string}[];
 }
-const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, selectedElement, isDirty, branchId, branches}) => {
+const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onToggleChange, selectedComponent, selectedElement}) => {
 	const {data, onAttributeChange} = useComponentAttribute();
-	const {isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo, behaviors, setBehaviors} = useHarmonyContext();
+	const {isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo, isGlobal, setIsGlobal} = useHarmonyContext();
 	const {setPanel} = useSidePanel();
 
 	const onPreview = () => {
@@ -320,13 +325,13 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			//A black transparent looks like a white
 			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
-				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker<`#${string}`> className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'backgroundColor': ({data, onChange}) => {
 			const _data = data === '#00000000' ? '#FFFFFF' : data
 			return (
-				<ColorPicker className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
+				<ColorPicker<`#${string}`> className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={onChange} container={document.getElementById("harmony-container") || undefined}/>
 			)
 		},
 		'textAlign': ({data: raw, onChange}) => {
@@ -344,7 +349,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				const index = options.indexOf(data);
 				if (index < 0) throw new Error("Invalid alignment");
 				const nextIndex = index < options.length - 1 ? index + 1 : 0;
-				onChange(options[nextIndex]);
+				onChange(options[nextIndex]!);
 			}
 			const icon = icons[data];
 			if (!icon) {
@@ -357,8 +362,8 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		},
 		'spacing': ({data, onChange}) => {
 			const split = data.split('-');
-			const lineStr = split[0].replace('px', '');
-			const letterStr = split[1].replace('px', '');
+			const lineStr = split[0]!.replace('px', '');
+			const letterStr = split[1]!.replace('px', '');
 			const line = Number(lineStr);
 			let letter = Number(letterStr);
 			if (isNaN(letter)) {
@@ -394,24 +399,28 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		return componentTools;
 	}, [selectedElement]);
 
-	const onChangeBehavior = (behavior: BehaviorType) => (value: boolean) => {
-		const copy = behaviors.slice();
-		if (value) {
-			if (!copy.includes(behavior)) {
-				copy.push(behavior);
-			}
-		} else {
-			const currIndex = copy.indexOf(behavior);
-			if (currIndex > -1) {
-				copy.splice(currIndex, 1);
-			}
-		}
+	// const onChangeBehavior = (behavior: BehaviorType) => (value: boolean) => {
+	// 	const copy = behaviors.slice();
+	// 	if (value) {
+	// 		if (!copy.includes(behavior)) {
+	// 			copy.push(behavior);
+	// 		}
+	// 	} else {
+	// 		const currIndex = copy.indexOf(behavior);
+	// 		if (currIndex > -1) {
+	// 			copy.splice(currIndex, 1);
+	// 		}
+	// 	}
 
-		setBehaviors(copy);
-	}
+	// 	setBehaviors(copy);
+	// }
 
 	const onPositionClick = () => {
 		!isDemo && setPanel({id: 'attribute', content: <ComponentAttributePanel/>});
+	}
+
+	const onGlobalClick = () => {
+		setIsGlobal(!isGlobal);
 	}
 
 	return (
@@ -437,6 +446,9 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				{!isDemo ? <div className="hw-px-4">
 					<button className="hw-text-base hw-font-light" onClick={onPositionClick}>Layout</button>
 				</div> : null}
+				<div className="hw-px-4">
+					<button className="hw-text-base hw-font-light" onClick={onGlobalClick}>{isGlobal ? 'All' : 'Single'}</button>
+				</div>
 				{/* <div className="hw-px-4">
 					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
 						<Label label="Dark Mode:" sameLine>
@@ -600,20 +612,20 @@ const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=fa
 }
 
 const ShareButton = () => {
-	const [show, setShow] = useState(false);
+	//const [show, setShow] = useState(false);
 	const [copyText, setCopyText] = useState('Copy Link');
 
 	const url = new URL(window.location.href);
 	url.searchParams.set('mode', 'preview-full');
 	const href = url.href;
 
-	const onClose = () => {
-		setShow(false);
-	}
+	// const onClose = () => {
+	// 	setShow(false);
+	// }
 
-	const onClick = () => {
-		setShow(true);
-	}
+	// const onClick = () => {
+	// 	setShow(true);
+	// }
 
 	const onCopy = () => {
 		window.navigator.clipboard.writeText(href);
@@ -647,7 +659,7 @@ const componentTools = ['backgroundColor'] as const;
 const computedTools = ['marginRight', 'marginLeft', 'marginTop', 'marginBottom', 
 				   'paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom', 'width', 'height'] as const;
 const attributeTools = ['display', 
-						'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'flexWrap', 'flexGrow', 'flexShrink',
+						'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'gap', 'flexWrap', 'flexGrow', 'flexShrink',
 						'gridTemplateColumns', 'gridTemplateRows', 'gridColumn', 'gridRow',
 						'position', 'top', 'left', 'right', 'bottom'] as const;
 type TextTools = typeof textTools[number];
@@ -659,7 +671,7 @@ type ToolbarTools = TextTools | ButtonTools | ComponentTools
 export type CommonTools = ToolbarTools | AttributeTools | ComputedTools;
 type ComponentTool = React.FunctionComponent<{data: string, onChange: (data: string) => void}>;
 
-type ComponentToolData = {name: CommonTools, value: string};
+interface ComponentToolData {name: CommonTools, value: string};
 interface ComponentToolsProps {
 	tools: readonly CommonTools[],
 	components: Record<CommonTools, ComponentTool | undefined>,
@@ -682,326 +694,326 @@ const ComponentToolComponent: React.FunctionComponent<{ToolComponent: ComponentT
 	const onComponentChange = (value: string): void => {
 		const update = data[index];
 
-		onChange({...update, value});
+		onChange({...update!, value});
 	}
-	return <Component data={data[index].value} onChange={onComponentChange}/>
+	return <Component data={data[index]!.value} onChange={onComponentChange}/>
 }
 
-interface AttributePanelProps {
-	selectedComponent: ComponentElement | undefined;
-	onAttributesChange: (component: ComponentElement, attributes: Attribute[]) => void;
-	onAttributesSave: () => void;
-	onAttributesCancel: () => void;
-	root: ComponentElement | undefined;
-	onComponentSelect: (component: ComponentElement) => void;
-	onComponentHover: (component: ComponentElement) => void;
-}
-const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, selectedComponent, onAttributesChange: onAttributesChangeProps, onAttributesSave, onAttributesCancel, onComponentHover, onComponentSelect}) => {
-	const [isDirty, setIsDirty] = useState(false);
-	const getTreeItems = (children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
-		return children.map<TreeViewItem<ComponentElement>>(child => ({
-			id: child,
-			content: child.name,
-			items: getTreeItems(child.children),
-			selected: selectedComponent === child.element
-		}))
-	}
-	const treeItems: TreeViewItem<ComponentElement>[] = root ? getTreeItems([root]) : [];
+// interface AttributePanelProps {
+// 	selectedComponent: ComponentElement | undefined;
+// 	onAttributesChange: (component: ComponentElement, attributes: Attribute[]) => void;
+// 	onAttributesSave: () => void;
+// 	onAttributesCancel: () => void;
+// 	root: ComponentElement | undefined;
+// 	onComponentSelect: (component: ComponentElement) => void;
+// 	onComponentHover: (component: ComponentElement) => void;
+// }
+// const AttributePanel: React.FunctionComponent<AttributePanelProps> = ({root, selectedComponent, onAttributesChange: onAttributesChangeProps, onAttributesSave, onAttributesCancel, onComponentHover, onComponentSelect}) => {
+// 	const [isDirty, setIsDirty] = useState(false);
+// 	const getTreeItems = (children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
+// 		return children.map<TreeViewItem<ComponentElement>>(child => ({
+// 			id: child,
+// 			content: child.name,
+// 			items: getTreeItems(child.children),
+// 			selected: selectedComponent === child.element
+// 		}))
+// 	}
+// 	const treeItems: TreeViewItem<ComponentElement>[] = root ? getTreeItems([root]) : [];
 
-	const onAttributesChange = (attributes: Attribute[]): void => {
-		setIsDirty(true);
-		selectedComponent && onAttributesChangeProps(selectedComponent, attributes);
-	}
+// 	const onAttributesChange = (attributes: Attribute[]): void => {
+// 		setIsDirty(true);
+// 		selectedComponent && onAttributesChangeProps(selectedComponent, attributes);
+// 	}
 
-	const onSave = (): void => {
-		onAttributesSave();
-		setIsDirty(false);
-	}
+// 	const onSave = (): void => {
+// 		onAttributesSave();
+// 		setIsDirty(false);
+// 	}
 
-	const onCancel = (): void => {
-		onAttributesCancel();
-		setIsDirty(false);
-	}
+// 	const onCancel = (): void => {
+// 		onAttributesCancel();
+// 		setIsDirty(false);
+// 	}
 	
-	return (
-		<div className="hw-absolute hw-right-0 hw-flex hw-flex-col hw-h-full hw-border hw-border-gray-200 hw-p-4 hw-bg-white hw-pointer-events-auto hw-overflow-auto" style={{minWidth: '400px'}}>
-			<div className="hw-flex-1">
-				{isDirty ? <div className="hw-flex hw-gap-2">
-					<Button onClick={onSave}>Save</Button>
-					<Button onClick={onCancel} mode='secondary'>Cancel</Button>
-				</div> : null}
-				{selectedComponent ? <>
-					<ComponentDisplay value={selectedComponent} onAttributesChange={onAttributesChange}/>
-				</> : null}
-			</div>
-			<div className="hw-flex-1">
-				<TreeView items={treeItems} expand={true} onClick={(item) => onComponentSelect(item.id)} onHover={(item) => onComponentHover(item.id)}/>
-				{/* {rootFiber ? <ComponentTree node={rootFiber} expand={true} onHover={onFiberHover} onClick={onFiberClick}/> : null} */}
-			</div>
-		</div>
-	)
-}
+// 	return (
+// 		<div className="hw-absolute hw-right-0 hw-flex hw-flex-col hw-h-full hw-border hw-border-gray-200 hw-p-4 hw-bg-white hw-pointer-events-auto hw-overflow-auto" style={{minWidth: '400px'}}>
+// 			<div className="hw-flex-1">
+// 				{isDirty ? <div className="hw-flex hw-gap-2">
+// 					<Button onClick={onSave}>Save</Button>
+// 					<Button onClick={onCancel} mode='secondary'>Cancel</Button>
+// 				</div> : null}
+// 				{selectedComponent ? <>
+// 					<ComponentDisplay value={selectedComponent} onAttributesChange={onAttributesChange}/>
+// 				</> : null}
+// 			</div>
+// 			<div className="hw-flex-1">
+// 				<TreeView items={treeItems} expand={true} onClick={(item) => onComponentSelect(item.id)} onHover={(item) => onComponentHover(item.id)}/>
+// 				{/* {rootFiber ? <ComponentTree node={rootFiber} expand={true} onHover={onFiberHover} onClick={onFiberClick}/> : null} */}
+// 			</div>
+// 		</div>
+// 	)
+// }
 
-const spacingTypes = ['padding', 'margin', 'border'] as const;
-const spacingDirections = ['top', 'left', 'right', 'bottom'] as const;
-type SpacingType = typeof spacingTypes[number]
-type SpacingDirection = typeof spacingDirections[number];
-interface SpacingValue {
-	direction: SpacingDirection, 
-	value: number,
-}
-const spacingConvesions = {
-	getSpacingValues: (attributes: Attribute[]): Record<SpacingType, SpacingValue[]> => {
-		const values: Record<SpacingType, SpacingValue[]> = {'border': [], 'padding': [], 'margin': []};
-		for (const attribute of attributes) {
-			const {id, value: attributeValue} = attribute;
-			const [type, direction] = id.split('-');
+// const spacingTypes = ['padding', 'margin', 'border'] as const;
+// const spacingDirections = ['top', 'left', 'right', 'bottom'] as const;
+// type SpacingType = typeof spacingTypes[number]
+// type SpacingDirection = typeof spacingDirections[number];
+// interface SpacingValue {
+// 	direction: SpacingDirection, 
+// 	value: number,
+// }
+// const spacingConvesions = {
+// 	getSpacingValues: (attributes: Attribute[]): Record<SpacingType, SpacingValue[]> => {
+// 		const values: Record<SpacingType, SpacingValue[]> = {'border': [], 'padding': [], 'margin': []};
+// 		for (const attribute of attributes) {
+// 			const {id, value: attributeValue} = attribute;
+// 			const [type, direction] = id.split('-');
 
-			const spacingType = spacingTypes.find(sType => type === sType);
-			const spacingDirection = spacingDirections.find(sDirection => sDirection === direction);
-			if (!spacingType || !spacingDirection) continue;
+// 			const spacingType = spacingTypes.find(sType => type === sType);
+// 			const spacingDirection = spacingDirections.find(sDirection => sDirection === direction);
+// 			if (!spacingType || !spacingDirection) continue;
 
-			const value = Number(attributeValue);
-			if (isNaN(value)) {
-				throw new Error(`Invalid attribute value for ${id}: ${attributeValue}`);
-			}
+// 			const value = Number(attributeValue);
+// 			if (isNaN(value)) {
+// 				throw new Error(`Invalid attribute value for ${id}: ${attributeValue}`);
+// 			}
 
-			values[spacingType].push({direction: spacingDirection, value});
-			// const spacingType = spacingTypes.find(type => id.includes(type));
-			// if (spacingType) {
-			// 	const directions = spacingDirections.filter(type => name.includes(type));
-			// 	const value = Number(attributeValue);
-			// 	if (isNaN(value)) {
-			// 		throw new Error("Invalid attribute value for " + name);
-			// 	}
-			// 	const finalDirections = (directions.length > 0 ? directions : spacingDirections);
-			// 	values[spacingType].push(...finalDirections.map(direction => ({direction, value, attribute })))
-			// }
-		}
+// 			values[spacingType].push({direction: spacingDirection, value});
+// 			// const spacingType = spacingTypes.find(type => id.includes(type));
+// 			// if (spacingType) {
+// 			// 	const directions = spacingDirections.filter(type => name.includes(type));
+// 			// 	const value = Number(attributeValue);
+// 			// 	if (isNaN(value)) {
+// 			// 		throw new Error("Invalid attribute value for " + name);
+// 			// 	}
+// 			// 	const finalDirections = (directions.length > 0 ? directions : spacingDirections);
+// 			// 	values[spacingType].push(...finalDirections.map(direction => ({direction, value, attribute })))
+// 			// }
+// 		}
 	
-		return values;
-	},
-	//padding -> p
-	//padding-left-right -> px
-	//padding-top-bottom -> py
-	//padding-left -> pl
-	//padding-top -> pt
-	//padding-right -> pr
-	//padding-bottom -> pb
-	getAttributes: (spacingValues: Record<SpacingType, SpacingValue[]>): Attribute[] => {
-		const attributes: Attribute[] = [];
-		for (const type in spacingValues) {
-			const values = spacingValues[type as SpacingType];
-			attributes.push(...values.map(value => ({id: `${type}-${value.direction}`, type: 'className', name: `${type} ${value.direction}`, value: String(value.value), reference: {id: '', isComponent: false, parentId: ''}})));
-			// const sameValues = groupBy(values, 'value');
-			// for (const value in sameValues) {
-			// 	const sameDirection = groupBy(sameValues[Number(value)], 'direction');
-			// 	const directions = Object.keys(sameDirection) as SpacingDirection[];
-			// 	const directionTag: string = directions.length === 4 ? '' : `-${directions.join('-')}`;
-			// 	attributes.push({name: `${type}${directionTag}`, value, });
-			// }
-		}
+// 		return values;
+// 	},
+// 	//padding -> p
+// 	//padding-left-right -> px
+// 	//padding-top-bottom -> py
+// 	//padding-left -> pl
+// 	//padding-top -> pt
+// 	//padding-right -> pr
+// 	//padding-bottom -> pb
+// 	getAttributes: (spacingValues: Record<SpacingType, SpacingValue[]>): Attribute[] => {
+// 		const attributes: Attribute[] = [];
+// 		for (const type in spacingValues) {
+// 			const values = spacingValues[type as SpacingType];
+// 			attributes.push(...values.map(value => ({id: `${type}-${value.direction}`, type: 'className', name: `${type} ${value.direction}`, value: String(value.value), reference: {id: '', isComponent: false, parentId: ''}})));
+// 			// const sameValues = groupBy(values, 'value');
+// 			// for (const value in sameValues) {
+// 			// 	const sameDirection = groupBy(sameValues[Number(value)], 'direction');
+// 			// 	const directions = Object.keys(sameDirection) as SpacingDirection[];
+// 			// 	const directionTag: string = directions.length === 4 ? '' : `-${directions.join('-')}`;
+// 			// 	attributes.push({name: `${type}${directionTag}`, value, });
+// 			// }
+// 		}
 
-		return attributes;
-	}
-}
+// 		return attributes;
+// 	}
+// }
 
-const useSpacingAttributeConverter = () => {
-	return spacingConvesions;
-}
+// const useSpacingAttributeConverter = () => {
+// 	return spacingConvesions;
+// }
 
-interface ComponentDisplayProps {
-	value: ComponentElement;
-	onAttributesChange: (attributes: Attribute[]) => void;
-}
-const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value, onAttributesChange}) => {
-	const {name, attributes} = value;
+// interface ComponentDisplayProps {
+// 	value: ComponentElement;
+// 	onAttributesChange: (attributes: Attribute[]) => void;
+// }
+// const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value, onAttributesChange}) => {
+// 	const {name, attributes} = value;
 	
-	return (
-		<div className="hw-inline-flex hw-flex-col hw-gap-2">
-			<Header level={2}>{name}</Header>
-			<Header level={3}>Attributes</Header>
-			{/* <SpacingDisplay attributes={attributes} onChange={onAttributesChange}/> */}
-			<PropsDisplay attributes={attributes} onChange={onAttributesChange}/>
-		</div>
-	)
-}
+// 	return (
+// 		<div className="hw-inline-flex hw-flex-col hw-gap-2">
+// 			<Header level={2}>{name}</Header>
+// 			<Header level={3}>Attributes</Header>
+// 			{/* <SpacingDisplay attributes={attributes} onChange={onAttributesChange}/> */}
+// 			<PropsDisplay attributes={attributes} onChange={onAttributesChange}/>
+// 		</div>
+// 	)
+// }
 
-interface SpacingDisplayProps {
-	attributes: Attribute[],
-	onChange: (value: Attribute[]) => void;
-}
-const SpacingDisplay: React.FunctionComponent<SpacingDisplayProps> = ({attributes, onChange}) => {
-	const {getSpacingValues, getAttributes} = useSpacingAttributeConverter();
+// interface SpacingDisplayProps {
+// 	attributes: Attribute[],
+// 	onChange: (value: Attribute[]) => void;
+// }
+// const SpacingDisplay: React.FunctionComponent<SpacingDisplayProps> = ({attributes, onChange}) => {
+// 	const {getSpacingValues, getAttributes} = useSpacingAttributeConverter();
 	
-	const spacingValues = getSpacingValues(attributes);
-	const {border, padding, margin} = spacingValues;
+// 	const spacingValues = getSpacingValues(attributes);
+// 	const {border, padding, margin} = spacingValues;
 	
-	const onSpacingChange = (type: SpacingType) => (values: SpacingValue[]): void => {
-		const copy = {...spacingValues};
-		copy[type] = values;
+// 	const onSpacingChange = (type: SpacingType) => (values: SpacingValue[]): void => {
+// 		const copy = {...spacingValues};
+// 		copy[type] = values;
 
-		const newAttributes = getAttributes(copy);
-		onChange(newAttributes);
-	}
+// 		const newAttributes = getAttributes(copy);
+// 		onChange(newAttributes);
+// 	}
 	
-	const borderItemTabs: TabItem[] = [
-		{
-			id: 0,
-			label: 'padding',
-			component: <SpacingInput type='padding' values={padding} onChange={onSpacingChange('padding')}/>
-		},
-		{
-			id: 1,
-			label: 'margin',
-			component: <SpacingInput type='margin' values={margin} onChange={onSpacingChange('margin')}/>
-		},
-		{
-			id: 2,
-			label: 'border',
-			component: <SpacingInput type='border' values={border} onChange={onSpacingChange('border')}/>
-		}
-	]
-	return (
-		<TabButton className="hw-inline-flex hw-flex-col" items={borderItemTabs}/>
-	)
-}
+// 	const borderItemTabs: TabItem[] = [
+// 		{
+// 			id: 0,
+// 			label: 'padding',
+// 			component: <SpacingInput type='padding' values={padding} onChange={onSpacingChange('padding')}/>
+// 		},
+// 		{
+// 			id: 1,
+// 			label: 'margin',
+// 			component: <SpacingInput type='margin' values={margin} onChange={onSpacingChange('margin')}/>
+// 		},
+// 		{
+// 			id: 2,
+// 			label: 'border',
+// 			component: <SpacingInput type='border' values={border} onChange={onSpacingChange('border')}/>
+// 		}
+// 	]
+// 	return (
+// 		<TabButton className="hw-inline-flex hw-flex-col" items={borderItemTabs}/>
+// 	)
+// }
 
-interface PropsDisplayProps {
-	attributes: Attribute[]
-	onChange: (attributes: Attribute[]) => void;
-}
-const PropsDisplay: React.FunctionComponent<PropsDisplayProps> = ({attributes, onChange}) => {
-	const onAttributeChange = (attribute: Attribute) => (value: string) => {
-		const copy = attributes.slice();
-		const index = copy.indexOf(attribute);
-		if (index < 0) throw new Error("Cannot find attribute " + attribute.id);
+// interface PropsDisplayProps {
+// 	attributes: Attribute[]
+// 	onChange: (attributes: Attribute[]) => void;
+// }
+// const PropsDisplay: React.FunctionComponent<PropsDisplayProps> = ({attributes, onChange}) => {
+// 	const onAttributeChange = (attribute: Attribute) => (value: string) => {
+// 		const copy = attributes.slice();
+// 		const index = copy.indexOf(attribute);
+// 		if (index < 0) throw new Error("Cannot find attribute " + attribute.id);
 
-		copy[index] = {...attribute, value};
+// 		copy[index] = {...attribute, value};
 
-		onChange(copy);
-	}
-	return (
-		attributes.map(attribute => <Label label={attribute.name} key={attribute.id}>
-			<Input value={attribute.value} onChange={onAttributeChange(attribute)}/>
-		</Label>)
-	)
-}
+// 		onChange(copy);
+// 	}
+// 	return (
+// 		attributes.map(attribute => <Label label={attribute.name} key={attribute.id}>
+// 			<Input value={attribute.value} onChange={onAttributeChange(attribute)}/>
+// 		</Label>)
+// 	)
+// }
 
-interface SpacingInputProps {
-	values: SpacingValue[],
-	onChange: (values: SpacingValue[]) => void,
-	type: SpacingType
-}
-const SpacingInput: React.FunctionComponent<SpacingInputProps> = ({values, onChange, type}) => {
-	const [selectedDirection, setSelectedDirection] = useState<SpacingDirection>('top');
-	const selectedValue = values.find(value => value.direction === selectedDirection)?.value || 0;
+// interface SpacingInputProps {
+// 	values: SpacingValue[],
+// 	onChange: (values: SpacingValue[]) => void,
+// 	type: SpacingType
+// }
+// const SpacingInput: React.FunctionComponent<SpacingInputProps> = ({values, onChange, type}) => {
+// 	const [selectedDirection, setSelectedDirection] = useState<SpacingDirection>('top');
+// 	const selectedValue = values.find(value => value.direction === selectedDirection)?.value || 0;
 
-	const onChangeInput = (value: string) => {
-		const number = value ? Number(value) : 0;
-		if (isNaN(number)) return;
+// 	const onChangeInput = (value: string) => {
+// 		const number = value ? Number(value) : 0;
+// 		if (isNaN(number)) return;
 
-		const copy = [...values];
-		const index = copy.findIndex(c => c.direction === selectedDirection);
-		if (index > -1) {
-			const copyValue = {...copy[index]};
-			copyValue.value = number;
-			copy[index] = copyValue;
-		} else {
-			copy.push({direction: selectedDirection, value: number});
-		}
+// 		const copy = [...values];
+// 		const index = copy.findIndex(c => c.direction === selectedDirection);
+// 		if (index > -1) {
+// 			const copyValue = {...copy[index]};
+// 			copyValue.value = number;
+// 			copy[index] = copyValue;
+// 		} else {
+// 			copy.push({direction: selectedDirection, value: number});
+// 		}
 
-		onChange(copy);
-	}
+// 		onChange(copy);
+// 	}
 
 	
-	return (
-		<div className="hw-flex hw-flex-col hw-gap-2">
-			<div className="hw-flex hw-flex-col hw-gap-2">
-				<div className="hw-mx-auto">
-					<Button mode={selectedDirection === 'top' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('top')}>
-						<ArrowUpIcon className="hw-w-5 hw-h-5"/>
-					</Button>
-				</div>
-				<div className="hw-flex hw-justify-between">
-					<Button mode={selectedDirection === 'left' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('left')}>
-						<ArrowLeftIcon className="hw-w-5 hw-h-5"/>
-					</Button>
-					<Button mode={selectedDirection === 'right' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('right')}>
-						<ArrowRightIcon className="hw-w-5 hw-h-5"/>
-					</Button>
-				</div>
-				<div className="hw-mx-auto">
-					<Button mode={selectedDirection === 'bottom' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('bottom')}>
-						<ArrowDownIcon className="hw-w-5 hw-h-5"/>
-					</Button>
-				</div>
-			</div>
-			<InputBlur key={selectedValue} value={selectedValue || ''} onChange={onChangeInput} className="w-full"/>
-		</div>
-	)
-}
+// 	return (
+// 		<div className="hw-flex hw-flex-col hw-gap-2">
+// 			<div className="hw-flex hw-flex-col hw-gap-2">
+// 				<div className="hw-mx-auto">
+// 					<Button mode={selectedDirection === 'top' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('top')}>
+// 						<ArrowUpIcon className="hw-w-5 hw-h-5"/>
+// 					</Button>
+// 				</div>
+// 				<div className="hw-flex hw-justify-between">
+// 					<Button mode={selectedDirection === 'left' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('left')}>
+// 						<ArrowLeftIcon className="hw-w-5 hw-h-5"/>
+// 					</Button>
+// 					<Button mode={selectedDirection === 'right' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('right')}>
+// 						<ArrowRightIcon className="hw-w-5 hw-h-5"/>
+// 					</Button>
+// 				</div>
+// 				<div className="hw-mx-auto">
+// 					<Button mode={selectedDirection === 'bottom' ? 'primary' : 'secondary'} onClick={() => setSelectedDirection('bottom')}>
+// 						<ArrowDownIcon className="hw-w-5 hw-h-5"/>
+// 					</Button>
+// 				</div>
+// 			</div>
+// 			<InputBlur key={selectedValue} value={selectedValue || ''} onChange={onChangeInput} className="w-full"/>
+// 		</div>
+// 	)
+// }
 
 
-type Alignments = 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right'
-| 'bottom-left' | 'bottom-center' | 'bottom-right' 
-interface AlignmentSelectorProps {
-	value: Alignments, 
-	onChange: (value: Alignments) => void;
-	className?: string
-}
-const AlignmentSelector: React.FunctionComponent<AlignmentSelectorProps> = ({value, onChange, className}) => {
-	const alignmentButtons: {alignment: Alignments, icon: IconComponent, attr?: string}[][] = [
-		[{
-			alignment: 'top-left',
-			icon: Bars3BottomRight,
-			attr: 'rotate-180'
-		},
-		{
-			alignment: 'top-center',
-			icon: Bars3
-		},
-		{
-			alignment: 'top-right',
-			icon: Bars3BottomLeft,
-			attr: 'rotate-180'
-		},],
-		[{
-			alignment: 'middle-left',
-			icon: Bars3CenterLeft,
-		},
-		{
-			alignment: 'middle-center',
-			icon: Bars3
-		},
-		{
-			alignment: 'middle-right',
-			icon: Bars3CenterLeft,
-			attr: 'rotate-180'
-		},],
-		[{
-			alignment: 'bottom-left',
-			icon: Bars3BottomLeft,
-		},
-		{
-			alignment: 'bottom-center',
-			icon: Bars3
-		},
-		{
-			alignment: 'bottom-right',
-			icon: Bars3BottomRight,
-		},]
-	]
-	return (
-		<div className={getClass('hw-inline-flex hw-flex-col hw-gap-2', className)}>
-			{alignmentButtons.map((row, i) => <div key={i} className="hw-flex hw-gap-2">
-				{row.map(button => <button key={button.alignment} onClick={() => onChange(button.alignment)} className={getClass('p-1 hw-bg-white rounded-md', value === button.alignment ? 'border shadow-sm hover:hw-bg-gray-50' : 'hover:hw-bg-gray-100')}>
-					<button.icon className={getClass('hw-w-5 hw-h-5', button.attr)}/>
-				</button>)}
-			</div>)}
-		</div>
-	)
-}
+// type Alignments = 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right'
+// | 'bottom-left' | 'bottom-center' | 'bottom-right' 
+// interface AlignmentSelectorProps {
+// 	value: Alignments, 
+// 	onChange: (value: Alignments) => void;
+// 	className?: string
+// }
+// const AlignmentSelector: React.FunctionComponent<AlignmentSelectorProps> = ({value, onChange, className}) => {
+// 	const alignmentButtons: {alignment: Alignments, icon: IconComponent, attr?: string}[][] = [
+// 		[{
+// 			alignment: 'top-left',
+// 			icon: Bars3BottomRight,
+// 			attr: 'rotate-180'
+// 		},
+// 		{
+// 			alignment: 'top-center',
+// 			icon: Bars3
+// 		},
+// 		{
+// 			alignment: 'top-right',
+// 			icon: Bars3BottomLeft,
+// 			attr: 'rotate-180'
+// 		},],
+// 		[{
+// 			alignment: 'middle-left',
+// 			icon: Bars3CenterLeft,
+// 		},
+// 		{
+// 			alignment: 'middle-center',
+// 			icon: Bars3
+// 		},
+// 		{
+// 			alignment: 'middle-right',
+// 			icon: Bars3CenterLeft,
+// 			attr: 'rotate-180'
+// 		},],
+// 		[{
+// 			alignment: 'bottom-left',
+// 			icon: Bars3BottomLeft,
+// 		},
+// 		{
+// 			alignment: 'bottom-center',
+// 			icon: Bars3
+// 		},
+// 		{
+// 			alignment: 'bottom-right',
+// 			icon: Bars3BottomRight,
+// 		},]
+// 	]
+// 	return (
+// 		<div className={getClass('hw-inline-flex hw-flex-col hw-gap-2', className)}>
+// 			{alignmentButtons.map((row, i) => <div key={i} className="hw-flex hw-gap-2">
+// 				{row.map(button => <button key={button.alignment} onClick={() => onChange(button.alignment)} className={getClass('p-1 hw-bg-white rounded-md', value === button.alignment ? 'border shadow-sm hover:hw-bg-gray-50' : 'hover:hw-bg-gray-100')}>
+// 					<button.icon className={getClass('hw-w-5 hw-h-5', button.attr)}/>
+// 				</button>)}
+// 			</div>)}
+// 		</div>
+// 	)
+// }
 
 interface TreeViewItem<T = string> {
 	id: T;

@@ -1,10 +1,14 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare -- ok*/
+/* eslint-disable import/no-cycle -- ok*/
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal"
 import { useHarmonyContext } from "../../harmony-provider"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { useEffect, useMemo, useState } from "react";
-import { getWebUrl } from "@harmony/util/src";
+import { getWebUrl } from "@harmony/util/src/utils/component";
 import { Button } from "@harmony/ui/src/components/core/button";
-import { Alert, InfoBox } from "@harmony/ui/src/components/core/alert";
+import { InfoBox } from "@harmony/ui/src/components/core/alert";
 import { IconComponent } from "@harmony/ui/src/components/core/icons";
 
 export const WelcomeModal: React.FunctionComponent = () => {
@@ -30,7 +34,7 @@ export const WelcomeModal: React.FunctionComponent = () => {
         }
     }
 
-    const Page = pages[page];
+    const Page = pages[page]!;
     
     return (
         <HarmonyModal maxWidthClassName="hw-max-w-5xl" show={showWelcomeScreen === true || typeof showWelcomeScreen === 'number'} onClose={() => setShowWelcomeScreen(false)} editor>
@@ -84,18 +88,18 @@ const VideoScreen: PageComponent = ({onNext}) => {
     </>)
 }
 
-const ControlScreen: PageComponent = ({onNext}) => {
-    return (<>
-        <Header level={1}>Harmony Control Guide:</Header>
-        <ControlGrid/>
-        <div className="hw-flex hw-gap-4 hw-items-center hw-justify-around">
-            <p>We have loaded a sample project for you to play around with. Let’s get started with the ultra-simple controls!</p>
-            <div>
-                <Button className="hw-h-fit" onClick={onNext}>Get Started</Button>
-            </div>
-        </div>
-    </>)
-}
+// const ControlScreen: PageComponent = ({onNext}) => {
+//     return (<>
+//         <Header level={1}>Harmony Control Guide:</Header>
+//         <ControlGrid/>
+//         <div className="hw-flex hw-gap-4 hw-items-center hw-justify-around">
+//             <p>We have loaded a sample project for you to play around with. Let’s get started with the ultra-simple controls!</p>
+//             <div>
+//                 <Button className="hw-h-fit" onClick={onNext}>Get Started</Button>
+//             </div>
+//         </div>
+//     </>)
+// }
 
 const ControlGrid = () => {
     return (<>
@@ -122,7 +126,7 @@ const ControlGridRow: React.FunctionComponent<{title: string, description: strin
     </>)
 }
 
-const ParentChildSvg: IconComponent = (props) => {
+const ParentChildSvg: IconComponent = () => {
     return (
         <svg width="120" height="60" viewBox="0 0 207 102" fill="none" xmlns="http://www.w3.org/2000/svg">
             <rect x="34.2539" y="40.9038" width="48.7108" height="42.0602" stroke="#0094FF" stroke-width="2"/>

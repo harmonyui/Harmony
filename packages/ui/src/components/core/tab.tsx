@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { getClass } from "../../../../util/src/index";
+import { getClass } from "@harmony/util/src/utils/common";
 
 const useTabSelect = (items: TabItem[]) => {
 	const [selected, setSelected] = useState<string | number>(items[0]?.id ?? -1);

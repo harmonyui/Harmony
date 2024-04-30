@@ -3,15 +3,41 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "devDependencies": {},
+  "dependencies": {
+    "next": "14.2.1",
+    "dayjs": "^1.11.10",
+    "diff": "^5.2.0",
+    "dotenv-cli": "^7.3.0",
+    "tailwind-merge": "^2.2.1",
+    "zod": "^3.22.4"
+  },
+  "devDependencies": {
+    "vitest": "^1.5.0",
+    "@types/diff": "^5.0.9",
+    "@types/node": "^20",
+    "eslint": "^8.48.0",
+    "@harmony/eslint-config-custom": "workspace:^",
+    "prettier": "^3.0.3",
+    "@harmony/prettier-config": "workspace:^",
+    "@harmony/tsconfig": "workspace:^",
+    "typescript": "^5.2.2"
+  },
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "withenv": "dotenv -e ../../.env --",
+    "clean": "rm -rf .turbo node_modules",
+    "lint": "pnpm withenv eslint .",
+    "format": "prettier --write \"**/*.{ts,md,json}\" && eslint --fix .",
+    "typecheck": "tsc --noEmit",
+    "test": "vitest run"
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "peerDependencies": {
-    "dayjs": "^1.11.10",
-    "zod": "^3.22.4"
-  }
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@harmony/eslint-config-custom/library"
+    ]
+  },
+  "prettier": "@harmony/prettier-config"
 }

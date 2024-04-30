@@ -2,7 +2,7 @@ import ReactDOM from "react-dom"
 import { ClosableContent } from "./closable-content"
 import { useEffect, useState } from "react"
 import { usePrevious } from "../../hooks/previous";
-import { getClass } from "@harmony/util/src";
+import { getClass } from "@harmony/util/src/utils/common";
 
 interface AlertProps {
     label: string | undefined;

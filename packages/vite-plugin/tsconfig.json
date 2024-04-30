@@ -1,0 +1,10 @@
+{
+  "extends": "@harmony/tsconfig/base.json",
+  "compilerOptions": {
+    "outDir": "./dist/esm/"
+  },
+  "include": ["."],
+  "exclude": [
+    "webpack.config.js","dist", "*.spec.ts", "__snapshots__"
+  ]
+}

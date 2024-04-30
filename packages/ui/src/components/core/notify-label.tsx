@@ -1,4 +1,4 @@
-import { useColorVariant } from "../../types/colors";
+import { useColorVariant } from "@harmony/util/src/types/colors";
 
 type ColorVariant = "primary" | "blue";
 

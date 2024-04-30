@@ -14,10 +14,10 @@ module.exports = {
     target: 'web',
     resolve: {
         extensions: ['.tsx', '.ts', '.js', '.jsx'],
-        alias: {
-            '@harmony': path.resolve(__dirname, '../'),
-            'react': path.resolve(path.join(__dirname, '../..'), './node_modules/react'),
-        }
+        // alias: {
+        //     '@harmony': path.resolve(__dirname, '../'),
+        //     'react': path.resolve(path.join(__dirname, '../..'), './node_modules/react'),
+        // }
     },
     module: {
         rules: [

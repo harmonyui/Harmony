@@ -3,9 +3,9 @@ import { Button } from "./button";
 import { ChevronDownIcon, type IconComponent } from "./icons";
 import { CheckboxInput } from "./input";
 import { Popover } from "./popover";
-import { PolymorphicComponentProps } from "../../types/polymorphics";
-import { AllOrNothing } from "../../types/utils";
-import { getClass } from "@harmony/util/src";
+import { PolymorphicComponentProps } from "@harmony/util/src/types/polymorphics";
+import { AllOrNothing } from "@harmony/util/src/types/utils";
+import { getClass } from "@harmony/util/src/utils/common";
 
 export type ListBoxPopoverProps<T> = {
   items: DropdownItem<T>[];
