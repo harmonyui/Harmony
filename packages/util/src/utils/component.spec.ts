@@ -121,9 +121,9 @@ const target = `<Label label="Hello there">
     })
 
 	describe("getWebUrl", () => {
-		it("Should return http://localhost:3000 when in development mode", () => {
+		it("Should return http://localhost:4200 when in development mode", () => {
 			const url = getWebUrl('development');
-			expect(url).toBe('http://localhost:3000');
+			expect(url).toBe('http://localhost:4200');
 		})
 
 		it("Should return production url when in production mode", () => {
