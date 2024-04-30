@@ -11,7 +11,10 @@ function runPlugin(code: string, keepTranspiledCode: boolean) {
         babelrc: false,
         filename: 'test.tsx',
         sourceType: 'module',
-        presets: ["@babel/preset-env", '@babel/preset-typescript', '@babel/preset-react'],
+        // presets: ["@babel/preset-env", '@babel/preset-typescript', '@babel/preset-react'],
+        parserOpts: {
+            plugins: ['jsx', 'typescript']
+        },
         plugins: [[babelPlugin, {rootDir: path.join(__dirname, '../../../..'), keepTranspiledCode}]]
     });
     // const res = parse(code, {
@@ -32,6 +35,12 @@ function runPlugin(code: string, keepTranspiledCode: boolean) {
 describe("babel-plugin", () => {
     it("Should add harmony data tags to arrow and function components", () => {
         const code = testCases["test.ts"];
+        const res = runPlugin(code, false);
+        expect(res.code).toMatchSnapshot();
+    })
+
+    it("Should not visit multiple jsx when nested function calls", () => {
+        const code = testCases["nested.ts"];
         const res = runPlugin(code, false);
         expect(res.code).toMatchSnapshot();
     })
@@ -93,5 +102,11 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
     </div>
     );
 }
-    `
+    `,
+    'nested.ts': `const App = ({map}: {map: string[]}) => {
+        return <div>
+            <h1>Hello world</h1>
+            {map.map(str => <div key={str}>{str}</div>)}
+        </div>
+    }`
 }

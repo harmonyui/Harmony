@@ -228,6 +228,9 @@ importers:
       '@babel/traverse':
         specifier: ^7.23.7
         version: 7.24.1
+      '@harmony/util':
+        specifier: workspace:^
+        version: link:../util
     devDependencies:
       '@babel/types':
         specifier: ^7.24.0
@@ -689,6 +692,9 @@ importers:
       '@types/diff':
         specifier: ^5.0.9
         version: 5.2.0
+      '@types/node':
+        specifier: ^20
+        version: 20.12.7
       eslint:
         specifier: ^8.48.0
         version: 8.57.0
@@ -700,7 +706,59 @@ importers:
         version: 5.4.5
       vitest:
         specifier: ^1.5.0
-        version: 1.5.2
+        version: 1.5.2(@types/node@20.12.7)(jsdom@24.0.0)
+
+  packages/vite-plugin:
+    dependencies:
+      '@babel/core':
+        specifier: ^7.23.7
+        version: 7.24.4
+    devDependencies:
+      '@harmony/eslint-config-custom':
+        specifier: workspace:^
+        version: link:../../tooling/eslint-config-custom
+      '@harmony/prettier-config':
+        specifier: workspace:^
+        version: link:../../tooling/prettier-config
+      '@harmony/tsconfig':
+        specifier: workspace:^
+        version: link:../../tooling/tsconfig
+      '@harmony/util':
+        specifier: workspace:*
+        version: link:../util
+      '@types/babel__core':
+        specifier: ^7.20.5
+        version: 7.20.5
+      '@types/node':
+        specifier: ^20
+        version: 20.12.7
+      babel-plugin-harmony:
+        specifier: workspace:*
+        version: link:../babel-plugin
+      eslint:
+        specifier: ^8.48.0
+        version: 8.57.0
+      prettier:
+        specifier: ^3.0.3
+        version: 3.2.5
+      ts-loader:
+        specifier: ^9.5.1
+        version: 9.5.1(typescript@5.4.5)(webpack@5.91.0)
+      typescript:
+        specifier: ^5.2.2
+        version: 5.4.5
+      vite:
+        specifier: ^5.1.5
+        version: 5.2.10(@types/node@20.12.7)
+      vitest:
+        specifier: ^1.5.0
+        version: 1.5.2(@types/node@20.12.7)(jsdom@24.0.0)
+      webpack:
+        specifier: ^5.90.0
+        version: 5.91.0(webpack-cli@5.1.4)
+      webpack-cli:
+        specifier: ^5.1.4
+        version: 5.1.4(webpack@5.91.0)
 
   tooling/eslint-config-custom:
     devDependencies:
@@ -11711,61 +11769,6 @@ packages:
       rollup: 4.16.4
     optionalDependencies:
       fsevents: 2.3.3
-    dev: true
-
-  /vitest@1.5.2:
-    resolution: {integrity: sha512-l9gwIkq16ug3xY7BxHwcBQovLZG75zZL0PlsiYQbf76Rz6QGs54416UWMtC0jXeihvHvcHrf2ROEjkQRVpoZYw==}
-    engines: {node: ^18.0.0 || >=20.0.0}
-    hasBin: true
-    peerDependencies:
-      '@edge-runtime/vm': '*'
-      '@types/node': ^18.0.0 || >=20.0.0
-      '@vitest/browser': 1.5.2
-      '@vitest/ui': 1.5.2
-      happy-dom: '*'
-      jsdom: '*'
-    peerDependenciesMeta:
-      '@edge-runtime/vm':
-        optional: true
-      '@types/node':
-        optional: true
-      '@vitest/browser':
-        optional: true
-      '@vitest/ui':
-        optional: true
-      happy-dom:
-        optional: true
-      jsdom:
-        optional: true
-    dependencies:
-      '@vitest/expect': 1.5.2
-      '@vitest/runner': 1.5.2
-      '@vitest/snapshot': 1.5.2
-      '@vitest/spy': 1.5.2
-      '@vitest/utils': 1.5.2
-      acorn-walk: 8.3.2
-      chai: 4.4.1
-      debug: 4.3.4
-      execa: 8.0.1
-      local-pkg: 0.5.0
-      magic-string: 0.30.10
-      pathe: 1.1.2
-      picocolors: 1.0.0
-      std-env: 3.7.0
-      strip-literal: 2.1.0
-      tinybench: 2.8.0
-      tinypool: 0.8.4
-      vite: 5.2.10(@types/node@20.12.7)
-      vite-node: 1.5.2(@types/node@20.12.7)
-      why-is-node-running: 2.2.2
-    transitivePeerDependencies:
-      - less
-      - lightningcss
-      - sass
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
     dev: true
 
   /vitest@1.5.2(@types/node@20.12.7)(jsdom@24.0.0):

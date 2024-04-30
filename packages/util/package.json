@@ -14,6 +14,7 @@
   "devDependencies": {
     "vitest": "^1.5.0",
     "@types/diff": "^5.0.9",
+    "@types/node": "^20",
     "eslint": "^8.48.0",
     "@harmony/eslint-config-custom": "workspace:^",
     "prettier": "^3.0.3",

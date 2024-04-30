@@ -1,3 +1,4 @@
+/* eslint-disable no-useless-escape -- ok*/
 /* eslint-disable no-bitwise -- Allow bitwise for some functions here*/
 import dayjs from "dayjs";
 import { z } from "zod";
@@ -158,7 +159,7 @@ export const groupByDistinct = function <
   return arr.reduce<Record<T[K], T>>((prev, curr) => {
     const a = prev[curr[key]] as Record<T[K], T>[T[K]] | undefined;
     if (a) {
-      throw new DOMException("Each key value in the list must be unique");
+      throw new Error("Each key value in the list must be unique");
     }
 
     prev[curr[key]] = curr;
@@ -270,4 +271,9 @@ export const wordToKebabCase = (str: string): string => {
 
 export const camelToKebab = (camelCase: string): string => {
 	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
+}
+
+export const validPathRegex = /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx|js)$/;
+export const isValidPath = (path: string): boolean => {
+    return validPathRegex.test(path);
 }
