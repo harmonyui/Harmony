@@ -6,9 +6,10 @@ import { createTRPCContextExpress } from '@harmony/server/src/api/trpc';
 import { ClerkExpressWithAuth, LooseAuthProp } from "@clerk/clerk-sdk-node";
 import cors from 'cors';
 import { LOCALHOST } from '@harmony/util/src/utils/component';
+import {prisma} from '@harmony/db/lib/prisma';
+import { PORT } from './trpc';
 
 const app = express();
-const PORT = process.env.EDITOR_PORT || 4200;
 
 declare global {
   // eslint-disable-next-line @typescript-eslint/no-namespace -- ok
@@ -20,7 +21,22 @@ declare global {
 
 app.use(
   cors({
-    origin: [`http://${LOCALHOST}:3000`],
+    origin(origin, callback) {
+      prisma.repository.findFirst({
+        where: {
+          default_url: origin || ''
+        }
+      }).then((value) => {
+        if (value) {
+          callback(null, origin)
+        } else {
+          callback(null, []);
+        }
+      }).catch(err => {
+        callback(new Error(String(err)));
+      });
+      
+    },
     credentials: true,
   })
 );

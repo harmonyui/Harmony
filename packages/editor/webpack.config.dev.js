@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
     entry: './src/index.prod.tsx',
@@ -17,6 +18,16 @@ module.exports = {
         //     'react': path.resolve(path.join(__dirname, '../..'), './node_modules/react'),
         // }
     },
+    plugins: [
+        new webpack.DefinePlugin({
+            process: {
+                env: {
+                    "ENV": JSON.stringify("development"),
+                    "EDITOR_PORT": "4200"
+                }
+            }
+        })
+    ],
     module: {
         rules: [
             {

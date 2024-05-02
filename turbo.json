@@ -10,6 +10,7 @@
 	  "test": {
 		"dependsOn": ["^db:generate"]
 	  },
+	  "start": {},
 	  "dev": {
 		"cache": false,
 		"persistent": true,

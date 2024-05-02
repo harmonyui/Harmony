@@ -45,7 +45,7 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 
 function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId' | 'environment'>, branchId: string, harmonyContainer: HTMLDivElement, setup: Setuper) {
     const script = document.createElement('script');
-    const src = options.environment === 'development' ? `${getWebUrl('development')}/bundle.js` : 'https://unpkg.com/harmony-ai-editor/dist/editor/bundle.js'
+    const src = options.environment === 'development' ? `${getWebUrl('development')}/bundle.js` : `${process.env.EDITOR_URL}/bundle.js`
     script.src = src;
     script.addEventListener('load', function load() {
         window.HarmonyProvider({...options, branchId, setup}, harmonyContainer);

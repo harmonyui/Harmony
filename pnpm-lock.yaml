@@ -296,6 +296,9 @@ importers:
       '@clerk/clerk-sdk-node':
         specifier: ^5.0.2
         version: 5.0.2(react-dom@18.3.1)(react@18.3.1)
+      '@harmony/db':
+        specifier: workspace:*
+        version: link:../db
       '@harmony/server':
         specifier: workspace:*
         version: link:../server
