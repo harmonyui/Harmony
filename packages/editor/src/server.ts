@@ -5,6 +5,7 @@ import {appRouter} from '@harmony/server/src/api/root';
 import { createTRPCContextExpress } from '@harmony/server/src/api/trpc';
 import { ClerkExpressWithAuth, LooseAuthProp } from "@clerk/clerk-sdk-node";
 import cors from 'cors';
+import { LOCALHOST } from '@harmony/util/src/utils/component';
 
 const app = express();
 const PORT = process.env.EDITOR_PORT || 4200;
@@ -19,7 +20,7 @@ declare global {
 
 app.use(
   cors({
-    origin: "http://localhost:3000",
+    origin: [`http://${LOCALHOST}:3000`],
     credentials: true,
   })
 );
@@ -40,6 +41,6 @@ app.use(
 );
 
 // Start the server
-app.listen(PORT, () => {
+app.listen(4200, () => {
   console.log(`Server is running on port ${PORT}`);
 });

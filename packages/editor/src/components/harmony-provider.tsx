@@ -283,6 +283,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			});
 
 			updateElements(rootComponent, availableIds, errorElements);
+
+			//Hacky fix for the toolbar zooming weird and the user does not have the updated editor
+			const harmonyContainer = document.getElementById('harmony-container');
+			if (harmonyContainer && harmonyContainer.className.includes('hw-h-full')) {
+				harmonyContainer.classList.add('hw-w-full');
+			}
 		}
 	}, [rootComponent, availableIds, errorElements]);
 
@@ -607,8 +613,8 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 		const newEdits = undoStack.slice();
 		const newSaves = saveStack.slice();
-		const lastEdits = newEdits[newEdits.length - 1];
-		const lastEdit = lastEdits.update.length === 1 ? lastEdits.update[0] : undefined;
+		const lastEdits = newEdits[newEdits.length - 1] as HarmonyCommandChange | undefined;
+		const lastEdit = lastEdits?.update.length === 1 ? lastEdits.update[0] : undefined;
 		const newEdit = newCommand.update.length === 1 ? newCommand.update[0] : undefined;
 		const isSameCommandType = newEdit && lastEdit && newEdit.type === lastEdit.type && newEdit.name === lastEdit.name && newEdit.componentId === lastEdit.componentId && newEdit.parentId === lastEdit.parentId;
 
@@ -621,7 +627,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		} else {
 			//TODO: Get rid of type = 'component' dependency
 			// eslint-disable-next-line no-lonely-if -- ok
-			if (newEdits.length && newCommand.update.length === 1 && newCommand.update[0] && lastEdits.update[0] && newCommand.update[0].type !== 'component') {
+			if (newEdits.length && newCommand.update.length === 1 && newCommand.update[0] && lastEdits?.update[0] && newCommand.update[0].type !== 'component') {
 				newCommand.update[0].oldValue = lastEdits.update[0].oldValue;
 				newEdits[newEdits.length - 1] = newCommand;
 				//TODO: test this to make sure this works

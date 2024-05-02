@@ -139,7 +139,7 @@ class Setuper implements Setup {
     
         ReactDOM.createPortal = createPortal;
         this.bodyObserver.disconnect();
-        this.harmonyContainer.classList.remove('hw-h-full');
+        this.harmonyContainer.classList.remove('hw-h-full hw-w-full');
 
         return true;
     }
@@ -159,7 +159,7 @@ class Setuper implements Setup {
                 i--;
             }
         }
-        this.harmonyContainer.className = "hw-h-full";
+        this.harmonyContainer.className = "hw-h-full hw-w-full";
 
         ReactDOM.createPortal = function create(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
             if (_container === document.body) {

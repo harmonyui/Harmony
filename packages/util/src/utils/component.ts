@@ -1,6 +1,8 @@
 import { Change, diffChars } from "diff";
 import { ComponentUpdate } from "../types/component";
 
+export const LOCALHOST = 'localhost';
+
 export type ResizeCoords = 'n' | 'e' | 's' | 'w';
 //Some update values are not already in css form (like spacing and size). Convert them
 export function translateUpdatesToCss(updates: ComponentUpdate[]): ComponentUpdate[] {
@@ -124,7 +126,7 @@ export function getWebUrl(environment: Environment) {
         return 'https://harmony-xi.vercel.app'
     }
 
-    return 'http://localhost:4200';
+    return `http://${LOCALHOST}:4200`;
 }
 
 export function updateLocationFromContent({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}, oldContent: string, newContent: string) {
