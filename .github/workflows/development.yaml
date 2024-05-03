@@ -35,11 +35,11 @@ jobs:
       - name: "📦 install dependencies"
         uses: pnpm/action-setup@v3
 
-      - name: "generate prisma types"
-        run: npx prisma generate
+      - name: "install depdencencies"
+        run: pnpm install
 
       - name: "🔍 run tests"
-        run: pnpm run test --if-present
+        run: pnpm run test
 
   lint:
     name: Code standards
@@ -57,11 +57,11 @@ jobs:
       - name: "🔧 install npm@latest"
         run: npm i -g npm@latest
 
-      - name: "📦 install dependencies"
+      - name: "📦 install pnpm"
         uses: pnpm/action-setup@v3
 
-      - name: "Generate prisma types"
-        run: npx prisma generate
+      - name: "install depdencencies"
+        run: pnpm install
 
       - name: "🔍 lint code"
-        run: pnpm run lint --if-present
+        run: pnpm run lint

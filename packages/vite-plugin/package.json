@@ -11,8 +11,7 @@
     "main": "dist/bundle.js",
     "types": "dist/esm/vite-plugin/src/plugin.d.ts",
     "scripts": {
-        "build": "NODE_ENV=production webpack --mode=production",
-        "test": "vitest run"
+        "build": "NODE_ENV=production webpack --mode=production"
     },
     "files": [
         "dist"

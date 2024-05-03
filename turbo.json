@@ -6,7 +6,9 @@
 		"dependsOn": ["^test", "^db:generate", "^db:deploy"],
 		"outputs": [".next/**", "!.next/cache/**"]
 	  },
-	  "lint": {},
+	  "lint": {
+		"dependsOn": ["^db:generate"]
+	  },
 	  "test": {
 		"dependsOn": ["^db:generate"]
 	  },
