@@ -385,7 +385,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
 		const update: ComponentUpdateWithoutGlobal = {componentId: component.id, parentId: component.parentId, type: 'text', name: String(index), action: 'change', value, oldValue, childIndex}
-		onAttributesChange(component, [update], false);
+		onAttributesChange([update], false);
 	});
 
 	const onReorder = useEffectEvent(({from, to, element}: {from: number, to: number, element: HTMLElement}) => {
@@ -399,10 +399,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 		const update: ComponentUpdateWithoutGlobal = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value, oldValue, childIndex};
 		
-		onAttributesChange(component, [update], false);
+		onAttributesChange([update], false);
 	})
 
-	const onAttributesChange = (component: ComponentElement, updates: ComponentUpdateWithoutGlobal[], execute=true) => {
+	const onAttributesChange = (updates: ComponentUpdateWithoutGlobal[], execute=true) => {
 		executeCommand(updates.map(update => ({...update, isGlobal})), execute);
 		//setCurrUpdates({updates, execute});
 	}
@@ -413,7 +413,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			throw new Error("Error when getting component");
 		}
 
-		onAttributesChange(component, update, execute);
+		onAttributesChange(update, execute);
 	}
 
 	const onPublish = async (request: PublishRequest): Promise<PublishResponse | undefined> => {
@@ -558,6 +558,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 				}
 				resolve();
 			}).catch(() => {
+				setIsSaving(false);
 				//TODO: Test this
 				for (let i = copy.length - 1; i >= 0; i--) {
 					const update = copy[i];

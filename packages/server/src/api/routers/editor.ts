@@ -98,11 +98,13 @@ export const editorRouter = createTRPCRouter({
                 }
             });
 
-            // const errorElements = await prisma.componentError.findMany({
-            // 	where: {
-            // 		repository_id: repositoryId
-            // 	}
-            // })
+            const errorElements = await prisma.componentError.findMany({
+            	where: {
+            		repository_id: repositoryId
+            	}
+            })
+
+			const isDemo = accountTiedToBranch.role === 'quick'
 
             return {
                 updates,
@@ -110,10 +112,10 @@ export const editorRouter = createTRPCRouter({
                     id: branch.id,
                     name: branch.label
                 })),
-                errorElements: [],//errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
+                errorElements: isDemo ? [] : errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
                 pullRequest: pullRequest || undefined,
                 showWelcomeScreen: !accountTiedToBranch.seen_welcome_screen,
-                isDemo: accountTiedToBranch.role === 'quick'
+                isDemo
             } satisfies LoadResponse
         }),
     saveProject: publicProcedure
@@ -241,8 +243,8 @@ export const editorRouter = createTRPCRouter({
                                     type: error
                                 },
                             })
-                            errorUpdates.push({...update, errorType: error});
                         }
+						errorUpdates.push({...update, errorType: error});
                     }
                 }
             }

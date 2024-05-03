@@ -23,7 +23,7 @@ const ComponentAttributeContext = createContext<ComponentAttributeContextProps>(
 type ComponentAttributeProviderProps = ComponentAttributePanelProps & {
     selectedComponent: ComponentElement | undefined;
     children: React.ReactNode, 
-    onChange: (component: ComponentElement, update: ComponentUpdateWithoutGlobal[]) => void;
+    onChange: (update: ComponentUpdateWithoutGlobal[]) => void;
 }
 export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttributeProviderProps> = ({selectedComponent, children, onChange}) => {
     const {fonts} = useHarmonyContext();
@@ -31,19 +31,22 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
     
     const onAttributeChange = (values: {name: string, value: string}) => {
 		if (!data || !selectedComponent) return;
-        const componentId = selectedComponent.id;
-		const parentId = selectedComponent.parentId;
 
 		const old = data.find(t => t.name === values.name);
 		if (!old) throw new Error("Cannot find old property");
 		const oldValue = old.value;
-		const childIndex = Array.from(selectedComponent.element!.parentElement!.children).indexOf(selectedComponent.element!);
+		const childIndex = Array.from(old.element.parentElement!.children).indexOf(old.element);
 		if (childIndex < 0) throw new Error("Cannot get right child index");
+        const componentId = old.element.dataset.harmonyId;
+		const parentId = old.element.dataset.harmonyParentId || '';
+        if (!componentId) {
+            throw new Error("Element does not have a data id");
+        }
 
 		const update: ComponentUpdateWithoutGlobal = {componentId, parentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
 		
 		
-		onChange(selectedComponent, [update]);
+		onChange([update]);
 	}
 
     const selectedElement = selectedComponent?.element;
@@ -242,10 +245,10 @@ const EditFlexAttributes: React.FunctionComponent = () => {
     const getLabel = (value: string): string => {
         const split = value.split('-');
         if (split.length > 1) {
-            return capitalizeFirstLetter(split[1]!);
+            return capitalizeFirstLetter(split[1]);
         }
 
-        return capitalizeFirstLetter(split[0]!);
+        return capitalizeFirstLetter(split[0]);
     }
 
     const getMode = (name: CommonTools) => (value: string) => {

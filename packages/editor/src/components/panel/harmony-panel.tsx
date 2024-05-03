@@ -1,3 +1,8 @@
+/* eslint-disable @typescript-eslint/no-unsafe-argument -- ok*/
+/* eslint-disable @typescript-eslint/no-unsafe-call -- ok*/
+/* eslint-disable @typescript-eslint/no-unsafe-member-access -- ok*/
+/* eslint-disable @typescript-eslint/no-unsafe-assignment -- ok*/
+/* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
 /* eslint-disable @typescript-eslint/no-empty-function  -- ok*/
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents  -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow  -- ok*/
@@ -15,7 +20,7 @@ import { ArrowLeftIcon, BarsArrowDownIcon, MaximizeIcon, GitBranchIcon, PlayIcon
 import { camelToKebab, constArray, convertRgbToHex, getClass } from "@harmony/util/src/utils/common";
 import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
-import { componentIdentifier, isTextElement, selectDesignerElement } from "../inspector/inspector";
+import { componentIdentifier, isDesignerElementSelectable, isTextElement, selectDesignerElement } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import {Dropdown, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import ColorPicker from '@harmony/ui/src/components/core/color-picker';
@@ -38,7 +43,7 @@ export type SelectMode = 'scope' | 'tweezer';
 export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
-	onAttributesChange: (component: ComponentElement, updates: ComponentUpdateWithoutGlobal[]) => void;
+	onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void;
 	onComponentSelect: (component: HTMLElement) => void;
 	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
@@ -230,54 +235,131 @@ const PreviewPanel: React.FunctionComponent = () => {
 // 	)
 // }
 
+function getAppliedComputedStyles(element: HTMLElement, pseudo?: string | null) {
+	const styles = window.getComputedStyle(element, pseudo)
+	const inlineStyles = element.getAttribute('style')
+
+	const retval: Record<string, string> = {}
+	for (let i = 0; i < styles.length; i++) {
+		const key = styles[i]
+		const value = styles.getPropertyValue(key)
+
+		element.style.setProperty(key, 'unset')
+
+		const unsetValue = styles.getPropertyValue(key)
+
+		if (inlineStyles)
+			element.setAttribute('style', inlineStyles)
+		else
+			element.removeAttribute('style')
+
+		if (unsetValue !== value)
+			retval[key] = value
+	}
+
+	return retval
+}
+
 export const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | undefined) => {
 	if (!element.element) {
 		throw new Error("Component must have an element");
 	}
 
-	const computed = getComputedStyle(element.element);
-	const getAttr = (name: keyof CSSStyleDeclaration) => {
-		if (name === 'font') {
-			const computedFont = computed[name];
-			if (!fonts) {
-				console.log("No fonts");
-				return '';
-			}
-			const font = fonts.find(f => element.element!.classList.contains(f.id) || computedFont.toLowerCase().includes(f.name.toLowerCase()));
+	
+	const allStyles: [HTMLElement, Record<string, string>][] = [];
 
-			if (font) return font.id;
+	const getComputed = (name: keyof CSSStyleDeclaration) => {
+		let selectedElement = element.element;
+		let value: string | undefined;
 
-			return computedFont;
+		function find(style: [HTMLElement, Record<string, string>]) {
+			return style[0] === selectedElement;
 		}
-		return computed[name] as string;
+
+		while (selectedElement && !value) {
+			let styles = allStyles.find(find);
+			if (!styles) {
+				const newStyles: [HTMLElement, Record<string, string>] = [selectedElement, getAppliedComputedStyles(selectedElement)]
+				allStyles.push(newStyles);
+				styles = newStyles
+			}
+			value = styles[1][camelToKebab(name as string)];
+			if (value) {
+				break;
+			}
+			selectedElement = isDesignerElementSelectable(selectedElement.parentElement) ? selectedElement.parentElement || undefined : undefined;
+		}
+		if (!selectedElement) {
+			selectedElement = element.element!;
+			value = allStyles.find(style => style[0] === element.element!)?.[1][name as string] || getComputedValue(element.element!, camelToKebab(name as string));
+		}
+		return {value: value!, element: selectedElement};
+	}
+
+	const getAttr = (name: keyof CSSStyleDeclaration): {value: string, element: HTMLElement} => {
+		const computed = getComputed(name);
+			
+		if (name === 'font') {
+			if (!fonts) {
+				//console.log("No fonts");
+				return {element: element.element!, value: ''};
+			}
+			const font = fonts.find(f => element.element!.classList.contains(f.id) || computed.value.toLowerCase().includes(f.name.toLowerCase()));
+
+			if (font) return {element: element.element!, value: font.id};
+
+			return computed;
+		}
+		return computed;
+	}
+
+	const getColor = (name: 'color' | 'backgroundColor') => {
+		const color = getAttr(name);
+
+		return {
+			value: convertRgbToHex(color.value),
+			element: color.element
+		}
 	}
 	const all = constArray<ComponentToolData>()([
 		{
 			name: 'font',
-			value: getAttr('font'),
+			...getAttr('font'),
 		},
 		{
 			name: 'fontSize',
-			value: getAttr('fontSize'),
+			...getAttr('fontSize'),
 		},
 		{
 			name: 'color',
-			value: convertRgbToHex(getAttr('color')),
+			...getColor('color')
 		},
 		{
 			name: 'textAlign',
-			value: getAttr('textAlign'),
+			...getAttr('textAlign'),
 		},
 		{
 			name: 'spacing',
-			value: `${getAttr('lineHeight')}-${getAttr('letterSpacing')}`
+			...(function getSpacing() {
+				const lineHeight = getAttr('lineHeight');
+				const letterSpacing = getAttr('letterSpacing');
+
+				if (lineHeight.element !== letterSpacing.element) {
+					console.error("Line height and letter spacing elements are not the same");
+				}
+
+				return {
+					element: lineHeight.element,
+					value: `${lineHeight.value}-${letterSpacing.value}`
+				}
+			})()
 		},
 		{
 			name: 'backgroundColor',
-			value: convertRgbToHex(getAttr('backgroundColor')),
+			...getColor('backgroundColor')
 		},
-		...attributeTools.map(prop => ({name: prop, value: getAttr(prop)})),
-		...computedTools.map(prop => ({name: prop, value: getComputedValue(element.element!, camelToKebab(prop))}))
+		...attributeTools.map(prop => ({name: prop, ...getAttr(prop)})),
+		...computedTools.map(prop => ({name: prop, ...getAttr(prop)}))
 	]);
 
 	return all;
@@ -349,7 +431,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 				const index = options.indexOf(data);
 				if (index < 0) throw new Error("Invalid alignment");
 				const nextIndex = index < options.length - 1 ? index + 1 : 0;
-				onChange(options[nextIndex]!);
+				onChange(options[nextIndex]);
 			}
 			const icon = icons[data];
 			if (!icon) {
@@ -362,8 +444,8 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		},
 		'spacing': ({data, onChange}) => {
 			const split = data.split('-');
-			const lineStr = split[0]!.replace('px', '');
-			const letterStr = split[1]!.replace('px', '');
+			const lineStr = split[0].replace('px', '');
+			const letterStr = split[1].replace('px', '');
 			const line = Number(lineStr);
 			let letter = Number(letterStr);
 			if (isNaN(letter)) {
@@ -671,7 +753,7 @@ type ToolbarTools = TextTools | ButtonTools | ComponentTools
 export type CommonTools = ToolbarTools | AttributeTools | ComputedTools;
 type ComponentTool = React.FunctionComponent<{data: string, onChange: (data: string) => void}>;
 
-interface ComponentToolData {name: CommonTools, value: string};
+interface ComponentToolData {name: CommonTools, value: string, element: HTMLElement};
 interface ComponentToolsProps {
 	tools: readonly CommonTools[],
 	components: Record<CommonTools, ComponentTool | undefined>,
@@ -694,9 +776,9 @@ const ComponentToolComponent: React.FunctionComponent<{ToolComponent: ComponentT
 	const onComponentChange = (value: string): void => {
 		const update = data[index];
 
-		onChange({...update!, value});
+		onChange({...update, value});
 	}
-	return <Component data={data[index]!.value} onChange={onComponentChange}/>
+	return <Component data={data[index].value} onChange={onComponentChange}/>
 }
 
 // interface AttributePanelProps {

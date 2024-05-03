@@ -1,4 +1,4 @@
-import { auth, clerkClient } from "@clerk/nextjs";
+import { clerkClient } from "@clerk/nextjs";
 import { z } from "zod";
 import { prisma, Prisma } from "@harmony/db/lib/prisma";
 import { Repository, repositorySchema } from "@harmony/util/src/types/branch";

@@ -28,9 +28,8 @@ interface RectSize {
 	height: number,
 }
 
-//Returns the element as understood from a designer (no nested containers with one child and no padding)
-export function selectDesignerElement(element: HTMLElement): HTMLElement {
-	let target = element;
+export const isDesignerElementSelectable = (element: HTMLElement | null): element is HTMLElement => {
+	if (!element) return false;
 
 	const getClientSize = (element: HTMLElement, withBorder=false): RectSize => {
 		const width = element.clientWidth + (withBorder ? getProperty(element, 'border', 'left') + getProperty(element, 'border', 'right') : 0);
@@ -42,14 +41,14 @@ export function selectDesignerElement(element: HTMLElement): HTMLElement {
 	const sizesAreEqual = (size1: RectSize, size2: RectSize): boolean => {
 		return size1.width === size2.width && size1.height === size2.height;
 	}
+
+	return element.children.length === 1 && (['bottom', 'top', 'left', 'right'] as const).every(d => getProperty(element, 'padding', d) === 0) && sizesAreEqual(getClientSize(element.children[0] as HTMLElement, true), getClientSize(element));
+} 
+//Returns the element as understood from a designer (no nested containers with one child and no padding)
+export function selectDesignerElement(element: HTMLElement): HTMLElement {
+	let target = element;
 	
-	const isSelectable = (element: HTMLElement | null): element is HTMLElement => {
-		if (!element) return false;
-
-		return element.children.length === 1 && (['bottom', 'top', 'left', 'right'] as const).every(d => getProperty(element, 'padding', d) === 0) && sizesAreEqual(getClientSize(element.children[0] as HTMLElement, true), getClientSize(element));
-	}
-
-	while(isSelectable(target.parentElement)) {
+	while(isDesignerElementSelectable(target.parentElement)) {
 		target = target.parentElement;
 	}
 

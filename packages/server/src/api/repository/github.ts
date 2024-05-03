@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/require-await -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
@@ -309,9 +310,9 @@ export class LocalGitRepository implements GitRepository {
     
     constructor(public repository: Repository) {}
 
-    public async getContentOrDirectory(path: string): Promise<ContentOrDirectory | { content: string; path: string; } | ContentOrDirectory[]> {
-        const content = await this.getContent(path);
-        return {content, path};
+    public async getContentOrDirectory(_path: string): Promise<ContentOrDirectory | { content: string; path: string; } | ContentOrDirectory[]> {
+        const content = await this.getContent(_path);
+        return {content, path: _path};
     }
     public async createBranch(): Promise<void> {
         return undefined;
@@ -319,7 +320,7 @@ export class LocalGitRepository implements GitRepository {
     public async getBranchRef(): Promise<string> {
         return this.repository.ref;
     }
-    public diffFiles(branch: string, oldRef: string, file: string): Promise<Change[]> {
+    public diffFiles(): Promise<Change[]> {
         throw new Error("Not implemented");
     }
     public getContent(file: string): Promise<string> {
@@ -353,10 +354,10 @@ export class LocalGitRepository implements GitRepository {
 
         this.commits[branch] = updates;
     }
-    public getCommits(branch: string): Promise<{ message: string; date: Date; author: string; }[]> {
+    public getCommits(): Promise<{ message: string; date: Date; author: string; }[]> {
         throw new Error("Not implemented");
     }
-    public async createPullRequest(branch: string, title: string, body: string): Promise<string> {
+    public async createPullRequest(branch: string): Promise<string> {
         const encode = (str: string): string => {
             return str.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
         }
