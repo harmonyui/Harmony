@@ -1,0 +1,22 @@
+{
+  "name": "@harmony/vitest-config",
+  "private": true,
+  "version": "0.0.0",
+  "main": "vitest.config.ts",
+  "scripts": {
+    "format": "prettier --write \"**/*.{prisma,ts,md,json}\" && eslint --fix"
+  },
+  "eslint": {
+    "root": true,
+    "extends": [
+      "@harmony/eslint-config-custom/library"
+    ]
+  },
+  "prettier": "@harmony/prettier-config",
+  "dependencies": {
+    
+  },
+  "devDependencies": {
+    "@harmony/tsconfig": "workspace:*"
+  }
+}

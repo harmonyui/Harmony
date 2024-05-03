@@ -1,4 +1,4 @@
-import { getClass } from "../../../../util/src/index";
+import { getClass } from "@harmony/util/src/utils/common";
 
 export const Spinner: React.FunctionComponent<{className?: string, sizeClass: string}> = ({className, sizeClass}) => {
     return <div className={className} role="status">

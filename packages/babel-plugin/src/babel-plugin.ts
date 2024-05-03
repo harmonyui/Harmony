@@ -1,11 +1,7 @@
 import { PluginObj } from "@babel/core";
 import { NodePath, VisitNodeFunction, Visitor } from "@babel/traverse";
 import * as BabelTypes from "@babel/types";
-
-const validPathRegex = /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx|js)$/;
-const isValidPath = (path: string): boolean => {
-    return validPathRegex.test(path);
-}
+import {isValidPath} from '@harmony/util/src/utils/common';
 
 export interface PluginOptions {
     opts: {
@@ -18,9 +14,6 @@ export interface PluginOptions {
 export interface Babel {
     types: typeof BabelTypes;
 }
-
-
-
 
 export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
     const t = babel.types;
@@ -93,6 +86,11 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
                 path.traverse({
                     JSXElement(path, state) {
                         if (!path.node.loc) return;
+
+                        //Only visit this node if it already hasn't been visited
+                        if (path.node.openingElement.attributes.some(attr => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && ['data-harmony-id', 'data-harmony-parent-id'].includes(attr.name.name))) {
+                            return;
+                        }
         
                         const relativePath = constructPath(state.filename, state.opts.rootDir)
                         const harmonyId = `${relativePath}:${path.node.loc.start.line}:${path.node.loc.start.column}:${path.node.loc.end.line}:${path.node.loc.end.column}`;

@@ -1,5 +1,6 @@
 import { ArrowLeftIcon, IconComponent, QuestionMarkIcon, SendIcon } from "@harmony/ui/src/components/core/icons"
-import { getClass, getWebUrl } from "@harmony/util/src";
+import { getWebUrl } from "@harmony/util/src/utils/component";
+import { getClass } from '@harmony/util/src/utils/common';
 import { Popover } from "@harmony/ui/src/components/core/popover"
 import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
@@ -9,8 +10,8 @@ import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input } from "@harmony/ui/src/components/core/input";
-import { emailSchema } from "@harmony/ui/src/types/utils";
-import { EmailFeedbackRequest, EmailMeetingRequest } from "@harmony/ui/src/types/network";
+import { emailSchema } from "@harmony/util/src/types/utils";
+import { EmailFeedbackRequest, EmailMeetingRequest } from "@harmony/util/src/types/network";
 
 export const HelpGuide: React.FunctionComponent<{className?: string}> = ({className}) => {
     const {setShowGiveFeedback} = useHarmonyContext();

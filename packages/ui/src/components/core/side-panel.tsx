@@ -5,7 +5,7 @@ import React, { Fragment, useState } from 'react'
 import { type IconComponent, ToggleIcon } from './icons';
 import { Bars3Icon, ChevronDownIcon, RectangleListIcon, XMarkIcon, UserCircleIcon } from './icons';
 import {Transition, Dialog, Menu} from '@headlessui/react';
-import { getClass } from '../../../../util/src/index';
+import { getClass } from '@harmony/util/src/utils/common';
 import { Header } from './header';
 import { cooper, mulish } from '@harmony/util/src/fonts';
 

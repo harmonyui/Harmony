@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import type { AllOrNothing } from "../../types/utils";
-import {getClass} from "../../../../util/src/index"
+import type { AllOrNothing } from "@harmony/util/src/types/utils";
+import {getClass} from "@harmony/util/src/utils/common"
 
 import { Popover as ReactPopover } from "./date-picker";
 

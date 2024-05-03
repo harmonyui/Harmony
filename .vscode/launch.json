@@ -5,7 +5,15 @@
       "name": "Next.js: debug server-side",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run dev"
+      "command": "pnpm run dev",
+      "cwd": "${workspaceFolder}/apps/dashboard",
+    },
+    {
+      "name": "Editor",
+      "type": "node-terminal",
+      "request": "launch",
+      "command": "pnpm run dev",
+      "cwd": "${workspaceFolder}/packages/editor",
     },
     {
       "name": "Next.js: debug client-side",
@@ -17,7 +25,8 @@
       "name": "Next.js: debug full stack",
       "type": "node-terminal",
       "request": "launch",
-      "command": "npm run dev",
+      "command": "pnpm run dev",
+      "cwd": "${workspaceFolder}/apps/dashboard",
       "serverReadyAction": {
         "pattern": "- Local:.+(https?://.+)",
         "uriFormat": "%s",

@@ -1,9 +1,10 @@
 'use client';
 import ReactDOM from 'react-dom';
-import {HarmonyProvider, HarmonyProviderProps} from './components/harmony-provider';
-import { HarmonySetup } from './components/harmony-setup';
 import { useEffect, useRef } from 'react';
-import { getClass } from '@harmony/util/src';
+import { getClass } from '@harmony/util/src/utils/common';
+import type { HarmonyProviderProps} from './components/harmony-provider';
+import {HarmonyProvider} from './components/harmony-provider';
+import { HarmonySetup } from './components/harmony-setup';
 
 type HarmonyProvider = (options: Omit<HarmonyProviderProps, 'children'>, harmonyContainer: HTMLDivElement) => void;
 
@@ -14,7 +15,7 @@ declare global {
 }
 
 export function HarmonyProviderFunc(options: Omit<HarmonyProviderProps, 'children'>, harmonyContainer: HTMLDivElement) {
-    const Container: React.FunctionComponent<{harmonyContainer: HTMLElement, className: string}> = ({harmonyContainer, className}) => {
+    const Container: React.FunctionComponent<{harmonyContainer: HTMLElement, className: string}> = ({className}) => {
         const ref = useRef<HTMLBodyElement>(null);
         useEffect(() => {
             if (ref.current) {

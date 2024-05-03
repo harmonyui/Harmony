@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
     entry: './src/index.tsx',
@@ -14,11 +15,22 @@ module.exports = {
     target: 'node',
     resolve: {
         extensions: ['.tsx', '.ts', '.js', '.jsx'],
-        alias: {
-            '@harmony': path.resolve(__dirname, '../'),
-            'react': path.resolve(path.join(__dirname, '../..'), './node_modules/react'),
-        }
+        // alias: {
+        //     '@harmony': path.resolve(__dirname, '../'),
+        //     'react': path.resolve(path.join(__dirname, '../..'), './node_modules/react'),
+        // }
     },
+    plugins: [
+        new webpack.DefinePlugin({
+            process: {
+                env: {
+                    "ENV": JSON.stringify("production"),
+                    "EDITOR_PORT": "4200",
+                    "EDITOR_URL": JSON.stringify("https://harmony-ui.fly.dev")
+                }
+            }
+        })
+    ],
     module: {
         rules: [
             {

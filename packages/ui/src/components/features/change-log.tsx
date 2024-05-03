@@ -1,5 +1,5 @@
-import { displayDateFull } from "@harmony/util/src";
-import { ChangeLog } from "../../types/change-log"
+import { displayDateFull } from "@harmony/util/src/utils/common";
+import { ChangeLog } from "@harmony/util/src/types/change-log"
 import { Header } from "../core/header"
 
 

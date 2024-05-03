@@ -1,13 +1,26 @@
-import { capitalizeFirstLetter, groupBy, groupByDistinct, round, close } from "@harmony/util/src";
+/* eslint-disable object-shorthand -- ok*/
+/* eslint-disable no-constant-condition -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+/* eslint-disable @typescript-eslint/no-empty-function -- ok*/
+/* eslint-disable no-nested-ternary -- ok*/
+/* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
+/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style -- ok*/
+/* eslint-disable no-lonely-if -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion -- ok*/
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable no-param-reassign -- ok*/
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable import/no-cycle -- ok*/
+import { capitalizeFirstLetter, round, close } from "@harmony/util/src/utils/common";
 import interact from "interactjs";
 import { useState, useEffect, useRef, useMemo, useCallback } from "react";
 import { Rect, RectBox, isImageElement, isSelectable as isSelectableInspector, isTextElement, removeTextContentSpans, replaceTextContentWithSpans, selectDesignerElement, selectDesignerElementReverse } from "../inspector/inspector";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import {InteractEvent, ResizeEvent, EdgeOptions} from '@interactjs/types'
+import {InteractEvent, ResizeEvent, EdgeOptions} from '@interactjs/types/index'
 import {Modifier} from '@interactjs/modifiers/types'
 import {AspectRatioOptions, AspectRatioState} from '@interactjs/modifiers/aspectRatio'
 import $ from 'jquery';
-import { Axis, ChildEdgeInfo, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateEdgesInfoWithSizing, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
+import { Axis, ChildEdgeInfo, ParentEdgeInfoRequired, RectSide, calculateEdgesInfo, calculateFlexParentEdgeInfo, calculateParentEdgeInfo, calculateParentEdgeInfoWithSizing, getBoundingClientRect, getBoundingRect, getFitContentSize, getMinGap, getNonWorkableGap, getOffsetRect } from "./calculations";
 import { PositionUpdator, UpdateRect, UpdateRectsProps, UpdatedElement, absoluteUpdator, elementUpdator, flexUpdator } from "./position-updator";
 
 
@@ -24,7 +37,7 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
 }
 
 type RelativePoint = 'x0' | 'x1' | 'y0' | 'y1';
-type SnapPoint = {
+interface SnapPoint {
     point: {left: number} | {right: number} | {top: number} | {bottom: number};
 	offset?: HTMLElement,
 	guides?: {
@@ -35,10 +48,10 @@ type SnapPoint = {
 }
 
 
-interface StyleValue {
-	name: string;
-	value: string;
-}
+// interface StyleValue {
+// 	name: string;
+// 	value: string;
+// }
 
 interface GuidePoint {
     relativeTo: HTMLElement,
@@ -92,9 +105,9 @@ function Snapping({parent, element, parentEdgeInfo, resultsX, resultsY}: {parent
             }
 
             const calculatePosition = (position: GuidePosition, direction: 1 | -1) => {
-                let x0 = calculatePoints(position.x, 'x');
+                const x0 = calculatePoints(position.x, 'x');
                 let x1 = x0;
-                let y0 = calculatePoints(position.y,'y');
+                const y0 = calculatePoints(position.y,'y');
                 let y1 = y0;
 
                 if (length) {
@@ -234,7 +247,7 @@ class ElementSnapping implements SnapBehavior {
 
 		for (const child of Array.from(parent.children)) {
 			const style = getComputedStyle(child);
-			const componentId = (child as HTMLElement).dataset.harmonyId || '';
+			//const componentId = (child as HTMLElement).dataset.harmonyId || '';
 			//Only add the old values of new elements to not interfere with the updates
 			//if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
 				oldValues.push([child as HTMLElement, {
@@ -254,7 +267,7 @@ class ElementSnapping implements SnapBehavior {
 
 		for (const child of Array.from(element.children)) {
 			const style = getComputedStyle(child);
-			const componentId = (child as HTMLElement).dataset.harmonyId || '';
+			//const componentId = (child as HTMLElement).dataset.harmonyId || '';
 			//Only add the old values of new elements to not interfere with the updates
 			//if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
 				oldValues.push([child as HTMLElement, {
@@ -424,21 +437,21 @@ class ElementSnapping implements SnapBehavior {
                 start: {
                     x: {
                         value: 0,
-                        relativeTo: others[0].element
+                        relativeTo: others[0]!.element
                     },
                     y: {
                         value: 0,
-                        relativeTo: others[0].element
+                        relativeTo: others[0]!.element
                     }
                 },
                 end: {
                     x: {
                         value: 0,
-                        relativeTo: others[others.length - 1].element
+                        relativeTo: others[others.length - 1]!.element
                     },
                     y: {
                         value: 1,
-                        relativeTo: others[others.length - 1].element
+                        relativeTo: others[others.length - 1]!.element
                     }
                 },
             });
@@ -502,7 +515,7 @@ class FlexSnapping implements SnapBehavior {
 
 		for (const child of Array.from(parent.children)) {
 			const style = getComputedStyle(child);
-			const componentId = (child as HTMLElement).dataset.harmonyId || '';
+			//const componentId = (child as HTMLElement).dataset.harmonyId || '';
 			//Only add the old values of new elements to not interfere with the updates
 			//if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
 				oldValues.push([child as HTMLElement, {
@@ -522,7 +535,7 @@ class FlexSnapping implements SnapBehavior {
 
 		for (const child of Array.from(element.children)) {
 			const style = getComputedStyle(child);
-			const componentId = (child as HTMLElement).dataset.harmonyId || '';
+			//const componentId = (child as HTMLElement).dataset.harmonyId || '';
 			//Only add the old values of new elements to not interfere with the updates
 			//if (!oldValues.find(value => value[0].dataset.harmonyId === componentId)) {
 				oldValues.push([child as HTMLElement, {
@@ -553,7 +566,7 @@ class FlexSnapping implements SnapBehavior {
 		}
 
 		const parentStyle = getComputedStyle(parent);
-		if (['flex', 'inline-flex'].includes(parentStyle?.display)) {
+		if (['flex', 'inline-flex'].includes(parentStyle.display)) {
 			if (parentStyle.flexWrap === 'wrap') {
 				return 'Harmony does not currently support flex-wrap';
 			}
@@ -569,9 +582,9 @@ class FlexSnapping implements SnapBehavior {
 		const axis = style.flexDirection !== 'column' ? 'x' : 'y';
 		const left = axis === 'x' ? 'left' : 'top';
 		const right = axis === 'x' ? 'right' : 'bottom';
-		const top = axis === 'x' ? 'top' : 'left';
-		const bottom = axis === 'x' ? 'bottom' : 'right'; 
-		const otherAxis = axis === 'x' ? 'y' : 'x';
+		// const top = axis === 'x' ? 'top' : 'left';
+		// const bottom = axis === 'x' ? 'bottom' : 'right'; 
+		// const otherAxis = axis === 'x' ? 'y' : 'x';
 		const currParentInfo = calculateParentEdgeInfo(parent, scale, scale, false, 'x');
 		const ds = (axis === 'x' ? event.dx : event.dy);
 		if (currParentInfo.edges === undefined) return [];
@@ -583,7 +596,7 @@ class FlexSnapping implements SnapBehavior {
 
 		const flexEnabled = parent.dataset.harmonyFlex === 'true';
 
-		const lastGap = parent.dataset.lastGap ? parseFloat(parent.dataset.lastGap) : currParentInfo[minGapBetweenX];
+		//const lastGap = parent.dataset.lastGap ? parseFloat(parent.dataset.lastGap) : currParentInfo[minGapBetweenX];
 		const gapDiff = currParentInfo[minGapBetweenX] - minGap// - lastGap;
 		
 		const isMoving = selfIndex > 0 && selfIndex < childrenCount - 1 || ((close(gapDiff, 0, 0.1) || currParentInfo[minGapBetweenX] < minGap) && (selfIndex === 0 && ds > 0 || selfIndex === childrenCount - 1 && ds < 0));
@@ -1226,7 +1239,7 @@ export const useSnapping = ({element: elementProps, onIsDragging, onDragFinish, 
 
 		const newOldValues = cssUpdator !== snappingBehavior.getPositionUpdator() ? setCssCalculations(element, scale, oldValues) : oldValues;
 		
-		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), newOldValues);
+		onDragFinish(snappingBehavior.onFinish(element), newOldValues);
 		setOldValues([]);
 	}, canDrag(element) {
 		if (element.contentEditable === 'true') return false;
@@ -1403,7 +1416,7 @@ export const useSnapping = ({element: elementProps, onIsDragging, onDragFinish, 
 
 		const newOldValues = cssUpdator !== snappingBehavior.getPositionUpdator() ? setCssCalculations(element, scale, oldValues) : oldValues;
 		
-		onDragFinish && onDragFinish(snappingBehavior.onFinish(element), newOldValues);
+		onDragFinish(snappingBehavior.onFinish(element), newOldValues);
 		setOldValues([]);
 	}});
 
@@ -1564,7 +1577,7 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 					offset: 'self',
 				}),
 				interact.modifiers.snap({
-					targets: [function(x, y, interaction, offset, index) {
+					targets: [function target(x, y, interaction, offset, index) {
 						if (!onCalculateSnapping) return;
 
 						const result = onCalculateSnapping(element, x, y, refX.current, refY.current);
@@ -1632,7 +1645,7 @@ export const useDraggable = ({element, onIsDragging, onCalculateSnapping, onCalc
 	}, [element, scale, shiftSnapper]);
 
 	function startIt(event: InteractEvent<'drag', 'start'>) {
-		var interaction = event.interaction
+		const interaction = event.interaction
 
 		if (!interaction.interacting()) {
 			interaction.start(
@@ -1767,7 +1780,7 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 					offset: 'self',
 				}),
 				interact.modifiers.snapEdges({
-					targets: [function(x, y, interaction, offset, index) {
+					targets: [function target(x, y, interaction, offset, index) {
 						if (!onCalculateSnapping) return;
 
 						const result = onCalculateSnapping(element, x, y, refX.current, refY.current);
@@ -1811,7 +1824,7 @@ export const useResizable = ({element, scale, canResize, onIsResizing, onResizeF
 
 				const considerTheYs = !parentStyle.display.includes('flex') || parentStyle.flexDirection === 'column';
 				modifiers.push(interact.modifiers.restrictEdges({
-					inner: toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? function() {
+					inner: toMeasure.children.length > 0 && !isTextElement(toMeasure) && !isImageElement(toMeasure) ? function bob() {
 						const toMeasureInfo =  calculateParentEdgeInfoWithSizing(toMeasure, 1, scale, false, 'x');
 
 						return toMeasureInfo.edges ? {
@@ -2021,7 +2034,6 @@ export const useDraggableList = ({ onDragFinish, onIsDragging }: DraggableListPr
 				}
 				toRef.current = Array.from(draggedElement.parentElement!.children).indexOf(draggedElement);
 				onIsDragging && onIsDragging();
-			} else {
 			}
 		};
 

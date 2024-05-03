@@ -1,5 +1,5 @@
 import { z } from "zod";
-import type { PropsOf } from "../../types/polymorphics";
+import type { PropsOf } from "@harmony/util/src/types/polymorphics";
 
 const HeaderLevelsArray = [1, 2, 3, 4, 5, 6] as const;
 export const HeaderLevelsSchema = z.custom<HeaderLevels>(

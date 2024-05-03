@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import { PolymorphicComponentProps } from "../../../types/polymorphics";
+import { PolymorphicComponentProps } from "@harmony/util/src/types/polymorphics";
 import { Spinner } from "../../core/spinner";
 
 export type ButtonType = "primary" | "secondary" | "other" | "none" | "dark";

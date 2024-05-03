@@ -1,0 +1,37 @@
+{
+    "name": "@harmony/db",
+    "private": true,
+    "version": "0.0.0",
+    "main": "index.ts",
+    "scripts": {
+      "format": "prettier --write \"**/*.{prisma,ts,md,json}\" && eslint --fix",
+      "withenv": "dotenv -e ../../.env --",
+      "db:generate": "pnpm withenv prisma generate",
+      "db:push": "pnpm withenv prisma db push --skip-generate",
+      "db:makemigration": "pnpm withenv prisma migrate dev --name",
+      "db:studio": "pnpm withenv prisma studio",
+      "db:deploy": "pnpm withenv prisma migrate deploy"
+    },
+    "eslint": {
+      "root": true,
+      "extends": [
+        "@harmony/eslint-config-custom/library"
+      ]
+    },
+    "prettier": "@harmony/prettier-config",
+    "dependencies": {
+      "@prisma/client": "^5.3.1",
+      "dotenv-cli": "^7.3.0",
+      "prisma": "^5.3.1"
+    },
+    "devDependencies": {
+      "@types/node": "^20.6.2",
+      "eslint": "^8.48.0",
+      "@harmony/eslint-config-custom": "workspace:^",
+      "prettier": "^3.0.3",
+      "@harmony/prettier-config": "workspace:^",
+      "@harmony/tsconfig": "workspace:^",
+      "typescript": "^5.2.2"
+    }
+  }
+  
