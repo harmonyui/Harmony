@@ -133,8 +133,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [isGlobal, setIsGlobal] = useState(true);
 	//const [currUpdates, setCurrUpdates] = useState<{updates: ComponentUpdateWithoutGlobal[], execute: boolean}>();
 
-	//const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
-	
 	const executeCommand = useComponentUpdator({isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}, onError: setError});

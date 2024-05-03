@@ -1,7 +1,9 @@
 import { Change, diffChars } from "diff";
 import { ComponentUpdate } from "../types/component";
+import { BranchItem } from "../types/branch";
 
 export const LOCALHOST = 'localhost';
+export const environment = process.env.ENV as Environment | undefined || process.env.NEXT_PUBLIC_ENV as Environment | undefined || 'production'
 
 export type ResizeCoords = 'n' | 'e' | 's' | 'w';
 //Some update values are not already in css form (like spacing and size). Convert them
@@ -119,14 +121,34 @@ export function getIndexFromLineAndColumn(text: string, line: number, column: nu
 
 export type Environment = 'production' | 'staging' | 'development';
 
-export function getWebUrl(environment: Environment) {
-    if (environment === 'production') {
+export function getWebUrl(_environment: Environment) {
+    if (_environment === 'production') {
         return 'https://dashboard.harmonyui.app'
-    } else if (environment === 'staging') {
+    } else if (_environment === 'staging') {
         return 'https://harmony-xi.vercel.app'
     }
 
-    return `http://${LOCALHOST}:4200`;
+    return `http://${LOCALHOST}:3000`;
+}
+
+export function getEditorUrl(_environment: Environment) {
+  if (_environment === 'production') {
+      return 'https://harmony-ui.fly.dev'
+  } else if (_environment === 'staging') {
+      return 'https://harmony-ui-staging.fly.dev'
+  }
+
+  return `http://${LOCALHOST}:4200`;
+}
+
+export function createUrlFromProject(branch: BranchItem) {
+  const url = new URL(branch.url);
+  if (environment === 'staging' || environment === 'development') {
+    url.searchParams.append('harmony-environment', environment);
+  }
+  url.searchParams.append('branch-id', branch.id);
+
+  return url;
 }
 
 export function updateLocationFromContent({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}, oldContent: string, newContent: string) {

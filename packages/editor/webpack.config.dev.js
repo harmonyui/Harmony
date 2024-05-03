@@ -19,14 +19,7 @@ module.exports = {
         // }
     },
     plugins: [
-        new webpack.DefinePlugin({
-            process: {
-                env: {
-                    "ENV": JSON.stringify("development"),
-                    "EDITOR_PORT": "4200"
-                }
-            }
-        })
+        new webpack.EnvironmentPlugin({ ...process.env })
     ],
     module: {
         rules: [

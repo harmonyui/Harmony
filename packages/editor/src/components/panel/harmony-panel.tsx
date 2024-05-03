@@ -32,7 +32,7 @@ import {PullRequest} from '@harmony/util/src/types/branch';
 import { ComponentUpdateWithoutGlobal, useHarmonyContext, usePinchGesture } from "../harmony-provider";
 import { PublishRequest } from "@harmony/util/src/types/network";
 import { Font } from "@harmony/util/src/fonts";
-import { getWebUrl } from "@harmony/util/src/utils/component";
+import { getEditorUrl } from "@harmony/util/src/utils/component";
 import { GiveFeedbackModal, HelpGuide } from "./welcome/help-guide";
 import { SidePanel, SidePanelProvider, useSidePanel } from "./side-panel";
 import { ComponentAttributePanel, ComponentAttributeProvider, useComponentAttribute } from "./attribute-panel";
@@ -119,12 +119,12 @@ const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({selectedCompon
 
 	//TODO: Remove dependency on harmony text
 	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement.dataset.harmonyText === 'true' ? selectedElement.parentElement! : selectedElement) : undefined;
-	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
+	const EDITOR_URL = useMemo(() => getEditorUrl(environment), [environment]);
 
 	return (
 		<div className="hw-flex hw-w-full hw-items-center hw-shadow-2xl">
 			<div className="hw-h-10 hw-ml-4">
-				<img alt="Harmony Logo" className="hw-h-full" src={`${WEB_URL}/Harmony_logo.svg`}/>
+				<img alt="Harmony Logo" className="hw-h-full" src={`${EDITOR_URL}/Harmony_logo.svg`}/>
 			</div>
 			<div className="hw-pl-4 hw-pr-2 hw-py-2 hw-w-full">
 				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} selectedElement={selectedElement} isDirty={isDirty} branchId={branchId} branches={branches}/>

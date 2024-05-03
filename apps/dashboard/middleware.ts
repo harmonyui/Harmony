@@ -1,4 +1,4 @@
-import { auth, authMiddleware, redirectToSignIn } from "@clerk/nextjs";
+import { authMiddleware, redirectToSignIn } from "@clerk/nextjs";
 import { NextResponse } from "next/server";
  
 const allowedOrigins: string[] = [];

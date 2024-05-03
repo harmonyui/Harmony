@@ -5,7 +5,7 @@ import { DisplayMode, HarmonyProviderProps } from "./harmony-provider";
 import { FiberHTMLElement, getElementFiber } from "./inspector/inspector-dev";
 import { getComponentElementFiber } from "./inspector/component-identifier";
 import { Fiber } from "react-reconciler";
-import { getWebUrl } from "@harmony/util/src/utils/component";
+import { Environment, getEditorUrl } from "@harmony/util/src/utils/component";
     
 export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts' | 'environment'> & {local?: boolean}> = ({local=false, ...options}) => {
 	const setBranchId = (branchId: string) => {
@@ -26,6 +26,8 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
         };
 
         if (!branchId) return;
+
+        const environment = urlParams.get('harmony-environment') as Environment | undefined || options.environment;
         
 		const result = setupHarmonyProvider();
 		if (result) {
@@ -33,7 +35,7 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 
 			const {harmonyContainer} = result;
 			if (!local) {
-                createProductionScript(options, branchId, harmonyContainer, result.setup);
+                createProductionScript({...options, environment}, branchId, harmonyContainer, result.setup);
             } else {
                 window.HarmonyProvider({...options, branchId, setup: result.setup}, harmonyContainer);
             }
@@ -45,7 +47,7 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 
 function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId' | 'environment'>, branchId: string, harmonyContainer: HTMLDivElement, setup: Setuper) {
     const script = document.createElement('script');
-    const src = options.environment === 'development' ? `${getWebUrl('development')}/bundle.js` : `${process.env.EDITOR_URL}/bundle.js`
+    const src = `${getEditorUrl(options.environment || 'production')}/bundle.js`
     script.src = src;
     script.addEventListener('load', function load() {
         window.HarmonyProvider({...options, branchId, setup}, harmonyContainer);

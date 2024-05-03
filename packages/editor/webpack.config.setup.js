@@ -21,15 +21,7 @@ module.exports = {
         // }
     },
     plugins: [
-        new webpack.DefinePlugin({
-            process: {
-                env: {
-                    "ENV": JSON.stringify("production"),
-                    "EDITOR_PORT": "4200",
-                    "EDITOR_URL": JSON.stringify("https://harmony-ui.fly.dev")
-                }
-            }
-        })
+        new webpack.EnvironmentPlugin({ ...process.env })
     ],
     module: {
         rules: [

@@ -49,6 +49,10 @@ target
 #editor
 bundle.js
 dev
+server
 
 #turbo
 .turbo
+
+#prisma
+generated

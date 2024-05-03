@@ -14,6 +14,7 @@ import { DropdownIcon } from "@harmony/ui/src/components/core/dropdown";
 import { ConfirmModal } from "@harmony/ui/src/components/core/confirm";
 import { useRouter } from "next/navigation";
 import { api } from "../../../utils/api";
+import { createUrlFromProject } from "@harmony/util/src/utils/component";
 
 
 export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[], defaultUrl: string}> = ({Projectes, defaultUrl}) => {
@@ -22,8 +23,7 @@ export const ProjectDisplay: React.FunctionComponent<{Projectes: BranchItem[], d
 	const router = useRouter();
 	
 	const openProject = (item: BranchItem) => {
-		const url = new URL(item.url);
-		url.searchParams.append('branch-id', item.id);
+		const url = createUrlFromProject(item);
 		window.location.replace(url.href);
 	}
 

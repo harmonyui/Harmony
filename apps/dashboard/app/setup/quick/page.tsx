@@ -9,6 +9,7 @@ import { createBranch, getBranches } from "@harmony/server/src/api/routers/branc
 import { wordToKebabCase } from "@harmony/util/src/utils/common";
 import { auth } from "@clerk/nextjs";
 import { DesignerSetup } from "../components/setup";
+import { createUrlFromProject } from "@harmony/util/src/utils/component";
 
 async function QuickPage({searchParams}: {searchParams?: { [key: string]: string | string[] | undefined }}) {
     const teamId = searchParams?.teamId || undefined;
@@ -64,8 +65,8 @@ async function QuickPage({searchParams}: {searchParams?: { [key: string]: string
     }
 
 
-    const url = new URL(`${firstBranch.url}`);
-    url.searchParams.append('branch-id', firstBranch.id);
+    const url = createUrlFromProject(firstBranch);
+    
     redirect(url.href)
 }
 

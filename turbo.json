@@ -28,8 +28,8 @@
 		"persistent": true
 	  },
 	  "db:generate": {
-		"inputs": ["packages/db/prisma/schema.prisma"],
-		"outputs": ["packages/db/lib/generated"]
+		"inputs": ["packages/db/lib/prisma/schema.prisma"],
+      	"outputs": ["packages/db/lib/generated"]
 	  },
 	  "db:deploy": {
 		"cache": false

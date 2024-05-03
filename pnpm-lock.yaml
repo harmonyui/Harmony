@@ -59,6 +59,9 @@ importers:
       '@headlessui/react':
         specifier: ^1.7.18
         version: 1.7.19(react-dom@18.3.1)(react@18.3.1)
+      '@prisma/nextjs-monorepo-workaround-plugin':
+        specifier: ^5.13.0
+        version: 5.13.0
       '@swc/cli':
         specifier: ^0.1.63
         version: 0.1.65(@swc/core@1.5.0)
@@ -3386,6 +3389,10 @@ packages:
     resolution: {integrity: sha512-B/WrQwYTzwr7qCLifQzYOmQhZcFmIFhR81xC45gweInSUn2hTEbfKUPd2keAog+y5WI5xLAFNJ3wkXplvSVkSw==}
     dependencies:
       '@prisma/debug': 5.13.0
+
+  /@prisma/nextjs-monorepo-workaround-plugin@5.13.0:
+    resolution: {integrity: sha512-KcrUjPotWYanktn7t97NwzeMHRsRT9P452EVO802J+yvCm9yKx6xtFzfUlD3NFOsUToAMytIE+t9Ct7/7bDnsg==}
+    dev: false
 
   /@prisma/prisma-schema-wasm@4.17.0-26.6b0aef69b7cdfc787f822ecd7cdc76d5f1991584:
     resolution: {integrity: sha512-JFdsnSgBPN8reDTLOI9Vh/6ccCb2aD1LbY/LWQnkcIgNo6IdpzvuM+qRVbBuA6IZP2SdqQI8Lu6RL2P8EFBQUA==}

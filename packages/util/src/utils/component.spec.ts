@@ -1,5 +1,5 @@
 import { describe, it, expect } from "vitest"
-import { getLineAndColumn, getWebUrl, updateLocationFromContent } from "./component";
+import { getEditorUrl, getLineAndColumn, getWebUrl, updateLocationFromContent } from "./component";
 
 describe("index", () => {
     describe("updateLocationFromDiffs", () => {
@@ -121,14 +121,26 @@ const target = `<Label label="Hello there">
     })
 
 	describe("getWebUrl", () => {
-		it("Should return http://localhost:4200 when in development mode", () => {
+		it("Should return http://localhost:3000 when in development mode", () => {
 			const url = getWebUrl('development');
-			expect(url).toBe('http://localhost:4200');
+			expect(url).toBe('http://localhost:3000');
 		})
 
 		it("Should return production url when in production mode", () => {
 			const url = getWebUrl('production');
 			expect(url).toBe('https://dashboard.harmonyui.app');
+		})
+	})
+
+	describe("getEditorUrl", () => {
+		it("Should return http://localhost:4200 when in development mode", () => {
+			const url = getEditorUrl('development');
+			expect(url).toBe('http://localhost:4200');
+		})
+
+		it("Should return production url when in production mode", () => {
+			const url = getEditorUrl('production');
+			expect(url).toBe('https://harmony-ui.fly.dev');
 		})
 	})
 });
