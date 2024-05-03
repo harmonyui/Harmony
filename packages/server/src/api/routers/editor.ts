@@ -4,8 +4,7 @@
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
 import { loadRequestSchema, publishRequestSchema, PublishResponse, updateRequestBodySchema, UpdateResponse, type LoadResponse } from '@harmony/util/src/types/network';
-import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { GithubRepository } from "../repository/github";
+import { createTRPCRouter, publicProcedure } from "../trpc";
 import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { getBranch, getRepository } from "./branch";
 import { getCodeSnippet, getFileContent } from "../services/indexor/github";
@@ -18,9 +17,10 @@ import { TailwindConverter } from 'css-to-tailwindcss';
 import { createPullRequest } from "./pull-request";
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
+import { GitRepository } from "../repository/github";
 
 export const editorRouter = createTRPCRouter({
-    loadProject: protectedProcedure
+    loadProject: publicProcedure
         .input(loadRequestSchema)
         .query(async ({ctx, input}) => {
             const {repositoryId, branchId} = input;
@@ -72,7 +72,7 @@ export const editorRouter = createTRPCRouter({
                 isGlobal: up.isGlobal
             }));
 
-            const githubRepository = new GithubRepository(repository);
+            const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
             const ref = await githubRepository.getBranchRef(repository.branch);
 
             //If the current repository ref is out of date, that means we have some
@@ -116,7 +116,7 @@ export const editorRouter = createTRPCRouter({
                 isDemo: accountTiedToBranch.role === 'quick'
             } satisfies LoadResponse
         }),
-    saveProject: protectedProcedure
+    saveProject: publicProcedure
         .input(updateRequestBodySchema)
         .mutation(async ({ctx, input}) => {
             const {branchId} = input;
@@ -170,6 +170,7 @@ export const editorRouter = createTRPCRouter({
                 }
             })
 
+			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
             const updates: ComponentUpdate[] = [];
             const errorUpdates: (ComponentUpdate & {errorType: string})[] = [];
             //Indexes the files of these component updates
@@ -187,7 +188,7 @@ export const editorRouter = createTRPCRouter({
                         }
                     });
                     if (!element) {
-                        await indexForComponent(update.componentId, update.parentId, repository);
+                        await indexForComponent(update.componentId, update.parentId, gitRepository);
                     }
 
                     element = await prisma.componentElement.findFirst({
@@ -279,70 +280,69 @@ export const editorRouter = createTRPCRouter({
             const response: UpdateResponse = {errorUpdates: reversed};
             return response;
         }),
-        publishProject: protectedProcedure
-            .input(publishRequestSchema)
-            .mutation(async ({ctx, input}) => {
-                const data = input;
-                const {branchId, pullRequest} = data;
-                const {prisma} = ctx;
+	publishProject: publicProcedure
+		.input(publishRequestSchema)
+		.mutation(async ({ctx, input}) => {
+			const data = input;
+			const {branchId, pullRequest} = data;
+			const {prisma} = ctx;
 
-                const branch = await getBranch({prisma, branchId});
-                if (!branch) {
-                    throw new Error("Cannot find branch with id " + branchId);
-                }
+			const branch = await getBranch({prisma, branchId});
+			if (!branch) {
+				throw new Error("Cannot find branch with id " + branchId);
+			}
 
-                const repository = await getRepository({prisma, repositoryId: branch.repositoryId});
-                if (!repository) {
-                    throw new Error("Cannot find repository with id " + branch.repositoryId);
-                }
+			const repository = await getRepository({prisma, repositoryId: branch.repositoryId});
+			if (!repository) {
+				throw new Error("Cannot find repository with id " + branch.repositoryId);
+			}
 
-                const alreadyPublished = await prisma.pullRequest.findUnique({
-                    where: {
-                        branch_id: branch.id
-                    }
-                })
+			const alreadyPublished = await prisma.pullRequest.findUnique({
+				where: {
+					branch_id: branch.id
+				}
+			})
 
-                if (alreadyPublished) {
-					throw new Error("This project has already been published");
-                }
+			if (alreadyPublished) {
+				throw new Error("This project has already been published");
+			}
 
-                const old: string[] = branch.old;
-                //Get rid of same type of updates (more recent one wins)
-                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- It is necessary
-                const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([{...curr, oldValue: old[i]!}]), []);
-                // const githubRepository = new GithubRepository(repository);
-                // const ref = await githubRepository.getBranchRef(repository.branch);
-                // if (ref !== repository.ref) {
-                // 	for (const update of updates) {
-                // 		await indexForComponent(update.componentId, update.parentId, repository);
-                // 	}
+			const old: string[] = branch.old;
+			//Get rid of same type of updates (more recent one wins)
+			// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- It is necessary
+			const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([{...curr, oldValue: old[i]!}]), []);
+			// const githubRepository = new GithubRepository(repository);
+			// const ref = await githubRepository.getBranchRef(repository.branch);
+			// if (ref !== repository.ref) {
+			// 	for (const update of updates) {
+			// 		await indexForComponent(update.componentId, update.parentId, repository);
+			// 	}
 
-                // 	await prisma.repository.update({
-                // 		where: {
-                // 			id: repository.id
-                // 		},
-                // 		data: {
-                // 			ref
-                // 		}
-                // 	})
-                // }
+			// 	await prisma.repository.update({
+			// 		where: {
+			// 			id: repository.id
+			// 		},
+			// 		data: {
+			// 			ref
+			// 		}
+			// 	})
+			// }
 
-                await findAndCommitUpdates(updates, repository, branch);
+			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
+			await findAndCommitUpdates(updates, gitRepository, branch);
 
-                const newPullRequest = await createPullRequest({branch, pullRequest, repository})
-                const response: PublishResponse = {pullRequest: newPullRequest};
+			const newPullRequest = await createPullRequest({branch, pullRequest, gitRepository})
+			const response: PublishResponse = {pullRequest: newPullRequest};
 
-                return response;
-            })
+			return response;
+		})
 })
 
-async function indexForComponent(componentId: string, parentId: string, repository: Repository) {
-	const githubRepository = new GithubRepository(repository);
-
+async function indexForComponent(componentId: string, parentId: string, gitRepository: GitRepository) {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
-		await getFileContent(githubRepository, filepath, repository.branch);
+		await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
 
 		return content;
 	}
@@ -355,7 +355,7 @@ async function indexForComponent(componentId: string, parentId: string, reposito
 	if (parentFile) {
 		paths.push(parentFile);
 	}
-	await indexFilesAndFollowImports(paths, readFile, repository.id)
+	await indexFilesAndFollowImports(paths, readFile, gitRepository.repository.id)
 }
 
 const elementPayload = {
@@ -386,12 +386,12 @@ interface UpdateInfo {
 	font?: string
 }
 
-async function createGithubBranch(repository: Repository, branchName: string): Promise<void> {
-    const githubRepository = new GithubRepository(repository);
-	await githubRepository.createBranch(branchName);
+async function createGithubBranch(gitRepository: GitRepository, branchName: string): Promise<void> {
+    await gitRepository.createBranch(branchName);
 }
 
-async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repository, branch: BranchItem) {
+async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: GitRepository, branch: BranchItem) {
+	const repository = gitRepository.repository;
 	const elementInstances = await prisma.componentElement.findMany({
 		where: {
 			repository_id: repository.id,
@@ -399,7 +399,6 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 		...elementPayload
 	})
 	
-	const githubRepository = new GithubRepository(repository);
 	let fileUpdates: FileUpdate[] = [];
 
 	//TODO: old value is not updated properly for size and spacing
@@ -462,7 +461,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 	for (const info of updateInfo) {
 	    //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
         // in the future we probably will use the actual branch
-		const result = await getChangeAndLocation(info, repository, githubRepository, elementInstances, repository.branch);
+		const result = await getChangeAndLocation(info, repository, gitRepository, elementInstances, repository.branch);
 
         if (result)
 		fileUpdates.push(result);
@@ -506,11 +505,11 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], repository: Repo
 		change.locations.push(newLocation);
 	}
 
-    await createGithubBranch(repository, branch.name);
-	await githubRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
+    await createGithubBranch(gitRepository, branch.name);
+	await gitRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
 }
 
-async function getChangeAndLocation(update: UpdateInfo, repository: Repository, githubRepository: GithubRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
+async function getChangeAndLocation(update: UpdateInfo, repository: Repository, gitRepository: GitRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
 	const {component, type, oldValue: _oldValue} = update;
 	// const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
 	
@@ -604,7 +603,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 				const textAttribute = attributes.find(attr => attr.type === 'text');
 				const {location, value} = getLocationAndValue(textAttribute, component);
 				
-				const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
+				const elementSnippet = await getCodeSnippet(gitRepository)(location, branchName);
 				const oldValue = value || _oldValue;
 				const start = elementSnippet.indexOf(oldValue);
 				const end = oldValue.length + start;
@@ -625,7 +624,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 				locationAndValue.value = locationAndValue.value?.replace('className:', '');
 				const {location, value, isDefinedAndDynamic} = locationAndValue;
 				
-				const elementSnippet = await getCodeSnippet(githubRepository)(location, branchName);
+				const elementSnippet = await getCodeSnippet(gitRepository)(location, branchName);
 
 
 				if (repository.cssFramework === 'tailwind') {

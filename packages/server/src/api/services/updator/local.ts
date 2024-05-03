@@ -4,7 +4,7 @@ import { z } from "zod";
 import fs from 'node:fs';
 import { getLocationFromComponentId, hashComponentId, updateLocationFromContent } from "@harmony/util/src/utils/component";
 import { prisma } from "@harmony/db/lib/prisma";
-import { GithubRepository } from "../../repository/github";
+import { GitRepository } from "../../repository/github";
 import { replaceByIndex } from "@harmony/util/src/utils/common";
 
 export const changesSchema = z.object({
@@ -55,16 +55,16 @@ export class ComponentIdUpdator {
 }
 
 export class GithubFileRetriver implements FileContentRetriever {
-	constructor(private oldRef: string, private githubRepository: GithubRepository) {}
+	constructor(private oldRef: string, private gitRepository: GitRepository) {}
 
 	public async getOldFileContent(file: string) {
-		const content = await this.githubRepository.getContent(file, this.oldRef);
+		const content = await this.gitRepository.getContent(file, this.oldRef);
 
 		return content;
 	}
 
 	public async getNewFileContent(file: string) {
-		const content = await this.githubRepository.getContent(file, this.githubRepository.repository.branch);
+		const content = await this.gitRepository.getContent(file, this.gitRepository.repository.branch);
 
 		return content;
 	}
@@ -75,9 +75,9 @@ export class GithubFileRetriver implements FileContentRetriever {
  * because of independent updates to the file, we need to update the component id 
  * @param updates -- 
  * @param ref --
- * @param githubRepository --
+ * @param gitRepository --
  */
-export async function updateComponentIdsFromUpdates(updates: ComponentUpdate[], ref: string, githubRepository: GithubRepository) {
+export async function updateComponentIdsFromUpdates(updates: ComponentUpdate[], ref: string, gitRepository: GitRepository) {
 	const filesRetrieved: string[] = [];
 	for (const update of updates) {
 		const oldId = update.componentId;
@@ -85,11 +85,11 @@ export async function updateComponentIdsFromUpdates(updates: ComponentUpdate[], 
 		const componentLocation = getLocationFromComponentId(oldId);
 		const parentLocation = getLocationFromComponentId(oldParentId);
 
-		const componentIdMappings = !filesRetrieved.includes(componentLocation.file) ? await getNewIdsFromFile(componentLocation.file, ref, githubRepository) : [];
+		const componentIdMappings = !filesRetrieved.includes(componentLocation.file) ? await getNewIdsFromFile(componentLocation.file, ref, gitRepository) : [];
 		filesRetrieved.push(componentLocation.file);
 		
 		if (!filesRetrieved.includes(parentLocation.file)) {
-			const parentMappings = await getNewIdsFromFile(parentLocation.file, ref, githubRepository);
+			const parentMappings = await getNewIdsFromFile(parentLocation.file, ref, gitRepository);
 			componentIdMappings.push(...parentMappings)
 			filesRetrieved.push(parentLocation.file);
 		}
@@ -114,10 +114,10 @@ async function getElementsInFile(file: string) {
 	return elements;
 }
 
-async function getNewIdsFromFile(file: string, oldRef: string, githubRepository: GithubRepository) {
+async function getNewIdsFromFile(file: string, oldRef: string, gitRepository: GitRepository) {
 	const elementsInFile = await getElementsInFile(file);
 
-	const fileRetriever = new GithubFileRetriver(oldRef, githubRepository);
+	const fileRetriever = new GithubFileRetriver(oldRef, gitRepository);
 	const componentIdUpdator = new ComponentIdUpdator(fileRetriever)
 	const componentIdMappings = await componentIdUpdator.getNewIdsForComponentsFromFile(file, elementsInFile.map(el => el.id))
 	

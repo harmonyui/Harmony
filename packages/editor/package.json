@@ -20,7 +20,8 @@
     "build-webpack": "NODE_ENV=production webpack --mode=production --config ./webpack.config.server.js",
     "build:rollup": "rollup -c",
     "build:esm": "tsc && tsc-alias",
-    "build:cjs": "tsc --module commonjs --outDir dist/cjs && tsc-alias"
+    "build:cjs": "tsc --module commonjs --outDir dist/cjs && tsc-alias",
+    "typecheck": "tsc --noEmit"
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.0.2",
@@ -28,15 +29,22 @@
     "@harmony/ui": "workspace:*",
     "@harmony/util": "workspace:*",
     "@harmony/db": "workspace:*",
+    "@headlessui/react": "^1.7.18",
     "@trpc/client": "^10.45.0",
     "@trpc/server": "^10.45.0",
+    "dayjs": "^1.11.10",
+    "hotkeys-js": "^3.13.2",
     "cors": "^2.8.5",
     "dotenv-cli": "^7.3.0",
     "express": "^4.19.2",
     "interactjs": "^1.10.26",
     "jquery": "^3.7.1",
     "react": "^18",
-    "superjson": "^2.2.1"
+    "react-dom": "^18",
+    "superjson": "^2.2.1",
+    "react-reconciler": "^0.29.0",
+    "tsc-alias": "^1.8.8",
+    "zod": "^3.22.4"
   },
   "peerDependencies": {
     "@headlessui/react": "^1.7.18",
@@ -67,6 +75,10 @@
     "@types/react-dom": "^18",
     "@types/react-reconciler": "^0.28.8",
     "css-loader": "^6.9.0",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.3",
+    "jsdom": "^24.0.0",
+    "postcss": "^8",
     "postcss-loader": "^8.0.0",
     "prettier": "^3.0.3",
     "style-loader": "^3.3.4",
@@ -74,6 +86,7 @@
     "ts-loader": "^9.5.1",
     "tsup": "^8.0.2",
     "tsx": "^4.7.3",
+    "typescript": "^5",
     "webpack": "^5.90.0",
     "webpack-cli": "^5.1.4"
   },

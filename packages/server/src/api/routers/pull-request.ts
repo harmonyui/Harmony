@@ -1,9 +1,9 @@
-import { BranchItem, Repository, branchItemSchema, pullRequestSchema } from "@harmony/util/src/types/branch";
+import { BranchItem, branchItemSchema, pullRequestSchema } from "@harmony/util/src/types/branch";
 import { createTRPCRouter, protectedProcedure } from "../trpc";
-import { GithubRepository } from "../repository/github";
 import { z } from "zod";
 import { PullRequest } from "@harmony/util/src/types/branch";
 import { prisma } from "@harmony/db/lib/prisma";
+import { GitRepository } from "../repository/github";
 
 export const pullRequestRouter = createTRPCRouter({
     createPullRequest: protectedProcedure
@@ -13,18 +13,17 @@ export const pullRequestRouter = createTRPCRouter({
                 throw new Error("Cannot create publish request without repository");
             }
 
-            return createPullRequest({branch: input.branch, pullRequest: input.pullRequest, repository: ctx.session.account.repository});
+            const gitRepository = ctx.gitRepositoryFactory.createGitRepository(ctx.session.account.repository);
+            return createPullRequest({branch: input.branch, pullRequest: input.pullRequest, gitRepository});
         })
 });
 
-export async function createPullRequest({branch, pullRequest, repository}: {branch: BranchItem, pullRequest: {title: string, body: string}, repository: Repository}) {
-    const githubRepository = new GithubRepository(repository);
-            
-    const url = await githubRepository.createPullRequest(branch.name, pullRequest.title, pullRequest.body);
+export async function createPullRequest({branch, pullRequest, gitRepository}: {branch: BranchItem, pullRequest: {title: string, body: string}, gitRepository: GitRepository}) {
+    const url = await gitRepository.createPullRequest(branch.name, pullRequest.title, pullRequest.body);
 
     const newPullRequest = await prisma.pullRequest.create({
         data: {
-            repository_id: repository.id,
+            repository_id: gitRepository.repository.id,
             title: pullRequest.title,
             body: pullRequest.body,
             url,

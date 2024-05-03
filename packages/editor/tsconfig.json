@@ -10,6 +10,7 @@
     "tailwind.config.ts", 
     "postcss.config.js", 
     "dist",
-    "dev"
+    "dev",
+    "node_modules"
   ]
 }

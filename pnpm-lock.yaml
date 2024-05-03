@@ -402,6 +402,18 @@ importers:
       css-loader:
         specifier: ^6.9.0
         version: 6.11.0(webpack@5.91.0)
+      eslint:
+        specifier: ^8
+        version: 8.57.0
+      eslint-config-next:
+        specifier: 14.0.3
+        version: 14.0.3(eslint@8.57.0)(typescript@5.4.5)
+      jsdom:
+        specifier: ^24.0.0
+        version: 24.0.0
+      postcss:
+        specifier: ^8
+        version: 8.4.38
       postcss-loader:
         specifier: ^8.0.0
         version: 8.1.1(postcss@8.4.38)(typescript@5.4.5)(webpack@5.91.0)
@@ -423,6 +435,9 @@ importers:
       tsx:
         specifier: ^4.7.3
         version: 4.7.3
+      typescript:
+        specifier: ^5
+        version: 5.4.5
       webpack:
         specifier: ^5.90.0
         version: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)

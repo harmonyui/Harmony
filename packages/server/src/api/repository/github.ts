@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 import { Octokit, App } from "octokit";
@@ -5,11 +6,14 @@ import fs from 'node:fs';
 import crypto from 'node:crypto';
 import { CommitItem, Repository } from "@harmony/util/src/types/branch";
 import { replaceByIndex } from "@harmony/util/src/utils/common";
-import {Change, diffLines} from 'diff';
+import {Change, diffChars, diffLines} from 'diff';
 import { getFileContentsFromCache, setFileCache } from "./cache";
+import path from "node:path";
+import { LOCALHOST } from "@harmony/util/src/utils/component";
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
-const privateKeyRaw = privateKeyPath ? fs.readFileSync(privateKeyPath) : atob(process.env.PRIVATE_KEY || '');
+const privateKeyEnv = process.env.PRIVATE_KEY;
+const privateKeyRaw = privateKeyEnv ? atob(privateKeyEnv): fs.readFileSync(privateKeyPath || '')
 const appId = process.env.GITHUB_APP_ID || '';
 
 const privateKey = crypto.createPrivateKey(privateKeyRaw).export({
@@ -19,12 +23,38 @@ const privateKey = crypto.createPrivateKey(privateKeyRaw).export({
 
 const app = new App({
     appId,
-    privateKey: privateKey,
+    privateKey,
 });
 
 export const appOctokit: Octokit = app.octokit;
 
-export class GithubRepository {
+export interface GitRepositoryFactory {
+    createGitRepository: (repository: Repository) => GitRepository;
+}
+
+interface ContentOrDirectory {
+    type: string,
+    path: string;
+}
+export interface GitRepository {
+    getContentOrDirectory: (filePath: string, branchName?: string) => Promise<ContentOrDirectory | ContentOrDirectory[] | {content: string, path: string}>;
+    createBranch: (newBranch: string) => Promise<void>;
+    getBranchRef: (branch: string) => Promise<string>;
+    diffFiles: (branch: string, oldRef: string, file: string) => Promise<Change[]>
+    getContent: (file: string, ref?: string) => Promise<string>;
+    updateFilesAndCommit: (branch: string, changes: { filePath: string, locations: {snippet: string, start: number, end: number }[]}[]) => Promise<void>;
+    getCommits: (branch: string) => Promise<CommitItem[]>
+    createPullRequest: (branch: string, title: string, body: string) => Promise<string>
+    repository: Repository
+}
+
+export class GithubRepositoryFactory implements GitRepositoryFactory {
+    public createGitRepository(repository: Repository) {
+        return new GithubRepository(repository);
+    }
+}
+
+export class GithubRepository implements GitRepository {
     private octokit: Octokit | undefined;
     private diffedFiles: Record<string, Change[]> = {};
 
@@ -114,7 +144,7 @@ export class GithubRepository {
             owner: this.repository.owner,
             repo: this.repository.name,
             path: cleanFile,
-            ref: ref,
+            ref,
         });
 
         if (Array.isArray(fileInfo)) {
@@ -270,5 +300,109 @@ export class GithubRepository {
         });
 
         return response.data.html_url;
+    }
+}
+
+interface LocalUpdate {oldContent: string, newContent: string, filePath: string}
+export class LocalGitRepository implements GitRepository {
+    private commits: Record<string, LocalUpdate[]> = {};
+    
+    constructor(public repository: Repository) {}
+
+    public async getContentOrDirectory(path: string): Promise<ContentOrDirectory | { content: string; path: string; } | ContentOrDirectory[]> {
+        const content = await this.getContent(path);
+        return {content, path};
+    }
+    public async createBranch(): Promise<void> {
+        return undefined;
+    }
+    public async getBranchRef(): Promise<string> {
+        return this.repository.ref;
+    }
+    public diffFiles(branch: string, oldRef: string, file: string): Promise<Change[]> {
+        throw new Error("Not implemented");
+    }
+    public getContent(file: string): Promise<string> {
+        const absolute = path.join(__dirname, '../../../../../../hintible-builder', file);
+        if (!fs.existsSync(absolute)) {
+            throw new Error("Invalid path " + absolute);
+        }
+    
+        return new Promise<string>((resolve, reject) => {
+            fs.readFile(absolute, 'utf-8', (err, data) => {
+                if (err) {
+                    reject(new Error(err.message));
+                }
+    
+                resolve(data);
+            })
+        });
+    }
+    public async updateFilesAndCommit(branch: string, changes: { filePath: string; locations: { snippet: string; start: number; end: number; }[]; }[]): Promise<void> {
+        const updates: LocalUpdate[] = [];
+        for (const change of changes) {
+            const contentText = await this.getContent(change.filePath);
+
+            let newContent = contentText;
+            for (const location of change.locations) {
+                newContent = replaceByIndex(newContent, location.snippet, location.start, location.end);
+            }
+            
+            updates.push({oldContent: contentText, newContent, filePath: change.filePath});
+        }
+
+        this.commits[branch] = updates;
+    }
+    public getCommits(branch: string): Promise<{ message: string; date: Date; author: string; }[]> {
+        throw new Error("Not implemented");
+    }
+    public async createPullRequest(branch: string, title: string, body: string): Promise<string> {
+        const encode = (str: string): string => {
+            return str.replaceAll('<', '&lt;').replaceAll('>', '&gt;');
+        }
+        const updates = this.commits[branch];
+        if (!updates) {
+            throw new Error("Cannot find updates");
+        }
+        const sections: string[] = [];
+        for (const update of updates) {
+            const diffs = diffChars(update.oldContent, update.newContent);
+
+            const spans: string[] = [];
+            diffs.forEach((part) => {
+                const color = part.added ? 'green' :
+                  part.removed ? 'red' : 'grey';
+                const lines = part.value.split('\n');
+
+                const span = `<span style="color: ${color};">${lines.map(line => encode(line)).join('<br>')}</span>`;
+                //span = document.createElement('span');
+                //span.style.color = color;
+                // span.appendChild(document
+                //   .createTextNode(part.value));
+                // fragment.appendChild(span);
+                spans.push(span);
+            });
+
+            const section = `<div>
+                <h4>${update.filePath}</h4>
+                <div>${spans.join('')}</div>
+            </div>`;
+
+            sections.push(section);
+        }
+
+        const template = 
+        `<!DOCTYPE html>
+        <html>
+            <head></head>
+            <body>
+                ${sections.join('')}
+            </body>
+        </html>`;
+
+        const diffPath = path.join(__dirname, '../../../../../', `packages/editor/public/${branch}.html`)
+        fs.writeFileSync(diffPath, template, 'utf-8');
+
+        return `http://${LOCALHOST}:4200/${branch}.html`;
     }
 }
