@@ -238,6 +238,18 @@ importers:
       '@babel/types':
         specifier: ^7.24.0
         version: 7.24.0
+      '@harmony/eslint-config-custom':
+        specifier: workspace:^
+        version: link:../../tooling/eslint-config-custom
+      '@harmony/prettier-config':
+        specifier: workspace:^
+        version: link:../../tooling/prettier-config
+      '@harmony/tsconfig':
+        specifier: workspace:^
+        version: link:../../tooling/tsconfig
+      '@testing-library/react':
+        specifier: ^14.2.1
+        version: 14.3.1(react-dom@18.3.1)(react@18.3.1)
       '@types/babel__core':
         specifier: ^7.20.5
         version: 7.20.5
@@ -247,9 +259,21 @@ importers:
       '@types/node':
         specifier: ^20
         version: 20.12.7
+      '@vitejs/plugin-react':
+        specifier: ^4.2.1
+        version: 4.2.1(vite@5.2.10)
+      eslint:
+        specifier: ^8.48.0
+        version: 8.57.0
+      prettier:
+        specifier: ^3.0.3
+        version: 3.2.5
       ts-loader:
         specifier: ^9.5.1
         version: 9.5.1(typescript@5.4.5)(webpack@5.91.0)
+      typescript:
+        specifier: ^5.2.2
+        version: 5.4.5
       vitest:
         specifier: ^1.5.0
         version: 1.5.2(@types/node@20.12.7)(jsdom@24.0.0)
@@ -841,12 +865,6 @@ importers:
         version: 10.4.19(postcss@8.4.38)
 
   tooling/tsconfig: {}
-
-  tooling/vitest:
-    devDependencies:
-      '@harmony/tsconfig':
-        specifier: workspace:*
-        version: link:../tsconfig
 
 packages:
 

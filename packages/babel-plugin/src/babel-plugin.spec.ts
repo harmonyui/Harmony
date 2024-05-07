@@ -2,28 +2,17 @@ import { transformSync, parseSync } from "@babel/core";
 import { describe, expect, it } from "vitest";
 import babelPlugin from "./babel-plugin";
 import path from 'path';
-import { parse } from "@babel/parser";
-import traverse from '@babel/traverse';
-import * as t from '@babel/types';
 
 function runPlugin(code: string, keepTranspiledCode: boolean) {
     const res = transformSync(code, {
         babelrc: false,
         filename: 'test.tsx',
         sourceType: 'module',
-        // presets: ["@babel/preset-env", '@babel/preset-typescript', '@babel/preset-react'],
         parserOpts: {
             plugins: ['jsx', 'typescript']
         },
         plugins: [[babelPlugin, {rootDir: path.join(__dirname, '../../../..'), keepTranspiledCode}]]
     });
-    // const res = parse(code, {
-    //     sourceType: 'module',
-    //     plugins: ['jsx', 'typescript'],
-    // });
-    
-    // const {visitor} = babelPlugin({types: t});
-    // traverse(res, visitor)
 
     if (!res) {
         throw new Error("plugin failed");
@@ -33,17 +22,29 @@ function runPlugin(code: string, keepTranspiledCode: boolean) {
 }
 
 describe("babel-plugin", () => {
-    it("Should add harmony data tags to arrow and function components", () => {
-        const code = testCases["test.ts"];
-        const res = runPlugin(code, false);
-        expect(res.code).toMatchSnapshot();
-    })
+    describe("transform", () => {
+        it("Should add harmony data tags to arrow and function components", () => {
+            const code = testCases["test.ts"];
+            const res = runPlugin(code, false);
+            expect(res.code).toMatchSnapshot();
+        })
 
-    it("Should not visit multiple jsx when nested function calls", () => {
-        const code = testCases["nested.ts"];
-        const res = runPlugin(code, false);
-        expect(res.code).toMatchSnapshot();
-    })
+        it("Should not visit multiple jsx when nested function calls", () => {
+            const code = testCases["nested.ts"];
+            const res = runPlugin(code, false);
+            expect(res.code).toMatchSnapshot();
+        })
+
+        it("Should refector function with multiple arguments", () => {
+            const code = `function Home({className, label}, ref) {
+                return <div>
+                    <h1>Hello there</h1>
+                </div>
+            }`;
+            const res = runPlugin(code, false);
+            expect(res.code).toMatchSnapshot();
+        })
+    });
 });
 
 const testCases = {
