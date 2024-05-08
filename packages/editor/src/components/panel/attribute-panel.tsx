@@ -38,12 +38,11 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
 		const childIndex = Array.from(old.element.parentElement!.children).indexOf(old.element);
 		if (childIndex < 0) throw new Error("Cannot get right child index");
         const componentId = old.element.dataset.harmonyId;
-		const parentId = old.element.dataset.harmonyParentId || '';
-        if (!componentId) {
+		if (!componentId) {
             throw new Error("Element does not have a data id");
         }
 
-		const update: ComponentUpdateWithoutGlobal = {componentId, parentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
+		const update: ComponentUpdateWithoutGlobal = {componentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
 		
 		
 		onChange([update]);

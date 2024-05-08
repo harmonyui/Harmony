@@ -55,8 +55,7 @@ model ComponentUpdate {
 	branch_id String
 	branch Branch @relation(fields: [branch_id], references: [id])
 	component_id String
-	component_parent_id String
-	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id], onDelete: Cascade)
+	component ComponentElement @relation(fields: [component_id], references: [id], onDelete: Cascade)
 	childIndex Int
 	type String //text, className, component
 	action String //change, add, remove
@@ -95,25 +94,23 @@ model ComponentElement {
 	children ComponentElement[] @relation("children")
 	location_id String
 	location Location @relation(fields: [location_id], references: [id])
-	parent_id String
-	parent_parent_id String?
-	parent ComponentElement? @relation(name: "children", fields: [parent_id, parent_parent_id], references: [id, parent_id])
+	parent_id String?
+	parent ComponentElement? @relation(name: "children", fields: [parent_id], references: [id])
 	definition_id String
 	definition ComponentDefinition @relation(name: "definition", fields: [definition_id], references: [id])
 	attributes ComponentAttribute[]
 	updates ComponentUpdate[]
 
-	@@id([id, parent_id])
+	@@id([id])
 }
 
 model ComponentError {
 	id String @id @default(cuid())
 	component_id String
-	component_parent_id String
 	repository_id String
 	type String
 	
-	@@unique([component_parent_id, component_id])
+	@@unique([component_id])
 }
 
 model ComponentAttribute {
@@ -122,8 +119,7 @@ model ComponentAttribute {
 	name String
 	value String
 	component_id String
-	component_parent_id String
-	component ComponentElement @relation(fields: [component_id, component_parent_id], references: [id, parent_id], onDelete: Cascade)
+	component ComponentElement @relation(fields: [component_id], references: [id], onDelete: Cascade)
 	location_id String
 	location Location @relation(fields: [location_id], references: [id])
 }

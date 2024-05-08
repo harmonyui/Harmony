@@ -2,7 +2,7 @@
 import { ComponentElementBase, ComponentUpdate } from "@harmony/util/src/types/component";
 import { z } from "zod";
 import fs from 'node:fs';
-import { getLocationFromComponentId, hashComponentId, updateLocationFromContent } from "@harmony/util/src/utils/component";
+import { getLocationsFromComponentId, hashComponentId, updateLocationFromContent } from "@harmony/util/src/utils/component";
 import { prisma } from "@harmony/db/lib/prisma";
 import { GitRepository } from "../../repository/github";
 import { replaceByIndex } from "@harmony/util/src/utils/common";
@@ -39,11 +39,17 @@ export class ComponentIdUpdator {
 		
 		const idMapping: {oldId: string, newId: string}[] = [];
 		for (const id of elementIds) {
-			const location = getLocationFromComponentId(id);
+			const locations = getLocationsFromComponentId(id);
+			const locationIndex = locations.findIndex(loc => loc.file === file);
+			if (locationIndex < 0) {
+				throw new Error(`Cannot find location from id ${id} and file ${file}`)
+			}
+			const location = locations[locationIndex];
 			const newLocation = updateLocationFromContent(location, oldContent, newContent);
 	
 			if (newLocation) {
-				const newId = hashComponentId(newLocation);
+				locations[locationIndex] = newLocation;
+				const newId = hashComponentId(locations);
 				id !== newId && idMapping.push({oldId: id, newId});
 			} else {
 				console.log(`Conflict in a saved component: ${id}`);
@@ -81,17 +87,14 @@ export async function updateComponentIdsFromUpdates(updates: ComponentUpdate[], 
 	const filesRetrieved: string[] = [];
 	for (const update of updates) {
 		const oldId = update.componentId;
-		const oldParentId = update.parentId;
-		const componentLocation = getLocationFromComponentId(oldId);
-		const parentLocation = getLocationFromComponentId(oldParentId);
+		const locations = getLocationsFromComponentId(oldId);
 
-		const componentIdMappings = !filesRetrieved.includes(componentLocation.file) ? await getNewIdsFromFile(componentLocation.file, ref, gitRepository) : [];
-		filesRetrieved.push(componentLocation.file);
-		
-		if (!filesRetrieved.includes(parentLocation.file)) {
-			const parentMappings = await getNewIdsFromFile(parentLocation.file, ref, gitRepository);
-			componentIdMappings.push(...parentMappings)
-			filesRetrieved.push(parentLocation.file);
+		const componentIdMappings: {newId: string, oldId: string}[] = [];
+		for (const componentLocation of locations) {
+			const mappings = !filesRetrieved.includes(componentLocation.file) ? await getNewIdsFromFile(componentLocation.file, ref, gitRepository) : [];
+			filesRetrieved.push(componentLocation.file);
+
+			componentIdMappings.push(...mappings);
 		}
 		
 		for (const mapping of componentIdMappings) {
@@ -145,10 +148,6 @@ async function updateElementIds(oldId: string, newId: string, updates: Component
 	updates.forEach(up => {
 		if (up.componentId === oldId) {
 			up.componentId = newId;
-		}
-
-		if (up.parentId === oldId) {
-			up.parentId = newId
 		}
 	});
 }

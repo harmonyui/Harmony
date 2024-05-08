@@ -45,7 +45,6 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		const elementFiber = getElementFiber(element as FiberHTMLElement);
 		
 		const id = element.dataset.harmonyId;//fiber?.key || nextId();
-		const parentId = element.dataset.harmonyParentId || '';
 		if (id === undefined) {
 			return undefined;
 		}
@@ -63,7 +62,6 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		}
 		return {
 			id,
-			parentId,
 			element,
 			name,
 			getParent,

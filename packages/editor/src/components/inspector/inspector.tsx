@@ -196,7 +196,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				if (!value) return;
 
 				const componentId = element.dataset.harmonyId || '';
-				const parentId = element.dataset.harmonyParentId || '';
 				const oldValue = oldProperties[property];
 
 				if (!oldValue) {
@@ -206,7 +205,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 				if (childIndex < 0) throw new Error("Cannot get right child index");
 
-				const update: ComponentUpdateWithoutGlobal = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue, childIndex};
+				const update: ComponentUpdateWithoutGlobal = {componentId, action: 'add', type: 'className', name: property, value, oldValue, childIndex};
 
 				
 				updates.push(update);

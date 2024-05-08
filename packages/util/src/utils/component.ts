@@ -54,21 +54,25 @@ export function translateUpdatesToCss(updates: ComponentUpdate[]): ComponentUpda
 	return translated;
 }
 
-export function hashComponentId({file, startLine, startColumn, endLine, endColumn}: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}) {
-    return btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`);
+export function hashComponentId(locations: {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}[]): string {
+    return locations.map(({file, startLine, startColumn, endLine, endColumn}) => btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`)).join('#');
   }
   
-  export function getLocationFromComponentId(id: string): {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number} {
-      const stuff = atob(id);
-      const [file, startLine, startColumn, endLine, endColumn] = stuff.split(':');
-  
-      return {
+  export function getLocationsFromComponentId(id: string): {file: string, startLine: number, startColumn: number, endLine: number, endColumn: number}[] {
+      const stuffs = id.split('#').map(i => atob(i));
+      const locations = stuffs.map(stuff => {
+        const [file, startLine, startColumn, endLine, endColumn] = stuff.split(':');
+
+        return {
           file, 
           startLine: Number(startLine), 
           startColumn: Number(startColumn), 
           endLine: Number(endLine), 
           endColumn: Number(endColumn)
       };
+      });
+  
+      return locations;
   }
 
 export const reverseUpdates = <T extends ComponentUpdate>(updates: T[]): T[] => {

@@ -103,7 +103,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 		const {line: startLine, column: startColumn} = getLineAndColumn(codeSnippet, start);
 		const {line: endLine, column: endColumn} = getLineAndColumn(codeSnippet, end);
 
-		return hashComponentId({file, startColumn, startLine, endColumn, endLine});
+		return hashComponentId([{file, startColumn, startLine, endColumn, endLine}]);
 	}
 
 	function getLocation(node: t.Node, file: string) {
@@ -132,7 +132,6 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 
 		return {
 			id,
-			parentId: '',
 			name,
 			getParent() {
 				return undefined
@@ -240,6 +239,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 					componentName = path.parent.declaration.id.name;
 				} else if (t.isFunctionDeclaration(path.node) && t.isIdentifier(path.node.id)) {
 					componentName = path.node.id.name;
+				} else if (t.isCallExpression(path.parent) && t.isVariableDeclarator(path.parentPath?.parent) && t.isIdentifier(path.parentPath.parent.id)) {
+					componentName = path.parentPath.parent.id.name;
 				}
 	
 				containingComponent.name = componentName;
@@ -283,21 +284,29 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		return instance.name[0] === instance.name[0].toUpperCase();
 	}
 
-	const elementInstances: ComponentElement[] = [];
-	const calledComponent: string[] = [];
-	for (const instance of instances) {
+	const connectInstanceToChildren = (instance: ComponentElement): void => {
 		if (isComponentInstance(instance)) {
 			const definition = componentDefinitions[instance.name];
-			if (!definition) continue;
+			if (!definition) return;
 
-			for (const definitionInstance of definition.children) {
+			for (let i = 0; i < definition.children.length; i++) {
+				const definitionInstance = definition.children[i];
+				//definitionInstance.getParent = () => instance;
 				const newInstance = {...definitionInstance, parentId: instance.id, getParent: () => instance};
 				newInstance.attributes = definitionInstance.attributes.map(atr => ({...atr, reference: newInstance}))
 
 				elementInstances.push(newInstance);
+				//definition.children[i] = definitionInstance;
+				connectInstanceToChildren(newInstance);
 			}
 			calledComponent.push(definition.name);
 		}
+	}
+
+	const elementInstances: ComponentElement[] = [];
+	const calledComponent: string[] = [];
+	for (const instance of instances) {
+		connectInstanceToChildren(instance);
 	}
 
 	//If a component has not been called, then that means it has no parent, so add that in
@@ -307,8 +316,24 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		}
 	}
 
+	function getIdFromParents(instance: ComponentElement): string {
+		const parent = instance.getParent();
+		if (!parent) {
+			return instance.id;
+		}
+
+		if (parent.id.includes('#')) {
+			return `${parent.id}#${instance.id}`;
+		}
+
+		const parentId = getIdFromParents(parent);
+
+		return `${parentId}#${instance.id}`;
+	}
+
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
+		instance.id = getIdFromParents(instance);
 		for (let j = 0; j < instance.attributes.length; j++) {
 			const attribute = instance.attributes[j];
 			if (attribute.type === 'text' && attribute.name === 'property') {
@@ -382,7 +407,7 @@ function randomId(): string {
 async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
 	const alreadyCreated: string[] = [];
 	const createElement = async (instance: ComponentElement) => {
-		if (alreadyCreated.includes(`${instance.id}${instance.parentId}`)) return;
+		if (alreadyCreated.includes(instance.id)) return;
 
 		const parent = instance.getParent();
 
@@ -416,7 +441,6 @@ async function updateDatabase(componentDefinitions: Record<string, HarmonyCompon
 			const prismaParent = await prisma.componentElement.findFirst({
 				where: {
 					id: parent.id,
-					parent_id: parent.parentId
 				}
 			});
 			if (!prismaParent) {
@@ -440,8 +464,6 @@ try {
 				id: instance.id,
 				repository_id: repositoryId,
 				name: instance.name,
-				parent_id: parent?.id || '',
-				parent_parent_id: parent?.parentId || null,
 				location_id: locationId,
 				definition_id: definition.id
 			}
@@ -449,20 +471,17 @@ try {
 
 		for (const attribute of instance.attributes) {
 			//if (attribute.type === 'text') {
-				let comp = !('parentId' in attribute.reference) ? await prisma.componentDefinition.findUnique({
+				let comp = !('id' in attribute.reference) ? await prisma.componentDefinition.findUnique({
 					where: {
 						name: attribute.reference.name
 					}
 				}) : await prisma.componentElement.findUnique({
 					where: {
-						id_parent_id: {
-							id: attribute.reference.id,
-							parent_id: attribute.reference.parentId
-						}
+						id: attribute.reference.id,
 					}
 				});
 				if (!comp) {
-					if (!('parentId' in attribute.reference)) {
+					if (!('id' in attribute.reference)) {
 						const definition = attribute.reference as HarmonyComponent;
 						comp = await prisma.componentDefinition.create({
 							data: {
@@ -488,7 +507,6 @@ try {
 						type: attribute.type,
 						value: attribute.value,
 						component_id: newElement.id, 
-						component_parent_id: newElement.parent_id,
 						location_id: comp?.location_id
 					}
 				})
@@ -496,7 +514,7 @@ try {
 		}
 	} catch (err) {console.log(instance)}
 
-		alreadyCreated.push(`${instance.id}${instance.parentId}`);
+		alreadyCreated.push(instance.id);
 	}
 
 	for (let i = 0; i < elementInstances.length; i++) {

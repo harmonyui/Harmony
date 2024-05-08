@@ -8,7 +8,7 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { getBranch, getRepository } from "./branch";
 import { getCodeSnippet, getFileContent } from "../services/indexor/github";
-import { getLocationFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
+import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
 import { indexFilesAndFollowImports } from "../services/indexor/indexor";
 import { prisma, Prisma } from "@harmony/db/lib/prisma";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
@@ -55,7 +55,7 @@ export const editorRouter = createTRPCRouter({
 
             const query = await prisma.$queryRaw<{action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, parentId: string, isGlobal: boolean}[]>`
                 SELECT u.action, u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", e.id, e.parent_id as "parentId" FROM "ComponentUpdate" u
-                INNER JOIN "ComponentElement" e on e.id = component_id AND e.parent_id = component_parent_id
+                INNER JOIN "ComponentElement" e on e.id = component_id
                 WHERE u.branch_id = ${branchId}
                 ORDER BY u.date_modified ASC`
 
@@ -112,7 +112,7 @@ export const editorRouter = createTRPCRouter({
                     id: branch.id,
                     name: branch.label
                 })),
-                errorElements: isDemo ? [] : errorElements.map(element => ({componentId: element.component_id, parentId: element.component_parent_id, type: element.type})),
+                errorElements: isDemo ? [] : errorElements.map(element => ({componentId: element.component_id, type: element.type})),
                 pullRequest: pullRequest || undefined,
                 showWelcomeScreen: !accountTiedToBranch.seen_welcome_screen,
                 isDemo
@@ -185,18 +185,16 @@ export const editorRouter = createTRPCRouter({
                     let element = await prisma.componentElement.findFirst({
                         where: {
                             id: update.componentId,
-                            parent_id: update.parentId,
                             repository_id: branch.repository_id
                         }
                     });
                     if (!element) {
-                        await indexForComponent(update.componentId, update.parentId, gitRepository);
+                        await indexForComponent(update.componentId, gitRepository);
                     }
 
                     element = await prisma.componentElement.findFirst({
                         where: {
                             id: update.componentId,
-                            parent_id: update.parentId,
                             repository_id: branch.repository_id
                         }
                     });
@@ -210,7 +208,6 @@ export const editorRouter = createTRPCRouter({
                         const textAttribute = await prisma.componentAttribute.findFirst({
                             where: {
                                 component_id: update.componentId,
-                                component_parent_id: update.parentId,
                                 type: 'text',
                                 name: 'string'
                             }
@@ -224,12 +221,12 @@ export const editorRouter = createTRPCRouter({
                     if (!error) {
                         updates.push(update);
                     } else {
+						if (error === 'element') {
+							throw new Error("Cannot have an error element because that shouldn't happend anymore");
+						}
                         const pastError = await prisma.componentError.findUnique({
                             where: {
-                                component_parent_id_component_id: {
-                                    component_id: update.componentId,
-                                    component_parent_id: update.parentId
-                                },
+                                component_id: update.componentId,
                                 repository_id: branch.repository_id
                             }
                         });
@@ -238,8 +235,7 @@ export const editorRouter = createTRPCRouter({
                             await prisma.componentError.create({
                                 data: {
                                     component_id: update.componentId,
-                                    component_parent_id: update.parentId,
-                                    repository_id: branch.repository_id,
+									repository_id: branch.repository_id,
                                     type: error
                                 },
                             })
@@ -252,7 +248,6 @@ export const editorRouter = createTRPCRouter({
             for (const up of updates) {
                 await prisma.componentUpdate.create({
                     data: {
-                        component_parent_id: up.parentId,
                         component_id: up.componentId,
                         action: up.action,
                         type: up.type,
@@ -312,7 +307,7 @@ export const editorRouter = createTRPCRouter({
 			const old: string[] = branch.old;
 			//Get rid of same type of updates (more recent one wins)
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- It is necessary
-			const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId && p.parentId === curr.parentId) ? prev : prev.concat([{...curr, oldValue: old[i]!}]), []);
+			const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId) ? prev : prev.concat([{...curr, oldValue: old[i]!}]), []);
 			// const githubRepository = new GithubRepository(repository);
 			// const ref = await githubRepository.getBranchRef(repository.branch);
 			// if (ref !== repository.ref) {
@@ -340,7 +335,7 @@ export const editorRouter = createTRPCRouter({
 		})
 })
 
-async function indexForComponent(componentId: string, parentId: string, gitRepository: GitRepository) {
+async function indexForComponent(componentId: string, gitRepository: GitRepository) {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
@@ -351,12 +346,8 @@ async function indexForComponent(componentId: string, parentId: string, gitRepos
 
 	//TODO: This does not follow the file up the whole tree which means it does not know
 	// all of the possible locations an attribute can be saved. Find a better way to do this
-	const {file: elementFile} = getLocationFromComponentId(componentId);
-	const {file: parentFile} = getLocationFromComponentId(parentId);
-	const paths = [elementFile];
-	if (parentFile) {
-		paths.push(parentFile);
-	}
+	const locations = getLocationsFromComponentId(componentId);
+	const paths = locations.map(location => location.file);
 	await indexFilesAndFollowImports(paths, readFile, gitRepository.repository.id)
 }
 
@@ -422,7 +413,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`;
 			}
 		}
-		const classNameUpdate = curr.type === 'className' ? prev.find(({update: up}) => up.componentId === curr.componentId && up.parentId === curr.parentId && up.type === 'className') : undefined;
+		const classNameUpdate = curr.type === 'className' ? prev.find(({update: up}) => up.componentId === curr.componentId && up.type === 'className') : undefined;
 		if (classNameUpdate) {
 			if (curr.name !== 'font') {
 				classNameUpdate.value += curr.value;
@@ -431,13 +422,13 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				classNameUpdate.font = curr.value;
 			}
 		} else {
-			const numSameComponentsButDifferentParents = updatesTranslated.filter(update => update.componentId === curr.componentId && update.parentId !== curr.parentId).length;
 			//We update the parent when we have multiple of the same elements with different updates or the user has specified that it is not a global update
-			const shouldUpdateParent = numSameComponentsButDifferentParents > 0 || !curr.isGlobal;
+			const shouldUpdateParent = !curr.isGlobal;
 
 			//When every we have a component that has a different parent, that means we need to set the classes at this parent
 			// level not the component level
-			const component = curr.type === 'className' && shouldUpdateParent ? elementInstances.find(el => el.id === curr.parentId) : elementInstances.find(el => el.id === curr.componentId && el.parent_id === curr.parentId);
+			const parentId = curr.componentId.split('#').slice(0, curr.componentId.split('#').length - 1).join('#');
+			const component = curr.type === 'className' && shouldUpdateParent ? elementInstances.find(el => el.id === parentId) : elementInstances.find(el => el.id === curr.componentId);
 			if (!component) {
 				return prev;
 				//throw new Error('Cannot find component with id ' + curr.componentId);
@@ -523,7 +514,6 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 	const attributes = await prisma.componentAttribute.findMany({
 		where: {
 			component_id: component.id,
-			component_parent_id: component.parent_id,
 		},
 		...attributePayload
 	});

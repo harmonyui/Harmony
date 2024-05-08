@@ -8,7 +8,6 @@ export type BehaviorType = z.infer<typeof behaviorTypesSchema>;
 //type: className, name: size
 export const updateSchema = z.object({
 	componentId: z.string(),
-	parentId: z.string(),
 	childIndex: z.number(),
 	type: z.union([z.literal('className'), z.literal('text'), z.literal('component')]),
 	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]), 
@@ -33,7 +32,7 @@ export const attributeSchema = z.object({
 	type: z.string(),
 	name: z.string(),
 	value: z.string(),
-	reference: z.union([z.object({name: z.string(), isComponent: z.literal(true)}), z.object({id: z.string(), isComponent: z.boolean(), parentId: z.string()})]),
+	reference: z.union([z.object({name: z.string(), isComponent: z.literal(true)}), z.object({id: z.string(), isComponent: z.boolean()})]),
 })
 export type Attribute = z.infer<typeof attributeSchema>;
 
@@ -47,7 +46,7 @@ export interface ComponentElementBase {
 }
 
 export interface ComponentElement extends ComponentElementBase {
-	parentId: string;
+	//parentId: string;
 	getParent: () => ComponentElement | undefined;
 	element?: HTMLElement;
 	containingComponent: HarmonyComponent;
@@ -60,7 +59,7 @@ export interface HarmonyComponent extends ComponentElementBase {
 
 export const componentErrorSchema = z.object({
 	componentId: z.string(),
-	parentId: z.string(),
+	//parentId: z.string(),
 	type: z.string()
 });
 

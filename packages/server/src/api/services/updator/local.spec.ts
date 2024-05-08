@@ -4,7 +4,7 @@
 import { getLocationFromContent, testCases } from "@harmony/util/src/utils/component.spec";
 import { describe, it, expect } from "vitest";
 import { ComponentIdUpdator, FileContentRetriever } from "./local";
-import { getLocationFromComponentId, hashComponentId } from "@harmony/util/src/utils/component";
+import { getLocationsFromComponentId, hashComponentId } from "@harmony/util/src/utils/component";
 
 describe("Component Id Updator", () => {
     const setup = (name: keyof (typeof testCases), targets: string[]) => {
@@ -20,7 +20,7 @@ describe("Component Id Updator", () => {
         const componentIds: string[] = [];
         for (const target of targets) {
             const p = getLocationFromContent(testCases[name].oldContent, target.replaceAll('    ', '\t'));
-            componentIds.push(hashComponentId(p));
+            componentIds.push(hashComponentId([p]));
         }
 
         return {componentIdUpdator, componentIds}
@@ -50,7 +50,7 @@ describe("Component Id Updator", () => {
             const mapping = mappings[i];
             const expection = expections[i];
             expect(mapping.oldId).toBe(componentId);
-            const location = getLocationFromComponentId(mapping.newId);
+            const [location] = getLocationsFromComponentId(mapping.newId);
 
             expect(location.startColumn).toBe(expection.startColumn);
             expect(location.endColumn).toBe(expection.endColumn);

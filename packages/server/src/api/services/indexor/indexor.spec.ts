@@ -28,12 +28,13 @@ describe("indexor", () => {
 
             const parentIds = ["YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NDI6ODo0NzoxMA==", 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NDg6ODo1MzoxMA==', 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NTQ6ODo1OToxMA=='];
 
-            const pTags = result.filter(r => r.id === 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6MjY6NDozMTo4');
+            const pTags = result.filter(r => r.id.includes('YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6MjY6NDozMTo4'));
             expect(pTags.length).toBe(parentIds.length);
             for (let i = 0; i < parentIds.length; i++) {
                 const parentId = parentIds[i];
                 const pTag = pTags[i];
-                expect(pTag.parentId).toBe(parentId);
+                const pTagParentId = pTag.id.split('#')[0];
+                expect(pTagParentId).toBe(parentId);
                 const parents = result.filter(r => r.id === parentId);
                 expect(parents.length).toBe(1);
                 const parent = parents[0];
@@ -46,7 +47,7 @@ describe("indexor", () => {
                 expect("id" in textAttribute.reference).toBe(true);
                 if (!("id" in textAttribute.reference)) return;
                 expect(textAttribute.reference.id).toBe(parent.id);
-                expect(textAttribute.reference.parentId).toBe(parent.parentId);         
+                //expect(textAttribute.reference.parentId).toBe(parent.parentId);         
             }
         })
     });

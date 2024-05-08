@@ -25,8 +25,8 @@ import { loadProject, publishProject, saveProject } from "../data-layer";
 
 export type ComponentUpdateWithoutGlobal = Omit<ComponentUpdate, 'isGlobal'>
 
-export function findElementFromId(componentId: string, parentId: string | undefined, childIndex: number): HTMLElement | undefined {
-	const selector = parentId ? `[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]` : `[data-harmony-id="${componentId}"]`;
+export function findElementFromId(componentId: string, childIndex: number): HTMLElement | undefined {
+	const selector = `[data-harmony-id="${componentId}"]`;
 	const container = document.getElementById('harmony-container');
 	if (!container) {
 		throw new Error("Cannot find container harmony-container");
@@ -40,8 +40,18 @@ export function findElementFromId(componentId: string, parentId: string | undefi
 	return undefined;
 }
 
-export function findElementsFromId(componentId: string, parentId: string | undefined): HTMLElement[] {
-	const selector = parentId ? `[data-harmony-id="${componentId}"][data-harmony-parent-id="${parentId}"]` : `[data-harmony-id="${componentId}"]`;
+export function findElementsFromId(componentId: string): HTMLElement[] {
+	const selector = `[data-harmony-id="${componentId}"]`;
+	const container = document.getElementById('harmony-container');
+	if (!container) {
+		throw new Error("Cannot find container harmony-container");
+	}
+	const elements = container.querySelectorAll(selector);
+	return Array.from(elements) as HTMLElement[];
+}
+
+export function findSameElementsFromId(componentId: string): HTMLElement[] {
+	const selector = `[data-harmony-component-id="${componentId}"]`;
 	const container = document.getElementById('harmony-container');
 	if (!container) {
 		throw new Error("Cannot find container harmony-container");
@@ -292,14 +302,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const updateElements = (element: HTMLElement, availableIds: ComponentUpdate[], errorElements: ComponentError[]): void => {
 		if (!rootComponent) return;
-		const errorComponent = errorElements.find(el => el.componentId === element.dataset.harmonyId && (!el.parentId || el.parentId === element.dataset.harmonyParentId))
+		const errorComponent = errorElements.find(el => el.componentId === element.dataset.harmonyId)
 		if (errorComponent) {
 			const type = errorComponent.type;
 			element.dataset.harmonyError = type;
 		}
 
 		const id = element.dataset.harmonyId;
-		const parentId = element.dataset.harmonyParentId || null;
+		if (id) {
+			const split = id.split('#');
+			const componentId = split[split.length - 1];
+			element.dataset.harmonyComponentId = componentId;
+		}
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		const children = Array.from(element.childNodes);
 		const textNodes = children.filter(child => child.nodeType === Node.TEXT_NODE);
@@ -317,7 +331,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 
 		if (id !== undefined) {
-			const updates = availableIds.filter(up => up.componentId === id && (!up.parentId || up.parentId === parentId) && up.childIndex === childIndex);
+			const updates = availableIds.filter(up => up.componentId === id && up.childIndex === childIndex);
 			makeUpdates(element, updates, rootComponent, fonts);
 		}
 
@@ -382,7 +396,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdateWithoutGlobal = {componentId: component.id, parentId: component.parentId, type: 'text', name: String(index), action: 'change', value, oldValue, childIndex}
+		const update: ComponentUpdateWithoutGlobal = {componentId: component.id, type: 'text', name: String(index), action: 'change', value, oldValue, childIndex}
 		onAttributesChange([update], false);
 	});
 
@@ -395,7 +409,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdateWithoutGlobal = {componentId: component.id, parentId: component.parentId, type: 'component', name: 'reorder', action: 'change', value, oldValue, childIndex};
+		const update: ComponentUpdateWithoutGlobal = {componentId: component.id, type: 'component', name: 'reorder', action: 'change', value, oldValue, childIndex};
 		
 		onAttributesChange([update], false);
 	})
@@ -547,7 +561,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 				if (errorUpdates.length > 0) {
 					change({name: 'change', update: errorUpdates});
 					errorUpdates.forEach(error => {
-						const elements = findElementsFromId(error.componentId, error.parentId);
+						const elements = findElementsFromId(error.componentId);
 						elements.forEach(element => {
 							element.dataset.harmonyError = error.errorType;
 						})
@@ -615,7 +629,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		const lastEdits = newEdits[newEdits.length - 1] as HarmonyCommandChange | undefined;
 		const lastEdit = lastEdits?.update.length === 1 ? lastEdits.update[0] : undefined;
 		const newEdit = newCommand.update.length === 1 ? newCommand.update[0] : undefined;
-		const isSameCommandType = newEdit && lastEdit && newEdit.type === lastEdit.type && newEdit.name === lastEdit.name && newEdit.componentId === lastEdit.componentId && newEdit.parentId === lastEdit.parentId;
+		const isSameCommandType = newEdit && lastEdit && newEdit.type === lastEdit.type && newEdit.name === lastEdit.name && newEdit.componentId === lastEdit.componentId;
 
 		const currTime = new Date().getTime();
 		if (editTimeout < currTime || !isSameCommandType) {
@@ -644,7 +658,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	const change = ({update}: HarmonyCommandChange): void => {
 		if (!rootComponent) return;
 		for (const up of update) {
-			const element = findElementFromId(up.componentId, up.parentId, up.childIndex);
+			const element = findElementFromId(up.componentId, up.childIndex);
 			if (element === undefined) return;
 			
 			makeUpdates(element, [up], rootComponent, fonts);
@@ -762,8 +776,8 @@ const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
 
 function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent: HTMLElement, fonts: Font[] | undefined) {
 	const id = el.dataset.harmonyId;
-	const parentId = el.dataset.harmonyParentId;
-	if (!id) {
+	const componentId = el.dataset.harmonyComponentId;
+	if (!id || !componentId) {
 		return;
 	}
 
@@ -822,7 +836,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 	//Updates that should happen for every element in a component
 	for (const update of translated) {
-		const sameElements = findElementsFromId(id, update.isGlobal ? undefined : parentId);
+		const sameElements = update.isGlobal ? findSameElementsFromId(componentId) : findElementsFromId(id);
 		for (const element of Array.from(sameElements)) {
 			const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 			const htmlElement = element;
