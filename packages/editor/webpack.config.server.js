@@ -3,7 +3,7 @@ const path = require('path');
 module.exports = {
     entry: './src/server.ts',
     output: {
-        path: path.resolve(__dirname, 'server'),
+        path: path.resolve(__dirname, 'dist-server'),
         filename: 'server.js',
         //library: 'HarmonySetup',
         libraryTarget: 'umd',

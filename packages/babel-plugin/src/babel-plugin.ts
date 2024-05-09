@@ -1,6 +1,7 @@
-import { PluginObj } from "@babel/core";
-import { NodePath, VisitNodeFunction, Visitor } from "@babel/traverse";
-import * as BabelTypes from "@babel/types";
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+import type { PluginObj } from "@babel/core";
+import type { NodePath} from "@babel/traverse";
+import type * as BabelTypes from "@babel/types";
 import {isValidPath} from '@harmony/util/src/utils/common';
 
 export interface PluginOptions {
@@ -51,7 +52,6 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
                 path.pushContainer('params', newParam);
             } else {
                 node.params = [newParam];
-                //path.get('params')[0].replaceWith(newParam);
             }
             
             for (let i = params.length - 1; i >= 0; i--) {
@@ -65,65 +65,81 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
                 }
     
                 const constDeclaration = t.variableDeclaration('let', [t.variableDeclarator(paramIdent, init)]);
-                const pathBody = path.get('body') as NodePath<BabelTypes.Node>;
+                const pathBody = path.get('body');
                 if (t.isExpression(pathBody.node)) {
-                    const pathBody = path.get('body') as NodePath<BabelTypes.Expression>;
-                    pathBody.replaceWith(t.blockStatement([t.returnStatement(pathBody.node)]))
+                    const _pathBody = path.get('body') as NodePath<BabelTypes.Expression>;
+                    _pathBody.replaceWith(t.blockStatement([t.returnStatement(_pathBody.node)]))
                 }
                 (pathBody as NodePath<BabelTypes.BlockStatement>).unshiftContainer('body', constDeclaration);
             }
         }
     }
+
+    const nestedFunctions: string[] = [];
     
     return {
         visitor: {
-            'FunctionDeclaration|ArrowFunctionExpression'(path, state) {
-                const keepTranspiledCode = state.opts.keepTranspiledCode === true;
-                if (path.type !== 'ArrowFunctionExpression' && path.type !== 'FunctionDeclaration') {
-                    return;
-                }
-                visitFunction(path as NodePath<BabelTypes.ArrowFunctionExpression | BabelTypes.FunctionDeclaration>, state);
-
-                path.traverse({
-                    JSXElement(path, state) {
-                        if (!path.node.loc) return;
-
-                        //Only visit this node if it already hasn't been visited
-                        if (path.node.openingElement.attributes.some(attr => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && ['data-harmony-id', 'data-harmony-parent-id'].includes(attr.name.name))) {
-                            return;
-                        }
-        
-                        const relativePath = constructPath(state.filename, state.opts.rootDir)
-                        const harmonyId = `${relativePath}:${path.node.loc.start.line}:${path.node.loc.start.column}:${path.node.loc.end.line}:${path.node.loc.end.column}`;
-                        const encodedHarmonyId = btoa(harmonyId);
-        
-                        //data-harmony-id="asdfasdfasdf"
-                        //const dataHarmonyIdAttribute = t.jsxAttribute(t.jsxIdentifier('data-harmony-id'), t.stringLiteral(encodedHarmonyId));
-                        
-                        //harmonyArguments[0]?.['data-harmony-id']
-                        const parentExpression = t.optionalMemberExpression(t.memberExpression(t.identifier("harmonyArguments"), t.numericLiteral(0), true), t.stringLiteral("data-harmony-id"), true , true)
-                        
-                        //typeof harmonyArguments !== 'undefined' && harmonyArguments[0]?.['data-harmony-id'] ? harmonyArguments[0]?.['data-harmony-id'] + '#' + 'id' : 'id'
-                        const dataHarmonyId = t.conditionalExpression(
-                            t.logicalExpression('&&',
-                                t.binaryExpression('!==', 
-                                    t.unaryExpression('typeof', t.identifier('harmonyArguments')), 
-                                    t.stringLiteral('undefined')),
-                                parentExpression),
-                            t.binaryExpression('+', parentExpression, t.binaryExpression('+', t.stringLiteral('#'), t.stringLiteral(encodedHarmonyId))),
-                            t.stringLiteral(encodedHarmonyId)
-                        )
-                        const dataHarmonyIdAttribute = t.jsxAttribute(t.jsxIdentifier('data-harmony-id'), t.jsxExpressionContainer(dataHarmonyId));
-                        //const parentAttributeValue = t.jsxExpressionContainer(undefinedCheck);
-        
-                        //const parentAttribute = t.jsxAttribute(t.jsxIdentifier("data-harmony-parent-id"), parentAttributeValue);
-                        const attributes = path.get('openingElement')
-                        attributes.pushContainer('attributes', dataHarmonyIdAttribute)
-                        //attributes.pushContainer('attributes', parentAttribute)
+            'FunctionDeclaration|ArrowFunctionExpression': {
+                enter(path, state) {
+                    const keepTranspiledCode = state.opts.keepTranspiledCode === true;
+                    if (path.type !== 'ArrowFunctionExpression' && path.type !== 'FunctionDeclaration') {
+                        return;
                     }
-                }, state);
-                if (keepTranspiledCode) {
-                    path.skip();
+                    const pathFunction = path as NodePath<BabelTypes.ArrowFunctionExpression | BabelTypes.FunctionDeclaration>;
+                    const returnExpressionOrStatement = t.isExpression(pathFunction.node.body) ? pathFunction.node.body : pathFunction.node.body.body[pathFunction.node.body.body.length - 1];
+                    const returnExpression = t.isReturnStatement(returnExpressionOrStatement) ? returnExpressionOrStatement.argument : returnExpressionOrStatement;
+                    if (!t.isJSXElement(returnExpression)) {
+                        nestedFunctions.push('function');
+                        return;
+                    }
+                    //Only declare a harmonyArguments var if we are at a root level function
+                    if (nestedFunctions.length === 0) {
+                        visitFunction(pathFunction, state);
+                    }
+
+                    if (nestedFunctions[nestedFunctions.length - 1] === 'function') {
+                        nestedFunctions.push('function');
+                        return;
+                    }
+                    nestedFunctions.push('react');
+    
+                    path.traverse({
+                        JSXElement(path, state) {
+                            if (!path.node.loc) return;
+    
+                            //Only visit this node if it already hasn't been visited
+                            if (path.node.openingElement.attributes.some(attr => attr.type === 'JSXAttribute' && attr.name.type === 'JSXIdentifier' && ['data-harmony-id', 'data-harmony-parent-id'].includes(attr.name.name))) {
+                                return;
+                            }
+            
+                            const relativePath = constructPath(state.filename, state.opts.rootDir)
+                            const harmonyId = `${relativePath}:${path.node.loc.start.line}:${path.node.loc.start.column}:${path.node.loc.end.line}:${path.node.loc.end.column}`;
+                            const encodedHarmonyId = btoa(harmonyId);
+            
+                            //harmonyArguments[0]?.['data-harmony-id']
+                            const parentExpression = t.optionalMemberExpression(t.memberExpression(t.identifier("harmonyArguments"), t.numericLiteral(0), true), t.stringLiteral("data-harmony-id"), true , true)
+                            
+                            //typeof harmonyArguments !== 'undefined' && harmonyArguments[0]?.['data-harmony-id'] ? harmonyArguments[0]?.['data-harmony-id'] + '#' + 'id' : 'id'
+                            const dataHarmonyId = t.conditionalExpression(
+                                t.logicalExpression('&&',
+                                    t.binaryExpression('!==', 
+                                        t.unaryExpression('typeof', t.identifier('harmonyArguments')), 
+                                        t.stringLiteral('undefined')),
+                                    parentExpression),
+                                t.binaryExpression('+', parentExpression, t.binaryExpression('+', t.stringLiteral('#'), t.stringLiteral(encodedHarmonyId))),
+                                t.stringLiteral(encodedHarmonyId)
+                            )
+                            const dataHarmonyIdAttribute = t.jsxAttribute(t.jsxIdentifier('data-harmony-id'), t.jsxExpressionContainer(dataHarmonyId));
+                            const attributes = path.get('openingElement')
+                            attributes.pushContainer('attributes', dataHarmonyIdAttribute)
+                        }
+                    }, state);
+                    if (keepTranspiledCode) {
+                        path.skip();
+                    }
+                },
+                exit() {
+                    nestedFunctions.pop();
                 }
             },
         }

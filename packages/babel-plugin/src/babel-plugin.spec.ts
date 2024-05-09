@@ -1,4 +1,4 @@
-import { transformSync, parseSync } from "@babel/core";
+import { transformSync } from "@babel/core";
 import { describe, expect, it } from "vitest";
 import babelPlugin from "./babel-plugin";
 import path from 'path';
@@ -31,6 +31,12 @@ describe("babel-plugin", () => {
 
         it("Should not visit multiple jsx when nested function calls", () => {
             const code = testCases["nested.ts"];
+            const res = runPlugin(code, false);
+            expect(res.code).toMatchSnapshot();
+        })
+
+        it("Should not visit higher order components yet", () => {
+            const code = testCases["generater.ts"];
             const res = runPlugin(code, false);
             expect(res.code).toMatchSnapshot();
         })
@@ -109,5 +115,98 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
             <h1>Hello world</h1>
             {map.map(str => <div key={str}>{str}</div>)}
         </div>
-    }`
+    }`,
+    'generater.ts': `const generatorWithReturn = (args, Component) => {
+        const id = args.id;
+        return ({map}: {map: string[]}) => {
+            return <div>
+                <h1>{id}</h1>
+                <Component label="hello"/>
+                {map.map(str => <div key={str}>{str}</div>)}
+            </div>
+        }
+    }
+    
+    const generatorArrowExpression = (args) => {
+        const id = args.id;
+        return ({map}: {map: string[]}) => <div>
+            <h1>{id}</h1>
+            {map.map(str => <div key={str}>{str}</div>)}
+        </div>
+    }
+    
+    const MyComponent = generatorWithReturn({id: '1'}, ({label}) => {
+        const items = [
+            {
+                label: 'Yes'
+            }
+        ]
+        return (<div>
+            <h1>This is it</h1>
+            <p>{label}</p>
+            <div>
+                {items.map(item => <div>{item.label}</div>)}
+            </div>
+        </div>)
+    })
+    `,
+    'bindings.ts': `
+        import { GitBranchIcon, GitPullRequestIcon, UserGroupIcon } from "@harmony/ui/src/components/core/icons"
+        export interface SidePanelItems {
+            label: string;
+            icon?: IconComponent | React.ReactNode;
+            href: string;
+            current: boolean;
+        }
+
+        const SideNav: React.FunctionComponent = () => {
+            const items: SidePanelItems[] = [
+                {
+                    label: 'Projects',
+                    href: '/projects',
+                    current: true,
+                    icon: GitBranchIcon
+                },
+                {
+                    label: 'Publish Requests',
+                    href: '/pull-requests',
+                    current: false,
+                    icon: GitPullRequestIcon
+                },
+                {
+                    label: 'My Team',
+                    href: '/team',
+                    current: false,
+                    icon: UserGroupIcon
+                }
+            ]
+
+            return <SidePanel items={items}/>
+        }
+
+        const SidePanel: React.FunctionComponent<{items: SidePanelItems[]}> = ({items}) => {
+            return <div>
+                {items.map(item => <SidePanelItem item={item}/>)}
+            </div>
+        }
+
+        const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: string}> = ({item, className}) => {
+            return (
+                <li key={item.label} className={getClass(className)}>
+                    <a
+                        className={getClass(
+                            item.current
+                                ? 'hw-text-[#11283B]'
+                                : 'hw-text-[#88939D] hover:hw-text-[#11283B]',
+                            'hw-group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-lg hw-leading-6 hw-pl-12'
+                        )}
+                        href={item.href}
+                    >
+                        {item.icon ? typeof item.icon === 'function' ? <ToggleIcon className="d" icon={item.icon} selected={item.current}/> : item.icon : null}
+                        {item.label}
+                    </a>
+                </li>
+            ) 
+        }
+    `
 }

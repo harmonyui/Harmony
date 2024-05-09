@@ -32,7 +32,7 @@ RUN pnpm run build --filter=harmony-ai-editor
 FROM base AS runner
 WORKDIR /app
  
-COPY --from=installer /app/packages/editor/server ./server
+COPY --from=installer /app/packages/editor/dist-server ./dist
 COPY --from=installer /app/packages/editor/public ./public
 COPY --from=installer /app/node_modules ./node_modules
 COPY --from=installer /app/packages/db/lib/generated/client ./generated/client
@@ -43,4 +43,4 @@ COPY --from=installer /app/packages/db/lib/generated/client ./generated/client
 # COPY --from=installer --chown=nextjs:nodejs /app/apps/web/.next/static ./apps/web/.next/static
 # COPY --from=installer --chown=nextjs:nodejs /app/apps/web/public ./apps/web/public
 EXPOSE 4200
-CMD node server/server.js
+CMD node dist/server.js

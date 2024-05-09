@@ -49,7 +49,7 @@ target
 #editor
 bundle.js
 dev
-server
+dist-server
 
 #turbo
 .turbo

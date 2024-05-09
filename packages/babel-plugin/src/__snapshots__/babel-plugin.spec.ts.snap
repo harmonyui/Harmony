@@ -45,6 +45,51 @@ export default function SummaryMetadata(...harmonyArguments) {
 }"
 `;
 
+exports[`babel-plugin > transform > Should not visit higher order components yet 1`] = `
+"const generatorWithReturn = (args, Component) => {
+  const id = args.id;
+  return ({
+    map
+  }: {
+    map: string[];
+  }) => {
+    return <div>
+                <h1>{id}</h1>
+                <Component label="hello" />
+                {map.map(str => <div key={str}>{str}</div>)}
+            </div>;
+  };
+};
+const generatorArrowExpression = args => {
+  const id = args.id;
+  return ({
+    map
+  }: {
+    map: string[];
+  }) => <div>
+            <h1>{id}</h1>
+            {map.map(str => <div key={str}>{str}</div>)}
+        </div>;
+};
+const MyComponent = generatorWithReturn({
+  id: '1'
+}, (...harmonyArguments) => {
+  let {
+    label
+  } = harmonyArguments[0];
+  const items = [{
+    label: 'Yes'
+  }];
+  return <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjY6MTY6MzI6MTQ=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjY6MTY6MzI6MTQ="}>
+            <h1 data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjc6MTI6Mjc6MzE=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjc6MTI6Mjc6MzE="}>This is it</h1>
+            <p data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjg6MTI6Mjg6MjY=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjg6MTI6Mjg6MjY="}>{label}</p>
+            <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjk6MTI6MzE6MTg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjk6MTI6MzE6MTg="}>
+                {items.map(item => <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzA6MzU6MzA6NTg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzA6MzU6MzA6NTg="}>{item.label}</div>)}
+            </div>
+        </div>;
+});"
+`;
+
 exports[`babel-plugin > transform > Should not visit multiple jsx when nested function calls 1`] = `
 "const App = (...harmonyArguments) => {
   let {
@@ -54,10 +99,7 @@ exports[`babel-plugin > transform > Should not visit multiple jsx when nested fu
   } = harmonyArguments[0];
   return <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjoxNTo1OjE0") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjoxNTo1OjE0"}>
             <h1 data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoxMjozOjMy") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoxMjozOjMy"}>Hello world</h1>
-            {map.map((...harmonyArguments) => {
-      let str = harmonyArguments[0];
-      return <div key={str} data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDoyODo0OjU0") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDoyODo0OjU0"}>{str}</div>;
-    })}
+            {map.map(str => <div key={str} data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDoyODo0OjU0") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDoyODo0OjU0"}>{str}</div>)}
         </div>;
 };"
 `;

@@ -12,7 +12,8 @@
 		"compose": "docker compose -f devops/docker-compose.yml -p my-app up --build -d",
 		"db:generate": "turbo run db:generate",
     "db:push": "turbo run db:push",
-		"db:studio": "turbo run db:studio"
+		"db:studio": "turbo run db:studio",
+    "db:deploy": "turbo run db:deploy"
   },
   "devDependencies": {
     "eslint": "^8.48.0",

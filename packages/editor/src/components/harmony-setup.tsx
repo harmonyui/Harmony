@@ -141,7 +141,8 @@ class Setuper implements Setup {
     
         ReactDOM.createPortal = createPortal;
         this.bodyObserver.disconnect();
-        this.harmonyContainer.classList.remove('hw-h-full hw-w-full');
+        this.harmonyContainer.classList.remove('hw-h-full');
+        this.harmonyContainer.classList.remove('hw-w-full');
 
         return true;
     }
