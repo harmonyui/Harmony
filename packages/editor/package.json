@@ -3,7 +3,7 @@
   "description": "Front-end overlay ontop of your webapp",
   "main": "./dist/setup/bundle.js",
   "module": "./dist/setup/bundle.js",
-  "types": "./dist/esm/packages/editor/src/index.d.ts",
+  "types": "./dist/esm/editor/src/index.d.ts",
   "files": [
     "dist"
   ],
@@ -97,5 +97,5 @@
     ]
   },
   "prettier": "@harmony/prettier-config",
-  "version": "0.12.5"
+  "version": "0.12.6"
 }

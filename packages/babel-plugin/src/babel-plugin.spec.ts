@@ -41,6 +41,12 @@ describe("babel-plugin", () => {
             expect(res.code).toMatchSnapshot();
         })
 
+        it("Should handle jsx fragment and variants", () => {
+            const code = testCases["fragment.ts"];
+            const res = runPlugin(code, false);
+            expect(res.code).toMatchSnapshot();
+        })
+
         it("Should refector function with multiple arguments", () => {
             const code = `function Home({className, label}, ref) {
                 return <div>
@@ -149,6 +155,41 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
             </div>
         </div>)
     })
+    `,
+    'fragment.ts': `
+    import { AuthForm } from './components/auth-form'
+    import { BrandMessage } from './components/brand-message'
+    import { LogoHintible } from '@/components/logos/logo-hintible'
+    import { Toaster } from '@/components/ui/sonner'
+    
+    export default function Fragment() {
+      return (
+        <>
+          <div className="relative grid flex-col h-full lg:grid-cols-2">
+            <div className="relative items-end justify-center hidden bg-gradient-to-b from-red-500 to-red-600 lg:flex">
+              {/* <img
+                src="/images/people-montage-1.jpeg"
+                className="absolute top-0 left-0 right-0 object-cover h-full opacity-10 pointer-events-none"
+              /> */}
+              <BrandMessage />
+            </div>
+            <div className="flex flex-col justify-center w-full max-w-sm p-8 m-auto space-y-6">
+              <div className="flex flex-col space-y-2 text-center">
+                <LogoHintible className="w-auto h-8 mx-auto mb-10" />
+              </div>
+              <AuthForm type="login" />
+            </div>
+          </div>
+          <Toaster richColors theme="light" />
+        </>
+      )
+    }    
+
+    function MemberThing() {
+        return (<Toaster.Thing>
+            This is a toaster thing
+        </Toaster.Thing>)
+    }
     `,
     'bindings.ts': `
         import { GitBranchIcon, GitPullRequestIcon, UserGroupIcon } from "@harmony/ui/src/components/core/icons"

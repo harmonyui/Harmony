@@ -45,6 +45,38 @@ export default function SummaryMetadata(...harmonyArguments) {
 }"
 `;
 
+exports[`babel-plugin > transform > Should handle jsx fragment and variants 1`] = `
+"import { AuthForm } from './components/auth-form';
+import { BrandMessage } from './components/brand-message';
+import { LogoHintible } from '@/components/logos/logo-hintible';
+import { Toaster } from '@/components/ui/sonner';
+export default function Fragment(...harmonyArguments) {
+  return <>
+          <div className="relative grid flex-col h-full lg:grid-cols-2" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTA6MTA6MjQ6MTY=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTA6MTA6MjQ6MTY="}>
+            <div className="relative items-end justify-center hidden bg-gradient-to-b from-red-500 to-red-600 lg:flex" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTE6MTI6MTc6MTg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTE6MTI6MTc6MTg="}>
+              {/* <img
+                src="/images/people-montage-1.jpeg"
+                className="absolute top-0 left-0 right-0 object-cover h-full opacity-10 pointer-events-none"
+               /> */}
+              <BrandMessage data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTY6MTQ6MTY6MzA=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTY6MTQ6MTY6MzA="} />
+            </div>
+            <div className="flex flex-col justify-center w-full max-w-sm p-8 m-auto space-y-6" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTg6MTI6MjM6MTg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTg6MTI6MjM6MTg="}>
+              <div className="flex flex-col space-y-2 text-center" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTk6MTQ6MjE6MjA=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTk6MTQ6MjE6MjA="}>
+                <LogoHintible className="w-auto h-8 mx-auto mb-10" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjA6MTY6MjA6Njk=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjA6MTY6MjA6Njk="} />
+              </div>
+              <AuthForm type="login" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjI6MTQ6MjI6Mzk=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjI6MTQ6MjI6Mzk="} />
+            </div>
+          </div>
+          <Toaster richColors theme="light" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjU6MTA6MjU6NDY=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjU6MTA6MjU6NDY="} />
+        </>;
+}
+function MemberThing(...harmonyArguments) {
+  return <Toaster.Thing data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzE6MTY6MzM6MjQ=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzE6MTY6MzM6MjQ="}>
+            This is a toaster thing
+        </Toaster.Thing>;
+}"
+`;
+
 exports[`babel-plugin > transform > Should not visit higher order components yet 1`] = `
 "const generatorWithReturn = (args, Component) => {
   const id = args.id;

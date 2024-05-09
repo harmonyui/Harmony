@@ -75,6 +75,10 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
         }
     }
 
+    const isJSX = (node: BabelTypes.Node | undefined | null): boolean => {
+        return [t.isJSXElement, t.isJSXFragment].some(func => func(node));
+    }
+
     const nestedFunctions: string[] = [];
     
     return {
@@ -88,7 +92,7 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
                     const pathFunction = path as NodePath<BabelTypes.ArrowFunctionExpression | BabelTypes.FunctionDeclaration>;
                     const returnExpressionOrStatement = t.isExpression(pathFunction.node.body) ? pathFunction.node.body : pathFunction.node.body.body[pathFunction.node.body.body.length - 1];
                     const returnExpression = t.isReturnStatement(returnExpressionOrStatement) ? returnExpressionOrStatement.argument : returnExpressionOrStatement;
-                    if (!t.isJSXElement(returnExpression)) {
+                    if (!isJSX(returnExpression)) {
                         nestedFunctions.push('function');
                         return;
                     }
