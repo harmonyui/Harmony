@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
 /* eslint-disable import/no-cycle -- TODO: Fix later */
 "use client";
-import React, { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import type { BehaviorType, ComponentElement, ComponentError, ComponentUpdate } from "@harmony/util/src/types/component";
 import type {PublishRequest, PublishResponse, UpdateRequest} from "@harmony/util/src/types/network";
 import type { Environment} from '@harmony/util/src/utils/component';
@@ -16,13 +16,14 @@ import type { Font } from "@harmony/util/src/fonts";
 import $ from 'jquery';
 import {DEFAULT_WIDTH as WIDTH, DEFAULT_HEIGHT as HEIGHT} from '@harmony/util/src/constants';
 import { HarmonyPanel} from "./panel/harmony-panel";
-import type { SelectMode} from "./panel/harmony-panel";
 import { getBoundingRect } from "./snapping/calculations";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import type { Setup } from "./harmony-setup";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
 import { loadProject, publishProject, saveProject } from "../data-layer";
+import { DisplayMode, HarmonyContext, viewModes } from "./harmony-context";
 
+export type SelectMode = 'scope' | 'tweezer';
 export type ComponentUpdateWithoutGlobal = Omit<ComponentUpdate, 'isGlobal'>
 
 export function findElementFromId(componentId: string, childIndex: number): HTMLElement | undefined {
@@ -60,52 +61,6 @@ export function findSameElementsFromId(componentId: string): HTMLElement[] {
 	return Array.from(elements) as HTMLElement[];
 }
 
-
-const viewModes = ['designer', 'preview', 'preview-full'] as const;
-export type DisplayMode = typeof viewModes[number];
-
-const noop = () => undefined;
-
-const asyncnoop = async () => undefined;
-
-interface HarmonyContextProps {
-	branchId: string;
-	isSaving: boolean;
-	setIsSaving: (isSaving: boolean) => void;
-	publish: (request: PublishRequest) => Promise<PublishResponse | undefined>;
-	pullRequest: PullRequest | undefined;
-	setPullRequest: (value: PullRequest) => void;
-	displayMode: DisplayMode;
-	changeMode: (mode: DisplayMode) => void;
-	publishState: PullRequest | undefined;
-	setPublishState: (value: PullRequest | undefined) => void;
-	fonts?: Font[];
-	onFlexToggle: () => void;
-	scale: number;
-	onScaleChange: (scale: number, cursorPos: {x: number, y: number}) => void;
-	onClose: () => void;
-	error: string | undefined;
-	setError: (value: string | undefined) => void;
-	environment: Environment;
-	showWelcomeScreen: boolean;
-	setShowWelcomeScreen: (value: boolean) => void;
-	showGiveFeedback: boolean;
-	setShowGiveFeedback: (value: boolean) => void;
-	isDemo: boolean;
-	currentBranch: {id: string, name: string} | undefined;
-	behaviors: BehaviorType[];
-	setBehaviors: (value: BehaviorType[]) => void;
-	isGlobal: boolean;
-	setIsGlobal: (value: boolean) => void;
-}
-const HarmonyContext = createContext<HarmonyContextProps>({branchId: '', pullRequest: undefined, publish: asyncnoop, isSaving: false, setIsSaving: noop, setPullRequest: noop, displayMode: 'designer', changeMode: noop, publishState: undefined, setPublishState: noop, onFlexToggle: noop, scale: 1, onScaleChange: noop, onClose: noop, error: undefined, setError: noop, environment: 'production', showWelcomeScreen: false, setShowWelcomeScreen: noop, showGiveFeedback: false, setShowGiveFeedback: noop, isDemo: false, currentBranch: undefined, behaviors: [], setBehaviors: noop, isGlobal: true, setIsGlobal: noop});
-
-export const useHarmonyContext = () => {
-	const context = useContext(HarmonyContext);
-
-	return context;
-}
-
 export interface HarmonyProviderProps {
 	repositoryId: string;
 	branchId: string;
@@ -140,7 +95,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [showGiveFeedback, setShowGiveFeedback] = useState(false);
 	const [isDemo, setIsDemo] = useState(false);
 	const [behaviors, setBehaviors] = useState<BehaviorType[]>([]);
-	const [isGlobal, setIsGlobal] = useState(true);
+	const [isGlobal, setIsGlobal] = useState(false);
 	//const [currUpdates, setCurrUpdates] = useState<{updates: ComponentUpdateWithoutGlobal[], execute: boolean}>();
 
 	const executeCommand = useComponentUpdator({isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
@@ -482,9 +437,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	return (
 		<>
-			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, pullRequest, setPullRequest, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showWelcomeScreen, setShowWelcomeScreen, showGiveFeedback, setShowGiveFeedback, isDemo, currentBranch: branches.find(branch => branch.id === branchId), behaviors, setBehaviors, isGlobal, setIsGlobal}}>
+			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, pullRequest, setPullRequest, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showWelcomeScreen, setShowWelcomeScreen, showGiveFeedback, setShowGiveFeedback, isDemo, currentBranch: branches.find(branch => branch.id === branchId), behaviors, setBehaviors, isGlobal, setIsGlobal, onComponentHover: setHoveredComponent, onComponentSelect: setSelectedComponent, selectedComponent}}>
 				{displayMode && displayMode !== 'preview-full' ? <>
-					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={setHoveredComponent} onComponentSelect={setSelectedComponent} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
+					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 						<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
 							<div id="harmony-scaled" ref={(d) => {
 								if (d && d !== harmonyContainerRef.current) {
@@ -620,9 +575,21 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 			name: 'change',
 			update: update.filter(update => update.oldValue !== update.value)//.map(update => ({...update, behaviors})),
 		}
+
 		//TODO: find a better way to do this
 		if (execute)
 			change(newCommand);
+
+		//TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
+		//When we want global in this scenario, we are going to assume it is the next layer up (which is what isGlobal false does)
+		//This might not hold true in all scenarios, but we will assume for now
+		newCommand.update.forEach(up => {
+			const id = up.componentId;
+			const sameElements = findElementsFromId(id);
+			if (sameElements.length > 1) {
+				up.isGlobal = false;
+			}
+		});
 
 		const newEdits = undoStack.slice();
 		const newSaves = saveStack.slice();

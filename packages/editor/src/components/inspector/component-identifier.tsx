@@ -102,9 +102,23 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 
 	private getComponentChildren(element: HTMLElement): ComponentElement[] {
 		const children: ComponentElement[] = [];
+		const noSlots = (el: HTMLElement): HTMLElement => {
+			if (el.tagName.toLowerCase() === 'slot') {
+				return noSlots(el.children[0] as HTMLElement);
+			}
+
+			return el;
+		}
 		// eslint-disable-next-line @typescript-eslint/prefer-for-of -- ok
-		for (let i = 0; i < element.children.length; i++) {
-			const child = element.children[i] as HTMLElement;
+		const elementChildren = Array.from(element.children);
+		for (let i = 0; i < elementChildren.length; i++) {
+			const child = elementChildren[i] as HTMLElement;
+			if (child.tagName.toLocaleLowerCase() === 'slot') {
+				elementChildren.splice(i, 1, ...Array.from(child.children));
+				i--;
+				continue;
+			}
+			//Hard coding for now when million adds in the slots, it messes things up
 			const childComponent = this.getComponentFromElement(child);
 			if (childComponent) { 
 				children.push(childComponent);

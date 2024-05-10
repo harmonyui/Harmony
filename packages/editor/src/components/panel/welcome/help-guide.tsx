@@ -1,24 +1,25 @@
-import { ArrowLeftIcon, IconComponent, QuestionMarkIcon, SendIcon } from "@harmony/ui/src/components/core/icons"
+import type { IconComponent} from "@harmony/ui/src/components/core/icons";
+import { QuestionMarkIcon, SendIcon } from "@harmony/ui/src/components/core/icons"
 import { getWebUrl } from "@harmony/util/src/utils/component";
 import { getClass } from '@harmony/util/src/utils/common';
 import { Popover } from "@harmony/ui/src/components/core/popover"
 import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
-import { useHarmonyContext } from "../../harmony-provider";
-import { ControlModal } from "./welcome-modal";
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input } from "@harmony/ui/src/components/core/input";
 import { emailSchema } from "@harmony/util/src/types/utils";
-import { EmailFeedbackRequest, EmailMeetingRequest } from "@harmony/util/src/types/network";
+import type { EmailFeedbackRequest, EmailMeetingRequest } from "@harmony/util/src/types/network";
+import { useHarmonyContext } from "../../harmony-context";
+import { ControlModal } from "./welcome-modal";
 
 export const HelpGuide: React.FunctionComponent<{className?: string}> = ({className}) => {
     const {setShowGiveFeedback} = useHarmonyContext();
     const [otherPopup, setOtherPopup] = useState<'condensed' | 'talk' | undefined>();
 
     const [showPopover, setShowPopover] = useState(false);
-    const [closeTrigger, setCloseTrigger] = useState(0);
+    const [closeTrigger] = useState(0);
     const [showControlModal, setShowControlModal] = useState(false);
 
     const onOpen = () => {
@@ -39,12 +40,12 @@ export const HelpGuide: React.FunctionComponent<{className?: string}> = ({classN
         'condensed': <HelpGuideCondensed onGuideClick={onGuideClick}/>,
         'talk': <TalkWithUs onAfterSend={onClosePopup}/>
     }[otherPopup] : <div className="hw-flex hw-flex-col hw-gap-2 hw-mr-4">
-        <div className="hover:hw-cursor-pointer hover:hw-text-[#88939D] hw-text-[#11283B]" onClick={() => setOtherPopup('condensed')}>View hotkey guide</div>
+        <div className="hover:hw-cursor-pointer hover:hw-text-[#88939D] hw-text-[#11283B]" onClick={() => {setOtherPopup('condensed')}}>View hotkey guide</div>
         <div className="hover:hw-cursor-pointer hover:hw-text-[#88939D] hw-text-[#11283B]" onClick={() => {
             setShowPopover(false);
             setShowGiveFeedback(true)
         }}>Give us feedback</div>
-        <div className="hover:hw-cursor-pointer hover:hw-text-[#88939D] hw-text-[#11283B]" onClick={() => setOtherPopup('talk')}>Talk with us</div>
+        <div className="hover:hw-cursor-pointer hover:hw-text-[#88939D] hw-text-[#11283B]" onClick={() => {setOtherPopup('talk')}}>Talk with us</div>
     </div>
 	return (<>
 		<Popover closeTrigger={closeTrigger} isOpen={showPopover} setIsOpen={(value) => {
@@ -53,7 +54,7 @@ export const HelpGuide: React.FunctionComponent<{className?: string}> = ({classN
         }} button={<ButtonIcon className={className} icon={QuestionMarkIcon} onClick={onOpen}/>} container={document.getElementById("harmony-container") || undefined}>
 			{popup}
 		</Popover>
-        <ControlModal show={showControlModal} onClose={() => setShowControlModal(false)}/>
+        <ControlModal show={showControlModal} onClose={() => {setShowControlModal(false)}}/>
 	</>)
 }
 
@@ -101,7 +102,7 @@ const TalkWithUs: React.FunctionComponent<{onAfterSend: () => void;}> = ({onAfte
         }
 
         const request: EmailMeetingRequest = {
-            name: name, email: emailParse.data, comments
+            name, email: emailParse.data, comments
         }
         setLoading(true);
         fetch(`${WEB_URL}/api/email/meeting`, {
@@ -158,7 +159,7 @@ export const GiveFeedbackModal: React.FunctionComponent<{show: boolean, onClose:
             return;
         }
         const request: EmailFeedbackRequest = {
-            name, comments: comments
+            name, comments
         }
         setLoading(true);
         //TODO: Put this somewhere else in an encapsulated network layer

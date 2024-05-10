@@ -1,15 +1,15 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+ 
 /* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare -- ok*/
-/* eslint-disable import/no-cycle -- ok*/
+ 
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal"
-import { useHarmonyContext } from "../../harmony-provider"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { useEffect, useMemo, useState } from "react";
 import { getEditorUrl } from "@harmony/util/src/utils/component";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { InfoBox } from "@harmony/ui/src/components/core/alert";
-import { IconComponent } from "@harmony/ui/src/components/core/icons";
+import type { IconComponent } from "@harmony/ui/src/components/core/icons";
+import { useHarmonyContext } from "../../harmony-context"
 
 export const WelcomeModal: React.FunctionComponent = () => {
     const {setShowWelcomeScreen, showWelcomeScreen} = useHarmonyContext();
@@ -34,7 +34,7 @@ export const WelcomeModal: React.FunctionComponent = () => {
         }
     }
 
-    const Page = pages[page]!;
+    const Page = pages[page];
     
     return (
         <HarmonyModal maxWidthClassName="hw-max-w-5xl" show={showWelcomeScreen === true || typeof showWelcomeScreen === 'number'} onClose={() => setShowWelcomeScreen(false)} editor>

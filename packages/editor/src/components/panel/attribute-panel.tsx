@@ -9,9 +9,10 @@ import { ComponentElement } from "@harmony/util/src/types/component";
 import { camelToKebab, capitalizeFirstLetter } from "@harmony/util/src/utils/common";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { CommonTools, getTextToolsFromAttributes } from "./harmony-panel";
-import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-provider";
+import { useHarmonyContext } from "../harmony-context";
 import { getComputedValue } from "../snapping/position-updator";
 import { overlayStyles } from "../inspector/inspector";
+import { ComponentUpdateWithoutGlobal } from "../harmony-provider";
 
 interface ComponentAttributeContextProps {
     selectedComponent: HTMLElement | undefined;

@@ -12,40 +12,41 @@
 /* eslint-disable @typescript-eslint/no-confusing-void-expression  -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion  -- ok*/
 /* eslint-disable import/no-cycle  -- ok*/
-import { ComponentElement } from "@harmony/util/src/types/component"
+import type { ComponentElement } from "@harmony/util/src/types/component"
 import { Header } from "@harmony/ui/src/components/core/header";
 import { Label } from "@harmony/ui/src/components/core/label";
 import { Input, NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { ArrowLeftIcon, BarsArrowDownIcon, MaximizeIcon, GitBranchIcon, PlayIcon, ShareArrowIcon, LinkIcon, XMarkIcon, SendIcon, PreviewIcon, AlignCenterIcon, AlignJustifyIcon, AlignLeftIcon, AlignRightIcon } from "@harmony/ui/src/components/core/icons";
-import { camelToKebab, constArray, convertRgbToHex, getClass } from "@harmony/util/src/utils/common";
+import { camelToKebab, constArray, convertRgbToHex } from "@harmony/util/src/utils/common";
 import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
-import { componentIdentifier, isDesignerElementSelectable, isTextElement, selectDesignerElement } from "../inspector/inspector";
 import { Slider } from "@harmony/ui/src/components/core/slider";
-import {Dropdown, DropdownItem} from "@harmony/ui/src/components/core/dropdown";
+import type { DropdownItem} from "@harmony/ui/src/components/core/dropdown";
+import {Dropdown} from "@harmony/ui/src/components/core/dropdown";
 import ColorPicker from '@harmony/ui/src/components/core/color-picker';
 import { HexColorSchema } from "@harmony/util/src/types/colors";
 import {useChangeProperty} from '@harmony/ui/src/hooks/change-property';
 import { Popover } from "@harmony/ui/src/components/core/popover";
 import {HarmonyModal} from '@harmony/ui/src/components/core/modal';
-import {PullRequest} from '@harmony/util/src/types/branch';
-import { ComponentUpdateWithoutGlobal, useHarmonyContext, usePinchGesture } from "../harmony-provider";
-import { PublishRequest } from "@harmony/util/src/types/network";
-import { Font } from "@harmony/util/src/fonts";
+import type {PullRequest} from '@harmony/util/src/types/branch';
+import type { PublishRequest } from "@harmony/util/src/types/network";
+import type { Font } from "@harmony/util/src/fonts";
 import { getEditorUrl } from "@harmony/util/src/utils/component";
+import { usePinchGesture } from "../harmony-provider";
+import type { ComponentUpdateWithoutGlobal, SelectMode} from "../harmony-provider";
+import { componentIdentifier, isDesignerElementSelectable, isTextElement, selectDesignerElement } from "../inspector/inspector";
+import { getComputedValue } from "../snapping/position-updator";
+import { ComponentAttributePanel, ComponentAttributeProvider, useComponentAttribute } from "./attribute-panel";
 import { GiveFeedbackModal, HelpGuide } from "./welcome/help-guide";
 import { SidePanel, SidePanelProvider, useSidePanel } from "./side-panel";
-import { ComponentAttributePanel, ComponentAttributeProvider, useComponentAttribute } from "./attribute-panel";
-import { getComputedValue } from "../snapping/position-updator";
-
-export type SelectMode = 'scope' | 'tweezer';
+import { ComponentLayoutPanel } from "./layout-panel";
+import { useHarmonyContext } from "../harmony-context";
+import { useEffectEvent } from "../inspector/inspector-dev";
 
 export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
 	selectedComponent: HTMLElement | undefined;
 	onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void;
-	onComponentSelect: (component: HTMLElement) => void;
-	onComponentHover: (component: HTMLElement) => void;
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
 	children: React.ReactNode;
@@ -497,9 +498,13 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 	// 	setBehaviors(copy);
 	// }
 
-	const onPositionClick = () => {
+	const onAttributeClick = () => {
 		!isDemo && setPanel({id: 'attribute', content: <ComponentAttributePanel/>});
 	}
+
+	const onLayoutClick = useEffectEvent(() => {
+		!isDemo && setPanel({id: 'layout', content: <ComponentLayoutPanel selectedComponent={selectedComponent}/>});
+	});
 
 	const onGlobalClick = () => {
 		setIsGlobal(!isGlobal);
@@ -510,6 +515,9 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
 				<Header className="hw-font-normal" level={3}>{currentBranch ? currentBranch.name : 'Invalid Branch'}</Header>
 			</div>
+			{!isDemo ? <div className="hw-px-4">
+				<button className="hw-text-base hw-font-light" onClick={onLayoutClick}>Layout</button>
+			</div> : null}
 			{data ? <>
 				<div className="hw-px-4">
 					<ComponentTools tools={currTools} components={currTools.reduce<Record<string, ComponentTool | undefined>>((prev, curr) => {prev[curr] = commonTools[curr]; return prev}, {})} data={data} onChange={onAttributeChange}/>
@@ -526,7 +534,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 					</Popover>
 				</div> : null}
 				{!isDemo ? <div className="hw-px-4">
-					<button className="hw-text-base hw-font-light" onClick={onPositionClick}>Layout</button>
+					<button className="hw-text-base hw-font-light" onClick={onAttributeClick}>Attributes</button>
 				</div> : null}
 				<div className="hw-px-4">
 					<button className="hw-text-base hw-font-light" onClick={onGlobalClick}>{isGlobal ? 'All' : 'Single'}</button>
@@ -1097,66 +1105,3 @@ const ComponentToolComponent: React.FunctionComponent<{ToolComponent: ComponentT
 // 	)
 // }
 
-interface TreeViewItem<T = string> {
-	id: T;
-	content: React.ReactNode,
-	items: TreeViewItem<T>[],
-	selected: boolean,
-}
-const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
-	if (item.selected) return true;
-
-	if (item.items.some(it => isSelected(it))) return true;
-
-	return false;
-}
-
-const TreeViewItem = <T,>({item, onClick, onHover}: {item: TreeViewItem<T>, onClick: (item: TreeViewItem<T>) => void, onHover: (item: TreeViewItem<T>) => void,}) => {
-	const [expand, setExpand] = useState(isSelected(item));
-	const onExpand = () => {
-		setExpand(!expand);
-	}
-
-	return (<>
-		{item.items.length === 0 ? <li className={getClass("hw-px-2 hover:hw-bg-gray-100", item.selected ? 'hw-bg-gray-200' : '')}>
-			<button onClick={() => onClick(item)} onMouseOver={() => onHover(item)}>{item.content}</button></li> : null}
-			{item.items.length > 0 ? <li >
-				<div className={getClass("hw-flex", item.selected ? "hw-bg-gray-200" : "")}>
-				<button
-					onClick={onExpand}
-					role="button"
-					aria-expanded="false"
-					aria-controls="collapseThree"
-					className="hw-flex hw-items-center hw-px-1 hover:hw-bg-gray-100 hw-rounded-md focus:hw-text-primary active:hw-text-primary">
-					<svg
-						xmlns="http://www.w3.org/2000/svg"
-						fill="none"
-						viewBox="0 0 24 24"
-						strokeWidth="2.5"
-						stroke="currentColor"
-						className={getClass('hw-h-4 hw-w-4', expand ? 'rotate-90' : '')}>
-						<path
-							stroke-linecap="round"
-							stroke-linejoin="round"
-							d="M8.25 4.5l7.5 7.5-7.5 7.5" />
-					</svg>
-				</button>
-				<button className="hw-px-1 hover:hw-bg-gray-100 hw-rounded-md" onClick={() => onClick(item)} onMouseOver={() => onHover(item)}>
-					{item.content}
-				</button>
-				</div>
-				<TreeView items={item.items} expand={expand} onClick={onClick} onHover={onHover}/>
-			</li> : null}
-		</>
-	)
-}
-
-const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeViewItem<T>[], expand?: boolean, onClick: (item: TreeViewItem<T>) => void, onHover: (item: TreeViewItem<T>) => void}) => {
-	return <>
-		<ul className={getClass('!hw-visible hw-ml-4', expand ? '' : 'hw-hidden')}>
-			{items.map(item => <>
-				<TreeViewItem key={String(item.selected)} item={item} onClick={onClick} onHover={onHover}/>
-			</>)}
-		</ul>
-	</>
-}

@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import { getEventListeners } from "events";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 let controller = new AbortController();
 

@@ -1,11 +1,12 @@
 "use client";
 import React, { useEffect} from "react";
 import ReactDOM from "react-dom";
-import { DisplayMode, HarmonyProviderProps } from "./harmony-provider";
+import { HarmonyProviderProps } from "./harmony-provider";
 import { FiberHTMLElement, getElementFiber } from "./inspector/inspector-dev";
 import { getComponentElementFiber } from "./inspector/component-identifier";
 import { Fiber } from "react-reconciler";
 import { Environment, getEditorUrl } from "@harmony/util/src/utils/component";
+import { DisplayMode } from "./harmony-context";
     
 export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts' | 'environment'> & {local?: boolean}> = ({local=false, ...options}) => {
 	const setBranchId = (branchId: string) => {
@@ -163,6 +164,7 @@ class Setuper implements Setup {
             }
         }
         this.harmonyContainer.className = "hw-h-full hw-w-full";
+        (this.container as HTMLElement).dataset.harmonyId = document.body.dataset.harmonyId;
 
         ReactDOM.createPortal = function create(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
             if (_container === document.body) {

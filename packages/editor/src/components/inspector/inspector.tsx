@@ -7,19 +7,19 @@
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
 /* eslint-disable import/no-cycle -- ok*/
 'use client';
-import { useHighlighter } from "./highlighter"
 import { useCallback, useEffect, useMemo, useRef } from "react"
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import { ReactComponentIdentifier } from "./component-identifier";
 import hotkeys from 'hotkeys-js';
-import { SelectMode } from "../panel/harmony-panel";
 import $ from 'jquery';
-import { useSnapping } from "../snapping/snapping";
 import { usePrevious } from "@harmony/ui/src/hooks/previous";
 import {Alert} from '@harmony/ui/src/components/core/alert';
-import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-provider";
+import { useSnapping } from "../snapping/snapping";
+import type { SelectMode , ComponentUpdateWithoutGlobal } from "../harmony-provider";
 import { getProperty } from "../snapping/calculations";
 import { useSidePanel } from "../panel/side-panel";
+import { useHarmonyContext } from "../harmony-context";
+import { ReactComponentIdentifier } from "./component-identifier";
+import { useHighlighter } from "./highlighter"
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -301,7 +301,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			const parent = selectDesignerElement(selectedComponent).parentElement;
 			if (parent && getComputedStyle(parent).display.includes('flex') && Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 2) {
 				if (!parent.dataset.harmonyFlex && !isDemo) {
-					parent.dataset.harmonyFlex = 'true';
+					//parent.dataset.harmonyFlex = 'true';
 				}
 			}
 			overlayRef.current.select(selectedComponent, scale, false, inspectorState, {onTextChange: onElementTextChange, onFlexClick});
@@ -699,8 +699,8 @@ export class OverlayRect {
 			
 		for (let i = 0; i < 8; i++) {
 			const handle = $('<div name="resize-handle"></div>');
-			this.resizeHandles.push(handle[0]!);
-			this.resizeHandles[i]!.style.backgroundColor = overlayStyles.resize;
+			this.resizeHandles.push(handle[0]);
+			this.resizeHandles[i].style.backgroundColor = overlayStyles.resize;
 		}
 
 		if (element.dataset.harmonyFlex && onFlexClick) {
@@ -720,9 +720,9 @@ export class OverlayRect {
 			$displayText.on('pointerdown', (e) => {
 				e.stopPropagation();
 				element.dataset.harmonyFlex = element.dataset.harmonyFlex === 'true' ? 'false' : 'true';
-				$displayText[0]!.dataset.harmonyFlex = element.dataset.harmonyFlex;
+				$displayText[0].dataset.harmonyFlex = element.dataset.harmonyFlex;
 			})
-			this.content.appendChild($displayText[0]!);
+			this.content.appendChild($displayText[0]);
 		}
 
 		this.border.style.borderColor = overlayStyles.background
@@ -821,7 +821,7 @@ export class OverlayRect {
 		//NE -> SE -> SW -> NW
 		//E -> S -> W -> N
 		if (drag) {
-			Object.assign(this.resizeHandles[0]!.style, {
+			Object.assign(this.resizeHandles[0].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
 				'pointer-events': 'none',
@@ -832,7 +832,7 @@ export class OverlayRect {
 			})
 
 
-			Object.assign(this.resizeHandles[1]!.style, {
+			Object.assign(this.resizeHandles[1].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
 				'pointer-events': 'none',
@@ -843,7 +843,7 @@ export class OverlayRect {
 			})
 
 
-			Object.assign(this.resizeHandles[2]!.style, {
+			Object.assign(this.resizeHandles[2].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
 				'pointer-events': 'none',
@@ -854,7 +854,7 @@ export class OverlayRect {
 			})
 
 
-			Object.assign(this.resizeHandles[3]!.style, {
+			Object.assign(this.resizeHandles[3].style, {
 				height: `${6 / scale}px`,
 				width: `${6 / scale}px`,
 				'pointer-events': 'none',
@@ -867,7 +867,7 @@ export class OverlayRect {
 
 			const boxHeight = box.height * scale;
 			if (boxHeight >= resizeThreshold) {
-				Object.assign(this.resizeHandles[4]!.style, {
+				Object.assign(this.resizeHandles[4].style, {
 					height: `${6 / scale}px`,
 					width: `${6 / scale}px`,
 					'pointer-events': 'none',
@@ -878,7 +878,7 @@ export class OverlayRect {
 				})
 				//this.resizeHandles[4].addEventListener('mousedown', initFullDrag('w'), false);
 
-				Object.assign(this.resizeHandles[6]!.style, {
+				Object.assign(this.resizeHandles[6].style, {
 					height: `${6 / scale}px`,
 					width: `${6 / scale}px`,
 					'pointer-events': 'none',
@@ -892,7 +892,7 @@ export class OverlayRect {
 
 			const boxWidth = box.width * scale;
 			if (boxWidth >= resizeThreshold) {
-				Object.assign(this.resizeHandles[5]!.style, {
+				Object.assign(this.resizeHandles[5].style, {
 					height: `${6 / scale}px`,
 					width: `${6 / scale}px`,
 					'pointer-events': 'none',
@@ -903,7 +903,7 @@ export class OverlayRect {
 				})
 				//this.resizeHandles[5].addEventListener('mousedown', initFullDrag('s'), false);
 
-				Object.assign(this.resizeHandles[7]!.style, {
+				Object.assign(this.resizeHandles[7].style, {
 					height: `${6 / scale}px`,
 					width: `${6 / scale}px`,
 					'pointer-events': 'none',
