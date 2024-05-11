@@ -114,7 +114,7 @@ export const editorRouter = createTRPCRouter({
                 })),
                 errorElements: isDemo ? [] : errorElements.map(element => ({componentId: element.component_id, type: element.type})),
                 pullRequest: pullRequest || undefined,
-                showWelcomeScreen: !accountTiedToBranch.seen_welcome_screen,
+                showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
                 isDemo
             } satisfies LoadResponse
         }),

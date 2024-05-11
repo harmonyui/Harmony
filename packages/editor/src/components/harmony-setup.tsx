@@ -28,8 +28,9 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 
         if (!branchId) return;
 
-        const environment = urlParams.get('harmony-environment') as Environment | undefined || options.environment;
-        
+        const environment = urlParams.get('harmony-environment') as Environment | undefined || window.sessionStorage.getItem('harmony-environment') as Environment | undefined || options.environment;
+        window.sessionStorage.setItem('harmony-environment', environment || 'production');
+
 		const result = setupHarmonyProvider();
 		if (result) {
 			setBranchId(branchId);
