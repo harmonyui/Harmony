@@ -306,7 +306,6 @@ export const ColorPickerFull = <T extends Color | HexColor>({
 const ColorPicker = <T extends Color | HexColor>({
   value,
   onChange,
-  container,
   className
 }: ColorPickerProps<T> & {container?: HTMLElement, className?: string}) => {
   return (
@@ -320,7 +319,6 @@ const ColorPicker = <T extends Color | HexColor>({
           />
         }
         buttonClass={className}
-        container={container}
       >
         <ColorPickerFull value={value} onChange={onChange} preview="false" />
       </Popover>

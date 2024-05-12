@@ -382,7 +382,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 
-		onSelect(element);
+		//Set timeout allows blur events to fire before a new selection is made
+		setTimeout(() => {onSelect(element)});
 		
 		return true;
 	});
@@ -787,7 +788,7 @@ export class OverlayRect {
 		dims.borderLeft = 2 / scale;
 		dims.borderRight = 2 / scale;
 		dims.borderTop = 2 / scale;
-		this.update({box, dims, borderSize: 2, error, drag: true, padding: this.inspectorState.showingLayoutPanel}, scale);
+		this.update({box, dims, borderSize: 2, error, drag: false, padding: this.inspectorState.showingLayoutPanel}, scale);
 	}
 
   	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle, error=false, drag=false}: OverlayProps, scale: number) {

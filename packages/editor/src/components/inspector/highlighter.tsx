@@ -43,6 +43,7 @@ export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPoin
 		container?.addEventListener('mouseover', onMouseEvent, options)
 		//container?.addEventListener('mouseup', onMouseEvent, options)
 		container?.addEventListener('pointerdown', onPointerDown, options);
+		//container?.addEventListener('pointerdown', onMouseEvent, options)
 		container?.addEventListener('dblclick', onDoubleClick, options);
 	});
 

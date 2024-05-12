@@ -2,7 +2,7 @@ import type { IconComponent} from "@harmony/ui/src/components/core/icons";
 import { QuestionMarkIcon, SendIcon } from "@harmony/ui/src/components/core/icons"
 import { getWebUrl } from "@harmony/util/src/utils/component";
 import { getClass } from '@harmony/util/src/utils/common';
-import { Popover } from "@harmony/ui/src/components/core/popover"
+import { PopoverAria } from "@harmony/ui/src/components/core/popover"
 import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal";
@@ -48,12 +48,12 @@ export const HelpGuide: React.FunctionComponent<{className?: string}> = ({classN
         <div className="hover:hw-cursor-pointer hover:hw-text-[#88939D] hw-text-[#11283B]" onClick={() => {setOtherPopup('talk')}}>Talk with us</div>
     </div>
 	return (<>
-		<Popover closeTrigger={closeTrigger} isOpen={showPopover} setIsOpen={(value) => {
+		<PopoverAria closeTrigger={closeTrigger} isOpen={showPopover} setIsOpen={(value) => {
             setOtherPopup(undefined);
             setShowPopover(value);
         }} button={<ButtonIcon className={className} icon={QuestionMarkIcon} onClick={onOpen}/>} container={document.getElementById("harmony-container") || undefined}>
 			{popup}
-		</Popover>
+		</PopoverAria>
         <ControlModal show={showControlModal} onClose={() => {setShowControlModal(false)}}/>
 	</>)
 }

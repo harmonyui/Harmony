@@ -1,8 +1,7 @@
 import React, { useEffect, useState } from "react";
+import { usePrevious } from "../../hooks/previous";
 import { CheckmarkIcon } from "./icons";
 import { Label } from "./label";
-import { Button } from "./button";
-import { usePrevious } from "../../hooks/previous";
 
 interface InputProps {
   onChange?: (value: string) => void;
@@ -73,8 +72,8 @@ export const InputBlur: React.FunctionComponent<Omit<InputProps, 'onBlur'>> = ({
     }
   }, [prevValue, valueProps])
 
-	const onInputChange = (value: string): void => {
-		setValue(value);
+	const onInputChange = (_value: string): void => {
+		setValue(_value);
 	}
 	return <Input {...rest} value={value} onChange={onInputChange} onBlur={onChange} />
 }
@@ -127,15 +126,15 @@ export const NumberStepperInput: React.FunctionComponent<NumberStepperInputProps
   const [value, setValue] = useState(String(valueProp));
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const value = e.target.value;
-    setValue(value);
+    const _value = e.target.value;
+    setValue(_value);
   }
 
 
   const changeValue = (newVal: number) => {
-    newVal = Math.min(Math.max(0, newVal), 99);
-    setValue(String(newVal));
-    onChangeProps(newVal);
+    const _newVal = Math.min(Math.max(0, newVal), 99);
+    setValue(String(_newVal));
+    onChangeProps(_newVal);
   }
 
   const onBlur = () => {
@@ -149,9 +148,9 @@ export const NumberStepperInput: React.FunctionComponent<NumberStepperInputProps
 
   return (
     <div className="hw-flex hw-rounded-[3px] hw-border hw-border-gray-400 hw-items-center hw-overflow-auto">
-      <button className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-r hw-border-gray-400" onClick={() => changeValue(valueProp - 1)}>-</button>
+      <button className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-r hw-border-gray-400" onClick={() => {changeValue(valueProp - 1)}}>-</button>
       <input className="hw-px-1.5 hw-text-sm hw-py-[1px] hw-border-none hw-w-8 focus:hw-ring-0" value={value} onChange={onChange} onBlur={onBlur}/>
-      <button className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-l hw-border-gray-400" onClick={() => changeValue(valueProp + 1)}>+</button>
+      <button className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-l hw-border-gray-400" onClick={() => {changeValue(valueProp + 1)}}>+</button>
     </div>
   )
 }

@@ -410,7 +410,7 @@ const EditPosition: React.FunctionComponent = () => {
     const position = getAttribute('position');
 
     return (
-        <EditAttribute label="Position" sameLine={<Dropdown initialValue={position} onChange={onChange} items={items} container={document.getElementById('harmony-container') || undefined}/>}>
+        <EditAttribute label="Position" sameLine={<Dropdown initialValue={position} onChange={onChange} items={items} />}>
             {position !== 'static' ? <>
                 {(['top', 'bottom', 'left', 'right'] as const).map(side => <div key={side} className="hw-flex-1">
                     <InputBlur className="hw-w-full" value={getAttribute(side)} onChange={(value) => onAttributeChange({name: side, value})}/>

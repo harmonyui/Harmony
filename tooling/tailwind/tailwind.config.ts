@@ -28,7 +28,7 @@ const config: Config = {
     },
   },
   plugins: [
-		forms
+		//forms
 	]
 }
 export default config

@@ -396,7 +396,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 		'font': fonts ? ({data, onChange}) => {
 			const items: DropdownItem<string>[] = fonts.map(font => ({id: font.id, name: font.name, className: font.id}));
 			return (
-				<Dropdown className="hw-w-[170px] hw-h-7 !hw-rounded-[3px]" items={items} initialValue={data} onChange={(item) => onChange(item.id)} container={document.getElementById("harmony-container") || undefined}/>
+				<Dropdown className="hw-w-[170px] hw-h-7 !hw-rounded-[3px]" items={items} initialValue={data} onChange={(item) => onChange(item.id)} />
 			)
 		} : undefined,
 		'fontSize': ({data, onChange}) => {
@@ -454,7 +454,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			}
 			
 			return (
-				<Popover buttonClass="hw-h-7" button={<Button mode='none'><BarsArrowDownIcon className="hw-h-7 hw-w-7"/></Button>} container={document.getElementById("harmony-container") || undefined}>
+				<Popover buttonClass="hw-h-7" button={<BarsArrowDownIcon className="hw-h-7 hw-w-7"/>}>
 					<div className="hw-grid hw-grid-cols-6 hw-gap-2 hw-text-sm hw-items-center hw-font-normal">
 						<span className="hw-col-span-2">Line Height</span>
 						<Slider className="hw-col-span-3" value={line} max={50} onChange={(value) => onChange(`${value}px-${letter}px`)}/>
@@ -515,7 +515,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
 				<Header className="hw-font-normal" level={3}>{currentBranch ? currentBranch.name : 'Invalid Branch'}</Header>
 			</div>
-			{!isDemo ? <div className="hw-px-4">
+			{!isDemo && false ? <div className="hw-px-4">
 				<button className="hw-text-base hw-font-light" onClick={onLayoutClick}>Layout</button>
 			</div> : null}
 			{data ? <>
@@ -523,7 +523,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 					<ComponentTools tools={currTools} components={currTools.reduce<Record<string, ComponentTool | undefined>>((prev, curr) => {prev[curr] = commonTools[curr]; return prev}, {})} data={data} onChange={onAttributeChange}/>
 				</div>
 				{currTools !== textTools ? <div className="hw-px-4">
-					<Popover button={<button className="hw-text-base hw-font-light">Text</button>} container={document.getElementById('harmony-container') || undefined}>
+					<Popover button={<button className="hw-text-base hw-font-light">Text</button>}>
 						<div className="hw-flex hw-flex-col hw-gap-2">
 							<div className="hw-flex hw-justify-around">
 								<ComponentToolComponent ToolComponent={commonTools.color} tool='color' data={data} onChange={onAttributeChange}/>
@@ -540,7 +540,7 @@ const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle, onTog
 					<button className="hw-text-base hw-font-light" onClick={onGlobalClick}>{isGlobal ? 'All' : 'Single'}</button>
 				</div>
 				{/* <div className="hw-px-4">
-					<Popover button={<Button mode="secondary">Behavior</Button>} container={document.getElementById('harmony-container') || undefined}>
+					<Popover button={<Button mode="secondary">Behavior</Button>}>
 						<Label label="Dark Mode:" sameLine>
 							<CheckboxInput value={behaviors.includes('dark')} onChange={onChangeBehavior('dark')}/>
 						</Label>
@@ -725,7 +725,7 @@ const ShareButton = () => {
 	return (<>
 		<Popover buttonClass="hw-h-8" button={<button className="hw-text-[#11283B] hover:hw-text-[#11283B]/80" >
 			<ShareArrowIcon className="hw-h-8 hw-w-8 hw-fill-white hw-stroke-none"/>
-		</button>} container={document.getElementById('harmony-container') || undefined}>
+		</button>}>
 			<button className="hw-text-sm hw-text-blue-500 hw-flex hw-items-center hw-gap-1" onClick={onCopy}>
 				<LinkIcon className="hw-h-4 hw-w-4 hw-fill-blue-500"/>
 				{copyText}

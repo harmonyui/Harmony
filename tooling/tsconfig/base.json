@@ -17,8 +17,7 @@
     "strict": true,
     "strictNullChecks": true,
 		"experimentalDecorators": true,
-    "sourceMap": true,
-    "lib": ["es2021"]
+    "sourceMap": true
   },
   "exclude": ["node_modules"]
 }

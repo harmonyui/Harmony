@@ -13,7 +13,7 @@
     "@fortawesome/free-solid-svg-icons": "^6.5.1",
     "@fortawesome/react-fontawesome": "^0.2.0",
     "@harmony/util": "workspace:*",
-    "@headlessui/react": "^1.7.18",
+    "@headlessui/react": "^2.0",
     "@internationalized/date": "^3.5.2",
     "@react-aria/calendar": "^3.5.0",
     "@react-aria/color": "^3.0.0-beta.21",
