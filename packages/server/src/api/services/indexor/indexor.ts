@@ -211,8 +211,12 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									if (t.isStringLiteral(attr.value)) {
 										jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: type === 'className' ? attr.value.value : `${attr.name.name}:${attr.value.value}`, reference: jsxElementDefinition});
 									} else if (t.isJSXExpressionContainer(attr.value)) {
-										const value = t.isIdentifier(attr.value.expression) ? attr.value.expression.name : undefined;
-										jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
+										if (t.isStringLiteral(attr.value.expression)) {
+											jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: type === 'className' ? attr.value.expression.value : `${attr.name.name}:${attr.value.expression.value}`, reference: jsxElementDefinition});
+										} else {
+											const value = t.isIdentifier(attr.value.expression) ? attr.value.expression.name : undefined;
+											jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
+										}
 									}
 								}
 							}
