@@ -1,21 +1,25 @@
+/* eslint-disable prefer-const -- ok */
+/* eslint-disable @typescript-eslint/no-explicit-any -- ok */
+/* eslint-disable @typescript-eslint/no-unsafe-call -- ok */
+/* eslint-disable @typescript-eslint/no-unsafe-member-access -- ok */
+/* eslint-disable @typescript-eslint/no-unsafe-assignment -- ok */
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok */
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable import/no-cycle -- ok*/
 'use client';
-import { useHighlighter } from "./highlighter"
-import { useCallback, useEffect, useMemo, useRef, useState } from "react"
+import { useCallback, useEffect, useMemo, useRef } from "react"
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import { ReactComponentIdentifier } from "./component-identifier";
 import hotkeys from 'hotkeys-js';
-import { SelectMode } from "../panel/harmony-panel";
-import { getClass, getNumberFromString, round } from "@harmony/util/src";
 import $ from 'jquery';
-
-import { ComponentUpdate } from "@harmony/ui/src/types/component";
-import { ResizeValue, useResize, ResizeRect, ResizeDirection, ResizeCoords } from "@harmony/ui/src/hooks/resize";
-import { FlexValues, MarginValues, useSnapping } from "../snapping/snapping";
 import { usePrevious } from "@harmony/ui/src/hooks/previous";
 import {Alert} from '@harmony/ui/src/components/core/alert';
-import { useHarmonyContext } from "../harmony-provider";
+import { useSnapping } from "../snapping/snapping";
+import type { SelectMode , ComponentUpdateWithoutGlobal } from "../harmony-provider";
 import { getProperty } from "../snapping/calculations";
 import { useSidePanel } from "../panel/side-panel";
+import { useHarmonyContext } from "../harmony-context";
+import { ReactComponentIdentifier } from "./component-identifier";
+import { useHighlighter } from "./highlighter"
 
 export const componentIdentifier = new ReactComponentIdentifier();
 
@@ -24,9 +28,8 @@ interface RectSize {
 	height: number,
 }
 
-//Returns the element as understood from a designer (no nested containers with one child and no padding)
-export function selectDesignerElement(element: HTMLElement): HTMLElement {
-	let target = element;
+export const isDesignerElementSelectable = (element: HTMLElement | null): element is HTMLElement => {
+	if (!element) return false;
 
 	const getClientSize = (element: HTMLElement, withBorder=false): RectSize => {
 		const width = element.clientWidth + (withBorder ? getProperty(element, 'border', 'left') + getProperty(element, 'border', 'right') : 0);
@@ -38,14 +41,14 @@ export function selectDesignerElement(element: HTMLElement): HTMLElement {
 	const sizesAreEqual = (size1: RectSize, size2: RectSize): boolean => {
 		return size1.width === size2.width && size1.height === size2.height;
 	}
+
+	return element.children.length === 1 && (['bottom', 'top', 'left', 'right'] as const).every(d => getProperty(element, 'padding', d) === 0) && sizesAreEqual(getClientSize(element.children[0] as HTMLElement, true), getClientSize(element));
+} 
+//Returns the element as understood from a designer (no nested containers with one child and no padding)
+export function selectDesignerElement(element: HTMLElement): HTMLElement {
+	let target = element;
 	
-	const isSelectable = (element: HTMLElement | null): element is HTMLElement => {
-		if (!element) return false;
-
-		return element.children.length === 1 && (['bottom', 'top', 'left', 'right'] as const).every(d => getProperty(element, 'padding', d) === 0) && sizesAreEqual(getClientSize(element.children[0] as HTMLElement, true), getClientSize(element));
-	}
-
-	while(isSelectable(target.parentElement)) {
+	while(isDesignerElementSelectable(target.parentElement)) {
 		target = target.parentElement;
 	}
 
@@ -133,11 +136,11 @@ export interface InspectorProps {
 	onElementTextChange: (value: string, oldValue: string) => void;
 	mode: SelectMode;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
-	onChange: (component: HTMLElement, update: ComponentUpdate[], execute?: boolean) => void;
+	onChange: (component: HTMLElement, update: ComponentUpdateWithoutGlobal[], execute?: boolean) => void;
 	updateOverlay: number;
 	scale: number;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onReorder, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 	const {onFlexToggle: onFlexClick, error, setError, isDemo} = useHarmonyContext();
@@ -146,7 +149,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	const inspectorState: InspectorState = useMemo(() => ({showingLayoutPanel: panel?.id === 'attribute'}), [panel]);
 
-	const {isDragging} = useSnapping({enabled: true, element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
+	const {isDragging} = useSnapping({enabled: isDemo, element: selectedComponent ? selectDesignerElement(selectedComponent) : undefined, onIsDragging(event, element) {
 		const container = containerRef.current;
 		if (container === null || parentElement === undefined) return;
 
@@ -162,7 +165,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	}, onDragFinish(element, oldValues) {
 		if (!selectedComponent) return;
 
-		const updates: ComponentUpdate[] = [];
+		const updates: ComponentUpdateWithoutGlobal[] = [];
 			
 		for (const oldValue of oldValues) {
 			const [element, oldProperties] = oldValue;
@@ -186,14 +189,13 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				element.style[property as unknown as number] = value;
 			});
 
-			const oldValues: string[] = [];
-			const keys: (keyof MarginValues | keyof FlexValues | 'width' | 'height')[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems', 'width', 'height'];
+			// const oldValues: string[] = [];
+			// const keys: (keyof MarginValues | keyof FlexValues | 'width' | 'height')[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems', 'width', 'height'];
 			Object.keys(oldProperties).forEach(property => {
 				const value = element.style[property as unknown as number];
 				if (!value) return;
 
 				const componentId = element.dataset.harmonyId || '';
-				const parentId = element.dataset.harmonyParentId || '';
 				const oldValue = oldProperties[property];
 
 				if (!oldValue) {
@@ -203,7 +205,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 				const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 				if (childIndex < 0) throw new Error("Cannot get right child index");
 
-				const update: ComponentUpdate = {componentId, parentId, action: 'add', type: 'className', name: property, value, oldValue, childIndex};
+				const update: ComponentUpdateWithoutGlobal = {componentId, action: 'add', type: 'className', name: property, value, oldValue, childIndex};
 
 				
 				updates.push(update);
@@ -299,7 +301,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 			const parent = selectDesignerElement(selectedComponent).parentElement;
 			if (parent && getComputedStyle(parent).display.includes('flex') && Array.from(parent.children).filter(child => isSelectable(child as HTMLElement, scale)).length > 2) {
 				if (!parent.dataset.harmonyFlex && !isDemo) {
-					parent.dataset.harmonyFlex = 'true';
+					//parent.dataset.harmonyFlex = 'true';
 				}
 			}
 			overlayRef.current.select(selectedComponent, scale, false, inspectorState, {onTextChange: onElementTextChange, onFlexClick});
@@ -330,7 +332,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 
 	const isInteractableComponent = useCallback((component: HTMLElement) => {
 		//TODO: Get rid of dependency on harmonyText
-		if (!Boolean(component.dataset.harmonyId) && !Boolean(component.dataset.harmonyText)) {
+		if (!component.dataset.harmonyId && !component.dataset.harmonyText) {
 			return false;
 		}
 		
@@ -380,12 +382,13 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		}
 
 
-		onSelect(element);
+		//Set timeout allows blur events to fire before a new selection is made
+		setTimeout(() => {onSelect(element)});
 		
 		return true;
 	});
 
-	const onHold = useEffectEvent((element: HTMLElement) => {
+	const onHold = useEffectEvent(() => {
 		return true;
 	});
 
@@ -449,14 +452,14 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 	)
 }
 
-interface Box {
-	x: number;
-	y: number;
-	height: number;
-	width: number;
-	lx: number; //The direction
-	ly: number; //The direction
-}
+// interface Box {
+// 	x: number;
+// 	y: number;
+// 	height: number;
+// 	width: number;
+// 	lx: number; //The direction
+// 	ly: number; //The direction
+// }
 
 export interface Rect {
   bottom: number;
@@ -522,13 +525,13 @@ class Overlay {
 				element.style.cursor = '';
 			});
 			this.rects.delete(method);
-			if (method === 'select') {
+			if (method === 'select' && stuff.values[0]) {
 				stuff.values[0].element.contentEditable = 'inherit';
 				stuff.values[0].element.removeAttribute('data-selected')
 			}
 			stuff.observer?.disconnect();
 			stuff.aborter.abort();
-			if (stuff.values[0].element.draggable) {
+			if (stuff.values[0]?.element.draggable) {
 				stuff.values[0].element.draggable = false;
 			}
 		}
@@ -611,12 +614,12 @@ class Overlay {
 
 		let mutationObserver: ResizeObserver | undefined;
 		const size = element.getBoundingClientRect();
-		mutationObserver = new ResizeObserver((mutations) => {
+		mutationObserver = new ResizeObserver(() => {
 			const newSize = element.getBoundingClientRect();
 			const stuff = this.rects.get(method);
 			if ((size.width !== newSize.width || size.height !== newSize.height) && stuff) {
 				const [box, dims] = this.getSizing(element);
-				stuff.values[0].rect.updateSize(box, dims, scale, error);
+				stuff.values[0]?.rect.updateSize(box, dims, scale, error);
 			}
 		});
 
@@ -785,7 +788,7 @@ export class OverlayRect {
 		dims.borderLeft = 2 / scale;
 		dims.borderRight = 2 / scale;
 		dims.borderTop = 2 / scale;
-		this.update({box, dims, borderSize: 2, error, drag: true, padding: this.inspectorState.showingLayoutPanel}, scale);
+		this.update({box, dims, borderSize: 2, error, drag: false, padding: this.inspectorState.showingLayoutPanel}, scale);
 	}
 
   	public update({box, dims, borderSize, opacity=1, padding=false, borderStyle, error=false, drag=false}: OverlayProps, scale: number) {

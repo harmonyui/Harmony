@@ -1,18 +1,5 @@
 {
-    "compilerOptions": {
-      "target": "es5",
-      "lib": ["dom", "dom.iterable", "esnext"],
-      "allowJs": true,
-      "skipLibCheck": true,
-      "esModuleInterop": true,
-      "strict": true,
-      "forceConsistentCasingInFileNames": true,
-      "module": "esnext",
-      "moduleResolution": "node",
-      "jsx": "react-jsx",
-      "declaration": true,
-      "composite": true,
-      "rootDir": "../..",
-      "outDir": "../editor/dist/esm"
-    }
+  "extends": "@harmony/tsconfig/react-library.json",
+  "include": [".", "../util/src/types/branch.ts", "../util/src/types/change-log.ts", "../util/src/types/colors.ts", "../util/src/types/component.ts", "../util/src/types/network.ts", "../util/src/types/polymorphics.ts", "../util/src/types/utils.ts"],
+  "exclude": ["dist", "build", "node_modules"]
 }

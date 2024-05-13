@@ -1,4 +1,5 @@
 const path = require('path');
+const webpack = require('webpack');
 
 module.exports = {
     entry: './src/index.prod.tsx',
@@ -12,11 +13,14 @@ module.exports = {
     devtool: "eval-source-map",
     resolve: {
         extensions: ['.tsx', '.ts', '.js', '.jsx'],
-        alias: {
-            '@harmony': path.resolve(__dirname, '../'),
-            'react': path.resolve(path.join(__dirname, '../..'), './node_modules/react'),
-        }
+        // alias: {
+        //     '@harmony': path.resolve(__dirname, '../'),
+        //     'react': path.resolve(path.join(__dirname, '../..'), './node_modules/react'),
+        // }
     },
+    plugins: [
+        new webpack.EnvironmentPlugin({ ...process.env })
+    ],
     module: {
         rules: [
             {

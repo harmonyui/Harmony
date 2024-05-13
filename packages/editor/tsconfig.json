@@ -1,24 +1,16 @@
 {
-    "compilerOptions": {
-      "target": "esnext",
-      "lib": ["dom", "dom.iterable", "esnext"],
-      "allowJs": true,
-      "skipLibCheck": true,
-      "esModuleInterop": true,
-      "strict": true,
-      "forceConsistentCasingInFileNames": true,
-      "module": "esnext",
-      "moduleResolution": "node",
-      "jsx": "react-jsx",
-      "declaration": true,
-      "rootDir": "../..",
-      "outDir": "./dist/esm",
-      "composite": true
-    },
-    "exclude": [
-      "webpack.config.setup.js","webpack.config.editor.js", "tailwind.config.ts", "postcss.config.js", "dist"
-    ]
-    // "references": [
-    //   {"path": "../ui"}
-    // ]
+  "extends": "@harmony/tsconfig/react-library.json",
+  "compilerOptions": {
+    "outDir": "./dist/esm"
+  },
+  "include": ["."],
+  "exclude": [
+    "webpack.config.setup.js","webpack.config.editor.js", 
+    "webpack.config.dev.js",
+    "tailwind.config.ts", 
+    "postcss.config.js", 
+    "dist",
+    "dev",
+    "node_modules"
+  ]
 }

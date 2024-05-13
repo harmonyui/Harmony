@@ -1,15 +1,14 @@
 "use client";
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect} from "react";
 import ReactDOM from "react-dom";
-import { DisplayMode, HarmonyProvider, HarmonyProviderProps } from "./harmony-provider";
+import { HarmonyProviderProps } from "./harmony-provider";
 import { FiberHTMLElement, getElementFiber } from "./inspector/inspector-dev";
 import { getComponentElementFiber } from "./inspector/component-identifier";
 import { Fiber } from "react-reconciler";
-import { getWebUrl } from "@harmony/util/src";
-
-var harmonyArguments = [{'data-harmony-id': 0}]
+import { Environment, getEditorUrl } from "@harmony/util/src/utils/component";
+import { DisplayMode } from "./harmony-context";
     
-export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts' | 'environment'> & {local?: boolean}> = ({local=false, ...options}) => {
+export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts' | 'environment'> & {local?: boolean}> = ({local=false, ...options}) => {
 	const setBranchId = (branchId: string) => {
 		const url = new URL(window.location.href);
 		if (!url.searchParams.has('branch-id')) {
@@ -28,14 +27,17 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
         };
 
         if (!branchId) return;
-        
+
+        const environment = urlParams.get('harmony-environment') as Environment | undefined || window.sessionStorage.getItem('harmony-environment') as Environment | undefined || options.environment;
+        window.sessionStorage.setItem('harmony-environment', environment || 'production');
+
 		const result = setupHarmonyProvider();
 		if (result) {
 			setBranchId(branchId);
 
 			const {harmonyContainer} = result;
 			if (!local) {
-                createProductionScript(options, branchId, harmonyContainer, result.setup);
+                createProductionScript({...options, environment}, branchId, harmonyContainer, result.setup);
             } else {
                 window.HarmonyProvider({...options, branchId, setup: result.setup}, harmonyContainer);
             }
@@ -47,9 +49,9 @@ export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'r
 
 function createProductionScript(options: Pick<HarmonyProviderProps, 'repositoryId' | 'environment'>, branchId: string, harmonyContainer: HTMLDivElement, setup: Setuper) {
     const script = document.createElement('script');
-    const src = options.environment === 'development' ? `${getWebUrl('development')}/bundle.js` : 'https://unpkg.com/harmony-ai-editor/dist/editor/bundle.js'
+    const src = `${getEditorUrl(options.environment || 'production')}/bundle.js`
     script.src = src;
-    script.addEventListener('load', function() {
+    script.addEventListener('load', function load() {
         window.HarmonyProvider({...options, branchId, setup}, harmonyContainer);
     });
 
@@ -66,8 +68,8 @@ const appendChild = (container: Element, child: Element | Node) => {
         const fiber = getComponentElementFiber(child as FiberHTMLElement);
         console.log(fiber);
         //const parentFiber = new ParentFiber();
-        let parent: Fiber | null = childFiber || null;
-        while (parent != null) {
+        let parent: Fiber | null = childFiber as Fiber | undefined || null;
+        while (parent !== null) {
             if (parent.elementType === 'body') {
                 break;
             }
@@ -133,7 +135,7 @@ class Setuper implements Setup {
     private setupNormalMode(container: Element) {
         for (let i = 0; i < container.children.length; i++) {
             const child = container.children[i];
-            if (isNativeElement(child)) {
+            if (child && isNativeElement(child)) {
                 appendChild(document.body, child);
                 i--;
             }
@@ -142,6 +144,7 @@ class Setuper implements Setup {
         ReactDOM.createPortal = createPortal;
         this.bodyObserver.disconnect();
         this.harmonyContainer.classList.remove('hw-h-full');
+        this.harmonyContainer.classList.remove('hw-w-full');
 
         return true;
     }
@@ -156,15 +159,17 @@ class Setuper implements Setup {
 
         for (let i = 0; i < document.body.children.length; i++) {
             const child = document.body.children[i];
-            if (isNativeElement(child)) {
+            if (child && isNativeElement(child)) {
                 appendChild(container, child);
                 i--;
             }
         }
-        this.harmonyContainer.className = "hw-h-full";
+        this.harmonyContainer.className = "hw-h-full hw-w-full";
+        (this.container as HTMLElement).dataset.harmonyId = document.body.dataset.harmonyId;
 
-        ReactDOM.createPortal = function(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
+        ReactDOM.createPortal = function create(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
             if (_container === document.body) {
+                // eslint-disable-next-line no-param-reassign -- ok
                 _container = container;
             }
             
@@ -173,6 +178,7 @@ class Setuper implements Setup {
 
         this.bodyObserver = new MutationObserver((mutations) => {
             for (const mutation of mutations) {
+                // eslint-disable-next-line @typescript-eslint/no-loop-func -- ok
                 mutation.addedNodes.forEach(node => {
                     if (node.parentElement === document.body && isNativeElement(node as Element)) {
                         appendChild(container, node);
@@ -203,10 +209,11 @@ export function setupHarmonyProvider(setupHarmonyContainer=true) {
         harmonyContainer.id = 'harmony-container';
         document.body.appendChild(harmonyContainer);
     } else {
-        harmonyContainer = document.getElementById("harmony-container") as HTMLDivElement;
-        if (!harmonyContainer) {
+        const _container = document.getElementById("harmony-container") as HTMLDivElement | undefined;
+        if (!_container) {
             return undefined;
         }
+        harmonyContainer = _container;
     }
 
 	const documentBody = document.body as HTMLBodyElement;

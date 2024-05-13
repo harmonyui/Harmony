@@ -1,14 +1,18 @@
+/* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
+/* eslint-disable @typescript-eslint/no-empty-interface -- ok*/
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable import/no-cycle -- ok*/
 import { Button } from "@harmony/ui/src/components/core/button";
 import { Dropdown, DropdownItem } from "@harmony/ui/src/components/core/dropdown";
-import { CheckboxInput, Input, InputBlur } from "@harmony/ui/src/components/core/input";
-import { ComponentElement, ComponentUpdate } from "@harmony/ui/src/types/component";
-import { camelToKebab, capitalizeFirstLetter } from "@harmony/util/src";
+import { CheckboxInput, InputBlur } from "@harmony/ui/src/components/core/input";
+import { ComponentElement } from "@harmony/util/src/types/component";
+import { camelToKebab, capitalizeFirstLetter } from "@harmony/util/src/utils/common";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import { CommonTools, getTextToolsFromAttributes } from "./harmony-panel";
-import { useHarmonyContext } from "../harmony-provider";
-import {close} from '@harmony/util/src';
+import { useHarmonyContext } from "../harmony-context";
 import { getComputedValue } from "../snapping/position-updator";
 import { overlayStyles } from "../inspector/inspector";
+import { ComponentUpdateWithoutGlobal } from "../harmony-provider";
 
 interface ComponentAttributeContextProps {
     selectedComponent: HTMLElement | undefined;
@@ -20,7 +24,7 @@ const ComponentAttributeContext = createContext<ComponentAttributeContextProps>(
 type ComponentAttributeProviderProps = ComponentAttributePanelProps & {
     selectedComponent: ComponentElement | undefined;
     children: React.ReactNode, 
-    onChange: (component: ComponentElement, update: ComponentUpdate[]) => void;
+    onChange: (update: ComponentUpdateWithoutGlobal[]) => void;
 }
 export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttributeProviderProps> = ({selectedComponent, children, onChange}) => {
     const {fonts} = useHarmonyContext();
@@ -28,19 +32,21 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
     
     const onAttributeChange = (values: {name: string, value: string}) => {
 		if (!data || !selectedComponent) return;
-        const componentId = selectedComponent.id;
-		const parentId = selectedComponent.parentId;
 
 		const old = data.find(t => t.name === values.name);
 		if (!old) throw new Error("Cannot find old property");
 		const oldValue = old.value;
-		const childIndex = Array.from(selectedComponent.element!.parentElement!.children).indexOf(selectedComponent.element!);
+		const childIndex = Array.from(old.element.parentElement!.children).indexOf(old.element);
 		if (childIndex < 0) throw new Error("Cannot get right child index");
+        const componentId = old.element.dataset.harmonyId;
+		if (!componentId) {
+            throw new Error("Element does not have a data id");
+        }
 
-		const update: ComponentUpdate = {componentId, parentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
+		const update: ComponentUpdateWithoutGlobal = {componentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
 		
 		
-		onChange(selectedComponent, [update]);
+		onChange([update]);
 	}
 
     const selectedElement = selectedComponent?.element;
@@ -160,7 +166,7 @@ const EditSpacing: React.FunctionComponent<EditSpacingProps> = ({spacing}) => {
 
 type Displays = 'block' | 'inline' | 'flex' | 'grid';
 const EditDisplay: React.FunctionComponent = () => {
-    const {getAttribute, onAttributeChange, selectedComponent} = useComponentAttribute();
+    const {getAttribute, selectedComponent} = useComponentAttribute();
     const items: DropdownItem<Displays>[] = [
         {
             id: 'block',
@@ -180,7 +186,7 @@ const EditDisplay: React.FunctionComponent = () => {
         }
     ];
 
-    const getComponent = (display: Displays): React.ReactNode => {
+    const getComponent = (_display: Displays): React.ReactNode => {
         const components: Record<Displays, React.ReactNode> = {
             block: <></>,
             inline: <></>,
@@ -190,7 +196,7 @@ const EditDisplay: React.FunctionComponent = () => {
 
         const component = components[initialValue];
 
-        if (selectedComponent?.parentElement && getComputedStyle(selectedComponent?.parentElement).display === 'grid') {
+        if (selectedComponent?.parentElement && getComputedStyle(selectedComponent.parentElement).display === 'grid') {
             return <>
                 <EditGridChildAttributes/>
                 {component}
@@ -202,9 +208,9 @@ const EditDisplay: React.FunctionComponent = () => {
 
     
 
-    const onChange = (item: DropdownItem<string>) => {
-        onAttributeChange({name: 'display', value: item.id});
-    }
+    // const onChange = (item: DropdownItem<string>) => {
+    //     onAttributeChange({name: 'display', value: item.id});
+    // }
 
     const display = getAttribute('display');
     const initialValue: Displays = items.find(item => item.id === display) ? display as Displays : 'block';
@@ -255,9 +261,10 @@ const EditFlexAttributes: React.FunctionComponent = () => {
     const onChange = (name: CommonTools) => (value: string) => onAttributeChange({name, value});
 
     const direction = getAttribute('flexDirection') as typeof directionValues[number];
-    const gapX = getAttribute('rowGap');
-    const gapY = getAttribute('columnGap');
-    const gap = direction === 'row' ? gapX : gapX;
+    const gapDirection = direction === 'row' ? 'columnGap' : 'rowGap';
+    // const gapX = getAttribute('columnGap');
+    // const gapY = getAttribute('rowGap');
+    const gap = getAttribute(gapDirection);
     const wrap = getAttribute('flexWrap');
     const grow = getAttribute('flexGrow');
     const shrink = getAttribute('flexShrink');
@@ -279,7 +286,7 @@ const EditFlexAttributes: React.FunctionComponent = () => {
             </div>
         </EditAttribute>
         <EditAttribute label="Gap" sameLine={<EditUnit units={['px']}/>}>
-            <InputBlur value={gap === 'normal' ? '0px' : gap} onChange={onChange('rowGap')}/>
+            <InputBlur value={gap === 'normal' ? '0px' : gap} onChange={onChange(gapDirection)}/>
         </EditAttribute>
         <EditAttribute label="Wrap" sameLine={<CheckboxInput value={wrap === 'wrap'} onChange={(value) => onAttributeChange({name: 'flexWrap', value: value ? 'wrap' : 'nowrap'})}/>}/>
         <EditAttribute label="Size" sameLine={undefined}>
@@ -369,7 +376,7 @@ const EditGridChildAttributes: React.FunctionComponent = () => {
     }
 
     const cols = getSpan('gridColumn');
-    const rows = getSpan('gridRow');
+    //const rows = getSpan('gridRow');
 
     return (<>
         <EditAttribute label="Column Span" sameLine={<InputBlur className="hw-w-1/4" value={cols} onChange={onChange('gridColumn')}/>}/>
@@ -403,7 +410,7 @@ const EditPosition: React.FunctionComponent = () => {
     const position = getAttribute('position');
 
     return (
-        <EditAttribute label="Position" sameLine={<Dropdown initialValue={position} onChange={onChange} items={items} container={document.getElementById('harmony-container') || undefined}/>}>
+        <EditAttribute label="Position" sameLine={<Dropdown initialValue={position} onChange={onChange} items={items} />}>
             {position !== 'static' ? <>
                 {(['top', 'bottom', 'left', 'right'] as const).map(side => <div key={side} className="hw-flex-1">
                     <InputBlur className="hw-w-full" value={getAttribute(side)} onChange={(value) => onAttributeChange({name: side, value})}/>

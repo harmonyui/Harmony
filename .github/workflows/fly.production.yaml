@@ -1,0 +1,16 @@
+name: Fly Deploy
+on:
+  push:
+    branches:
+      - master    # change to main if needed
+jobs:
+  deploy:
+    name: Deploy app
+    runs-on: ubuntu-latest
+    concurrency: deploy-group    # optional: ensure only one action runs at a time
+    steps:
+      - uses: actions/checkout@v4
+      - uses: superfly/flyctl-actions/setup-flyctl@master
+      - run: flyctl deploy --remote-only --app harmony-ui --build-arg database_url="postgres://default:OmNJZxVd30eS@ep-orange-meadow-a6w5vdlq-pooler.us-west-2.aws.neon.tech:5432/verceldb?sslmode=require&pgbouncer=true&connect_timeout=15" --build-arg env=production
+        env:
+          FLY_API_TOKEN: ${{ secrets.FLY_API_TOKEN }}

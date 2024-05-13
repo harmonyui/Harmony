@@ -11,7 +11,7 @@ use serde_json::Value;
 use swc_common::{Mark,SourceMapper, plugin::metadata::TransformPluginMetadataContextKind, DUMMY_SP};
 use swc_core::{
     atoms::js_word, ecma::{
-        ast::{op, BinExpr, BindingIdent, BlockStmt, BlockStmtOrExpr, ComputedPropName, CondExpr, Decl, Expr, Function, Ident, JSXAttr, JSXAttrName, JSXAttrValue, JSXElement, JSXExpr, JSXExprContainer, Lit, MemberExpr, MemberProp, Null, Number, OptChainBase, OptChainExpr, Param, Pat, Program, RestPat, ReturnStmt, Stmt, Str, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator}, 
+        ast::{op, BinExpr, BinaryOp, BindingIdent, BlockStmt, BlockStmtOrExpr, ComputedPropName, CondExpr, Decl, Expr, Function, Ident, JSXAttr, JSXAttrName, JSXAttrValue, JSXElement, JSXExpr, JSXExprContainer, Lit, MemberExpr, MemberProp, Number, OptChainBase, OptChainExpr, Param, Pat, Program, RestPat, ReturnStmt, Stmt, Str, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator}, 
         visit::{as_folder, FoldWith, VisitMut, VisitMutWith}
     }, plugin::{plugin_transform, proxies::{PluginSourceMapProxy, TransformPluginProgramMetadata}}
 };
@@ -23,11 +23,65 @@ pub struct TransformVisitor {
     data: Option<Arc<PluginSourceMapProxy>>,
     path: String,
     filename: String,
+    fun_stack: Vec<String>
 }
 
 impl TransformVisitor {
     pub fn new(data: Option<Arc<PluginSourceMapProxy>>, path: String, filename: String) -> Self {
-        Self { data, path, filename }
+        Self { data, path, filename, fun_stack: Vec::new() }
+    }
+}
+
+fn is_jsx_expr(expr: Expr) -> bool {
+    match expr {
+        Expr::JSXElement(_) => true,
+        Expr::JSXFragment(_) => true,
+        Expr::JSXMember(_) => true,
+        Expr::JSXNamespacedName(_) => true,
+        Expr::JSXEmpty(_) => true,
+        Expr::Paren(ref expr) => is_jsx_expr(*expr.expr.clone()),
+        _ => false
+    }
+}
+
+fn is_react_comp_arrow(node: &mut swc_core::ecma::ast::ArrowExpr) -> bool {
+    match *node.body.clone() {
+        BlockStmtOrExpr::BlockStmt(ref stmt) => stmt.stmts.iter().filter(|stmt| match stmt {
+            Stmt::Return(_) => true,
+            _ => false
+        }).all(|stmt| {
+            if let Stmt::Return(ref ret) = stmt {
+                if let Some(arg) = &ret.arg {
+                    is_jsx_expr(*arg.clone())
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        }),
+        BlockStmtOrExpr::Expr(ref _d) => is_jsx_expr(*_d.clone())
+    }
+}
+
+fn is_react_comp_func(node: &mut swc_core::ecma::ast::Function) -> bool {
+    if let Some(body) = &node.body {
+        body.stmts.iter().filter(|stmt| match stmt {
+            Stmt::Return(_) => true,
+            _ => false
+        }).all(|stmt| {
+            if let Stmt::Return(ref ret) = stmt {
+                if let Some(arg) = &ret.arg {
+                    is_jsx_expr(*arg.clone())
+                } else {
+                    false
+                }
+            } else {
+                false
+            }
+        })
+    } else {
+        false
     }
 }
 
@@ -66,7 +120,7 @@ fn valid_path(path: &str) -> bool {
 
 impl VisitMut for TransformVisitor {
     fn visit_mut_arrow_expr(&mut self,node: &mut swc_core::ecma::ast::ArrowExpr) {
-        if valid_path(&self.filename[1..]) && node.params.len() < 2 && !has_spread_operator_pat(&node.params) && !has_default_params_pat(&node.params) {
+        if valid_path(&self.filename[1..]) && node.params.len() < 3 && is_react_comp_arrow(node) && !has_spread_operator_pat(&node.params) && !has_default_params_pat(&node.params) && self.fun_stack.len() == 0 {
             let params = node.params.clone();
 
             // Create a new parameter with the identifier '...harmonyArguments'
@@ -83,10 +137,8 @@ impl VisitMut for TransformVisitor {
             node.span = node.span.apply_mark(Mark::fresh(Mark::root()));
             node.params = vec![new_param];
 
-            if params.len() == 1 {
-                // Extract the parameter from the function declaration
-                let param = &params[0];
-
+            for i in (0..params.len()).rev() {
+                let param = &params[i];
                 // Create a new identifier for the parameter
                 let default_value = match param {
                     Pat::Assign(ref _assign) => Some(_assign.right.clone()),
@@ -103,7 +155,7 @@ impl VisitMut for TransformVisitor {
                     prop: MemberProp::Computed(ComputedPropName {
                         expr: Box::new(Expr::Lit(Lit::Num(Number {
                             span: swc_common::DUMMY_SP,
-                            value: 0.0,
+                            value: i as f64,
                             raw: None
                         }))),
                         span: swc_common::DUMMY_SP
@@ -148,14 +200,18 @@ impl VisitMut for TransformVisitor {
 
                 node.body = Box::new(BlockStmtOrExpr::BlockStmt(body));
             }
+            self.fun_stack.push("react".to_string());
+        } else if self.fun_stack.last() == Some(&"react".to_string()) {
+            self.fun_stack.push("react".to_string());
+        } else {
+            self.fun_stack.push("arrow".to_string());
         }
-
-        node.visit_mut_children_with(self)
-    
+        node.visit_mut_children_with(self);
+        self.fun_stack.pop();
     }
 
     fn visit_mut_function(&mut self, node: &mut Function) {
-        if valid_path(&self.filename[1..]) && node.params.len() < 2 && !has_spread_operator(&node.params) && !has_default_params(&node.params) {
+        if valid_path(&self.filename[1..]) && node.params.len() < 3 && is_react_comp_func(node) && !has_spread_operator(&node.params) && !has_default_params(&node.params) && self.fun_stack.len() == 0 {
             let params = node.params.clone();
 
             // Create a new parameter with the identifier '...harmonyArguments'
@@ -176,9 +232,8 @@ impl VisitMut for TransformVisitor {
             node.span = node.span.apply_mark(Mark::fresh(Mark::root()));
             node.params = vec![new_param];
 
-            if params.len() == 1 {
-                // Extract the parameter from the function declaration
-                let param = &params[0];
+            for i in (0..params.len()).rev() {
+                let param = &params[i];
 
                 // Create a new identifier for the parameter
                 let default_value = match param.pat {
@@ -196,7 +251,7 @@ impl VisitMut for TransformVisitor {
                     prop: MemberProp::Computed(ComputedPropName {
                         expr: Box::new(Expr::Lit(Lit::Num(Number {
                             span: swc_common::DUMMY_SP,
-                            value: 0.0,
+                            value: i as f64,
                             raw: None
                         }))),
                         span: swc_common::DUMMY_SP
@@ -228,57 +283,46 @@ impl VisitMut for TransformVisitor {
                     body.stmts.insert(0, Stmt::Decl(Decl::Var(Box::new(const_declaration.clone()))));
                 }
             }
+            self.fun_stack.push("react".to_string());
+        } else if self.fun_stack.last() == Some(&"react".to_string()) {
+            self.fun_stack.push("react".to_string());
+        } else {
+            self.fun_stack.push("function".to_string());
         }
-    
         node.visit_mut_children_with(self);
+        self.fun_stack.pop();
     }
 
     fn visit_mut_jsx_element(&mut self, node: &mut JSXElement) {
-        if let Some(ref source_map) = self.data {
-            let low = source_map.lookup_char_pos(node.span.lo);
-            let high = source_map.lookup_char_pos(node.span.hi);
+        if let Some(last_func) = self.fun_stack.last() {
+            if last_func == "react" {
+                if let Some(ref source_map) = self.data {
+                    let low = source_map.lookup_char_pos(node.span.lo);
+                    let high = source_map.lookup_char_pos(node.span.hi);
 
-            //Extract file attribute, line, and column information
-            let start_line = low.line;
-            let start_col = low.col.0;
-            let end_line = high.line;
-            let end_col = high.col.0;
+                    //Extract file attribute, line, and column information
+                    let start_line = low.line;
+                    let start_col = low.col.0;
+                    let end_line = high.line;
+                    let end_col = high.col.0;
 
-            // Create a unique identifier based on file, line, and column information
-            let _harmony_id = format!("{}:{}:{}:{}:{}", self.path, start_line, start_col, end_line, end_col);
-            let harmony_id = format!("{}", BASE64_STANDARD.encode(_harmony_id));
-            
-            // // Add your logic to customize the data attribute
-            let data_harmony_id_attribute = JSXAttr {
-                span: swc_common::DUMMY_SP,
-                name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-id"), swc_common::DUMMY_SP)),
-                value: Some(JSXAttrValue::Lit(Lit::Str(Str {
-                    span: swc_common::DUMMY_SP,
-                    value: harmony_id.into(),
-                    raw: None
-                }))),
-            };
+                    // Create a unique identifier based on file, line, and column information
+                    let _harmony_id = format!("{}:{}:{}:{}:{}", self.path, start_line, start_col, end_line, end_col);
+                    let harmony_id = format!("{}", BASE64_STANDARD.encode(_harmony_id));
+                    
+                    //
+                    // let data_harmony_id_attribute = JSXAttr {
+                    //     span: swc_common::DUMMY_SP,
+                    //     name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-id"), swc_common::DUMMY_SP)),
+                    //     value: Some(JSXAttrValue::Lit(Lit::Str(Str {
+                    //         span: swc_common::DUMMY_SP,
+                    //         value: harmony_id.into(),
+                    //         raw: None
+                    //     }))),
+                    // };
 
-            // Create the attribute value: typeof harmonyArguments !== 'undefined' ? harmonyArguments[0]?["data-harmony-id"] : undefined
-            let parent_attr_value = JSXAttrValue::JSXExprContainer(JSXExprContainer {
-                span: swc_common::DUMMY_SP,
-                expr: JSXExpr::Expr(Box::new(Expr::Cond(CondExpr {
-                    span: DUMMY_SP,
-                    test: Box::new(Expr::Bin(BinExpr {
-                        span: DUMMY_SP,
-                        op: op!("!=="),
-                        left: Box::new(Expr::Unary(UnaryExpr {
-                            span: DUMMY_SP,
-                            op: op!("typeof"),
-                            arg: Box::new(Expr::Ident(Ident::new("harmonyArguments".into(), DUMMY_SP)))
-                        })),
-                        right: Box::new(Expr::Lit(Lit::Str(Str {
-                            span: DUMMY_SP,
-                            value: "undefined".into(),
-                            raw: None
-                        })))
-                    })),
-                    cons: Box::new(Expr::OptChain(OptChainExpr {
+                    //harmonyArguments[0]?.['data-harmony-id']
+                    let parent_expression = OptChainExpr {
                         span: DUMMY_SP,
                         base: Box::new(OptChainBase::Member(MemberExpr {
                             span: swc_common::DUMMY_SP,
@@ -307,20 +351,58 @@ impl VisitMut for TransformVisitor {
                             }),
                         })),
                         optional: true
-                    })),
-                    alt: Box::new(Expr::Lit(Lit::Null(Null { span: DUMMY_SP })))
-                })))
-            });
+                    };
 
-            let parent_attribute = JSXAttr {
-                span: swc_common::DUMMY_SP,
-                name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-parent-id"), swc_common::DUMMY_SP)),
-                value: Some(parent_attr_value),
-            };
+                    // Create the attribute value: typeof harmonyArguments !== 'undefined' ? harmonyArguments[0]?["data-harmony-id"] : undefined
+                    let data_harmony_id = JSXAttrValue::JSXExprContainer(JSXExprContainer {
+                        span: swc_common::DUMMY_SP,
+                        expr: JSXExpr::Expr(Box::new(Expr::Cond(CondExpr {
+                            span: DUMMY_SP,
+                            test: Box::new(Expr::Bin(BinExpr {
+                                span: DUMMY_SP,
+                                op: op!("&&"),
+                                left: Box::new(Expr::Bin(BinExpr {
+                                    span: DUMMY_SP,
+                                    op: op!("!=="),
+                                    left: Box::new(Expr::Unary(UnaryExpr {
+                                        span: DUMMY_SP,
+                                        op: op!("typeof"),
+                                        arg: Box::new(Expr::Ident(Ident::new("harmonyArguments".into(), DUMMY_SP)))
+                                    })),
+                                    right: Box::new(Expr::Lit(Lit::Str(Str {
+                                        span: DUMMY_SP,
+                                        value: "undefined".into(),
+                                        raw: None
+                                    })))
+                                })),
+                                right: Box::new(Expr::OptChain(parent_expression.clone()))
+                            })),
+                            cons: Box::new(Expr::Bin(BinExpr {
+                                span: DUMMY_SP,
+                                op: BinaryOp::Add,
+                                left: Box::new(Expr::OptChain(parent_expression)),
+                                right: Box::new(Expr::Bin(BinExpr {
+                                    span: DUMMY_SP,
+                                    op: BinaryOp::Add,
+                                    left: Box::new(Expr::Lit(Lit::Str("#".into()))),
+                                    right: Box::new(Expr::Lit(Lit::Str(harmony_id.clone().into())))
+                                }))
+                            })),
+                            alt: Box::new(Expr::Lit(Lit::Str(harmony_id.into())))
+                        })))
+                    });
 
-            node.opening.span = node.opening.span.apply_mark(Mark::fresh(Mark::root()));
-            node.opening.attrs.push(swc_core::ecma::ast::JSXAttrOrSpread::JSXAttr(data_harmony_id_attribute));
-            node.opening.attrs.push(swc_core::ecma::ast::JSXAttrOrSpread::JSXAttr(parent_attribute))
+                    let data_harmony_id_attribute = JSXAttr {
+                        span: swc_common::DUMMY_SP,
+                        name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-id"), swc_common::DUMMY_SP)),
+                        value: Some(data_harmony_id),
+                    };
+
+                    node.opening.span = node.opening.span.apply_mark(Mark::fresh(Mark::root()));
+                    node.opening.attrs.push(swc_core::ecma::ast::JSXAttrOrSpread::JSXAttr(data_harmony_id_attribute));
+                    //node.opening.attrs.push(swc_core::ecma::ast::JSXAttrOrSpread::JSXAttr(parent_attribute))
+                }
+            }
         }
 
         // Continue visiting children
@@ -368,7 +450,6 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
     };
 	//Striping the prefix leaves a '/' at the beginning, so let's get rid of that
     let cleaned_path = format!("{}", modified_result);
-    println!("{}", cleaned_path);
     
     console_error_panic_hook::set_once();
     let source_map = std::sync::Arc::new(data.source_map);

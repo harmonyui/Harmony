@@ -1,8 +1,7 @@
 'use client';
 
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
-import { getEventListeners } from "events";
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 
 let controller = new AbortController();
 
@@ -36,14 +35,16 @@ export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPoin
 		// 	htmlElement.addEventListener('mouseover', onMouseEvent, false)
 		// 	htmlElement.addEventListener('mouseup', onMouseEvent, false);
 		// });
-		container?.addEventListener('pointerup', onPointerUp, {signal: controller.signal});
-		container?.addEventListener('pointermove', onPointerOver, {signal: controller.signal});
-		container?.addEventListener('click', onMouseEvent, {signal: controller.signal})
-		//container?.addEventListener('mousedown', onMouseEvent, {signal: controller.signal}) //This one handels the content editable
-		container?.addEventListener('mouseover', onMouseEvent, {signal: controller.signal})
-		//container?.addEventListener('mouseup', onMouseEvent, {signal: controller.signal})
-		container?.addEventListener('pointerdown', onPointerDown, {signal: controller.signal});
-		container?.addEventListener('dblclick', onDoubleClick, {signal: controller.signal});
+		const options: AddEventListenerOptions = {signal: controller.signal, capture: true}
+		container?.addEventListener('pointerup', onPointerUp, options);
+		container?.addEventListener('pointermove', onPointerOver, options);
+		container?.addEventListener('click', onMouseEvent, options)
+		//container?.addEventListener('mousedown', onMouseEvent, options) //This one handels the content editable
+		container?.addEventListener('mouseover', onMouseEvent, options)
+		//container?.addEventListener('mouseup', onMouseEvent, options)
+		container?.addEventListener('pointerdown', onPointerDown, options);
+		//container?.addEventListener('pointerdown', onMouseEvent, options)
+		container?.addEventListener('dblclick', onDoubleClick, options);
 	});
 
 	const removeListeners = useEffectEvent((): void => {
@@ -87,11 +88,14 @@ export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPoin
 	});
 
 	//Disables the event
-	const onMouseEvent = (event: MouseEvent): void => {
+	const onMouseEvent = (event: MouseEvent): boolean | undefined => {
 		let target = event.target as HTMLElement | null;
 		if (noEvents.some(no => no.contains(target))) return;
 		event.preventDefault();
 		event.stopPropagation();
+		event.stopImmediatePropagation();
+
+		return false;
 	}
 
 	const onPointerUp = highligherDispatcher(onPointerUpProps);

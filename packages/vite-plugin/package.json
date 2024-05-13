@@ -1,0 +1,47 @@
+{
+    "name": "vite-plugin-harmony",
+    "version": "0.1.8",
+    "description": "",
+    "author": "",
+    "license": "ISC",
+    "keywords": [
+        "vite-plugin",
+        "rollup-plugin"
+    ],
+    "main": "dist/bundle.js",
+    "types": "dist/esm/vite-plugin/src/plugin.d.ts",
+    "scripts": {
+        "build": "NODE_ENV=production webpack --mode=production"
+    },
+    "files": [
+        "dist"
+    ],
+    "preferUnplugged": true,
+    "dependencies": {
+        "@babel/core": "^7.23.7"
+    },
+    "devDependencies": {
+        "babel-plugin-harmony": "workspace:*",
+        "@harmony/util": "workspace:*",
+        "@types/babel__core": "^7.20.5",
+        "@types/node": "^20",
+        "ts-loader": "^9.5.1",
+        "vitest": "^1.5.0",
+        "vite": "^5.1.5",
+        "webpack": "^5.90.0",
+        "webpack-cli": "^5.1.4",
+        "eslint": "^8.48.0",
+        "@harmony/eslint-config-custom": "workspace:^",
+        "prettier": "^3.0.3",
+        "@harmony/prettier-config": "workspace:^",
+        "@harmony/tsconfig": "workspace:^",
+        "typescript": "^5.2.2"
+    },
+    "eslintConfig": {
+        "root": true,
+        "extends": [
+            "@harmony/eslint-config-custom/library"
+        ]
+    },
+    "prettier": "@harmony/prettier-config"
+}

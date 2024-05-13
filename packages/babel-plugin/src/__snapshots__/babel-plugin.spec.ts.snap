@@ -1,0 +1,150 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`babel-plugin > transform > Should add harmony data tags to arrow and function components 1`] = `
+"import React from "react";
+import { cn } from "@formbricks/lib/cn";
+import { TSurveySummary } from "@formbricks/types/responses";
+import { TSurvey } from "@formbricks/types/surveys";
+const StatCard: React.FunctionComponent<{
+  label: string;
+  percentage: string;
+  value: React.ReactNode;
+  tooltipText: string;
+  className?: string;
+}> = (...harmonyArguments) => {
+  let {
+    label,
+    percentage,
+    value,
+    className
+  } = harmonyArguments[0];
+  return <div className={cn("flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm", className)} data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTU6NDoyNjoxMA==") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTU6NDoyNjoxMA=="}>
+    <p className="flex text-sm text-slate-600" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTk6NDoyNDo4") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTk6NDoyNDo4"}>
+        {label}
+        {percentage && percentage !== "NaN%" && <span className="ml-1 rounded-xl bg-slate-100 px-2 py-1 text-xs" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjI6ODoyMjo5Mg==") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjI6ODoyMjo5Mg=="}>{percentage}</span>}
+    </p>
+    <p className="px-0.5 text-2xl font-bold text-slate-800" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjU6NDoyNTo3MQ==") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjU6NDoyNTo3MQ=="}>{value}</p>
+    </div>;
+};
+export default function SummaryMetadata(...harmonyArguments) {
+  let {
+    surveySummary
+  }: SummaryMetadataProps = harmonyArguments[0];
+  const {
+    completedPercentage,
+    completedResponses,
+    displayCount,
+    startsPercentage,
+    totalResponses
+  } = surveySummary;
+  return <div className="flex flex-col-reverse gap-y-2 py-4 lg:flex-row lg:gap-x-2" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzQ6NDo1MzoxMA==") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzQ6NDo1MzoxMA=="}>
+        <StatCard label="Displays" percentage="100%" value={displayCount === 0 ? <span data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mzg6MzY6Mzg6NTA=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mzg6MzY6Mzg6NTA="}>-</span> : displayCount} tooltipText="Number of times the survey has been viewed." data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzU6ODo0MDoxMA==") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzU6ODo0MDoxMA=="} />
+        <StatCard label="Starts" percentage={\`\${Math.round(startsPercentage)}%\`} value={totalResponses === 0 ? <span data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDQ6Mzg6NDQ6NTI=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDQ6Mzg6NDQ6NTI="}>-</span> : totalResponses} tooltipText="Number of times the survey has been started." data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDE6ODo0NjoxMA==") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDE6ODo0NjoxMA=="} />
+        <StatCard label="Responses" percentage={\`\${Math.round(completedPercentage)}%\`} value={completedResponses === 0 ? <span data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NTA6NDI6NTA6NTY=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NTA6NDI6NTA6NTY="}>-</span> : completedResponses} tooltipText="Number of times the survey has been completed." data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDc6ODo1MjoxMA==") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDc6ODo1MjoxMA=="} />
+    </div>;
+}"
+`;
+
+exports[`babel-plugin > transform > Should handle jsx fragment and variants 1`] = `
+"import { AuthForm } from './components/auth-form';
+import { BrandMessage } from './components/brand-message';
+import { LogoHintible } from '@/components/logos/logo-hintible';
+import { Toaster } from '@/components/ui/sonner';
+export default function Fragment(...harmonyArguments) {
+  return <>
+          <div className="relative grid flex-col h-full lg:grid-cols-2" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTA6MTA6MjQ6MTY=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTA6MTA6MjQ6MTY="}>
+            <div className="relative items-end justify-center hidden bg-gradient-to-b from-red-500 to-red-600 lg:flex" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTE6MTI6MTc6MTg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTE6MTI6MTc6MTg="}>
+              {/* <img
+                src="/images/people-montage-1.jpeg"
+                className="absolute top-0 left-0 right-0 object-cover h-full opacity-10 pointer-events-none"
+               /> */}
+              <BrandMessage data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTY6MTQ6MTY6MzA=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTY6MTQ6MTY6MzA="} />
+            </div>
+            <div className="flex flex-col justify-center w-full max-w-sm p-8 m-auto space-y-6" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTg6MTI6MjM6MTg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTg6MTI6MjM6MTg="}>
+              <div className="flex flex-col space-y-2 text-center" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTk6MTQ6MjE6MjA=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MTk6MTQ6MjE6MjA="}>
+                <LogoHintible className="w-auto h-8 mx-auto mb-10" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjA6MTY6MjA6Njk=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjA6MTY6MjA6Njk="} />
+              </div>
+              <AuthForm type="login" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjI6MTQ6MjI6Mzk=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjI6MTQ6MjI6Mzk="} />
+            </div>
+          </div>
+          <Toaster richColors theme="light" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjU6MTA6MjU6NDY=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjU6MTA6MjU6NDY="} />
+        </>;
+}
+function MemberThing(...harmonyArguments) {
+  return <Toaster.Thing data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzE6MTY6MzM6MjQ=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzE6MTY6MzM6MjQ="}>
+            This is a toaster thing
+        </Toaster.Thing>;
+}"
+`;
+
+exports[`babel-plugin > transform > Should not visit higher order components yet 1`] = `
+"const generatorWithReturn = (args, Component) => {
+  const id = args.id;
+  return ({
+    map
+  }: {
+    map: string[];
+  }) => {
+    return <div>
+                <h1>{id}</h1>
+                <Component label="hello" />
+                {map.map(str => <div key={str}>{str}</div>)}
+            </div>;
+  };
+};
+const generatorArrowExpression = args => {
+  const id = args.id;
+  return ({
+    map
+  }: {
+    map: string[];
+  }) => <div>
+            <h1>{id}</h1>
+            {map.map(str => <div key={str}>{str}</div>)}
+        </div>;
+};
+const MyComponent = generatorWithReturn({
+  id: '1'
+}, (...harmonyArguments) => {
+  let {
+    label
+  } = harmonyArguments[0];
+  const items = [{
+    label: 'Yes'
+  }];
+  return <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjY6MTY6MzI6MTQ=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjY6MTY6MzI6MTQ="}>
+            <h1 data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjc6MTI6Mjc6MzE=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjc6MTI6Mjc6MzE="}>This is it</h1>
+            <p data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjg6MTI6Mjg6MjY=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjg6MTI6Mjg6MjY="}>{label}</p>
+            <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjk6MTI6MzE6MTg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6Mjk6MTI6MzE6MTg="}>
+                {items.map(item => <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzA6MzU6MzA6NTg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzA6MzU6MzA6NTg="}>{item.label}</div>)}
+            </div>
+        </div>;
+});"
+`;
+
+exports[`babel-plugin > transform > Should not visit multiple jsx when nested function calls 1`] = `
+"const App = (...harmonyArguments) => {
+  let {
+    map
+  }: {
+    map: string[];
+  } = harmonyArguments[0];
+  return <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjoxNTo1OjE0") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjoxNTo1OjE0"}>
+            <h1 data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoxMjozOjMy") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoxMjozOjMy"}>Hello world</h1>
+            {map.map(str => <div key={str} data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDoyODo0OjU0") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDoyODo0OjU0"}>{str}</div>)}
+        </div>;
+};"
+`;
+
+exports[`babel-plugin > transform > Should refector function with multiple arguments 1`] = `
+"function Home(...harmonyArguments) {
+  let {
+    className,
+    label
+  } = harmonyArguments[0];
+  let ref = harmonyArguments[1];
+  return <div data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjoyMzo0OjIy") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MjoyMzo0OjIy"}>
+                    <h1 data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoyMDozOjQw") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoyMDozOjQw"}>Hello there</h1>
+                </div>;
+}"
+`;

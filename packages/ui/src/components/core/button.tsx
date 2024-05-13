@@ -1,5 +1,5 @@
 import React, { useEffect, useRef, useState } from "react";
-import type { PolymorphicComponentProps } from "../../types/polymorphics";
+import type { PolymorphicComponentProps } from "@harmony/util/src/types/polymorphics";
 import { Spinner } from "./spinner";
 import { ModalPortal } from "./modal";
 import { Header } from "./header";

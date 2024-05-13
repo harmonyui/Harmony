@@ -1,6 +1,6 @@
 import { Fiber } from "react-reconciler";
-import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementFiberUpward, getElementInspect, getFiberName, getNamedFiber, getReferenceFiber } from "./inspector-dev";
-import { Attribute, ComponentElement } from "@harmony/ui/src/types/component";
+import { FiberHTMLElement, getCodeInfoFromFiber, getElementFiber, getElementFiberUpward, getFiberName, getReferenceFiber } from "./inspector-dev";
+import { Attribute, ComponentElement } from "@harmony/util/src/types/component";
 
 export interface ComponentIdentifier {
 	getComponentFromElement: (element: HTMLElement) => ComponentElement | undefined;
@@ -45,7 +45,6 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		const elementFiber = getElementFiber(element as FiberHTMLElement);
 		
 		const id = element.dataset.harmonyId;//fiber?.key || nextId();
-		const parentId = element.dataset.harmonyParentId || '';
 		if (id === undefined) {
 			return undefined;
 		}
@@ -53,8 +52,8 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		const name = getFiberName(fiber) || '';
 		const codeInfo = getCodeInfoFromFiber(elementFiber);
 		const sourceFile = codeInfo?.absolutePath || '';
-		const lineNumber = !isNaN(Number(codeInfo?.lineNumber)) ? Number(codeInfo?.lineNumber) : -1;
-		const isComponent = !Boolean(fiber?.stateNode);
+		//const lineNumber = !isNaN(Number(codeInfo?.lineNumber)) ? Number(codeInfo?.lineNumber) : -1;
+		const isComponent = !fiber?.stateNode;
 		const attributes: Attribute[] = this.getComponentAttributes(element);
 		
 		//const parent = element.parentElement ? this.getComponentFromElement(element.parentElement) : undefined;
@@ -63,7 +62,6 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		}
 		return {
 			id,
-			parentId,
 			element,
 			name,
 			getParent,
@@ -92,8 +90,7 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 
 	private getComponentAttributes(element: HTMLElement): Attribute[] {
 		const attributes: Attribute[] = [];
-		for (let i = 0; i < element.childNodes.length; i++) {
-			const node = element.childNodes[i];
+		for (const node of Array.from(element.childNodes)) {
 			if (node.nodeType === Node.TEXT_NODE) {
 				//attributes.push({id: `text-${i}`, type: 'text', name: `${i}`, value: node.textContent ?? ''});
 			}
@@ -105,8 +102,23 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 
 	private getComponentChildren(element: HTMLElement): ComponentElement[] {
 		const children: ComponentElement[] = [];
-		for (let i = 0; i < element.children.length; i++) {
-			const child = element.children[i] as HTMLElement;
+		const noSlots = (el: HTMLElement): HTMLElement => {
+			if (el.tagName.toLowerCase() === 'slot') {
+				return noSlots(el.children[0] as HTMLElement);
+			}
+
+			return el;
+		}
+		// eslint-disable-next-line @typescript-eslint/prefer-for-of -- ok
+		const elementChildren = Array.from(element.children);
+		for (let i = 0; i < elementChildren.length; i++) {
+			const child = elementChildren[i] as HTMLElement;
+			if (child.tagName.toLocaleLowerCase() === 'slot') {
+				elementChildren.splice(i, 1, ...Array.from(child.children));
+				i--;
+				continue;
+			}
+			//Hard coding for now when million adds in the slots, it messes things up
 			const childComponent = this.getComponentFromElement(child);
 			if (childComponent) { 
 				children.push(childComponent);
@@ -115,9 +127,4 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 
 		return children;
 	}
-}
-
-let currId = 0;
-const nextId = () => {
-	return String(currId++);
 }
