@@ -558,7 +558,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	}, [forceSave])
 
 	const onLeave = useEffectEvent((e: BeforeUnloadEvent) => {
-		if (saveStack.length > 0 && !isPublished) {
+		if ((saveStack.length > 0 || isSaving) && !isPublished) {
 			e.preventDefault();
 			return "Are you sure you want to leave?";
 		}
@@ -579,17 +579,6 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		//TODO: find a better way to do this
 		if (execute)
 			change(newCommand);
-
-		//TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
-		//When we want global in this scenario, we are going to assume it is the next layer up (which is what isGlobal false does)
-		//This might not hold true in all scenarios, but we will assume for now
-		newCommand.update.forEach(up => {
-			const id = up.componentId;
-			const sameElements = findElementsFromId(id);
-			if (sameElements.length > 1) {
-				up.isGlobal = false;
-			}
-		});
 
 		const newEdits = undoStack.slice();
 		const newSaves = saveStack.slice();
@@ -748,7 +737,21 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 		return;
 	}
 
-	const translated = translateUpdatesToCss(updates);
+	let translated = translateUpdatesToCss(updates);
+
+	//TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
+	//When we want global in this scenario, we are going to assume it is the next layer up (which is what isGlobal false does)
+	//This might not hold true in all scenarios, but we will assume for now
+	translated = translated.map(orig => {
+		const update = {...orig};
+		const id = update.componentId;
+		const sameElements = findElementsFromId(id);
+		if (sameElements.length > 1) {
+			update.childIndex = -1;
+		}
+
+		return update;
+	})
 
 	//TODO: make the value string splitting be a regex thing with groups
 
@@ -809,7 +812,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 			const htmlElement = element;
 			
 			//Setting childIndex to -1 means that we want to update all items in a list
-			if (!update.isGlobal && update.childIndex !== childIndex) continue;
+			if (!update.isGlobal && update.childIndex > -1 && update.childIndex !== childIndex) continue;
 
 			if (update.type === 'className') {
 				if (update.name === 'font') {

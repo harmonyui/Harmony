@@ -397,7 +397,8 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 	//TODO: old value is not updated properly for size and spacing
 	const updatesTranslated = translateUpdatesToCss(updates);
 
-	const updateInfo = updatesTranslated.reduce<UpdateInfo[]>((prev, curr) => {
+	const updateInfo = await updatesTranslated.reduce<Promise<UpdateInfo[]>>(async (prevPromise, curr) => {
+		const prev = await prevPromise;
 		if (curr.type === 'className') {
 			if (curr.name !== 'font') {
 				const cssName = camelToKebab(curr.name);
@@ -422,13 +423,34 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				classNameUpdate.font = curr.value;
 			}
 		} else {
-			//We update the parent when we have multiple of the same elements with different updates or the user has specified that it is not a global update
-			const shouldUpdateParent = !curr.isGlobal;
+			const getComponent = async (currId: string): Promise<ComponentElementPrisma | undefined> => {
+				const currElement = elementInstances.find(el => el.id === currId);
+				if (!currElement) {
+					return undefined;
+				}
+				if (curr.type !== 'className') return currElement;
 
-			//When every we have a component that has a different parent, that means we need to set the classes at this parent
-			// level not the component level
-			const parentId = curr.componentId.split('#').slice(0, curr.componentId.split('#').length - 1).join('#');
-			const component = curr.type === 'className' && shouldUpdateParent ? elementInstances.find(el => el.id === parentId) : elementInstances.find(el => el.id === curr.componentId);
+				const attributes = await prisma.componentAttribute.findMany({
+					where: {
+						component_id: currElement.id
+					}
+				});
+
+				const shouldUpdateParent = !curr.isGlobal && attributes.findIndex(attr => attr.type === 'className' && attr.name === 'property') > -1; //&& attr.value.split(':')[1] === 'className');
+				if (shouldUpdateParent) {
+					const parentId = curr.componentId.split('#').slice(0, curr.componentId.split('#').length - 1).join('#');
+					const el = await getComponent(parentId);
+					if (!el) {
+						return currElement;
+					}
+
+					return el;
+				}
+
+				return currElement;
+			}
+			//We update the parent when we have multiple of the same elements with different updates or the user has specified that it is not a global update
+			const component = await getComponent(curr.componentId);
 			if (!component) {
 				return prev;
 				//throw new Error('Cannot find component with id ' + curr.componentId);
@@ -449,7 +471,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 			}
 		}
 		return prev;
-	}, []);
+	}, Promise.resolve([]));
 
 	for (const info of updateInfo) {
 	    //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.

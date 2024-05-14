@@ -12,7 +12,90 @@ describe("indexor", () => {
 
             const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
             expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(11);
+            expect(componentElements[1].name).toBe('p');
+
+            const textAttributes = componentElements[1].attributes.filter(a => a.type === 'text');
+            expect(textAttributes.length).toBe(1);
+            expect(textAttributes[0].name).toBe('property');
+            expect(textAttributes[0].value).toBe('label');
         });
+
+        it("Should index attributes properly", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/SummaryMetadata.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(11);
+            expect(componentElements[5].name).toBe('StatCard');
+            expect(componentElements[5].attributes.length).toBe(5);
+
+            //static classes look like this (StatCard #1)
+            expect(componentElements[5].attributes[0].type).toBe('className');
+            expect(componentElements[5].attributes[0].name).toBe('string');
+            expect(componentElements[5].attributes[0].value).toBe('bg-gray-50');
+
+            //Dynamic classes look like this (StatCard #2)
+            expect(componentElements[7].attributes[0].type).toBe('className');
+            expect(componentElements[7].attributes[0].name).toBe('property');
+            expect(componentElements[7].attributes[0].value).toBe('className:variant');
+
+            //static properties have value propName:propValue
+            expect(componentElements[5].attributes[1].type).toBe('property');
+            expect(componentElements[5].attributes[1].name).toBe('string');
+            expect(componentElements[5].attributes[1].value).toBe('label:Displays');
+
+            //dynamic properties look like this
+            expect(componentElements[5].attributes[3].type).toBe('property');
+            expect(componentElements[5].attributes[3].name).toBe('property');
+            expect(componentElements[5].attributes[3].value).toBe('value:undefined');
+        });
+
+        it("Should index strings in containers", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/SummaryMetadata.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(11);
+            expect(componentElements[9].name).toBe('StatCard');
+            expect(componentElements[9].attributes.length).toBe(4);
+
+            //(StatCard #3)
+            expect(componentElements[9].attributes[0].type).toBe('property');
+            expect(componentElements[9].attributes[0].name).toBe('string');
+            expect(componentElements[9].attributes[0].value).toBe('label:Responses');
+        });
+
+        it("Can find the property in a call and template literal expression", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/harderDyanmic.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(2);
+            expect(componentElements[0].name).toBe('div');
+            expect(componentElements[0].attributes.length).toBe(1);
+            expect(componentElements[1].name).toBe('Button');
+            expect(componentElements[1].attributes.length).toBe(2);
+
+            //div #1
+            expect(componentElements[0].attributes[0].type).toBe('className');
+            expect(componentElements[0].attributes[0].name).toBe('property');
+            expect(componentElements[0].attributes[0].value).toBe('className:className');
+
+            //div #2
+            expect(componentElements[1].attributes[0].type).toBe('className');
+            expect(componentElements[1].attributes[0].name).toBe('property');
+            expect(componentElements[1].attributes[0].value).toBe('className:variant');
+        })
     })
 
     describe("getCodeInfoAndNormalizeFromFiles", () => {
@@ -26,9 +109,9 @@ describe("indexor", () => {
             expect(result).toBeTruthy();
             if (!result) return;
 
-            const parentIds = ["YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NDI6ODo0NzoxMA==", 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NDg6ODo1MzoxMA==', 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NTQ6ODo1OToxMA=='];
+            const parentIds = ["YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NDU6ODo1MToxMA==", 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NTI6ODo1ODoxMA==', 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NTk6ODo2NDoxMA=='];
 
-            const pTags = result.filter(r => r.id.includes('YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6MjY6NDozMTo4'));
+            const pTags = result.filter(r => r.id.includes('YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6Mjc6NDozMjo4'));
             expect(pTags.length).toBe(parentIds.length);
             for (let i = 0; i < parentIds.length; i++) {
                 const parentId = parentIds[i];
@@ -53,7 +136,7 @@ describe("indexor", () => {
     });
 });
 
-type TestFile = 'app/SummaryMetadata.tsx';
+type TestFile = 'app/SummaryMetadata.tsx' | 'app/harderDyanmic.tsx';
 const testCases: Record<TestFile, string> = {
     'app/SummaryMetadata.tsx': `import React from "react";
 
@@ -66,6 +149,7 @@ interface SummaryMetadataProps {
     setShowDropOffs: React.Dispatch<React.SetStateAction<boolean>>;
     showDropOffs: boolean;
     surveySummary: TSurveySummary["meta"];
+    className?: string;
 }
 
 const StatCard: React.FunctionComponent<{
@@ -90,26 +174,30 @@ const StatCard: React.FunctionComponent<{
     </div>
 );
 
-export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps) {
+export default function SummaryMetadata({ surveySummary, className }: SummaryMetadataProps) {
     const { completedPercentage, completedResponses, displayCount, startsPercentage, totalResponses } =
     surveySummary;
 
+    const variant = 'bg-blue-50';
+    const otherThing = 'flex';
     return (
-    <div className="flex flex-col-reverse gap-y-2 py-4 lg:flex-row lg:gap-x-2">
+    <div className={cn("flex flex-col-reverse gap-y-2 py-4 lg:flex-row lg:gap-x-2", className)}>
         <StatCard
+        className="bg-gray-50"
         label="Displays"
         percentage="100%"
         value={displayCount === 0 ? <span>-</span> : displayCount}
         tooltipText="Number of times the survey has been viewed."
         />
         <StatCard
+        className={cn("text-sm", variant, otherThing)}
         label="Starts"
         percentage={\`\${Math.round(startsPercentage)}%\`}
         value={totalResponses === 0 ? <span>-</span> : totalResponses}
         tooltipText="Number of times the survey has been started."
         />
         <StatCard
-        label="Responses"
+        label={"Responses"}
         percentage={\`\${Math.round(completedPercentage)}%\`}
         value={completedResponses === 0 ? <span>-</span> : completedResponses}
         tooltipText="Number of times the survey has been completed."
@@ -117,5 +205,15 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
     </div>
     );
 }
+    `,
+    'app/harderDyanmic.tsx': `
+        const App = ({className}) => {
+            const variant = 'text-sm';
+            return (
+                <div className={cn("flex", className)}>
+                    <Button className={\`bg-gray-900 \${variant}\`} children="Hello there"/>
+                </div>
+            )
+        }
     `
 }

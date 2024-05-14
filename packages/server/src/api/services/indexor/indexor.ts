@@ -213,6 +213,20 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									} else if (t.isJSXExpressionContainer(attr.value)) {
 										if (t.isStringLiteral(attr.value.expression)) {
 											jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: type === 'className' ? attr.value.expression.value : `${attr.name.name}:${attr.value.expression.value}`, reference: jsxElementDefinition});
+										} else if (t.isCallExpression(attr.value.expression)) {
+											const params = attr.value.expression.arguments
+											const ids = params.filter(param => t.isIdentifier(param)) as t.Identifier[];
+											let idIndex = type === 'className' ? ids.findIndex(id => id.name === 'className') : 0;
+											idIndex = idIndex === -1 ? 0 : idIndex;
+											const value = ids[idIndex] ? ids[idIndex].name : undefined;
+											jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
+										} else if (t.isTemplateLiteral(attr.value.expression)) {
+											const params = attr.value.expression.expressions;
+											const ids = params.filter(param => t.isIdentifier(param)) as t.Identifier[];
+											let idIndex = type === 'className' ? ids.findIndex(id => id.name === 'className') : 0;
+											idIndex = idIndex === -1 ? 0 : idIndex;
+											const value = ids[idIndex] ? ids[idIndex].name : undefined;
+											jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
 										} else {
 											const value = t.isIdentifier(attr.value.expression) ? attr.value.expression.name : undefined;
 											jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
