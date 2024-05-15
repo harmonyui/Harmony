@@ -263,11 +263,16 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			element.dataset.harmonyError = type;
 		}
 
-		const id = element.dataset.harmonyId;
+		let id = element.dataset.harmonyId;
 		if (id) {
 			const split = id.split('#');
 			const componentId = split[split.length - 1];
 			element.dataset.harmonyComponentId = componentId;
+
+			if (/pages\/_app\.(tsx|jsx|js)/.exec(atob(split[0]))) {
+				id = split.slice(1).join('#');
+				element.dataset.harmonyId = id;
+			}
 		}
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		const children = Array.from(element.childNodes);
@@ -340,7 +345,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					throw new Error("Error when getting component parent in harmony text");
 				}
 				component = componentIdentifier.getComponentFromElement(element);
-				index = Array.from(element.children).filter(child => (child as HTMLElement).dataset.harmonyText === 'true').indexOf(selectedComponent);
+				index = Array.from(element.children).indexOf(selectedComponent);
 				childIndex = Array.from(element.parentElement!.children).indexOf(element)
 			}
 
@@ -558,7 +563,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	}, [forceSave])
 
 	const onLeave = useEffectEvent((e: BeforeUnloadEvent) => {
-		if (saveStack.length > 0 && !isPublished) {
+		if ((saveStack.length > 0 || isSaving) && !isPublished) {
 			e.preventDefault();
 			return "Are you sure you want to leave?";
 		}
@@ -579,17 +584,6 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		//TODO: find a better way to do this
 		if (execute)
 			change(newCommand);
-
-		//TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
-		//When we want global in this scenario, we are going to assume it is the next layer up (which is what isGlobal false does)
-		//This might not hold true in all scenarios, but we will assume for now
-		newCommand.update.forEach(up => {
-			const id = up.componentId;
-			const sameElements = findElementsFromId(id);
-			if (sameElements.length > 1) {
-				up.isGlobal = false;
-			}
-		});
 
 		const newEdits = undoStack.slice();
 		const newSaves = saveStack.slice();
@@ -669,20 +663,10 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 	const saveCommand = async (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}) => {
 		setIsSaving(true);
-		const cmds = commands.map(cmd => ({update: cmd.update}))
+		const cmds = commands.map(cmd => ({update: cmd.update}));
 		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId, branchId};
 		const resultData = await saveProject(data);
-		// const result = await fetch(`${WEB_URL}/api/update/${save.branchId}`, {
-		// 	method: 'POST',
-		// 	body: JSON.stringify(data)
-		// });
 		setIsSaving(false);
-
-		// if (!result.ok) {
-		// 	throw new Error("There was an problem saving the changes");
-		// }
-
-		//const resultData = updateResponseSchema.parse(await result.json());
 
 		return resultData.errorUpdates;
 	}
@@ -748,7 +732,21 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 		return;
 	}
 
-	const translated = translateUpdatesToCss(updates);
+	let translated = translateUpdatesToCss(updates);
+
+	//TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
+	//When we want global in this scenario, we are going to assume it is the next layer up (which is what isGlobal false does)
+	//This might not hold true in all scenarios, but we will assume for now
+	translated = translated.map(orig => {
+		const update = {...orig};
+		const id = update.componentId;
+		const sameElements = findElementsFromId(id);
+		if (sameElements.length > 1) {
+			update.childIndex = -1;
+		}
+
+		return update;
+	})
 
 	//TODO: make the value string splitting be a regex thing with groups
 
@@ -784,7 +782,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		//TODO: Need to figure out when a text component should update everywhere and where it should update just this element
 		if (update.type === 'text') {
-			const textNodes = Array.from(el.childNodes).filter(node => node.nodeType === Node.TEXT_NODE || (node as HTMLElement).dataset.harmonyText === 'true');
+			const textNodes = Array.from(el.childNodes)
 			const index = parseInt(update.name);
 			if (isNaN(index)) {
 				throw new Error(`Invalid update text element ${  update.name}`);
@@ -809,7 +807,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 			const htmlElement = element;
 			
 			//Setting childIndex to -1 means that we want to update all items in a list
-			if (!update.isGlobal && update.childIndex !== childIndex) continue;
+			if (!update.isGlobal && update.childIndex > -1 && update.childIndex !== childIndex) continue;
 
 			if (update.type === 'className') {
 				if (update.name === 'font') {

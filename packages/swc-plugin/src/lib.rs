@@ -114,13 +114,14 @@ fn has_default_params_pat(params: &[Pat]) -> bool {
 }
 
 fn valid_path(path: &str) -> bool {
-    let regex = Regex::new(r"^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx)$").unwrap();
+    let regex = Regex::new(r"^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]?node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx|js)$").unwrap();
     regex.is_match(path).unwrap()
 }
 
 impl VisitMut for TransformVisitor {
     fn visit_mut_arrow_expr(&mut self,node: &mut swc_core::ecma::ast::ArrowExpr) {
         if valid_path(&self.filename[1..]) && node.params.len() < 3 && is_react_comp_arrow(node) && !has_spread_operator_pat(&node.params) && !has_default_params_pat(&node.params) && self.fun_stack.len() == 0 {
+            println!("{}", &self.filename);
             let params = node.params.clone();
 
             // Create a new parameter with the identifier '...harmonyArguments'
@@ -212,6 +213,7 @@ impl VisitMut for TransformVisitor {
 
     fn visit_mut_function(&mut self, node: &mut Function) {
         if valid_path(&self.filename[1..]) && node.params.len() < 3 && is_react_comp_func(node) && !has_spread_operator(&node.params) && !has_default_params(&node.params) && self.fun_stack.len() == 0 {
+            println!("{}", &self.filename);
             let params = node.params.clone();
 
             // Create a new parameter with the identifier '...harmonyArguments'

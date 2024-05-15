@@ -122,6 +122,7 @@ model ComponentAttribute {
 	component ComponentElement @relation(fields: [component_id], references: [id], onDelete: Cascade)
 	location_id String
 	location Location @relation(fields: [location_id], references: [id])
+	index Int
 }
 
 model ComponentDefinition {
