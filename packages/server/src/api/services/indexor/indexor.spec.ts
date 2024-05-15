@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
+import type { ComponentElement, HarmonyComponent } from "@harmony/util/src/types/component";
 import { getCodeInfoAndNormalizeFromFiles, getCodeInfoFromFile } from "./indexor";
-import { ComponentElement, HarmonyComponent } from "@harmony/util/src/types/component";
 
 describe("indexor", () => {
     describe("getCodeInfoFromFile", () => {
@@ -16,7 +16,7 @@ describe("indexor", () => {
             expect(componentElements[1].name).toBe('p');
 
             const textAttributes = componentElements[1].attributes.filter(a => a.type === 'text');
-            expect(textAttributes.length).toBe(1);
+            expect(textAttributes.length).toBe(2);
             expect(textAttributes[0].name).toBe('property');
             expect(textAttributes[0].value).toBe('label');
         });
@@ -96,6 +96,22 @@ describe("indexor", () => {
             expect(componentElements[1].attributes[0].name).toBe('property');
             expect(componentElements[1].attributes[0].value).toBe('className:variant');
         })
+
+        it("Should index compoennt with multiple text broken up", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/text_stuff.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(10);
+            expect(componentElements[3].attributes.length).toBe(4);
+            const textAttributes = componentElements[3].attributes.filter(attr => attr.type === 'text');
+            expect(textAttributes.length).toBe(3);
+            expect(textAttributes[1].name).toBe('string');
+            expect(textAttributes[1].value).toBe('Community')
+        })
     })
 
     describe("getCodeInfoAndNormalizeFromFiles", () => {
@@ -136,7 +152,7 @@ describe("indexor", () => {
     });
 });
 
-type TestFile = 'app/SummaryMetadata.tsx' | 'app/harderDyanmic.tsx';
+type TestFile = 'app/SummaryMetadata.tsx' | 'app/harderDyanmic.tsx' | 'app/text_stuff.tsx';
 const testCases: Record<TestFile, string> = {
     'app/SummaryMetadata.tsx': `import React from "react";
 
@@ -215,5 +231,32 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
                 </div>
             )
         }
-    `
+    `,
+    'app/text_stuff.tsx': `
+    import HomepageMap from "@/components/shared/HomepageMap";
+
+    export default function HomepageSaasLanding() {
+        return (
+            <div className="max-w-[95%] mx-auto">
+                <div className="flex flex-col md:flex-row">
+                    <div className="w-full md:w-1/2 pl-4 md:pl-16">
+                        <div className="text-5xl md:text-7xl !important leading-[1.15] text-center md:text-left">
+                            The ALSCrowd<br />Community<br />Directory
+                        </div>
+                        <div className="text-xl md:text-4xl leading-[1.15] mt-4 md:mt-8 text-center md:text-left">
+                            A central directory for the ALS community.
+                        </div>
+                    </div>
+                    <div className="w-full md:w-1/2 mt-8 md:mt-0 ml-auto mr-auto flex justify-center">
+                        <HomepageMap />
+                    </div>
+                </div>
+                <div className="text-2xl md:text-4xl leading-[1.15] mt-12 md:mt-20 text-center">
+                    Find, compare, and connect with organizations, clinics, and resources near you!
+                </div>
+            </div>
+    
+        );
+    
+    }`
 }

@@ -614,7 +614,9 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 	switch(type) {
 		case 'text':
 			{
-				const textAttribute = attributes.find(attr => attr.type === 'text');
+				const textAttributes = attributes.filter(attr => attr.type === 'text');
+				const index = parseInt(update.update.name);
+				const textAttribute = textAttributes.find(attr => attr.index === index);
 				const {location, value} = getLocationAndValue(textAttribute, component);
 				
 				const elementSnippet = await getCodeSnippet(gitRepository)(location, branchName);
@@ -625,9 +627,9 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 				if (start < 0) {
 					const commentValue = `Change inner text for ${component.name} tag from ${oldValue} to ${update.value}`;
 					result = addCommentToJSXElement({location, code: elementSnippet, attribute: textAttribute, commentValue})
+				} else {
+					result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update: update.update, dbLocation: location, attribute: textAttribute};
 				}
-				
-				result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update: update.update, dbLocation: location, attribute: textAttribute};
 			}
 			break;
         case 'className':

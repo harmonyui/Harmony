@@ -263,11 +263,16 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			element.dataset.harmonyError = type;
 		}
 
-		const id = element.dataset.harmonyId;
+		let id = element.dataset.harmonyId;
 		if (id) {
 			const split = id.split('#');
 			const componentId = split[split.length - 1];
 			element.dataset.harmonyComponentId = componentId;
+
+			if (/pages\/_app\.(tsx|jsx|js)/.exec(atob(split[0]))) {
+				id = split.slice(1).join('#');
+				element.dataset.harmonyId = id;
+			}
 		}
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		const children = Array.from(element.childNodes);
@@ -340,7 +345,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					throw new Error("Error when getting component parent in harmony text");
 				}
 				component = componentIdentifier.getComponentFromElement(element);
-				index = Array.from(element.children).filter(child => (child as HTMLElement).dataset.harmonyText === 'true').indexOf(selectedComponent);
+				index = Array.from(element.children).indexOf(selectedComponent);
 				childIndex = Array.from(element.parentElement!.children).indexOf(element)
 			}
 
@@ -658,20 +663,10 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 	const saveCommand = async (commands: HarmonyCommand[], save: {branchId: string, repositoryId: string}) => {
 		setIsSaving(true);
-		const cmds = commands.map(cmd => ({update: cmd.update}))
+		const cmds = commands.map(cmd => ({update: cmd.update}));
 		const data: UpdateRequest = {values: cmds, repositoryId: save.repositoryId, branchId};
 		const resultData = await saveProject(data);
-		// const result = await fetch(`${WEB_URL}/api/update/${save.branchId}`, {
-		// 	method: 'POST',
-		// 	body: JSON.stringify(data)
-		// });
 		setIsSaving(false);
-
-		// if (!result.ok) {
-		// 	throw new Error("There was an problem saving the changes");
-		// }
-
-		//const resultData = updateResponseSchema.parse(await result.json());
 
 		return resultData.errorUpdates;
 	}
@@ -787,7 +782,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		//TODO: Need to figure out when a text component should update everywhere and where it should update just this element
 		if (update.type === 'text') {
-			const textNodes = Array.from(el.childNodes).filter(node => node.nodeType === Node.TEXT_NODE || (node as HTMLElement).dataset.harmonyText === 'true');
+			const textNodes = Array.from(el.childNodes)
 			const index = parseInt(update.name);
 			if (isNaN(index)) {
 				throw new Error(`Invalid update text element ${  update.name}`);

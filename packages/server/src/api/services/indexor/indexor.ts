@@ -16,6 +16,7 @@ import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { hashCode } from "@harmony/util/src/utils/common";
+import { ComponentAttribute } from "@harmony/db/lib/generated/client";
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
@@ -188,49 +189,54 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 						//console.log(path);
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
 						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
-			
+
 						const parentComponent = containingComponent;
 						if (jsxElementDefinition) {
+							const createParamAttribute = (params: t.Node[], type: 'text' | 'className' | 'property', name: string | undefined): Attribute => {
+								const ids = params.filter(param => t.isIdentifier(param)) as t.Identifier[];
+								let idIndex = type === 'className' ? ids.findIndex(id => id.name === 'className') : 0;
+								idIndex = idIndex === -1 ? 0 : idIndex;
+								const value = ids[idIndex] ? ids[idIndex].name : undefined;
+								return {id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1};
+							}
+	
+							const createExpressionAttribute = (node: t.JSXExpressionContainer, type: 'text' | 'className' | 'property', name: string | undefined): Attribute => {
+								if (t.isStringLiteral(node.expression)) {
+									return createStringAttribute(type, name, node.expression.value)
+								} else if (t.isCallExpression(node.expression)) {
+									const params = node.expression.arguments
+									return createParamAttribute(params, type, name);
+								} else if (t.isTemplateLiteral(node.expression)) {
+									const params = node.expression.expressions;
+									return createParamAttribute(params, type, name);
+								} 
+								const value = t.isIdentifier(node.expression) ? node.expression.name : undefined;
+								return {id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1};
+							}
+	
+							const createStringAttribute = (type: 'text' | 'className' | 'property', propertyName: string | undefined, value: string): Attribute => {
+								return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1}
+							}
+
 							const node = jsPath.node;
 							const textAttributes: Attribute[] = [];
 							const nonWhiteSpaceChildren = node.children.filter(n => !t.isJSXText(n) || n.value.trim().length > 0);
-							for (const child of nonWhiteSpaceChildren) {
+							for (let i = 0; i < nonWhiteSpaceChildren.length; i++) {
+								const child = nonWhiteSpaceChildren[i];
 								if (t.isJSXText(child)) {
-									textAttributes.push({id: '', type: 'text', name: 'string', value: child.extra?.raw as string || child.value, reference: jsxElementDefinition})
+									textAttributes.push({...createStringAttribute('text', undefined, child.extra?.raw as string || child.value), index: i});
 								} else if (t.isJSXExpressionContainer(child)) {
-									const value = t.isIdentifier(child.expression) ? child.expression.name : '';
-									value && textAttributes.push({id: '', type: 'text', name: 'property', value, reference: jsxElementDefinition});
+									textAttributes.push({...createExpressionAttribute(child, 'text', undefined), index: i})
 								}
 							}
-							if (textAttributes.length === 1) {
-								jsxElementDefinition.attributes.push(...textAttributes);
-							}
+							jsxElementDefinition.attributes.push(...textAttributes);
 							for (const attr of node.openingElement.attributes) {
 								if (t.isJSXAttribute(attr)) {
 									const type = attr.name.name === 'className' ? 'className' : 'property';
 									if (t.isStringLiteral(attr.value)) {
-										jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: type === 'className' ? attr.value.value : `${attr.name.name}:${attr.value.value}`, reference: jsxElementDefinition});
+										jsxElementDefinition.attributes.push(createStringAttribute(type, String(attr.name.name), attr.value.value));
 									} else if (t.isJSXExpressionContainer(attr.value)) {
-										if (t.isStringLiteral(attr.value.expression)) {
-											jsxElementDefinition.attributes.push({id: '', type, name: 'string', value: type === 'className' ? attr.value.expression.value : `${attr.name.name}:${attr.value.expression.value}`, reference: jsxElementDefinition});
-										} else if (t.isCallExpression(attr.value.expression)) {
-											const params = attr.value.expression.arguments
-											const ids = params.filter(param => t.isIdentifier(param)) as t.Identifier[];
-											let idIndex = type === 'className' ? ids.findIndex(id => id.name === 'className') : 0;
-											idIndex = idIndex === -1 ? 0 : idIndex;
-											const value = ids[idIndex] ? ids[idIndex].name : undefined;
-											jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
-										} else if (t.isTemplateLiteral(attr.value.expression)) {
-											const params = attr.value.expression.expressions;
-											const ids = params.filter(param => t.isIdentifier(param)) as t.Identifier[];
-											let idIndex = type === 'className' ? ids.findIndex(id => id.name === 'className') : 0;
-											idIndex = idIndex === -1 ? 0 : idIndex;
-											const value = ids[idIndex] ? ids[idIndex].name : undefined;
-											jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
-										} else {
-											const value = t.isIdentifier(attr.value.expression) ? attr.value.expression.name : undefined;
-											jsxElementDefinition.attributes.push({id: '', type, name: 'property', value: `${attr.name.name}:${value}`, reference: jsxElementDefinition});
-										}
+										jsxElementDefinition.attributes.push(createExpressionAttribute(attr.value, type, String(attr.name.name)));
 									}
 								}
 							}
@@ -525,6 +531,7 @@ try {
 						type: attribute.type,
 						value: attribute.value,
 						component_id: newElement.id, 
+						index: attribute.index,
 						location_id: comp?.location_id
 					}
 				})
