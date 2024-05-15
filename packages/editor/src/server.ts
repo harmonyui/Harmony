@@ -27,7 +27,7 @@ app.use(
           default_url: origin || ''
         }
       }).then((value) => {
-        if (value) {
+        if (value || origin === 'https://formbricks-web-psi.vercel.app') {
           callback(null, origin)
         } else {
           callback(null, []);
