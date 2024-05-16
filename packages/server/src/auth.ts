@@ -87,7 +87,7 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 	}
 }
 
-const harmonyAdmins = ['bradofrado@gmail.com', 'braydon.jones28@gmail.com', 'jacobwyliehansen@gmail.com'];
+const harmonyAdmins = ['bradofrado@gmail.com', 'braydon.jones28@gmail.com', 'jacobwyliehansen@gmail.com', 'wyattthacker12@gmail.com'];
 export const getServerAuthSession = async (userId: string | null, mockUserId?: string): Promise<Session | undefined> => {
 	//const {userId} = auth()// : {userId: null};
 	//const {userId} = _auth;
