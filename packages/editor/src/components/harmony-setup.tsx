@@ -165,7 +165,9 @@ class Setuper implements Setup {
             }
         }
         this.harmonyContainer.className = "hw-h-full hw-w-full";
-        (this.container as HTMLElement).dataset.harmonyId = document.body.dataset.harmonyId;
+        if (document.body.dataset.harmonyId) {
+            (this.container as HTMLElement).dataset.harmonyId = document.body.dataset.harmonyId;
+        }
 
         ReactDOM.createPortal = function create(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
             if (_container === document.body) {
