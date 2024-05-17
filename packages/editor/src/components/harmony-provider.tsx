@@ -264,7 +264,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 
 		let id = element.dataset.harmonyId;
-		if (id) {
+		if (id && id !== 'undefined') {
 			const split = id.split('#');
 			const componentId = split[split.length - 1];
 			element.dataset.harmonyComponentId = componentId;
