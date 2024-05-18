@@ -251,7 +251,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 	return true;
 }
 
-function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, instances: ComponentElement[]) {
+export function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, instances: ComponentElement[]) {
 	const findAttributeLocation = (curr: ComponentElement, instance: ComponentElement, propertyName: string): {attribute: Attribute, reference: ComponentElement | HarmonyComponent} | undefined => {
 		const attribute = curr.attributes.find(a => a.type === 'property' && a.value.split(':')[0] === propertyName || a.type === 'text' &&  propertyName === 'children');
 		if (attribute) {

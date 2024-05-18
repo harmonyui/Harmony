@@ -3,9 +3,15 @@
 import { Octokit, App } from "octokit";
 import fs from 'node:fs';
 import crypto from 'node:crypto';
+<<<<<<< Updated upstream:packages/server/src/api/repository/github.ts
 import { CommitItem, Repository } from "@harmony/util/src/types/branch";
 import { replaceByIndex } from "@harmony/util/src/utils/common";
 import {Change, diffLines} from 'diff';
+=======
+import { CommitItem, FileDifference, Repository } from "../../../../packages/ui/src/types/branch";
+import { replaceByIndex } from "@harmony/util/src";
+import {Change, diffChars, diffLines} from 'diff';
+>>>>>>> Stashed changes:src/server/api/repository/github.ts
 import { getFileContentsFromCache, setFileCache } from "./cache";
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
@@ -253,9 +259,39 @@ export class GithubRepository {
 
         //return comparisonResponse.data.commits;
 
-        const aheadCommits = comparisonResponse.data.commits.map<CommitItem>((commit) => ({message: commit.commit.message, author: commit.commit.author?.name || '', date: new Date(commit.commit.author?.date || '')}));
+        const aheadCommits = comparisonResponse.data.commits.map<CommitItem>((commit:any) => ({message: commit.commit.message, author: commit.commit.author?.name || '', date: new Date(commit.commit.author?.date || '')}));
 
         return aheadCommits;
+    }
+
+    public async getCommitDiffFiles(incomingBranchSha: string): Promise<FileDifference[] | undefined> {
+        const octokit = await this.getOctokit();
+    
+        const response = await octokit.rest.repos.compareCommitsWithBasehead({
+            owner: this.repository.owner,
+            repo: this.repository.name,
+            basehead: this.repository.ref  + "..." + incomingBranchSha
+        });
+     
+        // TODO: if there is changes more than 250 pages, need to paginate the result
+
+        const filesChanged = response.data.files.map<FileDifference>((file:any) => ({
+            status: file.status, 
+            sha: file.sha, 
+            filename: file.filename, 
+            additions: file.additions, 
+            deletions: file.deletions, 
+            changes: file.changes, 
+            blob_url: file.blob_url,
+            raw_url: file.raw_url, 
+            contents_url: file.contents_url, 
+            patch: file.patch, 
+            previous_filename: file.previous_filename,
+        }));
+
+ 
+        return filesChanged;
+        
     }
 
     public async createPullRequest(branch: string, title: string, body: string) {

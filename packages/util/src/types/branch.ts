@@ -9,6 +9,23 @@ export const commitSchema = z.object({
 
 export type CommitItem = z.infer<typeof commitSchema>;
 
+export const FileDifferenceSchema = z.object({
+		sha: z.string(),
+		filename: z.string(),
+		status: z.enum(["added" , "removed" , "modified" , "renamed" , "copied" , "changed" , "unchanged"]),
+		additions: z.number(),
+		deletions: z.number(),
+		changes: z.number(),
+		blob_url: z.string(),
+		raw_url: z.string(),
+		contents_url: z.string(),
+		patch: z.optional(z.string()),
+		previous_filename: z.optional(z.string())
+})
+
+export type FileDifference = z.infer<typeof FileDifferenceSchema>;
+
+
 export const branchItemSchema = z.object({
 	id: z.string(),
 	name: z.string(),

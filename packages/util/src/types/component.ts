@@ -21,6 +21,15 @@ export const updateSchema = z.object({
 })
 export type ComponentUpdate = z.infer<typeof updateSchema>;
 
+export const dbLocationSchema = z.object({
+	file:z.string(),
+	startLine:z.number(),
+	startColumn: z.number(),
+	endLine: z.number(),
+	endColumn: z.number(),
+})
+export type ComponentDBLocation = z.infer<typeof dbLocationSchema>;
+
 export const locationSchema = z.object({
 	file: z.string(),
 	start: z.number(),

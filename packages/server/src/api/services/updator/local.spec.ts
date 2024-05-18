@@ -3,8 +3,16 @@
 /* eslint-disable @typescript-eslint/require-await -- ok*/
 import { getLocationFromContent, testCases } from "@harmony/util/src/utils/component.spec";
 import { describe, it, expect } from "vitest";
+<<<<<<< Updated upstream:packages/server/src/api/services/updator/local.spec.ts
 import { ComponentIdUpdator, FileContentRetriever } from "./local";
 import { getLocationFromComponentId, hashComponentId } from "@harmony/util/src/utils/component";
+=======
+import { ComponentIdUpdator, FileContentRetriever, updateComponentIdsFromUpdates } from './local';
+import { getLocationFromComponentId, hashComponentId } from "@harmony/util/src";
+import { GithubRepository } from '../../repository/github';
+import { github } from "react-syntax-highlighter/dist/esm/styles/hljs";
+import { Repository } from "@harmony/ui/src/types/branch";
+>>>>>>> Stashed changes:src/server/api/services/updator/local.spec.ts
 
 describe("Component Id Updator", () => {
     const setup = (name: keyof (typeof testCases), targets: string[]) => {
@@ -17,10 +25,10 @@ describe("Component Id Updator", () => {
             }
         }
         const componentIdUpdator = new ComponentIdUpdator(fileRetriever);
-        const componentIds: string[] = [];
+        const componentIds: {id: string, location: ComponentLocation} [] = [];
         for (const target of targets) {
             const p = getLocationFromContent(testCases[name].oldContent, target.replaceAll('    ', '\t'));
-            componentIds.push(hashComponentId(p));
+            componentIds.push({id: hashComponentId(p), location: p});
         }
 
         return {componentIdUpdator, componentIds}
@@ -60,3 +68,45 @@ describe("Component Id Updator", () => {
 
     }) 
 })
+
+describe("find differences from commits", () => {
+    const setup = (name: keyof (typeof testCases)) => {
+        const fileRetriever: FileContentRetriever = {
+            async getNewFileContent() {
+                return testCases[name].newContent;
+            },
+            async getOldFileContent() {
+                return testCases[name].oldContent;
+            }
+        }
+        const componentIdUpdator = new ComponentIdUpdator(fileRetriever);
+
+
+        return {componentIdUpdator}
+    }
+
+    it("Should successfully update component ids", async () => {
+
+        // const {ComponentIdUpdator} = setup('add-to-top-file');
+        const oldCommit = "8b99fe9103a158bec4acca3e9e5b550988ec97a8";
+        const newCommit = "74a0707a078c5e4c295d4261ff11b707f3eaa9b2";
+        const respository:Repository  = {
+            id: "c8dfd3ac-d901-43ac-b22e-0e995b4c6d5c",
+            branch: "master",
+            name: "saas-starter-next",
+            owner: "ReSzuJan",
+            ref: oldCommit,
+            installationId: 49011005,
+            cssFramework: "none",
+            defaultUrl: "localhost:4001"
+        }
+        const githubRepo = new GithubRepository(respository);
+        const diffFiles = await updateComponentIdsFromUpdates([], newCommit, githubRepo);
+        // console.log(diffFiles);
+    })
+})
+
+// describe("update ComponentIds from commit", () => {
+//     /** should update the component from github commit if there is a difference */
+
+// })
