@@ -1,18 +1,31 @@
+/* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
+/* eslint-disable @typescript-eslint/no-duplicate-type-constituents -- ok*/
 /* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
 /* eslint-disable @typescript-eslint/no-empty-interface -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-/* eslint-disable import/no-cycle -- ok*/
 import { Button } from "@harmony/ui/src/components/core/button";
-import { Dropdown, DropdownItem } from "@harmony/ui/src/components/core/dropdown";
+import type { DropdownItem } from "@harmony/ui/src/components/core/dropdown";
+import { Dropdown } from "@harmony/ui/src/components/core/dropdown";
 import { CheckboxInput, InputBlur } from "@harmony/ui/src/components/core/input";
-import { ComponentElement } from "@harmony/util/src/types/component";
-import { camelToKebab, capitalizeFirstLetter } from "@harmony/util/src/utils/common";
+import type { ComponentElement } from "@harmony/util/src/types/component";
+import { camelToKebab, capitalizeFirstLetter, constArray, convertRgbToHex } from "@harmony/util/src/utils/common";
 import { createContext, useCallback, useContext, useMemo } from "react";
-import { CommonTools, getTextToolsFromAttributes } from "./harmony-panel";
-import { useHarmonyContext } from "../harmony-context";
+import type { Font } from "@harmony/util/src/fonts";
+import type { ComponentUpdateWithoutGlobal } from "../harmony-context";
+import { useHarmonyContext  } from "../harmony-context";
 import { getComputedValue } from "../snapping/position-updator";
-import { overlayStyles } from "../inspector/inspector";
-import { ComponentUpdateWithoutGlobal } from "../harmony-provider";
+import { isDesignerElementSelectable, overlayStyles } from "../inspector/inspector";
+
+export const attributeTools = ['font', 'fontSize', 'textAlign',
+                        'display', 'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'gap', 'flexWrap', 'flexGrow', 'flexShrink',
+						'gridTemplateColumns', 'gridTemplateRows', 'gridColumn', 'gridRow',
+						'position', 'top', 'left', 'right', 'bottom', 'letterSpacing', 'lineHeight', 'marginRight', 'marginLeft', 'marginTop', 'marginBottom', 
+                        'paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom', 'width', 'height'] as const;
+const colorTools = ['color', 'backgroundColor'] as const;
+type AttributeTools = typeof attributeTools[number];
+type ColorTools = typeof colorTools[number]; 
+export type CommonTools = AttributeTools | ColorTools;
+export interface ComponentToolData {name: CommonTools, value: string};
 
 interface ComponentAttributeContextProps {
     selectedComponent: HTMLElement | undefined;
@@ -70,6 +83,100 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
             {children}
         </ComponentAttributeContext.Provider>
     )
+}
+
+export const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | undefined) => {
+	if (!element.element) {
+		throw new Error("Component must have an element");
+	}
+
+	
+	const allStyles: [HTMLElement, Record<string, string>][] = [];
+
+	const getComputed = (name: keyof CSSStyleDeclaration) => {
+		let selectedElement = element.element;
+		let value: string | undefined;
+
+		function find(style: [HTMLElement, Record<string, string>]) {
+			return style[0] === selectedElement;
+		}
+
+		while (selectedElement && !value) {
+			let styles = allStyles.find(find);
+			if (!styles) {
+				const newStyles: [HTMLElement, Record<string, string>] = [selectedElement, getAppliedComputedStyles(selectedElement)]
+				allStyles.push(newStyles);
+				styles = newStyles
+			}
+			value = styles[1][camelToKebab(name as string)];
+			if (value) {
+				break;
+			}
+			selectedElement = isDesignerElementSelectable(selectedElement.parentElement) ? selectedElement.parentElement : undefined;
+		}
+		if (!selectedElement) {
+			selectedElement = element.element!;
+			value = allStyles.find(style => style[0] === element.element!)?.[1][name as string] || getComputedValue(element.element!, camelToKebab(name as string));
+		}
+		return {value: value!, element: selectedElement};
+	}
+
+	const getAttr = (name: keyof CSSStyleDeclaration): {value: string, element: HTMLElement} => {
+		const computed = getComputed(name);
+			
+		if (name === 'font') {
+			if (!fonts) {
+				//console.log("No fonts");
+				return {element: element.element!, value: ''};
+			}
+			const font = fonts.find(f => element.element!.classList.contains(f.id) || computed.value.toLowerCase().includes(f.name.toLowerCase()));
+
+			if (font) return {element: element.element!, value: font.id};
+
+			return computed;
+		}
+		return computed;
+	}
+
+	const getColor = (name: 'color' | 'backgroundColor') => {
+		const color = getAttr(name);
+
+		return {
+			value: convertRgbToHex(color.value),
+			element: color.element
+		}
+	}
+    const all = constArray<ComponentToolData>()([
+		...attributeTools.map(prop => ({name: prop, ...getAttr(prop)})),
+        ...colorTools.map(prop => ({name: prop, ...getColor(prop)}))
+	]);
+
+	return all;
+}
+
+function getAppliedComputedStyles(element: HTMLElement, pseudo?: string | null) {
+	const styles = window.getComputedStyle(element, pseudo)
+	const inlineStyles = element.getAttribute('style')
+
+	const retval: Record<string, string> = {}
+	for (let i = 0; i < styles.length; i++) {
+		const key = styles[i]
+		const value = styles.getPropertyValue(key)
+
+		element.style.setProperty(key, 'unset')
+
+		const unsetValue = styles.getPropertyValue(key)
+
+		if (inlineStyles)
+			element.setAttribute('style', inlineStyles)
+		else
+			element.removeAttribute('style')
+
+		if (unsetValue !== value)
+			retval[key] = value
+	}
+
+	return retval
 }
 
 export const useComponentAttribute = () => {

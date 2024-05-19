@@ -14,7 +14,7 @@ import $ from 'jquery';
 import { usePrevious } from "@harmony/ui/src/hooks/previous";
 import {Alert} from '@harmony/ui/src/components/core/alert';
 import { useSnapping } from "../snapping/snapping";
-import type { SelectMode , ComponentUpdateWithoutGlobal } from "../harmony-provider";
+import type { SelectMode , ComponentUpdateWithoutGlobal } from "../harmony-context";
 import { getProperty } from "../snapping/calculations";
 import { useSidePanel } from "../panel/side-panel";
 import { useHarmonyContext } from "../harmony-context";

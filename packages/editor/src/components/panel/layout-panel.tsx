@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import type { ComponentElement } from "@harmony/util/src/types/component"
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { useHarmonyContext } from "../harmony-context"
 import { componentIdentifier, isSelectable } from "../inspector/inspector"
 import type { TreeViewItem} from "./tree-view";
@@ -16,15 +16,15 @@ export const ComponentLayoutPanel: React.FunctionComponent<ComponentTreeViewProp
 
 export const useComponentTreeItems = (root: ComponentElement | undefined, selectedComponent: HTMLElement | undefined): TreeViewItem<ComponentElement>[] => {
 	const {scale} = useHarmonyContext();
-    const getTreeItems = (children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
+    const getTreeItems = useCallback((children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
 		return children.filter(child => isSelectable(child.element!, scale)).map<TreeViewItem<ComponentElement>>(child => ({
 			id: child,
 			content: child.name,
 			items: getTreeItems(child.children),
 			selected: selectedComponent === child.element
 		}))
-	}
-	const treeItems: TreeViewItem<ComponentElement>[] = root ? getTreeItems([root]) : [];
+	}, [scale]);
+	const treeItems: TreeViewItem<ComponentElement>[] = useMemo(() => root ? getTreeItems([root]) : [], [root, getTreeItems]);
 
 	return treeItems;
 }
