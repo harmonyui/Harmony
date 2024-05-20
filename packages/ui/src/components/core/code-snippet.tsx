@@ -6,9 +6,10 @@ import { atomDark } from "react-syntax-highlighter/dist/esm/styles/prism"; // Ch
 interface CodeSnippetProps {
   language: string;
   code: string;
+  showLineNumbers?: boolean
 }
 
-const CodeSnippet: React.FC<CodeSnippetProps> = ({ language, code }) => {
+const CodeSnippet: React.FC<CodeSnippetProps> = ({ language, code, showLineNumbers=false }) => {
   const codeContainerRef = useRef<HTMLPreElement | null>(null);
   const [copied, setCopied] = useState(false);
 
@@ -35,7 +36,7 @@ const CodeSnippet: React.FC<CodeSnippetProps> = ({ language, code }) => {
       >
         <code>{code}</code>
       </pre> */}
-      <SyntaxHighlighter language={language} style={atomDark} customStyle={{margin: "0", borderRadius: "0"}}>
+      <SyntaxHighlighter showLineNumbers={showLineNumbers} language={language} style={atomDark} customStyle={{margin: "0", borderRadius: "0"}}>
         {code}
       </SyntaxHighlighter>
     </div>
