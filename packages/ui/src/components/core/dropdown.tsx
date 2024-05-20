@@ -66,7 +66,7 @@ export interface DropdownItem<T> {
   className?: string;
 }
 export type ItemAction<T> = (item: DropdownItem<T>, index: number) => void;
-interface DropdownProps<T> extends PropsWithChildren {
+interface DropdownProps<T> extends PropsWithChildren<{
   items: DropdownItem<T>[];
   initialValue?: T;
   className?: string;
@@ -75,7 +75,7 @@ interface DropdownProps<T> extends PropsWithChildren {
 	beforeIcon?: IconComponent;
   showValue?: boolean
   mode?: "primary" | "secondary" | "none";
-}
+}> {}
 
 export const Dropdown = <T,>({
   children,

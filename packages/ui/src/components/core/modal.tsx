@@ -13,7 +13,7 @@ interface ModalContextType {
 	container: HTMLElement | undefined
 }
 const ModalContext = createContext<ModalContextType>({addModal: () => undefined, removeModal: () => undefined, nextId: -1, container: undefined});
-export const ModalProvider: React.FunctionComponent<React.PropsWithChildren> = ({children}) => {
+export const ModalProvider: React.FunctionComponent<React.PropsWithChildren<{}>> = ({children}) => {
 	const [modals, setModals] = useState<React.ReactNode[]>([]);
 	const [container, setContainer] = useState<HTMLElement>();
 

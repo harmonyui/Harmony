@@ -324,7 +324,7 @@ export class LocalGitRepository implements GitRepository {
         throw new Error("Not implemented");
     }
     public getContent(file: string): Promise<string> {
-        const absolute = path.join('/Users/braydonjones/Documents/Projects/Harmony', file);
+        const absolute = path.join(process.env.DEV_PROJECT_PATH ?? '', file);
         if (!fs.existsSync(absolute)) {
             throw new Error("Invalid path " + absolute);
         }

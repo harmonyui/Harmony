@@ -450,7 +450,7 @@ export function CalendarCell({ state, date }: CalendarCellProps): JSX.Element {
   );
 }
 
-type DialogProps = AriaDialogProps & React.PropsWithChildren;
+type DialogProps = AriaDialogProps & React.PropsWithChildren<{}>;
 export function Dialog({ children, ...props }: DialogProps): JSX.Element {
   const ref = useRef<HTMLDivElement>(null);
   const { dialogProps } = useDialog(props, ref);

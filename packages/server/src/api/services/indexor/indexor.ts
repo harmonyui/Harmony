@@ -261,9 +261,9 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 					componentName = path.parent.id.name;
 				} else if (t.isExportDeclaration(path.parent) && path.parent.type !== 'ExportAllDeclaration' && path.parent.declaration && 'id' in path.parent.declaration && t.isIdentifier(path.parent.declaration?.id)) {
 					componentName = path.parent.declaration.id.name;
-				} else if (t.isFunctionDeclaration(path.node) && t.isIdentifier(path.node.id)) {
+				} else if (t.isFunctionDeclaration(path.node) && t.isIdentifier(path.node.id) && path.node.id.name != null) {
 					componentName = path.node.id.name;
-				} else if (t.isCallExpression(path.parent) && t.isVariableDeclarator(path.parentPath?.parent) && t.isIdentifier(path.parentPath.parent.id)) {
+				} else if (t.isCallExpression(path.parent) && path.parentPath != null && t.isVariableDeclarator(path.parentPath.parent) && t.isIdentifier(path.parentPath.parent.id) ) {
 					componentName = path.parentPath.parent.id.name;
 				}
 	

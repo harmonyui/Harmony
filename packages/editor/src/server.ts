@@ -21,7 +21,7 @@ declare global {
 
 app.use(
   cors({
-    origin(origin, callback) {
+    origin : (origin, callback) => {
       prisma.repository.findFirst({
         where: {
           default_url: origin || ''
@@ -35,7 +35,6 @@ app.use(
       }).catch(err => {
         callback(new Error(String(err)));
       });
-      
     },
     credentials: true,
   })

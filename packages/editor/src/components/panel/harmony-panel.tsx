@@ -777,7 +777,7 @@ const ComponentTools = ({tools, components, data, onChange}: ComponentToolsProps
 }
 
 const ComponentToolComponent: React.FunctionComponent<{ToolComponent: ComponentTool | undefined, tool: CommonTools, data: ComponentToolData[], onChange: (data: ComponentToolData) => void}> = ({ToolComponent: Component, tool, data, onChange}) => {
-	if (!Component) return undefined;
+	if (!Component) return null;
 
 	const index = data.findIndex(d => d.name === tool);
 

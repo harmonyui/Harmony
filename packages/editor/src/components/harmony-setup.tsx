@@ -169,7 +169,7 @@ class Setuper implements Setup {
             (this.container as HTMLElement).dataset.harmonyId = document.body.dataset.harmonyId;
         }
 
-        ReactDOM.createPortal = function create(children: React.ReactNode, _container: Element | DocumentFragment, key?: string | null | undefined) {
+        ReactDOM.createPortal = function create(children: React.ReactNode, _container: Element, key?: string | null | undefined) {
             if (_container === document.body) {
                 // eslint-disable-next-line no-param-reassign -- ok
                 _container = container;

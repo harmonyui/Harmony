@@ -3,7 +3,7 @@ import React from "react";
 type PanelProps = {
   className?: string;
   disabled?: boolean;
-} & React.PropsWithChildren;
+} & React.PropsWithChildren<{}>;
 export const Panel = ({
   children,
   className,

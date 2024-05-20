@@ -8,7 +8,7 @@
       "withenv": "dotenv -e ../../.env --",
       "db:generate": "pnpm withenv prisma generate",
       "db:push": "pnpm withenv prisma db push --skip-generate",
-      "db:makemigration": "pnpm withenv prisma migrate dev --name",
+      "db:makemigration": "pnpm withenv prisma migrate dev --schema=./prisma/schema.prisma",
       "db:studio": "pnpm withenv prisma studio",
       "db:deploy": "pnpm withenv prisma migrate deploy"
     },
