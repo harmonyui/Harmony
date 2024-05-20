@@ -19,8 +19,8 @@ This means that all api calls in the editor are made to this fly.io deployment.
 __Steps for making new update functionality (everything but CSS updates (see below))__
 
 1. Create the UX experience that will be getting the needed user input to update the component
-2. Create a `ComponentUpdate` object with the componentId of the element being updated, type of update (text, component, etc.), the name (additional identifying information about this update), the oldValue (the component's current value) and the value (the new value)
-3. Pass this object into the `onAttributeChange` function from `useHarmonyContext`
+2. Create a `ComponentUpdateWithoutGlobal` object with the componentId of the element being updated, type of update (text, component, etc.), the name (additional identifying information about this update), the oldValue (the component's current value) and the value (the new value)
+3. Pass this object into the `onAttributeChanges` function from `useHarmonyContext`
 4. Add in logic in `makeUpdates` in `harmony-provider.tsx` that takes in the update object and actually makes a change to the DOM given the update type and value.
 
 __Steps to update CSS (type className)__
@@ -33,7 +33,7 @@ Toolbar Item
 
 Attribute Item
 
-1. Add the names of the all the styles affected by this new attribute in the `attributeTools` array in `attribute-panel.tsx`. Put any color related attributes in the `colorTools` array. For adding a border attribute, you would put `borderSize`, `borderRadius` in the `attributeTools` array and `borderColor` in the `colorTools` array.
+1. Add the names of the all the styles affected by this new attribute in the `attributeTools` array in `attribute-panel.tsx`. Put any color related attributes in the `colorTools` array. For adding a border attribute, you would put `borderWidth`, `borderRadius` in the `attributeTools` array and `borderColor` in the `colorTools` array.
 2. Add the attribute field in the `ComponentAttributePanel` component. You can use any of the helper components.
 3. Make sure and use the `onAttributeChange` and `getAttribute` functions from `useComponentAttribute`. This will allow you to get the correct value and update it properly.
 
