@@ -60,6 +60,6 @@ const ComponentTreeView: React.FunctionComponent<ComponentTreeViewProps> = () =>
 	const treeItems = useComponentTreeItems(rootElement, selectedComponent);
 
 	return (
-		<TreeView items={treeItems} expand={true} onClick={(item) => {onComponentSelect(item.id.element!)}} onHover={(item) => {onComponentHover(item.id.element!)}}/>
+		<TreeView items={treeItems} expand={true} onClick={(item) => {onComponentSelect(item)}} onHover={(item) => {onComponentHover(item)}}/>
 	)
 }
