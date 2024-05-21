@@ -274,6 +274,13 @@ const useToolbarTools = ({element, fonts}: ToolbarToolsProps) => {
 			const borderHeight = Number(borderStr);
 			const borderRadius = Number(borderRadiusStr);
 
+			/*
+				Currently the borderColor from getAttribute is currently coming in the format of rgb(X, X, X)
+				So have to convert it to hex in order for the color picker to work. Need to figure this out, 
+				as transparency is not currently supported.
+
+				ColorPicker is also not showing up in the dom in the corrent place, need to figure this out.
+			*/
 			let value = getAttribute('borderColor').split('(')[1].replace(")", "").split(",");
 
 			function componentToHex(c: number) {
@@ -287,6 +294,7 @@ const useToolbarTools = ({element, fonts}: ToolbarToolsProps) => {
 
 			const _data = rgbToHex(parseInt(value[0].trim()), parseInt(value[1].trim()), parseInt(value[2].trim()))
 
+			// These are just temp dummy icons, need to replace with actual icons
 			const borderStyles = [
 				{value: 'none', icon: <CancelIcon/>},
 				{value: 'solid', icon: <SolidLine/>},
@@ -302,6 +310,7 @@ const useToolbarTools = ({element, fonts}: ToolbarToolsProps) => {
 								<button key={idx} className="hw-size-6" onClick={() => onChange({name: 'borderStyle', value})}>{icon}</button>
 							))}
 						</div>
+						{/* TODO: style the sliders */}
 						<div className="hw-flex hw-flex-row hw-space-x-2">
 							<p>Border Weight</p>
 							<Slider value={borderHeight} max={50} onChange={(value) => {onChange({name: 'borderWidth', value: `${value}px`})}}/>
