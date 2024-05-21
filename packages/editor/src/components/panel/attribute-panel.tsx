@@ -20,7 +20,7 @@ export const attributeTools = ['font', 'fontSize', 'textAlign',
                         'display', 'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'gap', 'flexWrap', 'flexGrow', 'flexShrink',
 						'gridTemplateColumns', 'gridTemplateRows', 'gridColumn', 'gridRow',
 						'position', 'top', 'left', 'right', 'bottom', 'letterSpacing', 'lineHeight', 'marginRight', 'marginLeft', 'marginTop', 'marginBottom', 
-                        'paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom', 'width', 'height'] as const;
+                        'paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom', 'width', 'height', 'borderStyle', 'borderWidth', 'borderRadius', 'borderColor'] as const;
 const colorTools = ['color', 'backgroundColor'] as const;
 type AttributeTools = typeof attributeTools[number];
 type ColorTools = typeof colorTools[number]; 

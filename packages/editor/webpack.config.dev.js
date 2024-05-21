@@ -4,7 +4,7 @@ const webpack = require('webpack');
 module.exports = {
     entry: './src/index.prod.tsx',
     output: {
-        path: path.resolve(__dirname, 'dev'),
+        path: path.resolve(__dirname, 'public'),
         filename: 'bundle.js',
         libraryTarget: 'umd',
         globalObject: 'this',

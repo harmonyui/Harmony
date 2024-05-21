@@ -569,7 +569,6 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 	useEffect(() => {
 		window.addEventListener('beforeunload', onLeave);
-
 		return () => { window.removeEventListener('beforeunload', onLeave); };
 	}, []);
 

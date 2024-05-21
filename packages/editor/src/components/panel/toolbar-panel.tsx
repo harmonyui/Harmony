@@ -11,7 +11,7 @@ import ColorPicker from "@harmony/ui/src/components/core/color-picker";
 import type { DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import { Dropdown } from "@harmony/ui/src/components/core/dropdown";
 import { Header } from "@harmony/ui/src/components/core/header";
-import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon } from "@harmony/ui/src/components/core/icons";
+import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon, BorderAllIcon, CancelIcon, DashedLine, DottedLine, SolidLine } from "@harmony/ui/src/components/core/icons";
 import { NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import { HexColorSchema } from "@harmony/util/src/types/colors";
@@ -25,10 +25,9 @@ import { useSidePanel } from "./side-panel";
 import type { CommonTools, ComponentToolData} from "./attribute-panel";
 import { ComponentAttributePanel, useComponentAttribute } from "./attribute-panel";
 import { PublishButton } from "./publish-button";
-
-export const buttonTools = ['backgroundColor', 'textAttr'] as const;
+export const buttonTools = ['backgroundColor', 'textAttr', 'borderAttrs'] as const;
 export const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
-export const componentTools = ['backgroundColor', 'textAttr'] as const;
+export const componentTools = ['backgroundColor', 'textAttr', 'borderAttrs'] as const;
 export type TextTools = typeof textTools[number];
 export type ButtonTools = typeof buttonTools[number];
 export type ComponentTools = typeof componentTools[number];
@@ -265,7 +264,59 @@ const useToolbarTools = ({element, fonts}: ToolbarToolsProps) => {
                     </div>
                 </Popover>
             )
-        }
+        },
+		'borderAttrs': ({data, onChange, getAttribute}) => {
+			const borderAttr = getAttribute('borderWidth');
+			const borderAttrRadius = getAttribute('borderRadius');
+			const borderStr = borderAttr.replace('px', '');
+			const borderRadiusStr = borderAttrRadius.replace('px', '');
+
+			const borderHeight = Number(borderStr);
+			const borderRadius = Number(borderRadiusStr);
+
+			let value = getAttribute('borderColor').split('(')[1].replace(")", "").split(",");
+
+			function componentToHex(c: number) {
+				var hex = c.toString(16);
+				return hex.length == 1 ? "0" + hex : hex;
+			  }
+
+			  function rgbToHex(r: number, g: number, b: number) {
+				return "#" + componentToHex(r) + componentToHex(g) + componentToHex(b);
+			  }
+
+			const _data = rgbToHex(parseInt(value[0].trim()), parseInt(value[1].trim()), parseInt(value[2].trim()))
+
+			const borderStyles = [
+				{value: 'none', icon: <CancelIcon/>},
+				{value: 'solid', icon: <SolidLine/>},
+				{value: 'dotted', icon: <DottedLine/>},
+				{value: 'dashed', icon: <DashedLine/>},
+			]
+
+			return (
+				<Popover button={<button className="hw-text-base hw-font-light"><BorderAllIcon /></button>}>
+					<div className="hw-flex hw-flex-col hw-gap-2">
+						<div className="hw-flex hw-flex-row hw-p-4 hw-items-center hw-justify-center hw-space-x-6">
+							{borderStyles.map(({value, icon}, idx) => (
+								<button key={idx} className="hw-size-6" onClick={() => onChange({name: 'borderStyle', value})}>{icon}</button>
+							))}
+						</div>
+						<div className="hw-flex hw-flex-row hw-space-x-2">
+							<p>Border Weight</p>
+							<Slider value={borderHeight} max={50} onChange={(value) => {onChange({name: 'borderWidth', value: `${value}px`})}}/>
+							<p>{borderHeight}</p>
+						</div>
+						<div className="hw-flex hw-flex-row hw-space-x-2">
+							<p>Border Radius</p>
+							<Slider value={borderRadius} max={50} onChange={(value) => {onChange({name: 'borderRadius', value: `${value}px`})}}/>
+							<p>{borderRadius}</p>
+						</div>
+						<ColorPicker<`#${string}`> className="hw-h-7" value={HexColorSchema.parse(_data)} onChange={(_value) => {onChange({value: _value, name: 'borderColor'})}} container={document.getElementById("harmony-container") || undefined}/>
+					</div>
+				</Popover>
+			)
+		}
 	}), [fonts]);
 
 	const toolNames: readonly ToolbarTools[] = useMemo(() => {
