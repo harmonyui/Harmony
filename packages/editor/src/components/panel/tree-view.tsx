@@ -6,6 +6,7 @@ import {
 	TreeViewComponent,
   } from "@syncfusion/ej2-react-navigations";
   import { enableRipple } from "@syncfusion/ej2-base";
+import { useHarmonyContext } from "../harmony-context";
   enableRipple(true);
   let menuObj;
   let treeObj;
@@ -22,6 +23,8 @@ export interface TransformNode<T = string> {
 	subChild: TransformNode<T>[],
 	expanded: boolean,
 }
+
+
 const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 	if (item.selected) return true;
 
@@ -33,9 +36,7 @@ const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 
 export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeViewItem<T>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void}) => {
 	const  [transformedItems, setTransformedItems] = useState<TransformNode<T>[]>(); 
-	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', node: "node"};
-
-	console.log('render')
+	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild'};
 	
 	function transform(node: TreeViewItem<any>): TransformNode<T> {
 		const {id, name} = node.id;
@@ -61,18 +62,34 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
         i[0].expanded = true
 		setTransformedItems(i);
 	}, [])
+	
+	return (
+        // specifies the tag for render the TreeView component
+        <TreeViewComponent fields={fields} allowDragAndDrop={true} ref={(treeview) => { treeObj = treeview; }} nodeTemplate={TreeViewItem} />
+    );
+}
+
+export interface TreeViewRenderItem {
+	id: string;
+	type: string;
+}
+
+function TreeViewItem(data: TreeViewRenderItem) {
+	const {onComponentSelect, onComponentHover} = useHarmonyContext()
+
+	function handleHover() {
+		const node = document.querySelectorAll(`[data-harmony-id="${data.id}"]`)
+		onComponentHover(node[0] as HTMLElement)
+	}
 
 	function nodeclicked(args: any) {
-		const v = [args.node.getAttribute("data-uid")];
-		const node = document.querySelectorAll(`[data-harmony-id="${v}"]`)
-		onClick(node[0] as HTMLElement)
+		const node = document.querySelectorAll(`[data-harmony-id="${data.id}"]`)
+		onComponentSelect(node[0] as HTMLElement)
     }	
-	
-    if (!transformedItems) return <p>loading....</p>;
-	
-	
-    return (
-        // specifies the tag for render the TreeView component
-        <TreeViewComponent fields={fields} allowDragAndDrop={true} nodeClicked={nodeclicked.bind(this)}  ref={(treeview) => { treeObj = treeview; }} />
-    );
+
+	return (
+		<div onMouseEnter={handleHover} onClick={nodeclicked} >
+			{data.type}
+		</div>
+	)
 }
