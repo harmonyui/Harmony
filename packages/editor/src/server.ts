@@ -1,12 +1,18 @@
+/* eslint-disable @typescript-eslint/no-misused-promises -- ok*/
 import path from 'node:path';
 import express from 'express';
 import {createExpressMiddleware} from '@trpc/server/adapters/express';
 import {appRouter} from '@harmony/server/src/api/root';
 import { createTRPCContextExpress } from '@harmony/server/src/api/trpc';
-import { ClerkExpressWithAuth, LooseAuthProp } from "@clerk/clerk-sdk-node";
+import type { LooseAuthProp } from "@clerk/clerk-sdk-node";
+import { ClerkExpressWithAuth } from "@clerk/clerk-sdk-node";
 import cors from 'cors';
-import { LOCALHOST } from '@harmony/util/src/utils/component';
 import {prisma} from '@harmony/db/lib/prisma';
+import webpack from 'webpack';
+import middleware from 'webpack-dev-middleware';
+import hotMiddleware from 'webpack-hot-middleware';
+import morgan from 'morgan';
+import webpackDev from '../webpack.config.dev';
 import { PORT } from './trpc';
 
 const app = express();
@@ -40,6 +46,18 @@ app.use(
     credentials: true,
   })
 );
+if (process.env.NODE_ENV === 'development') {
+  const compiler = webpack(webpackDev)
+  app.use(middleware(compiler, {
+    stats: { colors: true },
+  }))
+  app.use(hotMiddleware(compiler, {
+    path: '/__webpack_hmr',
+  }));
+}
+
+app.use(morgan('short'))
+
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, '..', 'public')));
@@ -47,7 +65,7 @@ app.use(express.static(path.join(__dirname, '..', 'public')));
 // Define API routes
 app.use(
   '/trpc',
-  // eslint-disable-next-line @typescript-eslint/no-misused-promises -- ok
+   
   ClerkExpressWithAuth({
   }),
   createExpressMiddleware({
