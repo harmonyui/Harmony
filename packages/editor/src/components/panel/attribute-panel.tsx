@@ -20,8 +20,8 @@ export const attributeTools = ['font', 'fontSize', 'textAlign',
                         'display', 'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'gap', 'flexWrap', 'flexGrow', 'flexShrink',
 						'gridTemplateColumns', 'gridTemplateRows', 'gridColumn', 'gridRow',
 						'position', 'top', 'left', 'right', 'bottom', 'letterSpacing', 'lineHeight', 'marginRight', 'marginLeft', 'marginTop', 'marginBottom', 
-                        'paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom', 'width', 'height', 'borderStyle', 'borderWidth', 'borderRadius', 'borderColor'] as const;
-const colorTools = ['color', 'backgroundColor'] as const;
+                        'paddingRight', 'paddingLeft', 'paddingTop', 'paddingBottom', 'width', 'height', 'borderStyle', 'borderWidth', 'borderRadius'] as const;
+const colorTools = ['color', 'backgroundColor', 'borderColor'] as const;
 type AttributeTools = typeof attributeTools[number];
 type ColorTools = typeof colorTools[number]; 
 export type CommonTools = AttributeTools | ColorTools;
@@ -138,7 +138,7 @@ export const getTextToolsFromAttributes = (element: ComponentElement, fonts: Fon
 		return computed;
 	}
 
-	const getColor = (name: 'color' | 'backgroundColor') => {
+	const getColor = (name: 'color' | 'backgroundColor' | 'borderColor') => {
 		const color = getAttr(name);
 
 		return {

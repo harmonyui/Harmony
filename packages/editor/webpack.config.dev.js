@@ -1,8 +1,8 @@
-import path from 'path';
-import webpack from 'webpack';
+const path = require('path');
+const webpack = require('webpack');
 
-export default {
-    entry: ['webpack-hot-middleware/client?reload=true&path=http://localhost:4200/__webpack_hmr', './src/index.prod.tsx'],
+module.exports = {
+    entry: './src/index.prod.tsx',
     output: {
         path: path.resolve(__dirname, 'public'),
         filename: 'bundle.js',
@@ -19,8 +19,7 @@ export default {
         // }
     },
     plugins: [
-        new webpack.EnvironmentPlugin({ ...process.env }),
-        new webpack.HotModuleReplacementPlugin()
+        new webpack.EnvironmentPlugin({ ...process.env })
     ],
     module: {
         rules: [
@@ -48,17 +47,4 @@ export default {
             },
         ],
     },
-    // devServer: {
-    //     historyApiFallback: true,
-    //     hot: true,
-    //     host: 'localhost', // Defaults to `localhost`
-    //     port: 4200, // Defaults to 8080
-    //     proxy: [{
-    //         '^/trpc/*': {
-    //         target: 'http://localhost:8080/trpc/',
-    //         secure: false
-    //         }
-    //     }],
-    //     static: './public'
-    // }
 }
