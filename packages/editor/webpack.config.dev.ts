@@ -4,7 +4,7 @@ import webpack from 'webpack';
 export default {
     entry: ['webpack-hot-middleware/client?reload=true&path=http://localhost:4200/__webpack_hmr', './src/index.prod.tsx'],
     output: {
-        path: path.resolve(__dirname, 'dev'),
+        path: path.resolve(__dirname, 'public'),
         filename: 'bundle.js',
         libraryTarget: 'umd',
         globalObject: 'this',

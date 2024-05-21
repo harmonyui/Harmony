@@ -15,7 +15,7 @@
     "build:setup:editor": "pnpm run build:editor && pnpm run build:setup",
     "build:setup": "NODE_ENV=production webpack --mode=production --config ./webpack.config.setup.js",
     "build:editor": "NODE_ENV=production webpack --mode=production --config ./webpack.config.editor.js",
-    "dev-webpack": "NODE_ENV=development pnpm withenv webpack --config ./webpack.config.dev.js && cp ./dev/bundle.js ./public/bundle.js",
+    "dev-webpack": "NODE_ENV=development pnpm withenv webpack --config ./webpack.config.dev.js",
     "build-webpack": "NODE_ENV=production webpack --mode=production --config ./webpack.config.server.js",
     "build:rollup": "rollup -c",
     "build:esm": "tsc && tsc-alias",

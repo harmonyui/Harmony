@@ -13,12 +13,12 @@ import { ZodError } from "zod";
 import { Db, prisma } from "@harmony/db/lib/prisma";
 import { FullSession, getServerAuthSession, Session } from "../auth";
 import { EmailService, NodeMailerEmailService } from "./services/email-service";
-import {FetchCreateContextFnOptions} from '@trpc/server/adapters/fetch';
-import {CreateExpressContextOptions} from '@trpc/server/adapters/express';
+import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
 import {
   WithAuthProp,
 } from '@clerk/clerk-sdk-node';
-import {Request} from 'express';
+import { Request } from 'express';
 import { auth } from "@clerk/nextjs";
 import { GithubRepositoryFactory, GitRepositoryFactory, LocalGitRepository } from "./repository/github";
 import { Repository } from "@harmony/util/src/types/branch";
@@ -99,7 +99,7 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
   }
   // Get the session from the server using the getServerSession wrapper function
   const session = await getServerAuthSession(userId, mockUserId);
-  const gitRepositoryFactory = process.env.ENV === 'development' ? gitLocalRepositoryFactory : new GithubRepositoryFactory();
+  const gitRepositoryFactory = process.env.ENV === 'development' && false ? gitLocalRepositoryFactory : new GithubRepositoryFactory();
   return createInnerTRPCContext({
     session,
     gitRepositoryFactory
@@ -113,11 +113,11 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
  *
  * @see https://trpc.io/docs/context
  */
-export const createTRPCContextFetch = async ({req}: FetchCreateContextFnOptions) => {
+export const createTRPCContextFetch = async ({ req }: FetchCreateContextFnOptions) => {
   return createTRPCContext(req.headers.get('cookie'), auth().userId);
 };
 
-export const createTRPCContextExpress = async ({req}: {res: CreateExpressContextOptions['res'], req: WithAuthProp<Request>}) => {
+export const createTRPCContextExpress = async ({ req }: { res: CreateExpressContextOptions['res'], req: WithAuthProp<Request> }) => {
   return createTRPCContext(req.headers.cookie, req.auth.userId);
 }
 
