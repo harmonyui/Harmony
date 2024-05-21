@@ -332,6 +332,18 @@ importers:
       '@headlessui/react':
         specifier: ^1.7.18
         version: 1.7.19(react-dom@18.3.1)(react@18.3.1)
+      '@syncfusion/ej2-base':
+        specifier: ^25.2.5
+        version: 25.2.5
+      '@syncfusion/ej2-buttons':
+        specifier: ^25.2.4
+        version: 25.2.4
+      '@syncfusion/ej2-inputs':
+        specifier: ^25.2.5
+        version: 25.2.5
+      '@syncfusion/ej2-react-navigations':
+        specifier: ^25.2.4
+        version: 25.2.4
       '@trpc/client':
         specifier: ^10.45.0
         version: 10.45.2(@trpc/server@10.45.2)
@@ -5107,6 +5119,86 @@ packages:
     resolution: {integrity: sha512-j+AckLt0GoTbFztiaQChgorCsRQOMa4JoVFu0QTZTfumdgIuhkl0CTH5k/opQAPnTgNNJMfv9lLmnR+NhaNRkQ==}
     dev: false
 
+  /@syncfusion/ej2-base@25.2.5:
+    resolution: {integrity: sha512-9nn6o+rR2GpjBLQdfNRzyHIBwH8pANr5TcLWFTcrJlX++u12snWubtrv+b3JH37cdSSG6BDOqCLLfVpRSNyL7g==}
+    hasBin: true
+    dependencies:
+      '@syncfusion/ej2-icons': 25.2.3
+    dev: false
+
+  /@syncfusion/ej2-buttons@25.2.4:
+    resolution: {integrity: sha512-FK0O+fy4qrbbpd5Q+E7NBgzAIeqfqnqqB+vpBex0d7FvpmgSoM5iSvcMqlXsbwWpb1ZJ9ORETItML4G9WgS8ZA==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+    dev: false
+
+  /@syncfusion/ej2-data@25.2.3:
+    resolution: {integrity: sha512-lzULJdW4ok79opA+FGppfPx1nUGiDwIA2KGr8XBOLmShW1o+Jt+KNOx3EVkW2r3VqRX3E0Pg5OlNk3uHFPe7sw==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+    dev: false
+
+  /@syncfusion/ej2-icons@25.2.3:
+    resolution: {integrity: sha512-WptrAR3YShA8S+mushGCojRmBgLUCYpsYq1Nw1S1ynWNRcijlZgdil5L7LjaGA8H6CA/mFG5BMBDCmZ76hYX1A==}
+    dev: false
+
+  /@syncfusion/ej2-inputs@25.2.5:
+    resolution: {integrity: sha512-eQ/O7UnmH1pxP87qd/+THxVJd+7f9HRbvnt3M2FLmoVbxPqrV/1wMdVfOfVZUMJ30KJM7h5Iga8mWa4Wx0v51Q==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+      '@syncfusion/ej2-buttons': 25.2.4
+      '@syncfusion/ej2-popups': 25.2.4
+      '@syncfusion/ej2-splitbuttons': 25.2.4
+    dev: false
+
+  /@syncfusion/ej2-lists@25.2.3:
+    resolution: {integrity: sha512-IunnsCjkHsDRMOgJ20wclxpB0UJsDDwsLTwlNqIi6ddDkluBmZBlviS8Zb16YthUO020YNTLN10HgP7JRevvlA==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+      '@syncfusion/ej2-buttons': 25.2.4
+      '@syncfusion/ej2-data': 25.2.3
+      '@syncfusion/ej2-popups': 25.2.4
+    dev: false
+
+  /@syncfusion/ej2-navigations@25.2.4:
+    resolution: {integrity: sha512-3MWUdBCZZkmA7wezcTuEM9jjZd6OWe/dIB8nBwACdstkv5nEIyOPaHf1btZmMPkBeMkkLhSWoZThHzq2PokMSg==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+      '@syncfusion/ej2-buttons': 25.2.4
+      '@syncfusion/ej2-data': 25.2.3
+      '@syncfusion/ej2-inputs': 25.2.5
+      '@syncfusion/ej2-lists': 25.2.3
+      '@syncfusion/ej2-popups': 25.2.4
+    dev: false
+
+  /@syncfusion/ej2-popups@25.2.4:
+    resolution: {integrity: sha512-A6NqEAUXThOY+Rvt/KLY/tG0XvvDKK6Je5miomdkOnYU5+i+SjsLHQavRLsIrJiaY/0lFCNtaN+l4ZIx3uFHvQ==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+      '@syncfusion/ej2-buttons': 25.2.4
+    dev: false
+
+  /@syncfusion/ej2-react-base@25.2.3:
+    resolution: {integrity: sha512-DJxjhHR9QJzAGIEl4XCmHNVxpkL5uFm0PU0pufQrjNgmorQDo0iQJ4abk59B8Uw1WFmuU4/5Y+KFImExdE92gg==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+    dev: false
+
+  /@syncfusion/ej2-react-navigations@25.2.4:
+    resolution: {integrity: sha512-AUR2/NzdOf1mSPAkfTRpKOOUAipChaikJ/Uczg3R7gdKT7MGY3+/wtPsR1xZ6P/xxrEsPiiWn/GY7puVOBmHGw==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+      '@syncfusion/ej2-navigations': 25.2.4
+      '@syncfusion/ej2-react-base': 25.2.3
+    dev: false
+
+  /@syncfusion/ej2-splitbuttons@25.2.4:
+    resolution: {integrity: sha512-9C3sXLg9+fCJPX3tdQPKUJfxMw7FKFm4lLRGHliSVqbnK6dsSw2NzR8yt5gtTDgQgSGCCwL87e9g1QCAc7GTAQ==}
+    dependencies:
+      '@syncfusion/ej2-base': 25.2.5
+      '@syncfusion/ej2-popups': 25.2.4
+    dev: false
+
   /@szmarczak/http-timer@4.0.6:
     resolution: {integrity: sha512-4BAffykYOgO+5nzBWYwE3W90sBgLJoUPRWWcL8wlyiM8IB8ipJz3UMJ9KXQd1RKQXpKp8Tutn80HZtWsu2u76w==}
     engines: {node: '>=10'}
@@ -6001,7 +6093,7 @@ packages:
       webpack: 5.x.x
       webpack-cli: 5.x.x
     dependencies:
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.91.0)
     dev: true
 
@@ -6012,7 +6104,7 @@ packages:
       webpack: 5.x.x
       webpack-cli: 5.x.x
     dependencies:
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.91.0)
     dev: true
 
@@ -6027,7 +6119,7 @@ packages:
       webpack-dev-server:
         optional: true
     dependencies:
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.91.0)
     dev: true
 
@@ -11700,7 +11792,7 @@ packages:
       semver: 7.6.0
       source-map: 0.7.4
       typescript: 5.4.5
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
     dev: true
 
   /tsc-alias@1.8.8:
@@ -12244,7 +12336,7 @@ packages:
       import-local: 3.1.0
       interpret: 3.1.1
       rechoir: 0.8.0
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
       webpack-merge: 5.10.0
     dev: true
 
