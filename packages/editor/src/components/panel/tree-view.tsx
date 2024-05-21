@@ -33,6 +33,9 @@ const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 
 export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeViewItem<T>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void}) => {
 	const  [transformedItems, setTransformedItems] = useState<TransformNode<T>[]>(); 
+	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', node: "node"};
+
+	console.log('render')
 	
 	function transform(node: TreeViewItem<any>): TransformNode<T> {
 		const {id, name} = node.id;
@@ -57,7 +60,7 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		})
         i[0].expanded = true
 		setTransformedItems(i);
-	}, [items])
+	}, [])
 
 	function nodeclicked(args: any) {
 		const v = [args.node.getAttribute("data-uid")];
@@ -67,9 +70,9 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 	
     if (!transformedItems) return <p>loading....</p>;
 	
-	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', node: "node"};
+	
     return (
         // specifies the tag for render the TreeView component
-        <TreeViewComponent fields={fields} allowDragAndDrop={true} nodeClicked={nodeclicked.bind(this)}  />
+        <TreeViewComponent fields={fields} allowDragAndDrop={true} nodeClicked={nodeclicked.bind(this)}  ref={(treeview) => { treeObj = treeview; }} />
     );
 }
