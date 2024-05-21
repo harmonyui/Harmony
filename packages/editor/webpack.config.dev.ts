@@ -2,7 +2,7 @@ import path from 'path';
 import webpack from 'webpack';
 
 export default {
-    entry: ['webpack-hot-middleware/client?path=http://localhost:4200/__webpack_hmr', './src/index.prod.tsx'],
+    entry: ['webpack-hot-middleware/client?reload=true&path=http://localhost:4200/__webpack_hmr', './src/index.prod.tsx'],
     output: {
         path: path.resolve(__dirname, 'dev'),
         filename: 'bundle.js',
