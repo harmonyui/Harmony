@@ -21,12 +21,25 @@ export const DeleteIcon: IconComponent = ({ className, ...props }) => {
   );
 };
 
-export const DottedLine: IconComponent = (props) => {
-  return (
-    <FontAwesomeIcon icon={faEllipsis} className={props.className}/>
-  )
+export const BorderIcon = (props: any) => {
+	return <svg {...props} fill="#000000" version="1.1" id="Capa_1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" viewBox="0 0 389.00 389.00" stroke="#000000" stroke-width="0.0038900000000000002"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round" stroke="#CCCCCC" stroke-width="0.778"></g><g id="SVGRepo_iconCarrier"> <g> <g> <g> <path d="M379,326.035h-18.852c-5.522,0-10,4.477-10,10v14.111h-14.113c-5.522,0-10,4.477-10,10V379c0,5.523,4.478,10,10,10H379 c5.522,0,10-4.477,10-10v-42.965C389,330.512,384.522,326.035,379,326.035z"></path> <path d="M166.927,350.146h-58.813c-5.522,0-10,4.477-10,10V379c0,5.523,4.478,10,10,10h58.813c5.522,0,10-4.477,10-10v-18.854 C176.927,354.623,172.449,350.146,166.927,350.146z"></path> <path d="M280.887,350.146h-58.812c-5.523,0-10,4.477-10,10V379c0,5.523,4.477,10,10,10h58.812c5.522,0,10-4.477,10-10v-18.854 C290.887,354.623,286.409,350.146,280.887,350.146z"></path> <path d="M52.965,350.146H38.852v-14.111c0-5.523-4.478-10-10-10H10c-5.522,0-10,4.477-10,10V379c0,5.523,4.478,10,10,10h42.965 c5.521,0,10-4.477,10-10v-18.854C62.965,354.623,58.486,350.146,52.965,350.146z"></path> <path d="M10,290.886h18.852c5.522,0,10-4.477,10-10v-58.812c0-5.523-4.478-10-10-10H10c-5.522,0-10,4.477-10,10v58.812 C0,286.409,4.478,290.886,10,290.886z"></path> <path d="M10,176.926h18.852c5.522,0,10-4.477,10-10v-58.812c0-5.523-4.478-10-10-10H10c-5.522,0-10,4.477-10,10v58.812 C0,172.449,4.478,176.926,10,176.926z"></path> <path d="M52.965,0H10C4.478,0,0,4.477,0,10v42.967c0,5.523,4.478,10,10,10h18.852c5.522,0,10-4.477,10-10V38.854h14.113 c5.521,0,10-4.477,10-10V10C62.965,4.478,58.486,0,52.965,0z"></path> <path d="M280.887,0h-58.812c-5.522,0-10,4.477-10,10v18.854c0,5.523,4.478,10,10,10h58.812c5.522,0,10-4.477,10-10V10 C290.887,4.478,286.409,0,280.887,0z"></path> <path d="M108.113,38.854h58.813c5.522,0,10-4.477,10-10V10c0-5.523-4.478-10-10-10h-58.813c-5.522,0-10,4.477-10,10v18.854 C98.113,34.377,102.591,38.854,108.113,38.854z"></path> <path d="M379,0h-42.965c-5.522,0-10,4.477-10,10v18.854c0,5.523,4.478,10,10,10h14.113v14.113c0,5.523,4.478,10,10,10H379 c5.522,0,10-4.477,10-10V10C389,4.478,384.522,0,379,0z"></path> <path d="M379,212.074h-18.852c-5.522,0-10,4.477-10,10v58.812c0,5.522,4.478,10,10,10H379c5.522,0,10-4.478,10-10v-58.812 C389,216.551,384.522,212.074,379,212.074z"></path> <path d="M379,98.114h-18.852c-5.522,0-10,4.477-10,10v58.812c0,5.523,4.478,10,10,10H379c5.522,0,10-4.477,10-10v-58.812 C389,102.591,384.522,98.114,379,98.114z"></path> </g> </g> </g> </g></svg>
 }
 
+export const CancelCircle = () => {
+	return <svg className="w-full h-full" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="12" cy="12" r="10"></circle><line x1="5" y1="5" x2="19" y2="19"></line></g></svg>
+}
+
+export const DottedLine = () => {
+	return <svg className="w-full h-full" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 6.625C1.01675 6.625 0.625 7.01675 0.625 7.5C0.625 7.98325 1.01675 8.375 1.5 8.375C1.98325 8.375 2.375 7.98325 2.375 7.5C2.375 7.01675 1.98325 6.625 1.5 6.625ZM5.5 6.625C5.01675 6.625 4.625 7.01675 4.625 7.5C4.625 7.98325 5.01675 8.375 5.5 8.375C5.98325 8.375 6.375 7.98325 6.375 7.5C6.375 7.01675 5.98325 6.625 5.5 6.625ZM9.5 6.625C9.01675 6.625 8.625 7.01675 8.625 7.5C8.625 7.98325 9.01675 8.375 9.5 8.375C9.98325 8.375 10.375 7.98325 10.375 7.5C10.375 7.01675 9.98325 6.625 9.5 6.625ZM12.625 7.5C12.625 7.01675 13.0168 6.625 13.5 6.625C13.9832 6.625 14.375 7.01675 14.375 7.5C14.375 7.98325 13.9832 8.375 13.5 8.375C13.0168 8.375 12.625 7.98325 12.625 7.5Z" fill="#000000"></path> </g></svg>
+}
+
+export const SolidLine = () => {
+	return <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" transform="rotate(90)"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Interface / Line_L"> <path id="Vector" d="M12 19V5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
+}
+
+export const DashedLine = () => {
+	return <svg className="w-full h-full" viewBox="0 0 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M0 8h4v1h-4v-1zM6.5 9h4v-1h-4v1zM13 8v1h4v-1h-4z" fill="#000000"></path> </g></svg>
+}
 
 export const CancelIcon: IconComponent = (props) => {
   return (
@@ -34,18 +47,6 @@ export const CancelIcon: IconComponent = (props) => {
   )
 }
 
-export const DashedLine: IconComponent = (props) => {
-  return (
-    <FontAwesomeIcon icon={faMinus} className={props.className}/>
-  )
-}
-
-
-export const SolidLine: IconComponent = (props) => {
-  return (
-    <FontAwesomeIcon icon={faBorderAll} className={props.className}/>
-  )
-}
 export const BorderAllIcon: IconComponent = (props) => {
   return (
     <FontAwesomeIcon icon={faBorderAll} className={props.className}/>

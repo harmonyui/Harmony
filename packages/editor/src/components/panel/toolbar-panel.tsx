@@ -11,7 +11,7 @@ import ColorPicker from "@harmony/ui/src/components/core/color-picker";
 import type { DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import { Dropdown } from "@harmony/ui/src/components/core/dropdown";
 import { Header } from "@harmony/ui/src/components/core/header";
-import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon, BorderAllIcon } from "@harmony/ui/src/components/core/icons";
+import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon, BorderAllIcon, CancelCircle, SolidLine, DottedLine, DashedLine, BorderIcon } from "@harmony/ui/src/components/core/icons";
 import { NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import { HexColorSchema } from "@harmony/util/src/types/colors";
@@ -33,21 +33,7 @@ export type ButtonTools = typeof buttonTools[number];
 export type ComponentTools = typeof componentTools[number];
 export type ToolbarTools = TextTools | ButtonTools | ComponentTools
 
-const CancelCircle = () => {
-	return <svg className="w-full h-full" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" fill="none" stroke="#000000" stroke-width="1" stroke-linecap="round" stroke-linejoin="miter"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"><circle cx="12" cy="12" r="10"></circle><line x1="5" y1="5" x2="19" y2="19"></line></g></svg>
-}
 
-const DottedLine = () => {
-	return <svg className="w-full h-full" viewBox="0 0 15 15" fill="none" xmlns="http://www.w3.org/2000/svg"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path fill-rule="evenodd" clip-rule="evenodd" d="M1.5 6.625C1.01675 6.625 0.625 7.01675 0.625 7.5C0.625 7.98325 1.01675 8.375 1.5 8.375C1.98325 8.375 2.375 7.98325 2.375 7.5C2.375 7.01675 1.98325 6.625 1.5 6.625ZM5.5 6.625C5.01675 6.625 4.625 7.01675 4.625 7.5C4.625 7.98325 5.01675 8.375 5.5 8.375C5.98325 8.375 6.375 7.98325 6.375 7.5C6.375 7.01675 5.98325 6.625 5.5 6.625ZM9.5 6.625C9.01675 6.625 8.625 7.01675 8.625 7.5C8.625 7.98325 9.01675 8.375 9.5 8.375C9.98325 8.375 10.375 7.98325 10.375 7.5C10.375 7.01675 9.98325 6.625 9.5 6.625ZM12.625 7.5C12.625 7.01675 13.0168 6.625 13.5 6.625C13.9832 6.625 14.375 7.01675 14.375 7.5C14.375 7.98325 13.9832 8.375 13.5 8.375C13.0168 8.375 12.625 7.98325 12.625 7.5Z" fill="#000000"></path> </g></svg>
-}
-
-const SolidLine = () => {
-	return <svg className="w-full h-full" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" transform="rotate(90)"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <g id="Interface / Line_L"> <path id="Vector" d="M12 19V5" stroke="#000000" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path> </g> </g></svg>
-}
-
-const DashedLine = () => {
-	return <svg className="w-full h-full" viewBox="0 0 17 17" version="1.1" xmlns="http://www.w3.org/2000/svg" xmlnsXlink="http://www.w3.org/1999/xlink" fill="#000000"><g id="SVGRepo_bgCarrier" stroke-width="0"></g><g id="SVGRepo_tracerCarrier" stroke-linecap="round" stroke-linejoin="round"></g><g id="SVGRepo_iconCarrier"> <path d="M0 8h4v1h-4v-1zM6.5 9h4v-1h-4v1zM13 8v1h4v-1h-4z" fill="#000000"></path> </g></svg>
-}
 
 interface ToolbarPanelProps {
 	mode: SelectMode;
@@ -290,27 +276,18 @@ const useToolbarTools = ({element, fonts}: ToolbarToolsProps) => {
 			const borderHeight = Number(borderStr);
 			const borderRadius = Number(borderRadiusStr);
 
-			/*
-				Currently the borderColor from getAttribute is currently coming in the format of rgb(X, X, X)
-				So have to convert it to hex in order for the color picker to work. Need to figure this out, 
-				as transparency is not currently supported.
-
-				ColorPicker is also not showing up in the dom in the corrent place, need to figure this out.
-			*/
 			let value = getAttribute('borderColor')
 			const _data = value === '#00000000' ? '#FFFFFF' : value
 
-
-			// These are just temp dummy icons, need to replace with actual icons
 			const borderStyles = [
-				{value: 'none', icon: <CancelCircle/>},
-				{value: 'solid', icon: <SolidLine/>},
-				{value: 'dotted', icon: <DottedLine/>},
-				{value: 'dashed', icon: <DashedLine/>},
+				{value: 'none', icon: <CancelCircle />},
+				{value: 'solid', icon: <SolidLine />},
+				{value: 'dotted', icon: <DottedLine />},
+				{value: 'dashed', icon: <DashedLine />},
 			]
 
 			return (
-				<Popover button={<button className="hw-text-base hw-font-light"><BorderAllIcon /></button>}>
+				<Popover buttonClass="hw-h-[25.76px]" button={<BorderIcon className="hw-h-[25.76px] hw-w-[25.76px]"/>}>
 					<div className="hw-flex hw-flex-col hw-gap-3 hw-w-[320px]">
 						<div className="hw-flex hw-flex-row hw-p-4 hw-items-center hw-w-full hw-justify-between hw-border hw-border-gray-200">
 							<ColorPicker<`#${string}`> className="hw-h-7 hw-z-50" value={HexColorSchema.parse(_data)} onChange={(_value) => { onChange({ value: _value, name: 'borderColor' }) }} container={document.getElementById("harmony-container") || undefined} />
