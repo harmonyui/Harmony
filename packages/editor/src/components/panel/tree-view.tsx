@@ -8,9 +8,9 @@ import {
   import { enableRipple } from "@syncfusion/ej2-base";
 import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
 import { findElementFromId } from "../harmony-provider";
+import { v4 as uuidv4 } from 'uuid';
   enableRipple(true);
-  let menuObj;
-  let treeObj;
+  
 export interface TreeViewItem<T = string> {
 	id: T;
 	content: React.ReactNode,
@@ -24,9 +24,13 @@ export interface TransformNode<T = string> {
 	subChild: TransformNode<T>[],
 	expanded: boolean,
 	childIndex: number,
+	uid: string
 }
 
 
+
+let menuObj;
+let treeObj: TreeViewComponent | null;
 const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 	if (item.selected) return true;
 
@@ -37,7 +41,8 @@ const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 
 
 export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeViewItem<T>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void}) => {
-	const { onAttributesChange } = useHarmonyContext()
+	const { onAttributesChange, onComponentHover, onComponentSelect } = useHarmonyContext()
+	
 	const  [transformedItems, setTransformedItems] = useState<TransformNode<T>[]>(); 
 	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex'};
 	
@@ -47,9 +52,10 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		const transformedNode: TransformNode<T> = {
 			id,
 			type: String(name), 
-			expanded: false,
+			expanded: true,
 			subChild: [] as TransformNode<T>[],
-			childIndex: 0
+			childIndex: 0,
+			uid: uuidv4()
 		};
 	
 		if (node.items && node.items.length > 0) {
@@ -79,7 +85,7 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 			type: "component",
 			name: "reorder",
 			action: 'change',
-			componentId: node.id,
+			componentId: droppedNode.dataset.uid,
 			childIndex: newIndex,
 			oldValue: JSON.stringify({parentId: oldParent.dataset.uid, childIndex: childIdx}),
 			value: JSON.stringify({parentId: newParent.dataset.uid, childIndex: newIndex})
@@ -88,9 +94,49 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		droppedNode.children[1].children[1].children[0].dataset.child = childIdx
 		draggedNode.children[1].children[1].children[0].dataset.child = newIndex
 	}
+
+	function onMouseOver(item: HTMLElement, uid: string) {
+		const childIdx = document.querySelector(`[data-uid="${uid}"]`)?.getAttribute('data-child')
+		const element = findElementFromId(item.dataset.uid!!, parseInt(childIdx!))
+		if (element) {
+			onComponentHover(element)
+		}
+	}
+	function onMouseClick(item: HTMLElement, uid: string) {
+		const childIdx = document.querySelector(`[data-uid="${uid}"]`)?.getAttribute('data-child')
+		const element = findElementFromId(item.dataset.uid!!,  parseInt(childIdx!))
+		if (element) {
+			onComponentSelect(element)
+		}
+	}
+
+	function addEvents(tree: HTMLElement[]) {
+		tree.forEach((item, idx )=> {
+			if (item.dataset.uid) {
+				if (item.children[0] && item.children[0].classList.contains('e-fullrow') && item.children[1].innerHTML.includes('data-uid')) {
+					const uid = item.children[1].innerHTML.split('data-uid=')[1].split('"')[1]
+					item.children[0].addEventListener('mouseover', () => {
+						onMouseOver(item, uid!)
+						onMouseClick(item, uid!)
+					})
+					item.children[1].addEventListener('mouseover', () => {
+						onMouseOver(item, uid!)
+						onMouseClick(item, uid!)
+					})
+				}
+			}
+			addEvents(Array.from(item.children) as HTMLElement[])
+		})
+	}
+
+	function onCreated() {
+		if (treeObj) {
+			addEvents([treeObj.element])
+		}
+	}
 	
 	return (
-        <TreeViewComponent fields={fields} allowDragAndDrop={true} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} />
+        <TreeViewComponent fields={fields} allowDragAndDrop={true} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} created={onCreated} />
     );
 }
 
@@ -98,28 +144,13 @@ export interface TreeViewRenderItem {
 	id: string;
 	type: string;
 	childIndex: number;
+	uid: string;
 }
 
 function TreeViewItem(data: TreeViewRenderItem) {
-	const {onComponentSelect, onComponentHover} = useHarmonyContext()
-
-	function handleHover() {
-		const element = findElementFromId(data.id, data.childIndex)
-		if (element) {
-			onComponentHover(element)
-		}
-	}
-
-	function nodeclicked(args: any) {
-		const element = findElementFromId(data.id, data.childIndex)
-		if (element) {
-			onComponentSelect(element)
-		}
-    }	
-
 	return (
-		<div onMouseEnter={handleHover} onClick={nodeclicked} data-child={data.childIndex}>
-			{data.type} - {data.childIndex}
+		<div data-uid={data.uid} data-child={data.childIndex}>
+			{data.type}
 		</div>
 	)
 }

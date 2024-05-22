@@ -35,6 +35,7 @@
     "@syncfusion/ej2-react-navigations": "^25.2.4",
     "@trpc/client": "^10.45.0",
     "@trpc/server": "^10.45.0",
+    "@types/uuid": "^9.0.8",
     "cors": "^2.8.5",
     "dayjs": "^1.11.10",
     "dotenv-cli": "^7.3.0",
@@ -48,6 +49,7 @@
     "react-reconciler": "^0.29.0",
     "superjson": "^2.2.1",
     "tsc-alias": "^1.8.8",
+    "uuid": "^9.0.1",
     "zod": "^3.22.4"
   },
   "peerDependencies": {
