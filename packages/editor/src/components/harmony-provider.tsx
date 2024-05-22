@@ -753,26 +753,20 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		if (update.type === 'component') {
 			if (update.name === 'reorder') {
-				const [fromStr, toStr] = update.value.split(':');
-				if (!fromStr || !toStr) throw new Error(`Invalid update reorder value ${  update.value}`);
-				const [_, from] = fromStr.split('=');
-				const [_2, to] = toStr.split('=');
-
-				if (!from || !to) throw new Error(`Invalid update reorder value ${  update.value}`);
-
+				const {oldValue, value} = update;
+				const {parentId: oldParent, childIndex: oldChildIndex} = JSON.parse(oldValue);
+				const {parentId: newParent, childIndex: newChildIndex} = JSON.parse(value);
 				
-				const fromNum = parseInt(from);
-				const toNum = parseInt(to);
-				if (isNaN(fromNum) || isNaN(toNum) || fromNum < 0 || toNum < 0 || fromNum >= parent.children.length || toNum >= parent.children.length)
-					throw new Error(`Invalid from and to numbers: ${fromNum}, ${toNum}`);
-
-				if (fromNum === toNum) continue;
-
-				const fromElement = parent.children[fromNum];
-				//if (!fromElement) throw new Error("Need from element");
-				//+1 because we need to get the next sibiling for the insertBefore
-				const toElement = parent.children[fromNum < toNum ? toNum + 1 : toNum]// || null;
-				parent.insertBefore(fromElement, toElement);
+				const oldElement = findElementFromId(update.componentId, parseInt(oldChildIndex));
+				oldElement?.remove();
+				const newElement = findElementFromId(newParent, 0);
+				if (newElement) {
+					if (newElement?.children.length > newChildIndex) {
+						newElement?.insertBefore(oldElement!, newElement.childNodes[newChildIndex]);
+					} else {
+						newElement?.appendChild(oldElement!);
+					}
+				}
 			}
 		}
 

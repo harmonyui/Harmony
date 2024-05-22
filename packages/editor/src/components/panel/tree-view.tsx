@@ -6,7 +6,7 @@ import {
 	TreeViewComponent,
   } from "@syncfusion/ej2-react-navigations";
   import { enableRipple } from "@syncfusion/ej2-base";
-import { useHarmonyContext } from "../harmony-context";
+import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
 import { findElementFromId } from "../harmony-provider";
   enableRipple(true);
   let menuObj;
@@ -23,7 +23,7 @@ export interface TransformNode<T = string> {
 	type: React.ReactNode,
 	subChild: TransformNode<T>[],
 	expanded: boolean,
-	childIdx: number,
+	childIndex: number,
 }
 
 
@@ -37,8 +37,9 @@ const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 
 
 export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeViewItem<T>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void}) => {
+	const { onAttributesChange } = useHarmonyContext()
 	const  [transformedItems, setTransformedItems] = useState<TransformNode<T>[]>(); 
-	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild'};
+	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex'};
 	
 	function transform(node: TreeViewItem<any>): TransformNode<T> {
 		const {id, name} = node.id;
@@ -48,13 +49,13 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 			type: String(name), 
 			expanded: false,
 			subChild: [] as TransformNode<T>[],
-			childIdx: 0,
+			childIndex: 0
 		};
 	
 		if (node.items && node.items.length > 0) {
-			let children = node.items.map(transform);
+			let children = node.items.map(node => transform(node));
 			transformedNode.subChild = children.map((child, index) => {
-				child.childIdx = index;
+				child.childIndex = index;
 				return child;
 			});
 		}
@@ -69,39 +70,56 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
         i[0].expanded = true
 		setTransformedItems(i);
 	}, [])
+
+	function handleNodeDropped(event: any) {
+		const { draggedParentNode: oldParent, dropTarget: newParent, dropIndex: newIndex, droppedNode, draggedNode, droppedNodeData: node } = event;
+		const childIdx = draggedNode.children[1].children[1].children[0].getAttribute('data-child')
+
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "reorder",
+			action: 'change',
+			componentId: node.id,
+			childIndex: newIndex,
+			oldValue: JSON.stringify({parentId: oldParent.dataset.uid, childIndex: childIdx}),
+			value: JSON.stringify({parentId: newParent.dataset.uid, childIndex: newIndex})
+		}
+		onAttributesChange([update])
+		droppedNode.children[1].children[1].children[0].dataset.child = childIdx
+		draggedNode.children[1].children[1].children[0].dataset.child = newIndex
+	}
 	
 	return (
-        // specifies the tag for render the TreeView component
-        <TreeViewComponent fields={fields} allowDragAndDrop={true} ref={(treeview) => { treeObj = treeview; }} nodeTemplate={TreeViewItem} />
+        <TreeViewComponent fields={fields} allowDragAndDrop={true} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} />
     );
 }
 
 export interface TreeViewRenderItem {
 	id: string;
 	type: string;
-	childIdx: number;
+	childIndex: number;
 }
 
 function TreeViewItem(data: TreeViewRenderItem) {
 	const {onComponentSelect, onComponentHover} = useHarmonyContext()
 
 	function handleHover() {
-		const element = findElementFromId(data.id, data.childIdx)
+		const element = findElementFromId(data.id, data.childIndex)
 		if (element) {
 			onComponentHover(element)
 		}
 	}
 
 	function nodeclicked(args: any) {
-		const element = findElementFromId(data.id, data.childIdx)
+		const element = findElementFromId(data.id, data.childIndex)
 		if (element) {
 			onComponentSelect(element)
 		}
     }	
 
 	return (
-		<div onMouseEnter={handleHover} onClick={nodeclicked} >
-			{data.type}
+		<div onMouseEnter={handleHover} onClick={nodeclicked} data-child={data.childIndex}>
+			{data.type} - {data.childIndex}
 		</div>
 	)
 }
