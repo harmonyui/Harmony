@@ -81,6 +81,12 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		const { draggedParentNode: oldParent, dropTarget: newParent, dropIndex: newIndex, droppedNode, draggedNode, droppedNodeData: node } = event;
 		const childIdx = draggedNode.children[1].innerHTML.split("data-child=")[1].split('"')[1] as string
 		const componentId = draggedNode.children[1].innerHTML.split("data-node=")[1].split('"')[1] as string
+
+		if (oldParent.dataset.uid != newParent.dataset.uid) {
+			event.cancel = true
+			throw new Error("Cannot move component to a different file")
+		}
+
 		const update: ComponentUpdateWithoutGlobal = {
 			type: "component",
 			name: "reorder",
@@ -152,6 +158,22 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		})
 	}
 
+	function dragStop(event: any) {
+		const { draggedParentNode: oldParent, dropTarget: newParent, } = event;
+
+		if (oldParent.dataset.uid != newParent.dataset.uid) {
+			event.cancel = true
+		}
+	}
+
+	function nodeDrag(event: any) {
+		const { draggedParentNode: oldParent, dropTarget: newParent, } = event;
+
+		if (oldParent.dataset.uid != newParent.dataset.uid) {
+			event.dropIndicator = 'e-no-drop';
+		}
+	}
+
 	function onCreated() {
 		if (treeObj) {
 			addEvents([treeObj.element])
@@ -159,7 +181,7 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 	}
 	
 	return (
-        <TreeViewComponent fields={fields} allowDragAndDrop={true} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} created={onCreated} />
+        <TreeViewComponent fields={fields} allowDragAndDrop={true} nodeDragging={nodeDrag.bind(this)} nodeDragStop={dragStop.bind(this)} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} created={onCreated} />
     );
 }
 
