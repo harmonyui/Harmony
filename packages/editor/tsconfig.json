@@ -6,7 +6,7 @@
   "include": ["."],
   "exclude": [
     "webpack.config.setup.js","webpack.config.editor.js", 
-    "webpack.config.dev.ts",
+    "webpack.config.dev.js",
     "tailwind.config.ts", 
     "postcss.config.js", 
     "dist",

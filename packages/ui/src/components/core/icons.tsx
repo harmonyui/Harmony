@@ -1,7 +1,7 @@
 import { getClass } from "@harmony/util/src/utils/common";
 import React from "react";
 import {FontAwesomeIcon} from '@fortawesome/react-fontawesome'
-import {faAlignCenter, faAlignJustify, faAlignLeft, faAlignRight, faArrowUpRightFromSquare, faCirclePlay, faCircleQuestion, faCodeBranch, faCodePullRequest, faRectangleList, faSquareShareNodes, faUserGroup} from '@fortawesome/free-solid-svg-icons'
+import {faAlignCenter, faAlignJustify, faAlignLeft, faAlignRight, faArrowUpRightFromSquare, faBorderAll, faBorderNone, faBorderTopLeft, faCirclePlay, faCircleQuestion, faCodeBranch, faCodePullRequest, faEllipsis, faMinus, faRectangleList, faSquareShareNodes, faUserGroup} from '@fortawesome/free-solid-svg-icons'
 
 export type IconComponent = (
   props: React.ComponentPropsWithoutRef<"svg">,
@@ -20,6 +20,37 @@ export const DeleteIcon: IconComponent = ({ className, ...props }) => {
     </svg>
   );
 };
+
+export const DottedLine: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faEllipsis} className={props.className}/>
+  )
+}
+
+
+export const CancelIcon: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faBorderNone} className={props.className}/>
+  )
+}
+
+export const DashedLine: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faMinus} className={props.className}/>
+  )
+}
+
+
+export const SolidLine: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faBorderAll} className={props.className}/>
+  )
+}
+export const BorderAllIcon: IconComponent = (props) => {
+  return (
+    <FontAwesomeIcon icon={faBorderAll} className={props.className}/>
+  )
+}
 
 export const AlignLeftIcon: IconComponent = (props) => {
   return (

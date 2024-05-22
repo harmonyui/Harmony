@@ -24,9 +24,4 @@ module.exports = {
             },
         ],
     },
-    externals: {
-        'webpack-dev-middleware': 'middleware',
-        'webpack-hot-middleware': 'hotMiddleware',
-        'webpack': 'webpack'
-    }
 }
