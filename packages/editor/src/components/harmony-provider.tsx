@@ -752,19 +752,36 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		if (update.type === 'component') {
 			if (update.name === 'reorder') {
+
+
 				const {oldValue, value} = update;
 				const {parentId: oldParent, childIndex: oldChildIndex} = JSON.parse(oldValue);
 				const {parentId: newParent, childIndex: newChildIndex} = JSON.parse(value);
-				
+
+				// Validate Input
+				if (!update.componentId || !oldParent || !newParent || !oldChildIndex || !newChildIndex) {
+					throw new Error(`makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`);
+				}
+
 				const oldElement = findElementFromId(update.componentId, parseInt(oldChildIndex));
-				oldElement?.remove();
-				const newElement = document.querySelector(`[data-harmony-id="${newParent}"]`)
+
+				// Verify that we could find the old element to be deleted from the DOM
+				if (!oldElement) {
+					throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${oldChildIndex}`);
+				}
+
+				oldElement.remove();
+
+				const newElement = document.querySelector(`[data-harmony-id="${newParent}"]`);
 				if (newElement) {
-					if (newElement?.children.length > newChildIndex) {
-						newElement?.insertBefore(oldElement!, newElement.childNodes[newChildIndex]);
+					const children = Array.from(newElement.children);
+					if (newChildIndex >= 0 && newChildIndex < children.length) {
+						newElement.insertBefore(oldElement, children[newChildIndex]);
 					} else {
-						newElement?.appendChild(oldElement!);
+						newElement.appendChild(oldElement);
 					}
+				} else {
+					throw new Error(`makeUpdates: Cannot find the elements parent with data-harmony-id: ${newParent}`);
 				}
 			}
 		}
