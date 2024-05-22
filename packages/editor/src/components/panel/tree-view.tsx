@@ -7,6 +7,7 @@ import {
   } from "@syncfusion/ej2-react-navigations";
   import { enableRipple } from "@syncfusion/ej2-base";
 import { useHarmonyContext } from "../harmony-context";
+import { findElementFromId } from "../harmony-provider";
   enableRipple(true);
   let menuObj;
   let treeObj;
@@ -22,6 +23,7 @@ export interface TransformNode<T = string> {
 	type: React.ReactNode,
 	subChild: TransformNode<T>[],
 	expanded: boolean,
+	childIdx: number,
 }
 
 
@@ -46,10 +48,15 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 			type: String(name), 
 			expanded: false,
 			subChild: [] as TransformNode<T>[],
+			childIdx: 0,
 		};
 	
 		if (node.items && node.items.length > 0) {
-			transformedNode.subChild = node.items.map(transform);
+			let children = node.items.map(transform);
+			transformedNode.subChild = children.map((child, index) => {
+				child.childIdx = index;
+				return child;
+			});
 		}
 	
 		return transformedNode;
@@ -72,19 +79,24 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 export interface TreeViewRenderItem {
 	id: string;
 	type: string;
+	childIdx: number;
 }
 
 function TreeViewItem(data: TreeViewRenderItem) {
 	const {onComponentSelect, onComponentHover} = useHarmonyContext()
 
 	function handleHover() {
-		const node = document.querySelectorAll(`[data-harmony-id="${data.id}"]`)
-		onComponentHover(node[0] as HTMLElement)
+		const element = findElementFromId(data.id, data.childIdx)
+		if (element) {
+			onComponentHover(element)
+		}
 	}
 
 	function nodeclicked(args: any) {
-		const node = document.querySelectorAll(`[data-harmony-id="${data.id}"]`)
-		onComponentSelect(node[0] as HTMLElement)
+		const element = findElementFromId(data.id, data.childIdx)
+		if (element) {
+			onComponentSelect(element)
+		}
     }	
 
 	return (
