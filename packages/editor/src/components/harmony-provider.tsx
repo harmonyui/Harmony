@@ -759,7 +759,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				
 				const oldElement = findElementFromId(update.componentId, parseInt(oldChildIndex));
 				oldElement?.remove();
-				const newElement = findElementFromId(newParent, 0);
+				const newElement = document.querySelector(`[data-harmony-id="${newParent}"]`)
 				if (newElement) {
 					if (newElement?.children.length > newChildIndex) {
 						newElement?.insertBefore(oldElement!, newElement.childNodes[newChildIndex]);

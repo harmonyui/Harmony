@@ -8,7 +8,7 @@ import { TreeView } from "./tree-view"
 
 export const ComponentLayoutPanel: React.FunctionComponent<ComponentTreeViewProps> = ({selectedComponent}) => {
     return (
-        <div className="hw-max-w-[300px] hw-p-2">
+        <div className="hw-max-w-[500px] hw-p-2">
             <ComponentTreeView selectedComponent={selectedComponent}/>
         </div>
     )
