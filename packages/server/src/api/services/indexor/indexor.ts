@@ -171,7 +171,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 			}
 
 			const containingComponent: HarmonyComponent = {
-				id: randomId(),
+				id: getHashFromLocation(location, originalCode),
 				name: '',
 				children: [],
 				attributes: [],
@@ -186,11 +186,115 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 				},
 				JSXElement: {
 					enter(jsPath) {
+						function getAttributeName(attribute: Attribute): string {
+							if (attribute.type === 'className') {
+								return 'className';
+							} else if (attribute.type === 'text') {
+								return 'children';
+							}
+
+							const [name] = attribute.value.split(':');
+							return name;
+						}
+
+						function getPropertyName(attribute: Attribute): string | undefined {
+							if (attribute.name !== 'property') return undefined;
+
+							if (attribute.type === 'text') {
+								return attribute.value === 'undefined' ? undefined : attribute.value;
+							}
+
+							const [_, propertyName] = attribute.value.split(':');
+							return propertyName === 'undefined' ? undefined : propertyName; 
+						}
+
+						function getAttributeValue(attribute: Attribute): string {
+							if (attribute.name === 'property') {
+								return getPropertyName(attribute) || 'undefined';
+							}
+
+							if (attribute.type === 'property') {
+								const [_, propertyValue] = attribute.value.split(':');
+								return propertyValue;
+							}
+
+							return attribute.value;
+						}
+
+						function connectAttributesToParent(elementAttributes: Attribute[], parent: ComponentElement): Attribute[] {
+							const attributes: Attribute[] = [];
+							for (const attribute of elementAttributes) {
+								const propertyName = getPropertyName(attribute);
+								if (propertyName) {
+									const sameAttributesInElement = parent.attributes.filter(attr => getAttributeName(attr) === propertyName).map(attr => {
+										const newAttribute = {...attr};
+										if (attribute.type === 'text') {
+											newAttribute.value = getAttributeValue(newAttribute);
+											newAttribute.type = 'text';
+										} else if (attribute.type === 'property') {
+											const name = getAttributeName(attribute);
+											const value = getAttributeValue(newAttribute);
+
+											newAttribute.value = `${name}:${value}`;
+											newAttribute.type = 'property';
+										}
+										return newAttribute;
+									});
+	
+									
+									attributes.push(...sameAttributesInElement);
+									continue;
+								}
+								attributes.push(attribute);
+							}
+
+							return attributes;
+						}
+
+						function connectChildToParent(child: ComponentElement, parent: ComponentElement): ComponentElement {
+							const attributes = connectAttributesToParent(child.attributes, parent);
+							const newElement = {...child, attributes, getParent: () => parent};
+							elementInstances.push(newElement);
+
+							return newElement;
+						}
+
+						function connectInstanceToChildren(element: ComponentElement): void {
+							if (!element.isComponent) return;
+
+							const binding = jsPath.scope.getBinding(element.name);
+							let id: string | undefined;
+							if (binding) {
+								binding.path.traverse({
+									FunctionDeclaration(path) {
+										const location = getLocation(path.node, file);
+										id = location ? getHashFromLocation(location, originalCode) : undefined;
+									},
+									ArrowFunctionExpression(path) {
+										const location = getLocation(path.node, file);
+										id = location ? getHashFromLocation(location, originalCode) : undefined;
+									}
+								})
+							}
+
+							const childElements = elementInstances.filter(instance => instance.containingComponent.id === id && instance.getParent() === undefined);
+							childElements.forEach(child => {
+								const newChild = connectChildToParent(child, element);
+								connectInstanceToChildren(newChild);
+							});
+						}
+
+						function connectInstanceToParent(element: ComponentElement): void {
+							const parents = elementInstances.filter(parent => parent.id === element.containingComponent.id);
+							parents.forEach(parent => {connectChildToParent(element, parent)});
+						}
+
 						//console.log(path);
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
 						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
 
 						const parentComponent = containingComponent;
+						
 						if (jsxElementDefinition) {
 							const createIdentifierAttribute = (node: t.Identifier, type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
 								const value = node.name;
@@ -243,7 +347,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									start: node.start,
 									end: node.end
 								}
-								return [{id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1, location}];
+								return [{id: '', type, name: 'property', value: name ? `${name}:${value}` : value || 'undefined', reference: jsxElementDefinition, index: -1, location}];
 							}
 	
 							const createStringAttribute = (node: t.StringLiteral | t.TemplateElement | t.JSXText, type: 'text' | 'className' | 'property', propertyName: string | undefined, value: string): Attribute => {
@@ -282,6 +386,10 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							jsxElements.push(jsxElementDefinition);
 							elementInstances.push(jsxElementDefinition);
 							parentComponent.children.push(jsxElementDefinition);
+
+							connectInstanceToChildren(jsxElementDefinition);
+							connectInstanceToParent(jsxElementDefinition);
+
 						}
 					},
 					exit() {
