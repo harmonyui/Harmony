@@ -237,6 +237,10 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 
 											newAttribute.value = `${name}:${value}`;
 											newAttribute.type = 'property';
+										} else if (attribute.type === 'className') {
+											const value = getAttributeValue(newAttribute);
+											newAttribute.value = newAttribute.name === 'property' ? `className:${value}` : value;
+											newAttribute.type = 'className';
 										}
 										return newAttribute;
 									});
@@ -440,69 +444,6 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 }
 
 function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, instances: ComponentElement[]) {
-	const findAttributeLocation = (curr: ComponentElement, instance: ComponentElement, propertyName: string): {attribute: Attribute, reference: ComponentElement | HarmonyComponent} | undefined => {
-		const attribute = curr.attributes.find(a => a.type === 'property' && a.value.split(':')[0] === propertyName || a.type === 'text' &&  propertyName === 'children');
-		if (attribute) {
-			if (attribute.name === 'string') {
-				return {reference: curr, attribute};
-				
-			} else {
-				const parent = curr.getParent();
-				if (parent) {
-					const reference = findAttributeLocation(parent, instance, propertyName);
-
-					//TODO: find the text in the containing component
-					// if (reference === undefined) {
-					// 	return {reference: curr.containingComponent, attribute};
-					// }
-
-					return reference;
-				}
-
-				//TODO: find the text in the containing component
-				//return {reference: curr.containingComponent, attribute}
-			}
-		}  
-
-		return undefined;
-	}
-
-	const isComponentInstance = (instance: ComponentElement): boolean => {
-		return instance.name[0] === instance.name[0].toUpperCase();
-	}
-
-	const connectInstanceToChildren = (instance: ComponentElement): void => {
-		if (isComponentInstance(instance)) {
-			const definition = componentDefinitions[instance.name];
-			if (!definition) return;
-
-			for (let i = 0; i < definition.children.length; i++) {
-				const definitionInstance = definition.children[i];
-				//definitionInstance.getParent = () => instance;
-				const newInstance = {...definitionInstance, parentId: instance.id, getParent: () => instance};
-				newInstance.attributes = definitionInstance.attributes.map(atr => ({...atr, reference: newInstance}))
-
-				elementInstances.push(newInstance);
-				//definition.children[i] = definitionInstance;
-				connectInstanceToChildren(newInstance);
-			}
-			calledComponent.push(definition.name);
-		}
-	}
-
-	// const elementInstances: ComponentElement[] = [];
-	const calledComponent: string[] = [];
-	// for (const instance of instances) {
-	// 	connectInstanceToChildren(instance);
-	// }
-
-	//If a component has not been called, then that means it has no parent, so add that in
-	// for (const name in componentDefinitions) {
-	// 	if (!calledComponent.includes(name)) {
-	// 		elementInstances.push(...componentDefinitions[name].children);
-	// 	}
-	// }
-
 	function getIdFromParents(instance: ComponentElement): string {
 		const parent = instance.getParent();
 		if (!parent) {
@@ -522,43 +463,6 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
 		instance.id = getIdFromParents(instance);
-		// for (let j = 0; j < instance.attributes.length; j++) {
-		// 	const attribute = instance.attributes[j];
-		// 	if (attribute.type === 'text' && attribute.name === 'property') {
-		// 		const parent = instance.getParent();
-		// 		if (parent) {
-		// 			const results = findAttributeLocation(parent, instance, attribute.value);
-		// 			if (results) {
-		// 				attribute.reference = results.reference;
-		// 				attribute.name = results.attribute.name;
-		// 				attribute.value = results.attribute.value;
-
-		// 				if (attribute.name !== 'string') {
-		// 					throw new Error("Attribute should be a string!");
-		// 				}
-						
-		// 				//For a string text property, we need to make sure the value is just the text. 
-		// 				//However, getting the info from a 'property' means the value is {name}:{value}. 
-		// 				//We must get rid of this and leave just {value}
-		// 				if (results.attribute.type === 'property' && attribute.type === 'text' && attribute.name === 'string') {
-		// 					const splitIndex = attribute.value.indexOf(':');
-		// 					if (splitIndex < 0) {
-		// 						throw new Error("Invalid property " + attribute.value);
-		// 					}
-
-		// 					attribute.value = attribute.value.substring(splitIndex + 1);
-		// 				}
-		// 			} else {
-		// 				//attribute.reference = instance.containingComponent;
-						
-		// 				//For now, if we cannot find where to update the text in a string property then just 
-		// 				//delete the attribute so we can say 'We cannot updat the text'
-		// 				instance.attributes.splice(j, 1);
-		// 				j--;
-		// 			}
-		// 		}
-		// 	}
-		// }
 	}
 
 	return elementInstances;
@@ -658,48 +562,31 @@ try {
 		});
 
 		for (const attribute of instance.attributes) {
-			//if (attribute.type === 'text') {
-				let comp = !('id' in attribute.reference) ? await prisma.componentDefinition.findUnique({
-					where: {
-						name: attribute.reference.name
-					}
-				}) : await prisma.componentElement.findUnique({
-					where: {
-						id: attribute.reference.id,
-					}
-				});
-				if (!comp) {
-					if (!('id' in attribute.reference)) {
-						const definition = attribute.reference as HarmonyComponent;
-						comp = await prisma.componentDefinition.create({
-							data: {
-								name: definition.name,
-								repository_id: repositoryId,
-								location: {
-									create: {
-										file: definition.location.file,
-										start: definition.location.start,
-										end: definition.location.end
-									}
-								}
-							}
-						})
-					} else {
-						throw new Error("There was an error finding the component");
+			await prisma.componentAttribute.create({
+				data: {
+					name: attribute.name,
+					type: attribute.type,
+					value: attribute.value,
+					component: {
+						connect: {
+							id: newElement.id
+						}
+					},
+					index: attribute.index,
+					location: {
+						create: {
+							file: attribute.location.file,
+							start: attribute.location.start,
+							end: attribute.location.end
+						}
+					},
+					reference_component: {
+						connect: {
+							id: attribute.reference.id
+						}
 					}
 				}
-
-				await prisma.componentAttribute.create({
-					data: {
-						name: attribute.name,
-						type: attribute.type,
-						value: attribute.value,
-						component_id: newElement.id, 
-						index: attribute.index,
-						location_id: comp?.location_id
-					}
-				})
-			//}
+			})
 		}
 	} catch (err) {console.log(instance)}
 

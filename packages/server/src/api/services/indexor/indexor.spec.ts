@@ -299,6 +299,29 @@ describe("indexor", () => {
             expectLocationOfString(file, componentElements[11].attributes[0].location, '"Hello there"');
         })
 
+        it("Should handle inner classNames", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/innerClassName.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(9);
+
+            expect(componentElements[4].attributes.length).toBe(2);
+            expect(componentElements[4].attributes[1].type).toBe('className');
+            expect(componentElements[4].attributes[1].name).toBe('property');
+            expect(componentElements[4].attributes[1].value).toBe('className:innerClass');
+            expectLocationOfString(file, componentElements[4].attributes[1].location, 'innerClass');
+
+            expect(componentElements[8].attributes.length).toBe(2);
+            expect(componentElements[8].attributes[1].type).toBe('className');
+            expect(componentElements[8].attributes[1].name).toBe('string');
+            expect(componentElements[8].attributes[1].value).toBe('bg-primary');
+            expectLocationOfString(file, componentElements[8].attributes[1].location, '"bg-primary"');
+        })
+
         //TODO: Finish this
         it("Should handle imports from various files", () => {
             const componentElements: ComponentElement[] = [];
@@ -535,6 +558,22 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
             <Component2 className="bg-white" name="A Name"/>
         )
     }
+    `,
+    'app/innerClassName.tsx': `
+    const InnerComponent = ({className, buttonClassName}) => {
+        return <div className={\`flex flex-col bg-white \${className}\`}>
+            <button className={buttonClassName}>Hello</button>
+        </div>
+    }
+
+    const InnerComponent2 = ({innerClass}) => {
+        return <InnerComponent className={"text-sm"} buttonClassName={innerClass}/>
+    }
+
+    const MainComponent = () => {
+        return <InnerComponent2 innerClass={"bg-primary"}/>
+    }
+    
     `
 } as const;
 
