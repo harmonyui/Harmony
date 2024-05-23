@@ -4,6 +4,11 @@ import { getCodeInfoAndNormalizeFromFiles, getCodeInfoFromFile } from "./indexor
 
 describe("indexor", () => {
     describe("getCodeInfoFromFile", () => {
+        const expectLocationOfString = (file: TestFile, actualLocation: {start: number, end: number}, expectedString: string): void => {
+            const content = testCases[file];
+            const substr = content.substring(actualLocation.start, actualLocation.end);
+            expect(substr).toBe(expectedString);
+        }
         it("Should index dynamic text with multiple children properly", () => {
             const componentElements: ComponentElement[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
@@ -19,6 +24,7 @@ describe("indexor", () => {
             expect(textAttributes.length).toBe(2);
             expect(textAttributes[0].name).toBe('property');
             expect(textAttributes[0].value).toBe('label');
+            expectLocationOfString(file, textAttributes[0].location, 'label')
         });
 
         it("Should index attributes properly", () => {
@@ -37,21 +43,41 @@ describe("indexor", () => {
             expect(componentElements[5].attributes[0].type).toBe('className');
             expect(componentElements[5].attributes[0].name).toBe('string');
             expect(componentElements[5].attributes[0].value).toBe('bg-gray-50');
+            expectLocationOfString(file, componentElements[5].attributes[0].location, '"bg-gray-50"');
+            
+            expect(componentElements[7].attributes.length).toBe(8);
+            expect(componentElements[7].attributes[0].type).toBe('className');
+            expect(componentElements[7].attributes[0].name).toBe('string');
+            expect(componentElements[7].attributes[0].value).toBe('text-sm');
+            expectLocationOfString(file, componentElements[7].attributes[0].location, '"text-sm"');
+
+            expect(componentElements[7].attributes[1].type).toBe('className');
+            expect(componentElements[7].attributes[1].name).toBe('string');
+            expect(componentElements[7].attributes[1].value).toBe('bg-blue-50');
+            expectLocationOfString(file, componentElements[7].attributes[1].location, '"bg-blue-50"');
+
+            expect(componentElements[7].attributes[2].type).toBe('className');
+            expect(componentElements[7].attributes[2].name).toBe('string');
+            expect(componentElements[7].attributes[2].value).toBe('flex');
+            expectLocationOfString(file, componentElements[7].attributes[2].location, '"flex"');
 
             //Dynamic classes look like this (StatCard #2)
-            expect(componentElements[7].attributes[0].type).toBe('className');
-            expect(componentElements[7].attributes[0].name).toBe('property');
-            expect(componentElements[7].attributes[0].value).toBe('className:variant');
+            expect(componentElements[4].attributes[1].type).toBe('className');
+            expect(componentElements[4].attributes[1].name).toBe('property');
+            expect(componentElements[4].attributes[1].value).toBe('className:className');
+            expectLocationOfString(file, componentElements[4].attributes[1].location, 'className');
 
             //static properties have value propName:propValue
             expect(componentElements[5].attributes[1].type).toBe('property');
             expect(componentElements[5].attributes[1].name).toBe('string');
             expect(componentElements[5].attributes[1].value).toBe('label:Displays');
+            expectLocationOfString(file, componentElements[5].attributes[1].location, '"Displays"');
 
             //dynamic properties look like this
             expect(componentElements[5].attributes[3].type).toBe('property');
             expect(componentElements[5].attributes[3].name).toBe('property');
             expect(componentElements[5].attributes[3].value).toBe('value:undefined');
+            expectLocationOfString(file, componentElements[5].attributes[3].location, 'displayCount === 0 ? <span>-</span> : displayCount');
         });
 
         it("Should index strings in containers", () => {
@@ -64,12 +90,13 @@ describe("indexor", () => {
             expect(result).toBeTruthy();
             expect(componentElements.length).toBe(11);
             expect(componentElements[9].name).toBe('StatCard');
-            expect(componentElements[9].attributes.length).toBe(4);
+            expect(componentElements[9].attributes.length).toBe(5);
 
             //(StatCard #3)
             expect(componentElements[9].attributes[0].type).toBe('property');
             expect(componentElements[9].attributes[0].name).toBe('string');
             expect(componentElements[9].attributes[0].value).toBe('label:Responses');
+            expectLocationOfString(file, componentElements[9].attributes[0].location, '"Responses"');
         });
 
         it("Can find the property in a call and template literal expression", () => {
@@ -82,19 +109,31 @@ describe("indexor", () => {
             expect(result).toBeTruthy();
             expect(componentElements.length).toBe(2);
             expect(componentElements[0].name).toBe('div');
-            expect(componentElements[0].attributes.length).toBe(1);
+            expect(componentElements[0].attributes.length).toBe(2);
             expect(componentElements[1].name).toBe('Button');
-            expect(componentElements[1].attributes.length).toBe(2);
+            expect(componentElements[1].attributes.length).toBe(3);
 
             //div #1
             expect(componentElements[0].attributes[0].type).toBe('className');
-            expect(componentElements[0].attributes[0].name).toBe('property');
-            expect(componentElements[0].attributes[0].value).toBe('className:className');
+            expect(componentElements[0].attributes[0].name).toBe('string');
+            expect(componentElements[0].attributes[0].value).toBe('flex');
+            expectLocationOfString(file, componentElements[0].attributes[0].location, '"flex"');
+
+            expect(componentElements[0].attributes[1].type).toBe('className');
+            expect(componentElements[0].attributes[1].name).toBe('property');
+            expect(componentElements[0].attributes[1].value).toBe('className:className');
+            expectLocationOfString(file, componentElements[0].attributes[1].location, 'className');
 
             //div #2
             expect(componentElements[1].attributes[0].type).toBe('className');
-            expect(componentElements[1].attributes[0].name).toBe('property');
-            expect(componentElements[1].attributes[0].value).toBe('className:variant');
+            expect(componentElements[1].attributes[0].name).toBe('string');
+            expect(componentElements[1].attributes[0].value).toBe('bg-gray-900 ');
+            expectLocationOfString(file, componentElements[1].attributes[0].location, 'bg-gray-900 ');
+
+            expect(componentElements[1].attributes[1].type).toBe('className');
+            expect(componentElements[1].attributes[1].name).toBe('string');
+            expect(componentElements[1].attributes[1].value).toBe('text-sm');
+            expectLocationOfString(file, componentElements[1].attributes[1].location, '"text-sm"');
         })
 
         it("Should index compoennt with multiple text broken up", () => {
@@ -109,8 +148,15 @@ describe("indexor", () => {
             expect(componentElements[3].attributes.length).toBe(4);
             const textAttributes = componentElements[3].attributes.filter(attr => attr.type === 'text');
             expect(textAttributes.length).toBe(3);
+            // expect(textAttributes[0].name).toBe('string');
+            // expect(textAttributes[0].value).toBe('The ALS Crowd')
+            // expectLocationOfString(file, textAttributes[0].location, 'The ALS Crowd');
             expect(textAttributes[1].name).toBe('string');
             expect(textAttributes[1].value).toBe('Community')
+            expectLocationOfString(file, textAttributes[1].location, 'Community');
+            // expect(textAttributes[2].name).toBe('string');
+            // expect(textAttributes[2].value).toBe('Directory')
+            // expectLocationOfString(file, textAttributes[2].location, 'Directory');
         })
     })
 
@@ -194,8 +240,8 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     const { completedPercentage, completedResponses, displayCount, startsPercentage, totalResponses } =
     surveySummary;
 
-    const variant = 'bg-blue-50';
-    const otherThing = 'flex';
+    const variant = "bg-blue-50";
+    const otherThing = "flex";
     return (
     <div className={cn("flex flex-col-reverse gap-y-2 py-4 lg:flex-row lg:gap-x-2", className)}>
         <StatCard
@@ -224,7 +270,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     `,
     'app/harderDyanmic.tsx': `
         const App = ({className}) => {
-            const variant = 'text-sm';
+            const variant = "text-sm";
             return (
                 <div className={cn("flex", className)}>
                     <Button className={\`bg-gray-900 \${variant}\`} children="Hello there"/>

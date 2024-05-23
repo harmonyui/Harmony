@@ -192,30 +192,68 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 
 						const parentComponent = containingComponent;
 						if (jsxElementDefinition) {
-							const createParamAttribute = (params: t.Node[], type: 'text' | 'className' | 'property', name: string | undefined): Attribute => {
-								const ids = params.filter(param => t.isIdentifier(param)) as t.Identifier[];
-								let idIndex = type === 'className' ? ids.findIndex(id => id.name === 'className') : 0;
-								idIndex = idIndex === -1 ? 0 : idIndex;
-								const value = ids[idIndex] ? ids[idIndex].name : undefined;
-								return {id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1};
+							const createIdentifierAttribute = (node: t.Identifier, type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
+								const value = node.name;
+								const binding = value ? jsPath.scope.getBinding(value) : undefined;
+								if (binding && ['const', 'let', 'var'].includes(binding.kind) && t.isVariableDeclarator(binding.path.node) && binding.path.node.init) {
+									return createExpressionAttribute(binding.path.node.init, type, name)
+								}
+
+								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
+								const location: ComponentLocation = {
+									file,
+									start: node.start,
+									end: node.end
+								}
+								return [{id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1, location}];
+							}
+							const createParamAttribute = (params: t.Node[], type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
+								const expressions = params.filter(param => t.isExpression(param)) as t.Expression[];
+								const attributes: Attribute[] = expressions.map(expression => createExpressionAttribute(expression, type, name)).flat()
+
+								return attributes;
 							}
 	
-							const createExpressionAttribute = (node: t.JSXExpressionContainer, type: 'text' | 'className' | 'property', name: string | undefined): Attribute => {
-								if (t.isStringLiteral(node.expression)) {
-									return createStringAttribute(type, name, node.expression.value)
-								} else if (t.isCallExpression(node.expression)) {
-									const params = node.expression.arguments
+							const createExpressionAttribute = (node: t.Expression | t.JSXEmptyExpression, type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
+								if (t.isStringLiteral(node)) {
+									return [createStringAttribute(node, type, name, node.value)]
+								} else if (t.isCallExpression(node)) {
+									const params = node.arguments
 									return createParamAttribute(params, type, name);
-								} else if (t.isTemplateLiteral(node.expression)) {
-									const params = node.expression.expressions;
-									return createParamAttribute(params, type, name);
-								} 
-								const value = t.isIdentifier(node.expression) ? node.expression.name : undefined;
-								return {id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1};
+								} else if (t.isTemplateLiteral(node)) {
+									const expressions = [...node.expressions, ...node.quasis].sort((a, b) => (a.start || 0) - (b.start || 0));
+									return expressions.map<Attribute[]>(expression => {
+										if (t.isTemplateElement(expression) && expression.value.raw) {
+											return [createStringAttribute(expression, type, name, expression.value.raw)];
+										} else if (t.isExpression(expression)) {
+											return createParamAttribute([expression], type, name);
+										}
+
+										return [];
+									}).flat()
+								} else if (t.isIdentifier(node)) {
+									return createIdentifierAttribute(node, type, name);
+								}
+
+								//If we get here, then we could not resolve to a static string.
+								const value = undefined;
+								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
+								const location: ComponentLocation = {
+									file,
+									start: node.start,
+									end: node.end
+								}
+								return [{id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1, location}];
 							}
 	
-							const createStringAttribute = (type: 'text' | 'className' | 'property', propertyName: string | undefined, value: string): Attribute => {
-								return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1}
+							const createStringAttribute = (node: t.StringLiteral | t.TemplateElement | t.JSXText, type: 'text' | 'className' | 'property', propertyName: string | undefined, value: string): Attribute => {
+								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
+								const location: ComponentLocation = {
+									file,
+									start: node.start,
+									end: node.end
+								}
+								return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1, location}
 							}
 
 							const node = jsPath.node;
@@ -224,9 +262,9 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							for (let i = 0; i < nonWhiteSpaceChildren.length; i++) {
 								const child = nonWhiteSpaceChildren[i];
 								if (t.isJSXText(child)) {
-									textAttributes.push({...createStringAttribute('text', undefined, child.extra?.raw as string || child.value), index: i});
+									textAttributes.push({...createStringAttribute(child, 'text', undefined, child.extra?.raw as string || child.value), index: i});
 								} else if (t.isJSXExpressionContainer(child)) {
-									textAttributes.push({...createExpressionAttribute(child, 'text', undefined), index: i})
+									textAttributes.push({...createExpressionAttribute(child.expression, 'text', undefined)[0], index: i})
 								}
 							}
 							jsxElementDefinition.attributes.push(...textAttributes);
@@ -234,9 +272,9 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								if (t.isJSXAttribute(attr)) {
 									const type = attr.name.name === 'className' ? 'className' : 'property';
 									if (t.isStringLiteral(attr.value)) {
-										jsxElementDefinition.attributes.push(createStringAttribute(type, String(attr.name.name), attr.value.value));
+										jsxElementDefinition.attributes.push(createStringAttribute(attr.value, type, String(attr.name.name), attr.value.value));
 									} else if (t.isJSXExpressionContainer(attr.value)) {
-										jsxElementDefinition.attributes.push(createExpressionAttribute(attr.value, type, String(attr.name.name)));
+										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)));
 									}
 								}
 							}
