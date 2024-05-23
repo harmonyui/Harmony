@@ -259,7 +259,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return newElement;
 						}
 
-						function connectInstanceToChildren(element: ComponentElement): void {
+						function getComponentsBindingId(element: ComponentElement): string | undefined {
 							if (!element.isComponent) return;
 
 							const binding = jsPath.scope.getBinding(element.name);
@@ -276,6 +276,15 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									}
 								})
 							}
+							if (!id) {
+								id = componentDefinitions[element.name]?.id;
+							}
+
+							return id;
+						}
+
+						function connectInstanceToChildren(element: ComponentElement): void {
+							const id = getComponentsBindingId(element);
 
 							const childElements = elementInstances.filter(instance => instance.containingComponent.id === id && instance.getParent() === undefined);
 							childElements.forEach(child => {
@@ -285,7 +294,15 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 						}
 
 						function connectInstanceToParent(element: ComponentElement): void {
-							const parents = elementInstances.filter(parent => parent.id === element.containingComponent.id);
+							const bindings: Record<string, string | undefined> = {}
+							const parents = elementInstances.filter(parent => {
+								let binding = bindings[parent.name];
+								if (!binding) {
+									bindings[parent.name] = getComponentsBindingId(parent);
+									binding = bindings[parent.name]
+								}
+								return binding === element.containingComponent.id
+							});
 							parents.forEach(parent => {connectChildToParent(element, parent)});
 						}
 
@@ -298,7 +315,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 						if (jsxElementDefinition) {
 							const createIdentifierAttribute = (node: t.Identifier, type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
 								const value = node.name;
-								const binding = value ? jsPath.scope.getBinding(value) : undefined;
+								const binding = jsPath.scope.getBinding(value);
 								if (binding && ['const', 'let', 'var'].includes(binding.kind) && t.isVariableDeclarator(binding.path.node) && binding.path.node.init) {
 									return createExpressionAttribute(binding.path.node.init, type, name)
 								}
@@ -309,7 +326,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									start: node.start,
 									end: node.end
 								}
-								return [{id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1, location}];
+								return [{id: '', type, name: 'property', value: name ? `${name}:${value}` : value || 'undefined', reference: jsxElementDefinition, index: -1, location}];
 							}
 							const createParamAttribute = (params: t.Node[], type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
 								const expressions = params.filter(param => t.isExpression(param)) as t.Expression[];
@@ -473,18 +490,18 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		}
 	}
 
-	const elementInstances: ComponentElement[] = [];
+	// const elementInstances: ComponentElement[] = [];
 	const calledComponent: string[] = [];
-	for (const instance of instances) {
-		connectInstanceToChildren(instance);
-	}
+	// for (const instance of instances) {
+	// 	connectInstanceToChildren(instance);
+	// }
 
 	//If a component has not been called, then that means it has no parent, so add that in
-	for (const name in componentDefinitions) {
-		if (!calledComponent.includes(name)) {
-			elementInstances.push(...componentDefinitions[name].children);
-		}
-	}
+	// for (const name in componentDefinitions) {
+	// 	if (!calledComponent.includes(name)) {
+	// 		elementInstances.push(...componentDefinitions[name].children);
+	// 	}
+	// }
 
 	function getIdFromParents(instance: ComponentElement): string {
 		const parent = instance.getParent();
@@ -501,46 +518,47 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		return `${parentId}#${instance.id}`;
 	}
 
+	const elementInstances = instances;
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
 		instance.id = getIdFromParents(instance);
-		for (let j = 0; j < instance.attributes.length; j++) {
-			const attribute = instance.attributes[j];
-			if (attribute.type === 'text' && attribute.name === 'property') {
-				const parent = instance.getParent();
-				if (parent) {
-					const results = findAttributeLocation(parent, instance, attribute.value);
-					if (results) {
-						attribute.reference = results.reference;
-						attribute.name = results.attribute.name;
-						attribute.value = results.attribute.value;
+		// for (let j = 0; j < instance.attributes.length; j++) {
+		// 	const attribute = instance.attributes[j];
+		// 	if (attribute.type === 'text' && attribute.name === 'property') {
+		// 		const parent = instance.getParent();
+		// 		if (parent) {
+		// 			const results = findAttributeLocation(parent, instance, attribute.value);
+		// 			if (results) {
+		// 				attribute.reference = results.reference;
+		// 				attribute.name = results.attribute.name;
+		// 				attribute.value = results.attribute.value;
 
-						if (attribute.name !== 'string') {
-							throw new Error("Attribute should be a string!");
-						}
+		// 				if (attribute.name !== 'string') {
+		// 					throw new Error("Attribute should be a string!");
+		// 				}
 						
-						//For a string text property, we need to make sure the value is just the text. 
-						//However, getting the info from a 'property' means the value is {name}:{value}. 
-						//We must get rid of this and leave just {value}
-						if (results.attribute.type === 'property' && attribute.type === 'text' && attribute.name === 'string') {
-							const splitIndex = attribute.value.indexOf(':');
-							if (splitIndex < 0) {
-								throw new Error("Invalid property " + attribute.value);
-							}
+		// 				//For a string text property, we need to make sure the value is just the text. 
+		// 				//However, getting the info from a 'property' means the value is {name}:{value}. 
+		// 				//We must get rid of this and leave just {value}
+		// 				if (results.attribute.type === 'property' && attribute.type === 'text' && attribute.name === 'string') {
+		// 					const splitIndex = attribute.value.indexOf(':');
+		// 					if (splitIndex < 0) {
+		// 						throw new Error("Invalid property " + attribute.value);
+		// 					}
 
-							attribute.value = attribute.value.substring(splitIndex + 1);
-						}
-					} else {
-						//attribute.reference = instance.containingComponent;
+		// 					attribute.value = attribute.value.substring(splitIndex + 1);
+		// 				}
+		// 			} else {
+		// 				//attribute.reference = instance.containingComponent;
 						
-						//For now, if we cannot find where to update the text in a string property then just 
-						//delete the attribute so we can say 'We cannot updat the text'
-						instance.attributes.splice(j, 1);
-						j--;
-					}
-				}
-			}
-		}
+		// 				//For now, if we cannot find where to update the text in a string property then just 
+		// 				//delete the attribute so we can say 'We cannot updat the text'
+		// 				instance.attributes.splice(j, 1);
+		// 				j--;
+		// 			}
+		// 		}
+		// 	}
+		// }
 	}
 
 	return elementInstances;

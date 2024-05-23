@@ -3,12 +3,12 @@ import type { ComponentElement, HarmonyComponent } from "@harmony/util/src/types
 import { getCodeInfoAndNormalizeFromFiles, getCodeInfoFromFile } from "./indexor";
 
 describe("indexor", () => {
+    const expectLocationOfString = (file: TestFile, actualLocation: {start: number, end: number}, expectedString: string): void => {
+        const content = testCases[file];
+        const substr = content.substring(actualLocation.start, actualLocation.end);
+        expect(substr).toBe(expectedString);
+    }
     describe("getCodeInfoFromFile", () => {
-        const expectLocationOfString = (file: TestFile, actualLocation: {start: number, end: number}, expectedString: string): void => {
-            const content = testCases[file];
-            const substr = content.substring(actualLocation.start, actualLocation.end);
-            expect(substr).toBe(expectedString);
-        }
         it("Should index dynamic text with multiple children properly", () => {
             const componentElements: ComponentElement[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
@@ -216,22 +216,23 @@ describe("indexor", () => {
 
             const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
             expect(result).toBeTruthy();
-            expect(componentElements.length).toBe(9);
+            expect(componentElements.length).toBe(15);
 
             //Layer 1
-            expect(componentElements[0].attributes.length).toBe(2);
-            expect(componentElements[0].attributes[0].type).toBe('className');
-            expect(componentElements[0].attributes[0].name).toBe('property');
-            expect(componentElements[0].attributes[0].value).toBe('className:className');
-            expectLocationOfString(file, componentElements[0].attributes[0].location, 'className');
+            expect(componentElements[2].attributes.length).toBe(2);
+            expect(componentElements[2].attributes[0].type).toBe('className');
+            expect(componentElements[2].attributes[0].name).toBe('property');
+            expect(componentElements[2].attributes[0].value).toBe('className:className');
+            expectLocationOfString(file, componentElements[2].attributes[0].location, 'className');
             
-            expect(componentElements[1].attributes.length).toBe(1);
-            expect(componentElements[1].attributes[0].type).toBe('text');
-            expect(componentElements[1].attributes[0].name).toBe('property');
-            expect(componentElements[1].attributes[0].value).toBe('label');
-            expectLocationOfString(file, componentElements[1].attributes[0].location, 'label');
+            expect(componentElements[5].attributes.length).toBe(1);
+            expect(componentElements[5].attributes[0].type).toBe('text');
+            expect(componentElements[5].attributes[0].name).toBe('property');
+            expect(componentElements[5].attributes[0].value).toBe('label');
+            expectLocationOfString(file, componentElements[5].attributes[0].location, 'label');
 
             //Layer 2
+            //Component1:1 -> div
             expect(componentElements[3].attributes.length).toBe(3);
             expect(componentElements[3].attributes[0].type).toBe('className');
             expect(componentElements[3].attributes[0].name).toBe('string');
@@ -250,45 +251,69 @@ describe("indexor", () => {
             expect(componentElements[3].attributes[2].value).toBe('bg-blue-50 flex flex-col');
             expectLocationOfString(file, componentElements[3].attributes[2].location, '"bg-blue-50 flex flex-col"');
 
-            expect(componentElements[4].attributes.length).toBe(1);
-            expect(componentElements[4].attributes[0].type).toBe('text');
-            expect(componentElements[4].attributes[0].name).toBe('property');
-            expect(componentElements[4].attributes[0].value).toBe('name');
-            expectLocationOfString(file, componentElements[4].attributes[0].location, 'name');
+            //Component1:2 -> div
+            expect(componentElements[4].attributes.length).toBe(2);
+            expect(componentElements[4].attributes[0].type).toBe('className');
+            expect(componentElements[4].attributes[0].name).toBe('string');
+            expect(componentElements[4].attributes[0].value).toBe('m-3');
+            expectLocationOfString(file, componentElements[4].attributes[0].location, '"m-3"');
+
+            expect(componentElements[6].attributes.length).toBe(1);
+            expect(componentElements[6].attributes[0].type).toBe('text');
+            expect(componentElements[6].attributes[0].name).toBe('property');
+            expect(componentElements[6].attributes[0].value).toBe('name');
+            expectLocationOfString(file, componentElements[6].attributes[0].location, 'name');
 
             //Layer 3
             //Component1 --> Should keep property name, but get value of parent
-            expect(componentElements[6].attributes.length).toBe(3);
-            expect(componentElements[6].attributes[2].type).toBe('property');
-            expect(componentElements[6].attributes[2].name).toBe('string');
-            expect(componentElements[6].attributes[2].value).toBe('label:Hello there');
-            expectLocationOfString(file, componentElements[6].attributes[2].location, '"Hello there"');
+            expect(componentElements[9].attributes.length).toBe(3);
+            expect(componentElements[9].attributes[2].type).toBe('property');
+            expect(componentElements[9].attributes[2].name).toBe('string');
+            expect(componentElements[9].attributes[2].value).toBe('label:Hello there');
+            expectLocationOfString(file, componentElements[9].attributes[2].location, '"Hello there"');
 
             //div
-            expect(componentElements[7].attributes.length).toBe(3);
-            expect(componentElements[7].attributes[0].type).toBe('className');
-            expect(componentElements[7].attributes[0].name).toBe('string');
-            expect(componentElements[7].attributes[0].value).toBe('m-2');
-            expectLocationOfString(file, componentElements[7].attributes[0].location, '"m-2"');
+            expect(componentElements[10].attributes.length).toBe(3);
+            expect(componentElements[10].attributes[0].type).toBe('className');
+            expect(componentElements[10].attributes[0].name).toBe('string');
+            expect(componentElements[10].attributes[0].value).toBe('m-2');
+            expectLocationOfString(file, componentElements[10].attributes[0].location, '"m-2"');
 
             //h1
-            expect(componentElements[7].attributes.length).toBe(3);
-            expect(componentElements[7].attributes[1].type).toBe('className');
-            expect(componentElements[7].attributes[1].name).toBe('string');
-            expect(componentElements[7].attributes[1].value).toBe('p-3');
-            expectLocationOfString(file, componentElements[7].attributes[1].location, 'p-3');
+            expect(componentElements[10].attributes.length).toBe(3);
+            expect(componentElements[10].attributes[1].type).toBe('className');
+            expect(componentElements[10].attributes[1].name).toBe('string');
+            expect(componentElements[10].attributes[1].value).toBe('p-3');
+            expectLocationOfString(file, componentElements[10].attributes[1].location, 'p-3');
 
-            expect(componentElements[7].attributes.length).toBe(3);
-            expect(componentElements[7].attributes[2].type).toBe('className');
-            expect(componentElements[7].attributes[2].name).toBe('string');
-            expect(componentElements[7].attributes[2].value).toBe('bg-blue-50 flex flex-col');
-            expectLocationOfString(file, componentElements[7].attributes[2].location, '"bg-blue-50 flex flex-col"');
+            expect(componentElements[10].attributes.length).toBe(3);
+            expect(componentElements[10].attributes[2].type).toBe('className');
+            expect(componentElements[10].attributes[2].name).toBe('string');
+            expect(componentElements[10].attributes[2].value).toBe('bg-blue-50 flex flex-col');
+            expectLocationOfString(file, componentElements[10].attributes[2].location, '"bg-blue-50 flex flex-col"');
 
-            expect(componentElements[8].attributes.length).toBe(1);
-            expect(componentElements[8].attributes[0].type).toBe('text');
-            expect(componentElements[8].attributes[0].name).toBe('string');
-            expect(componentElements[8].attributes[0].value).toBe('Hello there');
-            expectLocationOfString(file, componentElements[8].attributes[0].location, '"Hello there"');
+            expect(componentElements[11].attributes.length).toBe(1);
+            expect(componentElements[11].attributes[0].type).toBe('text');
+            expect(componentElements[11].attributes[0].name).toBe('string');
+            expect(componentElements[11].attributes[0].value).toBe('Hello there');
+            expectLocationOfString(file, componentElements[11].attributes[0].location, '"Hello there"');
+        })
+
+        //TODO: Finish this
+        it("Should handle imports from various files", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file1: TestFile = 'app/multipleLayers1.tsx';
+            const content1 = testCases[file1];
+
+            const result1 = getCodeInfoFromFile(file1, content1, componentDefinitions, componentElements, {});
+            expect(result1).toBeTruthy();
+
+            const file2: TestFile = 'app/multipleLayers2.tsx';
+            const content2 = testCases[file2];
+
+            const result2 = getCodeInfoFromFile(file2, content2, componentDefinitions, componentElements, {});
+            expect(result2).toBeTruthy();
         })
     })
 
@@ -305,7 +330,7 @@ describe("indexor", () => {
 
             const parentIds = ["YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NDU6ODo1MToxMA==", 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NTI6ODo1ODoxMA==', 'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NTk6ODo2NDoxMA=='];
 
-            const pTags = result.filter(r => r.id.includes('YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6Mjc6NDozMjo4'));
+            const pTags = result.filter(r => r.id.includes('YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6Mjc6NDozMjo4') && r.getParent());
             expect(pTags.length).toBe(parentIds.length);
             for (let i = 0; i < parentIds.length; i++) {
                 const parentId = parentIds[i];
@@ -317,7 +342,7 @@ describe("indexor", () => {
                 const parent = parents[0];
 
                 const textAttributes = pTag.attributes.filter(attr => attr.type === 'text');
-                expect(textAttributes.length).toBe(1);
+                expect(textAttributes.length).toBe(2);
                 const textAttribute = textAttributes[0];
 
                 expect(textAttribute.name).toBe('string');   
@@ -327,7 +352,47 @@ describe("indexor", () => {
                 //expect(textAttribute.reference.parentId).toBe(parent.parentId);         
             }
         })
+
+        it("Should index and normalize across files", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const contents: {file: TestFile, content: string}[] = [
+                {
+                    file: 'app/multipleLayers1.tsx',
+                    content: testCases['app/multipleLayers1.tsx']
+                },
+                {
+                    file: 'app/multipleLayers2.tsx',
+                    content: testCases['app/multipleLayers2.tsx']
+                },
+            ]
+
+            const result = getCodeInfoAndNormalizeFromFiles(contents, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            if (!result) return;
+
+            expect(result.length).toBe(22);
+            expect(componentElements[16].attributes.length).toBe(3);
+            expect(componentElements[16].attributes[1].type).toBe('className');
+            expect(componentElements[16].attributes[1].name).toBe('string');
+            expect(componentElements[16].attributes[1].value).toBe('bg-white');
+            expectLocationOfString('app/multipleLayers2.tsx', componentElements[16].attributes[1].location, '"bg-white"');
+
+            expect(componentElements[16].attributes[2].type).toBe('property');
+            expect(componentElements[16].attributes[2].name).toBe('string');
+            expect(componentElements[16].attributes[2].value).toBe('label:A Name');
+            expectLocationOfString('app/multipleLayers2.tsx', componentElements[16].attributes[2].location, '"A Name"');
+
+            expect(componentElements[18].attributes.length).toBe(1);
+            expect(componentElements[18].attributes[0].type).toBe('text');
+            expect(componentElements[18].attributes[0].name).toBe('string');
+            expect(componentElements[18].attributes[0].value).toBe('A Name');
+            expectLocationOfString('app/multipleLayers2.tsx', componentElements[18].attributes[0].location, '"A Name"');
+
+        })
     });
+
+
 });
 
 const testCases = {
@@ -437,6 +502,14 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     
     }`,
     'app/multipleLayers1.tsx': `
+    const Component2 = ({className, name}) => {
+        const bob = name;
+        return (<>
+            <Component1 className={cn("m-2", className)} label={bob}/>
+            <Component1 className="m-3" label="bob"/>
+        </>)
+    }
+
     const Component1 = ({className, label}) => {
         return (
             <div className={cn(className, "bg-blue-50 flex flex-col")}>
@@ -444,13 +517,6 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
             </div>
         )
     } 
-
-    const Component2 = ({className, name}) => {
-        const bob = name;
-        return (
-            <Component1 className={cn("m-2", className)} label={bob}/>
-        )
-    }
 
     const Component3 = () => {
         const anotherOne = "Hello there";
@@ -462,11 +528,11 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     export default Component2
     `,
     'app/multipleLayers2.tsx': `
-    import MainComponent from './app/multipleLayers2.tsx';
+    import Component2 from './app/multipleLayers2.tsx';
 
     const App = () => {
         return (
-            <MainComponent className="bg-white" name="A Name"/>
+            <Component2 className="bg-white" name="A Name"/>
         )
     }
     `
