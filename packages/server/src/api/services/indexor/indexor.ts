@@ -16,11 +16,12 @@ import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { hashCode } from "@harmony/util/src/utils/common";
-import { ComponentAttribute } from "@harmony/db/lib/generated/client";
+import { ComponentAttribute, ComponentDefinition } from "@harmony/db/lib/generated/client";
+import { INDEXING_VERSION } from "@harmony/util/src/constants";
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
-export const indexFilesAndFollowImports = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string) => {
+export const indexFilesAndFollowImports = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: ComponentElement[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
@@ -47,7 +48,10 @@ export const indexFilesAndFollowImports = async (files: string[], readFile: (fil
 	const elementInstance = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, importDeclarations);
 	if (elementInstance) {
 		await updateDatabase(componentDefinitions, elementInstance, repositoryId);
+		return elementInstance;
 	}
+
+	return [];
 }
 
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
@@ -256,6 +260,14 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 						}
 
 						function connectChildToParent(child: ComponentElement, parent: ComponentElement): ComponentElement {
+							const recurseConnectLog = (el: ComponentElement): string => {
+								const parent = el.getParent();
+								if (parent) {
+									return `to ${parent.name} ${recurseConnectLog(parent)}`;
+								}
+								return '';
+							}
+							console.log(`Connecting ${child.name} to ${parent.name} ${recurseConnectLog(parent)}`)
 							const attributes = connectAttributesToParent(child.attributes, parent);
 							const newElement = {...child, attributes, getParent: () => parent};
 							elementInstances.push(newElement);
@@ -271,10 +283,12 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							if (binding) {
 								binding.path.traverse({
 									FunctionDeclaration(path) {
+										if (id) return;
 										const location = getLocation(path.node, file);
 										id = location ? getHashFromLocation(location, originalCode) : undefined;
 									},
 									ArrowFunctionExpression(path) {
+										if (id) return;
 										const location = getLocation(path.node, file);
 										id = location ? getHashFromLocation(location, originalCode) : undefined;
 									}
@@ -307,7 +321,10 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								}
 								return binding === element.containingComponent.id
 							});
-							parents.forEach(parent => {connectChildToParent(element, parent)});
+							parents.forEach(parent => {
+								connectChildToParent(element, parent);
+								//connectInstanceToParent(parent);
+							});
 						}
 
 						//console.log(path);
@@ -404,6 +421,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								}
 							}
 							
+							console.log(`Adding ${jsxElementDefinition.name}`);
 							jsxElements.push(jsxElementDefinition);
 							elementInstances.push(jsxElementDefinition);
 							parentComponent.children.push(jsxElementDefinition);
@@ -443,7 +461,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 	return true;
 }
 
-function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, instances: ComponentElement[]) {
+function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[]) {
 	function getIdFromParents(instance: ComponentElement): string {
 		const parent = instance.getParent();
 		if (!parent) {
@@ -459,12 +477,31 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		return `${parentId}#${instance.id}`;
 	}
 
-	const elementInstances = instances;
+	const findAttributeReference = (element: ComponentElement | undefined, attributeId: string): {id: string} | undefined=> {
+		if (!element) return undefined;
+
+		const id = element.id.split('#')[element.id.split('#').length - 1];
+		if (id === attributeId) {
+			return element;
+		}
+
+		return findAttributeReference(element.getParent(), attributeId);
+	}
+
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
 		instance.id = getIdFromParents(instance);
+		for (const attribute of instance.attributes) {
+			if (attribute.reference.id.split('#').length > 1) continue;
+			const newReference = findAttributeReference(instance, attribute.reference.id);
+			if (!newReference) {
+				throw new Error("Reference should be pointer to an ancestor element");
+			}
+			attribute.reference = newReference;
+		}
 	}
 
+	//Sort the instances parents first.
 	return elementInstances;
 }
 
@@ -497,79 +534,90 @@ function randomId(): string {
 }
 
 async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
-	const alreadyCreated: string[] = [];
-	const createElement = async (instance: ComponentElement) => {
-		if (alreadyCreated.includes(instance.id)) return;
+	elementInstances.sort((a, b) => b.id.split('#').length - a.id.split('#').length);
+	const containingComponents = elementInstances.reduce<HarmonyComponent[]>((prev, curr) => {
+		const def = prev.find(d => d.id === curr.containingComponent.id);
+		if (!def) {
+			prev.push(curr.containingComponent)
+		}
 
-		const parent = instance.getParent();
+		return prev;
+	}, []);
 
-		const currComponent = await prisma.componentElement.findFirst({
+	await Promise.all(containingComponents.map(component => prisma.componentDefinition.upsert({
+		where: {
+			id: component.id
+		},
+		create: {
+			id: component.id,
+			repository_id: repositoryId,
+			name: component.name,
+			location: {
+				create: {
+					file: component.location.file,
+					start: component.location.start,
+					end: component.location.end,
+				}
+			}
+		},
+		update: {
+			id: component.id,
+			repository_id: repositoryId,
+			name: component.name,
+		}
+	})))
+
+	for (let i = 0; i < elementInstances.length; i++) {
+		const instance = elementInstances[i];
+		await prisma.componentElement.upsert({
 			where: {
 				id: instance.id
-			}
-		});
-
-		let definition = await prisma.componentDefinition.findUnique({
-			where: {
-				name: instance.containingComponent.name
-			}
-		})
-		if (definition === null) {
-			definition = await prisma.componentDefinition.create({
-				data: {
-					repository_id: repositoryId,
-					name: instance.containingComponent.name,
-					location: {
-						create: {
-							file: instance.containingComponent.location.file,
-							start: instance.containingComponent.location.start,
-							end: instance.containingComponent.location.end,
-						}
-					}
-				}
-			})
-		}
-		if (parent) {
-			const prismaParent = await prisma.componentElement.findFirst({
-				where: {
-					id: parent.id,
-				}
-			});
-			if (!prismaParent) {
-				await createElement(parent);
-			}
-		}
-		let locationId = currComponent?.location_id;
-		if (!locationId) {
-			const location = await prisma.location.create({
-				data: {
-					file: instance.location.file,
-					start: instance.location.start,
-					end: instance.location.end,
-				}
-			});
-			locationId = location.id;
-		}
-try {
-		const newElement = await prisma.componentElement.create({
-			data: {
+			},
+			create: {
 				id: instance.id,
 				repository_id: repositoryId,
 				name: instance.name,
-				location_id: locationId,
-				definition_id: definition.id
+				location: {
+					create: {
+						file: instance.location.file,
+						start: instance.location.start,
+						end: instance.location.end
+					}
+				},
+				definition: {
+					connect: {
+						id: instance.containingComponent.id
+					}
+				},
+				version: INDEXING_VERSION
+			},
+			update: {
+				id: instance.id,
+				repository_id: repositoryId,
+				name: instance.name,
+				definition: {
+					connect: {
+						id: instance.containingComponent.id
+					}
+				},
+				version: INDEXING_VERSION
 			}
 		});
 
-		for (const attribute of instance.attributes) {
-			await prisma.componentAttribute.create({
+		await prisma.componentAttribute.deleteMany({
+			where: {
+				component_id: instance.id
+			}
+		});
+		try {
+			await Promise.all(instance.attributes.map(attribute => prisma.componentAttribute.create({
 				data: {
 					name: attribute.name,
 					type: attribute.type,
 					value: attribute.value,
 					component: {
 						connect: {
-							id: newElement.id
+							id: instance.id
 						}
 					},
 					index: attribute.index,
@@ -586,16 +634,12 @@ try {
 						}
 					}
 				}
-			})
+			})));
+		} catch(err) {
+			console.log(err);
 		}
-	} catch (err) {console.log(instance)}
 
-		alreadyCreated.push(instance.id);
-	}
-
-	for (let i = 0; i < elementInstances.length; i++) {
-		const instance = elementInstances[i];
-		await createElement(instance);
+		//await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)
 	}
 }

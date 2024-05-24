@@ -413,6 +413,28 @@ describe("indexor", () => {
             expectLocationOfString('app/multipleLayers2.tsx', componentElements[18].attributes[0].location, '"A Name"');
 
         })
+
+        it("Should index and normalize across files reverse", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const contents: {file: TestFile, content: string}[] = [
+                {
+                    file: 'app/multipleLayers2.tsx',
+                    content: testCases['app/multipleLayers2.tsx']
+                },
+                {
+                    file: 'app/multipleLayers1.tsx',
+                    content: testCases['app/multipleLayers1.tsx']
+                },
+            ]
+
+            const result = getCodeInfoAndNormalizeFromFiles(contents, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            if (!result) return;
+
+            expect(result.length).toBe(22);
+            
+        })
     });
 
 
@@ -534,6 +556,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     }
 
     const Component1 = ({className, label}) => {
+        const thisMightMessThingsUp = () => true;
         return (
             <div className={cn(className, "bg-blue-50 flex flex-col")}>
                 <h1>{label}</h1>

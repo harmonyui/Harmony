@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
+import type { ComponentElement, ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
 import { loadRequestSchema, publishRequestSchema, PublishResponse, updateRequestBodySchema, UpdateResponse, type LoadResponse } from '@harmony/util/src/types/network';
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import { updateComponentIdsFromUpdates } from "../services/updator/local";
@@ -16,7 +16,7 @@ import { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { createPullRequest } from "./pull-request";
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
-import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
+import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
 import { GitRepository } from "../repository/github";
 
 export const editorRouter = createTRPCRouter({
@@ -335,7 +335,7 @@ export const editorRouter = createTRPCRouter({
 		})
 })
 
-async function indexForComponent(componentId: string, gitRepository: GitRepository) {
+async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<ComponentElement[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
@@ -348,7 +348,7 @@ async function indexForComponent(componentId: string, gitRepository: GitReposito
 	// all of the possible locations an attribute can be saved. Find a better way to do this
 	const locations = getLocationsFromComponentId(componentId);
 	const paths = locations.map(location => location.file);
-	await indexFilesAndFollowImports(paths, readFile, gitRepository.repository.id)
+	return indexFilesAndFollowImports(paths, readFile, gitRepository.repository.id)
 }
 
 const elementPayload = {
@@ -386,12 +386,28 @@ async function createGithubBranch(gitRepository: GitRepository, branchName: stri
 
 async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: GitRepository, branch: BranchItem) {
 	const repository = gitRepository.repository;
-	const elementInstances = await prisma.componentElement.findMany({
+	let elementInstances = await prisma.componentElement.findMany({
 		where: {
 			repository_id: repository.id,
 		},
 		...elementPayload
-	})
+	});
+	elementInstances.sort((a, b) => b.id.split('#').length - a.id.split('#').length);
+
+	const alreadyIndexed: ComponentElement[] = [];
+	let currIndex = elementInstances.find(i => i.version !== INDEXING_VERSION && !alreadyIndexed.find(indexed => indexed.id === i.id));
+	while (currIndex) {
+		alreadyIndexed.push(...await indexForComponent(currIndex.id, gitRepository));
+		currIndex = elementInstances.find(i => i.version !== INDEXING_VERSION && !alreadyIndexed.find(indexed => indexed.id === i.id));
+	}
+	if (alreadyIndexed.length) {
+		elementInstances = await prisma.componentElement.findMany({
+			where: {
+				repository_id: repository.id,
+			},
+			...elementPayload
+		});
+	}
 	
 	let fileUpdates: FileUpdate[] = [];
 

@@ -101,6 +101,7 @@ model ComponentElement {
 	attributes ComponentAttribute[] @relation(name: "component")
 	reference_attributes ComponentAttribute[] @relation(name: "reference")
 	updates ComponentUpdate[]
+	version String
 
 	@@id([id])
 }
@@ -131,7 +132,7 @@ model ComponentAttribute {
 model ComponentDefinition {
 	id String @id @default(cuid())
 	repository_id String
-	name String @unique
+	name String
 	children ComponentElement[] @relation("definition")
 	location_id String @unique
 	location Location @relation(fields: [location_id], references: [id])
