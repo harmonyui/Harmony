@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { set } from "zod";
 import {
 	ContextMenuComponent,
+	DragAndDropEventArgs,
 	TreeViewComponent,
   } from "@syncfusion/ej2-react-navigations";
   import { enableRipple } from "@syncfusion/ej2-base";
@@ -77,10 +78,13 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		setTransformedItems(i);
 	}, [])
 
-	function handleNodeDropped(event: any) {
-		const { draggedParentNode: oldParent, dropTarget: newParent, dropIndex: newIndex, droppedNode, draggedNode, droppedNodeData: node } = event;
+	function handleNodeDropped(event: DragAndDropEventArgs) {
+		const { draggedParentNode: oldParentElement, dropTarget: newParentElement, dropIndex: newIndex, droppedNode, draggedNode, droppedNodeData: node } = event;
 		const childIdx = draggedNode.children[1].innerHTML.split("data-child=")[1].split('"')[1] as string
 		const componentId = draggedNode.children[1].innerHTML.split("data-node=")[1].split('"')[1] as string
+
+		const oldParent = oldParentElement as HTMLElement
+		const newParent = newParentElement as HTMLElement
 
 		if (oldParent.dataset.uid != newParent.dataset.uid) {
 			event.cancel = true
