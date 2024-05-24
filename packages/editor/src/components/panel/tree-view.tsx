@@ -164,20 +164,26 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		})
 	}
 
-	function dragStop(event: any) {
-		const { draggedParentNode: oldParent, dropTarget: newParent, } = event;
+	function dragStop(event: DragAndDropEventArgs) {
+		const { draggedParentNode: oldParentElement, dropTarget: newParentElement, } = event;
 
-		if (oldParent.dataset.uid != newParent.dataset.uid) {
-			event.cancel = true
-		}
+		const oldParent = oldParentElement as HTMLElement
+		const newParent = newParentElement as HTMLElement
+
+		if (oldParent?.dataset?.uid == newParent?.dataset?.uid) return;
+
+		event.cancel = true;
 	}
 
-	function nodeDrag(event: any) {
-		const { draggedParentNode: oldParent, dropTarget: newParent, } = event;
+	function nodeDrag(event: DragAndDropEventArgs) {
+		const { draggedParentNode: oldParentElement, dropTarget: newParentElement, } = event;
 
-		if (oldParent.dataset.uid != newParent.dataset.uid) {
-			event.dropIndicator = 'e-no-drop';
-		}
+		const oldParent = oldParentElement as HTMLElement
+		const newParent = newParentElement as HTMLElement
+
+		if (oldParent?.dataset?.uid == newParent?.dataset?.uid) return;
+
+		event.dropIndicator = 'e-no-drop';
 	}
 
 	function onCreated() {
