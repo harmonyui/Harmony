@@ -555,7 +555,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         </>)
     }
 
-    const Component1 = ({className, label}) => {
+    function Component1({className, label}) {
         const thisMightMessThingsUp = () => true;
         return (
             <div className={cn(className, "bg-blue-50 flex flex-col")}>

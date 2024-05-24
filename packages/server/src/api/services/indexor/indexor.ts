@@ -278,21 +278,30 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 						function getComponentsBindingId(element: ComponentElement): string | undefined {
 							if (!element.isComponent) return;
 
+							const getId = (node: t.Node): string | undefined => {
+								const location = getLocation(node, file);
+								return location ? getHashFromLocation(location, originalCode) : undefined;
+							}
+
 							const binding = jsPath.scope.getBinding(element.name);
 							let id: string | undefined;
 							if (binding) {
-								binding.path.traverse({
-									FunctionDeclaration(path) {
-										if (id) return;
-										const location = getLocation(path.node, file);
-										id = location ? getHashFromLocation(location, originalCode) : undefined;
-									},
-									ArrowFunctionExpression(path) {
-										if (id) return;
-										const location = getLocation(path.node, file);
-										id = location ? getHashFromLocation(location, originalCode) : undefined;
-									}
-								})
+								if (t.isFunctionDeclaration(binding.path.node) || t.isArrowFunctionExpression(binding.path.node)) {
+									id = getId(binding.path.node);
+								} else {
+									binding.path.traverse({
+										FunctionDeclaration(path) {
+											if (id) return;
+											const location = getLocation(path.node, file);
+											id = location ? getHashFromLocation(location, originalCode) : undefined;
+										},
+										ArrowFunctionExpression(path) {
+											if (id) return;
+											const location = getLocation(path.node, file);
+											id = location ? getHashFromLocation(location, originalCode) : undefined;
+										}
+									})
+								}
 							}
 							if (!id) {
 								id = componentDefinitions[element.name]?.id;

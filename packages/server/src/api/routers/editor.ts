@@ -394,11 +394,12 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 	});
 	elementInstances.sort((a, b) => b.id.split('#').length - a.id.split('#').length);
 
-	const alreadyIndexed: ComponentElement[] = [];
-	let currIndex = elementInstances.find(i => i.version !== INDEXING_VERSION && !alreadyIndexed.find(indexed => indexed.id === i.id));
+	const alreadyIndexed: string[] = [];
+	let currIndex = elementInstances.find(i => i.version !== INDEXING_VERSION && !alreadyIndexed.includes(i.id));
 	while (currIndex) {
-		alreadyIndexed.push(...await indexForComponent(currIndex.id, gitRepository));
-		currIndex = elementInstances.find(i => i.version !== INDEXING_VERSION && !alreadyIndexed.find(indexed => indexed.id === i.id));
+		alreadyIndexed.push(...(await indexForComponent(currIndex.id, gitRepository)).map(el => el.id));
+		alreadyIndexed.push(currIndex.id);
+		currIndex = elementInstances.find(i => i.version !== INDEXING_VERSION && !alreadyIndexed.includes(i.id));
 	}
 	if (alreadyIndexed.length) {
 		elementInstances = await prisma.componentElement.findMany({
@@ -707,7 +708,14 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					type AttributeUpdate = AddClassName;
 					const attributeUpdates: AttributeUpdate[] = [];
 
-					const getAttribute = async (attribute: ComponentAttributePrisma, newClass: string): Promise<AttributeUpdate> => {
+					const mergeClassesWithScreenSizeWithPrefix = (originalClass: string | undefined, newClass: string, screenSize: number, prefix: string | undefined) => {
+						const merged = mergeClassesWithScreenSize(prefix ? originalClass.replaceAll(prefix, '') : originalClass, prefix ? newClass.replaceAll(prefix, '') : newClass, screenSize);
+						const withPrefix = prefix ? addPrefixToClassName(merged, prefix) : merged;
+
+						return withPrefix;
+					}
+
+					const getAttribute = async (attribute: ComponentAttributePrisma, getNewValueAndComment: (oldValue: string | undefined) => {newClass: string, commentValue: string}): Promise<AttributeUpdate> => {
 						const locationAndValue = getLocationAndValue(attribute, component);
 						//TODO: This is temporary. It shouldn't have 'className:'
 						locationAndValue.value = locationAndValue.value?.replace('className:', '');
@@ -716,27 +724,40 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 
 						//TODO: Make the tailwind prefix part dynamic
 						const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
-						const mergedIt = mergeClassesWithScreenSize(oldClasses, newClass, DEFAULT_WIDTH);
-						return {location, code: elementSnippet, oldClass: value, newClass: mergedIt, isDefinedAndDynamic, commentValue: '', attribute};
+						const {newClass, commentValue} = getNewValueAndComment(oldClasses);
+						
+						return {location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute};
+					}
+
+					const getAttributeFromClass = async (attribute: ComponentAttributePrisma, _newClass: string): Promise<AttributeUpdate> => {
+						return getAttribute(attribute, (oldClasses) => {
+							const mergedIt = mergeClassesWithScreenSize(oldClasses, _newClass, DEFAULT_WIDTH)
+							const newClass = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
+							const commentValue = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
+							
+							return {newClass, commentValue};
+						});
 					}
 
 					const addAttribute = (attribute: AttributeUpdate): void => {
 						const sameAttributeLocation = attributeUpdates.find(attr => attr.location === attribute.location);
 						if (sameAttributeLocation) {
-							const newMerged = mergeClassesWithScreenSize(sameAttributeLocation.newClass, attribute.newClass, DEFAULT_WIDTH);
-							const oldMerged = mergeClassesWithScreenSize(sameAttributeLocation.oldClass, attribute.oldClass || '', DEFAULT_WIDTH);
+							const newMerged = mergeClassesWithScreenSizeWithPrefix(sameAttributeLocation.newClass, attribute.newClass, DEFAULT_WIDTH, repository.tailwindPrefix);
+							//const oldMerged = mergeClassesWithScreenSizeWithPrefix(sameAttributeLocation.oldClass, attribute.oldClass || '', DEFAULT_WIDTH, repository.tailwindPrefix);
 							sameAttributeLocation.newClass = newMerged;
-							sameAttributeLocation.oldClass = oldMerged;
+							//sameAttributeLocation.oldClass = oldMerged;
 							return;
 						}
 
 						attributeUpdates.push(attribute);
 					}
 
+					const defaultClassName = classNameAttributes.find(attr => attr.name === 'string') || classNameAttributes[0];
 					for (const newClass of newClasses.split(' ')) {
 						let addedAttribue = false;
 						for (const classNameAttribute of classNameAttributes) {
-							const attribute = await getAttribute(classNameAttribute, newClass);
+							if (classNameAttribute.name !== 'string') continue;
+							const attribute = await getAttributeFromClass(classNameAttribute, newClass);
 							if (attribute.newClass.split(' ').length === newClass.split(' ').length) {
 								addAttribute(attribute);
 								addedAttribue = true;
@@ -744,20 +765,27 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 							}
 						}
 						if (!addedAttribue) {
-							addAttribute(await getAttribute(classNameAttributes[0], newClass));
+							addAttribute(await getAttributeFromClass(defaultClassName, newClass));
 						}
 					}
 
-					for (const attribute of attributeUpdates) {
-						const mergedIt = attribute.newClass;
-						let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
+					if (update.font) {
+						const sameAttributeLocation = attributeUpdates.find(attr => attr.location === defaultClassName.location);
+						if (sameAttributeLocation) {
+							sameAttributeLocation.newClass += ` ${update.font}`;
+						} else {
+							attributeUpdates.push(await getAttribute(defaultClassName, (oldClasses) => {
+								const value = oldClasses ? `${oldClasses} ${update.font}` : update.font || '';
 
-						let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
-						mergedClasses = update.font ? `${update.font} ${mergedClasses}` : mergedClasses;
-						withPrefix = update.font ? `${update.font} ${withPrefix}` : withPrefix;
-
-						results.push(addNewClassOrComment({...attribute, newClass: mergedClasses, commentValue: withPrefix}))
+								return {
+									newClass: value,
+									commentValue: update.font || ''
+								}
+							}));
+						}
 					}
+
+					results.push(...attributeUpdates.map(attribute => addNewClassOrComment(attribute)));
 
 					//TODO: Make the tailwind prefix part dynamic
 					// const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
