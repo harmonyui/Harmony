@@ -99,7 +99,7 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 			action: 'change',
 			componentId: componentId,
 			childIndex: parseInt(childIdx),
-			oldValue: JSON.stringify({parentId: oldParent.dataset.uid, childIndex: childIdx}),
+			oldValue: JSON.stringify({parentId: oldParent.dataset.uid, childIndex: parseInt(childIdx)}),
 			value: JSON.stringify({parentId: newParent.dataset.uid, childIndex: newIndex})
 		}
 		onAttributesChange([update])

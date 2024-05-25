@@ -753,17 +753,21 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 		if (update.type === 'component') {
 			if (update.name === 'reorder') {
 
-
+				
 				const {oldValue, value} = update;
-				const {parentId: oldParent, childIndex: oldChildIndex} = JSON.parse(oldValue);
-				const {parentId: newParent, childIndex: newChildIndex} = JSON.parse(value);
-
-				// Validate Input
-				if (!update.componentId || !oldParent || !newParent || !oldChildIndex || !newChildIndex) {
-					throw new Error(`makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`);
+				const {parentId: oldParent, childIndex: oldChildIndex}:{parentId: string, childIndex: number} = JSON.parse(oldValue);
+				const {parentId: newParent, childIndex: newChildIndex}:{parentId: string, childIndex: number} = JSON.parse(value);
+				const error = `makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`
+				
+				function validateId(id: string) {
+					return id.trim().length > 0;
 				}
 
-				const oldElement = findElementFromId(update.componentId, parseInt(oldChildIndex));
+				if (!validateId(update.componentId) || !validateId(oldParent) || !validateId(newParent)) {
+					throw new Error(error);
+				}
+
+				const oldElement = findElementFromId(update.componentId, oldChildIndex);
 
 				// Verify that we could find the old element to be deleted from the DOM
 				if (!oldElement) {
@@ -771,7 +775,8 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				}
 
 				oldElement.remove();
-
+				
+				// Add element to new parent
 				const newElement = document.querySelector(`[data-harmony-id="${newParent}"]`);
 				if (newElement) {
 					const children = Array.from(newElement.children);
