@@ -441,7 +441,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				classNameUpdate.font = curr.value;
 			}
 		} else {
-			const getComponent = async (currId: string): Promise<ComponentElementPrisma | undefined> => {
+			const getComponent = (currId: string): ComponentElementPrisma | undefined => {
 				const currElement = elementInstances.find(el => el.id === currId);
 				if (!currElement) {
 					return undefined;
@@ -495,7 +495,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				return attributes;
 			}
 			//We update the parent when we have multiple of the same elements with different updates or the user has specified that it is not a global update
-			const component = await getComponent(curr.componentId);
+			const component = getComponent(curr.componentId);
 			if (!component) {
 				return prev;
 				//throw new Error('Cannot find component with id ' + curr.componentId);
@@ -709,7 +709,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					const attributeUpdates: AttributeUpdate[] = [];
 
 					const mergeClassesWithScreenSizeWithPrefix = (originalClass: string | undefined, newClass: string, screenSize: number, prefix: string | undefined) => {
-						const merged = mergeClassesWithScreenSize(prefix ? originalClass.replaceAll(prefix, '') : originalClass, prefix ? newClass.replaceAll(prefix, '') : newClass, screenSize);
+						const merged = mergeClassesWithScreenSize(prefix ? originalClass?.replaceAll(prefix, '') : originalClass, prefix ? newClass.replaceAll(prefix, '') : newClass, screenSize);
 						const withPrefix = prefix ? addPrefixToClassName(merged, prefix) : merged;
 
 						return withPrefix;
