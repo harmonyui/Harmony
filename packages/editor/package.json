@@ -29,6 +29,10 @@
     "@harmony/ui": "workspace:*",
     "@harmony/util": "workspace:*",
     "@headlessui/react": "^1.7.18",
+    "@syncfusion/ej2-base": "^25.2.5",
+    "@syncfusion/ej2-buttons": "^25.2.4",
+    "@syncfusion/ej2-inputs": "^25.2.5",
+    "@syncfusion/ej2-react-navigations": "^25.2.4",
     "@trpc/client": "^10.45.0",
     "@trpc/server": "^10.45.0",
     "cors": "^2.8.5",
@@ -44,6 +48,7 @@
     "react-reconciler": "^0.29.0",
     "superjson": "^2.2.1",
     "tsc-alias": "^1.8.8",
+    "uuid": "^9.0.1",
     "zod": "^3.22.4"
   },
   "peerDependencies": {
@@ -75,6 +80,7 @@
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-reconciler": "^0.28.8",
+    "@types/uuid": "^9.0.8",
     "@types/webpack-env": "^1.18.5",
     "@types/webpack-hot-middleware": "^2.25.9",
     "css-loader": "^6.9.0",

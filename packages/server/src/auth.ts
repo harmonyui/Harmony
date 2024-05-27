@@ -5,10 +5,10 @@ import { Repository, repositorySchema } from "@harmony/util/src/types/branch";
 import { emailSchema } from "@harmony/util/src/types/utils";
 
 export interface User {
-  id: string;
-  name: string;
-  image: string;
-  email: string;
+	id: string;
+	name: string;
+	image: string;
+	email: string;
 }
 
 export const accountSchema = z.object({
@@ -37,11 +37,11 @@ export interface FullSession {
 }
 
 export type Session = {
-    auth: AuthContext,
+	auth: AuthContext,
 	account: Account | undefined
 } | FullSession;
 
-const teamPayload = {include: {repository: true}}
+const teamPayload = { include: { repository: true } }
 
 export const getRepositoryFromTeam = (team: Prisma.TeamGetPayload<typeof teamPayload>): Repository | undefined => {
 	return team.repository.length > 0 ? {
@@ -87,12 +87,12 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 	}
 }
 
-const harmonyAdmins = ['bradofrado@gmail.com', 'braydon.jones28@gmail.com', 'jacobwyliehansen@gmail.com', 'wyattthacker12@gmail.com'];
+const harmonyAdmins = ['bradofrado@gmail.com', 'braydon.jones28@gmail.com', 'jacobwyliehansen@gmail.com', 'wyattthacker12@gmail.com', 'tannerhelms01@gmail.com', 'tannerhelmsllc@gmail.com'];
 export const getServerAuthSession = async (userId: string | null, mockUserId?: string): Promise<Session | undefined> => {
 	//const {userId} = auth()// : {userId: null};
 	//const {userId} = _auth;
 	let ourAuth: AuthContext | null = null;
-	
+
 	if (userId) {
 		const user = await clerkClient.users.getUser(userId);
 
@@ -111,7 +111,7 @@ export const getServerAuthSession = async (userId: string | null, mockUserId?: s
 			role: harmonyAdmins.includes(email) ? 'harmony-admin' : 'user'
 		}
 	}
-	
+
 	const userIdToUse = mockUserId !== 'none' ? mockUserId || userId : null;
 	const account: Account | undefined = ourAuth && userIdToUse ? (await getAccount(userIdToUse)) : undefined;
 

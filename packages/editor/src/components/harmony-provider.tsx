@@ -569,7 +569,6 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 	useEffect(() => {
 		window.addEventListener('beforeunload', onLeave);
-
 		return () => { window.removeEventListener('beforeunload', onLeave); };
 	}, []);
 
@@ -753,26 +752,42 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		if (update.type === 'component') {
 			if (update.name === 'reorder') {
-				const [fromStr, toStr] = update.value.split(':');
-				if (!fromStr || !toStr) throw new Error(`Invalid update reorder value ${  update.value}`);
-				const [_, from] = fromStr.split('=');
-				const [_2, to] = toStr.split('=');
-
-				if (!from || !to) throw new Error(`Invalid update reorder value ${  update.value}`);
 
 				
-				const fromNum = parseInt(from);
-				const toNum = parseInt(to);
-				if (isNaN(fromNum) || isNaN(toNum) || fromNum < 0 || toNum < 0 || fromNum >= parent.children.length || toNum >= parent.children.length)
-					throw new Error(`Invalid from and to numbers: ${fromNum}, ${toNum}`);
+				const {oldValue, value} = update;
+				const {parentId: oldParent, childIndex: oldChildIndex}:{parentId: string, childIndex: number} = JSON.parse(oldValue);
+				const {parentId: newParent, childIndex: newChildIndex}:{parentId: string, childIndex: number} = JSON.parse(value);
+				const error = `makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`
+				
+				const validateId = (id: string) => {
+					return id.trim().length > 0;
+				}
 
-				if (fromNum === toNum) continue;
+				if (!validateId(update.componentId) || !validateId(oldParent) || !validateId(newParent)) {
+					throw new Error(error);
+				}
 
-				const fromElement = parent.children[fromNum];
-				//if (!fromElement) throw new Error("Need from element");
-				//+1 because we need to get the next sibiling for the insertBefore
-				const toElement = parent.children[fromNum < toNum ? toNum + 1 : toNum]// || null;
-				parent.insertBefore(fromElement, toElement);
+				const oldElement = findElementFromId(update.componentId, oldChildIndex);
+
+				// Verify that we could find the old element to be deleted from the DOM
+				if (!oldElement) {
+					throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${oldChildIndex}`);
+				}
+
+				oldElement.remove();
+				
+				// Add element to new parent
+				const newElement = document.querySelector(`[data-harmony-id="${newParent}"]`);
+				if (newElement) {
+					const children = Array.from(newElement.children);
+					if (newChildIndex >= 0 && newChildIndex < children.length) {
+						newElement.insertBefore(oldElement, children[newChildIndex]);
+					} else {
+						newElement.appendChild(oldElement);
+					}
+				} else {
+					throw new Error(`makeUpdates: Cannot find the elements parent with data-harmony-id: ${newParent}`);
+				}
 			}
 		}
 
