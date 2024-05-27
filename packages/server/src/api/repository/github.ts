@@ -323,21 +323,23 @@ export class LocalGitRepository implements GitRepository {
     public diffFiles(): Promise<Change[]> {
         throw new Error("Not implemented");
     }
-    public getContent(file: string): Promise<string> {
-        const absolute = path.join('/Users/braydonjones/Documents/Projects/Harmony', file);
-        if (!fs.existsSync(absolute)) {
-            throw new Error("Invalid path " + absolute);
-        }
+    public getContent(file: string, ref?: string): Promise<string> {
+        const githubRepo = new GithubRepository(this.repository);
+        return githubRepo.getContent(file, ref);
+        // const absolute = path.join('/Users/braydonjones/Documents/Projects/Harmony', file);
+        // if (!fs.existsSync(absolute)) {
+        //     throw new Error("Invalid path " + absolute);
+        // }
     
-        return new Promise<string>((resolve, reject) => {
-            fs.readFile(absolute, 'utf-8', (err, data) => {
-                if (err) {
-                    reject(new Error(err.message));
-                }
+        // return new Promise<string>((resolve, reject) => {
+        //     fs.readFile(absolute, 'utf-8', (err, data) => {
+        //         if (err) {
+        //             reject(new Error(err.message));
+        //         }
     
-                resolve(data);
-            })
-        });
+        //         resolve(data);
+        //     })
+        // });
     }
     public async updateFilesAndCommit(branch: string, changes: { filePath: string; locations: { snippet: string; start: number; end: number; }[]; }[]): Promise<void> {
         const updates: LocalUpdate[] = [];

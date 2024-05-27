@@ -11,7 +11,7 @@ import ColorPicker from "@harmony/ui/src/components/core/color-picker";
 import type { DropdownItem} from "@harmony/ui/src/components/core/dropdown";
 import { Dropdown } from "@harmony/ui/src/components/core/dropdown";
 import { Header } from "@harmony/ui/src/components/core/header";
-import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon } from "@harmony/ui/src/components/core/icons";
+import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon, BorderAllIcon, CancelCircle, SolidLine, DottedLine, DashedLine, BorderIcon } from "@harmony/ui/src/components/core/icons";
 import { NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import { HexColorSchema } from "@harmony/util/src/types/colors";
@@ -25,14 +25,15 @@ import { useSidePanel } from "./side-panel";
 import type { CommonTools, ComponentToolData} from "./attribute-panel";
 import { ComponentAttributePanel, useComponentAttribute } from "./attribute-panel";
 import { PublishButton } from "./publish-button";
-
-export const buttonTools = ['backgroundColor', 'textAttr'] as const;
+export const buttonTools = ['backgroundColor', 'textAttr', 'borderAttrs'] as const;
 export const textTools = ['font', 'fontSize', 'color', 'textAlign', 'spacing'] as const;
-export const componentTools = ['backgroundColor', 'textAttr'] as const;
+export const componentTools = ['backgroundColor', 'textAttr', 'borderAttrs'] as const;
 export type TextTools = typeof textTools[number];
 export type ButtonTools = typeof buttonTools[number];
 export type ComponentTools = typeof componentTools[number];
 export type ToolbarTools = TextTools | ButtonTools | ComponentTools
+
+
 
 interface ToolbarPanelProps {
 	mode: SelectMode;
@@ -90,7 +91,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle
 			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
 				<Header className="hw-font-normal" level={3}>{currentBranch ? currentBranch.name : 'Invalid Branch'}</Header>
 			</div>
-			{!isDemo && false ? <div className="hw-px-4">
+			{!isDemo && true ? <div className="hw-px-4">
 				<button className="hw-text-base hw-font-light" onClick={onLayoutClick}>Layout</button>
 			</div> : null}
 			{data ? <>
@@ -265,7 +266,52 @@ const useToolbarTools = ({element, fonts}: ToolbarToolsProps) => {
                     </div>
                 </Popover>
             )
-        }
+        },
+		'borderAttrs': ({data, onChange, getAttribute}) => {
+			const borderAttr = getAttribute('borderWidth');
+			const borderAttrRadius = getAttribute('borderRadius');
+			const borderStr = borderAttr.replace('px', '');
+			const borderRadiusStr = borderAttrRadius.replace('px', '');
+
+			const borderHeight = Number(borderStr);
+			const borderRadius = Number(borderRadiusStr);
+
+			let value = getAttribute('borderColor')
+			const _data = value === '#00000000' ? '#FFFFFF' : value
+
+			const borderStyles = [
+				{value: 'none', icon: <CancelCircle />},
+				{value: 'solid', icon: <SolidLine />},
+				{value: 'dotted', icon: <DottedLine />},
+				{value: 'dashed', icon: <DashedLine />},
+			]
+
+			return (
+				<Popover buttonClass="hw-h-[25.76px]" button={<BorderIcon className="hw-h-[25.76px] hw-w-[25.76px]"/>}>
+					<div className="hw-flex hw-flex-col hw-gap-3 hw-w-[320px]">
+						<div className="hw-flex hw-flex-row hw-p-4 hw-items-center hw-w-full hw-justify-between hw-border hw-border-gray-200">
+							<ColorPicker<`#${string}`> className="hw-h-7 hw-z-50" value={HexColorSchema.parse(_data)} onChange={(_value) => { onChange({ value: _value, name: 'borderColor' }) }} container={document.getElementById("harmony-container") || undefined} />
+							<p className="hw-uppercase  hw-text-lg">{_data}</p>
+						</div>
+						<div className="hw-flex hw-flex-row hw-items-center hw-w-full hw-justify-between">
+							{borderStyles.map(({ value, icon }, idx) => (
+								<button key={idx} className="hw-size-12 hw-border hw-border-gray-200 hw-p-1" onClick={() => onChange({ name: 'borderStyle', value })}>{icon}</button>
+							))}
+						</div>
+						<div className="hw-flex hw-flex-row hw-space-x-2 hw-items-center">
+							<p>Weight</p>
+							<Slider className="flex-1" value={borderHeight} max={50} onChange={(value) => { onChange({ name: 'borderWidth', value: `${value}px` }) }} />
+							<p>{borderHeight.toFixed(0)}</p>
+						</div>
+						<div className="hw-flex hw-flex-row hw-space-x-2 hw-items-center">
+							<p>Rounded</p>
+							<Slider className="flex-1" value={borderRadius} max={50} onChange={(value) => { onChange({ name: 'borderRadius', value: `${value}px` }) }} />
+							<p>{borderRadius.toFixed(0)}</p>
+						</div>
+					</div>
+				</Popover>
+			)
+		}
 	}), [fonts]);
 
 	const toolNames: readonly ToolbarTools[] = useMemo(() => {

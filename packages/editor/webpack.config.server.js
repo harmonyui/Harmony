@@ -6,9 +6,7 @@ module.exports = {
         path: path.resolve(__dirname, 'dist-server'),
         filename: 'server.js',
         //library: 'HarmonySetup',
-        libraryTarget: 'umd',
         // publicPath: '/dist',
-        globalObject: 'this',
         //libraryTarget: 'umd',
     },
     target: 'node',
@@ -24,4 +22,9 @@ module.exports = {
             },
         ],
     },
+    externals: {
+        'webpack-dev-middleware': 'middleware',
+        'webpack-hot-middleware': 'hotMiddleware',
+        'webpack': 'webpack'
+    }
 }
