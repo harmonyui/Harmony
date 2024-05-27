@@ -759,7 +759,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				const {parentId: newParent, childIndex: newChildIndex}:{parentId: string, childIndex: number} = JSON.parse(value);
 				const error = `makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`
 				
-				function validateId(id: string) {
+				const validateId = (id: string) => {
 					return id.trim().length > 0;
 				}
 
