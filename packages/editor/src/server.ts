@@ -8,11 +8,7 @@ import type { LooseAuthProp } from "@clerk/clerk-sdk-node";
 import { ClerkExpressWithAuth } from "@clerk/clerk-sdk-node";
 import cors from 'cors';
 import {prisma} from '@harmony/db/lib/prisma';
-import webpack from 'webpack';
-import middleware from 'webpack-dev-middleware';
-import hotMiddleware from 'webpack-hot-middleware';
 import morgan from 'morgan';
-import webpackDev from '../webpack.config.dev';
 import { PORT } from './trpc';
 
 const app = express();
@@ -46,14 +42,21 @@ app.use(
     credentials: true,
   })
 );
-if (process.env.NODE_ENV === 'development') {
-  const compiler = webpack(webpackDev)
-  app.use(middleware(compiler, {
-    stats: { colors: true },
-  }))
-  app.use(hotMiddleware(compiler, {
-    path: '/__webpack_hmr',
-  }));
+if (process.env.NODE_ENV !== 'production') {
+  void (async () => {
+    const webpack = await import('webpack');
+    const middleware = await import('webpack-dev-middleware');
+    const hotMiddleware = await import('webpack-hot-middleware');
+    const webpackDev = await import('../webpack.config.dev');
+
+    const compiler = webpack.default(webpackDev.default)
+    app.use(middleware.default(compiler, {
+      stats: { colors: true },
+    }))
+    app.use(hotMiddleware.default(compiler, {
+      path: '/__webpack_hmr',
+    }));
+  })();
 }
 
 app.use(morgan('short'))
