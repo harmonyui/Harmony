@@ -66,3 +66,6 @@ jobs:
 
       - name: "🔍 lint code"
         run: pnpm run lint
+
+      - name: "type checking"
+        run: pnpm run typecheck
