@@ -99,7 +99,7 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
   }
   // Get the session from the server using the getServerSession wrapper function
   const session = await getServerAuthSession(userId, mockUserId);
-  const gitRepositoryFactory = process.env.ENV === 'development' && false ? gitLocalRepositoryFactory : new GithubRepositoryFactory();
+  const gitRepositoryFactory = process.env.ENV === 'development' ? gitLocalRepositoryFactory : new GithubRepositoryFactory();
   return createInnerTRPCContext({
     session,
     gitRepositoryFactory

@@ -7,6 +7,7 @@ import { ClerkExpressWithAuth, LooseAuthProp } from "@clerk/clerk-sdk-node";
 import cors from 'cors';
 import { LOCALHOST } from '@harmony/util/src/utils/component';
 import {prisma} from '@harmony/db/lib/prisma';
+import morgan from 'morgan';
 import { PORT } from './trpc';
 
 const app = express();
@@ -40,6 +41,25 @@ app.use(
     credentials: true,
   })
 );
+if (process.env.NODE_ENV !== 'production') {
+  void (async () => {
+    const webpack = await import('webpack');
+    const middleware = await import('webpack-dev-middleware');
+    const hotMiddleware = await import('webpack-hot-middleware');
+    const webpackDev = await import('../webpack.config.dev');
+
+    const compiler = webpack.default(webpackDev.default)
+    app.use(middleware.default(compiler, {
+      stats: { colors: true },
+    }))
+    app.use(hotMiddleware.default(compiler, {
+      path: '/__webpack_hmr',
+    }));
+  })();
+}
+
+app.use(morgan('short'))
+
 
 // Serve static files from the 'public' directory
 app.use(express.static(path.join(__dirname, '..', 'public')));
