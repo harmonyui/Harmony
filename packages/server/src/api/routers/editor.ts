@@ -463,12 +463,14 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 
 				//If this is global, find the first string attribute and get everything on that layer
 				for (const attribute of allAttributes) {
-					if (attribute.name === 'string' && curr.isGlobal) {
-						attributes.push(...allAttributes.filter(attr => attr.reference_component_id === attribute.reference_component_id));
-						break;
+					if (attribute.type === 'className' && attribute.name === 'string' && curr.isGlobal) {
+						attributes.push(...allAttributes.filter(attr => attr.reference_component_id === attribute.reference_component_id && attr.type === 'className'));
 					}
 
-					attributes.push(attribute);
+					//Continue adding attributes for non-global or global's that don't already have classNames
+					if (!curr.isGlobal || attribute.type !== 'className' && !attributes.find(attr => attr.type === 'className' && attr.name === 'string')) {
+						attributes.push(attribute);
+					}
 				}
 
 				//Put the parents first for updating the code
@@ -484,7 +486,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 			const font = curr.type === 'className' && curr.name === 'font' ? curr.value : undefined;
 			const value = curr.type === 'className' && curr.name === 'font' ? '' : curr.value;
 
-			const sameComponent = curr.type === 'className' ? prev.find(({component: other}) => other.id === component.id && other.parent_id === component.parent_id) : undefined;
+			const sameComponent = curr.type === 'className' ? prev.find(({component: other, type}) => type === 'className' && other.id === component.id && other.parent_id === component.parent_id) : undefined;
 			if (sameComponent) {
 				if (curr.name !== 'font') {
 					sameComponent.value += curr.value;
@@ -521,8 +523,9 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 		if (last) {
 			const diff = last.updatedTo - last.end + last.diff;
 			if (last.updatedTo > newLocation.start + diff) {
-				throw new Error("Conflict in changes")
-				//console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`);
+				if (last.snippet === newLocation.snippet) continue;
+				//throw new Error("Conflict in changes")
+				console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`);
 			}
 
 			newLocation.start += diff;
@@ -608,7 +611,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 	const addNewClassOrComment = async ({location, code, newClass, oldClass, commentValue, attribute, isDefinedAndDynamic}: AddClassName): Promise<FileUpdate> => {
 		if (oldClass === undefined) {
 			//If this is a dynamic property then just add a comment
-			if (isDefinedAndDynamic) {
+			if (isDefinedAndDynamic || code.includes('className=')) {
 				return addCommentToJSXElement({location, commentValue, attribute});
 			}
 

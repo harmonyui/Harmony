@@ -186,6 +186,7 @@ describe("indexor", () => {
             expect(componentElements[7].attributes[0].type).toBe('text');
             expect(componentElements[7].attributes[0].name).toBe('string');
             expect(componentElements[7].attributes[0].value).toBe('Displays');
+            expect(componentElements[7].attributes[0].index).toBe(0);
             expectLocationOfString(file, componentElements[7].attributes[0].location, '"Displays"');
 
             expect(componentElements[12].attributes.length).toBe(4);

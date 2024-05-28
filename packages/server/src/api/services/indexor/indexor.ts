@@ -235,6 +235,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										if (attribute.type === 'text') {
 											newAttribute.value = getAttributeValue(newAttribute);
 											newAttribute.type = 'text';
+											newAttribute.index = attribute.index;
 										} else if (attribute.type === 'property') {
 											const name = getAttributeName(attribute);
 											const value = getAttributeValue(newAttribute);
