@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import type { ComponentElement } from "@harmony/util/src/types/component"
-import { useMemo } from "react"
+import { useCallback, useMemo } from "react"
 import { useHarmonyContext } from "../harmony-context"
 import { componentIdentifier, isSelectable } from "../inspector/inspector"
 import type { TreeViewItem} from "./tree-view";
@@ -8,7 +8,7 @@ import { TreeView } from "./tree-view"
 
 export const ComponentLayoutPanel: React.FunctionComponent<ComponentTreeViewProps> = ({selectedComponent}) => {
     return (
-        <div className="hw-max-w-[300px] hw-p-2">
+        <div className="hw-max-w-[500px] hw-p-2">
             <ComponentTreeView selectedComponent={selectedComponent}/>
         </div>
     )
@@ -16,15 +16,15 @@ export const ComponentLayoutPanel: React.FunctionComponent<ComponentTreeViewProp
 
 export const useComponentTreeItems = (root: ComponentElement | undefined, selectedComponent: HTMLElement | undefined): TreeViewItem<ComponentElement>[] => {
 	const {scale} = useHarmonyContext();
-    const getTreeItems = (children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
+    const getTreeItems = useCallback((children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
 		return children.filter(child => isSelectable(child.element!, scale)).map<TreeViewItem<ComponentElement>>(child => ({
 			id: child,
 			content: child.name,
 			items: getTreeItems(child.children),
 			selected: selectedComponent === child.element
 		}))
-	}
-	const treeItems: TreeViewItem<ComponentElement>[] = root ? getTreeItems([root]) : [];
+	}, [scale]);
+	const treeItems: TreeViewItem<ComponentElement>[] = useMemo(() => root ? getTreeItems([root]) : [], [root, getTreeItems]);
 
 	return treeItems;
 }
@@ -60,6 +60,6 @@ const ComponentTreeView: React.FunctionComponent<ComponentTreeViewProps> = () =>
 	const treeItems = useComponentTreeItems(rootElement, selectedComponent);
 
 	return (
-		<TreeView items={treeItems} expand={true} onClick={(item) => {onComponentSelect(item.id.element!)}} onHover={(item) => {onComponentHover(item.id.element!)}}/>
+		<TreeView items={treeItems} expand={true} onClick={(item) => {onComponentSelect(item)}} onHover={(item) => {onComponentHover(item)}}/>
 	)
 }

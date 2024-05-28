@@ -16,11 +16,12 @@ import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { hashCode } from "@harmony/util/src/utils/common";
-import { ComponentAttribute } from "@harmony/db/lib/generated/client";
+import { ComponentAttribute, ComponentDefinition } from "@harmony/db/lib/generated/client";
+import { INDEXING_VERSION } from "@harmony/util/src/constants";
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
-export const indexFilesAndFollowImports = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string) => {
+export const indexFilesAndFollowImports = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: ComponentElement[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
@@ -47,7 +48,10 @@ export const indexFilesAndFollowImports = async (files: string[], readFile: (fil
 	const elementInstance = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, importDeclarations);
 	if (elementInstance) {
 		await updateDatabase(componentDefinitions, elementInstance, repositoryId);
+		return elementInstance;
 	}
+
+	return [];
 }
 
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
@@ -171,7 +175,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 			}
 
 			const containingComponent: HarmonyComponent = {
-				id: randomId(),
+				id: getHashFromLocation(location, originalCode),
 				name: '',
 				children: [],
 				attributes: [],
@@ -186,36 +190,324 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 				},
 				JSXElement: {
 					enter(jsPath) {
-						//console.log(path);
+						function getAttributeName(attribute: Attribute): string {
+							if (attribute.type === 'className') {
+								return 'className';
+							} else if (attribute.type === 'text') {
+								return 'children';
+							}
+
+							const [name] = attribute.value.split(':');
+							return name;
+						}
+
+						function getPropertyName(attribute: Attribute): string | undefined {
+							if (attribute.name !== 'property') return undefined;
+
+							if (attribute.type === 'text') {
+								return attribute.value === 'undefined' ? undefined : attribute.value;
+							}
+
+							const [_, propertyName] = attribute.value.split(':');
+							return propertyName === 'undefined' ? undefined : propertyName; 
+						}
+
+						function getAttributeValue(attribute: Attribute): string {
+							if (attribute.name === 'property') {
+								return getPropertyName(attribute) || 'undefined';
+							}
+
+							if (attribute.type === 'property') {
+								const [_, propertyValue] = attribute.value.split(':');
+								return propertyValue;
+							}
+
+							return attribute.value;
+						}
+
+						function connectAttributesToParent(elementAttributes: Attribute[], parent: ComponentElement): Attribute[] {
+							const attributes: Attribute[] = [];
+							for (const attribute of elementAttributes) {
+								const propertyName = getPropertyName(attribute);
+								if (propertyName) {
+									const sameAttributesInElement = parent.attributes.filter(attr => getAttributeName(attr) === propertyName).map(attr => {
+										const newAttribute = {...attr};
+										if (attribute.type === 'text') {
+											newAttribute.value = getAttributeValue(newAttribute);
+											newAttribute.type = 'text';
+											newAttribute.index = attribute.index;
+										} else if (attribute.type === 'property') {
+											const name = getAttributeName(attribute);
+											const value = getAttributeValue(newAttribute);
+
+											newAttribute.value = `${name}:${value}`;
+											newAttribute.type = 'property';
+										} else if (attribute.type === 'className') {
+											const value = getAttributeValue(newAttribute);
+											newAttribute.value = newAttribute.name === 'property' ? `className:${value}` : value;
+											newAttribute.type = 'className';
+										}
+										return newAttribute;
+									});
+	
+									
+									attributes.push(...sameAttributesInElement);
+									continue;
+								}
+								attributes.push(attribute);
+							}
+
+							return attributes;
+						}
+
+						function connectChildToParent(child: ComponentElement, parent: ComponentElement): ComponentElement {
+							const recurseConnectLog = (el: ComponentElement): string => {
+								const parent = el.getParent();
+								if (parent) {
+									return `to ${parent.name} ${recurseConnectLog(parent)}`;
+								}
+								return '';
+							}
+							//console.log(`Connecting ${child.name} to ${parent.name} ${recurseConnectLog(parent)}`)
+							const attributes = connectAttributesToParent(child.attributes, parent);
+							const newElement = {...child, attributes, getParent: () => parent};
+							elementInstances.push(newElement);
+
+							return newElement;
+						}
+
+						function getComponentsBindingId(element: ComponentElement): string | undefined {
+							if (!element.isComponent) return;
+
+							const getId = (node: t.Node): string | undefined => {
+								const location = getLocation(node, file);
+								return location ? getHashFromLocation(location, originalCode) : undefined;
+							}
+
+							const binding = jsPath.scope.getBinding(element.name);
+							let id: string | undefined;
+							if (binding) {
+								if (t.isFunctionDeclaration(binding.path.node) || t.isArrowFunctionExpression(binding.path.node)) {
+									id = getId(binding.path.node);
+								} else {
+									binding.path.traverse({
+										FunctionDeclaration(path) {
+											if (id) return;
+											const location = getLocation(path.node, file);
+											id = location ? getHashFromLocation(location, originalCode) : undefined;
+										},
+										ArrowFunctionExpression(path) {
+											if (id) return;
+											const location = getLocation(path.node, file);
+											id = location ? getHashFromLocation(location, originalCode) : undefined;
+										}
+									})
+								}
+							}
+							if (!id) {
+								id = componentDefinitions[element.name]?.id;
+							}
+
+							return id;
+						}
+
+						function connectInstanceToChildren(element: ComponentElement): void {
+							const id = getComponentsBindingId(element);
+
+							const childElements = elementInstances.filter(instance => instance.containingComponent.id === id && instance.getParent() === undefined);
+							childElements.forEach(child => {
+								const newChild = connectChildToParent(child, element);
+								connectInstanceToChildren(newChild);
+							});
+						}
+
+						function connectInstanceToParent(element: ComponentElement): void {
+							const bindings: Record<string, string | undefined> = {}
+							const parents = elementInstances.filter(parent => {
+								let binding = bindings[parent.name];
+								if (!binding) {
+									bindings[parent.name] = getComponentsBindingId(parent);
+									binding = bindings[parent.name]
+								}
+								return binding === element.containingComponent.id
+							});
+							parents.forEach(parent => {
+								connectChildToParent(element, parent);
+								//connectInstanceToParent(parent);
+							});
+						}
+
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
 						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
 
 						const parentComponent = containingComponent;
+
+						type AttributeType = 'text' | 'className' | 'property';
+						
 						if (jsxElementDefinition) {
-							const createParamAttribute = (params: t.Node[], type: 'text' | 'className' | 'property', name: string | undefined): Attribute => {
-								const ids = params.filter(param => t.isIdentifier(param)) as t.Identifier[];
-								let idIndex = type === 'className' ? ids.findIndex(id => id.name === 'className') : 0;
-								idIndex = idIndex === -1 ? 0 : idIndex;
-								const value = ids[idIndex] ? ids[idIndex].name : undefined;
-								return {id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1};
+							const createPropertyAttribute = (node: t.Node, type: AttributeType, name: string | undefined, propertyName: string | undefined): Attribute => {
+								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
+								const location: ComponentLocation = {
+									file,
+									start: node.start,
+									end: node.end
+								}
+								return createAttribute(type, 'property', name, propertyName, location);
+							}
+							const createIdentifierAttribute = (node: t.Identifier, type: AttributeType, name: string | undefined): Attribute[] => {
+								const value = node.name;
+								const binding = jsPath.scope.getBinding(value);
+								const getAttributes = (_node: t.Node, values: Attribute[]): Attribute[] => {
+									if (t.isIdentifier(_node)) {
+										return values;
+									} else if (t.isObjectPattern(_node)) {
+										const property = _node.properties.find(prop => t.isObjectProperty(prop) && t.isIdentifier(prop.value) && prop.value.name === value) as t.ObjectProperty | undefined;
+										const getPropertyName = () => {
+											if (!property) return value;
+
+											if (t.isIdentifier(property.key) && property.key.name === value) return value;
+
+											const propertyAttribute = t.isExpression(property.key) ? createExpressionAttribute(property.key, type, name) : [];
+											const propertyName = propertyAttribute.length === 1 ? getAttributeValue(propertyAttribute[0]) : '';
+
+											return propertyName;
+										}
+										
+										const propertyName = getPropertyName();
+										const attributes = createAttributeFromObjects(node, values, type, name, propertyName);
+										if (attributes.length) {
+											return attributes;
+										}
+									}
+
+									return values;
+								}
+								if (binding && ['const', 'let', 'var'].includes(binding.kind) && t.isVariableDeclarator(binding.path.node) && binding.path.node.init) {
+									const idValues = createExpressionAttribute(binding.path.node.init, type, name);
+									// if (idValues.length === 1 && getAttributeValue(idValues[0]) === 'param') {
+									// 	return [createPropertyAttribute(node, type, name, value)];
+									// } else 
+									return getAttributes(binding.path.node.id, idValues);
+								}
+
+								if (binding && binding.kind === 'param') {
+									const values = [createPropertyAttribute(node, type, name, 'param')];
+									return getAttributes(binding.path.node, values);
+								}
+
+								return [createPropertyAttribute(node, type, name, value)]
+							}
+
+							const createAttributeFromObjects = (node: t.Node, objectAttributes: Attribute[], type: AttributeType, name: string | undefined, propertyName: string): Attribute[] => {
+								const attributes: Attribute[] = [];
+								for (const attribute of objectAttributes) {
+									const attrName = getAttributeName(attribute);
+									const attrValue = getAttributeValue(attribute);
+									if (attrValue === 'param') {
+										attributes.push(createPropertyAttribute(node, type, name, propertyName));
+									} else if (attrName === propertyName) {
+										const value = getAttributeValue(attribute);
+										const newAttribute = createAttribute(type, attribute.name, name, value, attribute.location);
+										attributes.push(newAttribute)
+									}
+								}
+
+								return attributes;
+							}
+
+							const createMemberExpressionAttribute = (node: t.MemberExpression, type: AttributeType, name: string | undefined): Attribute[] => {
+								if (t.isIdentifier(node.object) && t.isExpression(node.property)) {
+									const objectAttributes = createIdentifierAttribute(node.object, type, name);
+									const propertyAttributes = createExpressionAttribute(node.property, type, name);
+									const propertyName = propertyAttributes.length === 1 ? getAttributeValue(propertyAttributes[0]) : '';
+									const attributes = createAttributeFromObjects(node, objectAttributes, type, name, propertyName);
+									if (attributes.length) {
+										return attributes;
+									}
+								}
+
+								return [createPropertyAttribute(node, type, name, undefined)];
+							}
+
+							const createObjectPropertiesAttribute = (properties: t.Node[], type: AttributeType, name: string | undefined): Attribute[] => {
+								const attributes: Attribute[] = [];
+								for (const property of properties) {
+									if (t.isObjectProperty(property) && t.isIdentifier(property.key) && t.isExpression(property.value)) {
+										const attrs = createExpressionAttribute(property.value, 'property', property.key.name);
+										attributes.push(...attrs.map(attr => {
+											const name = getAttributeName(attr);
+											const value = getAttributeValue(attr);
+											return createAttribute(attr.type as AttributeType, attr.name, name, value, attr.location)
+										}))
+									}
+								}
+
+								return attributes;
+							}
+
+							const createObjectExpressionAttribute = (node: t.ObjectExpression, type: AttributeType, name: string | undefined): Attribute[] => {
+								return createObjectPropertiesAttribute(node.properties, type, name);
+							}
+
+							const createLogicalExpressionAttribute = (node: t.LogicalExpression, type: AttributeType, name: string | undefined): Attribute[] => {
+								if (type === 'text') return [createPropertyAttribute(node, type, name, undefined)];
+								return [...createExpressionAttribute(node.left, type, name), ...createExpressionAttribute(node.right, type, name)];
+							}
+
+							const createParamAttribute = (params: t.Node[], type: AttributeType, name: string | undefined): Attribute[] => {
+								const expressions = params.filter(param => t.isExpression(param)) as t.Expression[];
+								const attributes: Attribute[] = expressions.map(expression => createExpressionAttribute(expression, type, name)).flat()
+
+								return attributes;
 							}
 	
-							const createExpressionAttribute = (node: t.JSXExpressionContainer, type: 'text' | 'className' | 'property', name: string | undefined): Attribute => {
-								if (t.isStringLiteral(node.expression)) {
-									return createStringAttribute(type, name, node.expression.value)
-								} else if (t.isCallExpression(node.expression)) {
-									const params = node.expression.arguments
+							const createExpressionAttribute = (node: t.Expression | t.JSXEmptyExpression, type: AttributeType, name: string | undefined): Attribute[] => {
+								if (t.isStringLiteral(node)) {
+									return [createStringAttribute(node, type, name, node.value)]
+								} else if (t.isCallExpression(node)) {
+									const params = node.arguments
 									return createParamAttribute(params, type, name);
-								} else if (t.isTemplateLiteral(node.expression)) {
-									const params = node.expression.expressions;
-									return createParamAttribute(params, type, name);
-								} 
-								const value = t.isIdentifier(node.expression) ? node.expression.name : undefined;
-								return {id: '', type, name: 'property', value: name ? `${name}:${value}` : value || '', reference: jsxElementDefinition, index: -1};
+								} else if (t.isTemplateLiteral(node)) {
+									const expressions = [...node.expressions, ...node.quasis].sort((a, b) => (a.start || 0) - (b.start || 0));
+									return expressions.map<Attribute[]>(expression => {
+										if (t.isTemplateElement(expression) && expression.value.raw) {
+											return [createStringAttribute(expression, type, name, expression.value.raw)];
+										} else if (t.isExpression(expression)) {
+											return createParamAttribute([expression], type, name);
+										}
+
+										return [];
+									}).flat()
+								} else if (t.isMemberExpression(node)) {
+									return createMemberExpressionAttribute(node, type, name);
+								} else if (t.isObjectExpression(node)) {
+									return createObjectExpressionAttribute(node, type, name);
+								} else if (t.isLogicalExpression(node)) {
+									return createLogicalExpressionAttribute(node, type, name);
+								} else if (t.isIdentifier(node)) {
+									return createIdentifierAttribute(node, type, name);
+								}
+
+								//If we get here, then we could not resolve to a static string.
+								return [createPropertyAttribute(node, type, name, undefined)];
 							}
 	
-							const createStringAttribute = (type: 'text' | 'className' | 'property', propertyName: string | undefined, value: string): Attribute => {
-								return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1}
+							const createStringAttribute = (node: t.StringLiteral | t.TemplateElement | t.JSXText, type: AttributeType, propertyName: string | undefined, value: string): Attribute => {
+								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
+								const location: ComponentLocation = {
+									file,
+									start: node.start,
+									end: node.end
+								}
+								return createAttribute(type, 'string', propertyName, value, location);
+							}
+
+							const createAttribute = (type: AttributeType, name: string, propertyName: string | undefined, value: string | undefined, location: ComponentLocation): Attribute => {
+								if (name === 'string') {
+									return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value || '' : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1, location}
+								}
+
+								return {id: '', type, name: 'property', value: propertyName ? `${propertyName}:${value}` : value || 'undefined', reference: jsxElementDefinition, index: -1, location};
 							}
 
 							const node = jsPath.node;
@@ -224,9 +516,9 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							for (let i = 0; i < nonWhiteSpaceChildren.length; i++) {
 								const child = nonWhiteSpaceChildren[i];
 								if (t.isJSXText(child)) {
-									textAttributes.push({...createStringAttribute('text', undefined, child.extra?.raw as string || child.value), index: i});
+									textAttributes.push({...createStringAttribute(child, 'text', undefined, child.extra?.raw as string || child.value), index: i});
 								} else if (t.isJSXExpressionContainer(child)) {
-									textAttributes.push({...createExpressionAttribute(child, 'text', undefined), index: i})
+									textAttributes.push({...createExpressionAttribute(child.expression, 'text', undefined)[0], index: i})
 								}
 							}
 							jsxElementDefinition.attributes.push(...textAttributes);
@@ -234,16 +526,21 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								if (t.isJSXAttribute(attr)) {
 									const type = attr.name.name === 'className' ? 'className' : 'property';
 									if (t.isStringLiteral(attr.value)) {
-										jsxElementDefinition.attributes.push(createStringAttribute(type, String(attr.name.name), attr.value.value));
+										jsxElementDefinition.attributes.push(createStringAttribute(attr.value, type, String(attr.name.name), attr.value.value));
 									} else if (t.isJSXExpressionContainer(attr.value)) {
-										jsxElementDefinition.attributes.push(createExpressionAttribute(attr.value, type, String(attr.name.name)));
+										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => ({...expression, type})));
 									}
 								}
 							}
 							
+							//console.log(`Adding ${jsxElementDefinition.name}`);
 							jsxElements.push(jsxElementDefinition);
 							elementInstances.push(jsxElementDefinition);
 							parentComponent.children.push(jsxElementDefinition);
+
+							connectInstanceToChildren(jsxElementDefinition);
+							connectInstanceToParent(jsxElementDefinition);
+
 						}
 					},
 					exit() {
@@ -276,70 +573,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 	return true;
 }
 
-function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, instances: ComponentElement[]) {
-	const findAttributeLocation = (curr: ComponentElement, instance: ComponentElement, propertyName: string): {attribute: Attribute, reference: ComponentElement | HarmonyComponent} | undefined => {
-		const attribute = curr.attributes.find(a => a.type === 'property' && a.value.split(':')[0] === propertyName || a.type === 'text' &&  propertyName === 'children');
-		if (attribute) {
-			if (attribute.name === 'string') {
-				return {reference: curr, attribute};
-				
-			} else {
-				const parent = curr.getParent();
-				if (parent) {
-					const reference = findAttributeLocation(parent, instance, propertyName);
-
-					//TODO: find the text in the containing component
-					// if (reference === undefined) {
-					// 	return {reference: curr.containingComponent, attribute};
-					// }
-
-					return reference;
-				}
-
-				//TODO: find the text in the containing component
-				//return {reference: curr.containingComponent, attribute}
-			}
-		}  
-
-		return undefined;
-	}
-
-	const isComponentInstance = (instance: ComponentElement): boolean => {
-		return instance.name[0] === instance.name[0].toUpperCase();
-	}
-
-	const connectInstanceToChildren = (instance: ComponentElement): void => {
-		if (isComponentInstance(instance)) {
-			const definition = componentDefinitions[instance.name];
-			if (!definition) return;
-
-			for (let i = 0; i < definition.children.length; i++) {
-				const definitionInstance = definition.children[i];
-				//definitionInstance.getParent = () => instance;
-				const newInstance = {...definitionInstance, parentId: instance.id, getParent: () => instance};
-				newInstance.attributes = definitionInstance.attributes.map(atr => ({...atr, reference: newInstance}))
-
-				elementInstances.push(newInstance);
-				//definition.children[i] = definitionInstance;
-				connectInstanceToChildren(newInstance);
-			}
-			calledComponent.push(definition.name);
-		}
-	}
-
-	const elementInstances: ComponentElement[] = [];
-	const calledComponent: string[] = [];
-	for (const instance of instances) {
-		connectInstanceToChildren(instance);
-	}
-
-	//If a component has not been called, then that means it has no parent, so add that in
-	for (const name in componentDefinitions) {
-		if (!calledComponent.includes(name)) {
-			elementInstances.push(...componentDefinitions[name].children);
-		}
-	}
-
+function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[]) {
 	function getIdFromParents(instance: ComponentElement): string {
 		const parent = instance.getParent();
 		if (!parent) {
@@ -355,48 +589,31 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		return `${parentId}#${instance.id}`;
 	}
 
+	const findAttributeReference = (element: ComponentElement | undefined, attributeId: string): {id: string} | undefined=> {
+		if (!element) return undefined;
+
+		const id = element.id.split('#')[element.id.split('#').length - 1];
+		if (id === attributeId) {
+			return element;
+		}
+
+		return findAttributeReference(element.getParent(), attributeId);
+	}
+
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
 		instance.id = getIdFromParents(instance);
-		for (let j = 0; j < instance.attributes.length; j++) {
-			const attribute = instance.attributes[j];
-			if (attribute.type === 'text' && attribute.name === 'property') {
-				const parent = instance.getParent();
-				if (parent) {
-					const results = findAttributeLocation(parent, instance, attribute.value);
-					if (results) {
-						attribute.reference = results.reference;
-						attribute.name = results.attribute.name;
-						attribute.value = results.attribute.value;
-
-						if (attribute.name !== 'string') {
-							throw new Error("Attribute should be a string!");
-						}
-						
-						//For a string text property, we need to make sure the value is just the text. 
-						//However, getting the info from a 'property' means the value is {name}:{value}. 
-						//We must get rid of this and leave just {value}
-						if (results.attribute.type === 'property' && attribute.type === 'text' && attribute.name === 'string') {
-							const splitIndex = attribute.value.indexOf(':');
-							if (splitIndex < 0) {
-								throw new Error("Invalid property " + attribute.value);
-							}
-
-							attribute.value = attribute.value.substring(splitIndex + 1);
-						}
-					} else {
-						//attribute.reference = instance.containingComponent;
-						
-						//For now, if we cannot find where to update the text in a string property then just 
-						//delete the attribute so we can say 'We cannot updat the text'
-						instance.attributes.splice(j, 1);
-						j--;
-					}
-				}
+		for (const attribute of instance.attributes) {
+			if (attribute.reference.id.split('#').length > 1) continue;
+			const newReference = findAttributeReference(instance, attribute.reference.id);
+			if (!newReference) {
+				throw new Error("Reference should be pointer to an ancestor element");
 			}
+			attribute.reference = newReference;
 		}
 	}
 
+	//Sort the instances parents first.
 	return elementInstances;
 }
 
@@ -429,122 +646,112 @@ function randomId(): string {
 }
 
 async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
-	const alreadyCreated: string[] = [];
-	const createElement = async (instance: ComponentElement) => {
-		if (alreadyCreated.includes(instance.id)) return;
-
-		const parent = instance.getParent();
-
-		const currComponent = await prisma.componentElement.findFirst({
-			where: {
-				id: instance.id
-			}
-		});
-
-		let definition = await prisma.componentDefinition.findUnique({
-			where: {
-				name: instance.containingComponent.name
-			}
-		})
-		if (definition === null) {
-			definition = await prisma.componentDefinition.create({
-				data: {
-					repository_id: repositoryId,
-					name: instance.containingComponent.name,
-					location: {
-						create: {
-							file: instance.containingComponent.location.file,
-							start: instance.containingComponent.location.start,
-							end: instance.containingComponent.location.end,
-						}
-					}
-				}
-			})
+	elementInstances.sort((a, b) => b.id.split('#').length - a.id.split('#').length);
+	const containingComponents = elementInstances.reduce<HarmonyComponent[]>((prev, curr) => {
+		const def = prev.find(d => d.id === curr.containingComponent.id);
+		if (!def) {
+			prev.push(curr.containingComponent)
 		}
-		if (parent) {
-			const prismaParent = await prisma.componentElement.findFirst({
-				where: {
-					id: parent.id,
+
+		return prev;
+	}, []);
+
+	await Promise.all(containingComponents.map(component => prisma.componentDefinition.upsert({
+		where: {
+			id: component.id
+		},
+		create: {
+			id: component.id,
+			repository_id: repositoryId,
+			name: component.name,
+			location: {
+				create: {
+					file: component.location.file,
+					start: component.location.start,
+					end: component.location.end,
 				}
-			});
-			if (!prismaParent) {
-				await createElement(parent);
 			}
+		},
+		update: {
+			id: component.id,
+			repository_id: repositoryId,
+			name: component.name,
 		}
-		let locationId = currComponent?.location_id;
-		if (!locationId) {
-			const location = await prisma.location.create({
-				data: {
-					file: instance.location.file,
-					start: instance.location.start,
-					end: instance.location.end,
-				}
-			});
-			locationId = location.id;
-		}
-try {
-		const newElement = await prisma.componentElement.create({
-			data: {
-				id: instance.id,
-				repository_id: repositoryId,
-				name: instance.name,
-				location_id: locationId,
-				definition_id: definition.id
-			}
-		});
-
-		for (const attribute of instance.attributes) {
-			//if (attribute.type === 'text') {
-				let comp = !('id' in attribute.reference) ? await prisma.componentDefinition.findUnique({
-					where: {
-						name: attribute.reference.name
-					}
-				}) : await prisma.componentElement.findUnique({
-					where: {
-						id: attribute.reference.id,
-					}
-				});
-				if (!comp) {
-					if (!('id' in attribute.reference)) {
-						const definition = attribute.reference as HarmonyComponent;
-						comp = await prisma.componentDefinition.create({
-							data: {
-								name: definition.name,
-								repository_id: repositoryId,
-								location: {
-									create: {
-										file: definition.location.file,
-										start: definition.location.start,
-										end: definition.location.end
-									}
-								}
-							}
-						})
-					} else {
-						throw new Error("There was an error finding the component");
-					}
-				}
-
-				await prisma.componentAttribute.create({
-					data: {
-						name: attribute.name,
-						type: attribute.type,
-						value: attribute.value,
-						component_id: newElement.id, 
-						index: attribute.index,
-						location_id: comp?.location_id
-					}
-				})
-			//}
-		}
-	} catch (err) {console.log(instance)}
-
-		alreadyCreated.push(instance.id);
-	}
+	})))
 
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
-		await createElement(instance);
+		await prisma.componentElement.upsert({
+			where: {
+				id: instance.id
+			},
+			create: {
+				id: instance.id,
+				repository_id: repositoryId,
+				name: instance.name,
+				location: {
+					create: {
+						file: instance.location.file,
+						start: instance.location.start,
+						end: instance.location.end
+					}
+				},
+				definition: {
+					connect: {
+						id: instance.containingComponent.id
+					}
+				},
+				version: INDEXING_VERSION
+			},
+			update: {
+				id: instance.id,
+				repository_id: repositoryId,
+				name: instance.name,
+				definition: {
+					connect: {
+						id: instance.containingComponent.id
+					}
+				},
+				version: INDEXING_VERSION
+			}
+		});
+
+		await prisma.componentAttribute.deleteMany({
+			where: {
+				component_id: instance.id
+			}
+		});
+		try {
+			await Promise.all(instance.attributes.map(attribute => prisma.componentAttribute.create({
+				data: {
+					name: attribute.name,
+					type: attribute.type,
+					value: attribute.value,
+					component: {
+						connect: {
+							id: instance.id
+						}
+					},
+					index: attribute.index,
+					location: {
+						create: {
+							file: attribute.location.file,
+							start: attribute.location.start,
+							end: attribute.location.end
+						}
+					},
+					reference_component: {
+						connect: {
+							id: attribute.reference.id
+						}
+					}
+				}
+			})));
+		} catch(err) {
+			console.log(err);
+		}
+
+		//await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)
 	}
 }

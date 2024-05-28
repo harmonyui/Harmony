@@ -28,7 +28,7 @@
 		"persistent": true
 	  },
 	  "db:generate": {
-		"inputs": ["packages/db/lib/prisma/schema.prisma"],
+		"inputs": ["packages/db/prisma/schema.prisma"],
       	"outputs": ["packages/db/lib/generated"]
 	  },
 	  "db:deploy": {

@@ -2,22 +2,24 @@
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
-import { loadRequestSchema, publishRequestSchema, PublishResponse, updateRequestBodySchema, UpdateResponse, type LoadResponse } from '@harmony/util/src/types/network';
-import { createTRPCRouter, publicProcedure } from "../trpc";
-import { updateComponentIdsFromUpdates } from "../services/updator/local";
-import { getBranch, getRepository } from "./branch";
-import { getCodeSnippet, getFileContent } from "../services/indexor/github";
+import type { ComponentElement, ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
+import { loadRequestSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
+import type { PublishResponse, UpdateResponse, LoadResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
-import { indexFilesAndFollowImports } from "../services/indexor/indexor";
-import { prisma, Prisma } from "@harmony/db/lib/prisma";
+import type { Prisma } from "@harmony/db/lib/prisma";
+import { prisma } from "@harmony/db/lib/prisma";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
-import { BranchItem, Repository } from "@harmony/util/src/types/branch";
+import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
-import { createPullRequest } from "./pull-request";
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
-import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
-import { GitRepository } from "../repository/github";
+import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
+import { indexFilesAndFollowImports } from "../services/indexor/indexor";
+import { getCodeSnippet, getFileContent } from "../services/indexor/github";
+import { updateComponentIdsFromUpdates } from "../services/updator/local";
+import { createTRPCRouter, publicProcedure } from "../trpc";
+import type { GitRepository } from "../repository/github";
+import { createPullRequest } from "./pull-request";
+import { getBranch, getRepository } from "./branch";
 
 export const editorRouter = createTRPCRouter({
     loadProject: publicProcedure
@@ -131,7 +133,7 @@ export const editorRouter = createTRPCRouter({
                 }
             });
             if (branch === null) {
-                throw new Error("Cannot find branch with id " + branchId);
+                throw new Error(`Cannot find branch with id ${branchId}`);
             }
 
             const pullRequest = await prisma.pullRequest.findUnique({
@@ -146,7 +148,7 @@ export const editorRouter = createTRPCRouter({
 
             const repository = await getRepository({prisma, repositoryId: branch.repository_id});
             if (!repository) {
-                throw new Error("Cannot find repository with id " + branch.repository_id)
+                throw new Error(`Cannot find repository with id ${branch.repository_id}`)
             }
 
             const accountTiedToBranch = await prisma.account.findFirst({
@@ -160,7 +162,7 @@ export const editorRouter = createTRPCRouter({
             });
 
             if (!accountTiedToBranch) {
-                throw new Error("Cannot find account tied to branch " + branchId);
+                throw new Error(`Cannot find account tied to branch ${branchId}`);
             }
 
             await prisma.account.update({
@@ -185,7 +187,8 @@ export const editorRouter = createTRPCRouter({
                     let element = await prisma.componentElement.findFirst({
                         where: {
                             id: update.componentId,
-                            repository_id: branch.repository_id
+                            repository_id: branch.repository_id,
+							version: INDEXING_VERSION
                         }
                     });
                     if (!element) {
@@ -198,7 +201,7 @@ export const editorRouter = createTRPCRouter({
                             repository_id: branch.repository_id
                         }
                     });
-                    let error: string | undefined = undefined;
+                    let error: string | undefined;
 
                     //If the element was not created, or if this is text and it is not a static string 
                     //(i.e it is tied to a property or containing component) then this is an error that needs to be reverted
@@ -286,12 +289,12 @@ export const editorRouter = createTRPCRouter({
 
 			const branch = await getBranch({prisma, branchId});
 			if (!branch) {
-				throw new Error("Cannot find branch with id " + branchId);
+				throw new Error(`Cannot find branch with id ${  branchId}`);
 			}
 
 			const repository = await getRepository({prisma, repositoryId: branch.repositoryId});
 			if (!repository) {
-				throw new Error("Cannot find repository with id " + branch.repositoryId);
+				throw new Error(`Cannot find repository with id ${  branch.repositoryId}`);
 			}
 
 			const alreadyPublished = await prisma.pullRequest.findUnique({
@@ -335,7 +338,7 @@ export const editorRouter = createTRPCRouter({
 		})
 })
 
-async function indexForComponent(componentId: string, gitRepository: GitRepository) {
+async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<ComponentElement[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
@@ -348,7 +351,7 @@ async function indexForComponent(componentId: string, gitRepository: GitReposito
 	// all of the possible locations an attribute can be saved. Find a better way to do this
 	const locations = getLocationsFromComponentId(componentId);
 	const paths = locations.map(location => location.file);
-	await indexFilesAndFollowImports(paths, readFile, gitRepository.repository.id)
+	return indexFilesAndFollowImports(paths, readFile, gitRepository.repository.id)
 }
 
 const elementPayload = {
@@ -364,14 +367,15 @@ const elementPayload = {
 }
 const attributePayload = {
 	include: {
-		location: true
+		location: true,
 	}
 }
 type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof elementPayload>
 type ComponentAttributePrisma = Prisma.ComponentAttributeGetPayload<typeof attributePayload>
 interface FileUpdate {update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & {updatedTo: number}), updatedCode: string, attribute?: ComponentAttributePrisma};
 interface UpdateInfo {
-	component: ComponentElementPrisma, 
+	component: ComponentElementPrisma,
+	attributes: ComponentAttributePrisma[], 
 	update: ComponentUpdate, 
 	type: ComponentUpdate['type'], 
 	oldValue: string, 
@@ -385,12 +389,6 @@ async function createGithubBranch(gitRepository: GitRepository, branchName: stri
 
 async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: GitRepository, branch: BranchItem) {
 	const repository = gitRepository.repository;
-	const elementInstances = await prisma.componentElement.findMany({
-		where: {
-			repository_id: repository.id,
-		},
-		...elementPayload
-	})
 	
 	let fileUpdates: FileUpdate[] = [];
 
@@ -424,30 +422,59 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 			}
 		} else {
 			const getComponent = async (currId: string): Promise<ComponentElementPrisma | undefined> => {
-				const currElement = elementInstances.find(el => el.id === currId);
+				let currElement = await prisma.componentElement.findUnique({
+					where: {
+						id: currId
+					},
+					...elementPayload
+				})
 				if (!currElement) {
 					return undefined;
 				}
-				if (curr.type !== 'className') return currElement;
 
-				const attributes = await prisma.componentAttribute.findMany({
-					where: {
-						component_id: currElement.id
+				if (currElement.version !== INDEXING_VERSION) {
+					await indexForComponent(currId, gitRepository);
+					currElement = await prisma.componentElement.findUnique({
+						where: {
+							id: currId
+						},
+						...elementPayload
+					});
+					if (currElement && currElement.version !== INDEXING_VERSION) {
+						console.error(`Element ${currId} cannot update indexing (curr version ${currElement.version})`);
 					}
-				});
-
-				const shouldUpdateParent = !curr.isGlobal && attributes.findIndex(attr => attr.type === 'className' && attr.name === 'property') > -1; //&& attr.value.split(':')[1] === 'className');
-				if (shouldUpdateParent) {
-					const parentId = curr.componentId.split('#').slice(0, curr.componentId.split('#').length - 1).join('#');
-					const el = await getComponent(parentId);
-					if (!el) {
-						return currElement;
-					}
-
-					return el;
 				}
 
-				return currElement;
+				return currElement ?? undefined;
+			}
+			const getAttributes = async (component: ComponentElementPrisma): Promise<ComponentAttributePrisma[]> => {
+				const allAttributes = await prisma.componentAttribute.findMany({
+					where: {
+						component_id: component.id
+					},
+					...attributePayload
+				});
+				
+				//Sort the attributes according to layers with the bottom layer first for global
+				allAttributes.sort((a, b) => b.reference_component_id.split('#').length - a.reference_component_id.split('#').length);
+
+
+				const attributes: ComponentAttributePrisma[] = [];
+
+				//If this is global, find the first string attribute and get everything on that layer
+				for (const attribute of allAttributes) {
+					if (attribute.type === 'className' && attribute.name === 'string' && curr.isGlobal) {
+						attributes.push(...allAttributes.filter(attr => attr.reference_component_id === attribute.reference_component_id && attr.type === 'className'));
+					}
+
+					//Continue adding attributes for non-global or global's that don't already have classNames
+					if (!curr.isGlobal || attribute.type !== 'className' && !attributes.find(attr => attr.type === 'className' && attr.name === 'string')) {
+						attributes.push(attribute);
+					}
+				}
+
+				//Put the parents first for updating the code
+				return attributes.sort((a, b) => a.reference_component_id.split('#').length - b.reference_component_id.split('#').length);
 			}
 			//We update the parent when we have multiple of the same elements with different updates or the user has specified that it is not a global update
 			const component = await getComponent(curr.componentId);
@@ -455,10 +482,11 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				return prev;
 				//throw new Error('Cannot find component with id ' + curr.componentId);
 			}
+			const attributes = await getAttributes(component);
 			const font = curr.type === 'className' && curr.name === 'font' ? curr.value : undefined;
 			const value = curr.type === 'className' && curr.name === 'font' ? '' : curr.value;
 
-			const sameComponent = curr.type === 'className' ? prev.find(({component: other}) => other.id === component.id && other.parent_id === component.parent_id) : undefined;
+			const sameComponent = curr.type === 'className' ? prev.find(({component: other, type}) => type === 'className' && other.id === component.id && other.parent_id === component.parent_id) : undefined;
 			if (sameComponent) {
 				if (curr.name !== 'font') {
 					sameComponent.value += curr.value;
@@ -467,7 +495,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 					sameComponent.font = curr.value;
 				}
 			} else {
-				prev.push({update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font});
+				prev.push({update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font, attributes});
 			}
 		}
 		return prev;
@@ -476,10 +504,9 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 	for (const info of updateInfo) {
 	    //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
         // in the future we probably will use the actual branch
-		const result = await getChangeAndLocation(info, repository, gitRepository, elementInstances, repository.branch);
+		const results = await getChangeAndLocation(info, repository, gitRepository, repository.branch);
 
-        if (result)
-		fileUpdates.push(result);
+        fileUpdates.push(...results);
 	}
 
 	fileUpdates = fileUpdates.sort((a, b) => a.location.start - b.location.start);
@@ -496,8 +523,9 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 		if (last) {
 			const diff = last.updatedTo - last.end + last.diff;
 			if (last.updatedTo > newLocation.start + diff) {
-				throw new Error("Conflict in changes")
-				//console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`);
+				if (last.snippet === newLocation.snippet) continue;
+				//throw new Error("Conflict in changes")
+				console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`);
 			}
 
 			newLocation.start += diff;
@@ -524,8 +552,8 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 	await gitRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
 }
 
-async function getChangeAndLocation(update: UpdateInfo, repository: Repository, gitRepository: GitRepository, elementInstances: ComponentElementPrisma[], branchName: string): Promise<FileUpdate | undefined> {
-	const {component, type, oldValue: _oldValue} = update;
+async function getChangeAndLocation(update: UpdateInfo, repository: Repository, gitRepository: GitRepository, branchName: string): Promise<FileUpdate[]> {
+	const {component, type, oldValue: _oldValue, attributes} = update;
 	// const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
 	
 	// if (component === undefined ) {
@@ -533,12 +561,12 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 	// }
 	// const parent = elementInstances.find(el => el.id === component.parent_id);
 	
-	const attributes = await prisma.componentAttribute.findMany({
-		where: {
-			component_id: component.id,
-		},
-		...attributePayload
-	});
+	// const attributes = await prisma.componentAttribute.findMany({
+	// 	where: {
+	// 		component_id: component.id,
+	// 	},
+	// 	...attributePayload
+	// });
 
 	interface LocationValue {
 		location: ComponentLocation,
@@ -550,9 +578,10 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		return {location: attribute?.location || _component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic};
 	}
 
-	let result: FileUpdate | undefined;
+	const results: FileUpdate[] = [];
 
-	const addCommentToJSXElement = ({location, code, commentValue, attribute}: {location: ComponentLocation, code: string, commentValue: string, attribute: ComponentAttributePrisma | undefined}) => {
+	const addCommentToJSXElement = async ({location, commentValue, attribute}: {location: ComponentLocation, commentValue: string, attribute: ComponentAttributePrisma | undefined}): Promise<FileUpdate> => {
+		const code = await getCodeSnippet(gitRepository)(component.location, branchName);
 		const comment = `/** ${commentValue} */`;
 		const match = /<([a-zA-Z0-9]+)(\s?)/.exec(code);
 		if (!match) {
@@ -579,11 +608,11 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		isDefinedAndDynamic: boolean;
 	}
 	//This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
-	const addNewClassOrComment = ({location, code, newClass, oldClass, commentValue, attribute, isDefinedAndDynamic}: AddClassName) => {
+	const addNewClassOrComment = async ({location, code, newClass, oldClass, commentValue, attribute, isDefinedAndDynamic}: AddClassName): Promise<FileUpdate> => {
 		if (oldClass === undefined) {
 			//If this is a dynamic property then just add a comment
-			if (isDefinedAndDynamic) {
-				return addCommentToJSXElement({location, code, commentValue, attribute});
+			if (isDefinedAndDynamic || code.includes('className=')) {
+				return addCommentToJSXElement({location, commentValue, attribute});
 			}
 
 			const match = /^<([a-zA-Z0-9]+)(\s?)/.exec(code);
@@ -626,22 +655,15 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 				const updatedTo = update.value.length + start;
 				if (start < 0) {
 					const commentValue = `Change inner text for ${component.name} tag from ${oldValue} to ${update.value}`;
-					result = addCommentToJSXElement({location, code: elementSnippet, attribute: textAttribute, commentValue})
+					results.push(await addCommentToJSXElement({location, attribute: textAttribute, commentValue}))
 				} else {
-					result = {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update: update.update, dbLocation: location, attribute: textAttribute};
+					results.push({location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update: update.update, dbLocation: location, attribute: textAttribute});
 				}
 			}
 			break;
         case 'className':
 			{
-				const classNameAttribute = attributes.find(attr => attr.type === 'className');
-				const locationAndValue = getLocationAndValue(classNameAttribute, component);
-				//TODO: This is temporary. It shouldn't have 'className:'
-				locationAndValue.value = locationAndValue.value?.replace('className:', '');
-				const {location, value, isDefinedAndDynamic} = locationAndValue;
-				
-				const elementSnippet = await getCodeSnippet(gitRepository)(location, branchName);
-
+				const classNameAttributes = attributes.filter(attr => attr.type === 'className');
 
 				if (repository.cssFramework === 'tailwind') {
 					//This assumes that the update values have already been merged and converted to name:value pairs
@@ -650,30 +672,118 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					}`);
 					const newClasses = converted.nodes.reduce((prev, curr) => prev + curr.tailwindClasses.join(' '), '')
 
-					//TODO: Make the tailwind prefix part dynamic
-					const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
-					
-					const mergedIt = mergeClassesWithScreenSize(oldClasses, newClasses, DEFAULT_WIDTH);
-					let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
+					type AttributeUpdate = AddClassName;
+					const attributeUpdates: AttributeUpdate[] = [];
 
-					let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
-					mergedClasses = update.font ? `${update.font} ${mergedClasses}` : mergedClasses;
-					withPrefix = update.font ? `${update.font} ${withPrefix}` : withPrefix;
+					const mergeClassesWithScreenSizeWithPrefix = (originalClass: string | undefined, newClass: string, screenSize: number, prefix: string | undefined) => {
+						const merged = mergeClassesWithScreenSize(prefix ? originalClass?.replaceAll(prefix, '') : originalClass, prefix ? newClass.replaceAll(prefix, '') : newClass, screenSize);
+						const withPrefix = prefix ? addPrefixToClassName(merged, prefix) : merged;
+
+						return withPrefix;
+					}
+
+					const getAttribute = async (attribute: ComponentAttributePrisma, getNewValueAndComment: (oldValue: string | undefined) => {newClass: string, commentValue: string}): Promise<AttributeUpdate> => {
+						const locationAndValue = getLocationAndValue(attribute, component);
+						//TODO: This is temporary. It shouldn't have 'className:'
+						locationAndValue.value = locationAndValue.value?.replace('className:', '');
+						const {location, value, isDefinedAndDynamic} = locationAndValue; 
+						const elementSnippet = await getCodeSnippet(gitRepository)(location, branchName);
+
+						//TODO: Make the tailwind prefix part dynamic
+						const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
+						const {newClass, commentValue} = getNewValueAndComment(oldClasses);
+						
+						return {location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute};
+					}
+
+					const getAttributeFromClass = async (attribute: ComponentAttributePrisma, _newClass: string): Promise<AttributeUpdate> => {
+						return getAttribute(attribute, (oldClasses) => {
+							const mergedIt = mergeClassesWithScreenSize(oldClasses, _newClass, DEFAULT_WIDTH)
+							const newClass = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
+							const commentValue = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
+							
+							return {newClass, commentValue};
+						});
+					}
+
+					const addAttribute = (attribute: AttributeUpdate): void => {
+						const sameAttributeLocation = attributeUpdates.find(attr => attr.location === attribute.location);
+						if (sameAttributeLocation) {
+							const newMerged = mergeClassesWithScreenSizeWithPrefix(sameAttributeLocation.newClass, attribute.newClass, DEFAULT_WIDTH, repository.tailwindPrefix);
+							//const oldMerged = mergeClassesWithScreenSizeWithPrefix(sameAttributeLocation.oldClass, attribute.oldClass || '', DEFAULT_WIDTH, repository.tailwindPrefix);
+							sameAttributeLocation.newClass = newMerged;
+							//sameAttributeLocation.oldClass = oldMerged;
+							return;
+						}
+
+						attributeUpdates.push(attribute);
+					}
+
+					const defaultClassName = classNameAttributes.find(attr => attr.name === 'string') || classNameAttributes[0];
+					for (const newClass of newClasses.split(' ')) {
+						let addedAttribue = false;
+						for (const classNameAttribute of classNameAttributes) {
+							if (classNameAttribute.name !== 'string') continue;
+							const attribute = await getAttributeFromClass(classNameAttribute, newClass);
+							if (attribute.oldClass && attribute.newClass.split(' ').length === attribute.oldClass.split(' ').length) {
+								addAttribute(attribute);
+								addedAttribue = true;
+								break;
+							}
+						}
+						if (!addedAttribue) {
+							addAttribute(await getAttributeFromClass(defaultClassName, newClass));
+						}
+					}
+
+					if (update.font) {
+						const sameAttributeLocation = attributeUpdates.find(attr => attr.location === defaultClassName.location);
+						if (sameAttributeLocation) {
+							sameAttributeLocation.newClass += ` ${update.font}`;
+						} else {
+							attributeUpdates.push(await getAttribute(defaultClassName, (oldClasses) => {
+								const value = oldClasses ? `${oldClasses} ${update.font}` : update.font || '';
+
+								return {
+									newClass: value,
+									commentValue: update.font || ''
+								}
+							}));
+						}
+					}
+
+					results.push(...await Promise.all(attributeUpdates.map(attribute => addNewClassOrComment(attribute))));
+
+					//TODO: Make the tailwind prefix part dynamic
+					// const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
 					
-					result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute, isDefinedAndDynamic});
+					// const mergedIt = mergeClassesWithScreenSize(oldClasses, newClasses, DEFAULT_WIDTH);
+					// let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
+
+					// let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
+					// mergedClasses = update.font ? `${update.font} ${mergedClasses}` : mergedClasses;
+					// withPrefix = update.font ? `${update.font} ${withPrefix}` : withPrefix;
+					
+					// result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute, isDefinedAndDynamic});
 				} else {
+					const locationAndValue = getLocationAndValue(classNameAttributes[0], component);
+					//TODO: This is temporary. It shouldn't have 'className:'
+					locationAndValue.value = locationAndValue.value?.replace('className:', '');
+					const {location} = locationAndValue;
 					let valuesNewLined = update.value.replaceAll(';', ';\n');
 					valuesNewLined = update.font ? `font className: ${update.value}\n\n${valuesNewLined}` : valuesNewLined;
-					result = addCommentToJSXElement({location, commentValue: valuesNewLined, code: elementSnippet, attribute: classNameAttribute});
+					results.push(await addCommentToJSXElement({location, commentValue: valuesNewLined, attribute: classNameAttributes[0]}));
 				}
 			}
             break;
+		case 'component':
+			break;
 		default:
 			throw new Error("Invalid use case");
 			
 	}
 
-	return result;
+	return results;
 }
 
 const converter = new TailwindConverter({
@@ -695,22 +805,22 @@ function addPrefixToClassName(className: string, prefix: string): string {
 		if (klasses.includes(":")) {
 			const [before, after] = klasses.split(":");
 			if (!before || !after) {
-				throw new Error("Invalid class " + klasses);
+				throw new Error(`Invalid class ${  klasses}`);
 			}
 			return [`${before}:`, after];
 		} else if (klasses.startsWith('-')) {
 			return ['-', klasses.substring(1)];
-		} else {
+		} 
 			return ['', klasses];
-		}
+		
 	});
 
 	const withPrefix: [string, string][] = listClass.map((klasses) => {
 		if (!klasses.includes(prefix)) {
 			return [klasses[0], prefix + klasses[1]];
-		} else {
+		} 
 			return klasses;
-		}
+		
 	});
 
 	const final = withPrefix.map(str => `${str[0]}${str[1]}`).join(' ');

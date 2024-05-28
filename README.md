@@ -14,25 +14,30 @@ Harmony setup is the npm package that users install in their app. It gets things
 
 This means that all api calls in the editor are made to this fly.io deployment.
 
-#### HarmonyProvider
+#### Component Updating
 
-This is where brain of the editor is. It is the source of state and logic. Any state/logic that is shared between either the Inspector or panel should live here.
+__Steps for making new update functionality (everything but CSS updates (see below))__
 
-#### Inspector
+1. Create the UX experience that will be getting the needed user input to update the component
+2. Create a `ComponentUpdateWithoutGlobal` object with the componentId of the element being updated, type of update (text, component, etc.), the name (additional identifying information about this update), the oldValue (the component's current value) and the value (the new value)
+3. Pass this object into the `onAttributeChanges` function from `useHarmonyContext`
+4. Add in logic in `makeUpdates` in `harmony-provider.tsx` that takes in the update object and actually makes a change to the DOM given the update type and value.
 
-This is where the functionality for any direct DOM manipulation lives. That means hovering over a component, selecting, changing text, drag and drop, etc.
+__Steps to update CSS (type className)__
 
-#### HarmonyPanel
+Toolbar Item
 
-This is the source of the toolbar/side-panel.
+1. Add a name describing the property/properties you are changing to the arrays correlating to which element type this toolbar item will show up for in `toolbar-panel.tsx`. For example, if you are adding a border popup toolbar item that allows the user to edit various border properties, and this toolbar item should show up when selecting a button element, add `borderAttrs` to the `buttonTools` array.
+2. Add the necessary component that changes this attribute to the `commonTools` in `useToolbarTools`.
+3. Do step 1. for adding a new Attribute Item
 
-#### ComponentUpdater
+Attribute Item
 
-Every DOM manipulation is abstracted into a "command", which is a `ComponentUpdate` object. This allows DOM manipulation to have a single dependency and thus easier to manage.
+1. Add the names of the all the styles affected by this new attribute in the `attributeTools` array in `attribute-panel.tsx`. Put any color related attributes in the `colorTools` array. For adding a border attribute, you would put `borderWidth`, `borderRadius` in the `attributeTools` array and `borderColor` in the `colorTools` array.
+2. Add the attribute field in the `ComponentAttributePanel` component. You can use any of the helper components.
+3. Make sure and use the `onAttributeChange` and `getAttribute` functions from `useComponentAttribute`. This will allow you to get the correct value and update it properly.
 
-#### Components
-
-Core components are contained in `packages/ui/src/core`.
+Under the hood, `onAttributeChange` takes the name and value of the attribute being changed and creates a `ComponentUpdate` object to send to the component updater, like in the above steps for making new update functionality.
 
 ### Backend
 

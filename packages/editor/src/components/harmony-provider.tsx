@@ -1,4 +1,4 @@
-/* eslint-disable @typescript-eslint/require-await -- ok*/
+ 
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
 /* eslint-disable import/no-cycle -- TODO: Fix later */
@@ -15,16 +15,14 @@ import type { PullRequest } from "@harmony/util/src/types/branch";
 import type { Font } from "@harmony/util/src/fonts";
 import $ from 'jquery';
 import {DEFAULT_WIDTH as WIDTH, DEFAULT_HEIGHT as HEIGHT} from '@harmony/util/src/constants';
+import { loadProject, publishProject, saveProject } from "../data-layer";
 import { HarmonyPanel} from "./panel/harmony-panel";
 import { getBoundingRect } from "./snapping/calculations";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import type { Setup } from "./harmony-setup";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
-import { loadProject, publishProject, saveProject } from "../data-layer";
-import { DisplayMode, HarmonyContext, viewModes } from "./harmony-context";
-
-export type SelectMode = 'scope' | 'tweezer';
-export type ComponentUpdateWithoutGlobal = Omit<ComponentUpdate, 'isGlobal'>
+import type { ComponentUpdateWithoutGlobal, DisplayMode, SelectMode} from "./harmony-context";
+import { HarmonyContext, viewModes } from "./harmony-context";
 
 export function findElementFromId(componentId: string, childIndex: number): HTMLElement | undefined {
 	const selector = `[data-harmony-id="${componentId}"]`;
@@ -136,7 +134,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				// 	},
 				// });
 
-				// eslint-disable-next-line @typescript-eslint/no-shadow -- We are ok here
+				 
 				const {updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo} = response;
 				setAvailableIds(updates);
 				setBranches(branches);
@@ -222,7 +220,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const onFlexClick = useCallback(() => {
 		if (!selectedComponent) return;
 
-		// eslint-disable-next-line @typescript-eslint/no-non-null-assertion -- ok
+		 
 		const parent = selectDesignerElement(selectedComponent).parentElement!;
 		const flexEnabled = parent.dataset.harmonyFlex;
 		if (flexEnabled) {
@@ -442,7 +440,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	return (
 		<>
-			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, pullRequest, setPullRequest, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showWelcomeScreen, setShowWelcomeScreen, showGiveFeedback, setShowGiveFeedback, isDemo, currentBranch: branches.find(branch => branch.id === branchId), behaviors, setBehaviors, isGlobal, setIsGlobal, onComponentHover: setHoveredComponent, onComponentSelect: setSelectedComponent, selectedComponent}}>
+			{<HarmonyContext.Provider value={{branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, pullRequest, setPullRequest, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showWelcomeScreen, setShowWelcomeScreen, showGiveFeedback, setShowGiveFeedback, isDemo, currentBranch: branches.find(branch => branch.id === branchId), behaviors, setBehaviors, isGlobal, setIsGlobal, onComponentHover: setHoveredComponent, onComponentSelect: setSelectedComponent, selectedComponent, onAttributesChange}}>
 				{displayMode && displayMode !== 'preview-full' ? <>
 					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
 						<div style={{width: `${WIDTH*scale}px`, minHeight: `${HEIGHT*scale}px`}}>
@@ -571,7 +569,6 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 
 	useEffect(() => {
 		window.addEventListener('beforeunload', onLeave);
-
 		return () => { window.removeEventListener('beforeunload', onLeave); };
 	}, []);
 
@@ -727,11 +724,11 @@ const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
 
 function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent: HTMLElement, fonts: Font[] | undefined) {
 	const id = el.dataset.harmonyId;
-	const componentId = el.dataset.harmonyComponentId;
-	if (!id || !componentId) {
+	if (!id) {
 		return;
 	}
-
+	const componentId = id.split('#')[id.split('#').length - 1];
+	
 	let translated = translateUpdatesToCss(updates);
 
 	//TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
@@ -748,8 +745,6 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 		return update;
 	})
 
-	//TODO: make the value string splitting be a regex thing with groups
-
 	//Updates that should happen just for the element (reordering)
 	for (const update of translated) {
 		const parent = el.parentElement;
@@ -757,26 +752,42 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		if (update.type === 'component') {
 			if (update.name === 'reorder') {
-				const [fromStr, toStr] = update.value.split(':');
-				if (!fromStr || !toStr) throw new Error("Invalid update reorder value " + update.value);
-				const [_, from] = fromStr.split('=');
-				const [_2, to] = toStr.split('=');
-
-				if (!from || !to) throw new Error("Invalid update reorder value " + update.value);
 
 				
-				const fromNum = parseInt(from);
-				const toNum = parseInt(to);
-				if (isNaN(fromNum) || isNaN(toNum) || fromNum < 0 || toNum < 0 || fromNum >= parent.children.length || toNum >= parent.children.length)
-					throw new Error(`Invalid from and to numbers: ${fromNum}, ${toNum}`);
+				const {oldValue, value} = update;
+				const {parentId: oldParent, childIndex: oldChildIndex}:{parentId: string, childIndex: number} = JSON.parse(oldValue);
+				const {parentId: newParent, childIndex: newChildIndex}:{parentId: string, childIndex: number} = JSON.parse(value);
+				const error = `makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`
+				
+				const validateId = (id: string) => {
+					return id.trim().length > 0;
+				}
 
-				if (fromNum === toNum) continue;
+				if (!validateId(update.componentId) || !validateId(oldParent) || !validateId(newParent)) {
+					throw new Error(error);
+				}
 
-				const fromElement = parent.children[fromNum];
-				//if (!fromElement) throw new Error("Need from element");
-				//+1 because we need to get the next sibiling for the insertBefore
-				const toElement = parent.children[fromNum < toNum ? toNum + 1 : toNum]// || null;
-				parent.insertBefore(fromElement, toElement);
+				const oldElement = findElementFromId(update.componentId, oldChildIndex);
+
+				// Verify that we could find the old element to be deleted from the DOM
+				if (!oldElement) {
+					throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${oldChildIndex}`);
+				}
+
+				oldElement.remove();
+				
+				// Add element to new parent
+				const newElement = document.querySelector(`[data-harmony-id="${newParent}"]`);
+				if (newElement) {
+					const children = Array.from(newElement.children);
+					if (newChildIndex >= 0 && newChildIndex < children.length) {
+						newElement.insertBefore(oldElement, children[newChildIndex]);
+					} else {
+						newElement.appendChild(oldElement);
+					}
+				} else {
+					throw new Error(`makeUpdates: Cannot find the elements parent with data-harmony-id: ${newParent}`);
+				}
 			}
 		}
 
@@ -791,12 +802,6 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				textNodes[index].textContent = update.value;
 			}
 		}
-
-		//TODO: Find a better way to exclude margin class names from being applied to all elements.
-		//Probably the solution is figure out what needs to applied to all elements by indexing the code base before hand
-		// if (update.type === "className" && update.name.includes('margin')) {
-		// 	el.style[update.name as unknown as number]= update.value;
-		// }
 	}
 
 	//Updates that should happen for every element in a component

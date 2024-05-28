@@ -36,13 +36,8 @@ export const getComputedValue = (element: HTMLElement | StylePropertyMapReadOnly
 
 	if (styleValue instanceof CSSKeywordValue) {
 		return styleValue.value;
-	} else if (styleValue instanceof CSSUnitValue) {
-		const unit = styleValue.unit === 'percent' ? '%' : styleValue.unit;
-		return `${styleValue.value}${unit}`;
-	} else {
-		//console.log("I'm not sure what to do this get-the-old-value scenario...");
-		return styleValue.toString();
 	}
+	return styleValue.toString();
 }
 
 const updateElementValues = (element: HTMLElement, properties: string[], updatedElements: UpdatedElement[]) => {

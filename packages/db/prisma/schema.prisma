@@ -98,8 +98,10 @@ model ComponentElement {
 	parent ComponentElement? @relation(name: "children", fields: [parent_id], references: [id])
 	definition_id String
 	definition ComponentDefinition @relation(name: "definition", fields: [definition_id], references: [id])
-	attributes ComponentAttribute[]
+	attributes ComponentAttribute[] @relation(name: "component")
+	reference_attributes ComponentAttribute[] @relation(name: "reference")
 	updates ComponentUpdate[]
+	version String
 
 	@@id([id])
 }
@@ -119,7 +121,9 @@ model ComponentAttribute {
 	name String
 	value String
 	component_id String
-	component ComponentElement @relation(fields: [component_id], references: [id], onDelete: Cascade)
+	component ComponentElement @relation(name: "component", fields: [component_id], references: [id], onDelete: Cascade)
+	reference_component_id String
+	reference_component ComponentElement @relation(name: "reference", fields: [reference_component_id], references: [id], onDelete: Cascade)
 	location_id String
 	location Location @relation(fields: [location_id], references: [id])
 	index Int
@@ -128,7 +132,7 @@ model ComponentAttribute {
 model ComponentDefinition {
 	id String @id @default(cuid())
 	repository_id String
-	name String @unique
+	name String
 	children ComponentElement[] @relation("definition")
 	location_id String @unique
 	location Location @relation(fields: [location_id], references: [id])

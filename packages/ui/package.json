@@ -27,11 +27,13 @@
     "react-aria": "^3.27.0",
     "react-dom": "^18",
     "react-stately": "^3.23.0",
+    "react-syntax-highlighter": "^15.5.0",
     "zod": "^3.22.4"
   },
   "devDependencies": {
     "@types/react": "^18",
     "@types/react-dom": "^18",
+    "@types/react-syntax-highlighter": "^15.5.11",
     "eslint": "^8.48.0",
     "typescript": "^5.2.2",
     "prettier": "^3.0.3",

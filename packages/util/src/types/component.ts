@@ -33,7 +33,8 @@ export const attributeSchema = z.object({
 	name: z.string(),
 	value: z.string(),
 	index: z.number(),
-	reference: z.union([z.object({name: z.string(), isComponent: z.literal(true)}), z.object({id: z.string(), isComponent: z.boolean()})]),
+	location: locationSchema,
+	reference: z.object({id: z.string()})
 })
 export type Attribute = z.infer<typeof attributeSchema>;
 
