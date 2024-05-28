@@ -455,7 +455,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 					...attributePayload
 				});
 				
-				//Sort the attributes according to layers with the bottom layer first
+				//Sort the attributes according to layers with the bottom layer first for global
 				allAttributes.sort((a, b) => b.reference_component_id.split('#').length - a.reference_component_id.split('#').length);
 
 
@@ -471,7 +471,8 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 					attributes.push(attribute);
 				}
 
-				return attributes;
+				//Put the parents first for updating the code
+				return attributes.sort((a, b) => a.reference_component_id.split('#').length - b.reference_component_id.split('#').length);
 			}
 			//We update the parent when we have multiple of the same elements with different updates or the user has specified that it is not a global update
 			const component = await getComponent(curr.componentId);
@@ -721,7 +722,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 						for (const classNameAttribute of classNameAttributes) {
 							if (classNameAttribute.name !== 'string') continue;
 							const attribute = await getAttributeFromClass(classNameAttribute, newClass);
-							if (attribute.newClass.split(' ').length === newClass.split(' ').length) {
+							if (attribute.oldClass && attribute.newClass.split(' ').length === attribute.oldClass.split(' ').length) {
 								addAttribute(attribute);
 								addedAttribue = true;
 								break;

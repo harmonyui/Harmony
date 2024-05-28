@@ -322,6 +322,120 @@ describe("indexor", () => {
             expectLocationOfString(file, componentElements[8].attributes[1].location, '"bg-primary"');
         })
 
+        it("Should handle object properties", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/objectProperties.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(7);
+
+            //div -> layer 1
+            expect(componentElements[0].attributes.length).toBe(3);
+            expect(componentElements[0].attributes[1].type).toBe('className');
+            expect(componentElements[0].attributes[1].name).toBe('string');
+            expect(componentElements[0].attributes[1].value).toBe('bg-white');
+            expectLocationOfString(file, componentElements[0].attributes[1].location, '"bg-white"')
+            expect(componentElements[0].attributes[2].type).toBe('className');
+            expect(componentElements[0].attributes[2].name).toBe('property');
+            expect(componentElements[0].attributes[2].value).toBe('className:className');
+            expectLocationOfString(file, componentElements[0].attributes[2].location, 'className')
+
+            //h1 -> layer 1
+            expect(componentElements[1].attributes.length).toBe(2);
+            expect(componentElements[1].attributes[1].type).toBe('className');
+            expect(componentElements[1].attributes[1].name).toBe('string');
+            expect(componentElements[1].attributes[1].value).toBe('text-lg');
+            expectLocationOfString(file, componentElements[1].attributes[1].location, '"text-lg"');
+
+            expect(componentElements[1].attributes[0].type).toBe('text');
+            expect(componentElements[1].attributes[0].name).toBe('property');
+            expect(componentElements[1].attributes[0].value).toBe('label');
+            expectLocationOfString(file, componentElements[1].attributes[0].location, 'props.label');
+
+            //h2
+            expect(componentElements[2].attributes.length).toBe(2);
+            expect(componentElements[2].attributes[0].type).toBe('text');
+            expect(componentElements[2].attributes[0].name).toBe('string');
+            expect(componentElements[2].attributes[0].value).toBe('Yes');
+            expectLocationOfString(file, componentElements[2].attributes[0].location, '"Yes"');
+
+            expect(componentElements[2].attributes.length).toBe(2);
+            expect(componentElements[2].attributes[1].type).toBe('className');
+            expect(componentElements[2].attributes[1].name).toBe('string');
+            expect(componentElements[2].attributes[1].value).toBe('flex');
+            expectLocationOfString(file, componentElements[2].attributes[1].location, '"flex"');
+
+            //div -> layer 2
+            expect(componentElements[4].attributes.length).toBe(3);
+            expect(componentElements[4].attributes[1].type).toBe('className');
+            expect(componentElements[4].attributes[1].name).toBe('string');
+            expect(componentElements[4].attributes[1].value).toBe('bg-white');
+            expectLocationOfString(file, componentElements[4].attributes[1].location, '"bg-white"')
+            expect(componentElements[4].attributes[2].type).toBe('className');
+            expect(componentElements[4].attributes[2].name).toBe('string');
+            expect(componentElements[4].attributes[2].value).toBe('bg-blue-50');
+            expectLocationOfString(file, componentElements[4].attributes[2].location, '"bg-blue-50"')
+
+            //h1
+            expect(componentElements[5].attributes.length).toBe(2);
+            expect(componentElements[5].attributes[0].type).toBe('text');
+            expect(componentElements[5].attributes[0].name).toBe('string');
+            expect(componentElements[5].attributes[0].value).toBe('Hello there');
+            expectLocationOfString(file, componentElements[5].attributes[0].location, '"Hello there"');
+        })
+
+        it("Should be able to handle complex dynamic instances", () => {
+            const componentElements: ComponentElement[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/complexDynamicCases.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+
+            //Comp
+            // expect(componentElements[2].attributes.length).toBe(4);
+            // expect(componentElements[2].attributes[0].type).toBe('className');
+            // expect(componentElements[2].attributes[0].name).toBe('string');
+            // expect(componentElements[2].attributes[0].value).toBe('outline');
+            // expectLocationOfString(file, componentElements[2].attributes[0].location, '"outline"');
+
+            // expect(componentElements[2].attributes[1].type).toBe('className');
+            // expect(componentElements[2].attributes[1].name).toBe('property');
+            // expect(componentElements[2].attributes[1].value).toBe('className:size');
+            // expectLocationOfString(file, componentElements[2].attributes[1].location, 'size');
+
+            // expect(componentElements[2].attributes[2].type).toBe('className');
+            // expect(componentElements[2].attributes[2].name).toBe('string');
+            // expect(componentElements[2].attributes[2].value).toBe('bg-sky-50');
+            // expectLocationOfString(file, componentElements[2].attributes[2].location, '"bg-sky-50"');
+
+            //div -> ScrollView
+            expect(componentElements[6].attributes.length).toBe(4);
+            expect(componentElements[6].attributes[2].type).toBe('className');
+            expect(componentElements[6].attributes[2].name).toBe('string');
+            expect(componentElements[6].attributes[2].value).toBe('flex');
+            expectLocationOfString(file, componentElements[6].attributes[2].location, '"flex"');
+            expect(componentElements[6].attributes[3].type).toBe('className');
+            expect(componentElements[6].attributes[3].name).toBe('string');
+            expect(componentElements[6].attributes[3].value).toBe('dark:hover:text-sm');
+            expectLocationOfString(file, componentElements[6].attributes[3].location, '"dark:hover:text-sm"');
+
+            expect(componentElements[7].attributes.length).toBe(5);
+            expect(componentElements[7].attributes[3].type).toBe('className');
+            expect(componentElements[7].attributes[3].name).toBe('string');
+            expect(componentElements[7].attributes[3].value).toBe('styles');
+            expectLocationOfString(file, componentElements[7].attributes[3].location, '"styles"');
+
+            expect(componentElements[7].attributes[0].type).toBe('text');
+            expect(componentElements[7].attributes[0].name).toBe('string');
+            expect(componentElements[7].attributes[0].value).toBe('Hello');
+            expectLocationOfString(file, componentElements[7].attributes[0].location, '"Hello"');
+        })
+
         //TODO: Finish this
         it("Should handle imports from various files", () => {
             const componentElements: ComponentElement[] = [];
@@ -596,7 +710,127 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     const MainComponent = () => {
         return <InnerComponent2 innerClass={"bg-primary"}/>
     }
-    
+    `,
+    'app/objectProperties.tsx': `
+    const JourneyCard = (props) => {
+        const {className, other} = props;
+        const classesActual = {
+            header: "text-lg",
+            container: "bg-white",
+            otherClass: "flex",
+            idThing: 'header',
+        }
+        const classes = {
+            header: classesActual.header,
+            container: classesActual.container
+        }
+        const {otherClass} = classesActual;
+        const headerId = classesActual.idThing;
+        const labelId = "label";
+        const {[labelId]: anotherLabel} = {
+            label: "Yes"
+        }
+        return <div className={cn("flex", classes.container, buttonVariants({className}))}>
+            <h1 className={classes[headerId]}>{props.label}</h1>
+            <h2 className={otherClass}>{anotherLabel}</h2>
+        </div>
+    }
+
+    const App = () => {
+        return (
+            <JourneyCard className="bg-blue-50" label="Hello there"/>
+        )
+    }
+    `,
+    'app/complexDynamicCases.tsx': `
+    import * as React from "react"
+    import { Slot } from "@radix-ui/react-slot"
+    import { cva, type VariantProps } from "class-variance-authority"
+    import styles from './scroll-view.module.css'
+
+    import { cn } from "@/lib/utils"
+
+    const buttonVariants = cva(
+    "inline-flex items-center justify-center whitespace-nowrap rounded-md text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:bg-gray-100 disabled:text-gray-400 disabled:!shadow-none",
+    {
+        variants: {
+        variant: {
+            default:
+            "bg-primary text-primary-foreground shadow hover:bg-primary/90",
+            destructive:
+            "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+            outline:
+            "border border-input bg-background shadow-sm hover:bg-accent hover:text-accent-foreground",
+            secondary:
+            "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
+            ghost: "hover:bg-accent hover:text-accent-foreground",
+            link: "text-primary underline-offset-4 hover:underline",
+        },
+        size: {
+            default: "h-9 px-4 py-2",
+            sm: "h-8 rounded-md px-3 text-xs",
+            lg: "h-10 rounded-md px-8",
+            xl: "h-12 text-md rounded-md px-8",
+            icon: "h-9 w-9",
+        },
+        },
+        defaultVariants: {
+        variant: "default",
+        size: "default",
+        },
+    }
+    )
+
+    export interface ButtonProps
+    extends React.ButtonHTMLAttributes<HTMLButtonElement>,
+        VariantProps<typeof buttonVariants> {
+    asChild?: boolean
+    }
+
+    const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+    ({ className, variant, size, asChild = false, ...props }, ref) => {
+        const Comp = asChild ? Slot : "button"
+        return (
+        <Comp
+            className={cn(buttonVariants({ variant, size, className }))}
+            ref={ref}
+            {...props}
+        />
+        )
+    }
+    )
+    Button.displayName = "Button"
+
+    export { Button, buttonVariants }
+
+    const ButtonInstance = () => {
+        return (<Button className="bg-sky-50" variant="outline"/>)
+    }
+
+    type Props = {
+        className?: string
+        contentClass?: string
+        children: React.ReactNode
+    }
+
+    export function ScrollView({ children, className, contentClass }: Props) {
+        const classStyles = \`\${styles.ScrollView} \${className ?? "dark:hover:text-sm"}\`
+        const contentStyles = \`\${styles.Content} \${contentClass ?? ''}\`
+
+        return (
+            <div className={classStyles}>
+                <div className={contentStyles}>{children}</div>
+            </div>
+        )
+    }
+
+    const ScrollViewInstance = () => {
+        const child = "Hello"
+        return (
+            <ScrollView className="flex" contentClass={"styles"}>{child}</ScrollView>
+        )
+    }
+
     `
 } as const;
 
