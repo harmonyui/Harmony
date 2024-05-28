@@ -145,7 +145,7 @@ export class GithubRepository implements GitRepository {
             owner: this.repository.owner,
             repo: this.repository.name,
             path: cleanFile,
-            ref,
+            ref: refKey,
         });
 
         if (Array.isArray(fileInfo)) {

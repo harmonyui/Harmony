@@ -235,6 +235,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										if (attribute.type === 'text') {
 											newAttribute.value = getAttributeValue(newAttribute);
 											newAttribute.type = 'text';
+											newAttribute.index = attribute.index;
 										} else if (attribute.type === 'property') {
 											const name = getAttributeName(attribute);
 											const value = getAttributeValue(newAttribute);
@@ -267,7 +268,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								}
 								return '';
 							}
-							console.log(`Connecting ${child.name} to ${parent.name} ${recurseConnectLog(parent)}`)
+							//console.log(`Connecting ${child.name} to ${parent.name} ${recurseConnectLog(parent)}`)
 							const attributes = connectAttributesToParent(child.attributes, parent);
 							const newElement = {...child, attributes, getParent: () => parent};
 							elementInstances.push(newElement);
@@ -336,36 +337,131 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							});
 						}
 
-						//console.log(path);
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
 						const jsxElementDefinition = createJSXElementDefinition(jsPath.node, parentElement, containingComponent, file, originalCode);
 
 						const parentComponent = containingComponent;
+
+						type AttributeType = 'text' | 'className' | 'property';
 						
 						if (jsxElementDefinition) {
-							const createIdentifierAttribute = (node: t.Identifier, type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
-								const value = node.name;
-								const binding = jsPath.scope.getBinding(value);
-								if (binding && ['const', 'let', 'var'].includes(binding.kind) && t.isVariableDeclarator(binding.path.node) && binding.path.node.init) {
-									return createExpressionAttribute(binding.path.node.init, type, name)
-								}
-
+							const createPropertyAttribute = (node: t.Node, type: AttributeType, name: string | undefined, propertyName: string | undefined): Attribute => {
 								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
 								const location: ComponentLocation = {
 									file,
 									start: node.start,
 									end: node.end
 								}
-								return [{id: '', type, name: 'property', value: name ? `${name}:${value}` : value || 'undefined', reference: jsxElementDefinition, index: -1, location}];
+								return createAttribute(type, 'property', name, propertyName, location);
 							}
-							const createParamAttribute = (params: t.Node[], type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
+							const createIdentifierAttribute = (node: t.Identifier, type: AttributeType, name: string | undefined): Attribute[] => {
+								const value = node.name;
+								const binding = jsPath.scope.getBinding(value);
+								const getAttributes = (_node: t.Node, values: Attribute[]): Attribute[] => {
+									if (t.isIdentifier(_node)) {
+										return values;
+									} else if (t.isObjectPattern(_node)) {
+										const property = _node.properties.find(prop => t.isObjectProperty(prop) && t.isIdentifier(prop.value) && prop.value.name === value) as t.ObjectProperty | undefined;
+										const getPropertyName = () => {
+											if (!property) return value;
+
+											if (t.isIdentifier(property.key) && property.key.name === value) return value;
+
+											const propertyAttribute = t.isExpression(property.key) ? createExpressionAttribute(property.key, type, name) : [];
+											const propertyName = propertyAttribute.length === 1 ? getAttributeValue(propertyAttribute[0]) : '';
+
+											return propertyName;
+										}
+										
+										const propertyName = getPropertyName();
+										const attributes = createAttributeFromObjects(node, values, type, name, propertyName);
+										if (attributes.length) {
+											return attributes;
+										}
+									}
+
+									return values;
+								}
+								if (binding && ['const', 'let', 'var'].includes(binding.kind) && t.isVariableDeclarator(binding.path.node) && binding.path.node.init) {
+									const idValues = createExpressionAttribute(binding.path.node.init, type, name);
+									// if (idValues.length === 1 && getAttributeValue(idValues[0]) === 'param') {
+									// 	return [createPropertyAttribute(node, type, name, value)];
+									// } else 
+									return getAttributes(binding.path.node.id, idValues);
+								}
+
+								if (binding && binding.kind === 'param') {
+									const values = [createPropertyAttribute(node, type, name, 'param')];
+									return getAttributes(binding.path.node, values);
+								}
+
+								return [createPropertyAttribute(node, type, name, value)]
+							}
+
+							const createAttributeFromObjects = (node: t.Node, objectAttributes: Attribute[], type: AttributeType, name: string | undefined, propertyName: string): Attribute[] => {
+								const attributes: Attribute[] = [];
+								for (const attribute of objectAttributes) {
+									const attrName = getAttributeName(attribute);
+									const attrValue = getAttributeValue(attribute);
+									if (attrValue === 'param') {
+										attributes.push(createPropertyAttribute(node, type, name, propertyName));
+									} else if (attrName === propertyName) {
+										const value = getAttributeValue(attribute);
+										const newAttribute = createAttribute(type, attribute.name, name, value, attribute.location);
+										attributes.push(newAttribute)
+									}
+								}
+
+								return attributes;
+							}
+
+							const createMemberExpressionAttribute = (node: t.MemberExpression, type: AttributeType, name: string | undefined): Attribute[] => {
+								if (t.isIdentifier(node.object) && t.isExpression(node.property)) {
+									const objectAttributes = createIdentifierAttribute(node.object, type, name);
+									const propertyAttributes = createExpressionAttribute(node.property, type, name);
+									const propertyName = propertyAttributes.length === 1 ? getAttributeValue(propertyAttributes[0]) : '';
+									const attributes = createAttributeFromObjects(node, objectAttributes, type, name, propertyName);
+									if (attributes.length) {
+										return attributes;
+									}
+								}
+
+								return [createPropertyAttribute(node, type, name, undefined)];
+							}
+
+							const createObjectPropertiesAttribute = (properties: t.Node[], type: AttributeType, name: string | undefined): Attribute[] => {
+								const attributes: Attribute[] = [];
+								for (const property of properties) {
+									if (t.isObjectProperty(property) && t.isIdentifier(property.key) && t.isExpression(property.value)) {
+										const attrs = createExpressionAttribute(property.value, 'property', property.key.name);
+										attributes.push(...attrs.map(attr => {
+											const name = getAttributeName(attr);
+											const value = getAttributeValue(attr);
+											return createAttribute(attr.type as AttributeType, attr.name, name, value, attr.location)
+										}))
+									}
+								}
+
+								return attributes;
+							}
+
+							const createObjectExpressionAttribute = (node: t.ObjectExpression, type: AttributeType, name: string | undefined): Attribute[] => {
+								return createObjectPropertiesAttribute(node.properties, type, name);
+							}
+
+							const createLogicalExpressionAttribute = (node: t.LogicalExpression, type: AttributeType, name: string | undefined): Attribute[] => {
+								if (type === 'text') return [createPropertyAttribute(node, type, name, undefined)];
+								return [...createExpressionAttribute(node.left, type, name), ...createExpressionAttribute(node.right, type, name)];
+							}
+
+							const createParamAttribute = (params: t.Node[], type: AttributeType, name: string | undefined): Attribute[] => {
 								const expressions = params.filter(param => t.isExpression(param)) as t.Expression[];
 								const attributes: Attribute[] = expressions.map(expression => createExpressionAttribute(expression, type, name)).flat()
 
 								return attributes;
 							}
 	
-							const createExpressionAttribute = (node: t.Expression | t.JSXEmptyExpression, type: 'text' | 'className' | 'property', name: string | undefined): Attribute[] => {
+							const createExpressionAttribute = (node: t.Expression | t.JSXEmptyExpression, type: AttributeType, name: string | undefined): Attribute[] => {
 								if (t.isStringLiteral(node)) {
 									return [createStringAttribute(node, type, name, node.value)]
 								} else if (t.isCallExpression(node)) {
@@ -382,29 +478,36 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 
 										return [];
 									}).flat()
+								} else if (t.isMemberExpression(node)) {
+									return createMemberExpressionAttribute(node, type, name);
+								} else if (t.isObjectExpression(node)) {
+									return createObjectExpressionAttribute(node, type, name);
+								} else if (t.isLogicalExpression(node)) {
+									return createLogicalExpressionAttribute(node, type, name);
 								} else if (t.isIdentifier(node)) {
 									return createIdentifierAttribute(node, type, name);
 								}
 
 								//If we get here, then we could not resolve to a static string.
-								const value = undefined;
-								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
-								const location: ComponentLocation = {
-									file,
-									start: node.start,
-									end: node.end
-								}
-								return [{id: '', type, name: 'property', value: name ? `${name}:${value}` : value || 'undefined', reference: jsxElementDefinition, index: -1, location}];
+								return [createPropertyAttribute(node, type, name, undefined)];
 							}
 	
-							const createStringAttribute = (node: t.StringLiteral | t.TemplateElement | t.JSXText, type: 'text' | 'className' | 'property', propertyName: string | undefined, value: string): Attribute => {
+							const createStringAttribute = (node: t.StringLiteral | t.TemplateElement | t.JSXText, type: AttributeType, propertyName: string | undefined, value: string): Attribute => {
 								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
 								const location: ComponentLocation = {
 									file,
 									start: node.start,
 									end: node.end
 								}
-								return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1, location}
+								return createAttribute(type, 'string', propertyName, value, location);
+							}
+
+							const createAttribute = (type: AttributeType, name: string, propertyName: string | undefined, value: string | undefined, location: ComponentLocation): Attribute => {
+								if (name === 'string') {
+									return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value || '' : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1, location}
+								}
+
+								return {id: '', type, name: 'property', value: propertyName ? `${propertyName}:${value}` : value || 'undefined', reference: jsxElementDefinition, index: -1, location};
 							}
 
 							const node = jsPath.node;
@@ -425,12 +528,12 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									if (t.isStringLiteral(attr.value)) {
 										jsxElementDefinition.attributes.push(createStringAttribute(attr.value, type, String(attr.name.name), attr.value.value));
 									} else if (t.isJSXExpressionContainer(attr.value)) {
-										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)));
+										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => ({...expression, type})));
 									}
 								}
 							}
 							
-							console.log(`Adding ${jsxElementDefinition.name}`);
+							//console.log(`Adding ${jsxElementDefinition.name}`);
 							jsxElements.push(jsxElementDefinition);
 							elementInstances.push(jsxElementDefinition);
 							parentComponent.children.push(jsxElementDefinition);
