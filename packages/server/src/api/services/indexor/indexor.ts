@@ -484,10 +484,15 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									return [createStringAttribute(node, type, name, node.value)]
 								} else if (t.isCallExpression(node)) {
 									const params = node.arguments
-									return createParamAttribute(params, type, name);
+									const attributes = createParamAttribute(params, type, name);
+									if (attributes.length) {
+										return attributes;
+									}
+
+									return [createPropertyAttribute(node, type, name, undefined)];
 								} else if (t.isTemplateLiteral(node)) {
 									const expressions = [...node.expressions, ...node.quasis].sort((a, b) => (a.start || 0) - (b.start || 0));
-									return expressions.map<Attribute[]>(expression => {
+									const attributes = expressions.map<Attribute[]>(expression => {
 										if (t.isTemplateElement(expression) && expression.value.raw) {
 											return [createStringAttribute(expression, type, name, expression.value.raw)];
 										} else if (t.isExpression(expression)) {
@@ -495,7 +500,12 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										}
 
 										return [];
-									}).flat()
+									}).flat();
+									if (attributes.length) {
+										return attributes;
+									}
+
+									return [createPropertyAttribute(node, type, name, undefined)];
 								} else if (t.isMemberExpression(node)) {
 									return createMemberExpressionAttribute(node, type, name);
 								} else if (t.isObjectExpression(node)) {
