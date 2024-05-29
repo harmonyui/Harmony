@@ -414,6 +414,13 @@ describe("indexor", () => {
             // expect(componentElements[2].attributes[2].value).toBe('bg-sky-50');
             // expectLocationOfString(file, componentElements[2].attributes[2].location, '"bg-sky-50"');
 
+            //ScrollView
+            expect(componentElements[5].attributes.length).toBe(4);
+            expect(componentElements[5].attributes[3].type).toBe('property');
+            expect(componentElements[5].attributes[3].name).toBe('property');
+            expect(componentElements[5].attributes[3].value).toBe('id:params');
+            expectLocationOfString(file, componentElements[5].attributes[3].location, 'params');
+
             //div -> ScrollView
             expect(componentElements[6].attributes.length).toBe(4);
             expect(componentElements[6].attributes[2].type).toBe('className');
@@ -509,7 +516,7 @@ describe("indexor", () => {
             expect(result).toBeTruthy();
             if (!result) return;
 
-            expect(result.length).toBe(22);
+            expect(result.length).toBe(30);
             expect(componentElements[16].attributes.length).toBe(3);
             expect(componentElements[16].attributes[1].type).toBe('className');
             expect(componentElements[16].attributes[1].name).toBe('string');
@@ -547,7 +554,7 @@ describe("indexor", () => {
             expect(result).toBeTruthy();
             if (!result) return;
 
-            expect(result.length).toBe(22);
+            expect(result.length).toBe(30);
             
         })
     });
@@ -696,6 +703,12 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
             <Component2 className="bg-white" name="A Name"/>
         )
     }
+
+    const App2 = () => {
+        return (
+            <Component3 />
+        )
+    }
     `,
     'app/innerClassName.tsx': `
     const InnerComponent = ({className, buttonClassName}) => {
@@ -715,6 +728,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     'app/objectProperties.tsx': `
     const JourneyCard = (props) => {
         const {className, other} = props;
+        const container = "this might mess things up";
         const classesActual = {
             header: "text-lg",
             container: "bg-white",
@@ -825,10 +839,11 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         )
     }
 
-    const ScrollViewInstance = () => {
+    const ScrollViewInstance = ({params}) => {
         const child = "Hello"
+        const id = params.id;
         return (
-            <ScrollView className="flex" contentClass={"styles"}>{child}</ScrollView>
+            <ScrollView className="flex" contentClass={"styles"} id={params.id}>{child}</ScrollView>
         )
     }
 
