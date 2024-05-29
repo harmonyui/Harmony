@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
 /* eslint-disable @typescript-eslint/prefer-string-starts-ends-with -- ok*/
 /* eslint-disable @typescript-eslint/restrict-template-expressions -- ok*/
@@ -254,7 +255,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									attributes.push(...sameAttributesInElement);
 									continue;
 								}
-								attributes.push(attribute);
+								attributes.push({...attribute});
 							}
 
 							return attributes;
@@ -331,10 +332,13 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								}
 								return binding === element.containingComponent.id
 							});
-							parents.forEach(parent => {
-								connectChildToParent(element, parent);
+							const newChildren = parents.map(parent => {
+								return connectChildToParent(element, parent);
 								//connectInstanceToParent(parent);
 							});
+							newChildren.forEach(newChild => {
+								connectInstanceToChildren(newChild);
+							})
 						}
 
 						const parentElement = jsxElements.length > 0 ? jsxElements[jsxElements.length - 1] : undefined;
@@ -418,8 +422,22 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							const createMemberExpressionAttribute = (node: t.MemberExpression, type: AttributeType, name: string | undefined): Attribute[] => {
 								if (t.isIdentifier(node.object) && t.isExpression(node.property)) {
 									const objectAttributes = createIdentifierAttribute(node.object, type, name);
-									const propertyAttributes = createExpressionAttribute(node.property, type, name);
-									const propertyName = propertyAttributes.length === 1 ? getAttributeValue(propertyAttributes[0]) : '';
+									const getPropertyName = () => {
+										//If this property is computed, then evaulate the expression
+										if (node.computed) {
+											const propertyAttributes = createExpressionAttribute(node.property as t.Expression, type, name);
+											const propertyName = propertyAttributes.length === 1 ? getAttributeValue(propertyAttributes[0]) : '';
+											return propertyName;
+										}
+
+										//If it's not computed, just get the name of the property
+										if (t.isIdentifier(node.property)) {
+											return node.property.name;
+										}
+
+										return '';
+									}
+									const propertyName = getPropertyName();
 									const attributes = createAttributeFromObjects(node, objectAttributes, type, name, propertyName);
 									if (attributes.length) {
 										return attributes;
@@ -466,10 +484,15 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									return [createStringAttribute(node, type, name, node.value)]
 								} else if (t.isCallExpression(node)) {
 									const params = node.arguments
-									return createParamAttribute(params, type, name);
+									const attributes = createParamAttribute(params, type, name);
+									if (attributes.length) {
+										return attributes;
+									}
+
+									return [createPropertyAttribute(node, type, name, undefined)];
 								} else if (t.isTemplateLiteral(node)) {
 									const expressions = [...node.expressions, ...node.quasis].sort((a, b) => (a.start || 0) - (b.start || 0));
-									return expressions.map<Attribute[]>(expression => {
+									const attributes = expressions.map<Attribute[]>(expression => {
 										if (t.isTemplateElement(expression) && expression.value.raw) {
 											return [createStringAttribute(expression, type, name, expression.value.raw)];
 										} else if (t.isExpression(expression)) {
@@ -477,7 +500,12 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										}
 
 										return [];
-									}).flat()
+									}).flat();
+									if (attributes.length) {
+										return attributes;
+									}
+
+									return [createPropertyAttribute(node, type, name, undefined)];
 								} else if (t.isMemberExpression(node)) {
 									return createMemberExpressionAttribute(node, type, name);
 								} else if (t.isObjectExpression(node)) {
@@ -646,7 +674,7 @@ function randomId(): string {
 }
 
 async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
-	elementInstances.sort((a, b) => b.id.split('#').length - a.id.split('#').length);
+	elementInstances.sort((a, b) => a.id.split('#').length - b.id.split('#').length);
 	const containingComponents = elementInstances.reduce<HarmonyComponent[]>((prev, curr) => {
 		const def = prev.find(d => d.id === curr.containingComponent.id);
 		if (!def) {
