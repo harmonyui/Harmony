@@ -274,7 +274,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 											throw new Error("Invalid location");
 										}
 										const {end} = parent.node.openingElement.name.loc;
-										attributes.push({...attribute, name: 'string', value: '', locationType: 'add', location: {file, start: end.index, end: end.index}});
+										attributes.push({...attribute, name: 'string', value: '', locationType: 'add', location: {file: parent.location.file, start: end.index, end: end.index}});
 									}
 									attributes.push(...sameAttributesInElement);
 									continue;
