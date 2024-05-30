@@ -1,6 +1,4 @@
-/* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
-/* eslint-disable @typescript-eslint/prefer-string-starts-ends-with -- ok*/
 /* eslint-disable @typescript-eslint/restrict-template-expressions -- ok*/
 /* eslint-disable @typescript-eslint/no-base-to-string -- ok*/
 /* eslint-disable @typescript-eslint/no-empty-function -- ok*/
@@ -11,7 +9,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
-import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/util/src/types/component";
+import type { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/util/src/types/component";
 import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
@@ -19,10 +17,21 @@ import * as t from '@babel/types';
 import { hashCode } from "@harmony/util/src/utils/common";
 import { ComponentAttribute, ComponentDefinition } from "@harmony/db/lib/generated/client";
 import { INDEXING_VERSION } from "@harmony/util/src/constants";
+import { PrismaComponentElementRepository } from "../../repository/component-element";
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
-export const indexFilesAndFollowImports = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
+export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
+	const result = await indexFiles(files, readFile);
+	if (result) {
+		await updateDatabase(result.componentDefinitions, result.elementInstance, repositoryId);
+		return result.elementInstance;
+	}
+
+	return [];
+}
+
+export const indexFiles = async (files: string[], readFile: (filepath: string) => Promise<string>): Promise<{elementInstance: ComponentElement[], componentDefinitions: Record<string, HarmonyComponent>} | false> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: ComponentElement[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
@@ -47,12 +56,10 @@ export const indexFilesAndFollowImports = async (files: string[], readFile: (fil
 	}
 
 	const elementInstance = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, importDeclarations);
-	if (elementInstance) {
-		await updateDatabase(componentDefinitions, elementInstance, repositoryId);
-		return elementInstance;
-	}
 
-	return [];
+	if (!elementInstance) return false;
+
+	return {elementInstance, componentDefinitions};
 }
 
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
@@ -60,14 +67,24 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 	const instances: ComponentElement[] = [];
 	const fileContents: FileAndContent[] = [];
 
-	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename, content) => {
+	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
 		fileContents.push({file: filename, content});
 	});
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
-		await updateDatabase(componentDefinitions, elementInstances, repoId);
+		await updateDatabaseComponentDefinitions(elementInstances, repoId);
+		//await updateDatabaseComponentErrors(elementInstances, repoId);
 	}
+}
+
+function findErrorElements(elementInstances: ComponentElement[]): (ComponentElement & {type: string})[] {
+	const textAttributeErrors = elementInstances.filter(instance => !instance.isComponent && instance.children.length === 0 && instance.attributes.find(attr => attr.type === 'text') && !instance.attributes.find(attr => attr.type === 'text' && attr.name === 'string'));
+
+	return textAttributeErrors.map(attr => ({
+		...attr,
+		type: 'text'
+	}));
 }
 
 interface FileAndContent {
@@ -562,6 +579,9 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							}
 							
 							//console.log(`Adding ${jsxElementDefinition.name}`);
+							jsxElements.forEach(element => {
+								element.children.push(jsxElementDefinition);
+							})
 							jsxElements.push(jsxElementDefinition);
 							elementInstances.push(jsxElementDefinition);
 							parentComponent.children.push(jsxElementDefinition);
@@ -669,12 +689,8 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 // const alias = '@harmony/ui/src/component';
 // const resolvedPath = resolvePathAlias(alias, aliasMappings);
 
-function randomId(): string {
-	return hashCode(String(Math.random())).toString();
-}
 
-async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
-	elementInstances.sort((a, b) => a.id.split('#').length - b.id.split('#').length);
+async function updateDatabaseComponentDefinitions(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
 	const containingComponents = elementInstances.reduce<HarmonyComponent[]>((prev, curr) => {
 		const def = prev.find(d => d.id === curr.containingComponent.id);
 		if (!def) {
@@ -705,79 +721,30 @@ async function updateDatabase(componentDefinitions: Record<string, HarmonyCompon
 			repository_id: repositoryId,
 			name: component.name,
 		}
-	})))
+	})));
+}
+
+async function updateDatabaseComponentErrors(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
+	const errorElements = findErrorElements(elementInstances);
+	const componentElementRepository = new PrismaComponentElementRepository(prisma);
+	
+	const createElement = async (element: ComponentElement): Promise<void> => {
+		const referenceFirst = element.attributes.filter(attr => element.id !== attr.reference.id).map(attr => attr.reference as ComponentElement);
+		await Promise.all(referenceFirst.map(r => createElement(r)));
+		await componentElementRepository.createOrUpdateElement(element, repositoryId);
+	}
+	await Promise.all(errorElements.map(element => createElement(element)));
+}
+
+async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
+	elementInstances.sort((a, b) => a.id.split('#').length - b.id.split('#').length);
+	await updateDatabaseComponentDefinitions(elementInstances, repositoryId);
+
+	const componentElementRepository = new PrismaComponentElementRepository(prisma);
 
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
-		await prisma.componentElement.upsert({
-			where: {
-				id: instance.id
-			},
-			create: {
-				id: instance.id,
-				repository_id: repositoryId,
-				name: instance.name,
-				location: {
-					create: {
-						file: instance.location.file,
-						start: instance.location.start,
-						end: instance.location.end
-					}
-				},
-				definition: {
-					connect: {
-						id: instance.containingComponent.id
-					}
-				},
-				version: INDEXING_VERSION
-			},
-			update: {
-				id: instance.id,
-				repository_id: repositoryId,
-				name: instance.name,
-				definition: {
-					connect: {
-						id: instance.containingComponent.id
-					}
-				},
-				version: INDEXING_VERSION
-			}
-		});
-
-		await prisma.componentAttribute.deleteMany({
-			where: {
-				component_id: instance.id
-			}
-		});
-		try {
-			await Promise.all(instance.attributes.map(attribute => prisma.componentAttribute.create({
-				data: {
-					name: attribute.name,
-					type: attribute.type,
-					value: attribute.value,
-					component: {
-						connect: {
-							id: instance.id
-						}
-					},
-					index: attribute.index,
-					location: {
-						create: {
-							file: attribute.location.file,
-							start: attribute.location.start,
-							end: attribute.location.end
-						}
-					},
-					reference_component: {
-						connect: {
-							id: attribute.reference.id
-						}
-					}
-				}
-			})));
-		} catch(err) {
-			console.log(err);
-		}
+		await componentElementRepository.createOrUpdateElement(instance, repositoryId);
 
 		//await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)
