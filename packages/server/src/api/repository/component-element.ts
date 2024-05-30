@@ -23,6 +23,9 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
     constructor(private prisma: Db) {}
 
     public async createOrUpdateElement(instance: ComponentElement, repositoryId: string): Promise<ComponentElementPrisma> {
+        const referenceFirst = instance.attributes.filter(attr => instance.id !== attr.reference.id).map(attr => attr.reference as ComponentElement);
+        await Promise.all(referenceFirst.map(ref => this.createOrUpdateElement(ref, repositoryId)));
+        
         const newInstance = await this.prisma.componentElement.upsert({
 			where: {
 				id: instance.id
