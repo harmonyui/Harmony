@@ -67,14 +67,24 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 	const instances: ComponentElement[] = [];
 	const fileContents: FileAndContent[] = [];
 
-	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|ts|tsx|jsx)$/, (filename, content) => {
+	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
 		fileContents.push({file: filename, content});
 	});
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
-		await updateDatabase(componentDefinitions, elementInstances, repoId);
+		await updateDatabaseComponentDefinitions(elementInstances, repoId);
+		//await updateDatabaseComponentErrors(elementInstances, repoId);
 	}
+}
+
+function findErrorElements(elementInstances: ComponentElement[]): (ComponentElement & {type: string})[] {
+	const textAttributeErrors = elementInstances.filter(instance => !instance.isComponent && instance.children.length === 0 && instance.attributes.find(attr => attr.type === 'text') && !instance.attributes.find(attr => attr.type === 'text' && attr.name === 'string'));
+
+	return textAttributeErrors.map(attr => ({
+		...attr,
+		type: 'text'
+	}));
 }
 
 interface FileAndContent {
@@ -569,6 +579,9 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							}
 							
 							//console.log(`Adding ${jsxElementDefinition.name}`);
+							jsxElements.forEach(element => {
+								element.children.push(jsxElementDefinition);
+							})
 							jsxElements.push(jsxElementDefinition);
 							elementInstances.push(jsxElementDefinition);
 							parentComponent.children.push(jsxElementDefinition);
@@ -676,12 +689,8 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 // const alias = '@harmony/ui/src/component';
 // const resolvedPath = resolvePathAlias(alias, aliasMappings);
 
-function randomId(): string {
-	return hashCode(String(Math.random())).toString();
-}
 
-async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
-	elementInstances.sort((a, b) => a.id.split('#').length - b.id.split('#').length);
+async function updateDatabaseComponentDefinitions(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
 	const containingComponents = elementInstances.reduce<HarmonyComponent[]>((prev, curr) => {
 		const def = prev.find(d => d.id === curr.containingComponent.id);
 		if (!def) {
@@ -713,6 +722,23 @@ async function updateDatabase(componentDefinitions: Record<string, HarmonyCompon
 			name: component.name,
 		}
 	})));
+}
+
+async function updateDatabaseComponentErrors(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
+	const errorElements = findErrorElements(elementInstances);
+	const componentElementRepository = new PrismaComponentElementRepository(prisma);
+	
+	const createElement = async (element: ComponentElement): Promise<void> => {
+		const referenceFirst = element.attributes.filter(attr => element.id !== attr.reference.id).map(attr => attr.reference as ComponentElement);
+		await Promise.all(referenceFirst.map(r => createElement(r)));
+		await componentElementRepository.createOrUpdateElement(element, repositoryId);
+	}
+	await Promise.all(errorElements.map(element => createElement(element)));
+}
+
+async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
+	elementInstances.sort((a, b) => a.id.split('#').length - b.id.split('#').length);
+	await updateDatabaseComponentDefinitions(elementInstances, repositoryId);
 
 	const componentElementRepository = new PrismaComponentElementRepository(prisma);
 
