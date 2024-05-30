@@ -641,7 +641,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					type AttributeUpdate = AddClassName;
 					const attributeUpdates: AttributeUpdate[] = [];
 
-					const getAttribute = async (attribute: Attribute, getNewValueAndComment: (oldValue: string | undefined) => {newClass: string, commentValue: string, oldClass: string | undefined}): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
+					const getAttribute = async (attribute: Attribute | undefined, getNewValueAndComment: (oldValue: string | undefined, location: ComponentLocation) => {newClass: string, commentValue: string, oldClass: string | undefined}): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
 						const locationAndValue = getLocationAndValue(attribute, component);
 						//TODO: This is temporary. It shouldn't have 'className:'
 						locationAndValue.value = locationAndValue.value?.replace('className:', '');
@@ -650,7 +650,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 
 						//TODO: Make the tailwind prefix part dynamic
 						const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
-						const {newClass, commentValue, oldClass} = getNewValueAndComment(oldClasses);
+						const {newClass, commentValue, oldClass} = getNewValueAndComment(oldClasses, location);
 						
 						return {
 							attribute: {location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute},
@@ -658,10 +658,10 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 						};
 					}
 
-					const getAttributeFromClass = async (attribute: Attribute, _newClass: string): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
-						return getAttribute(attribute, (oldClasses) => {
+					const getAttributeFromClass = async (attribute: Attribute | undefined, _newClass: string): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
+						return getAttribute(attribute, (oldClasses, location) => {
 							//If we have already merged classes, then merge out new stuff into what was already merged
-							const oldStuff = attributeUpdates.find(attr => attr.location === attribute.location)?.newClass ?? oldClasses;
+							const oldStuff = attributeUpdates.find(attr => attr.location === location)?.newClass ?? oldClasses;
 							const mergedIt = mergeClassesWithScreenSize(oldStuff, _newClass, DEFAULT_WIDTH)
 							const newClass = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 							const commentValue = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
@@ -680,7 +680,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 						attributeUpdates.push(attribute);
 					}
 
-					const defaultClassName = classNameAttributes.find(attr => attr.name === 'string') || classNameAttributes[0];
+					const defaultClassName = classNameAttributes.find(attr => attr.name === 'string') || classNameAttributes[0] as Attribute | undefined;
 					for (const newClass of newClasses.split(' ')) {
 						let addedAttribue = false;
 						for (const classNameAttribute of classNameAttributes) {
@@ -698,7 +698,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					}
 
 					if (update.font) {
-						const sameAttributeLocation = attributeUpdates.find(attr => attr.location === defaultClassName.location);
+						const sameAttributeLocation = attributeUpdates.find(attr => attr.location === defaultClassName?.location);
 						if (sameAttributeLocation) {
 							sameAttributeLocation.newClass += ` ${update.font}`;
 						} else {
