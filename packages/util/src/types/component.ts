@@ -34,6 +34,7 @@ export const attributeSchema = z.object({
 	value: z.string(),
 	index: z.number(),
 	location: locationSchema,
+	locationType: z.string(),
 	reference: z.object({id: z.string()})
 })
 export type Attribute = z.infer<typeof attributeSchema>;

@@ -16,6 +16,8 @@ import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { PrismaComponentElementRepository } from "../../repository/component-element";
 
+export type ComponentElementWithNode = ComponentElement & {node: t.JSXElement};
+
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
 export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
@@ -28,9 +30,9 @@ export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (fi
 	return [];
 }
 
-export const indexFiles = async (files: string[], readFile: (filepath: string) => Promise<string>): Promise<{elementInstance: ComponentElement[], componentDefinitions: Record<string, HarmonyComponent>} | false> => {
+export const indexFiles = async (files: string[], readFile: (filepath: string) => Promise<string>): Promise<{elementInstance: ComponentElementWithNode[], componentDefinitions: Record<string, HarmonyComponent>} | false> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
-	const instances: ComponentElement[] = [];
+	const instances: ComponentElementWithNode[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
 	const visitedFiles: Set<string> = new Set<string>();
 	const fileContents: FileAndContent[] = [];
@@ -61,7 +63,7 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
-	const instances: ComponentElement[] = [];
+	const instances: ComponentElementWithNode[] = [];
 	const fileContents: FileAndContent[] = [];
 
 	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
@@ -88,7 +90,7 @@ interface FileAndContent {
 	file: string;
 	content: string;
 }
-export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], importDeclarations: Record<string, {name: string, path: string}>): ComponentElement[] | false {
+export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[], importDeclarations: Record<string, {name: string, path: string}>): ComponentElementWithNode[] | false {
 	for (const {file, content} of files) {
 		if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
 			return false;
@@ -98,7 +100,7 @@ export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], compon
 	return normalizeCodeInfo(componentDefinitions, elementInstances);
 }
 
-export function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
+export function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
   const ast = parse(originalCode, {
     sourceType: 'module',
  		plugins: ['jsx', 'typescript'],
@@ -138,7 +140,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 		}
 	}
 
-	function createJSXElementDefinition(node: t.JSXElement, parentElement: ComponentElement | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): ComponentElement | undefined {
+	function createJSXElementDefinition(node: t.JSXElement, parentElement: ComponentElement | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): ComponentElementWithNode | undefined {
 		const name = getNameFromNode(node.openingElement.name);
 		const isComponent = name[0].toLowerCase() !== name[0];
 		const location = getLocation(node, file);
@@ -160,7 +162,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 			isComponent,
 			location,
 			attributes: [],
-			containingComponent
+			containingComponent,
+			node
 		};
 	}
 
@@ -240,7 +243,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return attribute.value;
 						}
 
-						function connectAttributesToParent(elementAttributes: Attribute[], parent: ComponentElement): Attribute[] {
+						function connectAttributesToParent(elementAttributes: Attribute[], parent: ComponentElementWithNode): Attribute[] {
 							const attributes: Attribute[] = [];
 							for (const attribute of elementAttributes) {
 								const propertyName = getPropertyName(attribute);
@@ -263,9 +266,16 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 											newAttribute.type = 'className';
 										}
 										return newAttribute;
-									});
-	
-									
+									})
+									//If there is a props className attribute but the parent doesn't have a className attribute already applied to it, then add it
+									//on to the parent.
+									if (attribute.type === 'className' && attribute.locationType === 'props' && sameAttributesInElement.length === 0) {
+										if (!parent.node.openingElement.name.loc) {
+											throw new Error("Invalid location");
+										}
+										const {end} = parent.node.openingElement.name.loc;
+										attributes.push({...attribute, name: 'string', value: '', locationType: 'add', location: {file: parent.location.file, start: end.index, end: end.index}});
+									}
 									attributes.push(...sameAttributesInElement);
 									continue;
 								}
@@ -275,7 +285,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return attributes;
 						}
 
-						function connectChildToParent(child: ComponentElement, parent: ComponentElement): ComponentElement {
+						function connectChildToParent(child: ComponentElementWithNode, parent: ComponentElementWithNode): ComponentElementWithNode {
 							const recurseConnectLog = (el: ComponentElement): string => {
 								const parent = el.getParent();
 								if (parent) {
@@ -326,7 +336,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return id;
 						}
 
-						function connectInstanceToChildren(element: ComponentElement): void {
+						function connectInstanceToChildren(element: ComponentElementWithNode): void {
 							const id = getComponentsBindingId(element);
 
 							const childElements = elementInstances.filter(instance => instance.containingComponent.id === id && instance.getParent() === undefined);
@@ -336,7 +346,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							});
 						}
 
-						function connectInstanceToParent(element: ComponentElement): void {
+						function connectInstanceToParent(element: ComponentElementWithNode): void {
 							const bindings: Record<string, string | undefined> = {}
 							const parents = elementInstances.filter(parent => {
 								let binding = bindings[parent.name];
@@ -363,14 +373,14 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 						type AttributeType = 'text' | 'className' | 'property';
 						
 						if (jsxElementDefinition) {
-							const createPropertyAttribute = (node: t.Node, type: AttributeType, name: string | undefined, propertyName: string | undefined): Attribute => {
+							const createPropertyAttribute = (node: t.Node, type: AttributeType, name: string | undefined, propertyName: string | undefined, locationType: string): Attribute => {
 								if (!node.start || !node.end) throw new Error(`Invalid start and end for node ${node}`);
 								const location: ComponentLocation = {
 									file,
 									start: node.start,
 									end: node.end
 								}
-								return createAttribute(type, 'property', name, propertyName, location);
+								return createAttribute(type, 'property', name, propertyName, locationType, location);
 							}
 							const createIdentifierAttribute = (node: t.Identifier, type: AttributeType, name: string | undefined): Attribute[] => {
 								const value = node.name;
@@ -402,18 +412,15 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								}
 								if (binding && ['const', 'let', 'var'].includes(binding.kind) && t.isVariableDeclarator(binding.path.node) && binding.path.node.init) {
 									const idValues = createExpressionAttribute(binding.path.node.init, type, name);
-									// if (idValues.length === 1 && getAttributeValue(idValues[0]) === 'param') {
-									// 	return [createPropertyAttribute(node, type, name, value)];
-									// } else 
 									return getAttributes(binding.path.node.id, idValues);
 								}
 
 								if (binding && binding.kind === 'param') {
-									const values = [createPropertyAttribute(node, type, name, 'param')];
+									const values = [createPropertyAttribute(node, type, name, 'props', 'props')];
 									return getAttributes(binding.path.node, values);
 								}
 
-								return [createPropertyAttribute(node, type, name, value)]
+								return [createPropertyAttribute(node, type, name, value, 'component')]
 							}
 
 							const createAttributeFromObjects = (node: t.Node, objectAttributes: Attribute[], type: AttributeType, name: string | undefined, propertyName: string): Attribute[] => {
@@ -421,11 +428,11 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								for (const attribute of objectAttributes) {
 									const attrName = getAttributeName(attribute);
 									const attrValue = getAttributeValue(attribute);
-									if (attrValue === 'param') {
-										attributes.push(createPropertyAttribute(node, type, name, propertyName));
+									if (attrValue === 'props') {
+										attributes.push(createPropertyAttribute(node, type, name, propertyName, 'props'));
 									} else if (attrName === propertyName) {
 										const value = getAttributeValue(attribute);
-										const newAttribute = createAttribute(type, attribute.name, name, value, attribute.location);
+										const newAttribute = createAttribute(type, attribute.name, name, value, 'component', attribute.location);
 										attributes.push(newAttribute)
 									}
 								}
@@ -458,7 +465,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									}
 								}
 
-								return [createPropertyAttribute(node, type, name, undefined)];
+								return [createPropertyAttribute(node, type, name, undefined, 'component')];
 							}
 
 							const createObjectPropertiesAttribute = (properties: t.Node[], type: AttributeType, name: string | undefined): Attribute[] => {
@@ -469,7 +476,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										attributes.push(...attrs.map(attr => {
 											const name = getAttributeName(attr);
 											const value = getAttributeValue(attr);
-											return createAttribute(attr.type as AttributeType, attr.name, name, value, attr.location)
+											return createAttribute(attr.type as AttributeType, attr.name, name, value, attr.locationType, attr.location)
 										}))
 									}
 								}
@@ -482,7 +489,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							}
 
 							const createLogicalExpressionAttribute = (node: t.LogicalExpression, type: AttributeType, name: string | undefined): Attribute[] => {
-								if (type === 'text') return [createPropertyAttribute(node, type, name, undefined)];
+								if (type === 'text') return [createPropertyAttribute(node, type, name, undefined, 'component')];
 								return [...createExpressionAttribute(node.left, type, name), ...createExpressionAttribute(node.right, type, name)];
 							}
 
@@ -503,7 +510,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										return attributes;
 									}
 
-									return [createPropertyAttribute(node, type, name, undefined)];
+									return [createPropertyAttribute(node, type, name, undefined, 'component')];
 								} else if (t.isTemplateLiteral(node)) {
 									const expressions = [...node.expressions, ...node.quasis].sort((a, b) => (a.start || 0) - (b.start || 0));
 									const attributes = expressions.map<Attribute[]>(expression => {
@@ -519,7 +526,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										return attributes;
 									}
 
-									return [createPropertyAttribute(node, type, name, undefined)];
+									return [createPropertyAttribute(node, type, name, undefined, 'component')];
 								} else if (t.isMemberExpression(node)) {
 									return createMemberExpressionAttribute(node, type, name);
 								} else if (t.isObjectExpression(node)) {
@@ -531,7 +538,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								}
 
 								//If we get here, then we could not resolve to a static string.
-								return [createPropertyAttribute(node, type, name, undefined)];
+								return [createPropertyAttribute(node, type, name, undefined, 'component')];
 							}
 	
 							const createStringAttribute = (node: t.StringLiteral | t.TemplateElement | t.JSXText, type: AttributeType, propertyName: string | undefined, value: string): Attribute => {
@@ -541,15 +548,21 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									start: node.start,
 									end: node.end
 								}
-								return createAttribute(type, 'string', propertyName, value, location);
+								return createAttribute(type, 'string', propertyName, value, 'component', location);
 							}
 
-							const createAttribute = (type: AttributeType, name: string, propertyName: string | undefined, value: string | undefined, location: ComponentLocation): Attribute => {
+							const createAttribute = (type: AttributeType, name: string, propertyName: string | undefined, value: string | undefined, locationType: string, location: ComponentLocation): Attribute => {
+								//For className attributes in the props, only include them as className if it has class in the name
+								//in order to filter out properties that don't have classes (see app/classNameTests.tsx for more details)		
+								if (type === 'className' && locationType === 'props' && !propertyName?.includes('class')) {
+									return createAttribute('property', name, propertyName, value, locationType, location);
+								}
+								
 								if (name === 'string') {
-									return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value || '' : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1, location}
+									return {id: '', type, name: 'string', value: type === 'className' || !propertyName ? value || '' : `${propertyName}:${value}`, reference: jsxElementDefinition, index: -1, location, locationType}
 								}
 
-								return {id: '', type, name: 'property', value: propertyName ? `${propertyName}:${value}` : value || 'undefined', reference: jsxElementDefinition, index: -1, location};
+								return {id: '', type, name: 'property', value: propertyName ? `${propertyName}:${value}` : value || 'undefined', reference: jsxElementDefinition, index: -1, location, locationType};
 							}
 
 							const node = jsPath.node;
@@ -570,9 +583,18 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									if (t.isStringLiteral(attr.value)) {
 										jsxElementDefinition.attributes.push(createStringAttribute(attr.value, type, String(attr.name.name), attr.value.value));
 									} else if (t.isJSXExpressionContainer(attr.value)) {
-										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => ({...expression, type})));
+										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => createAttribute(type, expression.name, getAttributeName(expression), getAttributeValue(expression), expression.locationType, expression.location)));
 									}
 								}
+							}
+
+							//If this is a native html element and there is not className props, then we want the ability to add one
+							if (!jsxElementDefinition.isComponent && !jsxElementDefinition.attributes.find(attr => attr.type === 'className')) {
+								if (!node.openingElement.name.loc) {
+									throw new Error("Invalid location");
+								}
+								const {end} = node.openingElement.name.loc;
+								jsxElementDefinition.attributes.push(createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index}))
 							}
 							
 							//console.log(`Adding ${jsxElementDefinition.name}`);
@@ -618,7 +640,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 	return true;
 }
 
-function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[]) {
+function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[]) {
 	function getIdFromParents(instance: ComponentElement): string {
 		const parent = instance.getParent();
 		if (!parent) {

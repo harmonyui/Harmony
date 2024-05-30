@@ -585,25 +585,14 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		isDefinedAndDynamic: boolean;
 	}
 	//This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
-	const addNewClassOrComment = async ({location, code, newClass, oldClass, commentValue, attribute, isDefinedAndDynamic}: AddClassName): Promise<FileUpdate> => {
+	const addNewClassOrComment = async ({location, code, newClass, oldClass, commentValue, attribute}: AddClassName): Promise<FileUpdate> => {
 		if (oldClass === undefined) {
-			//If this is a dynamic property then just add a comment
-			if (isDefinedAndDynamic || code.includes('className=')) {
-				return addCommentToJSXElement({location, commentValue, attribute});
-			}
-
-			const match = /^<([a-zA-Z0-9]+)(\s?)/.exec(code);
-			if (!match) {
-				throw new Error(`There was no update to add className to jsx: snippet: ${code}, commentValue: ${commentValue}`);
-			}
-
-			//Here means we do not have a class 
-			let value = match[2] ? `className="${newClass}" ` : ` className="${newClass}" `;
-			value = value.replace('undefined ', '');
+			return addCommentToJSXElement({location, commentValue, attribute});
+		} else if (attribute?.locationType === 'add') {
 			// eslint-disable-next-line no-param-reassign -- It is ok
-			oldClass = match[0];
+			newClass = ` className="${newClass}"`;
 			// eslint-disable-next-line no-param-reassign -- It is ok
-			newClass = `${match[0]}${value}`;
+			oldClass = '';
 		}
 
 		const oldValue = oldClass;
@@ -652,14 +641,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					type AttributeUpdate = AddClassName;
 					const attributeUpdates: AttributeUpdate[] = [];
 
-					const mergeClassesWithScreenSizeWithPrefix = (originalClass: string | undefined, newClass: string, screenSize: number, prefix: string | undefined) => {
-						const merged = mergeClassesWithScreenSize(prefix ? originalClass?.replaceAll(prefix, '') : originalClass, prefix ? newClass.replaceAll(prefix, '') : newClass, screenSize);
-						const withPrefix = prefix ? addPrefixToClassName(merged, prefix) : merged;
-
-						return withPrefix;
-					}
-
-					const getAttribute = async (attribute: Attribute, getNewValueAndComment: (oldValue: string | undefined) => {newClass: string, commentValue: string}): Promise<AttributeUpdate> => {
+					const getAttribute = async (attribute: Attribute, getNewValueAndComment: (oldValue: string | undefined) => {newClass: string, commentValue: string, oldClass: string | undefined}): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
 						const locationAndValue = getLocationAndValue(attribute, component);
 						//TODO: This is temporary. It shouldn't have 'className:'
 						locationAndValue.value = locationAndValue.value?.replace('className:', '');
@@ -668,28 +650,30 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 
 						//TODO: Make the tailwind prefix part dynamic
 						const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
-						const {newClass, commentValue} = getNewValueAndComment(oldClasses);
+						const {newClass, commentValue, oldClass} = getNewValueAndComment(oldClasses);
 						
-						return {location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute};
+						return {
+							attribute: {location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute},
+							oldClass
+						};
 					}
 
-					const getAttributeFromClass = async (attribute: Attribute, _newClass: string): Promise<AttributeUpdate> => {
+					const getAttributeFromClass = async (attribute: Attribute, _newClass: string): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
 						return getAttribute(attribute, (oldClasses) => {
-							const mergedIt = mergeClassesWithScreenSize(oldClasses, _newClass, DEFAULT_WIDTH)
+							//If we have already merged classes, then merge out new stuff into what was already merged
+							const oldStuff = attributeUpdates.find(attr => attr.location === attribute.location)?.newClass ?? oldClasses;
+							const mergedIt = mergeClassesWithScreenSize(oldStuff, _newClass, DEFAULT_WIDTH)
 							const newClass = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 							const commentValue = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
 							
-							return {newClass, commentValue};
+							return {newClass, oldClass: oldStuff, commentValue};
 						});
 					}
 
 					const addAttribute = (attribute: AttributeUpdate): void => {
 						const sameAttributeLocation = attributeUpdates.find(attr => attr.location === attribute.location);
 						if (sameAttributeLocation) {
-							const newMerged = mergeClassesWithScreenSizeWithPrefix(sameAttributeLocation.newClass, attribute.newClass, DEFAULT_WIDTH, repository.tailwindPrefix);
-							//const oldMerged = mergeClassesWithScreenSizeWithPrefix(sameAttributeLocation.oldClass, attribute.oldClass || '', DEFAULT_WIDTH, repository.tailwindPrefix);
-							sameAttributeLocation.newClass = newMerged;
-							//sameAttributeLocation.oldClass = oldMerged;
+							sameAttributeLocation.newClass = attribute.newClass;
 							return;
 						}
 
@@ -701,15 +685,15 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 						let addedAttribue = false;
 						for (const classNameAttribute of classNameAttributes) {
 							if (classNameAttribute.name !== 'string') continue;
-							const attribute = await getAttributeFromClass(classNameAttribute, newClass);
-							if (attribute.oldClass && attribute.newClass.split(' ').length === attribute.oldClass.split(' ').length) {
+							const {attribute, oldClass} = await getAttributeFromClass(classNameAttribute, newClass);
+							if (oldClass && attribute.newClass.split(' ').length === oldClass.split(' ').length) {
 								addAttribute(attribute);
 								addedAttribue = true;
 								break;
 							}
 						}
 						if (!addedAttribue) {
-							addAttribute(await getAttributeFromClass(defaultClassName, newClass));
+							addAttribute((await getAttributeFromClass(defaultClassName, newClass)).attribute);
 						}
 					}
 
@@ -718,14 +702,15 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 						if (sameAttributeLocation) {
 							sameAttributeLocation.newClass += ` ${update.font}`;
 						} else {
-							attributeUpdates.push(await getAttribute(defaultClassName, (oldClasses) => {
+							attributeUpdates.push((await getAttribute(defaultClassName, (oldClasses) => {
 								const value = oldClasses ? `${oldClasses} ${update.font}` : update.font || '';
 
 								return {
 									newClass: value,
-									commentValue: update.font || ''
+									commentValue: update.font || '',
+									oldClass: oldClasses
 								}
-							}));
+							})).attribute);
 						}
 					}
 
