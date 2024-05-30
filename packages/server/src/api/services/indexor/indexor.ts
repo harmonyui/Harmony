@@ -1,6 +1,4 @@
-/* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
-/* eslint-disable @typescript-eslint/prefer-string-starts-ends-with -- ok*/
 /* eslint-disable @typescript-eslint/restrict-template-expressions -- ok*/
 /* eslint-disable @typescript-eslint/no-base-to-string -- ok*/
 /* eslint-disable @typescript-eslint/no-empty-function -- ok*/
@@ -11,7 +9,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
-import { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/util/src/types/component";
+import type { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/util/src/types/component";
 import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
@@ -19,10 +17,21 @@ import * as t from '@babel/types';
 import { hashCode } from "@harmony/util/src/utils/common";
 import { ComponentAttribute, ComponentDefinition } from "@harmony/db/lib/generated/client";
 import { INDEXING_VERSION } from "@harmony/util/src/constants";
+import { PrismaComponentElementRepository } from "../../repository/component-element";
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
-export const indexFilesAndFollowImports = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
+export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
+	const result = await indexFiles(files, readFile);
+	if (result) {
+		await updateDatabase(result.componentDefinitions, result.elementInstance, repositoryId);
+		return result.elementInstance;
+	}
+
+	return [];
+}
+
+export const indexFiles = async (files: string[], readFile: (filepath: string) => Promise<string>): Promise<{elementInstance: ComponentElement[], componentDefinitions: Record<string, HarmonyComponent>} | false> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: ComponentElement[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
@@ -47,12 +56,10 @@ export const indexFilesAndFollowImports = async (files: string[], readFile: (fil
 	}
 
 	const elementInstance = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, importDeclarations);
-	if (elementInstance) {
-		await updateDatabase(componentDefinitions, elementInstance, repositoryId);
-		return elementInstance;
-	}
 
-	return [];
+	if (!elementInstance) return false;
+
+	return {elementInstance, componentDefinitions};
 }
 
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
@@ -705,79 +712,13 @@ async function updateDatabase(componentDefinitions: Record<string, HarmonyCompon
 			repository_id: repositoryId,
 			name: component.name,
 		}
-	})))
+	})));
+
+	const componentElementRepository = new PrismaComponentElementRepository(prisma);
 
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
-		await prisma.componentElement.upsert({
-			where: {
-				id: instance.id
-			},
-			create: {
-				id: instance.id,
-				repository_id: repositoryId,
-				name: instance.name,
-				location: {
-					create: {
-						file: instance.location.file,
-						start: instance.location.start,
-						end: instance.location.end
-					}
-				},
-				definition: {
-					connect: {
-						id: instance.containingComponent.id
-					}
-				},
-				version: INDEXING_VERSION
-			},
-			update: {
-				id: instance.id,
-				repository_id: repositoryId,
-				name: instance.name,
-				definition: {
-					connect: {
-						id: instance.containingComponent.id
-					}
-				},
-				version: INDEXING_VERSION
-			}
-		});
-
-		await prisma.componentAttribute.deleteMany({
-			where: {
-				component_id: instance.id
-			}
-		});
-		try {
-			await Promise.all(instance.attributes.map(attribute => prisma.componentAttribute.create({
-				data: {
-					name: attribute.name,
-					type: attribute.type,
-					value: attribute.value,
-					component: {
-						connect: {
-							id: instance.id
-						}
-					},
-					index: attribute.index,
-					location: {
-						create: {
-							file: attribute.location.file,
-							start: attribute.location.start,
-							end: attribute.location.end
-						}
-					},
-					reference_component: {
-						connect: {
-							id: attribute.reference.id
-						}
-					}
-				}
-			})));
-		} catch(err) {
-			console.log(err);
-		}
+		await componentElementRepository.createOrUpdateElement(instance, repositoryId);
 
 		//await createElement(instance);
 		onProgress && onProgress(i/elementInstances.length)

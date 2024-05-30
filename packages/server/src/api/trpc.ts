@@ -22,6 +22,7 @@ import { Request } from 'express';
 import { auth } from "@clerk/nextjs";
 import { GithubRepositoryFactory, GitRepositoryFactory, LocalGitRepository } from "./repository/github";
 import { Repository } from "@harmony/util/src/types/branch";
+import {PrismaComponentElementRepository, type ComponentElementRepository} from './repository/component-element'
 
 
 /**
@@ -35,7 +36,7 @@ import { Repository } from "@harmony/util/src/types/branch";
 interface CreateContextOptions {
   session: Session | undefined;
   gitRepositoryFactory: GitRepositoryFactory;
-  //req: Request;
+  componentElementRepository: ComponentElementRepository
 }
 
 interface AuthContextOptions {
@@ -45,7 +46,6 @@ interface AuthContextOptions {
 export interface CreateContext extends CreateContextOptions {
   prisma: Db,
   mailer: EmailService,
-  gitRepositoryFactory: GitRepositoryFactory
 }
 
 export interface AuthContext extends AuthContextOptions {
@@ -100,9 +100,12 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
   // Get the session from the server using the getServerSession wrapper function
   const session = await getServerAuthSession(userId, mockUserId);
   const gitRepositoryFactory = process.env.ENV === 'development' ? gitLocalRepositoryFactory : new GithubRepositoryFactory();
+  const componentElementRepository = new PrismaComponentElementRepository(prisma);
+
   return createInnerTRPCContext({
     session,
-    gitRepositoryFactory
+    gitRepositoryFactory,
+    componentElementRepository
     //req
   });
 }
