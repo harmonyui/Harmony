@@ -641,13 +641,6 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					type AttributeUpdate = AddClassName;
 					const attributeUpdates: AttributeUpdate[] = [];
 
-					const mergeClassesWithScreenSizeWithPrefix = (originalClass: string | undefined, newClass: string, screenSize: number, prefix: string | undefined) => {
-						const merged = mergeClassesWithScreenSize(prefix ? originalClass?.replaceAll(prefix, '') : originalClass, prefix ? newClass.replaceAll(prefix, '') : newClass, screenSize);
-						const withPrefix = prefix ? addPrefixToClassName(merged, prefix) : merged;
-
-						return withPrefix;
-					}
-
 					const getAttribute = async (attribute: Attribute, getNewValueAndComment: (oldValue: string | undefined) => {newClass: string, commentValue: string, oldClass: string | undefined}): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
 						const locationAndValue = getLocationAndValue(attribute, component);
 						//TODO: This is temporary. It shouldn't have 'className:'

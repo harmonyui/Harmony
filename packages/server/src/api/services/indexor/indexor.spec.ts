@@ -230,11 +230,16 @@ describe("indexor", () => {
             expect(componentElements[2].attributes[0].locationType).toBe('props');
             expectLocationOfString(file, componentElements[2].attributes[0].location, 'className');
             
-            expect(componentElements[5].attributes.length).toBe(1);
+            expect(componentElements[5].attributes.length).toBe(2);
             expect(componentElements[5].attributes[0].type).toBe('text');
             expect(componentElements[5].attributes[0].name).toBe('property');
             expect(componentElements[5].attributes[0].value).toBe('label');
             expectLocationOfString(file, componentElements[5].attributes[0].location, 'label');
+            expect(componentElements[5].attributes[1].type).toBe('className');
+            expect(componentElements[5].attributes[1].name).toBe('string');
+            expect(componentElements[5].attributes[1].value).toBe('');
+            expect(componentElements[5].attributes[1].locationType).toBe('add');
+            expectLocationOfString(file, componentElements[5].attributes[1].location, '');
 
             //Layer 2
             //Component1:1 -> div
@@ -264,7 +269,7 @@ describe("indexor", () => {
             expect(componentElements[4].attributes[0].value).toBe('m-3');
             expectLocationOfString(file, componentElements[4].attributes[0].location, '"m-3"');
 
-            expect(componentElements[6].attributes.length).toBe(1);
+            expect(componentElements[6].attributes.length).toBe(2);
             expect(componentElements[6].attributes[0].type).toBe('text');
             expect(componentElements[6].attributes[0].name).toBe('property');
             expect(componentElements[6].attributes[0].value).toBe('name');
@@ -298,7 +303,7 @@ describe("indexor", () => {
             expect(componentElements[10].attributes[2].value).toBe('bg-blue-50 flex flex-col');
             expectLocationOfString(file, componentElements[10].attributes[2].location, '"bg-blue-50 flex flex-col"');
 
-            expect(componentElements[11].attributes.length).toBe(1);
+            expect(componentElements[11].attributes.length).toBe(2);
             expect(componentElements[11].attributes[0].type).toBe('text');
             expect(componentElements[11].attributes[0].name).toBe('string');
             expect(componentElements[11].attributes[0].value).toBe('Hello there');
@@ -595,7 +600,7 @@ describe("indexor", () => {
             expect(componentElements[16].attributes[2].value).toBe('label:A Name');
             expectLocationOfString('app/multipleLayers2.tsx', componentElements[16].attributes[2].location, '"A Name"');
 
-            expect(componentElements[18].attributes.length).toBe(1);
+            expect(componentElements[18].attributes.length).toBe(2);
             expect(componentElements[18].attributes[0].type).toBe('text');
             expect(componentElements[18].attributes[0].name).toBe('string');
             expect(componentElements[18].attributes[0].value).toBe('A Name');
