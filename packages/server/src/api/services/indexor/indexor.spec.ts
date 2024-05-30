@@ -485,7 +485,7 @@ describe("indexor", () => {
             expectLocationOfString(file, componentElements[4].attributes[2].location, '"border"');
         })
 
-        it("Should add className to parent if has props className", () => {
+        it("Should add className to element if has props className", () => {
             const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/classNameTests.tsx';
@@ -494,6 +494,14 @@ describe("indexor", () => {
             const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
             expect(result).toBeTruthy();
             expect(componentElements.length).toBe(7);
+
+            //h1
+            expect(componentElements[2].attributes.length).toBe(2);
+            expect(componentElements[2].attributes[1].type).toBe('className');
+            expect(componentElements[2].attributes[1].name).toBe('string');
+            expect(componentElements[2].attributes[1].value).toBe('');
+            expect(componentElements[2].attributes[1].locationType).toBe('add');
+            expectLocationOfString(file, componentElements[2].attributes[1].location, '');
 
             expect(componentElements[6].attributes.length).toBe(2);
             expect(componentElements[6].attributes[1].type).toBe('className');

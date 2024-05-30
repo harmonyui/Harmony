@@ -267,7 +267,6 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										}
 										return newAttribute;
 									})
-	
 									//If there is a props className attribute but the parent doesn't have a className attribute already applied to it, then add it
 									//on to the parent.
 									if (attribute.type === 'className' && attribute.locationType === 'props' && sameAttributesInElement.length === 0) {
@@ -277,7 +276,6 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										const {end} = parent.node.openingElement.name.loc;
 										attributes.push({...attribute, name: 'string', value: '', locationType: 'add', location: {file, start: end.index, end: end.index}});
 									}
-									
 									attributes.push(...sameAttributesInElement);
 									continue;
 								}
@@ -588,6 +586,15 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => createAttribute(type, expression.name, getAttributeName(expression), getAttributeValue(expression), expression.locationType, expression.location)));
 									}
 								}
+							}
+
+							//If this is a native html element and there is not className props, then we want the ability to add one
+							if (!jsxElementDefinition.isComponent && !jsxElementDefinition.attributes.find(attr => attr.type === 'className')) {
+								if (!node.openingElement.name.loc) {
+									throw new Error("Invalid location");
+								}
+								const {end} = node.openingElement.name.loc;
+								jsxElementDefinition.attributes.push(createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index}))
 							}
 							
 							//console.log(`Adding ${jsxElementDefinition.name}`);
