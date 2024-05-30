@@ -190,9 +190,10 @@ export const editorRouter = createTRPCRouter({
                         }
                     }) ?? undefined;
                     if (!element) {
-                        const indexedElement = await indexForComponent(update.componentId, gitRepository);
+                        const elementInstances = await indexForComponent(update.componentId, gitRepository);
+						const indexedElement = elementInstances.find(el => el.id === update.componentId);
 						if (indexedElement) {
-							await updateDatabaseComponentDefinitions([indexedElement], branch.repository_id);
+							await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
 							element = await ctx.componentElementRepository.createOrUpdateElement(indexedElement, branch.repository_id);
 						}
                     }
@@ -334,7 +335,7 @@ export const editorRouter = createTRPCRouter({
 		})
 })
 
-async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<ComponentElement | undefined> {
+async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<ComponentElement[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
@@ -348,10 +349,9 @@ async function indexForComponent(componentId: string, gitRepository: GitReposito
 	const locations = getLocationsFromComponentId(componentId);
 	const paths = locations.map(location => location.file);
 	const result = await indexFiles(paths, readFile);
-	if (!result) return undefined;
+	if (!result) return [];
 
-	const element = result.elementInstance.find(el => el.id === componentId);
-	return element;
+	return result.elementInstance;
 }
 
 async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<ComponentElement[]> {
