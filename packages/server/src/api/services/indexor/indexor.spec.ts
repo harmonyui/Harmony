@@ -1,6 +1,6 @@
 import { describe, it, expect } from "vitest"
-import type { ComponentElement, HarmonyComponent } from "@harmony/util/src/types/component";
-import { getCodeInfoAndNormalizeFromFiles, getCodeInfoFromFile } from "./indexor";
+import type {HarmonyComponent } from "@harmony/util/src/types/component";
+import { getCodeInfoAndNormalizeFromFiles, getCodeInfoFromFile, ComponentElementWithNode} from "./indexor";
 
 describe("indexor", () => {
     const expectLocationOfString = (file: TestFile, actualLocation: {start: number, end: number}, expectedString: string): void => {
@@ -10,7 +10,7 @@ describe("indexor", () => {
     }
     describe("getCodeInfoFromFile", () => {
         it("Should index dynamic text with multiple children properly", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/SummaryMetadata.tsx';
             const content = testCases[file];
@@ -30,7 +30,7 @@ describe("indexor", () => {
         });
 
         it("Should index attributes properly", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/SummaryMetadata.tsx';
             const content = testCases[file];
@@ -67,7 +67,7 @@ describe("indexor", () => {
             expect(componentElements[4].attributes[1].type).toBe('className');
             expect(componentElements[4].attributes[1].name).toBe('property');
             expect(componentElements[4].attributes[1].value).toBe('className:className');
-            expect(componentElements[4].attributes[1].locationType).toBe('param');
+            expect(componentElements[4].attributes[1].locationType).toBe('props');
             expectLocationOfString(file, componentElements[4].attributes[1].location, 'className');
 
             //static properties have value propName:propValue
@@ -85,7 +85,7 @@ describe("indexor", () => {
         });
 
         it("Should index strings in containers", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/SummaryMetadata.tsx';
             const content = testCases[file];
@@ -104,7 +104,7 @@ describe("indexor", () => {
         });
 
         it("Can find the property in a call and template literal expression", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/harderDyanmic.tsx';
             const content = testCases[file];
@@ -126,7 +126,7 @@ describe("indexor", () => {
             expect(componentElements[0].attributes[1].type).toBe('className');
             expect(componentElements[0].attributes[1].name).toBe('property');
             expect(componentElements[0].attributes[1].value).toBe('className:className');
-            expect(componentElements[0].attributes[1].locationType).toBe('param');
+            expect(componentElements[0].attributes[1].locationType).toBe('props');
             expectLocationOfString(file, componentElements[0].attributes[1].location, 'className');
 
             //div #2
@@ -142,7 +142,7 @@ describe("indexor", () => {
         })
 
         it("Should index compoennt with multiple text broken up", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/text_stuff.tsx';
             const content = testCases[file];
@@ -165,7 +165,7 @@ describe("indexor", () => {
         })
 
         it("Should connect to correct parent attributes", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/SummaryMetadata.tsx';
             const content = testCases[file];
@@ -213,7 +213,7 @@ describe("indexor", () => {
         })
 
         it("Should handle multiple layers of parents", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/multipleLayers1.tsx';
             const content = testCases[file];
@@ -227,7 +227,7 @@ describe("indexor", () => {
             expect(componentElements[2].attributes[0].type).toBe('className');
             expect(componentElements[2].attributes[0].name).toBe('property');
             expect(componentElements[2].attributes[0].value).toBe('className:className');
-            expect(componentElements[2].attributes[0].locationType).toBe('param');
+            expect(componentElements[2].attributes[0].locationType).toBe('props');
             expectLocationOfString(file, componentElements[2].attributes[0].location, 'className');
             
             expect(componentElements[5].attributes.length).toBe(1);
@@ -248,7 +248,7 @@ describe("indexor", () => {
             expect(componentElements[3].attributes[1].type).toBe('className');
             expect(componentElements[3].attributes[1].name).toBe('property');
             expect(componentElements[3].attributes[1].value).toBe('className:className');
-            expect(componentElements[3].attributes[1].locationType).toBe('param');
+            expect(componentElements[3].attributes[1].locationType).toBe('props');
             expectLocationOfString(file, componentElements[3].attributes[1].location, 'className');
 
             expect(componentElements[3].attributes.length).toBe(3);
@@ -306,7 +306,7 @@ describe("indexor", () => {
         })
 
         it("Should handle inner classNames", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/innerClassName.tsx';
             const content = testCases[file];
@@ -329,7 +329,7 @@ describe("indexor", () => {
         })
 
         it("Should handle object properties", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/objectProperties.tsx';
             const content = testCases[file];
@@ -347,7 +347,7 @@ describe("indexor", () => {
             expect(componentElements[0].attributes[2].type).toBe('className');
             expect(componentElements[0].attributes[2].name).toBe('property');
             expect(componentElements[0].attributes[2].value).toBe('className:className');
-            expect(componentElements[0].attributes[2].locationType).toBe('param');
+            expect(componentElements[0].attributes[2].locationType).toBe('props');
             expectLocationOfString(file, componentElements[0].attributes[2].location, 'className')
 
             //h1 -> layer 1
@@ -395,7 +395,7 @@ describe("indexor", () => {
         })
 
         it("Should be able to handle complex dynamic instances", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/complexDynamicCases.tsx';
             const content = testCases[file];
@@ -451,7 +451,7 @@ describe("indexor", () => {
         })
 
         it("Should not include classNames that are params and don't have 'class' in the name of the property", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/classNameTests.tsx';
             const content = testCases[file];
@@ -464,12 +464,12 @@ describe("indexor", () => {
             expect(componentElements[0].attributes[0].type).toBe('property');
             expect(componentElements[0].attributes[0].name).toBe('property');
             expect(componentElements[0].attributes[0].value).toBe('variant:variant');
-            expect(componentElements[0].attributes[0].locationType).toBe('param');
+            expect(componentElements[0].attributes[0].locationType).toBe('props');
             expectLocationOfString(file, componentElements[0].attributes[0].location, 'variant');
             expect(componentElements[0].attributes[2].type).toBe('className');
             expect(componentElements[0].attributes[2].name).toBe('property');
             expect(componentElements[0].attributes[2].value).toBe('className:className');
-            expect(componentElements[0].attributes[2].locationType).toBe('param');
+            expect(componentElements[0].attributes[2].locationType).toBe('props');
             expectLocationOfString(file, componentElements[0].attributes[2].location, 'className');
 
             expect(componentElements[4].attributes.length).toBe(3);
@@ -485,9 +485,27 @@ describe("indexor", () => {
             expectLocationOfString(file, componentElements[4].attributes[2].location, '"border"');
         })
 
+        it("Should add className to parent if has props className", () => {
+            const componentElements: ComponentElementWithNode[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/classNameTests.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(7);
+
+            expect(componentElements[6].attributes.length).toBe(2);
+            expect(componentElements[6].attributes[1].type).toBe('className');
+            expect(componentElements[6].attributes[1].name).toBe('string');
+            expect(componentElements[6].attributes[1].value).toBe('');
+            expect(componentElements[6].attributes[1].locationType).toBe('add');
+            expectLocationOfString(file, componentElements[6].attributes[1].location, '');
+        });
+
         //TODO: Finish this
         it("Should handle imports from various files", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file1: TestFile = 'app/multipleLayers1.tsx';
             const content1 = testCases[file1];
@@ -505,7 +523,7 @@ describe("indexor", () => {
 
     describe("getCodeInfoAndNormalizeFromFiles", () => {
         it("Should index dynamic text with multiple children properly", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const file: TestFile = 'app/SummaryMetadata.tsx';
             const content = testCases[file];
@@ -540,7 +558,7 @@ describe("indexor", () => {
         })
 
         it("Should index and normalize across files", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const contents: {file: TestFile, content: string}[] = [
                 {
@@ -578,7 +596,7 @@ describe("indexor", () => {
         })
 
         it("Should index and normalize across files reverse", () => {
-            const componentElements: ComponentElement[] = [];
+            const componentElements: ComponentElementWithNode[] = [];
             const componentDefinitions: Record<string, HarmonyComponent> = {};
             const contents: {file: TestFile, content: string}[] = [
                 {
