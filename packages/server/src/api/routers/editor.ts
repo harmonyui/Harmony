@@ -11,7 +11,7 @@ import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
-import { indexFiles } from "../services/indexor/indexor";
+import { indexFiles, updateDatabaseComponentDefinitions } from "../services/indexor/indexor";
 import { getCodeSnippet, getFileContent } from "../services/indexor/github";
 import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
@@ -192,6 +192,7 @@ export const editorRouter = createTRPCRouter({
                     if (!element) {
                         const indexedElement = await indexForComponent(update.componentId, gitRepository);
 						if (indexedElement) {
+							await updateDatabaseComponentDefinitions([indexedElement], branch.repository_id);
 							element = await ctx.componentElementRepository.createOrUpdateElement(indexedElement, branch.repository_id);
 						}
                     }

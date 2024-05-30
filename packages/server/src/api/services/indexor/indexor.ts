@@ -14,9 +14,6 @@ import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/compo
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import { hashCode } from "@harmony/util/src/utils/common";
-import { ComponentAttribute, ComponentDefinition } from "@harmony/db/lib/generated/client";
-import { INDEXING_VERSION } from "@harmony/util/src/constants";
 import { PrismaComponentElementRepository } from "../../repository/component-element";
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
@@ -690,7 +687,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 // const resolvedPath = resolvePathAlias(alias, aliasMappings);
 
 
-async function updateDatabaseComponentDefinitions(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
+export async function updateDatabaseComponentDefinitions(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
 	const containingComponents = elementInstances.reduce<HarmonyComponent[]>((prev, curr) => {
 		const def = prev.find(d => d.id === curr.containingComponent.id);
 		if (!def) {
