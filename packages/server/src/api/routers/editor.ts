@@ -11,7 +11,7 @@ import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
-import { indexFiles, updateDatabaseComponentDefinitions } from "../services/indexor/indexor";
+import { indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
 import { getCodeSnippet, getFileContent } from "../services/indexor/github";
 import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
@@ -178,9 +178,13 @@ export const editorRouter = createTRPCRouter({
             //Indexes the files of these component updates
             for (const value of body.values) {
                 for (const update of value.update) {
-                //for (let i = 0; i < value.update.length; i++) {
-                    //const update = value.update[i];
-                    if (!update.componentId) continue;
+                	if (!update.componentId) continue;
+
+					//TODO: Be able to handle dynamic components so we don't have to do this
+					const split = update.componentId.split('#')
+					if (split.length > 1 && /pages\/_app\.(tsx|jsx|js)/.exec(atob(split[0]))) {
+						update.componentId = split.slice(1).join('#');
+					}
                     
                     let element = await prisma.componentElement.findFirst({
                         where: {
@@ -194,53 +198,25 @@ export const editorRouter = createTRPCRouter({
 						const indexedElement = elementInstances.find(el => el.id === update.componentId);
 						if (indexedElement) {
 							await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
+							await updateDatabaseComponentErrors(elementInstances, branch.repository_id);
 							element = await ctx.componentElementRepository.createOrUpdateElement(indexedElement, branch.repository_id);
 						}
                     }
 
-                    let error: string | undefined;
-
-                    //If the element was not created, or if this is text and it is not a static string 
-                    //(i.e it is tied to a property or containing component) then this is an error that needs to be reverted
-                    if (!element) {
-                        error = 'element';
-                    } else if (update.type === 'text') {
-                        const textAttribute = await prisma.componentAttribute.findFirst({
-                            where: {
-                                component_id: update.componentId,
-                                type: 'text',
-                                name: 'string'
-                            }
-                        });
-                        if (!textAttribute) {
-                            error = 'text';
-                        }
-                    }
+					const error = await prisma.componentError.findFirst({
+						where: {
+							component_id: element?.id,
+							repository_id: branch.repository_id
+						}
+					});
                     
 
-                    if (!error) {
+                    if (element && !error) {
                         updates.push(update);
-                    } else {
-						if (error === 'element') {
-							throw new Error("Cannot have an error element because that shouldn't happend anymore");
-						}
-                        const pastError = await prisma.componentError.findUnique({
-                            where: {
-                                component_id: update.componentId,
-                                repository_id: branch.repository_id
-                            }
-                        });
-
-                        if (!pastError) {
-                            await prisma.componentError.create({
-                                data: {
-                                    component_id: update.componentId,
-									repository_id: branch.repository_id,
-                                    type: error
-                                },
-                            })
-                        }
-						errorUpdates.push({...update, errorType: error});
+                    } else if (!element) {
+						throw new Error("Cannot have an error element because that shouldn't happend anymore");
+					} else if (error) {
+						errorUpdates.push({...update, errorType: error.type});
                     }
                 }
             }
