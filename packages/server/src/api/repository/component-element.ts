@@ -1,11 +1,13 @@
 import {type ComponentElement} from '@harmony/util/src/types/component';
 import {Prisma, type Db} from '@harmony/db/lib/prisma';
 import {INDEXING_VERSION} from '@harmony/util/src/constants';
+import { randomUUID } from 'crypto';
 
 export type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof componentElementPayload>;
 
 export interface ComponentElementRepository {
     createOrUpdateElement: (element: ComponentElement, repositoryId: string) => Promise<ComponentElementPrisma>
+    createOrUpdateElements: (elements: ComponentElement[], repositoryId: string) => Promise<void>
 }
 
 const componentElementPayload = {
@@ -23,8 +25,8 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
     constructor(private prisma: Db) {}
 
     public async createOrUpdateElement(instance: ComponentElement, repositoryId: string): Promise<ComponentElementPrisma> {
-        const referenceFirst = instance.attributes.filter(attr => instance.id !== attr.reference.id).map(attr => attr.reference as ComponentElement);
-        await Promise.all(referenceFirst.map(ref => this.createOrUpdateElement(ref, repositoryId)));
+        // const referenceFirst = instance.attributes.filter(attr => instance.id !== attr.reference.id).map(attr => attr.reference as ComponentElement);
+        // await Promise.all(referenceFirst.map(ref => this.createOrUpdateElement(ref, repositoryId)));
         
         const newInstance = await this.prisma.componentElement.upsert({
 			where: {
@@ -62,39 +64,87 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
             ...componentElementPayload
 		});
 
-		await this.prisma.componentAttribute.deleteMany({
-			where: {
-				component_id: instance.id
-			}
-		});
-		newInstance.attributes = await Promise.all(instance.attributes.map(attribute => this.prisma.componentAttribute.create({
-            data: {
-                name: attribute.name,
-                type: attribute.type,
-                value: attribute.value,
-                component: {
-                    connect: {
-                        id: instance.id
-                    }
-                },
-                index: attribute.index,
-                location: {
-                    create: {
-                        file: attribute.location.file,
-                        start: attribute.location.start,
-                        end: attribute.location.end
-                    }
-                },
-                reference_component: {
-                    connect: {
-                        id: attribute.reference.id
-                    }
-                }
-            },
-            ...componentElementPayload.include.attributes
-        })));
+		// await this.prisma.componentAttribute.deleteMany({
+		// 	where: {
+		// 		component_id: instance.id
+		// 	}
+		// });
+		// newInstance.attributes = await Promise.all(instance.attributes.map(attribute => this.prisma.componentAttribute.create({
+        //     data: {
+        //         name: attribute.name,
+        //         type: attribute.type,
+        //         value: attribute.value,
+        //         component: {
+        //             connect: {
+        //                 id: instance.id
+        //             }
+        //         },
+        //         index: attribute.index,
+        //         location: {
+        //             create: {
+        //                 file: attribute.location.file,
+        //                 start: attribute.location.start,
+        //                 end: attribute.location.end
+        //             }
+        //         },
+        //         reference_component: {
+        //             connect: {
+        //                 id: attribute.reference.id
+        //             }
+        //         }
+        //     },
+        //     ...componentElementPayload.include.attributes
+        // })));
 
         return newInstance;
+    }
+
+    public async createOrUpdateElements(elements: ComponentElement[], repositoryId: string): Promise<void> {
+        const existingElements = await this.prisma.componentElement.findMany({
+            where: {
+                id: {
+                    in: elements.map(({id}) => id)
+                },
+                repository_id: repositoryId
+            }
+        });
+        const updateElements = existingElements;
+        let newElements = elements.filter(({id}) => !updateElements.find(({id: updateId}) => updateId === id)).map(element => ({...element, location: {...element.location, id: randomUUID()}}));
+        newElements = newElements.filter(a => newElements.filter(b => a.id === b.id).length < 2);
+        // await this.prisma.componentElement.updateMany({
+        //     where: {
+        //         id: {
+        //             in: updateElements.map(({id}) => id)
+        //         }
+        //     },
+        //     data: updateElements.map(element => ({
+        //         id: element.id,
+		// 		repository_id: repositoryId,
+		// 		name: element.name,
+		// 		definition_id: element.definition_id,
+		// 		version: INDEXING_VERSION
+        //     }))
+        // });
+
+        await this.prisma.location.createMany({
+            data: newElements.map(element => ({
+                id: element.location.id,
+                file: element.location.file,
+                start: element.location.start,
+                end: element.location.end
+            }))
+        })
+        
+        await this.prisma.componentElement.createMany({
+            data: newElements.map((element) => ({
+                id: element.id,
+				repository_id: repositoryId,
+				name: element.name,
+				definition_id: element.containingComponent.id,
+                location_id: element.location.id,
+				version: INDEXING_VERSION
+            }))
+        })
     }
 
     // public async getComponentElement(id: string): Promise<ComponentElement | undefined> {

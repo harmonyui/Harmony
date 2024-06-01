@@ -463,7 +463,7 @@ describe("indexor", () => {
 
             const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
             expect(result).toBeTruthy();
-            expect(componentElements.length).toBe(7);
+            expect(componentElements.length).toBe(8);
 
             expect(componentElements[0].attributes.length).toBe(3);
             expect(componentElements[0].attributes[0].type).toBe('property');
@@ -498,7 +498,7 @@ describe("indexor", () => {
 
             const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
             expect(result).toBeTruthy();
-            expect(componentElements.length).toBe(7);
+            expect(componentElements.length).toBe(8);
 
             //h1
             expect(componentElements[2].attributes.length).toBe(2);
@@ -508,13 +508,49 @@ describe("indexor", () => {
             expect(componentElements[2].attributes[1].locationType).toBe('add');
             expectLocationOfString(file, componentElements[2].attributes[1].location, '');
 
-            expect(componentElements[6].attributes.length).toBe(2);
-            expect(componentElements[6].attributes[1].type).toBe('className');
-            expect(componentElements[6].attributes[1].name).toBe('string');
-            expect(componentElements[6].attributes[1].value).toBe('');
-            expect(componentElements[6].attributes[1].locationType).toBe('add');
-            expectLocationOfString(file, componentElements[6].attributes[1].location, '');
+            //Text child should have the correct index
+            expect(componentElements[5].attributes.length).toBe(2);
+            expect(componentElements[5].attributes[0].type).toBe('text');
+            expect(componentElements[5].attributes[0].name).toBe('string');
+            expect(componentElements[5].attributes[0].value.trim()).toBe('You\'re welcome');
+            expect(componentElements[5].attributes[0].locationType).toBe('component');
+            expect(componentElements[5].attributes[0].index).toBe(1);
+
+            expect(componentElements[6].attributes.length).toBe(3);
+            expect(componentElements[6].attributes[0].type).toBe('property');
+            expect(componentElements[6].attributes[0].name).toBe('property');
+            expect(componentElements[6].attributes[0].value).toBe('variant:variant');
+            expect(componentElements[6].attributes[0].locationType).toBe('props');
+            expectLocationOfString(file, componentElements[6].attributes[0].location, 'variant');
+            expect(componentElements[6].attributes[2].type).toBe('className');
+            expect(componentElements[6].attributes[2].name).toBe('string');
+            expect(componentElements[6].attributes[2].value).toBe('');
+            expect(componentElements[6].attributes[2].locationType).toBe('add');
+            expectLocationOfString(file, componentElements[6].attributes[2].location, '');
         });
+
+        it("Should keep parent index of text element", () => {
+            const componentElements: ComponentElementWithNode[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/complexText.tsx';
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(10);
+
+            expect(componentElements[2].attributes.length).toBe(2);
+            expect(componentElements[2].attributes[0].type).toBe('text');
+            expect(componentElements[2].attributes[0].name).toBe('string');
+            expect(componentElements[2].attributes[0].value).toContain('Filter');
+            expect(componentElements[2].attributes[0].index).toBe(1);
+
+            expect(componentElements[7].attributes.length).toBe(2);
+            expect(componentElements[7].attributes[0].type).toBe('text');
+            expect(componentElements[7].attributes[0].name).toBe('string');
+            expect(componentElements[7].attributes[0].value).toContain('Hello');
+            expect(componentElements[7].attributes[0].index).toBe(2);
+        })
 
         //TODO: Finish this
         it("Should handle imports from various files", () => {
@@ -974,9 +1010,30 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
                     Thank you
                 </Button>
                 <Button size="lg">
-                    You're welcome
+                    <Icon/> You're welcome
                 </Button>
             </div>
+        )
+    }
+    `,
+    'app/complexText.tsx': 
+    `
+    const Component = ({children}) => {
+        return (
+            <div>{children}</div>
+        )
+    }
+    
+    const App = () => {
+        return (<>
+            <Component><Icon/> Filter</Component>
+            <ComponentComplex><Icon/> Hello</ComponentComplex>
+        </>)
+    }
+
+    const ComponentComplex = ({children}) => {
+        return (
+            <div><Icon/> {children}</div>
         )
     }
     `

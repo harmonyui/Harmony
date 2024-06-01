@@ -78,12 +78,14 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 }
 
 function findErrorElements(elementInstances: ComponentElement[]): (ComponentElement & {type: string})[] {
-	const textAttributeErrors = elementInstances.filter(instance => !instance.isComponent && instance.children.length === 0 && instance.attributes.find(attr => attr.type === 'text') && !instance.attributes.find(attr => attr.type === 'text' && attr.name === 'string'));
+	const textAttributeErrors = elementInstances.filter(instance => instance.attributes.find(attr => attr.type === 'text') && !instance.attributes.find(attr => attr.type === 'text' && attr.name === 'string'));
 
-	return textAttributeErrors.map(attr => ({
+	const errors = textAttributeErrors.map(attr => ({
 		...attr,
 		type: 'text'
 	}));
+
+	return errors.filter(a => errors.filter(b => a.id === b.id).length < 2);
 }
 
 interface FileAndContent {
@@ -252,8 +254,17 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										const newAttribute = {...attr};
 										if (attribute.type === 'text') {
 											newAttribute.value = getAttributeValue(newAttribute);
+											//The text index needs to be accurate, and if this new attribute is not a text then
+											//it is -1, which is not accurate
+											if (newAttribute.type !== 'text') {
+												newAttribute.index = attribute.index;
+											} else {
+												//When there are multiple layers with multiple text attributes,
+												//the index needs to be accurate.
+												//Look at test case 'Should keep parent index of text element'
+												newAttribute.index += attribute.index;
+											}
 											newAttribute.type = 'text';
-											newAttribute.index = attribute.index;
 										} else if (attribute.type === 'property') {
 											const name = getAttributeName(attribute);
 											const value = getAttributeValue(newAttribute);
@@ -274,10 +285,14 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 											throw new Error("Invalid location");
 										}
 										const {end} = parent.node.openingElement.name.loc;
-										attributes.push({...attribute, name: 'string', value: '', locationType: 'add', location: {file: parent.location.file, start: end.index, end: end.index}});
+										sameAttributesInElement.push({...attribute, name: 'string', value: '', locationType: 'add', location: {file: parent.location.file, start: end.index, end: end.index}});
 									}
-									attributes.push(...sameAttributesInElement);
-									continue;
+									//If we have some things to add, cheerio!
+									if (sameAttributesInElement.length > 0) {
+										attributes.push(...sameAttributesInElement);
+										continue;
+									}
+									//Otherwise just add this attribute
 								}
 								attributes.push({...attribute});
 							}
@@ -743,16 +758,29 @@ export async function updateDatabaseComponentDefinitions(elementInstances: Compo
 	})));
 }
 
-async function updateDatabaseComponentErrors(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
+export async function updateDatabaseComponentErrors(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
 	const errorElements = findErrorElements(elementInstances);
+
 	const componentElementRepository = new PrismaComponentElementRepository(prisma);
 	
-	const createElement = async (element: ComponentElement): Promise<void> => {
-		const referenceFirst = element.attributes.filter(attr => element.id !== attr.reference.id).map(attr => attr.reference as ComponentElement);
-		await Promise.all(referenceFirst.map(r => createElement(r)));
-		await componentElementRepository.createOrUpdateElement(element, repositoryId);
-	}
-	await Promise.all(errorElements.map(element => createElement(element)));
+	await componentElementRepository.createOrUpdateElements(errorElements, repositoryId);
+	
+	await Promise.all(errorElements.map(element => prisma.componentError.upsert({
+		create: {
+			component_id: element.id,
+			repository_id: repositoryId,
+			type: element.type
+		},
+		update: {
+			component_id: element.id,
+			repository_id: repositoryId,
+			type: element.type
+		},
+		where: {
+			component_id: element.id,
+			repository_id: repositoryId
+		}
+	})));
 }
 
 async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
