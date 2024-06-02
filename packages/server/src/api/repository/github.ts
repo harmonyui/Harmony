@@ -310,9 +310,11 @@ export class LocalGitRepository implements GitRepository {
     
     constructor(public repository: Repository) {}
 
-    public async getContentOrDirectory(_path: string): Promise<ContentOrDirectory | { content: string; path: string; } | ContentOrDirectory[]> {
-        const content = await this.getContent(_path);
-        return {content, path: _path};
+    public async getContentOrDirectory(_path: string, branch?: string): Promise<ContentOrDirectory | { content: string; path: string; } | ContentOrDirectory[]> {
+        const githubRepo = new GithubRepository(this.repository);
+        return githubRepo.getContentOrDirectory(_path, branch);
+        // const content = await this.getContent(_path);
+        // return {content, path: _path};
     }
     public async createBranch(): Promise<void> {
         return undefined;
