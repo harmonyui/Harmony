@@ -7,7 +7,7 @@ import { Header } from "@harmony/ui/src/components/core/header";
 import { useEffect, useMemo, useState } from "react";
 import { getEditorUrl } from "@harmony/util/src/utils/component";
 import { Button } from "@harmony/ui/src/components/core/button";
-import { InfoBox } from "@harmony/ui/src/components/core/alert";
+import { InfoBox } from "@harmony/ui/src/components/core/popup";
 import type { IconComponent } from "@harmony/ui/src/components/core/icons";
 import { useHarmonyContext } from "../../harmony-context"
 

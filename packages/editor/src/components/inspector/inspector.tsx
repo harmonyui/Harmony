@@ -12,7 +12,7 @@ import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import hotkeys from 'hotkeys-js';
 import $ from 'jquery';
 import { usePrevious } from "@harmony/ui/src/hooks/previous";
-import {Alert} from '@harmony/ui/src/components/core/alert';
+import {Notification} from '@harmony/ui/src/components/core/notification';
 import { useSnapping } from "../snapping/snapping";
 import type { SelectMode , ComponentUpdateWithoutGlobal } from "../harmony-context";
 import { getProperty } from "../snapping/calculations";
@@ -447,7 +447,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredCompo
 		<div ref={containerRef} className="hw-z-100" id="harmonyInspector">
 			<div id="harmony-snap-guides"></div>
 		</div>
-		<Alert label={error} setLabel={setError}/> 
+		<Notification type='danger' label={error} setLabel={setError}/> 
 		</>
 	)
 }

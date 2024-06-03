@@ -21,8 +21,12 @@ import { getBoundingRect } from "./snapping/calculations";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import type { Setup } from "./harmony-setup";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
-import type { ComponentUpdateWithoutGlobal, DisplayMode, SelectMode} from "./harmony-context";
+import type { DisplayMode} from "./harmony-context";
 import { HarmonyContext, viewModes } from "./harmony-context";
+import { GlobalUpdatePopup } from "./panel/global-change-popup";
+
+export type SelectMode = 'scope' | 'tweezer';
+export type ComponentUpdateWithoutGlobal = Omit<ComponentUpdate, 'isGlobal'>
 
 export function findElementFromId(componentId: string, childIndex: number): HTMLElement | undefined {
 	const selector = `[data-harmony-id="${componentId}"]`;
@@ -95,8 +99,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [behaviors, setBehaviors] = useState<BehaviorType[]>([]);
 	const [isGlobal, setIsGlobal] = useState(false);
 	//const [currUpdates, setCurrUpdates] = useState<{updates: ComponentUpdateWithoutGlobal[], execute: boolean}>();
+	const [lastUpdate, setLastUpdate] = useState<ComponentUpdate | undefined>();
 
-	const executeCommand = useComponentUpdator({isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
+	const {newUpdates, changeUpdate} = useComponentUpdator({isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
 		setUpdateOverlay(updateOverlay + 1);
 	}, onError: setError});
 
@@ -373,8 +378,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	})
 
 	const onAttributesChange = (updates: ComponentUpdateWithoutGlobal[], execute=true) => {
-		executeCommand(updates.map(update => ({...update, isGlobal})), execute);
-		//setCurrUpdates({updates, execute});
+		const _newUpdates = updates.map(update => ({...update, isGlobal}));
+		newUpdates(_newUpdates, execute);
+		setLastUpdate(_newUpdates[0]);
 	}
 
 	const onElementChange = (element: HTMLElement, update: ComponentUpdateWithoutGlobal[], execute=true) => {
@@ -433,6 +439,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		setForceSave(forceSave + 1);
 	}
 
+	const onApplyGlobal = (update: ComponentUpdate): void => {
+		changeUpdate(update, true);
+	}
+
 	// const onFinishGlobalUpdates = (updates: ComponentUpdate[]) => {
 	// 	executeCommand(updates, currUpdates?.execute);
 	// 	setCurrUpdates(undefined);
@@ -461,6 +471,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					</button>
 				</div>}
 				<WelcomeModal />
+				<GlobalUpdatePopup update={lastUpdate} onApplyGlobal={onApplyGlobal}/>
 				{/* {currUpdates ? <GlobalUpdateModal updates={currUpdates.updates || []} onFinish={onFinishGlobalUpdates}/> : null} */}
 			</HarmonyContext.Provider>}
 		</>
@@ -572,7 +583,12 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 		return () => { window.removeEventListener('beforeunload', onLeave); };
 	}, []);
 
-	const executeCommand = (update: ComponentUpdate[], execute=true): void => {
+	const changeUpdate = (update: ComponentUpdate, execute=true): void => {
+		onUndo();
+		newUpdates([update], execute);
+	}
+
+	const newUpdates = (update: ComponentUpdate[], execute=true): void => {
 		const newCommand: HarmonyCommand = {
 			name: 'change',
 			update: update.filter(update => update.oldValue !== update.value)//.map(update => ({...update, behaviors})),
@@ -684,7 +700,7 @@ const useComponentUpdator = ({onChange, branchId, repositoryId, isSaving, isPubl
 	// }, []);
 
 
-	return executeCommand;
+	return {newUpdates, changeUpdate};
 }
 
 const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
