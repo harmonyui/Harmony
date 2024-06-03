@@ -325,23 +325,22 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
 							</div>
 						</div>
 						{/* Borer Width */}
-						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center hw-gap-2">
+						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center">
 							<p>Width</p>
-							<input className="hw-border hw-border-gray-200 hw-rounded-md hw-w-full hw-text-center hw-h-12" value={borderWidth[0].toFixed(0)} onChange={(e) => { onChange({ name: 'borderWidth', value: `${e.target.value}px` }) }} />
-							<div className="hw-border hw-border-gray-200 hw-rounded-md hw-flex hw-flex-row hw-items-center hw-justify-center hw-space-x-2 hw-h-12">
-								<div className="hw-cursor-pointer hw-p-2 hw-rounded-md">
-									<SquareIcon className="hw-size-8" />
-								</div>
-								<div className="hw-cursor-pointer hw-p-2 hw-rounded-md" onClick={() => {
-									onChange({ name: 'borderWidth', value: `0px 0px 0px 0px` })
-								}}>
-									<DottedSquareIcon className="hw-size-8" />
+							<div className="hw-grid hw-grid-cols-2 hw-col-span-2 hw-gap-1">
+								<input className="hw-border hw-border-gray-200 hw-rounded-md hw-w-full hw-text-center hw-h-12" value={borderWidth[0].toFixed(0)} onChange={(e) => { onChange({ name: 'borderWidth', value: `${e.target.value}px` }) }} />
+								<div className="hw-border hw-border-gray-200 hw-rounded-md hw-flex hw-flex-row hw-items-center hw-justify-center hw-space-x-2 hw-h-12">
+									<div className="hw-cursor-pointer hw-p-2 hw-rounded-md">
+										<SquareIcon className="hw-size-8" />
+									</div>
+									<div className="hw-cursor-pointer hw-p-2 hw-rounded-md" onClick={() => {
+										onChange({ name: 'borderWidth', value: `0px 0px 0px 0px` })
+									}}>
+										<DottedSquareIcon className="hw-size-8" />
+									</div>
 								</div>
 							</div>
 							{/* <Slider value={borderWidth} max={50} onChange={(value) => { onChange({ name: 'borderWidth', value: `${value}px` }) }} /> */}
-
-
-
 						</div>
 						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center">
 							<div className='hw-col-start-2 hw-col-span-2 hw-grid hw-grid-cols-4 hw-gap-1'>
