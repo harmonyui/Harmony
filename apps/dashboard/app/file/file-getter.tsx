@@ -24,6 +24,8 @@ export default function FileGetter({onSubmit: onSubmitProps}: {onSubmit: (ops: {
 
         void Promise.all(promises).then(codes => {setCode(codes)});
     }
+
+    const split = harmonyId ? harmonyId.split('#').map(a => `${atob(a)}-${a}`) : undefined;
     return (
          <div>
             <Label label="repository id">
@@ -33,7 +35,10 @@ export default function FileGetter({onSubmit: onSubmitProps}: {onSubmit: (ops: {
             <Input value={harmonyId} onChange={setHarmonyId}/>
             </Label>
             <Button onClick={onSubmit}>Submit</Button>
-            {code.map(c => <CodeSnippet language='javascript' code={c} showLineNumbers/>)}
+            {code.map((c, i) => <div>
+                {split ? <p>{split[i]}</p> : null}
+                <CodeSnippet language='javascript' code={c} showLineNumbers/>
+            </div>)}
         </div>
     );
 }
