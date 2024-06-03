@@ -12,7 +12,7 @@ import type { DropdownItem } from "@harmony/ui/src/components/core/dropdown";
 import { Dropdown } from "@harmony/ui/src/components/core/dropdown";
 import { Header } from "@harmony/ui/src/components/core/header";
 import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon, BorderAllIcon, CancelCircle, SolidLine, DottedLine, DashedLine, BorderIcon, ChevronUpIcon, ChevronDownIcon, SquareIcon, DottedSquareIcon } from "@harmony/ui/src/components/core/icons";
-import { NumberStepperInput } from "@harmony/ui/src/components/core/input";
+import { InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import { HexColorSchema } from "@harmony/util/src/types/colors";
 import { Popover } from "@harmony/ui/src/components/core/popover";
@@ -274,6 +274,7 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
 			const borderRadiusStr = borderAttrRadius.replace('px', '');
 
 			const borderWidth = borderStr.split(" ").map((item) => parseInt(item.trim()));
+			if (borderWidth.length === 1) borderWidth.push(borderWidth[0], borderWidth[0], borderWidth[0]);
 			const borderRadius = Number(borderRadiusStr);
 
 			let value = getAttribute('borderColor')
@@ -328,13 +329,13 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
 						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center">
 							<p>Width</p>
 							<div className="hw-grid hw-grid-cols-2 hw-col-span-2 hw-gap-1">
-								<input className="hw-border hw-border-gray-200 hw-rounded-md hw-w-full hw-text-center hw-h-12" value={borderWidth[0].toFixed(0)} onChange={(e) => { onChange({ name: 'borderWidth', value: `${e.target.value}px` }) }} />
+								<InputBlur className="hw-border hw-border-gray-200 hw-rounded-md hw-w-full hw-text-center hw-h-12" value={borderWidth[0].toFixed(0)} onChange={(value) => { onChange({ name: 'borderWidth', value: `${value}px` }) }} />
 								<div className="hw-border hw-border-gray-200 hw-rounded-md hw-flex hw-flex-row hw-items-center hw-justify-center hw-space-x-2 hw-h-12">
 									<div className="hw-cursor-pointer hw-p-2 hw-rounded-md">
 										<SquareIcon className="hw-size-8" />
 									</div>
 									<div className="hw-cursor-pointer hw-p-2 hw-rounded-md" onClick={() => {
-										onChange({ name: 'borderWidth', value: `0px 0px 0px 0px` })
+										onChange({ name: 'borderWidth', value: '0px 0px 0px 0px' })
 									}}>
 										<DottedSquareIcon className="hw-size-8" />
 									</div>
@@ -345,26 +346,26 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
 						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center">
 							<div className='hw-col-start-2 hw-col-span-2 hw-grid hw-grid-cols-4 hw-gap-1'>
 								<div className="hw-flex hw-flex-col hw-items-center hw-justify-center">
-									<input type="text" className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200 hw-rounded-tl-md hw-rounded-bl-md" placeholder="1" onChange={
-										(e) => updateBorderWidth('T', parseInt(e.target.value))
+									<InputBlur className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200 hw-rounded-tl-md hw-rounded-bl-md" value={borderWidth[0]} onChange={
+										(value) => updateBorderWidth('T', parseInt(value))
 									} />
 									<p className="hw-mt-2">T</p>
 								</div>
 								<div className="hw-flex hw-flex-col hw-items-center hw-justify-center">
-									<input type="text" className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200" placeholder="1" onChange={
-										(e) => updateBorderWidth('R', parseInt(e.target.value))
+									<InputBlur className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200" value={borderWidth[1]} onChange={
+										(value) => updateBorderWidth('R', parseInt(value))
 									} />
 									<p className="hw-mt-2">R</p>
 								</div>
 								<div className="hw-flex hw-flex-col hw-items-center hw-justify-center">
-									<input type="text" className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200" placeholder="1" onChange={
-										(e) => updateBorderWidth('B', parseInt(e.target.value))
+									<InputBlur className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200" value={borderWidth[2]} onChange={
+										(value) => updateBorderWidth('B', parseInt(value))
 									} />
 									<p className="hw-mt-2">B</p>
 								</div>
 								<div className="hw-flex hw-flex-col hw-items-center hw-justify-center">
-									<input type="text" className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200 hw-rounded-tr-md hw-rounded-br-md" placeholder="1" onChange={
-										(e) => updateBorderWidth('L', parseInt(e.target.value))
+									<InputBlur className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200 hw-rounded-tr-md hw-rounded-br-md" value={borderWidth[3]} onChange={
+										(value) => updateBorderWidth('L', parseInt(value))
 									} />
 									<p className="hw-mt-2">L</p>
 								</div>
