@@ -1,11 +1,12 @@
 /* eslint-disable no-await-in-loop -- Let's deal with this one later*/
-import { ComponentElementBase, ComponentUpdate } from "@harmony/util/src/types/component";
-import { z } from "zod";
 import fs from 'node:fs';
+import { z } from "zod";
 import { getLocationsFromComponentId, hashComponentId, updateLocationFromContent } from "@harmony/util/src/utils/component";
 import { prisma } from "@harmony/db/lib/prisma";
-import { GitRepository } from "../../repository/github";
 import { replaceByIndex } from "@harmony/util/src/utils/common";
+import type { ComponentUpdate } from "@harmony/util/src/types/component";
+import type { GitRepository } from "../../repository/github";
+import type { HarmonyComponent } from "../indexor/types";
 
 export const changesSchema = z.object({
 	oldCode: z.string(),
@@ -16,7 +17,7 @@ export const changesSchema = z.object({
 export type Changes = z.infer<typeof changesSchema>;
 
 // eslint-disable-next-line @typescript-eslint/require-await -- This function is polymorphic so we need the await
-export async function makeChanges(referencedComponent: ComponentElementBase, newSnippet: string): Promise<void> {
+export async function makeChanges(referencedComponent: HarmonyComponent, newSnippet: string): Promise<void> {
 	const file = fs.readFileSync(referencedComponent.location.file, 'utf-8');
 	const updatedFile = replaceByIndex(file, newSnippet, referencedComponent.location.start, referencedComponent.location.end);
 	fs.writeFileSync(referencedComponent.location.file, updatedFile);

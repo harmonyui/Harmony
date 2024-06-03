@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
 /* eslint-disable @typescript-eslint/restrict-template-expressions -- ok*/
 /* eslint-disable @typescript-eslint/no-base-to-string -- ok*/
@@ -9,18 +10,19 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
-import type { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/util/src/types/component";
+import type { ComponentLocation } from "@harmony/util/src/types/component";
 import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import { PrismaComponentElementRepository } from "../../repository/component-element";
+import { PrismaHarmonyComponentRepository } from "../../repository/component-element";
+import { Attribute, HarmonyComponent } from "./types";
 
-export type ComponentElementWithNode = ComponentElement & {node: t.JSXElement};
+export type HarmonyComponentWithNode = HarmonyComponent & {node: t.JSXElement};
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
-export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
+export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<HarmonyComponent[]> => {
 	const result = await indexFiles(files, readFile);
 	if (result) {
 		await updateDatabase(result.componentDefinitions, result.elementInstance, repositoryId);
@@ -30,9 +32,9 @@ export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (fi
 	return [];
 }
 
-export const indexFiles = async (files: string[], readFile: (filepath: string) => Promise<string>): Promise<{elementInstance: ComponentElementWithNode[], componentDefinitions: Record<string, HarmonyComponent>} | false> => {
+export const indexFiles = async (files: string[], readFile: (filepath: string) => Promise<string>): Promise<{elementInstance: HarmonyComponentWithNode[], componentDefinitions: Record<string, HarmonyComponent>} | false> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
-	const instances: ComponentElementWithNode[] = [];
+	const instances: HarmonyComponentWithNode[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
 	const visitedFiles: Set<string> = new Set<string>();
 	const fileContents: FileAndContent[] = [];
@@ -63,7 +65,7 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 
 export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
-	const instances: ComponentElementWithNode[] = [];
+	const instances: HarmonyComponentWithNode[] = [];
 	const fileContents: FileAndContent[] = [];
 
 	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
@@ -77,8 +79,8 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 	}
 }
 
-function findErrorElements(elementInstances: ComponentElement[]): (ComponentElement & {type: string})[] {
-	const textAttributeErrors = elementInstances.filter(instance => instance.attributes.find(attr => attr.type === 'text') && !instance.attributes.find(attr => attr.type === 'text' && attr.name === 'string'));
+function findErrorElements(elementInstances: HarmonyComponent[]): (HarmonyComponent & {type: string})[] {
+	const textAttributeErrors = elementInstances.filter(instance => instance.props.find(attr => attr.type === 'text') && !instance.props.find(attr => attr.type === 'text' && attr.name === 'string'));
 
 	const errors = textAttributeErrors.map(attr => ({
 		...attr,
@@ -92,7 +94,7 @@ interface FileAndContent {
 	file: string;
 	content: string;
 }
-export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[], importDeclarations: Record<string, {name: string, path: string}>): ComponentElementWithNode[] | false {
+export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[], importDeclarations: Record<string, {name: string, path: string}>): HarmonyComponentWithNode[] | false {
 	for (const {file, content} of files) {
 		if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
 			return false;
@@ -102,7 +104,7 @@ export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], compon
 	return normalizeCodeInfo(componentDefinitions, elementInstances);
 }
 
-export function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
+export function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
   const ast = parse(originalCode, {
     sourceType: 'module',
  		plugins: ['jsx', 'typescript'],
@@ -142,7 +144,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 		}
 	}
 
-	function createJSXElementDefinition(node: t.JSXElement, parentElement: ComponentElement | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): ComponentElementWithNode | undefined {
+	function createJSXElementDefinition(node: t.JSXElement, parentElement: HarmonyComponent | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): HarmonyComponentWithNode | undefined {
 		const name = getNameFromNode(node.openingElement.name);
 		const isComponent = name[0].toLowerCase() !== name[0];
 		const location = getLocation(node, file);
@@ -163,7 +165,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 			children: [],
 			isComponent,
 			location,
-			attributes: [],
+			props: [],
 			containingComponent,
 			node
 		};
@@ -187,7 +189,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 			}
 		},
 		['FunctionDeclaration|ArrowFunctionExpression'](path) {
-			const jsxElements: ComponentElement[] = [];
+			const jsxElements: HarmonyComponent[] = [];
 			const location = getLocation(path.node, file);
 
 			if (location === undefined) {
@@ -198,9 +200,10 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 				id: getHashFromLocation(location, originalCode),
 				name: '',
 				children: [],
-				attributes: [],
+				props: [],
 				isComponent: true,
-				location
+				location,
+				getParent: () => undefined,
 			};
 	
 			// Visitor for extracting JSX elements within the function body
@@ -245,12 +248,12 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return attribute.value;
 						}
 
-						function connectAttributesToParent(elementAttributes: Attribute[], parent: ComponentElementWithNode): Attribute[] {
+						function connectAttributesToParent(elementAttributes: Attribute[], parent: HarmonyComponentWithNode): Attribute[] {
 							const attributes: Attribute[] = [];
 							for (const attribute of elementAttributes) {
 								const propertyName = getPropertyName(attribute);
 								if (propertyName) {
-									const sameAttributesInElement = parent.attributes.filter(attr => getAttributeName(attr) === propertyName).map(attr => {
+									const sameAttributesInElement = parent.props.filter(attr => getAttributeName(attr) === propertyName).map(attr => {
 										const newAttribute = {...attr};
 										if (attribute.type === 'text') {
 											newAttribute.value = getAttributeValue(newAttribute);
@@ -300,8 +303,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return attributes;
 						}
 
-						function connectChildToParent(child: ComponentElementWithNode, parent: ComponentElementWithNode): ComponentElementWithNode {
-							const recurseConnectLog = (el: ComponentElement): string => {
+						function connectChildToParent(child: HarmonyComponentWithNode, parent: HarmonyComponentWithNode): HarmonyComponentWithNode {
+							const recurseConnectLog = (el: HarmonyComponent): string => {
 								const parent = el.getParent();
 								if (parent) {
 									return `to ${parent.name} ${recurseConnectLog(parent)}`;
@@ -309,14 +312,14 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								return '';
 							}
 							//console.log(`Connecting ${child.name} to ${parent.name} ${recurseConnectLog(parent)}`)
-							const attributes = connectAttributesToParent(child.attributes, parent);
+							const attributes = connectAttributesToParent(child.props, parent);
 							const newElement = {...child, attributes, getParent: () => parent};
 							elementInstances.push(newElement);
 
 							return newElement;
 						}
 
-						function getComponentsBindingId(element: ComponentElement): string | undefined {
+						function getComponentsBindingId(element: HarmonyComponent): string | undefined {
 							if (!element.isComponent) return;
 
 							const getId = (node: t.Node): string | undefined => {
@@ -351,17 +354,17 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return id;
 						}
 
-						function connectInstanceToChildren(element: ComponentElementWithNode): void {
+						function connectInstanceToChildren(element: HarmonyComponentWithNode): void {
 							const id = getComponentsBindingId(element);
 
-							const childElements = elementInstances.filter(instance => instance.containingComponent.id === id && instance.getParent() === undefined);
+							const childElements = elementInstances.filter(instance => instance.containingComponent?.id === id && instance.getParent() === undefined);
 							childElements.forEach(child => {
 								const newChild = connectChildToParent(child, element);
 								connectInstanceToChildren(newChild);
 							});
 						}
 
-						function connectInstanceToParent(element: ComponentElementWithNode): void {
+						function connectInstanceToParent(element: HarmonyComponentWithNode): void {
 							const bindings: Record<string, string | undefined> = {}
 							const parents = elementInstances.filter(parent => {
 								let binding = bindings[parent.name];
@@ -369,7 +372,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									bindings[parent.name] = getComponentsBindingId(parent);
 									binding = bindings[parent.name]
 								}
-								return binding === element.containingComponent.id
+								return binding === element.containingComponent?.id
 							});
 							const newChildren = parents.map(parent => {
 								return connectChildToParent(element, parent);
@@ -591,25 +594,25 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									textAttributes.push({...createExpressionAttribute(child.expression, 'text', undefined)[0], index: i})
 								}
 							}
-							jsxElementDefinition.attributes.push(...textAttributes);
+							jsxElementDefinition.props.push(...textAttributes);
 							for (const attr of node.openingElement.attributes) {
 								if (t.isJSXAttribute(attr)) {
 									const type = attr.name.name === 'className' ? 'className' : 'property';
 									if (t.isStringLiteral(attr.value)) {
-										jsxElementDefinition.attributes.push(createStringAttribute(attr.value, type, String(attr.name.name), attr.value.value));
+										jsxElementDefinition.props.push(createStringAttribute(attr.value, type, String(attr.name.name), attr.value.value));
 									} else if (t.isJSXExpressionContainer(attr.value)) {
-										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => createAttribute(type, expression.name, getAttributeName(expression), getAttributeValue(expression), expression.locationType, expression.location)));
+										jsxElementDefinition.props.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => createAttribute(type, expression.name, getAttributeName(expression), getAttributeValue(expression), expression.locationType, expression.location)));
 									}
 								}
 							}
 
 							//If this is a native html element and there is not className props, then we want the ability to add one
-							if (!jsxElementDefinition.isComponent && !jsxElementDefinition.attributes.find(attr => attr.type === 'className')) {
+							if (!jsxElementDefinition.isComponent && !jsxElementDefinition.props.find(attr => attr.type === 'className')) {
 								if (!node.openingElement.name.loc) {
 									throw new Error("Invalid location");
 								}
 								const {end} = node.openingElement.name.loc;
-								jsxElementDefinition.attributes.push(createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index}))
+								jsxElementDefinition.props.push(createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index}))
 							}
 							
 							//console.log(`Adding ${jsxElementDefinition.name}`);
@@ -655,8 +658,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 	return true;
 }
 
-function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[]) {
-	function getIdFromParents(instance: ComponentElement): string {
+function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[]) {
+	function getIdFromParents(instance: HarmonyComponent): string {
 		const parent = instance.getParent();
 		if (!parent) {
 			return instance.id;
@@ -671,7 +674,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		return `${parentId}#${instance.id}`;
 	}
 
-	const findAttributeReference = (element: ComponentElement | undefined, attributeId: string): {id: string} | undefined=> {
+	const findAttributeReference = (element: HarmonyComponent | undefined, attributeId: string): {id: string} | undefined=> {
 		if (!element) return undefined;
 
 		const id = element.id.split('#')[element.id.split('#').length - 1];
@@ -685,7 +688,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
 		instance.id = getIdFromParents(instance);
-		for (const attribute of instance.attributes) {
+		for (const attribute of instance.props) {
 			if (attribute.reference.id.split('#').length > 1) continue;
 			const newReference = findAttributeReference(instance, attribute.reference.id);
 			if (!newReference) {
@@ -724,11 +727,11 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 // const resolvedPath = resolvePathAlias(alias, aliasMappings);
 
 
-export async function updateDatabaseComponentDefinitions(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
+export async function updateDatabaseComponentDefinitions(elementInstances: HarmonyComponent[], repositoryId: string): Promise<void> {
 	const containingComponents = elementInstances.reduce<HarmonyComponent[]>((prev, curr) => {
-		const def = prev.find(d => d.id === curr.containingComponent.id);
+		const def = prev.find(d => d.id === curr.containingComponent?.id);
 		if (!def) {
-			prev.push(curr.containingComponent)
+			prev.push(curr.containingComponent!)
 		}
 
 		return prev;
@@ -758,10 +761,10 @@ export async function updateDatabaseComponentDefinitions(elementInstances: Compo
 	})));
 }
 
-export async function updateDatabaseComponentErrors(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
+export async function updateDatabaseComponentErrors(elementInstances: HarmonyComponent[], repositoryId: string): Promise<void> {
 	const errorElements = findErrorElements(elementInstances);
 
-	const componentElementRepository = new PrismaComponentElementRepository(prisma);
+	const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
 	
 	await componentElementRepository.createOrUpdateElements(errorElements, repositoryId);
 	
@@ -783,11 +786,11 @@ export async function updateDatabaseComponentErrors(elementInstances: ComponentE
 	})));
 }
 
-async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
+async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponent[], repositoryId: string, onProgress?: (progress: number) => void) {
 	elementInstances.sort((a, b) => a.id.split('#').length - b.id.split('#').length);
 	await updateDatabaseComponentDefinitions(elementInstances, repositoryId);
 
-	const componentElementRepository = new PrismaComponentElementRepository(prisma);
+	const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
 
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];

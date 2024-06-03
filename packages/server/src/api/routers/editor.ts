@@ -2,7 +2,7 @@
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import type { Attribute, ComponentElement, ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
+import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
 import { loadRequestSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
 import type { PublishResponse, UpdateResponse, LoadResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
@@ -18,6 +18,7 @@ import { createTRPCRouter, publicProcedure } from "../trpc";
 import type { GitRepository } from "../repository/github";
 import { createPullRequest } from "./pull-request";
 import { getBranch, getRepository } from "./branch";
+import { Attribute, HarmonyComponent } from "../services/indexor/types";
 
 export const editorRouter = createTRPCRouter({
     loadProject: publicProcedure
@@ -199,7 +200,7 @@ export const editorRouter = createTRPCRouter({
 						if (indexedElement) {
 							await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
 							await updateDatabaseComponentErrors(elementInstances, branch.repository_id);
-							element = await ctx.componentElementRepository.createOrUpdateElement(indexedElement, branch.repository_id);
+							element = await ctx.harmonyComponentRepository.createOrUpdateElement(indexedElement, branch.repository_id);
 						}
                     }
 
@@ -312,7 +313,7 @@ export const editorRouter = createTRPCRouter({
 		})
 })
 
-async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<ComponentElement[]> {
+async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
@@ -331,7 +332,7 @@ async function indexForComponent(componentId: string, gitRepository: GitReposito
 	return result.elementInstance;
 }
 
-async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<ComponentElement[]> {
+async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
@@ -352,7 +353,7 @@ async function indexForComponents(componentIds: string[], gitRepository: GitRepo
 
 interface FileUpdate {update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & {updatedTo: number}), updatedCode: string, attribute?: Attribute};
 interface UpdateInfo {
-	component: ComponentElement,
+	component: HarmonyComponent,
 	attributes: Attribute[], 
 	update: ComponentUpdate, 
 	type: ComponentUpdate['type'], 
@@ -401,13 +402,13 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				classNameUpdate.font = curr.value;
 			}
 		} else {
-			const getComponent = (currId: string): Promise<ComponentElement | undefined> => {
+			const getComponent = (currId: string): Promise<HarmonyComponent | undefined> => {
 				const currElement = elementInstances.find(instance => instance.id === currId);
 
 				return Promise.resolve(currElement);
 			}
-			const getAttributes = (component: ComponentElement): Promise<Attribute[]> => {
-				const allAttributes = component.attributes;
+			const getAttributes = (component: HarmonyComponent): Promise<Attribute[]> => {
+				const allAttributes = component.props;
 				
 				//Sort the attributes according to layers with the bottom layer first for global
 				allAttributes.sort((a, b) => b.reference.id.split('#').length - a.reference.id.split('#').length);
@@ -527,7 +528,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		value: string | undefined,
 		isDefinedAndDynamic: boolean
 	}
-	const getLocationAndValue = (attribute: Attribute | undefined, _component: ComponentElement): LocationValue => {
+	const getLocationAndValue = (attribute: Attribute | undefined, _component: HarmonyComponent): LocationValue => {
 		const isDefinedAndDynamic = attribute?.name === 'property';
 		return {location: attribute?.location || _component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic};
 	}

@@ -10,7 +10,7 @@ import {
 import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
 import { findElementFromId } from "../harmony-provider";
 import { v4 as uuidv4 } from 'uuid';
-import { ComponentElement } from "@harmony/util/src/types/component";
+import { ComponentElement } from "../inspector/component-identifier";
   enableRipple(true);
   
 export interface TreeViewItem<T = string> {
