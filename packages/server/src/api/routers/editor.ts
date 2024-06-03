@@ -206,7 +206,8 @@ export const editorRouter = createTRPCRouter({
 					const error = await prisma.componentError.findFirst({
 						where: {
 							component_id: element?.id,
-							repository_id: branch.repository_id
+							repository_id: branch.repository_id,
+							type: update.type
 						}
 					});
                     
