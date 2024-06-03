@@ -5,7 +5,7 @@
 /* eslint-disable no-nested-ternary -- ok*/
 import type { Font } from "@harmony/util/src/fonts";
 import type { ComponentElement } from "@harmony/util/src/types/component";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import ColorPicker from "@harmony/ui/src/components/core/color-picker";
 import type { DropdownItem } from "@harmony/ui/src/components/core/dropdown";
@@ -51,6 +51,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({ toggl
 	const { isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo, isGlobal, setIsGlobal } = useHarmonyContext();
 	const { setPanel } = useSidePanel();
 	const { toolNames, toolComponents } = useToolbarTools({ element: selectedElement, fonts });
+
 
 	const onPreview = () => {
 		changeMode('preview')
@@ -275,6 +276,8 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
 
 			const borderWidth = borderStr.split(" ").map((item) => parseInt(item.trim()));
 			if (borderWidth.length === 1) borderWidth.push(borderWidth[0], borderWidth[0], borderWidth[0]);
+			if (borderWidth.length === 2) borderWidth.push(borderWidth[0], borderWidth[1]);
+			if (borderWidth.length === 3) borderWidth.push(borderWidth[1]);
 			const borderRadius = Number(borderRadiusStr);
 
 			let value = getAttribute('borderColor')
@@ -331,13 +334,11 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
 							<div className="hw-grid hw-grid-cols-2 hw-col-span-2 hw-gap-1">
 								<InputBlur className="hw-border hw-border-gray-200 hw-rounded-md hw-w-full hw-text-center hw-h-12" value={borderWidth[0].toFixed(0)} onChange={(value) => { onChange({ name: 'borderWidth', value: `${value}px` }) }} />
 								<div className="hw-border hw-border-gray-200 hw-rounded-md hw-flex hw-flex-row hw-items-center hw-justify-center hw-space-x-2 hw-h-12">
-									<div className="hw-cursor-pointer hw-p-2 hw-rounded-md">
-										<SquareIcon className="hw-size-8" />
+									<div className='hw-cursor-pointer hw-p-2 hw-rounded-md' >
+										<SquareIcon className='hw-size-8' />
 									</div>
-									<div className="hw-cursor-pointer hw-p-2 hw-rounded-md" onClick={() => {
-										onChange({ name: 'borderWidth', value: '0px 0px 0px 0px' })
-									}}>
-										<DottedSquareIcon className="hw-size-8" />
+									<div className='hw-cursor-pointer hw-p-2 hw-rounded-md'>
+										<DottedSquareIcon className='hw-size-8' />
 									</div>
 								</div>
 							</div>
