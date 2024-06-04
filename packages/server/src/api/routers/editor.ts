@@ -1,28 +1,29 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+ 
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
-import { loadRequestSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
-import type { PublishResponse, UpdateResponse, LoadResponse } from '@harmony/util/src/types/network';
+import type { ComponentLocation, ComponentUpdate, HarmonyComponentInfo } from "@harmony/util/src/types/component";
+import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
+import type { PublishResponse, UpdateResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
 import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
-import { indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
+import { convertToHarmonyInfo, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
 import { getCodeSnippet, getFileContent } from "../services/indexor/github";
 import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import type { GitRepository } from "../repository/github";
+import type { Attribute, HarmonyComponent } from "../services/indexor/types";
 import { createPullRequest } from "./pull-request";
 import { getBranch, getRepository } from "./branch";
-import { Attribute, HarmonyComponent } from "../services/indexor/types";
 
 export const editorRouter = createTRPCRouter({
     loadProject: publicProcedure
         .input(loadRequestSchema)
+		.output(loadResponseSchema)
         .query(async ({ctx, input}) => {
             const {repositoryId, branchId} = input;
             const {prisma} = ctx;
@@ -50,8 +51,6 @@ export const editorRouter = createTRPCRouter({
                 throw new Error(`Cannot find account tied to branch ${  branchId}`);
             }
 
-            //await indexCodebase('/Users/braydonjones/Documents/Projects/formbricks', fromDir, repositoryId);
-
             let updates: ComponentUpdate[] = [];
 
             const query = await prisma.$queryRaw<{action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, parentId: string, isGlobal: boolean}[]>`
@@ -73,7 +72,7 @@ export const editorRouter = createTRPCRouter({
                 isGlobal: up.isGlobal
             }));
 
-            const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
+			const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
             const ref = await githubRepository.getBranchRef(repository.branch);
 
             //If the current repository ref is out of date, that means we have some
@@ -91,7 +90,6 @@ export const editorRouter = createTRPCRouter({
                     }
                 })
             }
-            
 
             const branches = await prisma.branch.findMany({
                 where: {
@@ -105,7 +103,10 @@ export const editorRouter = createTRPCRouter({
             	}
             })
 
-			const isDemo = accountTiedToBranch.role === 'quick'
+			const isDemo = accountTiedToBranch.role === 'quick';
+
+			const indexedComponents = await indexForComponents(updates.map(update => update.componentId), githubRepository);
+			const harmonyComponents: HarmonyComponentInfo[] = convertToHarmonyInfo(indexedComponents);
 
             return {
                 updates,
@@ -116,8 +117,9 @@ export const editorRouter = createTRPCRouter({
                 errorElements: isDemo ? [] : errorElements.map(element => ({componentId: element.component_id, type: element.type})),
                 pullRequest: pullRequest || undefined,
                 showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
-                isDemo
-            } satisfies LoadResponse
+                isDemo,
+				harmonyComponents
+            }
         }),
     saveProject: publicProcedure
         .input(updateRequestBodySchema)
@@ -223,33 +225,19 @@ export const editorRouter = createTRPCRouter({
                 }
             }
 
-            for (const up of updates) {
-                await prisma.componentUpdate.create({
-                    data: {
-                        component_id: up.componentId,
-                        action: up.action,
-                        type: up.type,
-                        name: up.name,
-                        value: up.value,
-                        branch_id: branchId,
-                        old_value: up.oldValue,
-                        childIndex: up.childIndex,
-                        is_global: up.isGlobal
-                    }
-                })
-            }
-            // await prisma.componentUpdate.createMany({
-            // 	data: updates.map(up => ({
-            // 		component_parent_id: up.parentId,
-            // 		component_id: up.componentId,
-            // 		action: up.action,
-            // 		type: up.type,
-            // 		name: up.name,
-            // 		value: up.value,
-            // 		branch_id: branchId,
-            // 		old_value: up.oldValue
-            // 	}))
-            // });
+			await Promise.all(updates.map(up => prisma.componentUpdate.create({
+				data: {
+					component_id: up.componentId,
+					action: up.action,
+					type: up.type,
+					name: up.name,
+					value: up.value,
+					branch_id: branchId,
+					old_value: up.oldValue,
+					childIndex: up.childIndex,
+					is_global: up.isGlobal
+				}
+			})))
 
             const reversed = reverseUpdates(errorUpdates);
             const response: UpdateResponse = {errorUpdates: reversed};
@@ -286,22 +274,6 @@ export const editorRouter = createTRPCRouter({
 			//Get rid of same type of updates (more recent one wins)
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- It is necessary
 			const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId) ? prev : prev.concat([{...curr, oldValue: old[i]!}]), []);
-			// const githubRepository = new GithubRepository(repository);
-			// const ref = await githubRepository.getBranchRef(repository.branch);
-			// if (ref !== repository.ref) {
-			// 	for (const update of updates) {
-			// 		await indexForComponent(update.componentId, update.parentId, repository);
-			// 	}
-
-			// 	await prisma.repository.update({
-			// 		where: {
-			// 			id: repository.id
-			// 		},
-			// 		data: {
-			// 			ref
-			// 		}
-			// 	})
-			// }
 
 			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
 			await findAndCommitUpdates(updates, gitRepository, branch);

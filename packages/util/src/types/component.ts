@@ -4,7 +4,7 @@ import { stringUnionSchema } from "../utils/common";
 const behaviorTypes = ['dark'] as const;
 const behaviorTypesSchema = stringUnionSchema(behaviorTypes);
 export type BehaviorType = z.infer<typeof behaviorTypesSchema>;
-const updateTypes = ['className', 'text', 'component'] as const;
+const updateTypes = ['className', 'text', 'component', 'property'] as const;
 const updateTypesSchema = stringUnionSchema(updateTypes);
 
 //type: className, name: size

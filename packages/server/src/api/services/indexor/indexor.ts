@@ -10,7 +10,7 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
-import type { ComponentLocation } from "@harmony/util/src/types/component";
+import { ComponentProp, type ComponentLocation, type HarmonyComponentInfo } from "@harmony/util/src/types/component";
 import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
@@ -63,7 +63,7 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 	return {elementInstance, componentDefinitions};
 }
 
-export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
+export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void): Promise<HarmonyComponentInfo[]> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: HarmonyComponentWithNode[] = [];
 	const fileContents: FileAndContent[] = [];
@@ -74,9 +74,81 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
-		await updateDatabaseComponentDefinitions(elementInstances, repoId);
+		return elementInstances.map(instance => ({
+			id: instance.id,
+			isComponent: instance.isComponent,
+			name: instance.name,
+			props: instance.props.map<ComponentProp>(prop => ({
+				isStatic: prop.name === 'string',
+				propName: '',
+				propValue: '',
+				type: prop.type,
+				componentId: instance.id
+			}))
+		}))
+		//await updateDatabaseComponentDefinitions(elementInstances, repoId);
 		//await updateDatabaseComponentErrors(elementInstances, repoId);
 	}
+
+	return [];
+}
+
+function getAttributeName(attribute: Attribute): string {
+	if (attribute.type === 'className') {
+		return 'className';
+	} else if (attribute.type === 'text') {
+		return 'children';
+	}
+
+	const [name] = attribute.value.split(':');
+	return name;
+}
+
+function getPropertyName(attribute: Attribute): string | undefined {
+	if (attribute.name !== 'property') return undefined;
+
+	if (attribute.type === 'text') {
+		return attribute.value === 'undefined' ? undefined : attribute.value;
+	}
+
+	const [_, propertyName] = attribute.value.split(':');
+	return propertyName === 'undefined' ? undefined : propertyName; 
+}
+
+function getAttributeValue(attribute: Attribute): string {
+	if (attribute.name === 'property') {
+		return getPropertyName(attribute) || 'undefined';
+	}
+
+	if (attribute.type === 'property') {
+		const [_, propertyValue] = attribute.value.split(':');
+		return propertyValue;
+	}
+
+	return attribute.value;
+}
+
+export function convertToHarmonyInfo(elementInstances: HarmonyComponent[]): HarmonyComponentInfo[] {
+	return elementInstances.filter(i => !i.isComponent).map(instance => {
+		const getBaseId = (id: string): string => {
+			const split = id.split('#');
+			return split[split.length - 1];
+		}
+		
+		const isRootElement = getBaseId(instance.containingComponent!.children[0].id) === getBaseId(instance.id);
+		return ({
+			id: instance.id,
+			isComponent: isRootElement,
+			name: isRootElement ? instance.containingComponent!.name : instance.name,
+			props: instance.props.map<ComponentProp>(prop => ({
+				isStatic: prop.name === 'string',
+				propName: getAttributeName(prop),
+				propValue: getAttributeValue(prop),
+				type: prop.type,
+				componentId: instance.id
+			}))
+		})
+	})
 }
 
 function findErrorElements(elementInstances: HarmonyComponent[]): (HarmonyComponent & {type: string})[] {
@@ -95,10 +167,13 @@ interface FileAndContent {
 	content: string;
 }
 export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[], importDeclarations: Record<string, {name: string, path: string}>): HarmonyComponentWithNode[] | false {
+	try {
 	for (const {file, content} of files) {
 		if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
 			return false;
 		}
+	} } catch(err) {
+		console.log(err);
 	}
 
 	return normalizeCodeInfo(componentDefinitions, elementInstances);
@@ -213,40 +288,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 				},
 				JSXElement: {
 					enter(jsPath) {
-						function getAttributeName(attribute: Attribute): string {
-							if (attribute.type === 'className') {
-								return 'className';
-							} else if (attribute.type === 'text') {
-								return 'children';
-							}
-
-							const [name] = attribute.value.split(':');
-							return name;
-						}
-
-						function getPropertyName(attribute: Attribute): string | undefined {
-							if (attribute.name !== 'property') return undefined;
-
-							if (attribute.type === 'text') {
-								return attribute.value === 'undefined' ? undefined : attribute.value;
-							}
-
-							const [_, propertyName] = attribute.value.split(':');
-							return propertyName === 'undefined' ? undefined : propertyName; 
-						}
-
-						function getAttributeValue(attribute: Attribute): string {
-							if (attribute.name === 'property') {
-								return getPropertyName(attribute) || 'undefined';
-							}
-
-							if (attribute.type === 'property') {
-								const [_, propertyValue] = attribute.value.split(':');
-								return propertyValue;
-							}
-
-							return attribute.value;
-						}
+						
 
 						function connectAttributesToParent(elementAttributes: Attribute[], parent: HarmonyComponentWithNode): Attribute[] {
 							const attributes: Attribute[] = [];
@@ -312,8 +354,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								return '';
 							}
 							//console.log(`Connecting ${child.name} to ${parent.name} ${recurseConnectLog(parent)}`)
-							const attributes = connectAttributesToParent(child.props, parent);
-							const newElement = {...child, attributes, getParent: () => parent};
+							const props = connectAttributesToParent(child.props, parent);
+							const newElement: HarmonyComponentWithNode = {...child, props, getParent: () => parent};
 							elementInstances.push(newElement);
 
 							return newElement;
@@ -413,6 +455,9 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 
 											if (t.isIdentifier(property.key) && property.key.name === value) return value;
 
+											//If we are looking at something like {param: _param} where our identifier value is _param, then the property name is param
+											if (t.isIdentifier(property.key) && t.isIdentifier(property.value) && property.value.name === value && !property.computed) return property.key.name;
+
 											const propertyAttribute = t.isExpression(property.key) ? createExpressionAttribute(property.key, type, name) : [];
 											const propertyName = propertyAttribute.length === 1 ? getAttributeValue(propertyAttribute[0]) : '';
 
@@ -450,7 +495,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										attributes.push(createPropertyAttribute(node, type, name, propertyName, 'props'));
 									} else if (attrName === propertyName) {
 										const value = getAttributeValue(attribute);
-										const newAttribute = createAttribute(type, attribute.name, name, value, 'component', attribute.location);
+										const newAttribute = createAttribute(type, attribute.name, name, value, attribute.locationType, attribute.location);
 										attributes.push(newAttribute)
 									}
 								}

@@ -4,7 +4,7 @@ import { z } from "zod";
 
 export const attributeSchema = z.object({
 	id: z.string(),
-	type: z.string(),
+	type: z.union([z.literal('text'), z.literal('className'), z.literal('property')]),
 	name: z.string(),
 	value: z.string(),
 	index: z.number(),

@@ -431,7 +431,8 @@ describe("indexor", () => {
             expect(componentElements[5].props[3].type).toBe('property');
             expect(componentElements[5].props[3].name).toBe('property');
             expect(componentElements[5].props[3].value).toBe('id:params');
-            expectLocationOfString(file, componentElements[5].props[3].location, 'params');
+            expect(componentElements[5].props[3].locationType).toBe('props')
+            expectLocationOfString(file, componentElements[5].props[3].location, '_params');
 
             //div -> ScrollView
             expect(componentElements[6].props.length).toBe(4);
@@ -914,9 +915,10 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
     ({ className, variant, size, asChild = false, ...props }, ref) => {
         const Comp = asChild ? Slot : "button"
+        const _className = className;
         return (
         <Comp
-            className={cn(buttonVariants({ variant, size, className }))}
+            className={cn(buttonVariants({ variant, size, _className }))}
             ref={ref}
             {...props}
         />
@@ -948,11 +950,12 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         )
     }
 
-    const ScrollViewInstance = ({params}) => {
+    const ScrollViewInstance = ({params: _params}) => {
         const child = "Hello"
-        const id = params.id;
+        const id = _params.id;
+        const params = 'hello';
         return (
-            <ScrollView className="flex" contentClass={"styles"} id={params.id}>{child}</ScrollView>
+            <ScrollView className="flex" contentClass={"styles"} id={_params.id}>{child}</ScrollView>
         )
     }
 
