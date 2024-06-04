@@ -4,15 +4,17 @@ import { set } from "zod";
 import {
 	ContextMenuComponent,
 	DragAndDropEventArgs,
+	NodeClickEventArgs,
+	NodeSelectEventArgs,
 	TreeViewComponent,
-  } from "@syncfusion/ej2-react-navigations";
-  import { enableRipple } from "@syncfusion/ej2-base";
+} from "@syncfusion/ej2-react-navigations";
+import { enableRipple } from "@syncfusion/ej2-base";
 import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
 import { findElementFromId } from "../harmony-provider";
 import { v4 as uuidv4 } from 'uuid';
 import { ComponentElement } from "@harmony/util/src/types/component";
-  enableRipple(true);
-  
+enableRipple(true);
+
 export interface TreeViewItem<T = string> {
 	id: T;
 	content: React.ReactNode,
@@ -26,7 +28,8 @@ export interface TransformNode {
 	subChild: TransformNode[],
 	expanded: boolean,
 	childIndex: number,
-	uid: string
+	uid: string,
+	error: string,
 }
 
 
@@ -42,32 +45,36 @@ const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 }
 
 
-export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeViewItem<ComponentElement>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void}) => {
+export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeViewItem<ComponentElement>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void }) => {
 	const { onAttributesChange, onComponentHover, onComponentSelect, setError } = useHarmonyContext()
-	
-	const  [transformedItems, setTransformedItems] = useState<TransformNode[]>(); 
-	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex'};
-	
-	function transform(node: TreeViewItem<any>): TransformNode {
-		const {id, name} = node.id;
-		
+
+	const [transformedItems, setTransformedItems] = useState<TransformNode[]>();
+	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex' };
+
+	function transform(node: TreeViewItem<any>, componentError = ''): TransformNode {
+		const { id, name } = node.id;
+
 		const transformedNode: TransformNode = {
 			id,
-			type: String(name), 
+			type: String(name),
 			expanded: true,
 			subChild: [] as TransformNode[],
 			childIndex: 0,
-			uid: uuidv4()
+			uid: uuidv4(),
+			error: componentError.length > 0 ? componentError : node.id.element.dataset.harmonyError
 		};
-	
+
 		if (node.items && node.items.length > 0) {
-			let children = node.items.map(node => transform(node));
+			if (node.id.element.dataset.harmonyError === "component") {
+				componentError = 'component'
+			}
+			let children = node.items.map(node => transform(node, componentError));
 			transformedNode.subChild = children.map((child, index) => {
 				child.childIndex = index;
 				return child;
 			});
 		}
-	
+
 		return transformedNode;
 	}
 
@@ -75,7 +82,7 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		let i = items.map((item) => {
 			return transform(item)
 		})
-        i[0].expanded = true
+		i[0].expanded = true
 		setTransformedItems(i);
 	}, [])
 
@@ -87,9 +94,9 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		const oldParent = oldParentElement as HTMLElement
 		const newParent = newParentElement as HTMLElement
 
-		if (oldParent.dataset.uid != newParent.dataset.uid) {
+		if (newParent.dataset.harmonyError === "component" || droppedNode.dataset.harmonyError === "component") {
 			event.cancel = true
-			setError("Cannot move component to a different file")
+			setError("Cannot move the current component")
 			return;
 		}
 
@@ -99,8 +106,8 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 			action: 'change',
 			componentId: componentId,
 			childIndex: parseInt(childIdx),
-			oldValue: JSON.stringify({parentId: oldParent.dataset.uid, childIndex: parseInt(childIdx)}),
-			value: JSON.stringify({parentId: newParent.dataset.uid, childIndex: newIndex})
+			oldValue: JSON.stringify({ parentId: oldParent.dataset.uid, childIndex: parseInt(childIdx) }),
+			value: JSON.stringify({ parentId: newParent.dataset.uid, childIndex: newIndex })
 		}
 		onAttributesChange([update])
 
@@ -110,7 +117,7 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 				const c = child.childNodes[1] as HTMLElement
 				const uid = c.innerHTML.split("data-uid=")[1].split('"')[1] as string
 				if (uid) {
-					const e = document.querySelector(`[data-uid="${uid}"]`) 
+					const e = document.querySelector(`[data-uid="${uid}"]`)
 					e?.setAttribute('data-child', idx.toString())
 				}
 			})
@@ -121,7 +128,7 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		} else {
 			updateChildIndex(oldParent)
 			updateChildIndex(newParent)
-		
+
 		}
 	}
 
@@ -134,24 +141,25 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 	}
 	function onMouseClick(item: HTMLElement, uid: string) {
 		const childIdx = document.querySelector(`[data-uid="${uid}"]`)?.getAttribute('data-child')
-		const element = findElementFromId(item.dataset.uid!!,  parseInt(childIdx!))
+		const element = findElementFromId(item.dataset.uid!!, parseInt(childIdx!))
 		if (element) {
 			onComponentSelect(element)
 		}
 	}
 
 	function addEvents(tree: HTMLElement[]) {
-		tree.forEach((item, idx )=> {
+		tree.forEach((item, idx) => {
 			if (item.dataset.uid) {
 				if (item.children[0] && item.children[0].classList.contains('e-fullrow') && item.children[1].innerHTML.includes('data-uid')) {
 					const uid = item.children[1].innerHTML.split('data-uid=')[1].split('"')[1]
+					item.dataset.harmonyError = item.children[1].innerHTML.split('harmony-error=')[1].split('"')[1]
 					item.children[0].addEventListener('mouseover', () => {
 						onMouseOver(item, uid!)
 					})
 					item.children[0].addEventListener('click', () => {
 						onMouseClick(item, uid!)
 					})
-					
+
 					item.children[1].addEventListener('mouseover', () => {
 						onMouseOver(item, uid!)
 					})
@@ -170,20 +178,22 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 		const oldParent = oldParentElement as HTMLElement
 		const newParent = newParentElement as HTMLElement
 
-		if (oldParent?.dataset?.uid == newParent?.dataset?.uid) return;
-
-		event.cancel = true;
+		if (oldParent?.dataset.harmonyError === "component" || newParent?.dataset.harmonyError === "component") {
+			event.cancel = true;
+			event.dropIndicator = 'e-no-drop';
+			setError("This component cannot be moved into this location")
+			return;
+		}
 	}
 
-	function nodeDrag(event: DragAndDropEventArgs) {
-		const { draggedParentNode: oldParentElement, dropTarget: newParentElement, } = event;
+	function nodeDragStart(event: DragAndDropEventArgs) {
+		const { draggedNode } = event;
 
-		const oldParent = oldParentElement as HTMLElement
-		const newParent = newParentElement as HTMLElement
-
-		if (oldParent?.dataset?.uid == newParent?.dataset?.uid) return;
-
-		event.dropIndicator = 'e-no-drop';
+		if (draggedNode?.dataset.harmonyError === "component") {
+			event.cancel = true;
+			event.dropIndicator = 'e-no-drop';
+			setError("This component cannot be moved!")
+		}
 	}
 
 	function onCreated() {
@@ -191,10 +201,10 @@ export const TreeView = <T,>({items, expand, onClick, onHover}: {items: TreeView
 			addEvents([treeObj.element])
 		}
 	}
-	
+
 	return (
-        <TreeViewComponent fields={fields} allowDragAndDrop={true} nodeDragging={nodeDrag.bind(this)} nodeDragStop={dragStop.bind(this)} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} created={onCreated} />
-    );
+		<TreeViewComponent fields={fields} allowDragAndDrop={true} nodeDragStart={nodeDragStart.bind(this)} nodeDragStop={dragStop.bind(this)} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} created={onCreated} />
+	);
 }
 
 export interface TreeViewRenderItem {
@@ -202,12 +212,16 @@ export interface TreeViewRenderItem {
 	type: string;
 	childIndex: number;
 	uid: string;
+	error: string;
 }
 
 function TreeViewItem(data: TreeViewRenderItem) {
 	return (
-		<div data-uid={data.uid} data-child={data.childIndex} data-node={data.id}>
-			{data.type}
+		<div data-uid={data.uid} data-child={data.childIndex} data-node={data.id} harmony-error={data.error || "none"}>
+			<p>
+				{data.error === "component" ? <span style={{ color: 'red' }}>⚠️</span> : ''}
+				{data.type}
+			</p>
 		</div>
 	)
 }
