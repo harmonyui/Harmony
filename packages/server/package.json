@@ -39,6 +39,7 @@
     "diff": "^5.2.0",
     "dotenv-cli": "^7.3.0",
     "express": "^4.19.2",
+    "ioredis": "^5.3.2",
     "next": "14.2.1",
     "nodemailer": "^6.9.9",
     "octokit": "^3.1.2",

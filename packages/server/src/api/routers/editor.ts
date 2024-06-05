@@ -2,7 +2,7 @@
  
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import type { ComponentLocation, ComponentUpdate, HarmonyComponentInfo } from "@harmony/util/src/types/component";
+import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
 import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
 import type { PublishResponse, UpdateResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
@@ -11,8 +11,8 @@ import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
-import { convertToHarmonyInfo, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
-import { getCodeSnippet, getFileContent } from "../services/indexor/github";
+import { indexCodebase, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
+import { getCodeSnippet } from "../services/indexor/github";
 import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import type { GitRepository } from "../repository/github";
@@ -73,6 +73,8 @@ export const editorRouter = createTRPCRouter({
             }));
 
 			const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
+			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
+
             const ref = await githubRepository.getBranchRef(repository.branch);
 
             //If the current repository ref is out of date, that means we have some
@@ -105,8 +107,7 @@ export const editorRouter = createTRPCRouter({
 
 			const isDemo = accountTiedToBranch.role === 'quick';
 
-			const indexedComponents = await indexForComponents(updates.map(update => update.componentId), githubRepository);
-			const harmonyComponents: HarmonyComponentInfo[] = convertToHarmonyInfo(indexedComponents);
+			const harmonyComponents = await indexCodebase('', githubRepository, githubCache);
 
             return {
                 updates,
@@ -288,8 +289,7 @@ export const editorRouter = createTRPCRouter({
 async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
-		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
-		await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
+		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
 
 		return content;
 	}
@@ -307,8 +307,7 @@ async function indexForComponent(componentId: string, gitRepository: GitReposito
 async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
-		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
-		await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
+		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
 
 		return content;
 	}

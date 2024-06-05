@@ -17,6 +17,9 @@ import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { PrismaHarmonyComponentRepository } from "../../repository/component-element";
 import { Attribute, HarmonyComponent } from "./types";
+import { GithubCache } from "../../repository/cache";
+import { GitRepository } from "../../repository/github";
+import { IndexingFiles } from "./github";
 
 export type HarmonyComponentWithNode = HarmonyComponent & {node: t.JSXElement};
 
@@ -63,14 +66,12 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 	return {elementInstance, componentDefinitions};
 }
 
-export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void): Promise<HarmonyComponentInfo[]> => {
+export const indexCodebase = async (dirname: string, gitRepository: GitRepository, gitCache: GithubCache): Promise<HarmonyComponentInfo[]> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: HarmonyComponentWithNode[] = [];
-	const fileContents: FileAndContent[] = [];
 
-	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
-		fileContents.push({file: filename, content});
-	});
+	const indexingFiles = new IndexingFiles(gitRepository, gitCache);
+	const fileContents = await indexingFiles.getIndexingFilesAndContent(dirname);
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {

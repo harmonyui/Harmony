@@ -91,7 +91,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({toggle
 			<div className="hw-flex hw-items-center hw-text-nowrap hw-gap-2 hw-mr-4">
 				<Header className="hw-font-normal" level={3}>{currentBranch ? currentBranch.name : 'Invalid Branch'}</Header>
 			</div>
-			{!isDemo && false ? <div className="hw-px-4">
+			{!isDemo && true ? <div className="hw-px-4">
 				<button className="hw-text-base hw-font-light" onClick={onLayoutClick}>Layout</button>
 			</div> : null}
 			{data ? <>
