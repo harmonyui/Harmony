@@ -90,10 +90,7 @@ export class GithubRepository implements GitRepository {
                 return {content: cachedFile, path: filePath};
             }
 
-            return cachedFile.map<ContentOrDirectory>(file => ({
-                path: file,
-                type: 'dir'
-            }));
+            return cachedFile;
         }
 
         const { data: fileInfo } = await octokit.rest.repos.getContent({
@@ -103,7 +100,7 @@ export class GithubRepository implements GitRepository {
             ref: branchName || this.repository.branch,
         });
 
-        const cacheContent = 'content' in fileInfo ? fileInfo.content : Array.isArray(fileInfo) ? fileInfo.map(file => file.path) : [fileInfo.path];
+        const cacheContent = 'content' in fileInfo ? fileInfo.content : Array.isArray(fileInfo) ? fileInfo : [fileInfo];
         await this.gitCache.setFileOrDirectoryContents(cacheKey, cacheContent)
 
         return fileInfo;

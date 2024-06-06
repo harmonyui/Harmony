@@ -23,6 +23,10 @@ export class IndexingFiles {
 			fileContents.push({file: filename, content});
 		});
 
+		if (fileContents.length === 0) {
+			throw new Error("No files were found");
+		}
+
 		await this.setFilesCache(fileContents);
 
 		return fileContents;

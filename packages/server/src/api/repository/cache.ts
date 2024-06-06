@@ -12,8 +12,8 @@ interface IndexingCacheKeyInfo {
 }
 
 export interface GithubCache {
-    getFileOrDirectoryContents: (keyInfo: FileCacheKeyInfo) => Promise<string | string[] | null>;
-    setFileOrDirectoryContents: (keyInfo: FileCacheKeyInfo, contents: string | string[]) => Promise<void>;
+    getFileOrDirectoryContents: (keyInfo: FileCacheKeyInfo) => Promise<string | {path: string, type: string}[] | null>;
+    setFileOrDirectoryContents: (keyInfo: FileCacheKeyInfo, contents: string | {path: string, type: string}[]) => Promise<void>;
     getFileContents: (keyInfo: FileCacheKeyInfo) => Promise<string | null>;
     setFileContents: (keyInfo: FileCacheKeyInfo, content: string) => Promise<void>;
     getIndexingFiles: (keyInfo: IndexingCacheKeyInfo) => Promise<string[] | null>;
@@ -42,20 +42,35 @@ export class RedisGithubCache implements GithubCache {
         await this.redisClient.set(cacheKey, content);
     }
 
-    public async getFileOrDirectoryContents(keyInfo: FileCacheKeyInfo): Promise<string | string[] | null> {
+    public async getFileOrDirectoryContents(keyInfo: FileCacheKeyInfo): Promise<string | {path: string, type: string}[] | null> {
         const cacheKey = this.getFileCacheKey(keyInfo);
         const type = await this.redisClient.type(cacheKey); 
+        if (type === 'none') return null;
+
         if (type === 'string') {
             return this.getFileContents(keyInfo);
         }
 
-       return this.redisClient.smembers(cacheKey);
+        const files = await this.redisClient.smembers(cacheKey);
+
+        const contents = files.map(file => {
+            const [path, fileType] = file.split(':');
+
+            return {path, type: fileType};
+        });
+
+        if (contents.some(content => !content.type)) return null;
+
+        return contents;
     }
 
-    public async setFileOrDirectoryContents(keyInfo: FileCacheKeyInfo, contentOrFiles: string | string[]): Promise<void> {
+    public async setFileOrDirectoryContents(keyInfo: FileCacheKeyInfo, contentOrFiles: string | {path: string, type: string}[]): Promise<void> {
         const cacheKey = this.getFileCacheKey(keyInfo);
         
-        const type = await this.redisClient.type(cacheKey);
+        let type = await this.redisClient.type(cacheKey);
+        if (type === 'none') {
+            type = typeof contentOrFiles === 'string' ? 'string' : 'set';
+        }
         if (type === 'string') {
             if (typeof contentOrFiles !== 'string') throw new Error("Must be file content when setting a file");
 
@@ -65,7 +80,7 @@ export class RedisGithubCache implements GithubCache {
 
         if (typeof contentOrFiles === 'string') throw new Error("Must be file content when setting a file"); 
 
-        await this.redisClient.sadd(cacheKey, ...contentOrFiles);
+        await this.redisClient.sadd(cacheKey, ...contentOrFiles.map(content => `${content.path}:${content.type}`));
     }
 
     public async getIndexingFiles(keyInfo: IndexingCacheKeyInfo): Promise<string[] | null> {
