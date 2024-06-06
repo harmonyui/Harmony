@@ -1,27 +1,29 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import type { Attribute, ComponentElement, ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
-import { loadRequestSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
-import type { PublishResponse, UpdateResponse, LoadResponse } from '@harmony/util/src/types/network';
+import type { ComponentLocation, ComponentUpdate, HarmonyComponentInfo } from "@harmony/util/src/types/component";
+import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema } from '@harmony/util/src/types/network';
+import type { PublishResponse, UpdateResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
 import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
-import { indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
+import { convertToHarmonyInfo, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
 import { getCodeSnippet, getFileContent } from "../services/indexor/github";
 import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import type { GitRepository } from "../repository/github";
+import type { Attribute, HarmonyComponent } from "../services/indexor/types";
 import { createPullRequest } from "./pull-request";
 import { getBranch, getRepository } from "./branch";
 
 export const editorRouter = createTRPCRouter({
 	loadProject: publicProcedure
 		.input(loadRequestSchema)
+		.output(loadResponseSchema)
 		.query(async ({ ctx, input }) => {
 			const { repositoryId, branchId } = input;
 			const { prisma } = ctx;
@@ -48,8 +50,6 @@ export const editorRouter = createTRPCRouter({
 			if (!accountTiedToBranch) {
 				throw new Error(`Cannot find account tied to branch ${branchId}`);
 			}
-
-			//await indexCodebase('/Users/braydonjones/Documents/Projects/formbricks', fromDir, repositoryId);
 
 			let updates: ComponentUpdate[] = [];
 
@@ -91,7 +91,6 @@ export const editorRouter = createTRPCRouter({
 				})
 			}
 
-
 			const branches = await prisma.branch.findMany({
 				where: {
 					repository_id: repositoryId
@@ -104,10 +103,10 @@ export const editorRouter = createTRPCRouter({
 				}
 			})
 
-			// This is only for dev testing
-			errorElements.push({ id: '1', type: 'component', component_id: 'YXBwcy9kYXNoYm9hcmQvYXBwL3Byb2plY3RzL3BhZ2UudHN4OjIwOjM6MjQ6MTM=#YXBwcy9kYXNoYm9hcmQvdXRpbHMvc2lkZS1uYXYudHN4OjUwOjM6NTI6MTU=#cGFja2FnZXMvdWkvc3JjL2NvbXBvbmVudHMvY29yZS9zaWRlLXBhbmVsLnRzeDoxNDE6MjI6MTQxOjY3#cGFja2FnZXMvdWkvc3JjL2NvbXBvbmVudHMvY29yZS9zaWRlLXBhbmVsLnRzeDoyNDc6MjoyNjA6Nw==', repository_id: 'test' })
+			const isDemo = accountTiedToBranch.role === 'quick';
 
-			const isDemo = accountTiedToBranch.role === 'quick'
+			const indexedComponents = await indexForComponents(updates.map(update => update.componentId), githubRepository);
+			const harmonyComponents: HarmonyComponentInfo[] = convertToHarmonyInfo(indexedComponents);
 
 			return {
 				updates,
@@ -118,8 +117,9 @@ export const editorRouter = createTRPCRouter({
 				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.component_id, type: element.type })),
 				pullRequest: pullRequest || undefined,
 				showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
-				isDemo
-			} satisfies LoadResponse
+				isDemo,
+				harmonyComponents
+			}
 		}),
 	saveProject: publicProcedure
 		.input(updateRequestBodySchema)
@@ -176,35 +176,35 @@ export const editorRouter = createTRPCRouter({
 			})
 
 			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
-            const updates: ComponentUpdate[] = [];
-            const errorUpdates: (ComponentUpdate & {errorType: string})[] = [];
-            //Indexes the files of these component updates
-            for (const value of body.values) {
-                for (const update of value.update) {
-                	if (!update.componentId) continue;
+			const updates: ComponentUpdate[] = [];
+			const errorUpdates: (ComponentUpdate & { errorType: string })[] = [];
+			//Indexes the files of these component updates
+			for (const value of body.values) {
+				for (const update of value.update) {
+					if (!update.componentId) continue;
 
 					//TODO: Be able to handle dynamic components so we don't have to do this
 					const split = update.componentId.split('#')
 					if (split.length > 1 && /pages\/_app\.(tsx|jsx|js)/.exec(atob(split[0]))) {
 						update.componentId = split.slice(1).join('#');
 					}
-                    
-                    let element = await prisma.componentElement.findFirst({
-                        where: {
-                            id: update.componentId,
-                            repository_id: branch.repository_id,
+
+					let element = await prisma.componentElement.findFirst({
+						where: {
+							id: update.componentId,
+							repository_id: branch.repository_id,
 							version: INDEXING_VERSION
-                        }
-                    }) ?? undefined;
-                    if (!element) {
-                        const elementInstances = await indexForComponent(update.componentId, gitRepository);
+						}
+					}) ?? undefined;
+					if (!element) {
+						const elementInstances = await indexForComponent(update.componentId, gitRepository);
 						const indexedElement = elementInstances.find(el => el.id === update.componentId);
 						if (indexedElement) {
 							await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
 							await updateDatabaseComponentErrors(elementInstances, branch.repository_id);
-							element = await ctx.componentElementRepository.createOrUpdateElement(indexedElement, branch.repository_id);
+							element = await ctx.harmonyComponentRepository.createOrUpdateElement(indexedElement, branch.repository_id);
 						}
-                    }
+					}
 
 					const error = await prisma.componentError.findFirst({
 						where: {
@@ -213,45 +213,31 @@ export const editorRouter = createTRPCRouter({
 							type: update.type
 						}
 					});
-                    
 
-                    if (element && !error) {
-                        updates.push(update);
-                    } else if (!element) {
-						throw new Error("Cannot have an error element because that shouldn't happend anymore");
+
+					if (element && !error) {
+						updates.push(update);
+					} else if (!element) {
+						throw new Error("Cannot have an error element because that shouldn't happened anymore");
 					} else if (error) {
-						errorUpdates.push({...update, errorType: error.type});
-                    }
-                }
-            }
-
-			for (const up of updates) {
-				await prisma.componentUpdate.create({
-					data: {
-						component_id: up.componentId,
-						action: up.action,
-						type: up.type,
-						name: up.name,
-						value: up.value,
-						branch_id: branchId,
-						old_value: up.oldValue,
-						childIndex: up.childIndex,
-						is_global: up.isGlobal
+						errorUpdates.push({ ...update, errorType: error.type });
 					}
-				})
+				}
 			}
-			// await prisma.componentUpdate.createMany({
-			// 	data: updates.map(up => ({
-			// 		component_parent_id: up.parentId,
-			// 		component_id: up.componentId,
-			// 		action: up.action,
-			// 		type: up.type,
-			// 		name: up.name,
-			// 		value: up.value,
-			// 		branch_id: branchId,
-			// 		old_value: up.oldValue
-			// 	}))
-			// });
+
+			await Promise.all(updates.map(up => prisma.componentUpdate.create({
+				data: {
+					component_id: up.componentId,
+					action: up.action,
+					type: up.type,
+					name: up.name,
+					value: up.value,
+					branch_id: branchId,
+					old_value: up.oldValue,
+					childIndex: up.childIndex,
+					is_global: up.isGlobal
+				}
+			})))
 
 			const reversed = reverseUpdates(errorUpdates);
 			const response: UpdateResponse = { errorUpdates: reversed };
@@ -288,22 +274,6 @@ export const editorRouter = createTRPCRouter({
 			//Get rid of same type of updates (more recent one wins)
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- It is necessary
 			const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId) ? prev : prev.concat([{ ...curr, oldValue: old[i]! }]), []);
-			// const githubRepository = new GithubRepository(repository);
-			// const ref = await githubRepository.getBranchRef(repository.branch);
-			// if (ref !== repository.ref) {
-			// 	for (const update of updates) {
-			// 		await indexForComponent(update.componentId, update.parentId, repository);
-			// 	}
-
-			// 	await prisma.repository.update({
-			// 		where: {
-			// 			id: repository.id
-			// 		},
-			// 		data: {
-			// 			ref
-			// 		}
-			// 	})
-			// }
 
 			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
 			await findAndCommitUpdates(updates, gitRepository, branch);
@@ -315,7 +285,7 @@ export const editorRouter = createTRPCRouter({
 		})
 })
 
-async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<ComponentElement[]> {
+async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
@@ -334,11 +304,11 @@ async function indexForComponent(componentId: string, gitRepository: GitReposito
 	return result.elementInstance;
 }
 
-async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<ComponentElement[]> {
+async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
-		await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
+			await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
 
 		return content;
 	}
@@ -353,14 +323,14 @@ async function indexForComponents(componentIds: string[], gitRepository: GitRepo
 	return result.elementInstance;
 }
 
-interface FileUpdate {update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & {updatedTo: number}), updatedCode: string, attribute?: Attribute};
+interface FileUpdate { update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & { updatedTo: number }), updatedCode: string, attribute?: Attribute };
 interface UpdateInfo {
-	component: ComponentElement,
-	attributes: Attribute[], 
-	update: ComponentUpdate, 
-	type: ComponentUpdate['type'], 
-	oldValue: string, 
-	value: string, 
+	component: HarmonyComponent,
+	attributes: Attribute[],
+	update: ComponentUpdate,
+	type: ComponentUpdate['type'],
+	oldValue: string,
+	value: string,
 	font?: string
 }
 
@@ -404,14 +374,14 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				classNameUpdate.font = curr.value;
 			}
 		} else {
-			const getComponent = (currId: string): Promise<ComponentElement | undefined> => {
+			const getComponent = (currId: string): Promise<HarmonyComponent | undefined> => {
 				const currElement = elementInstances.find(instance => instance.id === currId);
 
 				return Promise.resolve(currElement);
 			}
-			const getAttributes = (component: ComponentElement): Promise<Attribute[]> => {
-				const allAttributes = component.attributes;
-				
+			const getAttributes = (component: HarmonyComponent): Promise<Attribute[]> => {
+				const allAttributes = component.props;
+
 				//Sort the attributes according to layers with the bottom layer first for global
 				allAttributes.sort((a, b) => b.reference.id.split('#').length - a.reference.id.split('#').length);
 
@@ -443,7 +413,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 			const font = curr.type === 'className' && curr.name === 'font' ? curr.value : undefined;
 			const value = curr.type === 'className' && curr.name === 'font' ? '' : curr.value;
 
-			const sameComponent = curr.type === 'className' ? prev.find(({component: other, type}) => type === 'className' && other.id === component.id && other.getParent()?.id === component.getParent()?.id) : undefined;
+			const sameComponent = curr.type === 'className' ? prev.find(({ component: other, type }) => type === 'className' && other.id === component.id && other.getParent()?.id === component.getParent()?.id) : undefined;
 			if (sameComponent) {
 				if (curr.name !== 'font') {
 					sameComponent.value += curr.value;
@@ -530,14 +500,14 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		value: string | undefined,
 		isDefinedAndDynamic: boolean
 	}
-	const getLocationAndValue = (attribute: Attribute | undefined, _component: ComponentElement): LocationValue => {
+	const getLocationAndValue = (attribute: Attribute | undefined, _component: HarmonyComponent): LocationValue => {
 		const isDefinedAndDynamic = attribute?.name === 'property';
 		return { location: attribute?.location || _component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic };
 	}
 
 	const results: FileUpdate[] = [];
 
-	const addCommentToJSXElement = async ({location, commentValue, attribute}: {location: ComponentLocation, commentValue: string, attribute: Attribute | undefined}): Promise<FileUpdate> => {
+	const addCommentToJSXElement = async ({ location, commentValue, attribute }: { location: ComponentLocation, commentValue: string, attribute: Attribute | undefined }): Promise<FileUpdate> => {
 		const code = await getCodeSnippet(gitRepository)(component.location, branchName);
 		const comment = `/** ${commentValue} */`;
 		const match = /<([a-zA-Z0-9]+)(\s?)/.exec(code);
@@ -556,18 +526,18 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 	}
 
 	interface AddClassName {
-		location: ComponentLocation, 
-		code: string, 
-		newClass: string, 
-		oldClass: string | undefined, 
-		commentValue: string, 
+		location: ComponentLocation,
+		code: string,
+		newClass: string,
+		oldClass: string | undefined,
+		commentValue: string,
 		attribute: Attribute | undefined,
 		isDefinedAndDynamic: boolean;
 	}
 	//This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
-	const addNewClassOrComment = async ({location, code, newClass, oldClass, commentValue, attribute}: AddClassName): Promise<FileUpdate> => {
+	const addNewClassOrComment = async ({ location, code, newClass, oldClass, commentValue, attribute }: AddClassName): Promise<FileUpdate> => {
 		if (oldClass === undefined) {
-			return addCommentToJSXElement({location, commentValue, attribute});
+			return addCommentToJSXElement({ location, commentValue, attribute });
 		} else if (attribute?.locationType === 'add') {
 			// eslint-disable-next-line no-param-reassign -- It is ok
 			newClass = ` className="${newClass}"`;
@@ -621,7 +591,7 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					type AttributeUpdate = AddClassName;
 					const attributeUpdates: AttributeUpdate[] = [];
 
-					const getAttribute = async (attribute: Attribute | undefined, getNewValueAndComment: (oldValue: string | undefined, location: ComponentLocation) => {newClass: string, commentValue: string, oldClass: string | undefined}): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
+					const getAttribute = async (attribute: Attribute | undefined, getNewValueAndComment: (oldValue: string | undefined, location: ComponentLocation) => { newClass: string, commentValue: string, oldClass: string | undefined }): Promise<{ attribute: AttributeUpdate, oldClass: string | undefined }> => {
 						const locationAndValue = getLocationAndValue(attribute, component);
 						//TODO: This is temporary. It shouldn't have 'className:'
 						locationAndValue.value = locationAndValue.value?.replace('className:', '');
@@ -630,23 +600,23 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 
 						//TODO: Make the tailwind prefix part dynamic
 						const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
-						const {newClass, commentValue, oldClass} = getNewValueAndComment(oldClasses, location);
-						
+						const { newClass, commentValue, oldClass } = getNewValueAndComment(oldClasses, location);
+
 						return {
-							attribute: {location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute},
+							attribute: { location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute },
 							oldClass
 						};
 					}
 
-					const getAttributeFromClass = async (attribute: Attribute | undefined, _newClass: string): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
+					const getAttributeFromClass = async (attribute: Attribute | undefined, _newClass: string): Promise<{ attribute: AttributeUpdate, oldClass: string | undefined }> => {
 						return getAttribute(attribute, (oldClasses, location) => {
 							//If we have already merged classes, then merge out new stuff into what was already merged
 							const oldStuff = attributeUpdates.find(attr => attr.location === location)?.newClass ?? oldClasses;
 							const mergedIt = mergeClassesWithScreenSize(oldStuff, _newClass, DEFAULT_WIDTH)
 							const newClass = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 							const commentValue = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
-							
-							return {newClass, oldClass: oldStuff, commentValue};
+
+							return { newClass, oldClass: oldStuff, commentValue };
 						});
 					}
 
@@ -662,17 +632,17 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 
 					const defaultClassName = classNameAttributes.find(attr => attr.name === 'string') || classNameAttributes[0] as Attribute | undefined;
 					for (const newClass of newClasses.split(' ')) {
-						let addedAttribue = false;
+						let addedAttribute = false;
 						for (const classNameAttribute of classNameAttributes) {
 							if (classNameAttribute.name !== 'string') continue;
-							const {attribute, oldClass} = await getAttributeFromClass(classNameAttribute, newClass);
+							const { attribute, oldClass } = await getAttributeFromClass(classNameAttribute, newClass);
 							if (oldClass && attribute.newClass.split(' ').length === oldClass.split(' ').length) {
 								addAttribute(attribute);
-								addedAttribue = true;
+								addedAttribute = true;
 								break;
 							}
 						}
-						if (!addedAttribue) {
+						if (!addedAttribute) {
 							addAttribute((await getAttributeFromClass(defaultClassName, newClass)).attribute);
 						}
 					}
@@ -743,25 +713,25 @@ const converter = new TailwindConverter({
 
 function addPrefixToClassName(className: string, prefix: string): string {
 	const classes = className.split(' ');
-	const listClass: [string, string][] = classes.map((klasses) => {
-		if (klasses.includes(":")) {
-			const [before, after] = klasses.split(":");
+	const listClass: [string, string][] = classes.map((classes) => {
+		if (classes.includes(":")) {
+			const [before, after] = classes.split(":");
 			if (!before || !after) {
-				throw new Error(`Invalid class ${klasses}`);
+				throw new Error(`Invalid class ${classes}`);
 			}
 			return [`${before}:`, after];
-		} else if (klasses.startsWith('-')) {
-			return ['-', klasses.substring(1)];
+		} else if (classes.startsWith('-')) {
+			return ['-', classes.substring(1)];
 		}
-		return ['', klasses];
+		return ['', classes];
 
 	});
 
-	const withPrefix: [string, string][] = listClass.map((klasses) => {
-		if (!klasses.includes(prefix)) {
-			return [klasses[0], prefix + klasses[1]];
+	const withPrefix: [string, string][] = listClass.map((classes) => {
+		if (!classes.includes(prefix)) {
+			return [classes[0], prefix + classes[1]];
 		}
-		return klasses;
+		return classes;
 
 	});
 

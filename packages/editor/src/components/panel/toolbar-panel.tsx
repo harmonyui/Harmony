@@ -4,15 +4,14 @@
 /* eslint-disable no-constant-condition -- ok*/
 /* eslint-disable no-nested-ternary -- ok*/
 import type { Font } from "@harmony/util/src/fonts";
-import type { ComponentElement } from "@harmony/util/src/types/component";
-import { useMemo } from "react";
+import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import ColorPicker from "@harmony/ui/src/components/core/color-picker";
 import type { DropdownItem } from "@harmony/ui/src/components/core/dropdown";
 import { Dropdown } from "@harmony/ui/src/components/core/dropdown";
 import { Header } from "@harmony/ui/src/components/core/header";
-import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon, BorderAllIcon, CancelCircle, SolidLine, DottedLine, DashedLine, BorderIcon } from "@harmony/ui/src/components/core/icons";
-import { NumberStepperInput } from "@harmony/ui/src/components/core/input";
+import { PlayIcon, XMarkIcon, AlignLeftIcon, AlignCenterIcon, AlignRightIcon, AlignJustifyIcon, BarsArrowDownIcon, BorderAllIcon, CancelCircle, SolidLine, DottedLine, DashedLine, BorderIcon, ChevronUpIcon, ChevronDownIcon, SquareIcon, DottedSquareIcon } from "@harmony/ui/src/components/core/icons";
+import { InputBlur, NumberStepperInput } from "@harmony/ui/src/components/core/input";
 import { Slider } from "@harmony/ui/src/components/core/slider";
 import { HexColorSchema } from "@harmony/util/src/types/colors";
 import { Popover } from "@harmony/ui/src/components/core/popover";
@@ -20,6 +19,7 @@ import { useEffectEvent } from "../inspector/inspector-dev";
 import { selectDesignerElement, isTextElement } from "../inspector/inspector";
 import { useHarmonyContext } from "../harmony-context";
 import type { SelectMode } from "../harmony-context";
+import type { ComponentElement } from "../inspector/component-identifier";
 import { ComponentLayoutPanel } from "./layout-panel";
 import { useSidePanel } from "./side-panel";
 import type { CommonTools, ComponentToolData } from "./attribute-panel";
@@ -51,6 +51,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({ toggl
 	const { isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo, isGlobal, setIsGlobal } = useHarmonyContext();
 	const { setPanel } = useSidePanel();
 	const { toolNames, toolComponents } = useToolbarTools({ element: selectedElement, fonts });
+
 
 	const onPreview = () => {
 		changeMode('preview')
@@ -273,40 +274,109 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
 			const borderStr = borderAttr.replace('px', '');
 			const borderRadiusStr = borderAttrRadius.replace('px', '');
 
-			const borderHeight = Number(borderStr);
+			const borderWidth = borderStr.split(" ").map((item) => parseInt(item.trim()));
+			if (borderWidth.length === 1) borderWidth.push(borderWidth[0], borderWidth[0], borderWidth[0]);
+			if (borderWidth.length === 2) borderWidth.push(borderWidth[0], borderWidth[1]);
+			if (borderWidth.length === 3) borderWidth.push(borderWidth[1]);
 			const borderRadius = Number(borderRadiusStr);
 
 			let value = getAttribute('borderColor')
 			const _data = value === '#00000000' ? '#FFFFFF' : value
-
-			const borderStyles = [
-				{ value: 'none', icon: <CancelCircle /> },
-				{ value: 'solid', icon: <SolidLine /> },
-				{ value: 'dotted', icon: <DottedLine /> },
-				{ value: 'dashed', icon: <DashedLine /> },
+			const borderStyles: DropdownItem<string>[] = [
+				{
+					id: 'none',
+					name: 'None',
+				},
+				{
+					id: 'solid',
+					name: 'Solid',
+				},
+				{
+					id: 'dotted',
+					name: 'Dotted',
+				},
+				{
+					id: 'dashed',
+					name: 'Dashed',
+				},
 			]
+
+			function updateBorderWidth(type: string, value: number) {
+				if (type === 'T') {
+					onChange({ name: 'borderWidth', value: `${value}px ${borderWidth[1]}px ${borderWidth[2]}px ${borderWidth[3]}px` })
+				} else if (type === 'R') {
+					onChange({ name: 'borderWidth', value: `${borderWidth[0]}px ${value}px ${borderWidth[2]}px ${borderWidth[3]}px` })
+				} else if (type === 'B') {
+					onChange({ name: 'borderWidth', value: `${borderWidth[0]}px ${borderWidth[1]}px ${value}px ${borderWidth[3]}px` })
+				} else if (type === 'L') {
+					onChange({ name: 'borderWidth', value: `${borderWidth[0]}px ${borderWidth[1]}px ${borderWidth[2]}px ${value}px` })
+				}
+			}
 
 			return (
 				<Popover buttonClass="hw-h-[25.76px]" button={<BorderIcon className="hw-h-[25.76px] hw-w-[25.76px]" />}>
-					<div className="hw-flex hw-flex-col hw-gap-3 hw-w-[320px]">
-						<div className="hw-flex hw-flex-row hw-p-4 hw-items-center hw-w-full hw-justify-between hw-border hw-border-gray-200">
-							<ColorPicker<`#${string}`> className="hw-h-7 hw-z-50" value={HexColorSchema.parse(_data)} onChange={(_value) => { onChange({ value: _value, name: 'borderColor' }) }} container={document.getElementById("harmony-container") || undefined} />
-							<p className="hw-uppercase  hw-text-lg">{_data}</p>
+					<div className="hw-flex hw-flex-col hw-gap-3 hw-w-[350px] hw-p-2">
+						<div className="hw-flex hw-flex-row hw-justify-between hw-border-b hw-border-gray-200 hw-py-4">
+							<p className="hw-font-bold">Border</p>
+							<p className="hw-font-bold hw-cursor-pointer">X</p>
 						</div>
-						<div className="hw-flex hw-flex-row hw-items-center hw-w-full hw-justify-between">
-							{borderStyles.map(({ value, icon }, idx) => (
-								<button key={idx} className="hw-size-12 hw-border hw-border-gray-200 hw-p-1" onClick={() => onChange({ name: 'borderStyle', value })}>{icon}</button>
-							))}
+						{/* Border Color  */}
+						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center">
+							<p>Color</p>
+							<div className="hw-col-span-2 hw-flex hw-flex-row hw-p-2 hw-items-center hw-w-full hw-space-x-3 hw-border hw-border-gray-200 hw-rounded-md hw-h-12">
+								<ColorPicker<`#${string}`> className="hw-h-7 hw-z-50" value={HexColorSchema.parse(_data)} onChange={(_value) => { onChange({ value: _value, name: 'borderColor' }) }} container={document.getElementById("harmony-container") || undefined} />
+								<p className="hw-uppercase  hw-text-lg">{_data}</p>
+							</div>
 						</div>
-						<div className="hw-flex hw-flex-row hw-space-x-2 hw-items-center">
-							<p>Weight</p>
-							<Slider className="flex-1" value={borderHeight} max={50} onChange={(value) => { onChange({ name: 'borderWidth', value: `${value}px` }) }} />
-							<p>{borderHeight.toFixed(0)}</p>
+						{/* Borer Width */}
+						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center">
+							<p>Width</p>
+							<div className="hw-grid hw-grid-cols-2 hw-col-span-2 hw-gap-1">
+								<InputBlur className="hw-border hw-border-gray-200 hw-rounded-md hw-w-full hw-text-center hw-h-12" value={borderWidth[0].toFixed(0)} onChange={(value) => { onChange({ name: 'borderWidth', value: `${value}px` }) }} />
+								<div className="hw-border hw-border-gray-200 hw-rounded-md hw-flex hw-flex-row hw-items-center hw-justify-center hw-space-x-2 hw-h-12">
+									<div className='hw-cursor-pointer hw-p-2 hw-rounded-md' >
+										<SquareIcon className='hw-size-8' />
+									</div>
+									<div className='hw-cursor-pointer hw-p-2 hw-rounded-md'>
+										<DottedSquareIcon className='hw-size-8' />
+									</div>
+								</div>
+							</div>
+							{/* <Slider value={borderWidth} max={50} onChange={(value) => { onChange({ name: 'borderWidth', value: `${value}px` }) }} /> */}
 						</div>
-						<div className="hw-flex hw-flex-row hw-space-x-2 hw-items-center">
-							<p>Rounded</p>
-							<Slider className="flex-1" value={borderRadius} max={50} onChange={(value) => { onChange({ name: 'borderRadius', value: `${value}px` }) }} />
-							<p>{borderRadius.toFixed(0)}</p>
+						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center">
+							<div className='hw-col-start-2 hw-col-span-2 hw-grid hw-grid-cols-4 hw-gap-1'>
+								<div className="hw-flex hw-flex-col hw-items-center hw-justify-center">
+									<InputBlur className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200 hw-rounded-tl-md hw-rounded-bl-md" value={borderWidth[0]} onChange={
+										(value) => updateBorderWidth('T', parseInt(value))
+									} />
+									<p className="hw-mt-2">T</p>
+								</div>
+								<div className="hw-flex hw-flex-col hw-items-center hw-justify-center">
+									<InputBlur className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200" value={borderWidth[1]} onChange={
+										(value) => updateBorderWidth('R', parseInt(value))
+									} />
+									<p className="hw-mt-2">R</p>
+								</div>
+								<div className="hw-flex hw-flex-col hw-items-center hw-justify-center">
+									<InputBlur className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200" value={borderWidth[2]} onChange={
+										(value) => updateBorderWidth('B', parseInt(value))
+									} />
+									<p className="hw-mt-2">B</p>
+								</div>
+								<div className="hw-flex hw-flex-col hw-items-center hw-justify-center">
+									<InputBlur className="hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200 hw-rounded-tr-md hw-rounded-br-md" value={borderWidth[3]} onChange={
+										(value) => updateBorderWidth('L', parseInt(value))
+									} />
+									<p className="hw-mt-2">L</p>
+								</div>
+							</div>
+						</div>
+						<div className="hw-grid hw-grid-cols-3 hw-items-center hw-justify-center">
+							<p>Style</p>
+							<div className="hw-col-span-2">
+								<Dropdown className="hw-w-full hw-h-12 !hw-rounded-md hw-p-2" items={borderStyles} initialValue={getAttribute('borderStyle')} onChange={(item) => { onChange({ name: 'borderStyle', value: item.id }) }} />
+							</div>
 						</div>
 					</div>
 				</Popover>

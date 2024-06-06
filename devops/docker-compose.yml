@@ -1,6 +1,10 @@
+volumes:
+  db:
 version: "3"
+name: harmony
 services:
   db:
+    container_name: db
     image: postgres:15
     restart: always
     ports:
@@ -9,3 +13,5 @@ services:
       POSTGRES_USER: postgres
       POSTGRES_PASSWORD: password
       POSTGRES_DB: app
+    volumes:
+      - db:/var/lib/postgresql/data
