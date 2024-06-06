@@ -79,7 +79,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		})
 		i[0].expanded = true
 		setTransformedItems(i);
-	}, [items])
+	}, [])
 
 	function handleNodeDropped(event: DragAndDropEventArgs) {
 		const { draggedParentNode: oldParentElement, dropTarget: newParentElement, dropIndex: newIndex, droppedNode, draggedNode, droppedNodeData: node } = event;
