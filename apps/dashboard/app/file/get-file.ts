@@ -1,6 +1,6 @@
 'use server';
 import { prisma } from "@harmony/db/lib/prisma";
-import { GithubRepository } from "@harmony/server/src/api/repository/github";
+import { gitRepositoryFactory } from "@harmony/server/src/api";
 import { getRepository } from "@harmony/server/src/api/routers/branch";
 
 
@@ -9,7 +9,7 @@ export async function onSubmit({repositoryId, file}: {repositoryId: string, file
     if (!repository) {
         return 'Invalid repository id';
     }
-    const githubRepository = new GithubRepository(repository);
+    const githubRepository = gitRepositoryFactory.createGitRepository(repository);
 
     return githubRepository.getContent(file);
 }

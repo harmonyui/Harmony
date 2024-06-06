@@ -24,7 +24,7 @@ import { getServerAuthSession } from "../auth";
 import type { EmailService} from "./services/email-service";
 import type { GitRepositoryFactory} from "./repository/github";
 import {PrismaHarmonyComponentRepository, type HarmonyComponentRepository} from './repository/component-element'
-import { githubRepository, gitLocalRepositoryFactory, mailer } from "./index";
+import {gitRepositoryFactory, mailer } from "./index";
 
 
 /**
@@ -95,7 +95,6 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
   }
   // Get the session from the server using the getServerSession wrapper function
   const session = await getServerAuthSession(userId, mockUserId);
-  const gitRepositoryFactory = process.env.ENV === 'development' ? gitLocalRepositoryFactory : githubRepository;
   const harmonyComponentRepository = new PrismaHarmonyComponentRepository(prisma);
 
   return createInnerTRPCContext({

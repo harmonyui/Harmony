@@ -12,6 +12,8 @@ interface IndexingCacheKeyInfo {
 }
 
 export interface GithubCache {
+    getFileOrDirectoryContents: (keyInfo: FileCacheKeyInfo) => Promise<string | string[] | null>;
+    setFileOrDirectoryContents: (keyInfo: FileCacheKeyInfo, contents: string | string[]) => Promise<void>;
     getFileContents: (keyInfo: FileCacheKeyInfo) => Promise<string | null>;
     setFileContents: (keyInfo: FileCacheKeyInfo, content: string) => Promise<void>;
     getIndexingFiles: (keyInfo: IndexingCacheKeyInfo) => Promise<string[] | null>;
@@ -38,6 +40,32 @@ export class RedisGithubCache implements GithubCache {
     public async setFileContents(keyInfo: FileCacheKeyInfo, content: string): Promise<void> {
         const cacheKey = this.getFileCacheKey(keyInfo);
         await this.redisClient.set(cacheKey, content);
+    }
+
+    public async getFileOrDirectoryContents(keyInfo: FileCacheKeyInfo): Promise<string | string[] | null> {
+        const cacheKey = this.getFileCacheKey(keyInfo);
+        const type = await this.redisClient.type(cacheKey); 
+        if (type === 'string') {
+            return this.getFileContents(keyInfo);
+        }
+
+       return this.redisClient.smembers(cacheKey);
+    }
+
+    public async setFileOrDirectoryContents(keyInfo: FileCacheKeyInfo, contentOrFiles: string | string[]): Promise<void> {
+        const cacheKey = this.getFileCacheKey(keyInfo);
+        
+        const type = await this.redisClient.type(cacheKey);
+        if (type === 'string') {
+            if (typeof contentOrFiles !== 'string') throw new Error("Must be file content when setting a file");
+
+            await this.setFileContents(keyInfo, contentOrFiles);
+            return;
+        }
+
+        if (typeof contentOrFiles === 'string') throw new Error("Must be file content when setting a file"); 
+
+        await this.redisClient.sadd(cacheKey, ...contentOrFiles);
     }
 
     public async getIndexingFiles(keyInfo: IndexingCacheKeyInfo): Promise<string[] | null> {

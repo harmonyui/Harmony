@@ -75,6 +75,7 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
+		await updateDatabaseComponentErrors(elementInstances, gitRepository.repository.id);
 		return elementInstances.map(instance => ({
 			id: instance.id,
 			isComponent: instance.isComponent,
@@ -87,8 +88,6 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 				componentId: instance.id
 			}))
 		}))
-		//await updateDatabaseComponentDefinitions(elementInstances, repoId);
-		//await updateDatabaseComponentErrors(elementInstances, repoId);
 	}
 
 	return [];
@@ -812,6 +811,7 @@ export async function updateDatabaseComponentErrors(elementInstances: HarmonyCom
 
 	const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
 	
+	await updateDatabaseComponentDefinitions(errorElements, repositoryId);
 	await componentElementRepository.createOrUpdateElements(errorElements, repositoryId);
 	
 	await Promise.all(errorElements.map(element => prisma.componentError.upsert({

@@ -99,6 +99,8 @@ export const editorRouter = createTRPCRouter({
                 }
             });
 
+			const harmonyComponents = await indexCodebase('', githubRepository, githubCache);
+
             const errorElements = await prisma.componentError.findMany({
             	where: {
             		repository_id: repositoryId
@@ -106,8 +108,6 @@ export const editorRouter = createTRPCRouter({
             })
 
 			const isDemo = accountTiedToBranch.role === 'quick';
-
-			const harmonyComponents = await indexCodebase('', githubRepository, githubCache);
 
             return {
                 updates,

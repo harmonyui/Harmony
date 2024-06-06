@@ -7,7 +7,7 @@ import { NodeMailerEmailService } from "./services/email-service";
 export const mailer = new NodeMailerEmailService();
 export const redisGithubCache = new RedisGithubCache();
 export const githubRepository = new GithubRepositoryFactory(redisGithubCache);
-
+  
 export const gitLocalRepositoryFactory: GitRepositoryFactory = {
   createGitRepository(repository: Repository) {
     return new LocalGitRepository(repository, redisGithubCache);
@@ -16,3 +16,5 @@ export const gitLocalRepositoryFactory: GitRepositoryFactory = {
     return redisGithubCache;
   },
 };
+
+export const gitRepositoryFactory = process.env.ENV === 'development' ? gitLocalRepositoryFactory : githubRepository;
