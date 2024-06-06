@@ -4,7 +4,6 @@
 /* eslint-disable no-constant-condition -- ok*/
 /* eslint-disable no-nested-ternary -- ok*/
 import type { Font } from "@harmony/util/src/fonts";
-import type { ComponentElement } from "@harmony/util/src/types/component";
 import { useMemo, useState } from "react";
 import { Button } from "@harmony/ui/src/components/core/button";
 import ColorPicker from "@harmony/ui/src/components/core/color-picker";
@@ -20,6 +19,7 @@ import { useEffectEvent } from "../inspector/inspector-dev";
 import { selectDesignerElement, isTextElement } from "../inspector/inspector";
 import { useHarmonyContext } from "../harmony-context";
 import type { SelectMode } from "../harmony-context";
+import type { ComponentElement } from "../inspector/component-identifier";
 import { ComponentLayoutPanel } from "./layout-panel";
 import { useSidePanel } from "./side-panel";
 import type { CommonTools, ComponentToolData } from "./attribute-panel";

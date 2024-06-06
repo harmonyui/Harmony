@@ -1,16 +1,17 @@
-import {type ComponentElement} from '@harmony/util/src/types/component';
-import {Prisma, type Db} from '@harmony/db/lib/prisma';
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+import { randomUUID } from 'node:crypto';
+import type {Prisma, Db} from '@harmony/db/lib/prisma';
 import {INDEXING_VERSION} from '@harmony/util/src/constants';
-import { randomUUID } from 'crypto';
+import type { HarmonyComponent } from '../services/indexor/types';
 
-export type ComponentElementPrisma = Prisma.ComponentElementGetPayload<typeof componentElementPayload>;
+export type HarmonyComponentPrisma = Prisma.ComponentElementGetPayload<typeof harmonyComponentPayload>;
 
-export interface ComponentElementRepository {
-    createOrUpdateElement: (element: ComponentElement, repositoryId: string) => Promise<ComponentElementPrisma>
-    createOrUpdateElements: (elements: ComponentElement[], repositoryId: string) => Promise<void>
+export interface HarmonyComponentRepository {
+    createOrUpdateElement: (element: HarmonyComponent, repositoryId: string) => Promise<HarmonyComponentPrisma>
+    createOrUpdateElements: (elements: HarmonyComponent[], repositoryId: string) => Promise<void>
 }
 
-const componentElementPayload = {
+const harmonyComponentPayload = {
     include: {
         attributes: {
             include: {
@@ -21,11 +22,11 @@ const componentElementPayload = {
         location: true
     }
 }
-export class PrismaComponentElementRepository implements ComponentElementRepository {
+export class PrismaHarmonyComponentRepository implements HarmonyComponentRepository {
     constructor(private prisma: Db) {}
 
-    public async createOrUpdateElement(instance: ComponentElement, repositoryId: string): Promise<ComponentElementPrisma> {
-        // const referenceFirst = instance.attributes.filter(attr => instance.id !== attr.reference.id).map(attr => attr.reference as ComponentElement);
+    public async createOrUpdateElement(instance: HarmonyComponent, repositoryId: string): Promise<HarmonyComponentPrisma> {
+        // const referenceFirst = instance.attributes.filter(attr => instance.id !== attr.reference.id).map(attr => attr.reference as HarmonyComponent);
         // await Promise.all(referenceFirst.map(ref => this.createOrUpdateElement(ref, repositoryId)));
         
         const newInstance = await this.prisma.componentElement.upsert({
@@ -45,7 +46,7 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
 				},
 				definition: {
 					connect: {
-						id: instance.containingComponent.id
+						id: instance.containingComponent!.id
 					}
 				},
 				version: INDEXING_VERSION
@@ -56,12 +57,12 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
 				name: instance.name,
 				definition: {
 					connect: {
-						id: instance.containingComponent.id
+						id: instance.containingComponent!.id
 					}
 				},
 				version: INDEXING_VERSION
 			},
-            ...componentElementPayload
+            ...harmonyComponentPayload
 		});
 
 		// await this.prisma.componentAttribute.deleteMany({
@@ -93,13 +94,13 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
         //             }
         //         }
         //     },
-        //     ...componentElementPayload.include.attributes
+        //     ...harmonyComponentPayload.include.attributes
         // })));
 
         return newInstance;
     }
 
-    public async createOrUpdateElements(elements: ComponentElement[], repositoryId: string): Promise<void> {
+    public async createOrUpdateElements(elements: HarmonyComponent[], repositoryId: string): Promise<void> {
         const existingElements = await this.prisma.componentElement.findMany({
             where: {
                 id: {
@@ -140,14 +141,14 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
                 id: element.id,
 				repository_id: repositoryId,
 				name: element.name,
-				definition_id: element.containingComponent.id,
+				definition_id: element.containingComponent!.id,
                 location_id: element.location.id,
 				version: INDEXING_VERSION
             }))
         })
     }
 
-    // public async getComponentElement(id: string): Promise<ComponentElement | undefined> {
+    // public async getHarmonyComponent(id: string): Promise<HarmonyComponent | undefined> {
     //     const idTree = id.split('#').reduce<string[]>((prev, curr, i) => {
     //         const prevId = id.split('#').slice(0, i)
     //         const newId = [...prevId, curr].join('#');
@@ -163,7 +164,7 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
     //             }
     //         },
     //         include: {
-    //             ...componentElementPayload.include,
+    //             ...harmonyComponentPayload.include,
     //             definition: {
     //                 include: {
     //                     location: true
@@ -172,8 +173,8 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
     //         }
     //     });
 
-    //     const componentElements: ComponentElement[] = [];
-    //     for (let i = 0; i < componentElements.length; i++) {
+    //     const harmonyComponents: HarmonyComponent[] = [];
+    //     for (let i = 0; i < harmonyComponents.length; i++) {
 
     //     }
     // }
@@ -198,12 +199,12 @@ export class PrismaComponentElementRepository implements ComponentElementReposit
     //     }
     // }
 
-    // private async prismaToComponentElement(prismaElement: Prisma.ComponentElementGetPayload<typeof componentElementPayload>): Promise<ComponentElement> {
+    // private async prismaToHarmonyComponent(prismaElement: Prisma.HarmonyComponentGetPayload<typeof harmonyComponentPayload>): Promise<HarmonyComponent> {
     //     const parentId = prismaElement.id.split('#').slice(0, prismaElement.id.split('#').length - 1);
     //     const parent = this.getC
     // }
 
-    // private prismaToComponentElementRaw(prismaElement: Prisma.ComponentElementGetPayload<typeof componentElementPayload>, parent: ComponentElement | undefined, component: HarmonyComponent): ComponentElement {
+    // private prismaToHarmonyComponentRaw(prismaElement: Prisma.HarmonyComponentGetPayload<typeof harmonyComponentPayload>, parent: HarmonyComponent | undefined, component: HarmonyComponent): HarmonyComponent {
     //     return {
     //         id: prismaElement.id,
     //         attributes: prismaElement.attributes.map<Attribute>(attr => ({

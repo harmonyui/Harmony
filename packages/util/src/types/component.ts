@@ -1,15 +1,17 @@
-import { stringUnionSchema } from "../utils/common";
 import { z } from "zod";
+import { stringUnionSchema } from "../utils/common";
 
 const behaviorTypes = ['dark'] as const;
 const behaviorTypesSchema = stringUnionSchema(behaviorTypes);
 export type BehaviorType = z.infer<typeof behaviorTypesSchema>;
+const updateTypes = ['className', 'text', 'component', 'property'] as const;
+const updateTypesSchema = stringUnionSchema(updateTypes);
 
 //type: className, name: size
 export const updateSchema = z.object({
 	componentId: z.string(),
 	childIndex: z.number(),
-	type: z.union([z.literal('className'), z.literal('text'), z.literal('component')]),
+	type: updateTypesSchema,
 	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]), 
 	name: z.string(),
 	value: z.string(),
@@ -27,42 +29,26 @@ export const locationSchema = z.object({
 })
 export type ComponentLocation = z.infer<typeof locationSchema>;
 
-export const attributeSchema = z.object({
-	id: z.string(),
-	type: z.string(),
-	name: z.string(),
-	value: z.string(),
-	index: z.number(),
-	location: locationSchema,
-	locationType: z.string(),
-	reference: z.object({id: z.string()})
+export const componentPropSchema = z.object({
+	componentId: z.string(),
+	type: updateTypesSchema,
+	propName: z.string(),
+	propValue: z.string(),
+	isStatic: z.boolean(),
 })
-export type Attribute = z.infer<typeof attributeSchema>;
+export type ComponentProp = z.infer<typeof componentPropSchema>;
 
-export interface ComponentElementBase {
-	id: string;
-	name: string;
-	children: ComponentElement[];
-	location: ComponentLocation,
-	attributes: Attribute[];
-	isComponent: boolean;
-}
-
-export interface ComponentElement extends ComponentElementBase {
-	//parentId: string;
-	getParent: () => ComponentElement | undefined;
-	element?: HTMLElement;
-	containingComponent: HarmonyComponent;
-}
-
-export interface HarmonyComponent extends ComponentElementBase {
-	isComponent: true;
-
-}
+/** Passed to front-end */
+export const harmonyComponentInfoSchema = z.object({
+	id: z.string(),
+	name: z.string(),
+	props: z.array(componentPropSchema),
+	isComponent: z.boolean()
+});
+export type HarmonyComponentInfo = z.infer<typeof harmonyComponentInfoSchema>;
 
 export const componentErrorSchema = z.object({
 	componentId: z.string(),
-	//parentId: z.string(),
 	type: z.string()
 });
 
