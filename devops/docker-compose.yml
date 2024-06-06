@@ -1,9 +1,11 @@
-version: "3"
 volumes:
   db:
   cache:
+version: "3"
+name: harmony
 services:
   db:
+    container_name: db
     image: postgres:15
     restart: always
     ports:
