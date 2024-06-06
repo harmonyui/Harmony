@@ -1,4 +1,3 @@
-import { ComponentElement } from "@harmony/util/src/types/component";
 import { enableRipple } from "@syncfusion/ej2-base";
 import {
 	DragAndDropEventArgs,
@@ -7,6 +6,7 @@ import {
 import { useEffect, useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
+import { ComponentElement } from "../inspector/component-identifier";
 enableRipple(true);
 
 export interface TreeViewItem<T = string> {
@@ -79,21 +79,21 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		})
 		i[0].expanded = true
 		setTransformedItems(i);
-	}, [])
+	}, [items])
 
 	function handleNodeDropped(event: DragAndDropEventArgs) {
 		const { draggedParentNode: oldParentElement, dropTarget: newParentElement, dropIndex: newIndex, droppedNode, draggedNode, droppedNodeData: node } = event;
 		const componentId = draggedNode.children[1].innerHTML.split('data-component=')[1].split('"')[1]
 		const link = draggedNode.children[1].innerHTML.split("data-node=")[1].split('"')[1] as string
 		const domNode = document.querySelector(`[data-link="${link}"]`) as HTMLElement
-		
+
 		const oldParent = oldParentElement as HTMLElement
 		const oldParentId = oldParent.children[1].innerHTML.split('data-component=')[1].split('"')[1]
 		const newParent = newParentElement as HTMLElement
 		const newParentId = newParent.children[1].innerHTML.split('data-component=')[1].split('"')[1]
-		
+
 		const oldChildIndex = Array.from(domNode.parentElement!!.childNodes).indexOf(domNode)
-		
+
 		if (newParent.dataset.harmonyError === "component" || droppedNode.dataset.harmonyError === "component") {
 			event.cancel = true
 			setError("Cannot move the current component")
