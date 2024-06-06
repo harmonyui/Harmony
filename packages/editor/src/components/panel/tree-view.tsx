@@ -1,18 +1,12 @@
-import { getClass } from "@harmony/util/src/utils/common";
-import { useEffect, useState } from "react";
-import { set } from "zod";
-import {
-	ContextMenuComponent,
-	DragAndDropEventArgs,
-	NodeClickEventArgs,
-	NodeSelectEventArgs,
-	TreeViewComponent,
-} from "@syncfusion/ej2-react-navigations";
-import { enableRipple } from "@syncfusion/ej2-base";
-import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
-import { findElementFromId } from "../harmony-provider";
-import { v4 as uuidv4 } from 'uuid';
 import { ComponentElement } from "@harmony/util/src/types/component";
+import { enableRipple } from "@syncfusion/ej2-base";
+import {
+	DragAndDropEventArgs,
+	TreeViewComponent
+} from "@syncfusion/ej2-react-navigations";
+import { useEffect, useState } from "react";
+import { v4 as uuidv4 } from 'uuid';
+import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
 enableRipple(true);
 
 export interface TreeViewItem<T = string> {
@@ -28,8 +22,8 @@ export interface TransformNode {
 	subChild: TransformNode[],
 	expanded: boolean,
 	childIndex: number,
-	uid: string,
 	error: string,
+	component: string,
 }
 
 
@@ -52,16 +46,17 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex' };
 
 	function transform(node: TreeViewItem<any>, componentError = ''): TransformNode {
-		const { id, name } = node.id;
-
+		const { id, name, element }: { id: string, name: string, element: HTMLElement } = node.id;
+		const uuid = uuidv4();
+		element.dataset.link = uuid
 		const transformedNode: TransformNode = {
-			id,
+			id: uuid,
 			type: String(name),
 			expanded: true,
 			subChild: [] as TransformNode[],
 			childIndex: 0,
-			uid: uuidv4(),
-			error: componentError.length > 0 ? componentError : node.id.element.dataset.harmonyError
+			error: componentError.length > 0 ? componentError : node.id.element.dataset.harmonyError,
+			component: id
 		};
 
 		if (node.items && node.items.length > 0) {
@@ -88,12 +83,17 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 
 	function handleNodeDropped(event: DragAndDropEventArgs) {
 		const { draggedParentNode: oldParentElement, dropTarget: newParentElement, dropIndex: newIndex, droppedNode, draggedNode, droppedNodeData: node } = event;
-		const childIdx = draggedNode.children[1].innerHTML.split("data-child=")[1].split('"')[1] as string
-		const componentId = draggedNode.children[1].innerHTML.split("data-node=")[1].split('"')[1] as string
-
+		const componentId = draggedNode.children[1].innerHTML.split('data-component=')[1].split('"')[1]
+		const link = draggedNode.children[1].innerHTML.split("data-node=")[1].split('"')[1] as string
+		const domNode = document.querySelector(`[data-link="${link}"]`) as HTMLElement
+		
 		const oldParent = oldParentElement as HTMLElement
+		const oldParentId = oldParent.children[1].innerHTML.split('data-component=')[1].split('"')[1]
 		const newParent = newParentElement as HTMLElement
-
+		const newParentId = newParent.children[1].innerHTML.split('data-component=')[1].split('"')[1]
+		
+		const oldChildIndex = Array.from(domNode.parentElement!!.childNodes).indexOf(domNode)
+		
 		if (newParent.dataset.harmonyError === "component" || droppedNode.dataset.harmonyError === "component") {
 			event.cancel = true
 			setError("Cannot move the current component")
@@ -104,67 +104,45 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 			type: "component",
 			name: "reorder",
 			action: 'change',
-			componentId: componentId,
-			childIndex: parseInt(childIdx),
-			oldValue: JSON.stringify({ parentId: oldParent.dataset.uid, childIndex: parseInt(childIdx) }),
-			value: JSON.stringify({ parentId: newParent.dataset.uid, childIndex: newIndex })
+			componentId,
+			childIndex: oldChildIndex,
+			oldValue: JSON.stringify({ parentId: oldParentId, childIndex: oldChildIndex }),
+			value: JSON.stringify({ parentId: newParentId, childIndex: newIndex })
 		}
 		onAttributesChange([update])
-
-		function updateChildIndex(parent: Element) {
-			const children = Array.from(parent.children) as HTMLElement[]
-			children[2].childNodes.forEach((child, idx) => {
-				const c = child.childNodes[1] as HTMLElement
-				const uid = c.innerHTML.split("data-uid=")[1].split('"')[1] as string
-				if (uid) {
-					const e = document.querySelector(`[data-uid="${uid}"]`)
-					e?.setAttribute('data-child', idx.toString())
-				}
-			})
-		}
-
-		if (oldParent.dataset.uid === newParent.dataset.uid) {
-			updateChildIndex(newParent)
-		} else {
-			updateChildIndex(oldParent)
-			updateChildIndex(newParent)
-
-		}
 	}
 
-	function onMouseOver(item: HTMLElement, uid: string) {
-		const childIdx = document.querySelector(`[data-uid="${uid}"]`)?.getAttribute('data-child')
-		const element = findElementFromId(item.dataset.uid!!, parseInt(childIdx!))
-		if (element) {
-			onComponentHover(element)
+	function onMouseOver(item: HTMLElement, link: string) {
+		const node = document.querySelector(`[data-link="${link}"]`)
+		if (node) {
+			onComponentHover(node as HTMLElement)
 		}
 	}
-	function onMouseClick(item: HTMLElement, uid: string) {
-		const childIdx = document.querySelector(`[data-uid="${uid}"]`)?.getAttribute('data-child')
-		const element = findElementFromId(item.dataset.uid!!, parseInt(childIdx!))
-		if (element) {
-			onComponentSelect(element)
+	function onMouseClick(item: HTMLElement, link: string) {
+		const node = document.querySelector(`[data-link="${link}"]`)
+		if (node) {
+			onComponentSelect(node as HTMLElement)
 		}
 	}
 
 	function addEvents(tree: HTMLElement[]) {
 		tree.forEach((item, idx) => {
 			if (item.dataset.uid) {
-				if (item.children[0] && item.children[0].classList.contains('e-fullrow') && item.children[1].innerHTML.includes('data-uid')) {
-					const uid = item.children[1].innerHTML.split('data-uid=')[1].split('"')[1]
+				if (item.children[0] && item.children[0].classList.contains('e-fullrow') && item.children[1].innerHTML.includes('data-node')) {
+					const link = item.children[1].innerHTML.split('data-node=')[1].split('"')[1]
 					item.dataset.harmonyError = item.children[1].innerHTML.split('harmony-error=')[1].split('"')[1]
 					item.children[0].addEventListener('mouseover', () => {
-						onMouseOver(item, uid!)
+						onMouseOver(item, link!)
 					})
 					item.children[0].addEventListener('click', () => {
-						onMouseClick(item, uid!)
+						onMouseClick(item, link!)
 					})
 
 					item.children[1].addEventListener('mouseover', () => {
-						onMouseOver(item, uid!)
+						onMouseOver(item, link!)
 					})
 					item.children[1].addEventListener('click', () => {
-						onMouseClick(item, uid!)
+						onMouseClick(item, link!)
 					})
 				}
 			}
@@ -207,17 +185,10 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 	);
 }
 
-export interface TreeViewRenderItem {
-	id: string;
-	type: string;
-	childIndex: number;
-	uid: string;
-	error: string;
-}
 
-function TreeViewItem(data: TreeViewRenderItem) {
+function TreeViewItem(data: TransformNode) {
 	return (
-		<div data-uid={data.uid} data-child={data.childIndex} data-node={data.id} harmony-error={data.error || "none"}>
+		<div data-child={data.childIndex} data-node={data.id} harmony-error={data.error || "none"} data-component={data.component}>
 			<p>
 				{data.error === "component" ? <span style={{ color: 'red' }}>⚠️</span> : ''}
 				{data.type}
