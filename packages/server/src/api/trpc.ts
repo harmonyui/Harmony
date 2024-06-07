@@ -19,14 +19,12 @@ import type {
 } from '@clerk/clerk-sdk-node';
 import type { Request } from 'express';
 import { auth } from "@clerk/nextjs";
-import type { Repository } from "@harmony/util/src/types/branch";
 import type { FullSession, Session } from "../auth";
 import { getServerAuthSession } from "../auth";
 import type { EmailService} from "./services/email-service";
-import { NodeMailerEmailService } from "./services/email-service";
 import type { GitRepositoryFactory} from "./repository/github";
-import { GithubRepositoryFactory, LocalGitRepository } from "./repository/github";
 import {PrismaHarmonyComponentRepository, type HarmonyComponentRepository} from './repository/component-element'
+import {gitRepositoryFactory, mailer } from "./index";
 
 
 /**
@@ -57,13 +55,7 @@ export interface AuthContext extends AuthContextOptions {
   mailer: EmailService
 }
 
-export const mailer = new NodeMailerEmailService();
 
-const gitLocalRepositoryFactory: GitRepositoryFactory = {
-  createGitRepository(repository: Repository) {
-    return new LocalGitRepository(repository);
-  }
-};
 
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export
@@ -103,7 +95,6 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
   }
   // Get the session from the server using the getServerSession wrapper function
   const session = await getServerAuthSession(userId, mockUserId);
-  const gitRepositoryFactory = process.env.ENV === 'development' ? gitLocalRepositoryFactory : new GithubRepositoryFactory();
   const harmonyComponentRepository = new PrismaHarmonyComponentRepository(prisma);
 
   return createInnerTRPCContext({

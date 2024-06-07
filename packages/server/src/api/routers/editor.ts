@@ -2,8 +2,8 @@
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import type { ComponentLocation, ComponentUpdate, HarmonyComponentInfo } from "@harmony/util/src/types/component";
-import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema } from '@harmony/util/src/types/network';
+import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
+import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
 import type { PublishResponse, UpdateResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
@@ -11,12 +11,13 @@ import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
-import { convertToHarmonyInfo, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
-import { getCodeSnippet, getFileContent } from "../services/indexor/github";
-import { updateComponentIdsFromUpdates } from "../services/updator/local";
+import { indexCodebase, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
+import { getCodeSnippet } from "../services/indexor/github";
+//import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import type { GitRepository } from "../repository/github";
 import type { Attribute, HarmonyComponent } from "../services/indexor/types";
+import { updateFileCache } from "../services/updator/update-cache";
 import { createPullRequest } from "./pull-request";
 import { getBranch, getRepository } from "./branch";
 
@@ -73,29 +74,34 @@ export const editorRouter = createTRPCRouter({
 			}));
 
 			const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
-			const ref = await githubRepository.getBranchRef(repository.branch);
+			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
 
-			//If the current repository ref is out of date, that means we have some
-			//new commits that might affect our previously indexed component elements.
-			//Let's go through the diffs and update those component ids
-			if (ref !== repository.ref) {
-				await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
+            const ref = await githubRepository.getBranchRef(repository.branch);
 
+            //If the current repository ref is out of date, that means we have some
+            //new commits that might affect our previously indexed component elements.
+            //Let's go through the diffs and update those component ids
+            if (ref !== repository.ref) {
+                // await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
+				
+				await updateFileCache(ctx.gitRepositoryFactory, repository, repository.ref, ref);
 				await prisma.repository.update({
-					where: {
-						id: repository.id,
-					},
-					data: {
-						ref
-					}
-				})
-			}
+                    where: {
+                        id: repository.id,
+                    },
+                    data: {
+                        ref
+                    }
+                })
+            }
 
-			const branches = await prisma.branch.findMany({
-				where: {
-					repository_id: repositoryId
-				}
-			});
+            const branches = await prisma.branch.findMany({
+                where: {
+                    repository_id: repositoryId
+                }
+            });
+
+			const harmonyComponents = await indexCodebase('', githubRepository, githubCache);
 
 			const errorElements = await prisma.componentError.findMany({
 				where: {
@@ -104,9 +110,6 @@ export const editorRouter = createTRPCRouter({
 			})
 
 			const isDemo = accountTiedToBranch.role === 'quick';
-
-			const indexedComponents = await indexForComponents(updates.map(update => update.componentId), githubRepository);
-			const harmonyComponents: HarmonyComponentInfo[] = convertToHarmonyInfo(indexedComponents);
 
 			return {
 				updates,
@@ -288,8 +291,7 @@ export const editorRouter = createTRPCRouter({
 async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
-		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
-			await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
+		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
 
 		return content;
 	}
@@ -307,8 +309,7 @@ async function indexForComponent(componentId: string, gitRepository: GitReposito
 async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
-		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
-			await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
+		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
 
 		return content;
 	}
@@ -713,25 +714,25 @@ const converter = new TailwindConverter({
 
 function addPrefixToClassName(className: string, prefix: string): string {
 	const classes = className.split(' ');
-	const listClass: [string, string][] = classes.map((classes) => {
-		if (classes.includes(":")) {
-			const [before, after] = classes.split(":");
+	const listClass: [string, string][] = classes.map((_classes) => {
+		if (_classes.includes(":")) {
+			const [before, after] = _classes.split(":");
 			if (!before || !after) {
-				throw new Error(`Invalid class ${classes}`);
+				throw new Error(`Invalid class ${_classes}`);
 			}
 			return [`${before}:`, after];
-		} else if (classes.startsWith('-')) {
-			return ['-', classes.substring(1)];
+		} else if (_classes.startsWith('-')) {
+			return ['-', _classes.substring(1)];
 		}
-		return ['', classes];
+		return ['', _classes];
 
 	});
 
-	const withPrefix: [string, string][] = listClass.map((classes) => {
-		if (!classes.includes(prefix)) {
-			return [classes[0], prefix + classes[1]];
+	const withPrefix: [string, string][] = listClass.map((_classes) => {
+		if (!_classes.includes(prefix)) {
+			return [_classes[0], prefix + _classes[1]];
 		}
-		return classes;
+		return _classes;
 
 	});
 

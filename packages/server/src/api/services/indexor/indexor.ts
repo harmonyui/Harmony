@@ -6,17 +6,20 @@
 /* eslint-disable no-useless-computed-key -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
-/* eslint-disable no-useless-escape -- ok*/
+ 
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
-import { ComponentProp, type ComponentLocation, type HarmonyComponentInfo } from "@harmony/util/src/types/component";
+import type { ComponentProp, ComponentLocation, HarmonyComponentInfo } from "@harmony/util/src/types/component";
 import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { PrismaHarmonyComponentRepository } from "../../repository/component-element";
-import { Attribute, HarmonyComponent } from "./types";
+import type { GithubCache } from "../../repository/cache";
+import type { GitRepository } from "../../repository/github";
+import type { Attribute, HarmonyComponent } from "./types";
+import { IndexingFiles } from "./github";
 
 export type HarmonyComponentWithNode = HarmonyComponent & {node: t.JSXElement};
 
@@ -63,17 +66,16 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 	return {elementInstance, componentDefinitions};
 }
 
-export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void): Promise<HarmonyComponentInfo[]> => {
+export const indexCodebase = async (dirname: string, gitRepository: GitRepository, gitCache: GithubCache): Promise<HarmonyComponentInfo[]> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: HarmonyComponentWithNode[] = [];
-	const fileContents: FileAndContent[] = [];
 
-	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
-		fileContents.push({file: filename, content});
-	});
+	const indexingFiles = new IndexingFiles(gitRepository, gitCache);
+	const fileContents = await indexingFiles.getIndexingFilesAndContent(dirname);
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
+		await updateDatabaseComponentErrors(elementInstances, gitRepository.repository.id);
 		return elementInstances.map(instance => ({
 			id: instance.id,
 			isComponent: instance.isComponent,
@@ -86,8 +88,6 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 				componentId: instance.id
 			}))
 		}))
-		//await updateDatabaseComponentDefinitions(elementInstances, repoId);
-		//await updateDatabaseComponentErrors(elementInstances, repoId);
 	}
 
 	return [];
@@ -810,23 +810,27 @@ export async function updateDatabaseComponentErrors(elementInstances: HarmonyCom
 	const errorElements = findErrorElements(elementInstances);
 
 	const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
-	
-	await componentElementRepository.createOrUpdateElements(errorElements, repositoryId);
-	
-	await Promise.all(errorElements.map(element => prisma.componentError.upsert({
-		create: {
-			component_id: element.id,
-			repository_id: repositoryId,
-			type: element.type
-		},
-		update: {
-			component_id: element.id,
-			repository_id: repositoryId,
-			type: element.type
-		},
+
+	const ids = errorElements.map(({id}) => id);
+	const alreadyUpdated = await prisma.componentError.findMany({
 		where: {
-			component_id: element.id,
-			repository_id: repositoryId
+			component_id: {
+				in: ids
+			},
+			repository_id: repositoryId,
+		}
+	})
+	const newErrorElements = errorElements.filter(element => !alreadyUpdated.find(already => already.component_id === element.id && already.type === element.type))
+	
+	await updateDatabaseComponentDefinitions(newErrorElements, repositoryId);
+	await componentElementRepository.createOrUpdateElements(newErrorElements, repositoryId);
+	
+	
+	await Promise.all(newErrorElements.map(newEl => prisma.componentError.create({
+		data: {
+			component_id: newEl.id,
+			repository_id: repositoryId,
+			type: newEl.type
 		}
 	})));
 }
