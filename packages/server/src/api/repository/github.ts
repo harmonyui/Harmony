@@ -13,6 +13,7 @@ import type {Change} from 'diff';
 import { diffChars, diffLines} from 'diff';
 import { LOCALHOST } from "@harmony/util/src/utils/component";
 import type { GithubCache } from "./cache";
+import { components } from '@octokit/openapi-types';
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const privateKeyEnv = process.env.PRIVATE_KEY;
@@ -40,6 +41,10 @@ interface ContentOrDirectory {
     type: string,
     path: string;
 }
+interface UpdateFile {
+    type: 'add' | 'remove' | 'change';
+    path: string;
+}
 export interface GitRepository {
     getContentOrDirectory: (filePath: string, branchName?: string) => Promise<ContentOrDirectory | ContentOrDirectory[] | {content: string, path: string}>;
     createBranch: (newBranch: string) => Promise<void>;
@@ -49,7 +54,7 @@ export interface GitRepository {
     updateFilesAndCommit: (branch: string, changes: { filePath: string, locations: {snippet: string, start: number, end: number }[]}[]) => Promise<void>;
     getCommits: (branch: string) => Promise<CommitItem[]>
     createPullRequest: (branch: string, title: string, body: string) => Promise<string>
-    getUpdatedFiles: (branch: string, oldRef: string) => Promise<{path: string, type: 'add' | 'remove' | 'change'}[]>;
+    getUpdatedFiles: (branch: string, oldRef: string) => Promise<UpdateFile[]>;
     repository: Repository
 }
 
@@ -154,7 +159,27 @@ export class GithubRepository implements GitRepository {
     }
 
     public async getUpdatedFiles(branch: string, oldRef: string) {
-        return [];
+        const octokit = await this.getOctokit();
+        const {data: commitData} = await octokit.rest.repos.compareCommits({owner: this.repository.owner, repo: this.repository.name, base: oldRef, head: branch});
+        const mapping: Record<components['schemas']['diff-entry']['status'], UpdateFile['type']> = {
+            'added': 'add',
+            'removed': 'remove',
+            'changed': 'change',
+            'copied': 'add',
+            'modified': 'change',
+            'renamed': 'add',
+            'unchanged': 'change'
+        }
+
+        const updateFiles: UpdateFile[] = [];
+        for (const file of commitData.files || []) {
+            updateFiles.push({path: file.filename, type: mapping[file.status]});
+            if (file.status === 'renamed' && file.previous_filename) {
+                updateFiles.push({path: file.previous_filename, type: 'remove'});
+            }
+        }
+        
+        return updateFiles;
     }
 
     public async getContent(file: string, ref?: string, rawContent=false) {
@@ -378,8 +403,8 @@ export class LocalGitRepository implements GitRepository {
         // });
     }
 
-    public async getUpdatedFiles() {
-        return [];
+    public async getUpdatedFiles(branch: string, oldRef: string) {
+        return this.githubRepo.getUpdatedFiles(branch, oldRef);
     }
     public async updateFilesAndCommit(branch: string, changes: { filePath: string; locations: { snippet: string; start: number; end: number; }[]; }[]): Promise<void> {
         const updates: LocalUpdate[] = [];

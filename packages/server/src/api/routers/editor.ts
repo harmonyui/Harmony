@@ -13,13 +13,13 @@ import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-mer
 import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
 import { indexCodebase, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
 import { getCodeSnippet } from "../services/indexor/github";
-import { updateComponentIdsFromUpdates } from "../services/updator/local";
+//import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import type { GitRepository } from "../repository/github";
 import type { Attribute, HarmonyComponent } from "../services/indexor/types";
+import { updateFileCache } from "../services/updator/update-cache";
 import { createPullRequest } from "./pull-request";
 import { getBranch, getRepository } from "./branch";
-import { updateFileCache } from "../services/updator/update-cache";
 
 export const editorRouter = createTRPCRouter({
     loadProject: publicProcedure
