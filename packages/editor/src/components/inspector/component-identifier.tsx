@@ -1,6 +1,7 @@
 import type { Fiber } from "react-reconciler";
 import type { ComponentProp } from "@harmony/util/src/types/component";
 import { getElementFiberUpward, getFiberName, getReferenceFiber } from "./inspector-dev";
+import { useHarmonyContext } from "../harmony-context";
 
 export interface ComponentElement {
 	id: string;
@@ -17,15 +18,38 @@ export interface ComponentIdentifier {
 
 export const getComponentElementFiber = (element: HTMLElement): Fiber | undefined => {
 	const fiber = getElementFiberUpward(element)
-    const referenceFiber = getReferenceFiber(fiber)
+	const referenceFiber = getReferenceFiber(fiber)
 	return referenceFiber
 }
 
 export class ReactComponentIdentifier implements ComponentIdentifier {
-	public getComponentFromElement(element: HTMLElement): ComponentElement| undefined {
+	public getComponentFromElement(element: HTMLElement): ComponentElement | undefined {
+
+		const { harmonyComponents } = useHarmonyContext();
+
+		const id = element.dataset.harmonyId
+		const harmonyComponent = harmonyComponents.find(c => c.id === id);
+
+		if (harmonyComponent && id) {
+			const name = harmonyComponent.name
+			const isComponent = harmonyComponent.isComponent;
+			const props: ComponentProp[] = harmonyComponent.props;
+
+			return {
+				id,
+				element,
+				name,
+				children: this.getComponentChildren(element),
+				props,
+				isComponent,
+			}
+		}
+
+
+
+
 		const fiber = getComponentElementFiber(element);
-		
-		const id = element.dataset.harmonyId;
+
 		if (id === undefined) {
 			return undefined;
 		}
@@ -33,7 +57,7 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 		const name = getFiberName(fiber) || '';
 		const isComponent = !fiber?.stateNode;
 		const props: ComponentProp[] = this.getComponentAttributes(element);
-		
+
 		return {
 			id,
 			element,
@@ -51,14 +75,14 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 				//attributes.push({id: `text-${i}`, type: 'text', name: `${i}`, value: node.textContent ?? ''});
 			}
 		}
-		
+
 
 		return attributes;
 	}
 
 	private getComponentChildren(element: HTMLElement): ComponentElement[] {
 		const children: ComponentElement[] = [];
-		
+
 		const elementChildren = Array.from(element.children);
 		for (let i = 0; i < elementChildren.length; i++) {
 			const child = elementChildren[i] as HTMLElement;
@@ -67,9 +91,9 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 				i--;
 				continue;
 			}
-			
+
 			const childComponent = this.getComponentFromElement(child);
-			if (childComponent) { 
+			if (childComponent) {
 				children.push(childComponent);
 			}
 		}
