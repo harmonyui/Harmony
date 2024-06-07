@@ -714,25 +714,25 @@ const converter = new TailwindConverter({
 
 function addPrefixToClassName(className: string, prefix: string): string {
 	const classes = className.split(' ');
-	const listClass: [string, string][] = classes.map((classes) => {
-		if (classes.includes(":")) {
-			const [before, after] = classes.split(":");
+	const listClass: [string, string][] = classes.map((_classes) => {
+		if (_classes.includes(":")) {
+			const [before, after] = _classes.split(":");
 			if (!before || !after) {
-				throw new Error(`Invalid class ${classes}`);
+				throw new Error(`Invalid class ${_classes}`);
 			}
 			return [`${before}:`, after];
-		} else if (classes.startsWith('-')) {
-			return ['-', classes.substring(1)];
+		} else if (_classes.startsWith('-')) {
+			return ['-', _classes.substring(1)];
 		}
-		return ['', classes];
+		return ['', _classes];
 
 	});
 
-	const withPrefix: [string, string][] = listClass.map((classes) => {
-		if (!classes.includes(prefix)) {
-			return [classes[0], prefix + classes[1]];
+	const withPrefix: [string, string][] = listClass.map((_classes) => {
+		if (!_classes.includes(prefix)) {
+			return [_classes[0], prefix + _classes[1]];
 		}
-		return classes;
+		return _classes;
 
 	});
 
