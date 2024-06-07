@@ -19,6 +19,7 @@ import type { GitRepository } from "../repository/github";
 import type { Attribute, HarmonyComponent } from "../services/indexor/types";
 import { createPullRequest } from "./pull-request";
 import { getBranch, getRepository } from "./branch";
+import { updateFileCache } from "../services/updator/update-cache";
 
 export const editorRouter = createTRPCRouter({
     loadProject: publicProcedure
@@ -81,9 +82,10 @@ export const editorRouter = createTRPCRouter({
             //new commits that might affect our previously indexed component elements.
             //Let's go through the diffs and update those component ids
             if (ref !== repository.ref) {
-                await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
-
-                await prisma.repository.update({
+                // await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
+				
+				await updateFileCache(ctx.gitRepositoryFactory, repository, repository.ref, ref);
+				await prisma.repository.update({
                     where: {
                         id: repository.id,
                     },

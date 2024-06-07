@@ -45,10 +45,11 @@ export interface GitRepository {
     createBranch: (newBranch: string) => Promise<void>;
     getBranchRef: (branch: string) => Promise<string>;
     diffFiles: (branch: string, oldRef: string, file: string) => Promise<Change[]>
-    getContent: (file: string, ref?: string) => Promise<string>;
+    getContent: (file: string, ref?: string, rawContent?: boolean) => Promise<string>;
     updateFilesAndCommit: (branch: string, changes: { filePath: string, locations: {snippet: string, start: number, end: number }[]}[]) => Promise<void>;
     getCommits: (branch: string) => Promise<CommitItem[]>
     createPullRequest: (branch: string, title: string, body: string) => Promise<string>
+    getUpdatedFiles: (branch: string, oldRef: string) => Promise<{path: string, type: 'add' | 'remove' | 'change'}[]>;
     repository: Repository
 }
 
@@ -152,8 +153,13 @@ export class GithubRepository implements GitRepository {
         return diffs;
     }
 
-    public async getContent(file: string, ref?: string) {
+    public async getUpdatedFiles(branch: string, oldRef: string) {
+        return [];
+    }
+
+    public async getContent(file: string, ref?: string, rawContent=false) {
         const decodeContent = (content: string): string => {
+            if (rawContent) return content;
             //We have to do this fancy decoding because some special characters do not decode right 
             //with atob
             return decodeURIComponent(atob(content).split('').map(function map(c) {
@@ -348,8 +354,8 @@ export class LocalGitRepository implements GitRepository {
     public async createBranch(): Promise<void> {
         return undefined;
     }
-    public async getBranchRef(): Promise<string> {
-        return this.repository.ref;
+    public async getBranchRef(branch: string): Promise<string> {
+        return this.githubRepo.getBranchRef(branch)
     }
     public diffFiles(): Promise<Change[]> {
         throw new Error("Not implemented");
@@ -370,6 +376,10 @@ export class LocalGitRepository implements GitRepository {
         //         resolve(data);
         //     })
         // });
+    }
+
+    public async getUpdatedFiles() {
+        return [];
     }
     public async updateFilesAndCommit(branch: string, changes: { filePath: string; locations: { snippet: string; start: number; end: number; }[]; }[]): Promise<void> {
         const updates: LocalUpdate[] = [];
