@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
- 
+
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
@@ -22,56 +22,56 @@ import { createPullRequest } from "./pull-request";
 import { getBranch, getRepository } from "./branch";
 
 export const editorRouter = createTRPCRouter({
-    loadProject: publicProcedure
-        .input(loadRequestSchema)
+	loadProject: publicProcedure
+		.input(loadRequestSchema)
 		.output(loadResponseSchema)
-        .query(async ({ctx, input}) => {
-            const {repositoryId, branchId} = input;
-            const {prisma} = ctx;
+		.query(async ({ ctx, input }) => {
+			const { repositoryId, branchId } = input;
+			const { prisma } = ctx;
 
-            const repository = await getRepository({prisma, repositoryId});
-            if (!repository) throw new Error("No repo");
+			const repository = await getRepository({ prisma, repositoryId });
+			if (!repository) throw new Error("No repo");
 
-            const pullRequest = await prisma.pullRequest.findUnique({
-                where: {
-                    branch_id: branchId
-                }
-            });
+			const pullRequest = await prisma.pullRequest.findUnique({
+				where: {
+					branch_id: branchId
+				}
+			});
 
-            const accountTiedToBranch = await prisma.account.findFirst({
-                where: {
-                    branch: {
-                        some: {
-                            id: branchId
-                        }
-                    }
-                }
-            });
+			const accountTiedToBranch = await prisma.account.findFirst({
+				where: {
+					branch: {
+						some: {
+							id: branchId
+						}
+					}
+				}
+			});
 
-            if (!accountTiedToBranch) {
-                throw new Error(`Cannot find account tied to branch ${  branchId}`);
-            }
+			if (!accountTiedToBranch) {
+				throw new Error(`Cannot find account tied to branch ${branchId}`);
+			}
 
-            let updates: ComponentUpdate[] = [];
+			let updates: ComponentUpdate[] = [];
 
-            const query = await prisma.$queryRaw<{action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, parentId: string, isGlobal: boolean}[]>`
+			const query = await prisma.$queryRaw<{ action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, parentId: string, isGlobal: boolean }[]>`
                 SELECT u.action, u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", e.id, e.parent_id as "parentId" FROM "ComponentUpdate" u
                 INNER JOIN "ComponentElement" e on e.id = component_id
                 WHERE u.branch_id = ${branchId}
                 ORDER BY u.date_modified ASC`
 
 
-            updates = query.map(up => ({
-                action: up.action as ComponentUpdate['action'],
-                type: up.type as ComponentUpdate['type'],
-                name: up.name,
-                value: up.value,
-                oldValue: up.oldValue,
-                componentId: up.id,
-                parentId: up.parentId,
-                childIndex: up.childIndex,
-                isGlobal: up.isGlobal
-            }));
+			updates = query.map(up => ({
+				action: up.action as ComponentUpdate['action'],
+				type: up.type as ComponentUpdate['type'],
+				name: up.name,
+				value: up.value,
+				oldValue: up.oldValue,
+				componentId: up.id,
+				parentId: up.parentId,
+				childIndex: up.childIndex,
+				isGlobal: up.isGlobal
+			}));
 
 			const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
 			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
@@ -103,111 +103,111 @@ export const editorRouter = createTRPCRouter({
 
 			const harmonyComponents = await indexCodebase('', githubRepository, githubCache);
 
-            const errorElements = await prisma.componentError.findMany({
-            	where: {
-            		repository_id: repositoryId
-            	}
-            })
+			const errorElements = await prisma.componentError.findMany({
+				where: {
+					repository_id: repositoryId
+				}
+			})
 
 			const isDemo = accountTiedToBranch.role === 'quick';
 
-            return {
-                updates,
-                branches: branches.map(branch => ({
-                    id: branch.id,
-                    name: branch.label
-                })),
-                errorElements: isDemo ? [] : errorElements.map(element => ({componentId: element.component_id, type: element.type})),
-                pullRequest: pullRequest || undefined,
-                showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
-                isDemo,
+			return {
+				updates,
+				branches: branches.map(branch => ({
+					id: branch.id,
+					name: branch.label
+				})),
+				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.component_id, type: element.type })),
+				pullRequest: pullRequest || undefined,
+				showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
+				isDemo,
 				harmonyComponents
-            }
-        }),
-    saveProject: publicProcedure
-        .input(updateRequestBodySchema)
-        .mutation(async ({ctx, input}) => {
-            const {branchId} = input;
-            const body = input;
-            const {prisma} = ctx;
+			}
+		}),
+	saveProject: publicProcedure
+		.input(updateRequestBodySchema)
+		.mutation(async ({ ctx, input }) => {
+			const { branchId } = input;
+			const body = input;
+			const { prisma } = ctx;
 
-            const branch = await prisma.branch.findUnique({
-                where: {
-                    id: branchId
-                }
-            });
-            if (branch === null) {
-                throw new Error(`Cannot find branch with id ${branchId}`);
-            }
+			const branch = await prisma.branch.findUnique({
+				where: {
+					id: branchId
+				}
+			});
+			if (branch === null) {
+				throw new Error(`Cannot find branch with id ${branchId}`);
+			}
 
-            const pullRequest = await prisma.pullRequest.findUnique({
-                where: {
-                    branch_id: branchId
-                }
-            })
+			const pullRequest = await prisma.pullRequest.findUnique({
+				where: {
+					branch_id: branchId
+				}
+			})
 
-            if (pullRequest) {
-                throw new Error("Cannot make changes on a published branch");
-            }
+			if (pullRequest) {
+				throw new Error("Cannot make changes on a published branch");
+			}
 
-            const repository = await getRepository({prisma, repositoryId: branch.repository_id});
-            if (!repository) {
-                throw new Error(`Cannot find repository with id ${branch.repository_id}`)
-            }
+			const repository = await getRepository({ prisma, repositoryId: branch.repository_id });
+			if (!repository) {
+				throw new Error(`Cannot find repository with id ${branch.repository_id}`)
+			}
 
-            const accountTiedToBranch = await prisma.account.findFirst({
-                where: {
-                    branch: {
-                        some: {
-                            id: branchId
-                        }
-                    }
-                }
-            });
+			const accountTiedToBranch = await prisma.account.findFirst({
+				where: {
+					branch: {
+						some: {
+							id: branchId
+						}
+					}
+				}
+			});
 
-            if (!accountTiedToBranch) {
-                throw new Error(`Cannot find account tied to branch ${branchId}`);
-            }
+			if (!accountTiedToBranch) {
+				throw new Error(`Cannot find account tied to branch ${branchId}`);
+			}
 
-            await prisma.account.update({
-                where: {
-                    id: accountTiedToBranch.id
-                },
-                data: {
-                    seen_welcome_screen: true
-                }
-            })
+			await prisma.account.update({
+				where: {
+					id: accountTiedToBranch.id
+				},
+				data: {
+					seen_welcome_screen: true
+				}
+			})
 
 			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
-            const updates: ComponentUpdate[] = [];
-            const errorUpdates: (ComponentUpdate & {errorType: string})[] = [];
-            //Indexes the files of these component updates
-            for (const value of body.values) {
-                for (const update of value.update) {
-                	if (!update.componentId) continue;
+			const updates: ComponentUpdate[] = [];
+			const errorUpdates: (ComponentUpdate & { errorType: string })[] = [];
+			//Indexes the files of these component updates
+			for (const value of body.values) {
+				for (const update of value.update) {
+					if (!update.componentId) continue;
 
 					//TODO: Be able to handle dynamic components so we don't have to do this
 					const split = update.componentId.split('#')
 					if (split.length > 1 && /pages\/_app\.(tsx|jsx|js)/.exec(atob(split[0]))) {
 						update.componentId = split.slice(1).join('#');
 					}
-                    
-                    let element = await prisma.componentElement.findFirst({
-                        where: {
-                            id: update.componentId,
-                            repository_id: branch.repository_id,
+
+					let element = await prisma.componentElement.findFirst({
+						where: {
+							id: update.componentId,
+							repository_id: branch.repository_id,
 							version: INDEXING_VERSION
-                        }
-                    }) ?? undefined;
-                    if (!element) {
-                        const elementInstances = await indexForComponent(update.componentId, gitRepository);
+						}
+					}) ?? undefined;
+					if (!element) {
+						const elementInstances = await indexForComponent(update.componentId, gitRepository);
 						const indexedElement = elementInstances.find(el => el.id === update.componentId);
 						if (indexedElement) {
 							await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
 							await updateDatabaseComponentErrors(elementInstances, branch.repository_id);
 							element = await ctx.harmonyComponentRepository.createOrUpdateElement(indexedElement, branch.repository_id);
 						}
-                    }
+					}
 
 					const error = await prisma.componentError.findFirst({
 						where: {
@@ -216,17 +216,17 @@ export const editorRouter = createTRPCRouter({
 							type: update.type
 						}
 					});
-                    
 
-                    if (element && !error) {
-                        updates.push(update);
-                    } else if (!element) {
-						throw new Error("Cannot have an error element because that shouldn't happend anymore");
+
+					if (element && !error) {
+						updates.push(update);
+					} else if (!element) {
+						throw new Error("Cannot have an error element because that shouldn't happened anymore");
 					} else if (error) {
-						errorUpdates.push({...update, errorType: error.type});
-                    }
-                }
-            }
+						errorUpdates.push({ ...update, errorType: error.type });
+					}
+				}
+			}
 
 			await Promise.all(updates.map(up => prisma.componentUpdate.create({
 				data: {
@@ -242,25 +242,25 @@ export const editorRouter = createTRPCRouter({
 				}
 			})))
 
-            const reversed = reverseUpdates(errorUpdates);
-            const response: UpdateResponse = {errorUpdates: reversed};
-            return response;
-        }),
+			const reversed = reverseUpdates(errorUpdates);
+			const response: UpdateResponse = { errorUpdates: reversed };
+			return response;
+		}),
 	publishProject: publicProcedure
 		.input(publishRequestSchema)
-		.mutation(async ({ctx, input}) => {
+		.mutation(async ({ ctx, input }) => {
 			const data = input;
-			const {branchId, pullRequest} = data;
-			const {prisma} = ctx;
+			const { branchId, pullRequest } = data;
+			const { prisma } = ctx;
 
-			const branch = await getBranch({prisma, branchId});
+			const branch = await getBranch({ prisma, branchId });
 			if (!branch) {
-				throw new Error(`Cannot find branch with id ${  branchId}`);
+				throw new Error(`Cannot find branch with id ${branchId}`);
 			}
 
-			const repository = await getRepository({prisma, repositoryId: branch.repositoryId});
+			const repository = await getRepository({ prisma, repositoryId: branch.repositoryId });
 			if (!repository) {
-				throw new Error(`Cannot find repository with id ${  branch.repositoryId}`);
+				throw new Error(`Cannot find repository with id ${branch.repositoryId}`);
 			}
 
 			const alreadyPublished = await prisma.pullRequest.findUnique({
@@ -276,13 +276,13 @@ export const editorRouter = createTRPCRouter({
 			const old: string[] = branch.old;
 			//Get rid of same type of updates (more recent one wins)
 			// eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- It is necessary
-			const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId) ? prev : prev.concat([{...curr, oldValue: old[i]!}]), []);
+			const updates = branch.updates.reduce<(ComponentUpdate)[]>((prev, curr, i) => prev.find(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId) ? prev : prev.concat([{ ...curr, oldValue: old[i]! }]), []);
 
 			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
 			await findAndCommitUpdates(updates, gitRepository, branch);
 
-			const newPullRequest = await createPullRequest({branch, pullRequest, gitRepository})
-			const response: PublishResponse = {pullRequest: newPullRequest};
+			const newPullRequest = await createPullRequest({ branch, pullRequest, gitRepository })
+			const response: PublishResponse = { pullRequest: newPullRequest };
 
 			return response;
 		})
@@ -324,24 +324,24 @@ async function indexForComponents(componentIds: string[], gitRepository: GitRepo
 	return result.elementInstance;
 }
 
-interface FileUpdate {update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & {updatedTo: number}), updatedCode: string, attribute?: Attribute};
+interface FileUpdate { update: ComponentUpdate, dbLocation: ComponentLocation, location: (ComponentLocation & { updatedTo: number }), updatedCode: string, attribute?: Attribute };
 interface UpdateInfo {
 	component: HarmonyComponent,
-	attributes: Attribute[], 
-	update: ComponentUpdate, 
-	type: ComponentUpdate['type'], 
-	oldValue: string, 
-	value: string, 
+	attributes: Attribute[],
+	update: ComponentUpdate,
+	type: ComponentUpdate['type'],
+	oldValue: string,
+	value: string,
 	font?: string
 }
 
 async function createGithubBranch(gitRepository: GitRepository, branchName: string): Promise<void> {
-    await gitRepository.createBranch(branchName);
+	await gitRepository.createBranch(branchName);
 }
 
 async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: GitRepository, branch: BranchItem) {
 	const repository = gitRepository.repository;
-	
+
 	let fileUpdates: FileUpdate[] = [];
 
 	const elementInstances = await indexForComponents(updates.map(update => update.componentId), gitRepository);
@@ -366,7 +366,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 				curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`;
 			}
 		}
-		const classNameUpdate = curr.type === 'className' ? prev.find(({update: up}) => up.componentId === curr.componentId && up.type === 'className') : undefined;
+		const classNameUpdate = curr.type === 'className' ? prev.find(({ update: up }) => up.componentId === curr.componentId && up.type === 'className') : undefined;
 		if (classNameUpdate) {
 			if (curr.name !== 'font') {
 				classNameUpdate.value += curr.value;
@@ -382,7 +382,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 			}
 			const getAttributes = (component: HarmonyComponent): Promise<Attribute[]> => {
 				const allAttributes = component.props;
-				
+
 				//Sort the attributes according to layers with the bottom layer first for global
 				allAttributes.sort((a, b) => b.reference.id.split('#').length - a.reference.id.split('#').length);
 
@@ -414,7 +414,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 			const font = curr.type === 'className' && curr.name === 'font' ? curr.value : undefined;
 			const value = curr.type === 'className' && curr.name === 'font' ? '' : curr.value;
 
-			const sameComponent = curr.type === 'className' ? prev.find(({component: other, type}) => type === 'className' && other.id === component.id && other.getParent()?.id === component.getParent()?.id) : undefined;
+			const sameComponent = curr.type === 'className' ? prev.find(({ component: other, type }) => type === 'className' && other.id === component.id && other.getParent()?.id === component.getParent()?.id) : undefined;
 			if (sameComponent) {
 				if (curr.name !== 'font') {
 					sameComponent.value += curr.value;
@@ -423,30 +423,30 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 					sameComponent.font = curr.value;
 				}
 			} else {
-				prev.push({update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font, attributes});
+				prev.push({ update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font, attributes });
 			}
 		}
 		return prev;
 	}, Promise.resolve([]));
 
 	for (const info of updateInfo) {
-	    //TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
-        // in the future we probably will use the actual branch
+		//TODO: Right now we are creating the branch right before updating which means we need to use 'master' branch here.
+		// in the future we probably will use the actual branch
 		const results = await getChangeAndLocation(info, repository, gitRepository, repository.branch);
 
-        fileUpdates.push(...results);
+		fileUpdates.push(...results);
 	}
 
 	fileUpdates = fileUpdates.sort((a, b) => a.location.start - b.location.start);
 
-	const commitChanges: Record<string, {filePath: string, locations: {snippet: string, start: number, end: number, updatedTo: number, diff: number}[]}> = {};
+	const commitChanges: Record<string, { filePath: string, locations: { snippet: string, start: number, end: number, updatedTo: number, diff: number }[] }> = {};
 	for (const update of fileUpdates) {
 		let change = commitChanges[update.location.file];
 		if (!change) {
-			change = {filePath: update.location.file, locations: []}
-			commitChanges[update.location.file] = change;	
+			change = { filePath: update.location.file, locations: [] }
+			commitChanges[update.location.file] = change;
 		}
-		const newLocation = {snippet: update.updatedCode, start: update.location.start, end: update.location.end, updatedTo: update.location.updatedTo, diff: 0};
+		const newLocation = { snippet: update.updatedCode, start: update.location.start, end: update.location.end, updatedTo: update.location.updatedTo, diff: 0 };
 		const last = change.locations[change.locations.length - 1];
 		if (last) {
 			const diff = last.updatedTo - last.end + last.diff;
@@ -466,7 +466,7 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 
 		const ends = fileUpdates.filter(f => f.dbLocation.end >= update.location.end);
 		ends.forEach(end => {
-			
+
 			end.dbLocation.end += diff;
 			if (end.dbLocation.start >= newLocation.start) {
 				end.dbLocation.start += diff;
@@ -476,19 +476,19 @@ async function findAndCommitUpdates(updates: ComponentUpdate[], gitRepository: G
 		change.locations.push(newLocation);
 	}
 
-    await createGithubBranch(gitRepository, branch.name);
+	await createGithubBranch(gitRepository, branch.name);
 	await gitRepository.updateFilesAndCommit(branch.name, Object.values(commitChanges));
 }
 
 async function getChangeAndLocation(update: UpdateInfo, repository: Repository, gitRepository: GitRepository, branchName: string): Promise<FileUpdate[]> {
-	const {component, type, oldValue: _oldValue, attributes} = update;
+	const { component, type, oldValue: _oldValue, attributes } = update;
 	// const component = elementInstances.find(el => el.id === id && el.parent_id === parentId);
-	
+
 	// if (component === undefined ) {
 	// 	throw new Error('Cannot find component with id ' + id);
 	// }
 	// const parent = elementInstances.find(el => el.id === component.parent_id);
-	
+
 	// const attributes = await prisma.componentAttribute.findMany({
 	// 	where: {
 	// 		component_id: component.id,
@@ -503,12 +503,12 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 	}
 	const getLocationAndValue = (attribute: Attribute | undefined, _component: HarmonyComponent): LocationValue => {
 		const isDefinedAndDynamic = attribute?.name === 'property';
-		return {location: attribute?.location || _component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic};
+		return { location: attribute?.location || _component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic };
 	}
 
 	const results: FileUpdate[] = [];
 
-	const addCommentToJSXElement = async ({location, commentValue, attribute}: {location: ComponentLocation, commentValue: string, attribute: Attribute | undefined}): Promise<FileUpdate> => {
+	const addCommentToJSXElement = async ({ location, commentValue, attribute }: { location: ComponentLocation, commentValue: string, attribute: Attribute | undefined }): Promise<FileUpdate> => {
 		const code = await getCodeSnippet(gitRepository)(component.location, branchName);
 		const comment = `/** ${commentValue} */`;
 		const match = /<([a-zA-Z0-9]+)(\s?)/.exec(code);
@@ -523,22 +523,22 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		const start = matchEnd;
 		const end = start;
 		const updatedTo = value.length + start;
-		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: value, update: update.update, dbLocation: location, attribute};
+		return { location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: value, update: update.update, dbLocation: location, attribute };
 	}
 
 	interface AddClassName {
-		location: ComponentLocation, 
-		code: string, 
-		newClass: string, 
-		oldClass: string | undefined, 
-		commentValue: string, 
+		location: ComponentLocation,
+		code: string,
+		newClass: string,
+		oldClass: string | undefined,
+		commentValue: string,
 		attribute: Attribute | undefined,
 		isDefinedAndDynamic: boolean;
 	}
 	//This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
-	const addNewClassOrComment = async ({location, code, newClass, oldClass, commentValue, attribute}: AddClassName): Promise<FileUpdate> => {
+	const addNewClassOrComment = async ({ location, code, newClass, oldClass, commentValue, attribute }: AddClassName): Promise<FileUpdate> => {
 		if (oldClass === undefined) {
-			return addCommentToJSXElement({location, commentValue, attribute});
+			return addCommentToJSXElement({ location, commentValue, attribute });
 		} else if (attribute?.locationType === 'add') {
 			// eslint-disable-next-line no-param-reassign -- It is ok
 			newClass = ` className="${newClass}"`;
@@ -553,18 +553,18 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 		if (start < 0) {
 			throw new Error(`There was no update for tailwind classes, snippet: ${code}, oldValue: ${oldValue}`);
 		}
-		
-		return {location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: newClass, update: update.update, dbLocation: location, attribute};
+
+		return { location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: newClass, update: update.update, dbLocation: location, attribute };
 	}
 
-	switch(type) {
+	switch (type) {
 		case 'text':
 			{
 				const textAttributes = attributes.filter(attr => attr.type === 'text');
 				const index = parseInt(update.update.name);
 				const textAttribute = textAttributes.find(attr => attr.index === index);
-				const {location, value} = getLocationAndValue(textAttribute, component);
-				
+				const { location, value } = getLocationAndValue(textAttribute, component);
+
 				const elementSnippet = await getCodeSnippet(gitRepository)(location, branchName);
 				const oldValue = value || _oldValue;
 				const start = elementSnippet.indexOf(oldValue);
@@ -572,13 +572,13 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 				const updatedTo = update.value.length + start;
 				if (start < 0) {
 					const commentValue = `Change inner text for ${component.name} tag from ${oldValue} to ${update.value}`;
-					results.push(await addCommentToJSXElement({location, attribute: textAttribute, commentValue}))
+					results.push(await addCommentToJSXElement({ location, attribute: textAttribute, commentValue }))
 				} else {
-					results.push({location: {file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo}, updatedCode: update.value, update: update.update, dbLocation: location, attribute: textAttribute});
+					results.push({ location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: update.value, update: update.update, dbLocation: location, attribute: textAttribute });
 				}
 			}
 			break;
-        case 'className':
+		case 'className':
 			{
 				const classNameAttributes = attributes.filter(attr => attr.type === 'className');
 
@@ -592,32 +592,32 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 					type AttributeUpdate = AddClassName;
 					const attributeUpdates: AttributeUpdate[] = [];
 
-					const getAttribute = async (attribute: Attribute | undefined, getNewValueAndComment: (oldValue: string | undefined, location: ComponentLocation) => {newClass: string, commentValue: string, oldClass: string | undefined}): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
+					const getAttribute = async (attribute: Attribute | undefined, getNewValueAndComment: (oldValue: string | undefined, location: ComponentLocation) => { newClass: string, commentValue: string, oldClass: string | undefined }): Promise<{ attribute: AttributeUpdate, oldClass: string | undefined }> => {
 						const locationAndValue = getLocationAndValue(attribute, component);
 						//TODO: This is temporary. It shouldn't have 'className:'
 						locationAndValue.value = locationAndValue.value?.replace('className:', '');
-						const {location, value, isDefinedAndDynamic} = locationAndValue; 
+						const { location, value, isDefinedAndDynamic } = locationAndValue;
 						const elementSnippet = await getCodeSnippet(gitRepository)(location, branchName);
 
 						//TODO: Make the tailwind prefix part dynamic
 						const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
-						const {newClass, commentValue, oldClass} = getNewValueAndComment(oldClasses, location);
-						
+						const { newClass, commentValue, oldClass } = getNewValueAndComment(oldClasses, location);
+
 						return {
-							attribute: {location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute},
+							attribute: { location, code: elementSnippet, oldClass: value, newClass, isDefinedAndDynamic, commentValue, attribute },
 							oldClass
 						};
 					}
 
-					const getAttributeFromClass = async (attribute: Attribute | undefined, _newClass: string): Promise<{attribute: AttributeUpdate, oldClass: string | undefined}> => {
+					const getAttributeFromClass = async (attribute: Attribute | undefined, _newClass: string): Promise<{ attribute: AttributeUpdate, oldClass: string | undefined }> => {
 						return getAttribute(attribute, (oldClasses, location) => {
 							//If we have already merged classes, then merge out new stuff into what was already merged
 							const oldStuff = attributeUpdates.find(attr => attr.location === location)?.newClass ?? oldClasses;
 							const mergedIt = mergeClassesWithScreenSize(oldStuff, _newClass, DEFAULT_WIDTH)
 							const newClass = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 							const commentValue = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
-							
-							return {newClass, oldClass: oldStuff, commentValue};
+
+							return { newClass, oldClass: oldStuff, commentValue };
 						});
 					}
 
@@ -633,17 +633,17 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 
 					const defaultClassName = classNameAttributes.find(attr => attr.name === 'string') || classNameAttributes[0] as Attribute | undefined;
 					for (const newClass of newClasses.split(' ')) {
-						let addedAttribue = false;
+						let addedAttribute = false;
 						for (const classNameAttribute of classNameAttributes) {
 							if (classNameAttribute.name !== 'string') continue;
-							const {attribute, oldClass} = await getAttributeFromClass(classNameAttribute, newClass);
+							const { attribute, oldClass } = await getAttributeFromClass(classNameAttribute, newClass);
 							if (oldClass && attribute.newClass.split(' ').length === oldClass.split(' ').length) {
 								addAttribute(attribute);
-								addedAttribue = true;
+								addedAttribute = true;
 								break;
 							}
 						}
-						if (!addedAttribue) {
+						if (!addedAttribute) {
 							addAttribute((await getAttributeFromClass(defaultClassName, newClass)).attribute);
 						}
 					}
@@ -669,31 +669,31 @@ async function getChangeAndLocation(update: UpdateInfo, repository: Repository, 
 
 					//TODO: Make the tailwind prefix part dynamic
 					// const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
-					
+
 					// const mergedIt = mergeClassesWithScreenSize(oldClasses, newClasses, DEFAULT_WIDTH);
 					// let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
 
 					// let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
 					// mergedClasses = update.font ? `${update.font} ${mergedClasses}` : mergedClasses;
 					// withPrefix = update.font ? `${update.font} ${withPrefix}` : withPrefix;
-					
+
 					// result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute, isDefinedAndDynamic});
 				} else {
 					const locationAndValue = getLocationAndValue(classNameAttributes[0], component);
 					//TODO: This is temporary. It shouldn't have 'className:'
 					locationAndValue.value = locationAndValue.value?.replace('className:', '');
-					const {location} = locationAndValue;
+					const { location } = locationAndValue;
 					let valuesNewLined = update.value.replaceAll(';', ';\n');
 					valuesNewLined = update.font ? `font className: ${update.value}\n\n${valuesNewLined}` : valuesNewLined;
-					results.push(await addCommentToJSXElement({location, commentValue: valuesNewLined, attribute: classNameAttributes[0]}));
+					results.push(await addCommentToJSXElement({ location, commentValue: valuesNewLined, attribute: classNameAttributes[0] }));
 				}
 			}
-            break;
+			break;
 		case 'component':
 			break;
 		default:
 			throw new Error("Invalid use case");
-			
+
 	}
 
 	return results;
@@ -703,37 +703,37 @@ const converter = new TailwindConverter({
 	remInPx: 16, // set null if you don't want to convert rem to pixels
 	//postCSSPlugins: [], // add any postcss plugins to this array
 	tailwindConfig: {
-	  // your tailwind config here
-	  content: [],
-	  theme: {
-		extend: {
-		}
-	  },
+		// your tailwind config here
+		content: [],
+		theme: {
+			extend: {
+			}
+		},
 	},
 });
 
 function addPrefixToClassName(className: string, prefix: string): string {
 	const classes = className.split(' ');
-	const listClass: [string, string][] = classes.map((klasses) => {
-		if (klasses.includes(":")) {
-			const [before, after] = klasses.split(":");
+	const listClass: [string, string][] = classes.map((classes) => {
+		if (classes.includes(":")) {
+			const [before, after] = classes.split(":");
 			if (!before || !after) {
-				throw new Error(`Invalid class ${  klasses}`);
+				throw new Error(`Invalid class ${classes}`);
 			}
 			return [`${before}:`, after];
-		} else if (klasses.startsWith('-')) {
-			return ['-', klasses.substring(1)];
-		} 
-			return ['', klasses];
-		
+		} else if (classes.startsWith('-')) {
+			return ['-', classes.substring(1)];
+		}
+		return ['', classes];
+
 	});
 
-	const withPrefix: [string, string][] = listClass.map((klasses) => {
-		if (!klasses.includes(prefix)) {
-			return [klasses[0], prefix + klasses[1]];
-		} 
-			return klasses;
-		
+	const withPrefix: [string, string][] = listClass.map((classes) => {
+		if (!classes.includes(prefix)) {
+			return [classes[0], prefix + classes[1]];
+		}
+		return classes;
+
 	});
 
 	const final = withPrefix.map(str => `${str[0]}${str[1]}`).join(' ');
