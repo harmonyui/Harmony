@@ -2,9 +2,9 @@
 // learn more about it in the docs: https://pris.ly/d/prisma-schema
 
 generator client {
-    provider = "prisma-client-js"
-	engineType = "binary"
-	output   = "../lib/generated/client"
+    provider   = "prisma-client-js"
+    engineType = "binary"
+    output     = "../lib/generated/client"
 }
 
 datasource db {
@@ -17,146 +17,142 @@ datasource db {
 }
 
 model Team {
-	id String @id @default(cuid())
-	repository Repository[]
-	accounts Account[]
+    id         String       @id @default(cuid())
+    repository Repository[]
+    accounts   Account[]
 }
 
 // Necessary for Next auth
 model Account {
-    id                String  @id @default(cuid())
-    userId            String
-	firstName		  String
-	lastName		  String
-	role			  String
-	contact			  String
-	team_id			  String
-	seen_welcome_screen Boolean @default(false)
-	team Team @relation(fields: [team_id], references: [id])
-	branch Branch[]
+    id                  String   @id @default(cuid())
+    userId              String
+    firstName           String
+    lastName            String
+    role                String
+    contact             String
+    team_id             String
+    seen_welcome_screen Boolean  @default(false)
+    team                Team     @relation(fields: [team_id], references: [id])
+    branch              Branch[]
 }
 
 model Branch {
-	id	String @id @default(cuid())
-	repository_id String
-	name String
-	label String
-	url String
-	updates ComponentUpdate[]
-	pullRequest PullRequest?
-	date_modified DateTime @default(now())
-	is_deleted Boolean @default(false)
-	account_id String
-	account Account @relation(fields: [account_id], references: [id])
+    id            String            @id @default(cuid())
+    repository_id String
+    name          String
+    label         String
+    url           String
+    updates       ComponentUpdate[]
+    pullRequest   PullRequest?
+    date_modified DateTime          @default(now())
+    is_deleted    Boolean           @default(false)
+    account_id    String
+    account       Account           @relation(fields: [account_id], references: [id])
 }
 
 model ComponentUpdate {
-	id String @id @default(cuid())
-	branch_id String
-	branch Branch @relation(fields: [branch_id], references: [id])
-	component_id String
-	component ComponentElement @relation(fields: [component_id], references: [id], onDelete: Cascade)
-	childIndex Int
-	type String //text, className, component
-	action String //change, add, remove
-	name String
-	value String
-	old_value String
-	is_global Boolean
-	date_modified DateTime @default(now())
+    id            String   @id @default(cuid())
+    branch_id     String
+    branch        Branch   @relation(fields: [branch_id], references: [id])
+    component_id  String
+    childIndex    Int
+    type          String //text, className, component
+    action        String //change, add, remove
+    name          String
+    value         String
+    old_value     String
+    is_global     Boolean
+    date_modified DateTime @default(now())
 }
 
 model PullRequest {
-	id String @id @default(cuid())
-	repository_id String
-	title String
-	body String
-	url String
-	branch_id String @unique
-	branch Branch @relation(fields: [branch_id], references: [id])
+    id            String @id @default(cuid())
+    repository_id String
+    title         String
+    body          String
+    url           String
+    branch_id     String @unique
+    branch        Branch @relation(fields: [branch_id], references: [id])
 }
 
 model Location {
-	id String @id @default(cuid())
-	file String
-	start Int
-	end Int
+    id    String @id @default(cuid())
+    file  String
+    start Int
+    end   Int
 
-	component ComponentElement[]
-	attribute ComponentAttribute[]
-	definition ComponentDefinition?
+    component  ComponentElement[]
+    attribute  ComponentAttribute[]
+    definition ComponentDefinition?
 }
 
 model ComponentElement {
-	id String
-	repository_id String
-	name String
-	children ComponentElement[] @relation("children")
-	location_id String
-	location Location @relation(fields: [location_id], references: [id])
-	parent_id String?
-	parent ComponentElement? @relation(name: "children", fields: [parent_id], references: [id])
-	definition_id String
-	definition ComponentDefinition @relation(name: "definition", fields: [definition_id], references: [id])
-	attributes ComponentAttribute[] @relation(name: "component")
-	reference_attributes ComponentAttribute[] @relation(name: "reference")
-	updates ComponentUpdate[]
-	version String
+    id                   String
+    repository_id        String
+    name                 String
+    children             ComponentElement[]   @relation("children")
+    location_id          String
+    location             Location             @relation(fields: [location_id], references: [id])
+    parent_id            String?
+    parent               ComponentElement?    @relation(name: "children", fields: [parent_id], references: [id])
+    definition_id        String
+    definition           ComponentDefinition  @relation(name: "definition", fields: [definition_id], references: [id])
+    attributes           ComponentAttribute[] @relation(name: "component")
+    reference_attributes ComponentAttribute[] @relation(name: "reference")
+    version              String
 
-	@@id([id])
+    @@id([id])
 }
 
 model ComponentError {
-	id String @id @default(cuid())
-	component_id String
-	repository_id String
-	type String
-	
-	@@unique([component_id])
+    id            String @id @default(cuid())
+    component_id  String
+    repository_id String
+    type          String
 }
 
 model ComponentAttribute {
-	id String @id @default(cuid())
-	type String
-	name String
-	value String
-	component_id String
-	component ComponentElement @relation(name: "component", fields: [component_id], references: [id], onDelete: Cascade)
-	reference_component_id String
-	reference_component ComponentElement @relation(name: "reference", fields: [reference_component_id], references: [id], onDelete: Cascade)
-	location_id String
-	location Location @relation(fields: [location_id], references: [id])
-	index Int
+    id                     String           @id @default(cuid())
+    type                   String
+    name                   String
+    value                  String
+    component_id           String
+    component              ComponentElement @relation(name: "component", fields: [component_id], references: [id], onDelete: Cascade)
+    reference_component_id String
+    reference_component    ComponentElement @relation(name: "reference", fields: [reference_component_id], references: [id], onDelete: Cascade)
+    location_id            String
+    location               Location         @relation(fields: [location_id], references: [id])
+    index                  Int
 }
 
 model ComponentDefinition {
-	id String @id @default(cuid())
-	repository_id String
-	name String
-	children ComponentElement[] @relation("definition")
-	location_id String @unique
-	location Location @relation(fields: [location_id], references: [id])
+    id            String             @id @default(cuid())
+    repository_id String
+    name          String
+    children      ComponentElement[] @relation("definition")
+    location_id   String             @unique
+    location      Location           @relation(fields: [location_id], references: [id])
 }
 
 model Repository {
-	id String @id @default(cuid())
-	team_id String
-	name String
-	owner String
-	branch String
-	installationId Int
-	ref String
-	team Team @relation(fields: [team_id], references: [id])
-	css_framework String
-	default_url String
-	//TODO: We don't need this in the future hopefully
-	tailwind_prefix String?
+    id              String  @id @default(cuid())
+    team_id         String
+    name            String
+    owner           String
+    branch          String
+    installationId  Int
+    ref             String
+    team            Team    @relation(fields: [team_id], references: [id])
+    css_framework   String
+    default_url     String
+    //TODO: We don't need this in the future hopefully
+    tailwind_prefix String?
 }
 
 model ChangeLog {
-	id String @id @default(cuid())
-	release_date DateTime @default(now())
-	version String
-	features String
-	bugs String
+    id           String   @id @default(cuid())
+    release_date DateTime @default(now())
+    version      String
+    features     String
+    bugs         String
 }
