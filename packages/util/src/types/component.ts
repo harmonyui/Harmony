@@ -5,14 +5,14 @@ const behaviorTypes = ['dark'] as const;
 const behaviorTypesSchema = stringUnionSchema(behaviorTypes);
 export type BehaviorType = z.infer<typeof behaviorTypesSchema>;
 const updateTypes = ['className', 'text', 'component', 'property'] as const;
-const updateTypesSchema = stringUnionSchema(updateTypes);
+export const updateTypesSchema = stringUnionSchema(updateTypes);
+
 
 //type: className, name: size
 export const updateSchema = z.object({
 	componentId: z.string(),
 	childIndex: z.number(),
 	type: updateTypesSchema,
-	action: z.union([z.literal('add'), z.literal('remove'), z.literal('change')]), 
 	name: z.string(),
 	value: z.string(),
 	oldValue: z.string(),
