@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await -- ok*/
 /* eslint-disable no-useless-escape -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation } from "@harmony/util/src/types/component";
@@ -49,7 +50,7 @@ export class IndexingFiles {
 	}
 
 	private async getCacheKey(): Promise<{repo: string, ref: string}> {
-		const ref = await this.gitRepository.getBranchRef(this.gitRepository.repository.branch);
+		const ref = this.gitRepository.repository.ref;
 		const repo = this.gitRepository.repository.name;
 		return {ref, repo};
 	}
