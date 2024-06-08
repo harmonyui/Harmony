@@ -66,7 +66,7 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 	return {elementInstance, componentDefinitions};
 }
 
-export const indexCodebase = async (dirname: string, gitRepository: GitRepository, gitCache: GithubCache): Promise<HarmonyComponentInfo[]> => {
+export const indexCodebase = async (dirname: string, gitRepository: GitRepository, gitCache: GithubCache) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: HarmonyComponentWithNode[] = [];
 
@@ -75,8 +75,8 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
-		await updateDatabaseComponentErrors(elementInstances, gitRepository.repository.id);
-		return elementInstances.map(instance => ({
+		const errorElements = findErrorElements(elementInstances);
+		const harmonyComponents =  elementInstances.map(instance => ({
 			id: instance.id,
 			isComponent: instance.isComponent,
 			name: instance.name,
@@ -88,9 +88,11 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 				componentId: instance.id
 			}))
 		}))
+
+		return {errorElements, harmonyComponents};
 	}
 
-	return [];
+	return {errorElements: [], harmonyComponents: []};
 }
 
 function getAttributeName(attribute: Attribute): string {

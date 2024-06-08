@@ -101,13 +101,7 @@ export const editorRouter = createTRPCRouter({
                 }
             });
 
-			const harmonyComponents = await indexCodebase('', githubRepository, githubCache);
-
-			const errorElements = await prisma.componentError.findMany({
-				where: {
-					repository_id: repositoryId
-				}
-			})
+			const {harmonyComponents, errorElements} = await indexCodebase('', githubRepository, githubCache);
 
 			const isDemo = accountTiedToBranch.role === 'quick';
 
@@ -117,7 +111,7 @@ export const editorRouter = createTRPCRouter({
 					id: branch.id,
 					name: branch.label
 				})),
-				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.component_id, type: element.type })),
+				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.id, type: element.type })),
 				pullRequest: pullRequest || undefined,
 				showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
 				isDemo,
