@@ -384,9 +384,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			if (prop && !prop.isStatic) globalChange = true;
 		})
 
-		console.log(globalChange)
+		executeCommand(updates.map(update => ({ ...update, isGlobal: false })), execute);
 
-		executeCommand(updates.map(update => ({ ...update, isGlobal })), execute);
+		console.log('global change', globalChange)
+
 		//setCurrUpdates({updates, execute});
 	}
 
