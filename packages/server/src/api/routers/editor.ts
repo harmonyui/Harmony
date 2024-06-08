@@ -11,7 +11,7 @@ import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
-import { indexCodebase, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
+import { indexCodebase, indexFiles} from "../services/indexor/indexor";
 import { getCodeSnippet } from "../services/indexor/github";
 //import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
@@ -101,13 +101,7 @@ export const editorRouter = createTRPCRouter({
                 }
             });
 
-			const harmonyComponents = await indexCodebase('', githubRepository, githubCache);
-
-			const errorElements = await prisma.componentError.findMany({
-				where: {
-					repository_id: repositoryId
-				}
-			})
+			const {harmonyComponents, errorElements} = await indexCodebase('', githubRepository, githubCache);
 
 			const isDemo = accountTiedToBranch.role === 'quick';
 
@@ -117,7 +111,7 @@ export const editorRouter = createTRPCRouter({
 					id: branch.id,
 					name: branch.label
 				})),
-				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.component_id, type: element.type })),
+				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.id, type: element.type })),
 				pullRequest: pullRequest || undefined,
 				showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
 				isDemo,
@@ -178,7 +172,7 @@ export const editorRouter = createTRPCRouter({
 				}
 			})
 
-			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
+			//const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
 			const updates: ComponentUpdate[] = [];
 			const errorUpdates: (ComponentUpdate & { errorType: string })[] = [];
 			//Indexes the files of these component updates
@@ -192,22 +186,22 @@ export const editorRouter = createTRPCRouter({
 						update.componentId = split.slice(1).join('#');
 					}
 
-					let element = await prisma.componentElement.findFirst({
+					const element = await prisma.componentElement.findFirst({
 						where: {
 							id: update.componentId,
 							repository_id: branch.repository_id,
 							version: INDEXING_VERSION
 						}
 					}) ?? undefined;
-					if (!element) {
-						const elementInstances = await indexForComponent(update.componentId, gitRepository);
-						const indexedElement = elementInstances.find(el => el.id === update.componentId);
-						if (indexedElement) {
-							await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
-							await updateDatabaseComponentErrors(elementInstances, branch.repository_id);
-							element = await ctx.harmonyComponentRepository.createOrUpdateElement(indexedElement, branch.repository_id);
-						}
-					}
+					// if (!element) {
+					// 	const elementInstances = await indexForComponent(update.componentId, gitRepository);
+					// 	const indexedElement = elementInstances.find(el => el.id === update.componentId);
+					// 	if (indexedElement) {
+					// 		await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
+					// 		await updateDatabaseComponentErrors(elementInstances, branch.repository_id);
+					// 		element = await ctx.harmonyComponentRepository.createOrUpdateElement(indexedElement, branch.repository_id);
+					// 	}
+					// }
 
 					const error = await prisma.componentError.findFirst({
 						where: {
@@ -288,23 +282,23 @@ export const editorRouter = createTRPCRouter({
 		})
 })
 
-async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<HarmonyComponent[]> {
-	const readFile = async (filepath: string) => {
-		//TOOD: Need to deal with actual branch probably at some point
-		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
+// async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<HarmonyComponent[]> {
+// 	const readFile = async (filepath: string) => {
+// 		//TOOD: Need to deal with actual branch probably at some point
+// 		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
 
-		return content;
-	}
+// 		return content;
+// 	}
 
-	//TODO: This does not follow the file up the whole tree which means it does not know
-	// all of the possible locations an attribute can be saved. Find a better way to do this
-	const locations = getLocationsFromComponentId(componentId);
-	const paths = locations.map(location => location.file);
-	const result = await indexFiles(paths, readFile);
-	if (!result) return [];
+// 	//TODO: This does not follow the file up the whole tree which means it does not know
+// 	// all of the possible locations an attribute can be saved. Find a better way to do this
+// 	const locations = getLocationsFromComponentId(componentId);
+// 	const paths = locations.map(location => location.file);
+// 	const result = await indexFiles(paths, readFile);
+// 	if (!result) return [];
 
-	return result.elementInstance;
-}
+// 	return result.elementInstance;
+// }
 
 async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {

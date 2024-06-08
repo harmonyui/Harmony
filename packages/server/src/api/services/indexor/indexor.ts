@@ -66,7 +66,7 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 	return {elementInstance, componentDefinitions};
 }
 
-export const indexCodebase = async (dirname: string, gitRepository: GitRepository, gitCache: GithubCache): Promise<HarmonyComponentInfo[]> => {
+export const indexCodebase = async (dirname: string, gitRepository: GitRepository, gitCache: GithubCache) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: HarmonyComponentWithNode[] = [];
 
@@ -75,8 +75,8 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
-		await updateDatabaseComponentErrors(elementInstances, gitRepository.repository.id);
-		return elementInstances.map(instance => ({
+		const errorElements = findErrorElements(elementInstances);
+		const harmonyComponents =  elementInstances.map(instance => ({
 			id: instance.id,
 			isComponent: instance.isComponent,
 			name: instance.name,
@@ -88,9 +88,11 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 				componentId: instance.id
 			}))
 		}))
+
+		return {errorElements, harmonyComponents};
 	}
 
-	return [];
+	return {errorElements: [], harmonyComponents: []};
 }
 
 function getAttributeName(attribute: Attribute): string {
@@ -782,6 +784,31 @@ export async function updateDatabaseComponentDefinitions(elementInstances: Harmo
 		return prev;
 	}, []);
 
+	const alreadyCreated = await prisma.componentDefinition.findMany({
+		where: {
+			id: {
+				in: containingComponents.map(({id}) => id)
+			}
+		}
+	});
+	const newComponents = containingComponents.filter(comp => !alreadyCreated.find(already => already.id === comp.id));
+	const newLocations = await prisma.location.createManyAndReturn({
+		data: newComponents.map(component => ({
+			file: component.location.file,
+			start: component.location.start,
+			end: component.location.end,
+		}))
+	});
+
+	await prisma.componentDefinition.createMany({
+		data: newComponents.map((component, i) => ({
+			id: component.id,
+			repository_id: repositoryId,
+			name: component.name,
+			location_id: newLocations[i].id
+		}))
+	})
+
 	await Promise.all(containingComponents.map(component => prisma.componentDefinition.upsert({
 		where: {
 			id: component.id
@@ -809,7 +836,7 @@ export async function updateDatabaseComponentDefinitions(elementInstances: Harmo
 export async function updateDatabaseComponentErrors(elementInstances: HarmonyComponent[], repositoryId: string): Promise<void> {
 	const errorElements = findErrorElements(elementInstances);
 
-	const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
+	//const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
 
 	const ids = errorElements.map(({id}) => id);
 	const alreadyUpdated = await prisma.componentError.findMany({
@@ -822,17 +849,16 @@ export async function updateDatabaseComponentErrors(elementInstances: HarmonyCom
 	})
 	const newErrorElements = errorElements.filter(element => !alreadyUpdated.find(already => already.component_id === element.id && already.type === element.type))
 	
-	await updateDatabaseComponentDefinitions(newErrorElements, repositoryId);
-	await componentElementRepository.createOrUpdateElements(newErrorElements, repositoryId);
+	// await updateDatabaseComponentDefinitions(newErrorElements, repositoryId);
+	// await componentElementRepository.createOrUpdateElements(newErrorElements, repositoryId);
 	
-	
-	await Promise.all(newErrorElements.map(newEl => prisma.componentError.create({
-		data: {
+	await prisma.componentError.createMany({
+		data: newErrorElements.map(newEl => ({
 			component_id: newEl.id,
 			repository_id: repositoryId,
 			type: newEl.type
-		}
-	})));
+		}))
+	});
 }
 
 async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponent[], repositoryId: string, onProgress?: (progress: number) => void) {
