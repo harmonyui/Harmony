@@ -10,7 +10,7 @@ import { camelToKebab, round } from "@harmony/util/src/utils/common";
 import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
-import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
+import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
 import { indexCodebase, indexFiles} from "../services/indexor/indexor";
 import { getCodeSnippet } from "../services/indexor/github";
 //import { updateComponentIdsFromUpdates } from "../services/updator/local";
@@ -186,37 +186,18 @@ export const editorRouter = createTRPCRouter({
 						update.componentId = split.slice(1).join('#');
 					}
 
-					const element = await prisma.componentElement.findFirst({
-						where: {
-							id: update.componentId,
-							repository_id: branch.repository_id,
-							version: INDEXING_VERSION
-						}
-					}) ?? undefined;
-					// if (!element) {
-					// 	const elementInstances = await indexForComponent(update.componentId, gitRepository);
-					// 	const indexedElement = elementInstances.find(el => el.id === update.componentId);
-					// 	if (indexedElement) {
-					// 		await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
-					// 		await updateDatabaseComponentErrors(elementInstances, branch.repository_id);
-					// 		element = await ctx.harmonyComponentRepository.createOrUpdateElement(indexedElement, branch.repository_id);
-					// 	}
-					// }
-
 					const error = await prisma.componentError.findFirst({
 						where: {
-							component_id: element?.id,
+							component_id: update.componentId,
 							repository_id: branch.repository_id,
 							type: update.type
 						}
 					});
 
 
-					if (element && !error) {
+					if (!error) {
 						updates.push(update);
-					} else if (!element) {
-						throw new Error("Cannot have an error element because that shouldn't happened anymore");
-					} else if (error) {
+					} else {
 						errorUpdates.push({ ...update, errorType: error.type });
 					}
 				}
