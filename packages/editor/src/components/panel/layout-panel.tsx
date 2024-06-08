@@ -1,8 +1,8 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-import type { ComponentElement } from "@harmony/util/src/types/component"
+ 
 import { useCallback, useMemo } from "react"
 import { useHarmonyContext } from "../harmony-context"
 import { componentIdentifier, isSelectable } from "../inspector/inspector"
+import type { ComponentElement } from "../inspector/component-identifier";
 import type { TreeViewItem} from "./tree-view";
 import { TreeView } from "./tree-view"
 
@@ -17,7 +17,7 @@ export const ComponentLayoutPanel: React.FunctionComponent<ComponentTreeViewProp
 export const useComponentTreeItems = (root: ComponentElement | undefined, selectedComponent: HTMLElement | undefined): TreeViewItem<ComponentElement>[] => {
 	const {scale} = useHarmonyContext();
     const getTreeItems = useCallback((children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
-		return children.filter(child => isSelectable(child.element!, scale)).map<TreeViewItem<ComponentElement>>(child => ({
+		return children.filter(child => isSelectable(child.element, scale)).map<TreeViewItem<ComponentElement>>(child => ({
 			id: child,
 			content: child.name,
 			items: getTreeItems(child.children),

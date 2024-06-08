@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
-/* eslint-disable @typescript-eslint/no-duplicate-type-constituents -- ok*/
+ 
 /* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
 /* eslint-disable @typescript-eslint/no-empty-interface -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
@@ -7,7 +7,6 @@ import { Button } from "@harmony/ui/src/components/core/button";
 import type { DropdownItem } from "@harmony/ui/src/components/core/dropdown";
 import { Dropdown } from "@harmony/ui/src/components/core/dropdown";
 import { CheckboxInput, InputBlur } from "@harmony/ui/src/components/core/input";
-import type { ComponentElement } from "@harmony/util/src/types/component";
 import { camelToKebab, capitalizeFirstLetter, constArray, convertRgbToHex } from "@harmony/util/src/utils/common";
 import { createContext, useCallback, useContext, useMemo } from "react";
 import type { Font } from "@harmony/util/src/fonts";
@@ -15,6 +14,7 @@ import type { ComponentUpdateWithoutGlobal } from "../harmony-context";
 import { useHarmonyContext  } from "../harmony-context";
 import { getComputedValue } from "../snapping/position-updator";
 import { isDesignerElementSelectable, overlayStyles } from "../inspector/inspector";
+import type { ComponentElement } from "../inspector/component-identifier";
 
 export const attributeTools = ['font', 'fontSize', 'textAlign',
                         'display', 'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'gap', 'flexWrap', 'flexGrow', 'flexShrink',
@@ -86,15 +86,10 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
 }
 
 export const getTextToolsFromAttributes = (element: ComponentElement, fonts: Font[] | undefined) => {
-	if (!element.element) {
-		throw new Error("Component must have an element");
-	}
-
-	
 	const allStyles: [HTMLElement, Record<string, string>][] = [];
 
 	const getComputed = (name: keyof CSSStyleDeclaration) => {
-		let selectedElement = element.element;
+		let selectedElement: HTMLElement | undefined = element.element;
 		let value: string | undefined;
 
 		function find(style: [HTMLElement, Record<string, string>]) {
@@ -116,7 +111,7 @@ export const getTextToolsFromAttributes = (element: ComponentElement, fonts: Fon
 		}
 		if (!selectedElement) {
 			selectedElement = element.element!;
-			value = allStyles.find(style => style[0] === element.element!)?.[1][name as string] || getComputedValue(element.element!, camelToKebab(name as string));
+			value = allStyles.find(style => style[0] === element.element)?.[1][name as string] || getComputedValue(element.element, camelToKebab(name as string));
 		}
 		return {value: value!, element: selectedElement};
 	}
@@ -127,11 +122,11 @@ export const getTextToolsFromAttributes = (element: ComponentElement, fonts: Fon
 		if (name === 'font') {
 			if (!fonts) {
 				//console.log("No fonts");
-				return {element: element.element!, value: ''};
+				return {element: element.element, value: ''};
 			}
-			const font = fonts.find(f => element.element!.classList.contains(f.id) || computed.value.toLowerCase().includes(f.name.toLowerCase()));
+			const font = fonts.find(f => element.element.classList.contains(f.id) || computed.value.toLowerCase().includes(f.name.toLowerCase()));
 
-			if (font) return {element: element.element!, value: font.id};
+			if (font) return {element: element.element, value: font.id};
 
 			return computed;
 		}

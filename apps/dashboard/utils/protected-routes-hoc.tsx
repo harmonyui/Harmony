@@ -2,12 +2,14 @@
 /* eslint-disable @typescript-eslint/consistent-indexed-object-style -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import { type GetServerSideProps } from "next";
-import { FullSession, Session, getServerAuthSession } from "@harmony/server/src/auth";
+import type { FullSession, Session} from "@harmony/server/src/auth";
+import { getServerAuthSession } from "@harmony/server/src/auth";
 import { redirect } from "next/navigation";
-import { AuthContext, mailer } from "@harmony/server/src/api/trpc";
+import type { AuthContext } from "@harmony/server/src/api/trpc";
 import { prisma } from "@harmony/db/lib/prisma";
 import {cookies} from 'next/headers';
 import { auth } from "@clerk/nextjs";
+import { mailer } from "@harmony/server/src/api";
 
 interface RequireRouteProps {
   redirect: string;

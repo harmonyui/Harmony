@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
 /* eslint-disable @typescript-eslint/restrict-template-expressions -- ok*/
 /* eslint-disable @typescript-eslint/no-base-to-string -- ok*/
@@ -5,22 +6,26 @@
 /* eslint-disable no-useless-computed-key -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
-/* eslint-disable no-useless-escape -- ok*/
+ 
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
-import type { HarmonyComponent, ComponentElement, ComponentLocation, Attribute } from "@harmony/util/src/types/component";
+import type { ComponentProp, ComponentLocation, HarmonyComponentInfo } from "@harmony/util/src/types/component";
 import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import { PrismaComponentElementRepository } from "../../repository/component-element";
+import { PrismaHarmonyComponentRepository } from "../../repository/component-element";
+import type { GithubCache } from "../../repository/cache";
+import type { GitRepository } from "../../repository/github";
+import type { Attribute, HarmonyComponent } from "./types";
+import { IndexingFiles } from "./github";
 
-export type ComponentElementWithNode = ComponentElement & {node: t.JSXElement};
+export type HarmonyComponentWithNode = HarmonyComponent & {node: t.JSXElement};
 
 export type ReadFiles = (dirname: string, regex: RegExp, callback: (filename: string, content: string) => void) => Promise<void>;
 
-export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<ComponentElement[]> => {
+export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (filepath: string) => Promise<string>, repositoryId: string): Promise<HarmonyComponent[]> => {
 	const result = await indexFiles(files, readFile);
 	if (result) {
 		await updateDatabase(result.componentDefinitions, result.elementInstance, repositoryId);
@@ -30,9 +35,9 @@ export const indexFilesAndUpdateDatabase = async (files: string[], readFile: (fi
 	return [];
 }
 
-export const indexFiles = async (files: string[], readFile: (filepath: string) => Promise<string>): Promise<{elementInstance: ComponentElementWithNode[], componentDefinitions: Record<string, HarmonyComponent>} | false> => {
+export const indexFiles = async (files: string[], readFile: (filepath: string) => Promise<string>): Promise<{elementInstance: HarmonyComponentWithNode[], componentDefinitions: Record<string, HarmonyComponent>} | false> => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
-	const instances: ComponentElementWithNode[] = [];
+	const instances: HarmonyComponentWithNode[] = [];
 	const importDeclarations: Record<string, {name: string, path: string}> = {};
 	const visitedFiles: Set<string> = new Set<string>();
 	const fileContents: FileAndContent[] = [];
@@ -61,24 +66,95 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 	return {elementInstance, componentDefinitions};
 }
 
-export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void) => {
+export const indexCodebase = async (dirname: string, gitRepository: GitRepository, gitCache: GithubCache) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
-	const instances: ComponentElementWithNode[] = [];
-	const fileContents: FileAndContent[] = [];
+	const instances: HarmonyComponentWithNode[] = [];
 
-	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
-		fileContents.push({file: filename, content});
-	});
+	const indexingFiles = new IndexingFiles(gitRepository, gitCache);
+	const fileContents = await indexingFiles.getIndexingFilesAndContent(dirname);
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
-		await updateDatabaseComponentDefinitions(elementInstances, repoId);
-		//await updateDatabaseComponentErrors(elementInstances, repoId);
+		const errorElements = findErrorElements(elementInstances);
+		const harmonyComponents =  elementInstances.map(instance => ({
+			id: instance.id,
+			isComponent: instance.isComponent,
+			name: instance.name,
+			props: instance.props.map<ComponentProp>(prop => ({
+				isStatic: prop.name === 'string',
+				propName: '',
+				propValue: '',
+				type: prop.type,
+				componentId: instance.id
+			}))
+		}))
+
+		return {errorElements, harmonyComponents};
 	}
+
+	return {errorElements: [], harmonyComponents: []};
 }
 
-function findErrorElements(elementInstances: ComponentElement[]): (ComponentElement & {type: string})[] {
-	const textAttributeErrors = elementInstances.filter(instance => instance.attributes.find(attr => attr.type === 'text') && !instance.attributes.find(attr => attr.type === 'text' && attr.name === 'string'));
+function getAttributeName(attribute: Attribute): string {
+	if (attribute.type === 'className') {
+		return 'className';
+	} else if (attribute.type === 'text') {
+		return 'children';
+	}
+
+	const [name] = attribute.value.split(':');
+	return name;
+}
+
+function getPropertyName(attribute: Attribute): string | undefined {
+	if (attribute.name !== 'property') return undefined;
+
+	if (attribute.type === 'text') {
+		return attribute.value === 'undefined' ? undefined : attribute.value;
+	}
+
+	const [_, propertyName] = attribute.value.split(':');
+	return propertyName === 'undefined' ? undefined : propertyName; 
+}
+
+function getAttributeValue(attribute: Attribute): string {
+	if (attribute.name === 'property') {
+		return getPropertyName(attribute) || 'undefined';
+	}
+
+	if (attribute.type === 'property') {
+		const [_, propertyValue] = attribute.value.split(':');
+		return propertyValue;
+	}
+
+	return attribute.value;
+}
+
+export function convertToHarmonyInfo(elementInstances: HarmonyComponent[]): HarmonyComponentInfo[] {
+	return elementInstances.filter(i => !i.isComponent).map(instance => {
+		const getBaseId = (id: string): string => {
+			const split = id.split('#');
+			return split[split.length - 1];
+		}
+		
+		const isRootElement = getBaseId(instance.containingComponent!.children[0].id) === getBaseId(instance.id);
+		return ({
+			id: instance.id,
+			isComponent: isRootElement,
+			name: isRootElement ? instance.containingComponent!.name : instance.name,
+			props: instance.props.map<ComponentProp>(prop => ({
+				isStatic: prop.name === 'string',
+				propName: getAttributeName(prop),
+				propValue: getAttributeValue(prop),
+				type: prop.type,
+				componentId: instance.id
+			}))
+		})
+	})
+}
+
+function findErrorElements(elementInstances: HarmonyComponent[]): (HarmonyComponent & {type: string})[] {
+	const textAttributeErrors = elementInstances.filter(instance => instance.props.find(attr => attr.type === 'text') && !instance.props.find(attr => attr.type === 'text' && attr.name === 'string'));
 
 	const errors = textAttributeErrors.map(attr => ({
 		...attr,
@@ -92,17 +168,20 @@ interface FileAndContent {
 	file: string;
 	content: string;
 }
-export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[], importDeclarations: Record<string, {name: string, path: string}>): ComponentElementWithNode[] | false {
+export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[], importDeclarations: Record<string, {name: string, path: string}>): HarmonyComponentWithNode[] | false {
+	try {
 	for (const {file, content} of files) {
 		if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
 			return false;
 		}
+	} } catch(err) {
+		console.log(err);
 	}
 
 	return normalizeCodeInfo(componentDefinitions, elementInstances);
 }
 
-export function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
+export function getCodeInfoFromFile(file: string, originalCode: string, componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[], importDeclarations: Record<string, {name: string, path: string}>): boolean {
   const ast = parse(originalCode, {
     sourceType: 'module',
  		plugins: ['jsx', 'typescript'],
@@ -142,7 +221,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 		}
 	}
 
-	function createJSXElementDefinition(node: t.JSXElement, parentElement: ComponentElement | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): ComponentElementWithNode | undefined {
+	function createJSXElementDefinition(node: t.JSXElement, parentElement: HarmonyComponent | undefined, containingComponent: HarmonyComponent, file: string, snippet: string): HarmonyComponentWithNode | undefined {
 		const name = getNameFromNode(node.openingElement.name);
 		const isComponent = name[0].toLowerCase() !== name[0];
 		const location = getLocation(node, file);
@@ -163,7 +242,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 			children: [],
 			isComponent,
 			location,
-			attributes: [],
+			props: [],
 			containingComponent,
 			node
 		};
@@ -187,7 +266,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 			}
 		},
 		['FunctionDeclaration|ArrowFunctionExpression'](path) {
-			const jsxElements: ComponentElement[] = [];
+			const jsxElements: HarmonyComponent[] = [];
 			const location = getLocation(path.node, file);
 
 			if (location === undefined) {
@@ -198,9 +277,10 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 				id: getHashFromLocation(location, originalCode),
 				name: '',
 				children: [],
-				attributes: [],
+				props: [],
 				isComponent: true,
-				location
+				location,
+				getParent: () => undefined,
 			};
 	
 			// Visitor for extracting JSX elements within the function body
@@ -210,47 +290,14 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 				},
 				JSXElement: {
 					enter(jsPath) {
-						function getAttributeName(attribute: Attribute): string {
-							if (attribute.type === 'className') {
-								return 'className';
-							} else if (attribute.type === 'text') {
-								return 'children';
-							}
+						
 
-							const [name] = attribute.value.split(':');
-							return name;
-						}
-
-						function getPropertyName(attribute: Attribute): string | undefined {
-							if (attribute.name !== 'property') return undefined;
-
-							if (attribute.type === 'text') {
-								return attribute.value === 'undefined' ? undefined : attribute.value;
-							}
-
-							const [_, propertyName] = attribute.value.split(':');
-							return propertyName === 'undefined' ? undefined : propertyName; 
-						}
-
-						function getAttributeValue(attribute: Attribute): string {
-							if (attribute.name === 'property') {
-								return getPropertyName(attribute) || 'undefined';
-							}
-
-							if (attribute.type === 'property') {
-								const [_, propertyValue] = attribute.value.split(':');
-								return propertyValue;
-							}
-
-							return attribute.value;
-						}
-
-						function connectAttributesToParent(elementAttributes: Attribute[], parent: ComponentElementWithNode): Attribute[] {
+						function connectAttributesToParent(elementAttributes: Attribute[], parent: HarmonyComponentWithNode): Attribute[] {
 							const attributes: Attribute[] = [];
 							for (const attribute of elementAttributes) {
 								const propertyName = getPropertyName(attribute);
 								if (propertyName) {
-									const sameAttributesInElement = parent.attributes.filter(attr => getAttributeName(attr) === propertyName).map(attr => {
+									const sameAttributesInElement = parent.props.filter(attr => getAttributeName(attr) === propertyName).map(attr => {
 										const newAttribute = {...attr};
 										if (attribute.type === 'text') {
 											newAttribute.value = getAttributeValue(newAttribute);
@@ -300,8 +347,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return attributes;
 						}
 
-						function connectChildToParent(child: ComponentElementWithNode, parent: ComponentElementWithNode): ComponentElementWithNode {
-							const recurseConnectLog = (el: ComponentElement): string => {
+						function connectChildToParent(child: HarmonyComponentWithNode, parent: HarmonyComponentWithNode): HarmonyComponentWithNode {
+							const recurseConnectLog = (el: HarmonyComponent): string => {
 								const parent = el.getParent();
 								if (parent) {
 									return `to ${parent.name} ${recurseConnectLog(parent)}`;
@@ -309,14 +356,14 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								return '';
 							}
 							//console.log(`Connecting ${child.name} to ${parent.name} ${recurseConnectLog(parent)}`)
-							const attributes = connectAttributesToParent(child.attributes, parent);
-							const newElement = {...child, attributes, getParent: () => parent};
+							const props = connectAttributesToParent(child.props, parent);
+							const newElement: HarmonyComponentWithNode = {...child, props, getParent: () => parent};
 							elementInstances.push(newElement);
 
 							return newElement;
 						}
 
-						function getComponentsBindingId(element: ComponentElement): string | undefined {
+						function getComponentsBindingId(element: HarmonyComponent): string | undefined {
 							if (!element.isComponent) return;
 
 							const getId = (node: t.Node): string | undefined => {
@@ -351,17 +398,17 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							return id;
 						}
 
-						function connectInstanceToChildren(element: ComponentElementWithNode): void {
+						function connectInstanceToChildren(element: HarmonyComponentWithNode): void {
 							const id = getComponentsBindingId(element);
 
-							const childElements = elementInstances.filter(instance => instance.containingComponent.id === id && instance.getParent() === undefined);
+							const childElements = elementInstances.filter(instance => instance.containingComponent?.id === id && instance.getParent() === undefined);
 							childElements.forEach(child => {
 								const newChild = connectChildToParent(child, element);
 								connectInstanceToChildren(newChild);
 							});
 						}
 
-						function connectInstanceToParent(element: ComponentElementWithNode): void {
+						function connectInstanceToParent(element: HarmonyComponentWithNode): void {
 							const bindings: Record<string, string | undefined> = {}
 							const parents = elementInstances.filter(parent => {
 								let binding = bindings[parent.name];
@@ -369,7 +416,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									bindings[parent.name] = getComponentsBindingId(parent);
 									binding = bindings[parent.name]
 								}
-								return binding === element.containingComponent.id
+								return binding === element.containingComponent?.id
 							});
 							const newChildren = parents.map(parent => {
 								return connectChildToParent(element, parent);
@@ -410,6 +457,9 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 
 											if (t.isIdentifier(property.key) && property.key.name === value) return value;
 
+											//If we are looking at something like {param: _param} where our identifier value is _param, then the property name is param
+											if (t.isIdentifier(property.key) && t.isIdentifier(property.value) && property.value.name === value && !property.computed) return property.key.name;
+
 											const propertyAttribute = t.isExpression(property.key) ? createExpressionAttribute(property.key, type, name) : [];
 											const propertyName = propertyAttribute.length === 1 ? getAttributeValue(propertyAttribute[0]) : '';
 
@@ -447,7 +497,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										attributes.push(createPropertyAttribute(node, type, name, propertyName, 'props'));
 									} else if (attrName === propertyName) {
 										const value = getAttributeValue(attribute);
-										const newAttribute = createAttribute(type, attribute.name, name, value, 'component', attribute.location);
+										const newAttribute = createAttribute(type, attribute.name, name, value, attribute.locationType, attribute.location);
 										attributes.push(newAttribute)
 									}
 								}
@@ -591,25 +641,25 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									textAttributes.push({...createExpressionAttribute(child.expression, 'text', undefined)[0], index: i})
 								}
 							}
-							jsxElementDefinition.attributes.push(...textAttributes);
+							jsxElementDefinition.props.push(...textAttributes);
 							for (const attr of node.openingElement.attributes) {
 								if (t.isJSXAttribute(attr)) {
 									const type = attr.name.name === 'className' ? 'className' : 'property';
 									if (t.isStringLiteral(attr.value)) {
-										jsxElementDefinition.attributes.push(createStringAttribute(attr.value, type, String(attr.name.name), attr.value.value));
+										jsxElementDefinition.props.push(createStringAttribute(attr.value, type, String(attr.name.name), attr.value.value));
 									} else if (t.isJSXExpressionContainer(attr.value)) {
-										jsxElementDefinition.attributes.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => createAttribute(type, expression.name, getAttributeName(expression), getAttributeValue(expression), expression.locationType, expression.location)));
+										jsxElementDefinition.props.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => createAttribute(type, expression.name, getAttributeName(expression), getAttributeValue(expression), expression.locationType, expression.location)));
 									}
 								}
 							}
 
 							//If this is a native html element and there is not className props, then we want the ability to add one
-							if (!jsxElementDefinition.isComponent && !jsxElementDefinition.attributes.find(attr => attr.type === 'className')) {
+							if (!jsxElementDefinition.isComponent && !jsxElementDefinition.props.find(attr => attr.type === 'className')) {
 								if (!node.openingElement.name.loc) {
 									throw new Error("Invalid location");
 								}
 								const {end} = node.openingElement.name.loc;
-								jsxElementDefinition.attributes.push(createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index}))
+								jsxElementDefinition.props.push(createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index}))
 							}
 							
 							//console.log(`Adding ${jsxElementDefinition.name}`);
@@ -655,8 +705,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 	return true;
 }
 
-function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElementWithNode[]) {
-	function getIdFromParents(instance: ComponentElement): string {
+function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[]) {
+	function getIdFromParents(instance: HarmonyComponent): string {
 		const parent = instance.getParent();
 		if (!parent) {
 			return instance.id;
@@ -671,7 +721,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		return `${parentId}#${instance.id}`;
 	}
 
-	const findAttributeReference = (element: ComponentElement | undefined, attributeId: string): {id: string} | undefined=> {
+	const findAttributeReference = (element: HarmonyComponent | undefined, attributeId: string): {id: string} | undefined=> {
 		if (!element) return undefined;
 
 		const id = element.id.split('#')[element.id.split('#').length - 1];
@@ -685,7 +735,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];
 		instance.id = getIdFromParents(instance);
-		for (const attribute of instance.attributes) {
+		for (const attribute of instance.props) {
 			if (attribute.reference.id.split('#').length > 1) continue;
 			const newReference = findAttributeReference(instance, attribute.reference.id);
 			if (!newReference) {
@@ -724,15 +774,40 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 // const resolvedPath = resolvePathAlias(alias, aliasMappings);
 
 
-export async function updateDatabaseComponentDefinitions(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
+export async function updateDatabaseComponentDefinitions(elementInstances: HarmonyComponent[], repositoryId: string): Promise<void> {
 	const containingComponents = elementInstances.reduce<HarmonyComponent[]>((prev, curr) => {
-		const def = prev.find(d => d.id === curr.containingComponent.id);
+		const def = prev.find(d => d.id === curr.containingComponent?.id);
 		if (!def) {
-			prev.push(curr.containingComponent)
+			prev.push(curr.containingComponent!)
 		}
 
 		return prev;
 	}, []);
+
+	const alreadyCreated = await prisma.componentDefinition.findMany({
+		where: {
+			id: {
+				in: containingComponents.map(({id}) => id)
+			}
+		}
+	});
+	const newComponents = containingComponents.filter(comp => !alreadyCreated.find(already => already.id === comp.id));
+	const newLocations = await prisma.location.createManyAndReturn({
+		data: newComponents.map(component => ({
+			file: component.location.file,
+			start: component.location.start,
+			end: component.location.end,
+		}))
+	});
+
+	await prisma.componentDefinition.createMany({
+		data: newComponents.map((component, i) => ({
+			id: component.id,
+			repository_id: repositoryId,
+			name: component.name,
+			location_id: newLocations[i].id
+		}))
+	})
 
 	await Promise.all(containingComponents.map(component => prisma.componentDefinition.upsert({
 		where: {
@@ -758,36 +833,39 @@ export async function updateDatabaseComponentDefinitions(elementInstances: Compo
 	})));
 }
 
-export async function updateDatabaseComponentErrors(elementInstances: ComponentElement[], repositoryId: string): Promise<void> {
+export async function updateDatabaseComponentErrors(elementInstances: HarmonyComponent[], repositoryId: string): Promise<void> {
 	const errorElements = findErrorElements(elementInstances);
 
-	const componentElementRepository = new PrismaComponentElementRepository(prisma);
-	
-	await componentElementRepository.createOrUpdateElements(errorElements, repositoryId);
-	
-	await Promise.all(errorElements.map(element => prisma.componentError.upsert({
-		create: {
-			component_id: element.id,
-			repository_id: repositoryId,
-			type: element.type
-		},
-		update: {
-			component_id: element.id,
-			repository_id: repositoryId,
-			type: element.type
-		},
+	//const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
+
+	const ids = errorElements.map(({id}) => id);
+	const alreadyUpdated = await prisma.componentError.findMany({
 		where: {
-			component_id: element.id,
-			repository_id: repositoryId
+			component_id: {
+				in: ids
+			},
+			repository_id: repositoryId,
 		}
-	})));
+	})
+	const newErrorElements = errorElements.filter(element => !alreadyUpdated.find(already => already.component_id === element.id && already.type === element.type))
+	
+	// await updateDatabaseComponentDefinitions(newErrorElements, repositoryId);
+	// await componentElementRepository.createOrUpdateElements(newErrorElements, repositoryId);
+	
+	await prisma.componentError.createMany({
+		data: newErrorElements.map(newEl => ({
+			component_id: newEl.id,
+			repository_id: repositoryId,
+			type: newEl.type
+		}))
+	});
 }
 
-async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: ComponentElement[], repositoryId: string, onProgress?: (progress: number) => void) {
+async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponent[], repositoryId: string, onProgress?: (progress: number) => void) {
 	elementInstances.sort((a, b) => a.id.split('#').length - b.id.split('#').length);
 	await updateDatabaseComponentDefinitions(elementInstances, repositoryId);
 
-	const componentElementRepository = new PrismaComponentElementRepository(prisma);
+	const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
 
 	for (let i = 0; i < elementInstances.length; i++) {
 		const instance = elementInstances[i];

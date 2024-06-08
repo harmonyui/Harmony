@@ -10,19 +10,21 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import { Db, prisma } from "@harmony/db/lib/prisma";
-import { FullSession, getServerAuthSession, Session } from "../auth";
-import { EmailService, NodeMailerEmailService } from "./services/email-service";
-import { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import {
+import type { Db} from "@harmony/db/lib/prisma";
+import { prisma } from "@harmony/db/lib/prisma";
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
+import type {
   WithAuthProp,
 } from '@clerk/clerk-sdk-node';
-import { Request } from 'express';
+import type { Request } from 'express';
 import { auth } from "@clerk/nextjs";
-import { GithubRepositoryFactory, GitRepositoryFactory, LocalGitRepository } from "./repository/github";
-import { Repository } from "@harmony/util/src/types/branch";
-import {PrismaComponentElementRepository, type ComponentElementRepository} from './repository/component-element'
+import type { FullSession, Session } from "../auth";
+import { getServerAuthSession } from "../auth";
+import type { EmailService} from "./services/email-service";
+import type { GitRepositoryFactory} from "./repository/github";
+import {PrismaHarmonyComponentRepository, type HarmonyComponentRepository} from './repository/component-element'
+import {gitRepositoryFactory, mailer } from "./index";
 
 
 /**
@@ -36,7 +38,7 @@ import {PrismaComponentElementRepository, type ComponentElementRepository} from 
 interface CreateContextOptions {
   session: Session | undefined;
   gitRepositoryFactory: GitRepositoryFactory;
-  componentElementRepository: ComponentElementRepository
+  harmonyComponentRepository: HarmonyComponentRepository
 }
 
 interface AuthContextOptions {
@@ -53,13 +55,7 @@ export interface AuthContext extends AuthContextOptions {
   mailer: EmailService
 }
 
-export const mailer = new NodeMailerEmailService();
 
-const gitLocalRepositoryFactory: GitRepositoryFactory = {
-  createGitRepository(repository: Repository) {
-    return new LocalGitRepository(repository);
-  }
-};
 
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export
@@ -99,13 +95,12 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
   }
   // Get the session from the server using the getServerSession wrapper function
   const session = await getServerAuthSession(userId, mockUserId);
-  const gitRepositoryFactory = process.env.ENV === 'development' ? gitLocalRepositoryFactory : new GithubRepositoryFactory();
-  const componentElementRepository = new PrismaComponentElementRepository(prisma);
+  const harmonyComponentRepository = new PrismaHarmonyComponentRepository(prisma);
 
   return createInnerTRPCContext({
     session,
     gitRepositoryFactory,
-    componentElementRepository
+    harmonyComponentRepository
     //req
   });
 }

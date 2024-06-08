@@ -4,7 +4,7 @@
 /* eslint-disable import/no-cycle -- TODO: Fix later */
 "use client";
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import type { BehaviorType, ComponentElement, ComponentError, ComponentUpdate } from "@harmony/util/src/types/component";
+import type { BehaviorType, ComponentError, ComponentUpdate } from "@harmony/util/src/types/component";
 import type {PublishRequest, PublishResponse, UpdateRequest} from "@harmony/util/src/types/network";
 import type { Environment} from '@harmony/util/src/utils/component';
 import {translateUpdatesToCss, reverseUpdates , getWebUrl } from '@harmony/util/src/utils/component';
@@ -23,6 +23,7 @@ import type { Setup } from "./harmony-setup";
 import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
 import type { ComponentUpdateWithoutGlobal, DisplayMode, SelectMode} from "./harmony-context";
 import { HarmonyContext, viewModes } from "./harmony-context";
+import type { ComponentElement } from "./inspector/component-identifier";
 
 export function findElementFromId(componentId: string, childIndex: number): HTMLElement | undefined {
 	const selector = `[data-harmony-id="${componentId}"]`;
@@ -135,7 +136,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				// });
 
 				 
-				const {updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo} = response;
+				const {updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo, harmonyComponents} = response;
 				setAvailableIds(updates);
 				setBranches(branches);
 				setPullRequest(pullRequest);

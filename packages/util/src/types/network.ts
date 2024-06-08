@@ -1,5 +1,5 @@
 import { z } from "zod";
-import { componentErrorSchema, updateSchema } from "./component";
+import { componentErrorSchema, harmonyComponentInfoSchema, updateSchema } from "./component";
 import { pullRequestSchema } from "./branch";
 import { emailSchema } from "./utils";
 
@@ -29,6 +29,7 @@ export const loadResponseSchema = z.object({
 		id: z.string(),
 		name: z.string()
 	})),
+	harmonyComponents: z.array(harmonyComponentInfoSchema),
 	errorElements: z.array(componentErrorSchema),
 	pullRequest: z.optional(pullRequestSchema),
 	showWelcomeScreen: z.boolean(),
