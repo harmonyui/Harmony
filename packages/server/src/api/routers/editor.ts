@@ -2,21 +2,22 @@
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import type { ComponentLocation, ComponentUpdate, HarmonyComponentInfo } from "@harmony/util/src/types/component";
-import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema } from '@harmony/util/src/types/network';
+import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
+import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
 import type { PublishResponse, UpdateResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
 import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
-import { DEFAULT_WIDTH, INDEXING_VERSION } from "@harmony/util/src/constants";
-import { convertToHarmonyInfo, indexFiles, updateDatabaseComponentDefinitions, updateDatabaseComponentErrors } from "../services/indexor/indexor";
-import { getCodeSnippet, getFileContent } from "../services/indexor/github";
-import { updateComponentIdsFromUpdates } from "../services/updator/local";
+import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
+import { indexCodebase, indexFiles} from "../services/indexor/indexor";
+import { getCodeSnippet } from "../services/indexor/github";
+//import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
 import type { GitRepository } from "../repository/github";
 import type { Attribute, HarmonyComponent } from "../services/indexor/types";
+import { updateFileCache } from "../services/updator/update-cache";
 import { createPullRequest } from "./pull-request";
 import { getBranch, getRepository } from "./branch";
 
@@ -73,40 +74,36 @@ export const editorRouter = createTRPCRouter({
 			}));
 
 			const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
-			const ref = await githubRepository.getBranchRef(repository.branch);
+			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
 
-			//If the current repository ref is out of date, that means we have some
-			//new commits that might affect our previously indexed component elements.
-			//Let's go through the diffs and update those component ids
-			if (ref !== repository.ref) {
-				await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
+            const ref = await githubRepository.getBranchRef(repository.branch);
 
+            //If the current repository ref is out of date, that means we have some
+            //new commits that might affect our previously indexed component elements.
+            //Let's go through the diffs and update those component ids
+            if (ref !== repository.ref) {
+                // await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
+				
+				await updateFileCache(ctx.gitRepositoryFactory, repository, repository.ref, ref);
 				await prisma.repository.update({
-					where: {
-						id: repository.id,
-					},
-					data: {
-						ref
-					}
-				})
-			}
+                    where: {
+                        id: repository.id,
+                    },
+                    data: {
+                        ref
+                    }
+                })
+            }
 
-			const branches = await prisma.branch.findMany({
-				where: {
-					repository_id: repositoryId
-				}
-			});
+            const branches = await prisma.branch.findMany({
+                where: {
+                    repository_id: repositoryId
+                }
+            });
 
-			const errorElements = await prisma.componentError.findMany({
-				where: {
-					repository_id: repositoryId
-				}
-			})
+			const {harmonyComponents, errorElements} = await indexCodebase('', githubRepository, githubCache);
 
 			const isDemo = accountTiedToBranch.role === 'quick';
-
-			const indexedComponents = await indexForComponents(updates.map(update => update.componentId), githubRepository);
-			const harmonyComponents: HarmonyComponentInfo[] = convertToHarmonyInfo(indexedComponents);
 
 			return {
 				updates,
@@ -114,7 +111,7 @@ export const editorRouter = createTRPCRouter({
 					id: branch.id,
 					name: branch.label
 				})),
-				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.component_id, type: element.type })),
+				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.id, type: element.type })),
 				pullRequest: pullRequest || undefined,
 				showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
 				isDemo,
@@ -175,7 +172,7 @@ export const editorRouter = createTRPCRouter({
 				}
 			})
 
-			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
+			//const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
 			const updates: ComponentUpdate[] = [];
 			const errorUpdates: (ComponentUpdate & { errorType: string })[] = [];
 			//Indexes the files of these component updates
@@ -189,37 +186,18 @@ export const editorRouter = createTRPCRouter({
 						update.componentId = split.slice(1).join('#');
 					}
 
-					let element = await prisma.componentElement.findFirst({
-						where: {
-							id: update.componentId,
-							repository_id: branch.repository_id,
-							version: INDEXING_VERSION
-						}
-					}) ?? undefined;
-					if (!element) {
-						const elementInstances = await indexForComponent(update.componentId, gitRepository);
-						const indexedElement = elementInstances.find(el => el.id === update.componentId);
-						if (indexedElement) {
-							await updateDatabaseComponentDefinitions(elementInstances, branch.repository_id);
-							await updateDatabaseComponentErrors(elementInstances, branch.repository_id);
-							element = await ctx.harmonyComponentRepository.createOrUpdateElement(indexedElement, branch.repository_id);
-						}
-					}
-
 					const error = await prisma.componentError.findFirst({
 						where: {
-							component_id: element?.id,
+							component_id: update.componentId,
 							repository_id: branch.repository_id,
 							type: update.type
 						}
 					});
 
 
-					if (element && !error) {
+					if (!error) {
 						updates.push(update);
-					} else if (!element) {
-						throw new Error("Cannot have an error element because that shouldn't happened anymore");
-					} else if (error) {
+					} else {
 						errorUpdates.push({ ...update, errorType: error.type });
 					}
 				}
@@ -285,30 +263,28 @@ export const editorRouter = createTRPCRouter({
 		})
 })
 
-async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<HarmonyComponent[]> {
-	const readFile = async (filepath: string) => {
-		//TOOD: Need to deal with actual branch probably at some point
-		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
-			await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
+// async function indexForComponent(componentId: string, gitRepository: GitRepository): Promise<HarmonyComponent[]> {
+// 	const readFile = async (filepath: string) => {
+// 		//TOOD: Need to deal with actual branch probably at some point
+// 		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
 
-		return content;
-	}
+// 		return content;
+// 	}
 
-	//TODO: This does not follow the file up the whole tree which means it does not know
-	// all of the possible locations an attribute can be saved. Find a better way to do this
-	const locations = getLocationsFromComponentId(componentId);
-	const paths = locations.map(location => location.file);
-	const result = await indexFiles(paths, readFile);
-	if (!result) return [];
+// 	//TODO: This does not follow the file up the whole tree which means it does not know
+// 	// all of the possible locations an attribute can be saved. Find a better way to do this
+// 	const locations = getLocationsFromComponentId(componentId);
+// 	const paths = locations.map(location => location.file);
+// 	const result = await indexFiles(paths, readFile);
+// 	if (!result) return [];
 
-	return result.elementInstance;
-}
+// 	return result.elementInstance;
+// }
 
 async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
-		const content = //await getFile(`/Users/braydonjones/Documents/Projects/formbricks/${filepath}`);
-			await getFileContent(gitRepository, filepath, gitRepository.repository.branch);
+		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
 
 		return content;
 	}
@@ -713,25 +689,25 @@ const converter = new TailwindConverter({
 
 function addPrefixToClassName(className: string, prefix: string): string {
 	const classes = className.split(' ');
-	const listClass: [string, string][] = classes.map((classes) => {
-		if (classes.includes(":")) {
-			const [before, after] = classes.split(":");
+	const listClass: [string, string][] = classes.map((_classes) => {
+		if (_classes.includes(":")) {
+			const [before, after] = _classes.split(":");
 			if (!before || !after) {
-				throw new Error(`Invalid class ${classes}`);
+				throw new Error(`Invalid class ${_classes}`);
 			}
 			return [`${before}:`, after];
-		} else if (classes.startsWith('-')) {
-			return ['-', classes.substring(1)];
+		} else if (_classes.startsWith('-')) {
+			return ['-', _classes.substring(1)];
 		}
-		return ['', classes];
+		return ['', _classes];
 
 	});
 
-	const withPrefix: [string, string][] = listClass.map((classes) => {
-		if (!classes.includes(prefix)) {
-			return [classes[0], prefix + classes[1]];
+	const withPrefix: [string, string][] = listClass.map((_classes) => {
+		if (!_classes.includes(prefix)) {
+			return [_classes[0], prefix + _classes[1]];
 		}
-		return classes;
+		return _classes;
 
 	});
 

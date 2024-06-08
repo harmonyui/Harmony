@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-import { randomUUID } from 'node:crypto';
 import type {Prisma, Db} from '@harmony/db/lib/prisma';
 import {INDEXING_VERSION} from '@harmony/util/src/constants';
 import type { HarmonyComponent } from '../services/indexor/types';
@@ -110,26 +109,10 @@ export class PrismaHarmonyComponentRepository implements HarmonyComponentReposit
             }
         });
         const updateElements = existingElements;
-        let newElements = elements.filter(({id}) => !updateElements.find(({id: updateId}) => updateId === id)).map(element => ({...element, location: {...element.location, id: randomUUID()}}));
+        let newElements = elements.filter(({id}) => !updateElements.find(({id: updateId}) => updateId === id));
         newElements = newElements.filter(a => newElements.filter(b => a.id === b.id).length < 2);
-        // await this.prisma.componentElement.updateMany({
-        //     where: {
-        //         id: {
-        //             in: updateElements.map(({id}) => id)
-        //         }
-        //     },
-        //     data: updateElements.map(element => ({
-        //         id: element.id,
-		// 		repository_id: repositoryId,
-		// 		name: element.name,
-		// 		definition_id: element.definition_id,
-		// 		version: INDEXING_VERSION
-        //     }))
-        // });
-
-        await this.prisma.location.createMany({
+        const locations = await this.prisma.location.createManyAndReturn({
             data: newElements.map(element => ({
-                id: element.location.id,
                 file: element.location.file,
                 start: element.location.start,
                 end: element.location.end
@@ -137,12 +120,12 @@ export class PrismaHarmonyComponentRepository implements HarmonyComponentReposit
         })
         
         await this.prisma.componentElement.createMany({
-            data: newElements.map((element) => ({
+            data: newElements.map((element, i) => ({
                 id: element.id,
 				repository_id: repositoryId,
 				name: element.name,
 				definition_id: element.containingComponent!.id,
-                location_id: element.location.id,
+                location_id: locations[i].id,
 				version: INDEXING_VERSION
             }))
         })

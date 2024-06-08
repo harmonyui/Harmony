@@ -1,29 +1,81 @@
+/* eslint-disable @typescript-eslint/require-await -- ok*/
+/* eslint-disable no-useless-escape -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
-import { ComponentLocation } from "@harmony/util/src/types/component";
-import { ReadFiles } from "./indexor";
-import { GitRepository } from "../../repository/github";
+import type { ComponentLocation } from "@harmony/util/src/types/component";
+import type { GitRepository } from "../../repository/github";
+import type { GithubCache } from "../../repository/cache";
 
-export const fromGithub: (gitRepository: GitRepository) => ReadFiles = (gitRepository) => async (startPath, filter, callback) => {
-	const files = await gitRepository.getContentOrDirectory(startPath);
+export interface FileAndContent {
+	file: string;
+	content: string;
+}
 
-	if (Array.isArray(files)) {
-		for (const info of files) {
-			if (info.type === 'dir' || filter.test(info.path)) {
-				await fromGithub(gitRepository)(info.path, filter, callback);
-			}
+export class IndexingFiles {
+	constructor(private gitRepository: GitRepository, private githubCache: GithubCache) {}
+
+	public async getIndexingFilesAndContent(startDirName: string): Promise<FileAndContent[]> {
+		const cachesFiles = await this.getFilesCache();
+		if (cachesFiles) {
+			return cachesFiles;
 		}
-	} else if ('content' in files && filter.test(files.path)) {
-		callback(files.path, atob(files.content));
+
+		const fileContents: FileAndContent[] = [];
+		await this.fromDir(startDirName, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
+			fileContents.push({file: filename, content});
+		});
+
+		if (fileContents.length === 0) {
+			throw new Error("No files were found");
+		}
+
+		await this.setFilesCache(fileContents);
+
+		return fileContents;
+	}
+
+	private async getFilesCache(): Promise<FileAndContent[] | null> {
+		const key = await this.getCacheKey();
+		const cachedFiles = await this.githubCache.getIndexingFiles(key);
+		const filesAndContents: FileAndContent[] = [];
+		
+		if (cachedFiles) {
+			await Promise.all(cachedFiles.map(async (file) => {
+				const content = await this.gitRepository.getContent(file);
+				filesAndContents.push({content, file})
+			}));
+			return filesAndContents
+		}
+
+		return null;
+	}
+
+	private async getCacheKey(): Promise<{repo: string, ref: string}> {
+		const ref = this.gitRepository.repository.ref;
+		const repo = this.gitRepository.repository.name;
+		return {ref, repo};
+	}
+
+	private async setFilesCache(fileContents: FileAndContent[]): Promise<void> {
+		const key = await this.getCacheKey();
+		await this.githubCache.setIndexingFiles(key, fileContents.map(fileContent => fileContent.file));
+	}
+
+	private async fromDir(startPath: string, filter: RegExp, callback: (filename: string, content: string) => void) {
+		const files = await this.gitRepository.getContentOrDirectory(startPath);
+
+		if (Array.isArray(files)) {
+			for (const info of files) {
+				if (info.type === 'dir' || filter.test(info.path)) {
+					await this.fromDir(info.path, filter, callback);
+				}
+			}
+		} else if ('content' in files && filter.test(files.path)) {
+			callback(files.path, atob(files.content));
+		}
 	}
 }
 
-export const getFileContent = async (gitRepository: GitRepository, file: string, branch: string) => {
-	const fileContent = await gitRepository.getContent(file, branch);
-
-	return fileContent;
-}
-
 export const getCodeSnippet = (gitRepository: GitRepository) => async ({file, start, end}: ComponentLocation, branch: string): Promise<string> => {
-	const fileContent = await getFileContent(gitRepository, file, branch);
+	const fileContent = await gitRepository.getContent(file, branch);
 	return fileContent.substring(start, end);
 }

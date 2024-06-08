@@ -6,17 +6,20 @@
 /* eslint-disable no-useless-computed-key -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
-/* eslint-disable no-useless-escape -- ok*/
+ 
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
-import { ComponentProp, type ComponentLocation, type HarmonyComponentInfo } from "@harmony/util/src/types/component";
+import type { ComponentProp, ComponentLocation, HarmonyComponentInfo } from "@harmony/util/src/types/component";
 import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { PrismaHarmonyComponentRepository } from "../../repository/component-element";
-import { Attribute, HarmonyComponent } from "./types";
+import type { GithubCache } from "../../repository/cache";
+import type { GitRepository } from "../../repository/github";
+import type { Attribute, HarmonyComponent } from "./types";
+import { IndexingFiles } from "./github";
 
 export type HarmonyComponentWithNode = HarmonyComponent & {node: t.JSXElement};
 
@@ -63,18 +66,17 @@ export const indexFiles = async (files: string[], readFile: (filepath: string) =
 	return {elementInstance, componentDefinitions};
 }
 
-export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId: string, onProgress?: (progress: number) => void): Promise<HarmonyComponentInfo[]> => {
+export const indexCodebase = async (dirname: string, gitRepository: GitRepository, gitCache: GithubCache) => {
 	const componentDefinitions: Record<string, HarmonyComponent> = {};
 	const instances: HarmonyComponentWithNode[] = [];
-	const fileContents: FileAndContent[] = [];
 
-	await fromDir(dirname, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
-		fileContents.push({file: filename, content});
-	});
+	const indexingFiles = new IndexingFiles(gitRepository, gitCache);
+	const fileContents = await indexingFiles.getIndexingFilesAndContent(dirname);
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	if (elementInstances) {
-		return elementInstances.map(instance => ({
+		const errorElements = findErrorElements(elementInstances);
+		const harmonyComponents =  elementInstances.map(instance => ({
 			id: instance.id,
 			isComponent: instance.isComponent,
 			name: instance.name,
@@ -86,11 +88,11 @@ export const indexCodebase = async (dirname: string, fromDir: ReadFiles, repoId:
 				componentId: instance.id
 			}))
 		}))
-		//await updateDatabaseComponentDefinitions(elementInstances, repoId);
-		//await updateDatabaseComponentErrors(elementInstances, repoId);
+
+		return {errorElements, harmonyComponents};
 	}
 
-	return [];
+	return {errorElements: [], harmonyComponents: []};
 }
 
 function getAttributeName(attribute: Attribute): string {
@@ -167,15 +169,17 @@ interface FileAndContent {
 	content: string;
 }
 export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[], importDeclarations: Record<string, {name: string, path: string}>): HarmonyComponentWithNode[] | false {
-	try {
 	for (const {file, content} of files) {
-		if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
-			return false;
+		try {
+			if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
+				return false;
+			}
+		} catch (err) {
+			console.log(err);
+			throw err;
 		}
-	} } catch(err) {
-		console.log(err);
 	}
-
+	
 	return normalizeCodeInfo(componentDefinitions, elementInstances);
 }
 
@@ -399,7 +403,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 						function connectInstanceToChildren(element: HarmonyComponentWithNode): void {
 							const id = getComponentsBindingId(element);
 
-							const childElements = elementInstances.filter(instance => instance.containingComponent?.id === id && instance.getParent() === undefined);
+							const childElements = elementInstances.filter(instance => instance.name !== element.name && instance.containingComponent?.id === id && instance.getParent() === undefined);
 							childElements.forEach(child => {
 								const newChild = connectChildToParent(child, element);
 								connectInstanceToChildren(newChild);
@@ -782,6 +786,31 @@ export async function updateDatabaseComponentDefinitions(elementInstances: Harmo
 		return prev;
 	}, []);
 
+	const alreadyCreated = await prisma.componentDefinition.findMany({
+		where: {
+			id: {
+				in: containingComponents.map(({id}) => id)
+			}
+		}
+	});
+	const newComponents = containingComponents.filter(comp => !alreadyCreated.find(already => already.id === comp.id));
+	const newLocations = await prisma.location.createManyAndReturn({
+		data: newComponents.map(component => ({
+			file: component.location.file,
+			start: component.location.start,
+			end: component.location.end,
+		}))
+	});
+
+	await prisma.componentDefinition.createMany({
+		data: newComponents.map((component, i) => ({
+			id: component.id,
+			repository_id: repositoryId,
+			name: component.name,
+			location_id: newLocations[i].id
+		}))
+	})
+
 	await Promise.all(containingComponents.map(component => prisma.componentDefinition.upsert({
 		where: {
 			id: component.id
@@ -809,26 +838,29 @@ export async function updateDatabaseComponentDefinitions(elementInstances: Harmo
 export async function updateDatabaseComponentErrors(elementInstances: HarmonyComponent[], repositoryId: string): Promise<void> {
 	const errorElements = findErrorElements(elementInstances);
 
-	const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
-	
-	await componentElementRepository.createOrUpdateElements(errorElements, repositoryId);
-	
-	await Promise.all(errorElements.map(element => prisma.componentError.upsert({
-		create: {
-			component_id: element.id,
-			repository_id: repositoryId,
-			type: element.type
-		},
-		update: {
-			component_id: element.id,
-			repository_id: repositoryId,
-			type: element.type
-		},
+	//const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
+
+	const ids = errorElements.map(({id}) => id);
+	const alreadyUpdated = await prisma.componentError.findMany({
 		where: {
-			component_id: element.id,
-			repository_id: repositoryId
+			component_id: {
+				in: ids
+			},
+			repository_id: repositoryId,
 		}
-	})));
+	})
+	const newErrorElements = errorElements.filter(element => !alreadyUpdated.find(already => already.component_id === element.id && already.type === element.type))
+	
+	// await updateDatabaseComponentDefinitions(newErrorElements, repositoryId);
+	// await componentElementRepository.createOrUpdateElements(newErrorElements, repositoryId);
+	
+	await prisma.componentError.createMany({
+		data: newErrorElements.map(newEl => ({
+			component_id: newEl.id,
+			repository_id: repositoryId,
+			type: newEl.type
+		}))
+	});
 }
 
 async function updateDatabase(componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponent[], repositoryId: string, onProgress?: (progress: number) => void) {

@@ -2,15 +2,18 @@
 /* eslint-disable @typescript-eslint/require-await -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
-import { Octokit, App } from "octokit";
 import fs from 'node:fs';
 import crypto from 'node:crypto';
-import { CommitItem, Repository } from "@harmony/util/src/types/branch";
-import { replaceByIndex } from "@harmony/util/src/utils/common";
-import {Change, diffChars, diffLines} from 'diff';
-import { getFileContentsFromCache, setFileCache } from "./cache";
 import path from "node:path";
+import type { Octokit} from "octokit";
+import { App } from "octokit";
+import type { CommitItem, Repository } from "@harmony/util/src/types/branch";
+import { replaceByIndex } from "@harmony/util/src/utils/common";
+import type {Change} from 'diff';
+import { diffChars, diffLines} from 'diff';
 import { LOCALHOST } from "@harmony/util/src/utils/component";
+import type { GithubCache } from "./cache";
+import { components } from '@octokit/openapi-types';
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH;
 const privateKeyEnv = process.env.PRIVATE_KEY;
@@ -31,10 +34,15 @@ export const appOctokit: Octokit = app.octokit;
 
 export interface GitRepositoryFactory {
     createGitRepository: (repository: Repository) => GitRepository;
+    createGithubCache: () => GithubCache;
 }
 
 interface ContentOrDirectory {
     type: string,
+    path: string;
+}
+interface UpdateFile {
+    type: 'add' | 'remove' | 'change';
     path: string;
 }
 export interface GitRepository {
@@ -42,16 +50,23 @@ export interface GitRepository {
     createBranch: (newBranch: string) => Promise<void>;
     getBranchRef: (branch: string) => Promise<string>;
     diffFiles: (branch: string, oldRef: string, file: string) => Promise<Change[]>
-    getContent: (file: string, ref?: string) => Promise<string>;
+    getContent: (file: string, ref?: string, rawContent?: boolean) => Promise<string>;
     updateFilesAndCommit: (branch: string, changes: { filePath: string, locations: {snippet: string, start: number, end: number }[]}[]) => Promise<void>;
     getCommits: (branch: string) => Promise<CommitItem[]>
     createPullRequest: (branch: string, title: string, body: string) => Promise<string>
+    getUpdatedFiles: (branch: string, oldRef: string) => Promise<UpdateFile[]>;
     repository: Repository
 }
 
 export class GithubRepositoryFactory implements GitRepositoryFactory {
+    constructor(private githubCache: GithubCache) {}
+
     public createGitRepository(repository: Repository) {
-        return new GithubRepository(repository);
+        return new GithubRepository(repository, this.githubCache);
+    }
+
+    public createGithubCache(): GithubCache {
+        return this.githubCache;
     }
 }
 
@@ -67,17 +82,32 @@ export class GithubRepository implements GitRepository {
         return this.octokit;
     }
     
-    constructor(public repository: Repository) {
+    constructor(public repository: Repository, private gitCache: GithubCache) {
     }
 
     public async getContentOrDirectory(filePath: string, branchName?: string) {
         const octokit = await this.getOctokit();
+        const refKey = await this.getBranchRef(branchName || this.repository.branch);
+        const cacheKey = {repo: this.repository.name, path: filePath, ref: refKey}
+        
+        const cachedFile = await this.gitCache.getFileOrDirectoryContents(cacheKey);
+        if (cachedFile) {
+            if (typeof cachedFile === 'string') {
+                return {content: cachedFile, path: filePath};
+            }
+
+            return cachedFile;
+        }
+
         const { data: fileInfo } = await octokit.rest.repos.getContent({
             owner: this.repository.owner,
             repo: this.repository.name,
             path: filePath,
             ref: branchName || this.repository.branch,
         });
+
+        const cacheContent = 'content' in fileInfo ? fileInfo.content : Array.isArray(fileInfo) ? fileInfo : [fileInfo];
+        await this.gitCache.setFileOrDirectoryContents(cacheKey, cacheContent)
 
         return fileInfo;
     }
@@ -128,17 +158,49 @@ export class GithubRepository implements GitRepository {
         return diffs;
     }
 
-    public async getContent(file: string, ref?: string) {
+    public async getUpdatedFiles(branch: string, oldRef: string) {
+        const octokit = await this.getOctokit();
+        const {data: commitData} = await octokit.rest.repos.compareCommits({owner: this.repository.owner, repo: this.repository.name, base: oldRef, head: branch});
+        const mapping: Record<components['schemas']['diff-entry']['status'], UpdateFile['type']> = {
+            'added': 'add',
+            'removed': 'remove',
+            'changed': 'change',
+            'copied': 'add',
+            'modified': 'change',
+            'renamed': 'add',
+            'unchanged': 'change'
+        }
+
+        const updateFiles: UpdateFile[] = [];
+        for (const file of commitData.files || []) {
+            updateFiles.push({path: file.filename, type: mapping[file.status]});
+            if (file.status === 'renamed' && file.previous_filename) {
+                updateFiles.push({path: file.previous_filename, type: 'remove'});
+            }
+        }
+        
+        return updateFiles;
+    }
+
+    public async getContent(file: string, ref?: string, rawContent=false) {
+        const decodeContent = (content: string): string => {
+            if (rawContent) return content;
+            //We have to do this fancy decoding because some special characters do not decode right 
+            //with atob
+            return decodeURIComponent(atob(content).split('').map(function map(c) {
+                return `%${  (`00${  c.charCodeAt(0).toString(16)}`).slice(-2)}`;
+            }).join(''));
+        }
         const octokit = await this.getOctokit();
 
         const cleanFile = file.startsWith('/') ? file.substring(1) : file;
 
-        const refKey = ref ? ref : await this.getBranchRef(this.repository.branch);
+        const refKey = ref ? ref : this.repository.ref;
         const cacheKey = {repo: this.repository.name, path: cleanFile, ref: refKey}
         
-        const cachedFile = await getFileContentsFromCache(cacheKey);
+        const cachedFile = await this.gitCache.getFileContents(cacheKey);
         if (cachedFile) {
-            return cachedFile;
+            return decodeContent(cachedFile);
         }
 
         const { data: fileInfo } = await octokit.rest.repos.getContent({
@@ -156,13 +218,9 @@ export class GithubRepository implements GitRepository {
             throw new Error('File info does not have content');
         }
 
-        //We have to do this fancy decoding because some special characters do not decode right 
-        //with atob
-        const contentText = decodeURIComponent(atob(fileInfo.content).split('').map(function map(c) {
-            return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-        }).join(''));
+        await this.gitCache.setFileContents(cacheKey, fileInfo.content);
 
-        await setFileCache(cacheKey, contentText);
+        const contentText = decodeContent(fileInfo.content);
 
         return contentText;
     }
@@ -307,27 +365,28 @@ export class GithubRepository implements GitRepository {
 interface LocalUpdate {oldContent: string, newContent: string, filePath: string}
 export class LocalGitRepository implements GitRepository {
     private commits: Record<string, LocalUpdate[]> = {};
+    private githubRepo: GithubRepository;
     
-    constructor(public repository: Repository) {}
+    constructor(public repository: Repository, gitCache: GithubCache) {
+        this.githubRepo = new GithubRepository(repository, gitCache);
+    }
 
     public async getContentOrDirectory(_path: string, branch?: string): Promise<ContentOrDirectory | { content: string; path: string; } | ContentOrDirectory[]> {
-        const githubRepo = new GithubRepository(this.repository);
-        return githubRepo.getContentOrDirectory(_path, branch);
+        return this.githubRepo.getContentOrDirectory(_path, branch);
         // const content = await this.getContent(_path);
         // return {content, path: _path};
     }
     public async createBranch(): Promise<void> {
         return undefined;
     }
-    public async getBranchRef(): Promise<string> {
-        return this.repository.ref;
+    public async getBranchRef(branch: string): Promise<string> {
+        return this.githubRepo.getBranchRef(branch)
     }
     public diffFiles(): Promise<Change[]> {
         throw new Error("Not implemented");
     }
     public getContent(file: string, ref?: string): Promise<string> {
-        const githubRepo = new GithubRepository(this.repository);
-        return githubRepo.getContent(file, ref);
+        return this.githubRepo.getContent(file, ref);
         // const absolute = path.join('/Users/braydonjones/Documents/Projects/Harmony', file);
         // if (!fs.existsSync(absolute)) {
         //     throw new Error("Invalid path " + absolute);
@@ -342,6 +401,10 @@ export class LocalGitRepository implements GitRepository {
         //         resolve(data);
         //     })
         // });
+    }
+
+    public async getUpdatedFiles(branch: string, oldRef: string) {
+        return this.githubRepo.getUpdatedFiles(branch, oldRef);
     }
     public async updateFilesAndCommit(branch: string, changes: { filePath: string; locations: { snippet: string; start: number; end: number; }[]; }[]): Promise<void> {
         const updates: LocalUpdate[] = [];
