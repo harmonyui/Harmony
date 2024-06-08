@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-import { randomUUID } from 'node:crypto';
 import type {Prisma, Db} from '@harmony/db/lib/prisma';
 import {INDEXING_VERSION} from '@harmony/util/src/constants';
 import type { HarmonyComponent } from '../services/indexor/types';
