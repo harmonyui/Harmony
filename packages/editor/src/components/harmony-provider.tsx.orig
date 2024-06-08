@@ -138,8 +138,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				// 	},
 				// });
 
+<<<<<<< HEAD
 				const { updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo, harmonyComponents } = response;
 				setHarmonyComponents(harmonyComponents);
+=======
+				 
+				const {updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo, harmonyComponents} = response;
+>>>>>>> staging
 				setAvailableIds(updates);
 				setBranches(branches);
 				setPullRequest(pullRequest);
