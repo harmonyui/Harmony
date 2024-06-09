@@ -1,12 +1,13 @@
 import type { ComponentError } from "@harmony/util/src/types/component";
-import { create } from "zustand";
-import { recurseElements } from "../../utils/element-utils";
+import type { StateCreator } from "zustand";
+import { mergeArraysOnId } from "@harmony/util/src/utils/common";
+import { recurseElements } from "../../../utils/element-utils";
 
-interface ComponentErrorState {
+export interface ComponentErrorState {
     errorElements: ComponentError[]
     updateErrorElements: (errorElements: ComponentError[], rootElement: HTMLElement) => void;
 }
-export const useComponentErrors = create<ComponentErrorState>()((set) => ({
+export const createComponentErrorsSlice: StateCreator<ComponentErrorState> = (set) => ({
     errorElements: [],
     updateErrorElements(errorElements, rootElement) {
         recurseElements(rootElement, [(element) => {
@@ -17,6 +18,11 @@ export const useComponentErrors = create<ComponentErrorState>()((set) => ({
             }
         }]);
 
-        set({errorElements});
+        set((state) => {
+            const newErrors = mergeArraysOnId(state.errorElements, errorElements, 'componentId');
+            return {
+                errorElements: newErrors
+            }
+        });
     }
-}))
+})

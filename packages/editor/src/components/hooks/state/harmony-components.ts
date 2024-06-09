@@ -1,21 +1,21 @@
 import type { HarmonyComponentInfo } from '@harmony/util/src/types/component';
-import { create } from 'zustand';
+import type { StateCreator } from 'zustand';
 import type { IndexComponentsRequest } from '@harmony/util/src/types/network';
 import { mergeArraysOnId } from '@harmony/util/src/utils/common';
-import { indexComponents } from '../../data-layer';
-import { useComponentErrors } from './component-errors';
+import { indexComponents } from '../../../data-layer';
+import type { ComponentErrorState } from './component-error';
 
-interface HarmonyComponentsState {
+export interface HarmonyComponentsState {
     harmonyComponents: HarmonyComponentInfo[]
     updateComponentsFromIds: (request: IndexComponentsRequest, rootElement: HTMLElement) => Promise<void>
 }
 
-export const useHarmonyComponents = create<HarmonyComponentsState>()((set) => ({
+export const createHarmonyComponentSlice: StateCreator<HarmonyComponentsState & ComponentErrorState, [], [], HarmonyComponentsState> =(set, get) => ({
     harmonyComponents: [],
     errorElements: [],
     async updateComponentsFromIds(request, rootElement) {
         const {harmonyComponents, errorElements} = await indexComponents(request);
-        useComponentErrors.getState().updateErrorElements(errorElements, rootElement);
+        get().updateErrorElements(errorElements, rootElement);
 
         set((state) => {
             const newHarmonyComponents = mergeArraysOnId(state.harmonyComponents, harmonyComponents, 'id');
@@ -25,4 +25,4 @@ export const useHarmonyComponents = create<HarmonyComponentsState>()((set) => ({
             };
         })
     }
-}))
+})

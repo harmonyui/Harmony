@@ -1,7 +1,7 @@
 import type { Fiber } from "react-reconciler";
 import type { ComponentProp } from "@harmony/util/src/types/component";
+import { useHarmonyStore } from "../hooks/state";
 import { getElementFiberUpward, getFiberName, getReferenceFiber } from "./inspector-dev";
-import { useHarmonyContext } from "../harmony-context";
 
 export interface ComponentElement {
 	id: string;
@@ -24,8 +24,7 @@ export const getComponentElementFiber = (element: HTMLElement): Fiber | undefine
 
 export class ReactComponentIdentifier implements ComponentIdentifier {
 	public getComponentFromElement(element: HTMLElement): ComponentElement | undefined {
-
-		const { harmonyComponents } = useHarmonyContext();
+		const harmonyComponents = useHarmonyStore(state => state.harmonyComponents);
 
 		const id = element.dataset.harmonyId
 		const harmonyComponent = harmonyComponents.find(c => c.id === id);
