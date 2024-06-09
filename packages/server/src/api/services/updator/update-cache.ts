@@ -1,11 +1,12 @@
 import type { Repository } from "@harmony/util/src/types/branch";
+import { isValidPath } from "@harmony/util/src/utils/common";
 import type { GitRepositoryFactory } from "../../repository/github";
 
 export async function updateFileCache(gitFactory: GitRepositoryFactory, repository: Repository, oldRef: string, newRef: string) {
     const gitRepository = gitFactory.createGitRepository(repository);
     const gitCache = gitFactory.createGithubCache();
 
-    const updatedFiles = await gitRepository.getUpdatedFiles(repository.branch, oldRef);
+    const updatedFiles = (await gitRepository.getUpdatedFiles(repository.branch, oldRef)).filter(file => isValidPath(file.path));
     const indexedFiles = await gitCache.getIndexingFiles({ref: oldRef, repo: repository.name});
 
     if (indexedFiles) {

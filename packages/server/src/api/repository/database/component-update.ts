@@ -11,8 +11,8 @@ export class PrismaComponentUpdateRepository implements ComponentUpdateRepositor
     constructor(private prisma: Db) {}
 
     public async getUpdates(branchId: string) {
-        const query = await this.prisma.$queryRaw<{ action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, isGlobal: boolean }[]>`
-            SELECT u.action, u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", u.component_id FROM "ComponentUpdate" u
+        const query = await this.prisma.$queryRaw<{ type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, isGlobal: boolean }[]>`
+            SELECT u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", u.component_id as "id" FROM "ComponentUpdate" u
             WHERE u.branch_id = ${branchId}
             ORDER BY u.date_modified ASC`
 

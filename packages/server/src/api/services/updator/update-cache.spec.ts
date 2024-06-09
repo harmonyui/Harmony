@@ -145,4 +145,19 @@ describe('update-cache', () => {
         expect(await gitCache.getFileContents({path: 'file3.tsx', ref: 'newRef', repo: ''})).toBe('Here is file 3');
         expect(await gitCache.getFileContents({path: 'file1.tsx', ref: 'newRef', repo: ''})).toBe(undefined);
      });
+
+     it('should not update cache with invalid file', async () => {
+        const {factory, repository} = setup([{path: 'migration.sql', type: 'add', content: ''}]);
+        await updateFileCache(factory, repository, 'oldRef', 'newRef');
+        const gitCache = factory.createGithubCache();
+        
+        const indexingFiles = await gitCache.getIndexingFiles({ref: 'newRef', repo: ''});
+        expect(indexingFiles).toBeTruthy();
+        if (!indexingFiles) return;
+ 
+        expect(indexingFiles.length).toBe(3);
+        expect(indexingFiles[0]).toBe('file1.tsx');
+        expect(indexingFiles[1]).toBe('file2.tsx');
+        expect(indexingFiles[2]).toBe('file3.tsx');
+     })
 })
