@@ -186,6 +186,20 @@ export const groupTogetherDistinct = function <
   return Object.keys(groups);
 };
 
+export const mergeArraysOnId = <Key extends string, T extends {[K in Key]: string}>(currArray: T[], newArray: T[], idKey: Key) => {
+  const copy = currArray.slice();
+  for (const item of newArray) {
+      const currItemIndex = copy.findIndex(curr => curr[idKey] === item[idKey]);
+      if (currItemIndex >= 0) {
+          copy[currItemIndex] = item;
+      } else {
+          copy.push(item);
+      }
+  }
+
+  return copy;
+}
+
 export function isDateInBetween(
   test: Date | undefined,
   start: Date | undefined,

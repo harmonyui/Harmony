@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/require-await -- ok*/
-import { ComponentElement } from "@harmony/db/lib/generated/client";
 import type { Font } from "@harmony/util/src/fonts";
 import type { PullRequest } from "@harmony/util/src/types/branch";
 import type { BehaviorType, ComponentUpdate, HarmonyComponentInfo } from "@harmony/util/src/types/component";

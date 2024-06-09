@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
-import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
+import { indexComponentsRequestSchema, indexComponentsResponseSchema, loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
 import type { PublishResponse, UpdateResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
@@ -74,8 +74,7 @@ export const editorRouter = createTRPCRouter({
 			}));
 
 			const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
-			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
-
+			
             const ref = await githubRepository.getBranchRef(repository.branch);
 
             //If the current repository ref is out of date, that means we have some
@@ -101,7 +100,7 @@ export const editorRouter = createTRPCRouter({
                 }
             });
 
-			const {harmonyComponents, errorElements} = await indexCodebase('', githubRepository, githubCache);
+			
 
 			const isDemo = accountTiedToBranch.role === 'quick';
 
@@ -111,11 +110,9 @@ export const editorRouter = createTRPCRouter({
 					id: branch.id,
 					name: branch.label
 				})),
-				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.id, type: element.type })),
 				pullRequest: pullRequest || undefined,
 				showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
 				isDemo,
-				harmonyComponents
 			}
 		}),
 	saveProject: publicProcedure
@@ -260,6 +257,28 @@ export const editorRouter = createTRPCRouter({
 			const response: PublishResponse = { pullRequest: newPullRequest };
 
 			return response;
+		}),
+	indexComponents: publicProcedure
+		.input(indexComponentsRequestSchema)
+		.output(indexComponentsResponseSchema)
+		.mutation(async ({ctx, input}) => {
+			const {branchId} = input;
+			const branch = await getBranch({ prisma: ctx.prisma, branchId });
+			if (!branch) {
+				throw new Error(`Cannot find branch with id ${branchId}`);
+			}
+
+			const repository = await getRepository({ prisma: ctx.prisma, repositoryId: branch.repositoryId });
+			if (!repository) {
+				throw new Error(`Cannot find repository with id ${branch.repositoryId}`);
+			}
+
+			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
+			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
+
+			const {harmonyComponents, errorElements} = await indexCodebase('', gitRepository, githubCache);
+
+			return {harmonyComponents, errorElements: errorElements.map(error => ({componentId: error.id, type: error.type}))};
 		})
 })
 
