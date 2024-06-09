@@ -11,7 +11,7 @@ import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
-import { indexCodebase, indexFiles} from "../services/indexor/indexor";
+import { formatComponentAndErrors, indexCodebase, indexFiles} from "../services/indexor/indexor";
 import { getCodeSnippet } from "../services/indexor/github";
 //import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
@@ -243,9 +243,9 @@ export const editorRouter = createTRPCRouter({
 			}
 
 			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
-			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
-
-			const {harmonyComponents, errorElements} = await indexCodebase('', gitRepository, githubCache);
+			
+			const instances = await indexForComponents(input.components, gitRepository);
+			const {harmonyComponents, errorElements} = formatComponentAndErrors(instances);
 
 			return {harmonyComponents, errorElements: errorElements.map(error => ({componentId: error.id, type: error.type}))};
 		})
