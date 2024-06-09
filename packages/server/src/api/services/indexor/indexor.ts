@@ -169,15 +169,17 @@ interface FileAndContent {
 	content: string;
 }
 export function getCodeInfoAndNormalizeFromFiles(files: FileAndContent[], componentDefinitions: Record<string, HarmonyComponent>, elementInstances: HarmonyComponentWithNode[], importDeclarations: Record<string, {name: string, path: string}>): HarmonyComponentWithNode[] | false {
-	try {
 	for (const {file, content} of files) {
-		if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
-			return false;
+		try {
+			if (!getCodeInfoFromFile(file, content, componentDefinitions, elementInstances, importDeclarations)) {
+				return false;
+			}
+		} catch (err) {
+			console.log(err);
+			throw err;
 		}
-	} } catch(err) {
-		console.log(err);
 	}
-
+	
 	return normalizeCodeInfo(componentDefinitions, elementInstances);
 }
 
@@ -401,7 +403,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 						function connectInstanceToChildren(element: HarmonyComponentWithNode): void {
 							const id = getComponentsBindingId(element);
 
-							const childElements = elementInstances.filter(instance => instance.containingComponent?.id === id && instance.getParent() === undefined);
+							const childElements = elementInstances.filter(instance => instance.name !== element.name && instance.containingComponent?.id === id && instance.getParent() === undefined);
 							childElements.forEach(child => {
 								const newChild = connectChildToParent(child, element);
 								connectInstanceToChildren(newChild);

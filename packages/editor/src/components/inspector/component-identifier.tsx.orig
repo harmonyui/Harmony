@@ -92,11 +92,14 @@ export class ReactComponentIdentifier implements ComponentIdentifier {
 				continue;
 			}
 
+<<<<<<< HEAD
+=======
 			if (child.id === '__next') {
 				elementChildren.push(...Array.from(child.children));
 				continue;
 			}
 			
+>>>>>>> staging
 			const childComponent = this.getComponentFromElement(child);
 			if (childComponent) {
 				children.push(childComponent);
