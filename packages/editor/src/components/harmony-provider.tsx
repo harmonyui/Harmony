@@ -94,6 +94,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const componentUpdates = useHarmonyStore((state) => state.componentUpdates);
 	const isInitialized = useHarmonyStore((state) => state.isInitialized);
 	const publishState = useHarmonyStore(state => state.pullRequest);
+	const initializeProject = useHarmonyStore(state => state.initializeProject);
+	const updateComponentsFromIds = useHarmonyStore((state) => state.updateComponentsFromIds);
 
 	const executeCommand = useComponentUpdator({
 		isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
@@ -125,7 +127,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const initialize = async () => {
 			onHistoryChange();
 
-			await useHarmonyStore().initializeProject({branchId, repositoryId});
+			await initializeProject({branchId, repositoryId});
 		}
 
 		void initialize();
@@ -214,8 +216,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}, [selectedComponent]);
 
 	useEffect(() => {
-		const updateComponentsFromIds = useHarmonyStore((state) => state.updateComponentsFromIds);
-
 		if (rootComponent && isInitialized) {
 			const recurseAndUpdateElements = () => {
 				const componentIds: string[] = [];
