@@ -171,7 +171,6 @@ export const getBranch = async({prisma, branchId}: {prisma: Db, branchId: string
 		commits: [],//await githubRepository.getCommits(branch.name),
 		lastUpdated: getLastUpdated(branch),
 		updates: branch.updates.map(update => ({
-			action: update.action as ComponentUpdate['action'],
 			type: update.type as ComponentUpdate['type'],
 			name: update.name,
 			value: update.value,

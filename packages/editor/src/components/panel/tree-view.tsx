@@ -103,7 +103,6 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		const update: ComponentUpdateWithoutGlobal = {
 			type: "component",
 			name: "reorder",
-			action: 'change',
 			componentId,
 			childIndex: oldChildIndex,
 			oldValue: JSON.stringify({ parentId: oldParentId, childIndex: oldChildIndex }),

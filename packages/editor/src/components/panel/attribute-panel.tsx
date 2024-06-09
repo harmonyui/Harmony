@@ -56,7 +56,7 @@ export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttrib
             throw new Error("Element does not have a data id");
         }
 
-		const update: ComponentUpdateWithoutGlobal = {componentId, type: 'className', action: 'add', name: values.name, value: values.value, oldValue, childIndex};
+		const update: ComponentUpdateWithoutGlobal = {componentId, type: 'className', name: values.name, value: values.value, oldValue, childIndex};
 		
 		
 		onChange([update]);
