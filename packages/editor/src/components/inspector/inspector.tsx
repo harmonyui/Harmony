@@ -19,10 +19,7 @@ import { getProperty } from "../snapping/calculations";
 import { useSidePanel } from "../panel/side-panel";
 import { useHarmonyContext } from "../harmony-context";
 import { useHarmonyStore } from "../hooks/state";
-import { ReactComponentIdentifier } from "./component-identifier";
 import { useHighlighter } from "./highlighter"
-
-export const componentIdentifier = new ReactComponentIdentifier();
 
 interface RectSize {
 	width: number, 

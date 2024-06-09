@@ -7,13 +7,16 @@ import type { HarmonyComponentsState } from "./harmony-components";
 import { createHarmonyComponentSlice } from "./harmony-components";
 import { createPullRequestSlice } from "./pull-request";
 import { createComponentUpdateSlice } from "./component-update";
+import type { ComponentState} from "./component-state";
+import { createComponentStateSlice } from "./component-state";
 
-type StoreState = ProjectInfoState & ComponentErrorState & HarmonyComponentsState;
+type StoreState = ProjectInfoState & ComponentErrorState & HarmonyComponentsState & ComponentState;
 
 export const useHarmonyStore = create<StoreState>()((...a) => ({
     ...createProjectInfoSlice(...a),
     ...createComponentErrorsSlice(...a),
     ...createHarmonyComponentSlice(...a),
     ...createPullRequestSlice(...a),
-    ...createComponentUpdateSlice(...a)
+    ...createComponentUpdateSlice(...a),
+    ...createComponentStateSlice(...a)
 }));

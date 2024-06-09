@@ -1,8 +1,9 @@
 
 import { useCallback, useMemo } from "react"
 import { useHarmonyContext } from "../harmony-context"
-import { componentIdentifier, isSelectable } from "../inspector/inspector"
+import { isSelectable } from "../inspector/inspector"
 import type { ComponentElement } from "../inspector/component-identifier";
+import { useHarmonyStore } from "../hooks/state";
 import type { TreeViewItem } from "./tree-view";
 import { TreeView } from "./tree-view"
 
@@ -33,31 +34,10 @@ interface ComponentTreeViewProps {
 }
 const ComponentTreeView: React.FunctionComponent<ComponentTreeViewProps> = () => {
 	const { onComponentHover, onComponentSelect, selectedComponent } = useHarmonyContext();
+	const rootComponent = useHarmonyStore(state => state.rootComponent);
+	
 
-	const rootElement = useMemo(() => {
-		const section = document.getElementById('harmony-section');
-		if (!section) {
-			throw new Error("Cannot find harmony section");
-		}
-
-		let element: HTMLElement = section;
-		//A little bit hard coded for mounting on the root (vanilla react)
-		const root = document.getElementById('root');
-		if (root) {
-			element = root.children[0] as HTMLElement | null || element;
-		} else {
-			element.dataset.harmonyId = document.body.dataset.harmonyId;
-		}
-
-		const componentElement = componentIdentifier.getComponentFromElement(element);
-		if (!componentElement) {
-			throw new Error("Cannot get component element from harmony section");
-		}
-
-		return componentElement;
-	}, []);
-
-	const treeItems = useComponentTreeItems(rootElement, selectedComponent);
+	const treeItems = useComponentTreeItems(rootComponent, selectedComponent);
 
 	return (
 		<TreeView items={treeItems} expand={true} onClick={(item) => { onComponentSelect(item) }} onHover={(item) => { onComponentHover(item) }} />

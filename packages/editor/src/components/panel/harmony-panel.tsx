@@ -11,7 +11,6 @@ import type { PublishRequest } from "@harmony/util/src/types/network";
 import { getEditorUrl } from "@harmony/util/src/utils/component";
 import { usePinchGesture } from "../harmony-provider";
 import type { ComponentUpdateWithoutGlobal, SelectMode} from "../harmony-context";
-import { componentIdentifier } from "../inspector/inspector";
 import { useHarmonyContext } from "../harmony-context";
 import { useHarmonyStore } from "../hooks/state";
 import { ComponentAttributeProvider } from "./attribute-panel";
@@ -22,7 +21,6 @@ import { PublishButton } from "./publish-button";
 
 export interface HarmonyPanelProps {
 	root: HTMLElement | undefined;
-	selectedComponent: HTMLElement | undefined;
 	onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void;
 	mode: SelectMode;
 	onModeChange: (mode: SelectMode) => void;
@@ -40,9 +38,6 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 	}})
 	const {onTouch: onTouchHeader} = usePinchGesture({scale, onTouching() {}});
 	const {children} = props;
-	//TODO: Remove dependency on harmony text
-	const selectedComponent = props.selectedComponent ? componentIdentifier.getComponentFromElement(props.selectedComponent.dataset.harmonyText === 'true' ? props.selectedComponent.parentElement! : props.selectedComponent) : undefined;
-	
 
 	//TODO: Fix bug where getting rid of these parameters gives a "cannot read 'data-harmony-id' of undefined"
 	const getPanel = (_?: string, _2?: string) => {
@@ -54,7 +49,7 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 	}
 	return (
 		<SidePanelProvider>
-			<ComponentAttributeProvider selectedComponent={selectedComponent} onChange={props.onAttributesChange}>
+			<ComponentAttributeProvider onChange={props.onAttributesChange}>
 			<div className="hw-flex hw-h-full" ref={(ref) => {
 				ref?.addEventListener('wheel', onTouchHeader);
 			}}>
@@ -91,11 +86,9 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) 
 	) 
 }
 
-const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({selectedComponent: selectedElement, mode, onModeChange, toggle, onToggleChange, isDirty}) => {
+const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({mode, onModeChange, toggle, onToggleChange, isDirty}) => {
 	const {environment} = useHarmonyContext();
 
-	//TODO: Remove dependency on harmony text
-	const selectedComponent = selectedElement ? componentIdentifier.getComponentFromElement(selectedElement.dataset.harmonyText === 'true' ? selectedElement.parentElement! : selectedElement) : undefined;
 	const EDITOR_URL = useMemo(() => getEditorUrl(environment), [environment]);
 
 	return (
@@ -104,7 +97,7 @@ const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({selectedCompon
 				<img alt="Harmony Logo" className="hw-h-full" src={`${EDITOR_URL}/Harmony_logo.svg`}/>
 			</div>
 			<div className="hw-pl-4 hw-pr-2 hw-py-2 hw-w-full">
-				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} selectedComponent={selectedComponent} selectedElement={selectedElement} isDirty={isDirty}/>
+				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} isDirty={isDirty}/>
 			</div>
 		</div>
 	)

@@ -15,6 +15,7 @@ import { useHarmonyContext  } from "../harmony-context";
 import { getComputedValue } from "../snapping/position-updator";
 import { isDesignerElementSelectable, overlayStyles } from "../inspector/inspector";
 import type { ComponentElement } from "../inspector/component-identifier";
+import { useHarmonyStore } from "../hooks/state";
 
 export const attributeTools = ['font', 'fontSize', 'textAlign',
                         'display', 'justifyContent', 'alignItems', 'flexDirection', 'rowGap', 'columnGap', 'gap', 'flexWrap', 'flexGrow', 'flexShrink',
@@ -35,12 +36,12 @@ interface ComponentAttributeContextProps {
 }
 const ComponentAttributeContext = createContext<ComponentAttributeContextProps>({selectedComponent: {} as HTMLElement, onAttributeChange: () => undefined, data: [], getAttribute: () => ''});
 type ComponentAttributeProviderProps = ComponentAttributePanelProps & {
-    selectedComponent: ComponentElement | undefined;
     children: React.ReactNode, 
     onChange: (update: ComponentUpdateWithoutGlobal[]) => void;
 }
-export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttributeProviderProps> = ({selectedComponent, children, onChange}) => {
+export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttributeProviderProps> = ({children, onChange}) => {
     const {fonts} = useHarmonyContext();
+    const selectedComponent = useHarmonyStore(state => state.selectedComponent);
     const data = useMemo(() => selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined, [selectedComponent, fonts]);
     
     const onAttributeChange = (values: {name: string, value: string}) => {

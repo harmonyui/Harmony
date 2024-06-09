@@ -41,15 +41,15 @@ interface ToolbarPanelProps {
 	onModeChange: (mode: SelectMode) => void;
 	toggle: boolean;
 	onToggleChange: (toggle: boolean) => void;
-	selectedComponent: ComponentElement | undefined;
-	selectedElement: HTMLElement | undefined;
 	isDirty: boolean;
 }
-export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({ toggle, onToggleChange, selectedComponent, selectedElement }) => {
+export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({ toggle, onToggleChange }) => {
 	const { data, onAttributeChange, getAttribute } = useComponentAttribute();
 	const isDemo = useHarmonyStore(state => state.isDemo);
 	const pullRequest = useHarmonyStore(state => state.pullRequest);
 	const currentBranch = useHarmonyStore(state => state.currentBranch);
+	const selectedComponent = useHarmonyStore(state => state.selectedComponent);
+	const selectedElement = selectedComponent?.element;
 
 	const { isSaving, changeMode, fonts, onFlexToggle, onClose, isGlobal, setIsGlobal } = useHarmonyContext();
 	const { setPanel } = useSidePanel();
