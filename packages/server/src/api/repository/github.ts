@@ -200,7 +200,11 @@ export class GithubRepository implements GitRepository {
         
         const cachedFile = await this.gitCache.getFileContents(cacheKey);
         if (cachedFile) {
-            return decodeContent(cachedFile);
+            try {
+                return decodeContent(cachedFile);
+            } catch(err) {
+                console.log(err);
+            }
         }
 
         const { data: fileInfo } = await octokit.rest.repos.getContent({

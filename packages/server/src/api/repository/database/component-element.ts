@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import type {Prisma, Db} from '@harmony/db/lib/prisma';
 import {INDEXING_VERSION} from '@harmony/util/src/constants';
-import type { HarmonyComponent } from '../services/indexor/types';
+import type { HarmonyComponent } from '../../services/indexor/types';
 
 export type HarmonyComponentPrisma = Prisma.ComponentElementGetPayload<typeof harmonyComponentPayload>;
 

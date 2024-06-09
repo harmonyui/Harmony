@@ -52,26 +52,7 @@ export const editorRouter = createTRPCRouter({
 				throw new Error(`Cannot find account tied to branch ${branchId}`);
 			}
 
-			let updates: ComponentUpdate[] = [];
-
-			const query = await prisma.$queryRaw<{ action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, parentId: string, isGlobal: boolean }[]>`
-                SELECT u.action, u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", e.id, e.parent_id as "parentId" FROM "ComponentUpdate" u
-                INNER JOIN "ComponentElement" e on e.id = component_id
-                WHERE u.branch_id = ${branchId}
-                ORDER BY u.date_modified ASC`
-
-
-			updates = query.map(up => ({
-				action: up.action as ComponentUpdate['action'],
-				type: up.type as ComponentUpdate['type'],
-				name: up.name,
-				value: up.value,
-				oldValue: up.oldValue,
-				componentId: up.id,
-				parentId: up.parentId,
-				childIndex: up.childIndex,
-				isGlobal: up.isGlobal
-			}));
+			const updates = await ctx.componentUpdateRepository.getUpdates(branchId);
 
 			const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
 			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
@@ -203,19 +184,7 @@ export const editorRouter = createTRPCRouter({
 				}
 			}
 
-			await Promise.all(updates.map(up => prisma.componentUpdate.create({
-				data: {
-					component_id: up.componentId,
-					action: up.action,
-					type: up.type,
-					name: up.name,
-					value: up.value,
-					branch_id: branchId,
-					old_value: up.oldValue,
-					childIndex: up.childIndex,
-					is_global: up.isGlobal
-				}
-			})))
+			await ctx.componentUpdateRepository.createUpdates(updates, branchId);
 
 			const reversed = reverseUpdates(errorUpdates);
 			const response: UpdateResponse = { errorUpdates: reversed };

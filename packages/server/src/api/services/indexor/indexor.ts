@@ -15,7 +15,7 @@ import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/compo
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
-import { PrismaHarmonyComponentRepository } from "../../repository/component-element";
+import { PrismaHarmonyComponentRepository } from "../../repository/database/component-element";
 import type { GithubCache } from "../../repository/cache";
 import type { GitRepository } from "../../repository/github";
 import type { Attribute, HarmonyComponent } from "./types";

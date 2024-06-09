@@ -357,7 +357,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdateWithoutGlobal = { componentId: component.id, type: 'text', name: String(index), action: 'change', value, oldValue, childIndex }
+		const update: ComponentUpdateWithoutGlobal = { componentId: component.id, type: 'text', name: String(index), value, oldValue, childIndex }
 		onAttributesChange([update], false);
 	});
 
@@ -370,8 +370,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdateWithoutGlobal = { componentId: component.id, type: 'component', name: 'reorder', action: 'change', value, oldValue, childIndex };
-
+		const update: ComponentUpdateWithoutGlobal = { componentId: component.id, type: 'component', name: 'reorder', value, oldValue, childIndex };
+		
 		onAttributesChange([update], false);
 	})
 
