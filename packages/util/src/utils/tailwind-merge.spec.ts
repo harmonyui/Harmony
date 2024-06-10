@@ -63,5 +63,23 @@ describe("tailwind-merge", () => {
             const merged = mergeClassesWithScreenSize(oldClass, newClass, screenSize);
             expectClassesToBeEqual(merged, 'p-2 sm:p-4 ml-3 mr-2 md:my-1 bg-blue-400 top-0 xl:hover:bg-yellow-300 2xl:top-3');
         })
+
+        it("Should not put on uneccessary modifier for non trimmed classes", () => {
+            const oldClass = ' p-2 md:mr-2';
+            const newClass = 'p-4 mr-1';
+            const screenSize = 1960;
+            const merged = mergeClassesWithScreenSize(oldClass, newClass, screenSize);
+            expectClassesToBeEqual(merged, 'p-4 md:mr-1');
+
+            const oldClass2 = ' p-2 md:mr-2 ';
+            const newClass2 = 'p-4 mr-1';
+            const merged2 = mergeClassesWithScreenSize(oldClass2, newClass2, screenSize);
+            expectClassesToBeEqual(merged2, 'p-4 md:mr-1');
+
+            const oldClass3 = 'p-2 md:mr-2';
+            const newClass3 = ' p-4 mr-1';
+            const merged3 = mergeClassesWithScreenSize(oldClass3, newClass3, screenSize);
+            expectClassesToBeEqual(merged3, 'p-4 md:mr-1');
+        })
     });
 });
