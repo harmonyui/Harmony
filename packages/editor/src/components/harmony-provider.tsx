@@ -466,6 +466,7 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
 	const [saveStack, setSaveStack] = useState<HarmonyCommand[]>([]);
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
+	const addUpdates = useHarmonyStore(state => state.addComponentUpdates);
 
 	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
 
@@ -565,6 +566,7 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 				newSaves.push(newCommand);
 			}
 		}
+		addUpdates(newCommand.update);
 		setUndoStack(newEdits);
 		setSaveStack(newSaves);
 		setRedoStack([]);
@@ -605,6 +607,8 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 		const newSaves = saveStack.slice();
 		newSaves.push(newEdit);
 		setSaveStack(newSaves);
+
+		addUpdates(newEdit.update);
 	}
 
 	const onUndo = useEffectEvent(() => {

@@ -3,12 +3,18 @@ import { createHarmonySlice } from "./factory";
 
 export interface ComponentUpdateState {
     componentUpdates: ComponentUpdate[],
-    updateComponentUpdates: (value: ComponentUpdate[]) => void;
+    addComponentUpdates: (values: ComponentUpdate[]) => void
 }
 
 export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateState>((set) => ({
     componentUpdates: [],
-    updateComponentUpdates(value) {
-        set({componentUpdates: value});
+    addComponentUpdates(value) {
+        set(state => {
+            const copy = state.componentUpdates.slice();
+            copy.push(...value);
+            return {
+                componentUpdates: copy
+            }
+        })
     }
 }));
