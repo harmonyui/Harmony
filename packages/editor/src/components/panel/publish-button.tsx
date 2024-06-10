@@ -14,8 +14,8 @@ import { useHarmonyStore } from "../hooks/state";
 
 export const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=false}) => {
 	const {changeMode, isSaving, setError: setErrorProps} = useHarmonyContext();
-	const updatePublishState = useHarmonyStore(state => state.updatePullRequest);
-	const publishState = useHarmonyStore(state => state.pullRequest);
+	const updatePublishState = useHarmonyStore(state => state.updatePublishState);
+	const publishState = useHarmonyStore(state => state.publishState);
 	const pullRequestProps = useHarmonyStore(state => state.pullRequest);
 	const branchId = useHarmonyStore(state => state.currentBranch.id);
 	const isDemo = useHarmonyStore(state => state.isDemo);
