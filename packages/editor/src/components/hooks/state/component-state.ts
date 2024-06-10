@@ -39,16 +39,12 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
     
             const fiber = getComponentElementFiber(element);
     
-            if (id === undefined) {
-                return undefined;
-            }
-    
             const name = getFiberName(fiber) || '';
             const isComponent = !fiber?.stateNode;
             const props: ComponentProp[] = []
     
             return {
-                id,
+                id: id || '',
                 element,
                 name,
                 children: getComponentChildren(element),

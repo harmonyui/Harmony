@@ -11,7 +11,7 @@ import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
-import { formatComponentAndErrors, indexCodebase, indexFiles} from "../services/indexor/indexor";
+import { formatComponentAndErrors, indexFiles} from "../services/indexor/indexor";
 import { getCodeSnippet } from "../services/indexor/github";
 //import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
@@ -62,9 +62,10 @@ export const editorRouter = createTRPCRouter({
             //new commits that might affect our previously indexed component elements.
             //Let's go through the diffs and update those component ids
             if (ref !== repository.ref) {
-                // await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
-				
-				await updateFileCache(ctx.gitRepositoryFactory, repository, repository.ref, ref);
+				if (!repository.ref.startsWith('http')) {
+					// await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
+					await updateFileCache(ctx.gitRepositoryFactory, repository, repository.ref, ref);
+				}
 				await prisma.repository.update({
                     where: {
                         id: repository.id,

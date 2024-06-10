@@ -13,7 +13,9 @@ export interface HarmonyComponentsState {
 export const createHarmonyComponentSlice = createHarmonySlice<HarmonyComponentsState, ComponentErrorState>((set, get) => ({
     harmonyComponents: [],
     async updateComponentsFromIds(request, rootElement) {
-        const {harmonyComponents, errorElements} = await indexComponents(request);
+        const currHarmonyComponents = get().harmonyComponents;
+        const uniqueElements = request.components.filter(component => !currHarmonyComponents.find(comp => comp.id === component));
+        const {harmonyComponents, errorElements} = await indexComponents({...request, components: uniqueElements});
 
         get().updateErrorElements(errorElements, rootElement);
        
