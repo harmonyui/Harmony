@@ -18,10 +18,8 @@ import type { SelectMode , ComponentUpdateWithoutGlobal } from "../harmony-conte
 import { getProperty } from "../snapping/calculations";
 import { useSidePanel } from "../panel/side-panel";
 import { useHarmonyContext } from "../harmony-context";
-import { ReactComponentIdentifier } from "./component-identifier";
+import { useHarmonyStore } from "../hooks/state";
 import { useHighlighter } from "./highlighter"
-
-export const componentIdentifier = new ReactComponentIdentifier();
 
 interface RectSize {
 	width: number, 
@@ -143,7 +141,9 @@ export interface InspectorProps {
 export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
-	const {onFlexToggle: onFlexClick, error, setError, isDemo} = useHarmonyContext();
+	const {onFlexToggle: onFlexClick, error, setError} = useHarmonyContext();
+	const isDemo = useHarmonyStore(state => state.isDemo);
+
 	const previousError = usePrevious(error);
 	const {panel} = useSidePanel();
 

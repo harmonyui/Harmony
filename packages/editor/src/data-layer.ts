@@ -1,4 +1,4 @@
-import { LoadRequest, LoadResponse, loadResponseSchema, PublishRequest, PublishResponse, publishResponseSchema, UpdateRequest, UpdateResponse, updateResponseSchema } from "@harmony/util/src/types/network";
+import { IndexComponentsRequest, IndexComponentsResponse, indexComponentsResponseSchema, LoadRequest, LoadResponse, loadResponseSchema, PublishRequest, PublishResponse, publishResponseSchema, UpdateRequest, UpdateResponse, updateResponseSchema } from "@harmony/util/src/types/network";
 import { client } from "./trpc";
 import { z } from "zod";
 
@@ -11,3 +11,5 @@ export const loadProject = dataFetch<LoadRequest, LoadResponse>(client.editor.lo
 export const saveProject = dataFetch<UpdateRequest, UpdateResponse>(client.editor.saveProject.mutate, updateResponseSchema);
 
 export const publishProject = dataFetch<PublishRequest, PublishResponse>(client.editor.publishProject.mutate, publishResponseSchema);
+
+export const indexComponents = dataFetch<IndexComponentsRequest, IndexComponentsResponse>(client.editor.indexComponents.mutate, indexComponentsResponseSchema);

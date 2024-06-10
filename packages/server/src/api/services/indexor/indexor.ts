@@ -74,20 +74,13 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 	const fileContents = await indexingFiles.getIndexingFilesAndContent(dirname);
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
+	return elementInstances;
+}
+
+export function formatComponentAndErrors(elementInstances: false | HarmonyComponent[]) {
 	if (elementInstances) {
 		const errorElements = findErrorElements(elementInstances);
-		const harmonyComponents =  elementInstances.map(instance => ({
-			id: instance.id,
-			isComponent: instance.isComponent,
-			name: instance.name,
-			props: instance.props.map<ComponentProp>(prop => ({
-				isStatic: prop.name === 'string',
-				propName: '',
-				propValue: '',
-				type: prop.type,
-				componentId: instance.id
-			}))
-		}))
+		const harmonyComponents =  convertToHarmonyInfo(elementInstances);
 
 		return {errorElements, harmonyComponents};
 	}

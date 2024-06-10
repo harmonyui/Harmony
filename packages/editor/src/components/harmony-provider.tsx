@@ -7,23 +7,23 @@ import { MinimizeIcon } from "@harmony/ui/src/components/core/icons";
 import { useEffectEvent } from "@harmony/ui/src/hooks/effect-event";
 import { DEFAULT_HEIGHT as HEIGHT, DEFAULT_WIDTH as WIDTH } from '@harmony/util/src/constants';
 import type { Font } from "@harmony/util/src/fonts";
-import type { PullRequest } from "@harmony/util/src/types/branch";
-import type { BehaviorType, ComponentError, ComponentUpdate, HarmonyComponentInfo } from "@harmony/util/src/types/component";
-import type { PublishRequest, PublishResponse, UpdateRequest } from "@harmony/util/src/types/network";
+import type { BehaviorType, ComponentUpdate } from "@harmony/util/src/types/component";
+import type { UpdateRequest } from "@harmony/util/src/types/network";
 import type { Environment } from '@harmony/util/src/utils/component';
 import { getWebUrl, reverseUpdates, translateUpdatesToCss } from '@harmony/util/src/utils/component';
 import hotkeys from 'hotkeys-js';
-import $, { each } from 'jquery';
+import $ from 'jquery';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { loadProject, publishProject, saveProject } from "../data-layer";
+import { saveProject } from "../data-layer";
+import { recurseElements } from "../utils/element-utils";
 import type { ComponentUpdateWithoutGlobal, DisplayMode, SelectMode } from "./harmony-context";
-import { HarmonyContext, useHarmonyContext, viewModes } from "./harmony-context";
+import { HarmonyContext, viewModes } from "./harmony-context";
 import type { Setup } from "./harmony-setup";
-import type { ComponentElement } from "./inspector/component-identifier";
-import { Inspector, componentIdentifier, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
+import { Inspector, isSelectable, replaceTextContentWithSpans, selectDesignerElement } from "./inspector/inspector";
 import { HarmonyPanel } from "./panel/harmony-panel";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import { getBoundingRect } from "./snapping/calculations";
+import { useHarmonyStore } from "./hooks/state";
 
 export function findElementFromId(componentId: string, childIndex: number): HTMLElement | undefined {
 	const selector = `[data-harmony-id="${componentId}"]`;
@@ -70,33 +70,32 @@ export interface HarmonyProviderProps {
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({ repositoryId, children, branchId, fonts, setup, environment = 'production' }) => {
 	const [isToggled, setIsToggled] = useState(true);
-	const [selectedComponent, _setSelectedComponent] = useState<HTMLElement>();
 	const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>();
 	const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>();
 	const harmonyContainerRef = useRef<HTMLDivElement | null>(null);
 	const [mode, setMode] = useState<SelectMode>('tweezer');
-	const [availableIds, setAvailableIds] = useState<ComponentUpdate[]>();
-	const [errorElements, setErrorElements] = useState<ComponentError[]>();
-	const [branches, setBranches] = useState<{ id: string, name: string }[]>([]);
 	const [scale, _setScale] = useState(.8);
 	const [isDirty, setIsDirty] = useState(false);
 	const [updateOverlay, setUpdateOverlay] = useState(0);
 	const [isSaving, setIsSaving] = useState(false);
-	const [pullRequest, setPullRequest] = useState<PullRequest | undefined>();
 	const [displayMode, setDisplayMode] = useState<DisplayMode>();
-	const [publishState, setPublishState] = useState<PullRequest | undefined>();
 	const [cursorX, setCursorX] = useState(0);
 	const [cursorY, setCursorY] = useState(0);
 	const [oldScale, setOldSclae] = useState(scale);
 	const [forceSave, setForceSave] = useState(0);
 	const [error, setError] = useState<string | undefined>();
-	const [showWelcomeScreen, setShowWelcomeScreen] = useState<boolean>(false);
 	const [showGiveFeedback, setShowGiveFeedback] = useState(false);
-	const [isDemo, setIsDemo] = useState(false);
 	const [behaviors, setBehaviors] = useState<BehaviorType[]>([]);
 	const [isGlobal, setIsGlobal] = useState(false);
-	const [harmonyComponents, setHarmonyComponents] = useState<HarmonyComponentInfo[]>([]);
-	//const [currUpdates, setCurrUpdates] = useState<{updates: ComponentUpdateWithoutGlobal[], execute: boolean}>();
+	const harmonyComponents = useHarmonyStore((state) => state.harmonyComponents);
+	const pullRequest = useHarmonyStore((state) => state.pullRequest);
+	const componentUpdates = useHarmonyStore((state) => state.componentUpdates);
+	const isInitialized = useHarmonyStore((state) => state.isInitialized);
+	const publishState = useHarmonyStore(state => state.pullRequest);
+	const initializeProject = useHarmonyStore(state => state.initializeProject);
+	const updateComponentsFromIds = useHarmonyStore((state) => state.updateComponentsFromIds);
+	const selectedComponent = useHarmonyStore(state => state.selectedComponent?.element);
+	const setSelectedComponent = useHarmonyStore(state => state.selectElement);
 
 	const executeCommand = useComponentUpdator({
 		isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
@@ -128,27 +127,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const initialize = async () => {
 			onHistoryChange();
 
-			try {
-				const response = await loadProject({ branchId, repositoryId });
-				// const response = await fetch(`${WEB_URL}/api/load/${repositoryId}${branchId ? `?branchId=${branchId}` : ''}`, {
-				// 	method: 'GET',
-				// 	headers: {
-				// 		'Accept': 'application/json',
-				// 		'Content-Type': 'application/json'
-				// 	},
-				// });
-
-				const { updates, branches, pullRequest, errorElements, showWelcomeScreen, isDemo, harmonyComponents } = response;
-				setHarmonyComponents(harmonyComponents);
-				setAvailableIds(updates);
-				setBranches(branches);
-				setPullRequest(pullRequest);
-				setErrorElements(errorElements);
-				setShowWelcomeScreen(showWelcomeScreen);
-				setIsDemo(isDemo);
-			} catch (err) {
-				console.log(err);
-			}
+			await initializeProject({branchId, repositoryId});
 		}
 
 		void initialize();
@@ -237,16 +216,21 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}, [selectedComponent]);
 
 	useEffect(() => {
-		if (rootComponent && availableIds && errorElements) {
+		if (rootComponent && isInitialized) {
+			const recurseAndUpdateElements = () => {
+				const componentIds: string[] = [];
+				recurseElements(rootComponent, [updateElements(componentUpdates, componentIds)]);
+
+				void updateComponentsFromIds({branchId, components: componentIds}, rootComponent);
+			}
 			const mutationObserver = new MutationObserver(() => {
-				updateElements(rootComponent, availableIds, errorElements);
+				recurseAndUpdateElements();
 			});
 			const body = rootComponent.querySelector('body');
 			mutationObserver.observe(body || rootComponent, {
 				childList: true,
-				//subtree: true,
 			});
-			updateElements(rootComponent, availableIds, errorElements);
+			recurseAndUpdateElements();
 
 			//Hacky fix for the toolbar zooming weird and the user does not have the updated editor
 			const harmonyContainer = document.getElementById('harmony-container');
@@ -254,16 +238,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				harmonyContainer.classList.add('hw-w-full');
 			}
 		}
-	}, [rootComponent, availableIds, errorElements]);
+	}, [rootComponent, isInitialized]);
 
-	const updateElements = (element: HTMLElement, availableIds: ComponentUpdate[], errorElements: ComponentError[]): void => {
+	const updateElements = (componentUpdates: ComponentUpdate[], componentIds: string[]) => (element: HTMLElement): void => {
 		if (!rootComponent) return;
-		const errorComponent = errorElements.find(el => el.componentId === element.dataset.harmonyId)
-		if (errorComponent) {
-			const type = errorComponent.type;
-			element.dataset.harmonyError = type;
-		}
-
+	
 		let id = element.dataset.harmonyId;
 		if (id && id !== 'undefined') {
 			const split = id.split('#');
@@ -274,6 +253,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				id = split.slice(1).join('#');
 				element.dataset.harmonyId = id;
 			}
+
+			componentIds.push(id);
 		}
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		const children = Array.from(element.childNodes);
@@ -292,11 +273,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 
 		if (id !== undefined) {
-			const updates = availableIds.filter(up => up.componentId === id && up.childIndex === childIndex);
+			const updates = componentUpdates.filter(up => up.componentId === id && up.childIndex === childIndex);
 			makeUpdates(element, updates, rootComponent, fonts);
 		}
-
-		Array.from(element.children).filter(child => (child as HTMLElement).dataset.harmonyText !== 'true').forEach(child => { updateElements(child as HTMLElement, availableIds, errorElements); });
 	}
 
 	const setScale = useCallback((newScale: number, _: { x: number, y: number }) => {
@@ -336,41 +315,40 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const onTextChange = useEffectEvent((value: string, oldValue: string) => {
 		if (!selectedComponent) return;
 
-		let component: ComponentElement | undefined = componentIdentifier.getComponentFromElement(selectedComponent);
+		const componentId = selectedComponent.dataset.harmonyId;
 		let index = 0;
 		let childIndex = Array.from(selectedComponent.parentElement!.children).indexOf(selectedComponent);
-		if (!component) {
+		if (!componentId) {
 			if (selectedComponent.dataset.harmonyText === 'true') {
 				const element = selectedComponent.parentElement;
 				if (!element) {
 					throw new Error("Error when getting component parent in harmony text");
 				}
-				component = componentIdentifier.getComponentFromElement(element);
 				index = Array.from(element.children).indexOf(selectedComponent);
 				childIndex = Array.from(element.parentElement!.children).indexOf(element)
 			}
 
-			if (!component || index < 0) {
+			if (!componentId || index < 0) {
 				throw new Error("Error when getting component");
 			}
 		}
 
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdateWithoutGlobal = { componentId: component.id, type: 'text', name: String(index), value, oldValue, childIndex }
+		const update: ComponentUpdateWithoutGlobal = { componentId, type: 'text', name: String(index), value, oldValue, childIndex }
 		onAttributesChange([update], false);
 	});
 
 	const onReorder = useEffectEvent(({ from, to, element }: { from: number, to: number, element: HTMLElement }) => {
-		const component = componentIdentifier.getComponentFromElement(element);
-		if (!component) throw new Error("Error when getting component");
+		const componentId = element.dataset.harmonyId;
+		if (!componentId) throw new Error("Error when getting component");
 
 		const value = `from=${from}:to=${to}`
 		const oldValue = `from=${to}:to=${from}`;
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
-		const update: ComponentUpdateWithoutGlobal = { componentId: component.id, type: 'component', name: 'reorder', value, oldValue, childIndex };
+		const update: ComponentUpdateWithoutGlobal = { componentId, type: 'component', name: 'reorder', value, oldValue, childIndex };
 		
 		onAttributesChange([update], false);
 	})
@@ -392,43 +370,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	}
 
 	const onElementChange = (element: HTMLElement, update: ComponentUpdateWithoutGlobal[], execute = true) => {
-		const component = componentIdentifier.getComponentFromElement(element);
-
-		if (!component) {
-			throw new Error("Error when getting component");
-		}
-
 		onAttributesChange(update, execute);
-	}
-
-	const onPublish = async (request: PublishRequest): Promise<PublishResponse | undefined> => {
-		try {
-			// const response = await fetch(`${WEB_URL}/api/publish`, {
-			// 	method: 'POST',
-			// 	body: JSON.stringify(request)
-			// });
-			// if (!response.ok) {
-			// 	return undefined;
-			// }
-
-
-			// const parsed = publishResponseSchema.safeParse(await response.json());
-			// if (!parsed.success) {
-			// 	return undefined;
-			// }
-
-			const response = await publishProject(request);
-
-			setPullRequest(response.pullRequest);
-
-			return response;
-		} catch (err) {
-			return undefined
-		}
-	}
-
-	const setSelectedComponent = (component: HTMLElement | undefined): void => {
-		_setSelectedComponent(component);
 	}
 
 	const changeMode = (mode: DisplayMode) => {
@@ -455,9 +397,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	return (
 		<>
-			{<HarmonyContext.Provider value={{ branchId: branchId || '', publish: onPublish, isSaving, setIsSaving, pullRequest, setPullRequest, displayMode: displayMode || 'designer', changeMode, publishState, setPublishState, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showWelcomeScreen, setShowWelcomeScreen, showGiveFeedback, setShowGiveFeedback, isDemo, currentBranch: branches.find(branch => branch.id === branchId), behaviors, setBehaviors, isGlobal, setIsGlobal, onComponentHover: setHoveredComponent, onComponentSelect: setSelectedComponent, selectedComponent, onAttributesChange, harmonyComponents }}>
+			{<HarmonyContext.Provider value={{ isSaving, setIsSaving, displayMode: displayMode || 'designer', changeMode, fonts, onFlexToggle: onFlexClick, scale, onScaleChange: setScale, onClose, error, setError, environment, showGiveFeedback, setShowGiveFeedback, behaviors, setBehaviors, isGlobal, setIsGlobal, onComponentHover: setHoveredComponent, onComponentSelect: setSelectedComponent, selectedComponent, onAttributesChange }}>
 				{displayMode && displayMode !== 'preview-full' ? <>
-					<HarmonyPanel root={rootComponent} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} branchId={branchId} branches={branches}>
+					<HarmonyPanel root={rootComponent} onAttributesChange={onAttributesChange} mode={mode} onModeChange={setMode} toggle={isToggled} onToggleChange={setIsToggled} isDirty={isDirty} setIsDirty={setIsDirty} >
 						<div style={{ width: `${WIDTH * scale}px`, minHeight: `${HEIGHT * scale}px` }}>
 							<div id="harmony-scaled" ref={(d) => {
 								if (d && d !== harmonyContainerRef.current) {
@@ -524,6 +466,7 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 	const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([]);
 	const [saveStack, setSaveStack] = useState<HarmonyCommand[]>([]);
 	const [editTimeout, setEditTimeout] = useState(new Date().getTime());
+	const addUpdates = useHarmonyStore(state => state.addComponentUpdates);
 
 	const WEB_URL = useMemo(() => getWebUrl(environment), [environment]);
 
@@ -623,6 +566,7 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 				newSaves.push(newCommand);
 			}
 		}
+		addUpdates(newCommand.update);
 		setUndoStack(newEdits);
 		setSaveStack(newSaves);
 		setRedoStack([]);
@@ -663,6 +607,8 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 		const newSaves = saveStack.slice();
 		newSaves.push(newEdit);
 		setSaveStack(newSaves);
+
+		addUpdates(newEdit.update);
 	}
 
 	const onUndo = useEffectEvent(() => {

@@ -20,6 +20,7 @@ import { selectDesignerElement, isTextElement } from "../inspector/inspector";
 import { useHarmonyContext } from "../harmony-context";
 import type { SelectMode } from "../harmony-context";
 import type { ComponentElement } from "../inspector/component-identifier";
+import { useHarmonyStore } from "../hooks/state";
 import { ComponentLayoutPanel } from "./layout-panel";
 import { useSidePanel } from "./side-panel";
 import type { CommonTools, ComponentToolData } from "./attribute-panel";
@@ -40,15 +41,17 @@ interface ToolbarPanelProps {
 	onModeChange: (mode: SelectMode) => void;
 	toggle: boolean;
 	onToggleChange: (toggle: boolean) => void;
-	selectedComponent: ComponentElement | undefined;
-	selectedElement: HTMLElement | undefined;
 	isDirty: boolean;
-	branchId: string;
-	branches: { id: string, name: string }[];
 }
-export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({ toggle, onToggleChange, selectedComponent, selectedElement }) => {
+export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({ toggle, onToggleChange }) => {
 	const { data, onAttributeChange, getAttribute } = useComponentAttribute();
-	const { isSaving, pullRequest, changeMode, fonts, onFlexToggle, onClose, currentBranch, isDemo, isGlobal, setIsGlobal } = useHarmonyContext();
+	const isDemo = useHarmonyStore(state => state.isDemo);
+	const pullRequest = useHarmonyStore(state => state.pullRequest);
+	const currentBranch = useHarmonyStore(state => state.currentBranch);
+	const selectedComponent = useHarmonyStore(state => state.selectedComponent);
+	const selectedElement = selectedComponent?.element;
+
+	const { isSaving, changeMode, fonts, onFlexToggle, onClose, isGlobal, setIsGlobal } = useHarmonyContext();
 	const { setPanel } = useSidePanel();
 	const { toolNames, toolComponents } = useToolbarTools({ element: selectedElement, fonts });
 

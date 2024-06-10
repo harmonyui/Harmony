@@ -10,13 +10,21 @@ import type { PullRequest } from "@harmony/util/src/types/branch";
 import type { PublishRequest } from "@harmony/util/src/types/network";
 import { useState } from "react";
 import { useHarmonyContext } from "../harmony-context";
+import { useHarmonyStore } from "../hooks/state";
 
 export const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({preview=false}) => {
-	const {publishState, setPublishState, changeMode, isDemo, currentBranch, isSaving, setError: setErrorProps} = useHarmonyContext();
+	const {changeMode, isSaving, setError: setErrorProps} = useHarmonyContext();
+	const updatePublishState = useHarmonyStore(state => state.updatePullRequest);
+	const publishState = useHarmonyStore(state => state.pullRequest);
+	const pullRequestProps = useHarmonyStore(state => state.pullRequest);
+	const branchId = useHarmonyStore(state => state.currentBranch.id);
+	const isDemo = useHarmonyStore(state => state.isDemo);
+	const publish = useHarmonyStore(state => state.publishChanges);
+	const currentBranch = useHarmonyStore(state => state.currentBranch);
+
 	const [show, setShow] = useState(false);
-	const changeProperty = useChangeProperty<PullRequest>(setPublishState);
+	const changeProperty = useChangeProperty<PullRequest>(updatePublishState);
 	const [loading, setLoading] = useState(false);
-	const {branchId, publish, pullRequest: pullRequestProps} = useHarmonyContext();
 	const [error, setError] = useState('');
 
 	const pullRequest: PullRequest = publishState || {id: '', title: '', body: '', url: ''}
@@ -71,7 +79,7 @@ export const PublishButton: React.FunctionComponent<{preview?: boolean}> = ({pre
 	}
 
 	const onViewCode = () => {
-		if (!currentBranch) return;
+		if (!currentBranch.id) return;
 
 		if (isSaving) {
 			setErrorProps("Please wait to finish saving before publishing");
