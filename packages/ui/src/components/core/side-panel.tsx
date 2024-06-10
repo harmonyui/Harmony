@@ -131,12 +131,12 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                 className="hw-h-8 hw-w-auto"
                 src="/logo.png"
               /> */}
-							<Header className="hw-text-5xl hw-font-light" level={2}>{title}</Header>
+							<Header className="hw-text-5xl hw-font-light __className_80e47c" level={2}>{title}</Header>
             </div> : null}
             <nav className="hw-flex hw-flex-1 hw-flex-col">
               <ul className="hw-flex hw-flex-1 hw-flex-col hw-gap-y-7">
                 <li className="hw-h-full">
-                  <ul className="hw-space-y-10 hw-flex hw-flex-col hw-mt-20">
+                  <ul className="hw-hw-space-y-10 hw-hw-flex hw-hw-flex-col hw-hw-mt-20 hw-hw-gap-y-0 hw-mt-10">
                     {items.map((item) => (
                       <SidePanelItem item={item} key={item.label}/>
                     ))}
@@ -187,7 +187,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 											alt=""
 										/> */}
                     <span className="hw-hidden lg:hw-flex lg:hw-items-center">
-											<span className="hw-ml-4 hw-text-lg hw-font-semibold hw-leading-6 hw-text-gray-900" aria-hidden="true">
+											<span className="hw-ml-4 hw-text-lg hw-font-semibold hw-leading-6 hw-text-gray-900 __className_80e47c" aria-hidden="true">
 												Welcome, {profileItem.name}.
 											</span>
                       <UserCircleIcon className="hw-ml-4 hw-h-10 hw-w-10"/>
@@ -250,7 +250,7 @@ const SidePanelItem: React.FunctionComponent<{item: SidePanelItems, className?: 
 					item.current
 						? 'hw-text-[#11283B]'
 						: 'hw-text-[#88939D] hover:hw-text-[#11283B]',
-					'hw-group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-lg hw-leading-6 hw-pl-12'
+					'hw-hw-group hw-hw-flex hw-hw-gap-x-3 hw-hw-rounded-md hw-hw-p-2 hw-hw-text-lg hw-hw-leading-6 hw-hw-pl-12 hw-hw-justify-center hw-pl-2'
 				)}
 				href={item.href}
 			>

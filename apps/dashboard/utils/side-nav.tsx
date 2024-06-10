@@ -47,7 +47,7 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({children}) => {
 		]
 	}
 	return (
-			<SidePanel items={items} title="Harmony" profileItem={profileItem}>
+			<SidePanel items={items} title="Garmo" profileItem={profileItem}>
 				{children}
 			</SidePanel>
 	)
