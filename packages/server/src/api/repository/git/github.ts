@@ -447,7 +447,7 @@ export class LocalGitRepository implements GitRepository {
             </body>
         </html>`;
 
-        const diffPath = path.join(__dirname, '../../../../../', `packages/editor/public/${branch}.html`)
+        const diffPath = path.join(__dirname, '../../../../../../', `packages/editor/public/${branch}.html`)
         fs.writeFileSync(diffPath, template, 'utf-8');
 
         return `http://${LOCALHOST}:4200/${branch}.html`;
