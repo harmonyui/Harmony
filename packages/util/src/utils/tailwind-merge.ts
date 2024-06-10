@@ -22,21 +22,27 @@ export function mergeClassesWithScreenSize(originalClass: string | undefined, ne
         return 0;
     }
 
+    const splitClasses = (classes: string): string[] => {
+        const split = classes.split(' ');
+
+        return split.filter(s => s.length > 0);
+    }
+
     if (!originalClass) return newClass;
 
     const modifierIndex = getSizeModifierIndex();
 
     let newOriginalClass = originalClass;
-    const newClasses = newClass.split(' ');
+    const newClasses = splitClasses(newClass);
 
     //p-4 md:p-3, lg:p-2
     for (const klass of newClasses) {
-        const numClasses = newOriginalClass.split(' ').length;
+        const numClasses = splitClasses(newOriginalClass).length;
         let merged = '';
         for (let i = modifierIndex; i < modifiers.length; i++) {
             const [modifier] = modifiers[i];
             merged = twMerge(newOriginalClass, `${modifier ? `${modifier}:` : ''}${klass}`);
-            if (merged.split(' ').length === numClasses) {
+            if (splitClasses(merged).length === numClasses) {
                 break;
             }
         }

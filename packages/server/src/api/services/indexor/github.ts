@@ -1,10 +1,11 @@
 /* eslint-disable @typescript-eslint/require-await -- ok*/
-/* eslint-disable no-useless-escape -- ok*/
+ 
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation } from "@harmony/util/src/types/component";
 import { isValidPath } from "@harmony/util/src/utils/common";
-import type { GitRepository } from "../../repository/github";
-import type { GithubCache } from "../../repository/cache";
+import type { GithubCache } from "../../repository/cache/types";
+import type { GitRepository } from "../../repository/git/types";
+
 
 export interface FileAndContent {
 	file: string;

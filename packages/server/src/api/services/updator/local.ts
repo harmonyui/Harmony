@@ -5,7 +5,7 @@ import { getLocationsFromComponentId, hashComponentId, updateLocationFromContent
 import { prisma } from "@harmony/db/lib/prisma";
 import { replaceByIndex } from "@harmony/util/src/utils/common";
 import type { ComponentUpdate } from "@harmony/util/src/types/component";
-import type { GitRepository } from "../../repository/github";
+import type { GitRepository } from "../../repository/git/types";
 import type { HarmonyComponent } from "../indexor/types";
 
 export const changesSchema = z.object({

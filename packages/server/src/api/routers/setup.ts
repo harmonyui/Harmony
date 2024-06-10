@@ -2,7 +2,7 @@
 import { z } from "zod";
 import { createTRPCRouter, protectedProcedure, publicProcedure, registerdProcedure } from "../trpc";
 import { Account, getAccount, getRepositoryFromTeam } from "../../auth";
-import { appOctokit } from "../repository/github";
+import { appOctokit } from "../repository/git/github";
 import { Repository, repositorySchema } from "@harmony/util/src/types/branch";
 import {components} from '@octokit/openapi-types/types'
 import { emailSchema } from "@harmony/util/src/types/utils";
