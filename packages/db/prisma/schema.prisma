@@ -57,7 +57,6 @@ model ComponentUpdate {
     component_id  String
     childIndex    Int
     type          String //text, className, component
-    action        String //change, add, remove
     name          String
     value         String
     old_value     String

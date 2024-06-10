@@ -23,8 +23,9 @@ import type { FullSession, Session } from "../auth";
 import { getServerAuthSession } from "../auth";
 import type { EmailService} from "./services/email-service";
 import type { GitRepositoryFactory} from "./repository/github";
-import {PrismaHarmonyComponentRepository, type HarmonyComponentRepository} from './repository/component-element'
-import {gitRepositoryFactory, mailer } from "./index";
+import {PrismaHarmonyComponentRepository, type HarmonyComponentRepository} from './repository/database/component-element'
+import {gitRepositoryFactory, mailer, componentUpdateRepository } from "./index";
+import { ComponentUpdateRepository } from "./repository/database/component-update";
 
 
 /**
@@ -39,6 +40,7 @@ interface CreateContextOptions {
   session: Session | undefined;
   gitRepositoryFactory: GitRepositoryFactory;
   harmonyComponentRepository: HarmonyComponentRepository
+  componentUpdateRepository: ComponentUpdateRepository
 }
 
 interface AuthContextOptions {
@@ -100,7 +102,8 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
   return createInnerTRPCContext({
     session,
     gitRepositoryFactory,
-    harmonyComponentRepository
+    harmonyComponentRepository,
+    componentUpdateRepository,
     //req
   });
 }

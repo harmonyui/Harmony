@@ -1,5 +1,4 @@
  
-/* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-boolean-literal-compare -- ok*/
  
 import { HarmonyModal } from "@harmony/ui/src/components/core/modal"
@@ -10,9 +9,11 @@ import { Button } from "@harmony/ui/src/components/core/button";
 import { InfoBox } from "@harmony/ui/src/components/core/alert";
 import type { IconComponent } from "@harmony/ui/src/components/core/icons";
 import { useHarmonyContext } from "../../harmony-context"
+import { useHarmonyStore } from "../../hooks/state";
 
 export const WelcomeModal: React.FunctionComponent = () => {
-    const {setShowWelcomeScreen, showWelcomeScreen} = useHarmonyContext();
+    const showWelcomeScreen = useHarmonyStore(state => state.showWelcomeScreen);
+    const updateWelcomeScreen = useHarmonyStore(state => state.updateWelcomeScreen);
     const [page, setPage] = useState(0);
 
     useEffect(() => {
@@ -28,7 +29,7 @@ export const WelcomeModal: React.FunctionComponent = () => {
     const onNext = () => {
         const nextPage = page + 1;
         if (nextPage >= pages.length) {
-            setShowWelcomeScreen(false);
+            updateWelcomeScreen(false);
         } else {
             setPage(page + 1);
         }
@@ -37,7 +38,7 @@ export const WelcomeModal: React.FunctionComponent = () => {
     const Page = pages[page];
     
     return (
-        <HarmonyModal maxWidthClassName="hw-max-w-5xl" show={showWelcomeScreen === true || typeof showWelcomeScreen === 'number'} onClose={() => setShowWelcomeScreen(false)} editor>
+        <HarmonyModal maxWidthClassName="hw-max-w-5xl" show={showWelcomeScreen === true || typeof showWelcomeScreen === 'number'} onClose={() => {updateWelcomeScreen(false)}} editor>
             <div className="hw-flex hw-flex-col hw-text-center hw-gap-4">
                 <Page onNext={onNext}/>
             </div>

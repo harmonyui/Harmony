@@ -3,7 +3,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
-import { loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
+import { indexComponentsRequestSchema, indexComponentsResponseSchema, loadRequestSchema, loadResponseSchema, publishRequestSchema, updateRequestBodySchema} from '@harmony/util/src/types/network';
 import type { PublishResponse, UpdateResponse } from '@harmony/util/src/types/network';
 import { getLocationsFromComponentId, reverseUpdates, translateUpdatesToCss } from "@harmony/util/src/utils/component";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
@@ -11,7 +11,7 @@ import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
 import { TailwindConverter } from 'css-to-tailwindcss';
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
-import { indexCodebase, indexFiles} from "../services/indexor/indexor";
+import { formatComponentAndErrors, indexFiles} from "../services/indexor/indexor";
 import { getCodeSnippet } from "../services/indexor/github";
 //import { updateComponentIdsFromUpdates } from "../services/updator/local";
 import { createTRPCRouter, publicProcedure } from "../trpc";
@@ -52,39 +52,20 @@ export const editorRouter = createTRPCRouter({
 				throw new Error(`Cannot find account tied to branch ${branchId}`);
 			}
 
-			let updates: ComponentUpdate[] = [];
-
-			const query = await prisma.$queryRaw<{ action: string, type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, parentId: string, isGlobal: boolean }[]>`
-                SELECT u.action, u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", e.id, e.parent_id as "parentId" FROM "ComponentUpdate" u
-                INNER JOIN "ComponentElement" e on e.id = component_id
-                WHERE u.branch_id = ${branchId}
-                ORDER BY u.date_modified ASC`
-
-
-			updates = query.map(up => ({
-				action: up.action as ComponentUpdate['action'],
-				type: up.type as ComponentUpdate['type'],
-				name: up.name,
-				value: up.value,
-				oldValue: up.oldValue,
-				componentId: up.id,
-				parentId: up.parentId,
-				childIndex: up.childIndex,
-				isGlobal: up.isGlobal
-			}));
+			const updates = await ctx.componentUpdateRepository.getUpdates(branchId);
 
 			const githubRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
-			const githubCache = ctx.gitRepositoryFactory.createGithubCache();
-
+			
             const ref = await githubRepository.getBranchRef(repository.branch);
 
             //If the current repository ref is out of date, that means we have some
             //new commits that might affect our previously indexed component elements.
             //Let's go through the diffs and update those component ids
             if (ref !== repository.ref) {
-                // await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
-				
-				await updateFileCache(ctx.gitRepositoryFactory, repository, repository.ref, ref);
+				if (!repository.ref.startsWith('http')) {
+					// await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
+					await updateFileCache(ctx.gitRepositoryFactory, repository, repository.ref, ref);
+				}
 				await prisma.repository.update({
                     where: {
                         id: repository.id,
@@ -101,7 +82,7 @@ export const editorRouter = createTRPCRouter({
                 }
             });
 
-			const {harmonyComponents, errorElements} = await indexCodebase('', githubRepository, githubCache);
+			
 
 			const isDemo = accountTiedToBranch.role === 'quick';
 
@@ -111,11 +92,9 @@ export const editorRouter = createTRPCRouter({
 					id: branch.id,
 					name: branch.label
 				})),
-				errorElements: isDemo ? [] : errorElements.map(element => ({ componentId: element.id, type: element.type })),
 				pullRequest: pullRequest || undefined,
 				showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
 				isDemo,
-				harmonyComponents
 			}
 		}),
 	saveProject: publicProcedure
@@ -203,19 +182,7 @@ export const editorRouter = createTRPCRouter({
 				}
 			}
 
-			await Promise.all(updates.map(up => prisma.componentUpdate.create({
-				data: {
-					component_id: up.componentId,
-					action: up.action,
-					type: up.type,
-					name: up.name,
-					value: up.value,
-					branch_id: branchId,
-					old_value: up.oldValue,
-					childIndex: up.childIndex,
-					is_global: up.isGlobal
-				}
-			})))
+			await ctx.componentUpdateRepository.createUpdates(updates, branchId);
 
 			const reversed = reverseUpdates(errorUpdates);
 			const response: UpdateResponse = { errorUpdates: reversed };
@@ -260,6 +227,28 @@ export const editorRouter = createTRPCRouter({
 			const response: PublishResponse = { pullRequest: newPullRequest };
 
 			return response;
+		}),
+	indexComponents: publicProcedure
+		.input(indexComponentsRequestSchema)
+		.output(indexComponentsResponseSchema)
+		.mutation(async ({ctx, input}) => {
+			const {branchId} = input;
+			const branch = await getBranch({ prisma: ctx.prisma, branchId });
+			if (!branch) {
+				throw new Error(`Cannot find branch with id ${branchId}`);
+			}
+
+			const repository = await getRepository({ prisma: ctx.prisma, repositoryId: branch.repositoryId });
+			if (!repository) {
+				throw new Error(`Cannot find repository with id ${branch.repositoryId}`);
+			}
+
+			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
+			
+			const instances = await indexForComponents(input.components, gitRepository);
+			const {harmonyComponents, errorElements} = formatComponentAndErrors(instances);
+
+			return {harmonyComponents, errorElements: errorElements.map(error => ({componentId: error.id, type: error.type}))};
 		})
 })
 

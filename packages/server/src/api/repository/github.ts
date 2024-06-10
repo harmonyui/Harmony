@@ -195,12 +195,16 @@ export class GithubRepository implements GitRepository {
 
         const cleanFile = file.startsWith('/') ? file.substring(1) : file;
 
-        const refKey = ref ? ref : await this.getBranchRef(this.repository.branch);
+        const refKey = ref ? ref : this.repository.ref;
         const cacheKey = {repo: this.repository.name, path: cleanFile, ref: refKey}
         
         const cachedFile = await this.gitCache.getFileContents(cacheKey);
         if (cachedFile) {
-            return decodeContent(cachedFile);
+            try {
+                return decodeContent(cachedFile);
+            } catch(err) {
+                console.log(err);
+            }
         }
 
         const { data: fileInfo } = await octokit.rest.repos.getContent({

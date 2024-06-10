@@ -539,7 +539,7 @@ describe("indexor", () => {
 
             const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
             expect(result).toBeTruthy();
-            expect(componentElements.length).toBe(10);
+            expect(componentElements.length).toBe(15);
 
             expect(componentElements[2].props.length).toBe(2);
             expect(componentElements[2].props[0].type).toBe('text');
@@ -1038,6 +1038,15 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     const ComponentComplex = ({children}) => {
         return (
             <div><Icon/> {children}</div>
+        )
+    }
+
+    const RecursiveComponent = ({label}) => {
+        const newLabel = label + 'bob';
+        return (
+            <div>
+                <RecursiveComponent label={newLabel}/>
+            </div>
         )
     }
     `

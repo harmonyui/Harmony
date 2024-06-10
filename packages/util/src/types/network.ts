@@ -29,8 +29,6 @@ export const loadResponseSchema = z.object({
 		id: z.string(),
 		name: z.string()
 	})),
-	harmonyComponents: z.array(harmonyComponentInfoSchema),
-	errorElements: z.array(componentErrorSchema),
 	pullRequest: z.optional(pullRequestSchema),
 	showWelcomeScreen: z.boolean(),
 	isDemo: z.boolean()
@@ -50,6 +48,18 @@ export const publishResponseSchema = z.object({
 	pullRequest: pullRequestSchema
 });
 export type PublishResponse = z.infer<typeof publishResponseSchema>;
+
+export const indexComponentsRequestSchema = z.object({
+	branchId: z.string(),
+	components: z.array(z.string()),
+})
+export type IndexComponentsRequest = z.infer<typeof indexComponentsRequestSchema>;
+
+export const indexComponentsResponseSchema = z.object({
+	harmonyComponents: z.array(harmonyComponentInfoSchema),
+	errorElements: z.array(componentErrorSchema)
+})
+export type IndexComponentsResponse = z.infer<typeof indexComponentsResponseSchema>;
 
 export const emailFeedbackRequestSchema = z.object({
 	name: z.string(),

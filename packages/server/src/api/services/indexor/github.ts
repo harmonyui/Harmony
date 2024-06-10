@@ -1,6 +1,8 @@
+/* eslint-disable @typescript-eslint/require-await -- ok*/
 /* eslint-disable no-useless-escape -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation } from "@harmony/util/src/types/component";
+import { isValidPath } from "@harmony/util/src/utils/common";
 import type { GitRepository } from "../../repository/github";
 import type { GithubCache } from "../../repository/cache";
 
@@ -19,7 +21,7 @@ export class IndexingFiles {
 		}
 
 		const fileContents: FileAndContent[] = [];
-		await this.fromDir(startDirName, /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(js|tsx|jsx)$/, (filename, content) => {
+		await this.fromDir(startDirName, (filename, content) => {
 			fileContents.push({file: filename, content});
 		});
 
@@ -49,7 +51,7 @@ export class IndexingFiles {
 	}
 
 	private async getCacheKey(): Promise<{repo: string, ref: string}> {
-		const ref = await this.gitRepository.getBranchRef(this.gitRepository.repository.branch);
+		const ref = this.gitRepository.repository.ref;
 		const repo = this.gitRepository.repository.name;
 		return {ref, repo};
 	}
@@ -59,16 +61,16 @@ export class IndexingFiles {
 		await this.githubCache.setIndexingFiles(key, fileContents.map(fileContent => fileContent.file));
 	}
 
-	private async fromDir(startPath: string, filter: RegExp, callback: (filename: string, content: string) => void) {
+	private async fromDir(startPath: string, callback: (filename: string, content: string) => void) {
 		const files = await this.gitRepository.getContentOrDirectory(startPath);
 
 		if (Array.isArray(files)) {
 			for (const info of files) {
-				if (info.type === 'dir' || filter.test(info.path)) {
-					await this.fromDir(info.path, filter, callback);
+				if (info.type === 'dir' || isValidPath(info.path)) {
+					await this.fromDir(info.path, callback);
 				}
 			}
-		} else if ('content' in files && filter.test(files.path)) {
+		} else if ('content' in files && isValidPath(files.path)) {
 			callback(files.path, atob(files.content));
 		}
 	}
