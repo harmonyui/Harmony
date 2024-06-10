@@ -1,49 +1,26 @@
-import type { StateCreator } from "zustand";
-import type { ComponentProp } from "@harmony/util/src/types/component";
+import type { ComponentProp, HarmonyComponentInfo } from "@harmony/util/src/types/component";
 import type { ComponentElement} from "../../inspector/component-identifier";
 import { getComponentElementFiber } from "../../inspector/component-identifier";
 import { getFiberName } from "../../inspector/inspector-dev";
 import type { HarmonyComponentsState } from "./harmony-components";
+import { createHarmonySlice } from "./factory";
 
 export interface ComponentState {
     selectedComponent: ComponentElement | undefined
     rootComponent: ComponentElement | undefined
     selectElement: (element: HTMLElement | undefined) => void
-    updateRootElement: (rootElement: HTMLElement) => void
 }
 
-export const createComponentStateSlice: StateCreator<ComponentState & HarmonyComponentsState, [], [], ComponentState> = (set, get) => ({
-    selectedComponent: undefined,
-    rootComponent: undefined,
-    selectElement(element) {
-        const rootComponent = get().rootComponent;
-        if (!rootComponent || !element) {
-            set({selectedComponent: undefined});
-            return;
+export const createComponentStateSlice = createHarmonySlice<ComponentState, HarmonyComponentsState>((set, get) => {
+    const updateRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
+        const rootElement = document.getElementById('harmony-section');
+        if (!rootElement) {
+            throw new Error("Cannot find root element");
         }
-
-        const findElement = (currComponent: ComponentElement, elementIdToFind: string): ComponentElement | undefined => {
-            if (currComponent.id === elementIdToFind) return currComponent;
-
-            for (const child of currComponent.children) {
-                const foundInChild = findElement(child, elementIdToFind);
-                if (foundInChild) {
-                    return foundInChild;
-                }
-            }
-
-            return undefined;
-        }
-
-        const id = element.dataset.harmonyText === 'true' ? element.parentElement?.dataset.harmonyId : element.dataset.harmonyId;
-        const component = findElement(rootComponent, id || '');
-        set({selectedComponent: component});
-    },
-    updateRootElement(rootElement) {
-        const harmonyComponents = get().harmonyComponents;
+            
         const getComponentFromElement = (element: HTMLElement): ComponentElement | undefined => {
             const id = element.dataset.harmonyId
-		    const harmonyComponent = harmonyComponents.find(c => c.id === id);
+            const harmonyComponent = harmonyComponents.find(c => c.id === id);
 
             if (harmonyComponent && id) {
                 const name = harmonyComponent.name
@@ -106,7 +83,43 @@ export const createComponentStateSlice: StateCreator<ComponentState & HarmonyCom
             return children;
         }
 
-		const rootComponent = getComponentFromElement(rootElement);
+        const rootComponent = getComponentFromElement(rootElement);
         set({rootComponent});
-    },
-})
+    }
+    
+    return {
+        state: {
+            selectedComponent: undefined,
+            rootComponent: undefined,
+            selectElement(element: HTMLElement | undefined) {
+                const rootComponent = get().rootComponent;
+                if (!rootComponent || !element) {
+                    set({selectedComponent: undefined});
+                    return;
+                }
+
+                const findElement = (currComponent: ComponentElement, elementIdToFind: string): ComponentElement | undefined => {
+                    if (currComponent.id === elementIdToFind) return currComponent;
+
+                    for (const child of currComponent.children) {
+                        const foundInChild = findElement(child, elementIdToFind);
+                        if (foundInChild) {
+                            return foundInChild;
+                        }
+                    }
+
+                    return undefined;
+                }
+
+                const id = element.dataset.harmonyText === 'true' ? element.parentElement?.dataset.harmonyId : element.dataset.harmonyId;
+                const component = findElement(rootComponent, id || '');
+                set({selectedComponent: component ? {...component, element} : undefined});
+            },
+        },
+        dependencies: {
+            harmonyComponents(harmonyComponents) {
+                updateRootElement(harmonyComponents);
+            },
+        }
+    }
+});

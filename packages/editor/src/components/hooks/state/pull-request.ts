@@ -1,7 +1,7 @@
 import type { PullRequest } from "@harmony/util/src/types/branch";
 import type { PublishRequest, PublishResponse } from "@harmony/util/src/types/network";
-import type { StateCreator } from "zustand";
 import { publishProject } from "../../../data-layer";
+import { createHarmonySlice } from "./factory";
 
 export interface PullRequestState {
     //The pull request object after a publish has been made
@@ -13,7 +13,7 @@ export interface PullRequestState {
     publishChanges: (request: PublishRequest) => Promise<PublishResponse | undefined>
 }
 
-export const createPullRequestSlice: StateCreator<PullRequestState> = (set) => ({
+export const createPullRequestSlice = createHarmonySlice<PullRequestState>((set) => ({
     pullRequest: undefined,
     publishState: undefined,
     updatePullRequest(value) {
@@ -33,4 +33,4 @@ export const createPullRequestSlice: StateCreator<PullRequestState> = (set) => (
 			return undefined
 		}
 	}
-})
+}))

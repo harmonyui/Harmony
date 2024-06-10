@@ -1,9 +1,9 @@
-import type { StateCreator } from "zustand";
 import { loadProject } from "../../../data-layer";
 import type { PullRequestState } from "./pull-request";
 import type { ComponentUpdateState } from "./component-update";
+import { createHarmonySlice } from "./factory";
 
-interface ProjectInfoStateBase {
+export interface ProjectInfoState {
     currentBranch: {name: string, id: string}
     repositoryId: string
     branches: {name: string, id: string}[]
@@ -14,8 +14,7 @@ interface ProjectInfoStateBase {
     initializeProject: (props: {branchId: string, repositoryId: string}) => Promise<void>
 }
 
-export type ProjectInfoState = ProjectInfoStateBase & PullRequestState & ComponentUpdateState
-export const createProjectInfoSlice: StateCreator<ProjectInfoState, [], [], ProjectInfoStateBase> = (set) => ({
+export const createProjectInfoSlice = createHarmonySlice<ProjectInfoState, PullRequestState & ComponentUpdateState>((set) => ({
     branches: [],
     showWelcomeScreen: false,
     isDemo: false,
@@ -40,4 +39,4 @@ export const createProjectInfoSlice: StateCreator<ProjectInfoState, [], [], Proj
             console.log(err);
         }
     }
-})
+}));
