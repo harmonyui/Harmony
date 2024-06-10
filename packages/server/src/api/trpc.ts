@@ -22,7 +22,7 @@ import { auth } from "@clerk/nextjs";
 import type { FullSession, Session } from "../auth";
 import { getServerAuthSession } from "../auth";
 import type { EmailService} from "./services/email-service";
-import type { GitRepositoryFactory} from "./repository/github";
+import type { GitRepositoryFactory} from "./repository/git/types";
 import {PrismaHarmonyComponentRepository, type HarmonyComponentRepository} from './repository/database/component-element'
 import {gitRepositoryFactory, mailer, componentUpdateRepository } from "./index";
 import { ComponentUpdateRepository } from "./repository/database/component-update";

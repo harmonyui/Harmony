@@ -7,7 +7,7 @@ import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-mer
 import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
 import { getCodeSnippet } from "../indexor/github";
 import type { HarmonyComponent, Attribute } from "../indexor/types";
-import type { GitRepository } from "../../repository/github";
+import type { GitRepository } from "../../repository/git/types";
 import { indexForComponents } from "../indexor/indexor";
 import { addPrefixToClassName, converter } from "./css-conveter";
 

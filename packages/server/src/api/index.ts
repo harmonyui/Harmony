@@ -1,10 +1,10 @@
 import type { Repository } from "@harmony/util/src/types/branch";
 import { prisma } from "@harmony/db/lib/prisma";
-import { RedisGithubCache } from "./repository/cache";
-import type { GitRepositoryFactory} from "./repository/github";
-import { GithubRepositoryFactory, LocalGitRepository } from "./repository/github";
 import { NodeMailerEmailService } from "./services/email-service";
 import { PrismaComponentUpdateRepository } from "./repository/database/component-update";
+import { RedisGithubCache } from "./repository/cache/redis";
+import { GithubRepositoryFactory, LocalGitRepository } from "./repository/git/github";
+import type { GitRepositoryFactory } from "./repository/git/types";
 
 export const mailer = new NodeMailerEmailService();
 export const redisGithubCache = new RedisGithubCache();
