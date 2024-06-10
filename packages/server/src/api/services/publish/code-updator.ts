@@ -41,7 +41,7 @@ export class CodeUpdator {
         const updateInfo = await this.getUpdateInfo(updates, elementInstances);
 
         const repository = this.gitRepository.repository;
-        const codeUpdates: CodeUpdateInfo[] = (await Promise.all(updateInfo.map(info => this.getChangeAndLocation(info, repository, this.gitRepository, repository.name)))).flat();
+        const codeUpdates: CodeUpdateInfo[] = (await Promise.all(updateInfo.map(info => this.getChangeAndLocation(info, repository, this.gitRepository, repository.branch)))).flat();
         codeUpdates.sort((a, b) => a.location.start - b.location.start);
 
         const fileUpdates = this.transformIntoFileUpdates(codeUpdates);
