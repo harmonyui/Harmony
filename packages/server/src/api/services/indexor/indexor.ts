@@ -16,8 +16,8 @@ import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { PrismaHarmonyComponentRepository } from "../../repository/database/component-element";
-import type { GithubCache } from "../../repository/cache";
-import type { GitRepository } from "../../repository/github";
+import type { GithubCache } from "../../repository/cache/types";
+import type { GitRepository } from "../../repository/git/types";
 import type { Attribute, HarmonyComponent } from "./types";
 import { IndexingFiles } from "./github";
 
