@@ -2,7 +2,6 @@
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
 import { camelToKebab, round } from "@harmony/util/src/utils/common";
-import type { Repository } from "@harmony/util/src/types/branch";
 import { mergeClassesWithScreenSize } from "@harmony/util/src/utils/tailwind-merge";
 import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
 import { getCodeSnippet } from "../indexor/github";
@@ -13,18 +12,18 @@ import { addPrefixToClassName, converter } from "./css-conveter";
 
 export type FileUpdateInfo = Record<string, { filePath: string, locations: { snippet: string, start: number, end: number, updatedTo: number, diff: number }[] }>
 
-interface UpdateInfo {
+export interface UpdateInfo {
+    componentId: string
     component: HarmonyComponent,
 	attributes: Attribute[],
-	update: ComponentUpdate,
+	name: string,
 	type: ComponentUpdate['type'],
 	oldValue: string,
 	value: string,
 	font?: string
 }
 
-interface CodeUpdateInfo {
-    update: ComponentUpdate, 
+export interface CodeUpdateInfo {
     dbLocation: ComponentLocation, 
     location: (ComponentLocation & { updatedTo: number }), 
     updatedCode: string, 
@@ -41,7 +40,7 @@ export class CodeUpdator {
         const updateInfo = await this.getUpdateInfo(updates, elementInstances);
 
         const repository = this.gitRepository.repository;
-        const codeUpdates: CodeUpdateInfo[] = (await Promise.all(updateInfo.map(info => this.getChangeAndLocation(info, repository, this.gitRepository, repository.branch)))).flat();
+        const codeUpdates: CodeUpdateInfo[] = (await Promise.all(updateInfo.map(info => this.getChangeAndLocation(info, repository.branch)))).flat();
         codeUpdates.sort((a, b) => a.location.start - b.location.start);
 
         const fileUpdates = this.transformIntoFileUpdates(codeUpdates);
@@ -67,7 +66,7 @@ export class CodeUpdator {
                     curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`;
                 }
             }
-            const classNameUpdate = curr.type === 'className' ? prev.find(({ update: up }) => up.componentId === curr.componentId && up.type === 'className') : undefined;
+            const classNameUpdate = curr.type === 'className' ? prev.find((up) => up.componentId === curr.componentId && up.type === 'className') : undefined;
             if (classNameUpdate) {
                 if (curr.name !== 'font') {
                     classNameUpdate.value += curr.value;
@@ -124,15 +123,17 @@ export class CodeUpdator {
                         sameComponent.font = curr.value;
                     }
                 } else {
-                    prev.push({ update: curr, component, oldValue: curr.oldValue, value, type: curr.type, font, attributes });
+                    prev.push({ componentId: curr.componentId, name: curr.name, component, oldValue: curr.oldValue, value, type: curr.type, font, attributes });
                 }
             }
             return prev;
         }, Promise.resolve([]));
     }
 
-    private async getChangeAndLocation(update: UpdateInfo, repository: Repository, gitRepository: GitRepository, branchName: string): Promise<CodeUpdateInfo[]> {
+    private async getChangeAndLocation(update: UpdateInfo, branchName: string): Promise<CodeUpdateInfo[]> {
         const { component, type, oldValue: _oldValue, attributes } = update;
+        const gitRepository = this.gitRepository;
+        const repository = this.gitRepository.repository;
         
         interface LocationValue {
             location: ComponentLocation,
@@ -161,7 +162,7 @@ export class CodeUpdator {
             const start = matchEnd;
             const end = start;
             const updatedTo = value.length + start;
-            return { location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: value, update: update.update, dbLocation: location, attribute };
+            return { location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: value, dbLocation: location, attribute };
         }
     
         interface AddClassName {
@@ -192,14 +193,14 @@ export class CodeUpdator {
                 throw new Error(`There was no update for tailwind classes, snippet: ${code}, oldValue: ${oldValue}`);
             }
     
-            return { location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: newClass, update: update.update, dbLocation: location, attribute };
+            return { location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: newClass, dbLocation: location, attribute };
         }
     
         switch (type) {
             case 'text':
                 {
                     const textAttributes = attributes.filter(attr => attr.type === 'text');
-                    const index = parseInt(update.update.name);
+                    const index = parseInt(update.name);
                     const textAttribute = textAttributes.find(attr => attr.index === index);
                     const { location, value } = getLocationAndValue(textAttribute, component);
     
@@ -212,7 +213,7 @@ export class CodeUpdator {
                         const commentValue = `Change inner text for ${component.name} tag from ${oldValue} to ${update.value}`;
                         results.push(await addCommentToJSXElement({ location, attribute: textAttribute, commentValue }))
                     } else {
-                        results.push({ location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: update.value, update: update.update, dbLocation: location, attribute: textAttribute });
+                        results.push({ location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: update.value, dbLocation: location, attribute: textAttribute });
                     }
                 }
                 break;
@@ -238,7 +239,7 @@ export class CodeUpdator {
                             const elementSnippet = await getCodeSnippet(gitRepository)(location, branchName);
     
                             //TODO: Make the tailwind prefix part dynamic
-                            const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
+                            const oldClasses = value;
                             const { newClass, commentValue, oldClass } = getNewValueAndComment(oldClasses, location);
     
                             return {
@@ -250,12 +251,13 @@ export class CodeUpdator {
                         const getAttributeFromClass = async (attribute: Attribute | undefined, _newClass: string): Promise<{ attribute: AttributeUpdate, oldClass: string | undefined }> => {
                             return getAttribute(attribute, (oldClasses, location) => {
                                 //If we have already merged classes, then merge out new stuff into what was already merged
-                                const oldStuff = attributeUpdates.find(attr => attr.location === location)?.newClass ?? oldClasses;
+                                const oldStuff = replaceAll(attributeUpdates.find(attr => attr.location === location)?.newClass ?? oldClasses, repository.tailwindPrefix || '', '');
                                 const mergedIt = mergeClassesWithScreenSize(oldStuff, _newClass, DEFAULT_WIDTH)
                                 const newClass = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
                                 const commentValue = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
-    
-                                return { newClass, oldClass: oldStuff, commentValue };
+                                const oldWithPrefix = repository.tailwindPrefix && oldStuff ? addPrefixToClassName(oldStuff, repository.tailwindPrefix) : oldStuff;
+
+                                return { newClass, oldClass: oldWithPrefix, commentValue };
                             });
                         }
     
@@ -321,7 +323,7 @@ export class CodeUpdator {
                         //TODO: This is temporary. It shouldn't have 'className:'
                         locationAndValue.value = locationAndValue.value?.replace('className:', '');
                         const { location } = locationAndValue;
-                        let valuesNewLined = update.value.replaceAll(';', ';\n');
+                        let valuesNewLined = replaceAll(update.value, ';', ';\n');
                         valuesNewLined = update.font ? `font className: ${update.value}\n\n${valuesNewLined}` : valuesNewLined;
                         results.push(await addCommentToJSXElement({ location, commentValue: valuesNewLined, attribute: classNameAttributes[0] }));
                     }
@@ -377,4 +379,12 @@ export class CodeUpdator {
 
         return commitChanges;
     }
+}
+
+const replaceAll = <T extends string | undefined>(str: T, findStr: string, withStr: string): T => {
+    if (!str) return str;
+
+    const newStr = str.replace(new RegExp(findStr, 'g'), withStr);
+
+    return newStr as T;
 }
