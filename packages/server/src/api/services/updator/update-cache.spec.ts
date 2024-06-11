@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/require-await -- ok*/
 import { describe, expect, it } from "vitest";
-import { GitRepositoryFactory } from "../../repository/github";
+import type { GitRepositoryFactory } from "../../repository/git/types";
+import type { GithubCache } from "../../repository/cache/types";
 import { updateFileCache } from "./update-cache";
-import { GithubCache } from "../../repository/cache";
 
 describe('update-cache', () => {
     const setup = (changes: {path: string, type: 'add' | 'remove' | 'change', content: string}[]) => {

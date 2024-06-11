@@ -11,13 +11,13 @@
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from "@harmony/db/lib/prisma";
 import type { ComponentProp, ComponentLocation, HarmonyComponentInfo } from "@harmony/util/src/types/component";
-import { getLineAndColumn, hashComponentId } from "@harmony/util/src/utils/component";
+import { getLineAndColumn, getLocationsFromComponentId, hashComponentId } from "@harmony/util/src/utils/component";
 import {parse} from '@babel/parser';
 import traverse from '@babel/traverse';
 import * as t from '@babel/types';
 import { PrismaHarmonyComponentRepository } from "../../repository/database/component-element";
-import type { GithubCache } from "../../repository/cache";
-import type { GitRepository } from "../../repository/github";
+import type { GithubCache } from "../../repository/cache/types";
+import type { GitRepository } from "../../repository/git/types";
 import type { Attribute, HarmonyComponent } from "./types";
 import { IndexingFiles } from "./github";
 
@@ -75,6 +75,24 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 
 	const elementInstances = getCodeInfoAndNormalizeFromFiles(fileContents, componentDefinitions, instances, {});
 	return elementInstances;
+}
+
+export async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
+	const readFile = async (filepath: string) => {
+		//TOOD: Need to deal with actual branch probably at some point
+		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
+
+		return content;
+	}
+
+	//TODO: This does not follow the file up the whole tree which means it does not know
+	// all of the possible locations an attribute can be saved. Find a better way to do this
+	const locations = componentIds.flatMap(componentId => getLocationsFromComponentId(componentId));
+	const paths = locations.map(location => location.file);
+	const result = await indexFiles(paths, readFile);
+	if (!result) return [];
+
+	return result.elementInstance;
 }
 
 export function formatComponentAndErrors(elementInstances: false | HarmonyComponent[]) {

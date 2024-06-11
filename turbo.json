@@ -19,7 +19,9 @@
 		"dependsOn": ["^db:generate"]
 	  },
 	  "format": {},
-	  "typecheck": {},
+	  "typecheck": {
+		"cache": false
+	  },
 	  "db:push": {
 		"cache": false
 	  },

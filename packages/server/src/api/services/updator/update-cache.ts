@@ -1,6 +1,6 @@
 import type { Repository } from "@harmony/util/src/types/branch";
 import { isValidPath } from "@harmony/util/src/utils/common";
-import type { GitRepositoryFactory } from "../../repository/github";
+import type { GitRepositoryFactory } from "../../repository/git/types";
 
 export async function updateFileCache(gitFactory: GitRepositoryFactory, repository: Repository, oldRef: string, newRef: string) {
     const gitRepository = gitFactory.createGitRepository(repository);

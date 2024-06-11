@@ -1,24 +1,5 @@
 import Redis from 'ioredis';
-
-interface FileCacheKeyInfo {
-    repo: string, 
-    path: string,
-    ref: string
-}
-
-interface IndexingCacheKeyInfo {
-    repo: string,
-    ref: string
-}
-
-export interface GithubCache {
-    getFileOrDirectoryContents: (keyInfo: FileCacheKeyInfo) => Promise<string | {path: string, type: string}[] | null>;
-    setFileOrDirectoryContents: (keyInfo: FileCacheKeyInfo, contents: string | {path: string, type: string}[]) => Promise<void>;
-    getFileContents: (keyInfo: FileCacheKeyInfo) => Promise<string | null>;
-    setFileContents: (keyInfo: FileCacheKeyInfo, content: string) => Promise<void>;
-    getIndexingFiles: (keyInfo: IndexingCacheKeyInfo) => Promise<string[] | null>;
-    setIndexingFiles: (keyInfo: IndexingCacheKeyInfo, files: string[]) => Promise<void>;
-}
+import type { FileCacheKeyInfo, GithubCache, IndexingCacheKeyInfo } from './types';
 
 export class RedisGithubCache implements GithubCache {
     private redisClient: Redis;
