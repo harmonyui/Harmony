@@ -345,7 +345,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 											throw new Error("Invalid location");
 										}
 										const {end} = parent.node.openingElement.name.loc;
-										sameAttributesInElement.push({...attribute, name: 'string', value: '', locationType: 'add', location: {file: parent.location.file, start: end.index, end: end.index}});
+										//Even though this is type string, we need to know what the name of the class is we are adding, so we set that as the attribute value
+										sameAttributesInElement.push({...attribute, reference: parent, name: 'string', value: getAttributeValue(attribute), locationType: 'add', location: {file: parent.location.file, start: end.index, end: end.index}});
 									}
 									//If we have some things to add, cheerio!
 									if (sameAttributesInElement.length > 0) {
@@ -632,7 +633,7 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 							const createAttribute = (type: AttributeType, name: string, propertyName: string | undefined, value: string | undefined, locationType: string, location: ComponentLocation): Attribute => {
 								//For className attributes in the props, only include them as className if it has class in the name
 								//in order to filter out properties that don't have classes (see app/classNameTests.tsx for more details)		
-								if (type === 'className' && locationType === 'props' && !propertyName?.includes('class')) {
+								if (type === 'className' && locationType === 'props' && !propertyName?.toLowerCase()?.includes('class')) {
 									return createAttribute('property', name, propertyName, value, locationType, location);
 								}
 								
