@@ -24,6 +24,7 @@ import { HarmonyPanel } from "./panel/harmony-panel";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import { getBoundingRect } from "./snapping/calculations";
 import { useHarmonyStore } from "./hooks/state";
+import { GlobalUpdatePopup } from "./panel/global-change-popup";
 
 export function findElementFromId(componentId: string, childIndex: number): HTMLElement | undefined {
 	const selector = `[data-harmony-id="${componentId}"]`;
@@ -92,12 +93,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const componentUpdates = useHarmonyStore((state) => state.componentUpdates);
 	const isInitialized = useHarmonyStore((state) => state.isInitialized);
 	const publishState = useHarmonyStore(state => state.pullRequest);
+	const globalUpdate = useHarmonyStore(state => state.globalUpdate);
+	const onApplyGlobal = useHarmonyStore(state => state.onApplyGlobal);
 	const initializeProject = useHarmonyStore(state => state.initializeProject);
 	const updateComponentsFromIds = useHarmonyStore((state) => state.updateComponentsFromIds);
 	const selectedComponent = useHarmonyStore(state => state.selectedComponent?.element);
 	const setSelectedComponent = useHarmonyStore(state => state.selectElement);
 
-	const executeCommand = useComponentUpdator({
+	const { executeCommand, onUndo } = useComponentUpdator({
 		isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
 			setUpdateOverlay(updateOverlay + 1);
 		}, onError: setError
@@ -127,7 +130,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const initialize = async () => {
 			onHistoryChange();
 
-			await initializeProject({branchId, repositoryId});
+			await initializeProject({ branchId, repositoryId });
 		}
 
 		void initialize();
@@ -221,7 +224,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				const componentIds: string[] = [];
 				recurseElements(rootComponent, [updateElements(componentUpdates, componentIds)]);
 
-				void updateComponentsFromIds({branchId, components: componentIds}, rootComponent);
+				void updateComponentsFromIds({ branchId, components: componentIds }, rootComponent);
 			}
 			const mutationObserver = new MutationObserver(() => {
 				recurseAndUpdateElements();
@@ -242,7 +245,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 	const updateElements = (componentUpdates: ComponentUpdate[], componentIds: string[]) => (element: HTMLElement): void => {
 		if (!rootComponent) return;
-	
+
 		let id = element.dataset.harmonyId;
 		if (id && id !== 'undefined') {
 			const split = id.split('#');
@@ -349,7 +352,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
 		const update: ComponentUpdateWithoutGlobal = { componentId, type: 'component', name: 'reorder', value, oldValue, childIndex };
-		
+
 		onAttributesChange([update], false);
 	})
 
@@ -364,7 +367,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 		executeCommand(updates.map(update => ({ ...update, isGlobal: false })), execute);
 
-		console.log('global change', globalChange)
+		if (globalChange) {
+			const update: ComponentUpdate = {
+				componentId: updates[0].componentId,
+				type: updates[0].type,
+				name: updates[0].name,
+				value: updates[0].value,
+				oldValue: updates[0].oldValue,
+				childIndex: updates[0].childIndex,
+				isGlobal: true
+			}
+			onApplyGlobal(update);
+		}
 
 		//setCurrUpdates({updates, execute});
 	}
@@ -418,7 +432,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					</button>
 				</div>}
 				<WelcomeModal />
-				{/* {currUpdates ? <GlobalUpdateModal updates={currUpdates.updates || []} onFinish={onFinishGlobalUpdates}/> : null} */}
+				<GlobalUpdatePopup onUndo={onUndo} executeCommand={executeCommand} />
 			</HarmonyContext.Provider>}
 		</>
 	)
@@ -645,7 +659,7 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 	// }, []);
 
 
-	return executeCommand;
+	return { executeCommand, onUndo };
 }
 
 const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {

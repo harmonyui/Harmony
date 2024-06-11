@@ -1,14 +1,17 @@
-import type { ComponentProp, HarmonyComponentInfo } from "@harmony/util/src/types/component";
-import type { ComponentElement} from "../../inspector/component-identifier";
+import type { ComponentProp, ComponentUpdate, HarmonyComponentInfo } from "@harmony/util/src/types/component";
+import type { ComponentElement } from "../../inspector/component-identifier";
 import { getComponentElementFiber } from "../../inspector/component-identifier";
 import { getFiberName } from "../../inspector/inspector-dev";
 import type { HarmonyComponentsState } from "./harmony-components";
 import { createHarmonySlice } from "./factory";
+import { Component } from "react";
 
 export interface ComponentState {
     selectedComponent: ComponentElement | undefined
     rootComponent: ComponentElement | undefined
-    selectElement: (element: HTMLElement | undefined) => void
+    selectElement: (element: HTMLElement | undefined) => void,
+    globalUpdate: ComponentUpdate | undefined,
+    onApplyGlobal: (update: ComponentUpdate | undefined) => void,
 }
 
 export const createComponentStateSlice = createHarmonySlice<ComponentState, HarmonyComponentsState>((set, get) => {
@@ -17,7 +20,7 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
         if (!rootElement) {
             throw new Error("Cannot find root element");
         }
-            
+
         const getComponentFromElement = (element: HTMLElement): ComponentElement | undefined => {
             const id = element.dataset.harmonyId
             const harmonyComponent = harmonyComponents.find(c => c.id === id);
@@ -26,7 +29,7 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
                 const name = harmonyComponent.name
                 const isComponent = harmonyComponent.isComponent;
                 const props: ComponentProp[] = harmonyComponent.props;
-    
+
                 return {
                     id,
                     element,
@@ -36,13 +39,13 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
                     isComponent,
                 }
             }
-    
+
             const fiber = getComponentElementFiber(element);
-    
+
             const name = getFiberName(fiber) || '';
             const isComponent = !fiber?.stateNode;
             const props: ComponentProp[] = []
-    
+
             return {
                 id: id || '',
                 element,
@@ -69,7 +72,7 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
                     elementChildren.push(...Array.from(child.children));
                     continue;
                 }
-                
+
                 const childComponent = getComponentFromElement(child);
                 if (childComponent) {
                     children.push(childComponent);
@@ -80,9 +83,9 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
         }
 
         const rootComponent = getComponentFromElement(rootElement);
-        set({rootComponent});
+        set({ rootComponent });
     }
-    
+
     return {
         state: {
             selectedComponent: undefined,
@@ -90,7 +93,7 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
             selectElement(element: HTMLElement | undefined) {
                 const rootComponent = get().rootComponent;
                 if (!rootComponent || !element) {
-                    set({selectedComponent: undefined});
+                    set({ selectedComponent: undefined });
                     return;
                 }
 
@@ -109,7 +112,11 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
 
                 const id = element.dataset.harmonyText === 'true' ? element.parentElement?.dataset.harmonyId : element.dataset.harmonyId;
                 const component = findElement(rootComponent, id || '');
-                set({selectedComponent: component ? {...component, element} : undefined});
+                set({ selectedComponent: component ? { ...component, element } : undefined });
+            },
+            globalUpdate: undefined,
+            onApplyGlobal: (element: ComponentUpdate | undefined) => {
+                set({ globalUpdate: element });
             },
         },
         dependencies: {
