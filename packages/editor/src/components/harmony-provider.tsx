@@ -315,7 +315,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const onTextChange = useEffectEvent((value: string, oldValue: string) => {
 		if (!selectedComponent) return;
 
-		const componentId = selectedComponent.dataset.harmonyText === 'true' ? selectedComponent.parentElement!.dataset.harmonyId : selectedComponent.dataset.harmonyId;
+		let componentId = selectedComponent.dataset.harmonyId;
 		let index = 0;
 		let childIndex = Array.from(selectedComponent.parentElement!.children).indexOf(selectedComponent);
 		if (!componentId) {
@@ -326,6 +326,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				}
 				index = Array.from(element.children).indexOf(selectedComponent);
 				childIndex = Array.from(element.parentElement!.children).indexOf(element)
+				componentId = element.dataset.harmonyId;
 			}
 
 			if (!componentId || index < 0) {
