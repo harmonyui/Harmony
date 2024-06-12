@@ -82,7 +82,7 @@ export const editorRouter = createTRPCRouter({
 				})),
 				pullRequest: pullRequest || undefined,
 				showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
-				isDemo: true,
+				isDemo,
 			}
 		}),
 	saveProject: publicProcedure
