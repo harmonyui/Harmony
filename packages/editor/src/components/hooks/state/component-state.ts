@@ -5,13 +5,14 @@ import { getFiberName } from "../../inspector/inspector-dev";
 import type { HarmonyComponentsState } from "./harmony-components";
 import { createHarmonySlice } from "./factory";
 import { Component } from "react";
+import { ComponentUpdateWithoutGlobal } from "../../harmony-context";
 
 export interface ComponentState {
     selectedComponent: ComponentElement | undefined
     rootComponent: ComponentElement | undefined
     selectElement: (element: HTMLElement | undefined) => void,
-    globalUpdate: ComponentUpdate | undefined,
-    onApplyGlobal: (update: ComponentUpdate | undefined) => void,
+    globalUpdate: ComponentUpdateWithoutGlobal[] | undefined,
+    onApplyGlobal: (updates: ComponentUpdateWithoutGlobal[] | undefined) => void,
 }
 
 export const createComponentStateSlice = createHarmonySlice<ComponentState, HarmonyComponentsState>((set, get) => {
@@ -115,8 +116,18 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
                 set({ selectedComponent: component ? { ...component, element } : undefined });
             },
             globalUpdate: undefined,
-            onApplyGlobal: (element: ComponentUpdate | undefined) => {
-                set({ globalUpdate: element });
+            onApplyGlobal: (updates: ComponentUpdateWithoutGlobal[] | undefined) => {
+                if (!updates) return set({ globalUpdate: undefined })
+                let components = updates.map(update => get().harmonyComponents.find(component => component.id === update.componentId));
+                let globalChange = false;
+                components.forEach(component => {
+                    const updateType = updates.find(update => update.componentId === component?.id)?.type;
+                    const prop = component?.props.find(prop => prop.propName === updateType);
+                    if (prop && !prop.isStatic) globalChange = true;
+                })
+                if (globalChange) {
+                    set({ globalUpdate: updates });
+                }
             },
         },
         dependencies: {

@@ -10,17 +10,15 @@ interface GlobalUpdatePopupProps {
     executeCommand: (update: ComponentUpdate[], execute?: boolean) => void
 }
 export const GlobalUpdatePopup: React.FunctionComponent<GlobalUpdatePopupProps> = ({ onUndo, executeCommand }) => {
-    const update = useHarmonyStore(state => state.globalUpdate);
-    const [show, setShow] = useState(Boolean(update));
+    const updates = useHarmonyStore(state => state.globalUpdate);
+    const [show, setShow] = useState(Boolean(updates));
     const onApplyGlobal = useHarmonyStore(state => state.onApplyGlobal);
 
-    const componentUpdate: ComponentUpdate[] = update ? [update] : [];
-
     useEffect(() => {
-        if (update && !show) {
+        if (updates && !show) {
             setShow(true);
         }
-    }, [show, update]);
+    }, [show, updates]);
 
     useEffect(() => {
         if (show) {
@@ -31,11 +29,11 @@ export const GlobalUpdatePopup: React.FunctionComponent<GlobalUpdatePopupProps> 
 
             return () => clearTimeout(timer);
         }
-    }, [show])
+    }, [show, updates])
 
-    const allInstances = useMemo(() => {
-        if (update) {
-            const ids = update.componentId.split('#');
+    const allInstances = useMemo<number>(() => {
+        if (updates) {
+            const ids = updates[0].componentId.split('#');
             const baseId = ids[ids.length - 1];
 
             const instances = findSameElementsFromId(baseId);
@@ -44,14 +42,18 @@ export const GlobalUpdatePopup: React.FunctionComponent<GlobalUpdatePopupProps> 
         }
 
         return 0;
-    }, [update]);
+    }, [updates]);
 
     return (
         <Popup show={show && allInstances > 1} onClose={() => { setShow(false); onApplyGlobal(undefined) }}>
             <div className="hw-flex hw-justify-between hw-items-center hw-gap-4 hw-mx-4">
                 <div>You have unlinked this property</div>
-                <Button onClick={() => { onUndo(); onApplyGlobal(undefined); setShow(false) }}>Undo</Button>
-                <Button onClick={() => { onUndo(); executeCommand(componentUpdate, true); onApplyGlobal(undefined); setShow(false) }}>Apply All</Button>
+                {updates && (
+                    <>
+                        <Button onClick={() => { onUndo(); onApplyGlobal(undefined); setShow(false) }}>Undo</Button>
+                        <Button onClick={() => { onUndo(); executeCommand(updates.map(update => ({ ...update, isGlobal: true })), true);; onApplyGlobal(undefined); setShow(false) }}>Apply All</Button>
+                    </>
+                )}
             </div>
         </Popup>
     )

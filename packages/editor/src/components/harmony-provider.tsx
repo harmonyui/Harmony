@@ -222,7 +222,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (rootComponent && isInitialized) {
 			const recurseAndUpdateElements = () => {
 				const componentIds: string[] = [];
-				recurseElements(rootComponent, [updateElements(componentUpdates, componentIds)]);
+				recurseElements(rootComponent, [initElements(componentIds)]);
+				recurseElements(rootComponent, [updateElements]);
 
 				void updateComponentsFromIds({ branchId, components: componentIds }, rootComponent);
 			}
@@ -243,7 +244,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 	}, [rootComponent, isInitialized]);
 
-	const updateElements = (componentUpdates: ComponentUpdate[], componentIds: string[]) => (element: HTMLElement): void => {
+	const initElements = (componentIds: string[]) => (element: HTMLElement): void => {
 		if (!rootComponent) return;
 
 		let id = element.dataset.harmonyId;
@@ -259,7 +260,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 			componentIds.push(id);
 		}
-		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
+
 		const children = Array.from(element.childNodes);
 		const textNodes = children.filter(child => child.nodeType === Node.TEXT_NODE);
 		const styles = getComputedStyle(element);
@@ -275,6 +276,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			replaceTextContentWithSpans(element);
 		}
 
+
+	}
+
+	const updateElements = (element: HTMLElement) => {
+		if (!rootComponent) return;
+		const id = element.dataset.harmonyId
+		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (id !== undefined) {
 			const updates = componentUpdates.filter(up => up.componentId === id && up.childIndex === childIndex);
 			makeUpdates(element, updates, rootComponent, fonts);
@@ -357,30 +365,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	})
 
 	const onAttributesChange = (updates: ComponentUpdateWithoutGlobal[], execute = true) => {
-		let components = updates.map(update => harmonyComponents.find(component => component.id === update.componentId));
-		let globalChange = false;
-		components.forEach(component => {
-			const updateType = updates.find(update => update.componentId === component?.id)?.type;
-			const prop = component?.props.find(prop => prop.propName === updateType);
-			if (prop && !prop.isStatic) globalChange = true;
-		})
-
 		executeCommand(updates.map(update => ({ ...update, isGlobal: false })), execute);
-
-		if (globalChange) {
-			const update: ComponentUpdate = {
-				componentId: updates[0].componentId,
-				type: updates[0].type,
-				name: updates[0].name,
-				value: updates[0].value,
-				oldValue: updates[0].oldValue,
-				childIndex: updates[0].childIndex,
-				isGlobal: true
-			}
-			onApplyGlobal(update);
-		}
-
-		//setCurrUpdates({updates, execute});
+		onApplyGlobal(updates);
 	}
 
 	const onElementChange = (element: HTMLElement, update: ComponentUpdateWithoutGlobal[], execute = true) => {
