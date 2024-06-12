@@ -11,5 +11,8 @@ export async function onSubmit({repositoryId, file}: {repositoryId: string, file
     }
     const githubRepository = gitRepositoryFactory.createGitRepository(repository);
 
-    return githubRepository.getContent(file);
+    const content = await githubRepository.getContentOrDirectory(file);
+    
+
+    return 'content' in content ? content.content : Array.isArray(content) ? content.map(c => c.path).join('\n') : content.path;
 }
