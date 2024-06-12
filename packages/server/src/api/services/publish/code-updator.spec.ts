@@ -2,16 +2,16 @@
 /* eslint-disable @typescript-eslint/require-await -- ok*/
 import { describe, expect, it } from "vitest";
 import type { Repository } from "@harmony/util/src/types/branch";
+import type { ComponentUpdate } from "@harmony/util/src/types/component";
 import type { GitRepository } from "../../repository/git/types";
 import { indexFiles } from "../indexor/indexor";
 import type { UpdateInfo } from "./code-updator";
 import { CodeUpdator } from "./code-updator";
-import { ComponentUpdate } from "@harmony/util/src/types/component";
 
 describe("code-updator", () => {
-    const expectLocationOfString = (file: TestFile, actualLocation: {start: number, end: number}, expectedString: string): void => {
+    const expectLocationOfString = (file: TestFile, actualLocation: {start: number, end: number, diff?: number}, expectedString: string): void => {
         const content = testFiles[file];
-        const substr = content.substring(actualLocation.start, actualLocation.end);
+        const substr = content.substring(actualLocation.start - (actualLocation.diff || 0), actualLocation.end - (actualLocation.diff || 0));
         expect(substr).toBe(expectedString);
     }
 
@@ -163,6 +163,80 @@ describe("code-updator", () => {
             expect(codeUpdates.locations[1].start).toBe(389)
             expect(codeUpdates.locations[1].end).toBe(389)
         })
+
+        it("Should apply className and children updates to spread prop", async () => {
+            const file: TestFile = 'spreadProp';
+            const {codeUpdator, elementInstances} = await setupGitRepo(file);
+            const updates: ComponentUpdate[] = [
+                {
+                    value: 'Bobby Boi',
+                    oldValue: 'Bob',
+                    type: 'text',
+                    name: '0',
+                    componentId: elementInstances[11].id,
+                    childIndex: 0,
+                    isGlobal: false
+                },
+                {
+                    value: 'font-size:15px;',
+                    oldValue: '',
+                    type: 'className',
+                    name: '',
+                    componentId: elementInstances[13].id,
+                    childIndex: 1,
+                    isGlobal: false
+                },
+                {
+                    value: 'More children',
+                    oldValue: 'Some Children',
+                    type: 'text',
+                    name: '0',
+                    componentId: elementInstances[18].id,
+                    childIndex: 0,
+                    isGlobal: false
+                },
+                {
+                    value: 'background-color:#000;',
+                    oldValue: '',
+                    type: 'className',
+                    name: '',
+                    componentId: elementInstances[20].id,
+                    childIndex: 1,
+                    isGlobal: false
+                },
+                {
+                    value: 'Label you',
+                    oldValue: 'Label me',
+                    type: 'text',
+                    name: '0',
+                    componentId: elementInstances[21].id,
+                    childIndex: 0,
+                    isGlobal: false
+                },
+            ]
+
+            const fileUpdates = await codeUpdator.updateFiles(updates);
+            expect(Object.keys(fileUpdates).length).toBe(1);
+            expect(fileUpdates[file]).toBeTruthy();
+
+            const codeUpdates = fileUpdates[file];
+            expect(codeUpdates.filePath).toBe(file);
+            expect(codeUpdates.locations.length).toBe(5);
+            expect(codeUpdates.locations[0].snippet).toBe('Bobby Boi')
+            expectLocationOfString(file, codeUpdates.locations[0], 'Bob')
+
+            expect(codeUpdates.locations[1].snippet).toBe('text-[15px]')
+            expectLocationOfString(file, codeUpdates.locations[1], 'text-sm')
+
+            expect(codeUpdates.locations[2].snippet).toBe('Label you')
+            expectLocationOfString(file, codeUpdates.locations[2], 'Label me');
+
+            expect(codeUpdates.locations[3].snippet).toBe('bg-black')
+            expectLocationOfString(file, codeUpdates.locations[3], 'bg-white');
+
+            expect(codeUpdates.locations[4].snippet).toBe('More children')
+            expectLocationOfString(file, codeUpdates.locations[4], 'Some Children');
+        })
     })
 })
 
@@ -200,6 +274,40 @@ const testFiles = {
         const Parent = () => {
             return (
                 <Child />
+            )
+        }
+    `,
+    'spreadProp': `
+        const ChildWithoutChildren = ({className, ...rest}) => {
+            return (
+                <h1 className={className} {...rest}/>
+            )
+        }
+
+        const ChildWithoutClass = ({label, ...rest}) => {
+            return (
+                <div {...rest}>
+                    <h1>{label}</h1>
+                </div>
+            )
+        }
+
+        const ParentWithSpread = ({temp, ...rest}) => {
+            return (
+                <div>
+                    <ChildWithoutChildren {...rest}/>
+                    <ChildWithoutClass {...rest}/>
+                </div>
+            )
+        }
+
+        const Parent = () => {
+            return (
+                <div>
+                    <ChildWithoutChildren className="mx-1">Bob</ChildWithoutChildren>
+                    <ChildWithoutClass className="text-sm" label="Hello there"/>
+                    <ParentWithSpread label="Label me" className="bg-white">Some Children</ParentWithSpread>
+                </div>
             )
         }
     `
