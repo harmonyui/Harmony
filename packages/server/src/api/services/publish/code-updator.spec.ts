@@ -163,6 +163,46 @@ describe("code-updator", () => {
             expect(codeUpdates.locations[1].start).toBe(389)
             expect(codeUpdates.locations[1].end).toBe(389)
         })
+
+        it("Should apply className and children updates to spread prop", async () => {
+            const file: TestFile = 'spreadProp';
+            const {codeUpdator, elementInstances} = await setupGitRepo(file);
+            const updates: ComponentUpdate[] = [
+                {
+                    value: 'Bobby Boi',
+                    oldValue: 'Bob',
+                    type: 'text',
+                    name: '0',
+                    componentId: elementInstances[5].id,
+                    childIndex: 0,
+                    isGlobal: false
+                },
+                {
+                    value: 'font-size:15px;',
+                    oldValue: '',
+                    type: 'className',
+                    name: '',
+                    componentId: elementInstances[7].id,
+                    childIndex: 1,
+                    isGlobal: false
+                }
+            ]
+
+            const fileUpdates = await codeUpdator.updateFiles(updates);
+            expect(Object.keys(fileUpdates).length).toBe(1);
+            expect(fileUpdates[file]).toBeTruthy();
+
+            const codeUpdates = fileUpdates[file];
+            expect(codeUpdates.filePath).toBe(file);
+            expect(codeUpdates.locations.length).toBe(2);
+            expect(codeUpdates.locations[0].snippet).toBe('Bobby Boi')
+            expect(codeUpdates.locations[0].start).toBe(495)
+            expect(codeUpdates.locations[0].end).toBe(498)
+
+            expect(codeUpdates.locations[1].snippet).toBe('text-[15px]')
+            expect(codeUpdates.locations[1].start).toBe(578)
+            expect(codeUpdates.locations[1].end).toBe(585)
+        })
     })
 })
 
@@ -200,6 +240,30 @@ const testFiles = {
         const Parent = () => {
             return (
                 <Child />
+            )
+        }
+    `,
+    'spreadProp': `
+        const ChildWithoutChildren = ({className, ...rest}) => {
+            return (
+                <h1 className={className} {...rest}/>
+            )
+        }
+
+        const ChildWithoutClass = ({label, ...rest}) => {
+            return (
+                <div {...rest}>
+                    <h1>{label}</h1>
+                </div>
+            )
+        }
+
+        const Parent = () => {
+            return (
+                <div>
+                    <ChildWithoutChildren className="mx-1">Bob</ChildWithoutChildren>
+                    <ChildWithoutClass className="text-sm" label="Hello there"/>
+                </div>
             )
         }
     `

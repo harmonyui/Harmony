@@ -664,16 +664,35 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									} else if (t.isJSXExpressionContainer(attr.value)) {
 										jsxElementDefinition.props.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => createAttribute(type, expression.name, getAttributeName(expression), getAttributeValue(expression), expression.locationType, expression.location)));
 									}
+								} else if (t.isJSXSpreadAttribute(attr) && t.isIdentifier(attr.argument)) {
+									const prop = createIdentifierAttribute(attr.argument, 'property', 'harmony-spread')[0];
+									prop && jsxElementDefinition.props.push(createAttribute('property', prop.name, getAttributeName(prop), getAttributeValue(prop), prop.locationType, prop.location))
 								}
 							}
 
 							//If this is a native html element and there is not className props, then we want the ability to add one
+							let defaultClassName: Attribute | undefined;
 							if (!jsxElementDefinition.isComponent && !jsxElementDefinition.props.find(attr => attr.type === 'className')) {
 								if (!node.openingElement.name.loc) {
 									throw new Error("Invalid location");
 								}
 								const {end} = node.openingElement.name.loc;
-								jsxElementDefinition.props.push(createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index}))
+								defaultClassName = createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index})
+								jsxElementDefinition.props.push(defaultClassName)
+							}
+
+							//If we have a spread property, let's change the default classname to a property
+							//and add on a text (children) property if it doesn't exist
+							const spreadProp = jsxElementDefinition.props.find(prop => prop.locationType === 'props' && getAttributeName(prop) === 'harmony-spread');
+							if (spreadProp) {
+								if (defaultClassName) {
+									const index = jsxElementDefinition.props.indexOf(defaultClassName);
+									jsxElementDefinition.props[index] = createAttribute('className', 'property', 'className', 'className', 'props', spreadProp.location);
+								}
+
+								if (!jsxElementDefinition.props.find(prop => prop.type === 'text')) {
+									jsxElementDefinition.props.push({...createAttribute('text', 'property', undefined, 'children', 'props', spreadProp.location), index: 0});
+								}
 							}
 							
 							//console.log(`Adding ${jsxElementDefinition.name}`);
