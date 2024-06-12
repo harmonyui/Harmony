@@ -468,7 +468,7 @@ describe("indexor", () => {
             expect(result).toBeTruthy();
             expect(componentElements.length).toBe(8);
 
-            expect(componentElements[0].props.length).toBe(5);
+            expect(componentElements[0].props.length).toBe(4);
             expect(componentElements[0].props[0].type).toBe('property');
             expect(componentElements[0].props[0].name).toBe('property');
             expect(componentElements[0].props[0].value).toBe('variant:variant');
@@ -569,24 +569,24 @@ describe("indexor", () => {
             //Spread -> h1
             expect(componentElements[1].props.length).toBe(3);
             expect(componentElements[1].props[2].type).toBe('className');
-            expect(componentElements[1].props[2].name).toBe('property');
-            expect(componentElements[1].props[2].value).toBe('className:className');
-            expect(componentElements[1].props[2].locationType).toBe('props');
-            expectLocationOfString(file, componentElements[1].props[2].location, 'rest');
+            expect(componentElements[1].props[2].name).toBe('string');
+            expect(componentElements[1].props[2].value).toBe('');
+            expect(componentElements[1].props[2].locationType).toBe('add');
+            expectLocationOfString(file, componentElements[1].props[2].location, '');
 
             //Spread 1 -> h1
-            expect(componentElements[8].props.length).toBe(3);
-            expect(componentElements[8].props[2].type).toBe('className');
-            expect(componentElements[8].props[2].name).toBe('string');
-            expect(componentElements[8].props[2].value).toBe('className')
-            expect(componentElements[8].props[2].locationType).toBe('add');
+            expect(componentElements[8].props.length).toBe(4);
+            expect(componentElements[8].props[3].type).toBe('className');
+            expect(componentElements[8].props[3].name).toBe('string');
+            expect(componentElements[8].props[3].value).toBe('className')
+            expect(componentElements[8].props[3].locationType).toBe('add');
 
             //Spread 2 -> h1
-            expect(componentElements[10].props.length).toBe(3);
-            expect(componentElements[10].props[2].type).toBe('className');
-            expect(componentElements[10].props[2].name).toBe('string');
-            expect(componentElements[10].props[2].value).toBe('border-1')
-            expect(componentElements[10].props[2].locationType).toBe('component');
+            expect(componentElements[10].props.length).toBe(4);
+            expect(componentElements[10].props[3].type).toBe('className');
+            expect(componentElements[10].props[3].name).toBe('string');
+            expect(componentElements[10].props[3].value).toBe('border-1')
+            expect(componentElements[10].props[3].locationType).toBe('component');
         })
 
         //TODO: Finish this

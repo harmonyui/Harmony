@@ -307,10 +307,12 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 
 						function connectAttributesToParent(elementAttributes: Attribute[], parent: HarmonyComponentWithNode): Attribute[] {
 							const attributes: Attribute[] = [];
+							const addedFromParents: Attribute[] = [];
 							for (const attribute of elementAttributes) {
 								const propertyName = getPropertyName(attribute);
 								if (propertyName) {
-									const sameAttributesInElement = parent.props.filter(attr => getAttributeName(attr) === propertyName).map(attr => {
+									const filtered = parent.props.filter(attr => getAttributeName(attr) === propertyName);
+									const sameAttributesInElement = filtered.map(attr => {
 										const newAttribute = {...attr};
 										if (attribute.type === 'text') {
 											newAttribute.value = getAttributeValue(newAttribute);
@@ -338,6 +340,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										}
 										return newAttribute;
 									})
+									addedFromParents.push(...filtered);
+
 									//If there is a props className attribute but the parent doesn't have a className attribute already applied to it, then add it
 									//on to the parent.
 									if (attribute.type === 'className' && attribute.locationType === 'props' && sameAttributesInElement.length === 0) {
@@ -351,11 +355,28 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									//If we have some things to add, cheerio!
 									if (sameAttributesInElement.length > 0) {
 										attributes.push(...sameAttributesInElement);
+										
 										continue;
 									}
 									//Otherwise just add this attribute
 								}
 								attributes.push({...attribute});
+							}
+
+							//If the child has a spread attribute, lets pull down every attribute from the parent that has not been already
+							//connected
+							if (elementAttributes.find(attr => getAttributeName(attr) === 'harmony-spread' && attr.locationType === 'props')) {
+								const parentAttributesNotAlreadyAdded = parent.props.filter(parentProp => !addedFromParents.includes(parentProp));
+								attributes.push(...parentAttributesNotAlreadyAdded);
+								//If one of the parent's attribute doesn't include children, we can add that one
+								if (!attributes.find(attribute => attribute.type === 'className' && attribute.reference === parent)) {
+									if (!parent.node.openingElement.name.loc) {
+										throw new Error("Invalid location");
+									}
+									const {end} = parent.node.openingElement.name.loc;
+									//Even though this is type string, we need to know what the name of the class is we are adding, so we set that as the attribute value
+									attributes.push({id: '', type: 'className', index: -1, reference: parent, name: 'string', value: 'className', locationType: 'add', location: {file: parent.location.file, start: end.index, end: end.index}});
+								}
 							}
 
 							return attributes;
@@ -681,20 +702,6 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 								jsxElementDefinition.props.push(defaultClassName)
 							}
 
-							//If we have a spread property, let's change the default classname to a property
-							//and add on a text (children) property if it doesn't exist
-							const spreadProp = jsxElementDefinition.props.find(prop => prop.locationType === 'props' && getAttributeName(prop) === 'harmony-spread');
-							if (spreadProp) {
-								if (defaultClassName) {
-									const index = jsxElementDefinition.props.indexOf(defaultClassName);
-									jsxElementDefinition.props[index] = createAttribute('className', 'property', 'className', 'className', 'props', spreadProp.location);
-								}
-
-								if (!jsxElementDefinition.props.find(prop => prop.type === 'text')) {
-									jsxElementDefinition.props.push({...createAttribute('text', 'property', undefined, 'children', 'props', spreadProp.location), index: 0});
-								}
-							}
-							
 							//console.log(`Adding ${jsxElementDefinition.name}`);
 							jsxElements.forEach(element => {
 								element.children.push(jsxElementDefinition);
