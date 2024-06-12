@@ -475,9 +475,9 @@ describe("indexor", () => {
             expectLocationOfString(file, componentElements[0].props[0].location, 'variant');
             expect(componentElements[0].props[2].type).toBe('className');
             expect(componentElements[0].props[2].name).toBe('property');
-            expect(componentElements[0].props[2].value).toBe('className:className');
+            expect(componentElements[0].props[2].value).toBe('buttonClass:buttonClass');
             expect(componentElements[0].props[2].locationType).toBe('props');
-            expectLocationOfString(file, componentElements[0].props[2].location, 'className');
+            expectLocationOfString(file, componentElements[0].props[2].location, 'buttonClass');
 
             expect(componentElements[4].props.length).toBe(3);
             expect(componentElements[4].props[0].type).toBe('property');
@@ -526,7 +526,7 @@ describe("indexor", () => {
             expectLocationOfString(file, componentElements[6].props[0].location, 'variant');
             expect(componentElements[6].props[2].type).toBe('className');
             expect(componentElements[6].props[2].name).toBe('string');
-            expect(componentElements[6].props[2].value).toBe('');
+            expect(componentElements[6].props[2].value).toBe('buttonClass');
             expect(componentElements[6].props[2].locationType).toBe('add');
             expectLocationOfString(file, componentElements[6].props[2].location, '');
         });
@@ -995,11 +995,11 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         }
       )
 
-    const Button = ({ className, variant, size, asChild = false, ...props }) => {
+    const Button = ({ buttonClass, variant, size, asChild = false, ...props }) => {
         const Comp = asChild ? Slot : "button"
         return (
           <Comp
-            className={cn(buttonVariants({ variant, size, className }))}
+            className={cn(buttonVariants({ variant, size, buttonClass }))}
             {...props}
           />
         )
@@ -1010,7 +1010,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         return (
             <div>
                 <h1>This is some html</h1>
-                <Button variant="secondary" size="sm" className="border">
+                <Button variant="secondary" size="sm" buttonClass="border">
                     Thank you
                 </Button>
                 <Button size="lg">

@@ -142,7 +142,14 @@ export class CodeUpdator {
         }
         const getLocationAndValue = (attribute: Attribute | undefined, _component: HarmonyComponent): LocationValue => {
             const isDefinedAndDynamic = attribute?.name === 'property';
-            return { location: attribute?.location || _component.location, value: attribute?.name === 'string' ? attribute.value : undefined, isDefinedAndDynamic };
+            let value = attribute?.name === 'string' ? attribute.value : undefined;
+            
+            //Location add means this property doesn't exist and we need to add it, which means value is
+            //the name of the property we are adding, not the value of the property
+            if (attribute?.locationType === 'add') {
+                value = '';
+            }
+            return { location: attribute?.location || _component.location, value, isDefinedAndDynamic };
         }
     
         const results: CodeUpdateInfo[] = [];
@@ -179,8 +186,9 @@ export class CodeUpdator {
             if (oldClass === undefined) {
                 return addCommentToJSXElement({ location, commentValue, attribute });
             } else if (attribute?.locationType === 'add') {
+                const classPropertyName = attribute.value || 'className';
                 // eslint-disable-next-line no-param-reassign -- It is ok
-                newClass = ` className="${newClass}"`;
+                newClass = ` ${classPropertyName}="${newClass}"`;
                 // eslint-disable-next-line no-param-reassign -- It is ok
                 oldClass = '';
             }
