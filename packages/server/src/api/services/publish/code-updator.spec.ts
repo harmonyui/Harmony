@@ -3,10 +3,10 @@
 import { describe, expect, it } from "vitest";
 import type { Repository } from "@harmony/util/src/types/branch";
 import type { GitRepository } from "../../repository/git/types";
-import type { HarmonyComponentWithNode } from "../indexor/indexor";
-import { getCodeInfoFromFile } from "../indexor/indexor";
+import { indexFiles } from "../indexor/indexor";
 import type { UpdateInfo } from "./code-updator";
 import { CodeUpdator } from "./code-updator";
+import { ComponentUpdate } from "@harmony/util/src/types/component";
 
 describe("code-updator", () => {
     const expectLocationOfString = (file: TestFile, actualLocation: {start: number, end: number}, expectedString: string): void => {
@@ -15,7 +15,7 @@ describe("code-updator", () => {
         expect(substr).toBe(expectedString);
     }
 
-    const setupGitRepo = (testFile: TestFile, tailwindPrefix?: string) => {
+    const setupGitRepo = async (testFile: TestFile, tailwindPrefix?: string) => {
         const repository: Repository = {
             id: '',
             name: 'Repo',
@@ -58,18 +58,17 @@ describe("code-updator", () => {
             repository
         }
 
-        const content = testFiles[testFile];
-        const elementInstances: HarmonyComponentWithNode[] = [];
-        const result = getCodeInfoFromFile(testFile, content, {}, elementInstances, {});
+        const result = await indexFiles([testFile], async (file) => testFiles[file as TestFile]);
         expect(result).toBeTruthy();
+        if (!result) throw new Error();
 
         const codeUpdator = new CodeUpdator(gitRepository);
-        return {codeUpdator, elementInstances};
+        return {codeUpdator, elementInstances: result.elementInstance};
     }
     describe("getChangeAndLocation", () => {
         it("Should add on tailwind prefix correctly", async () => {
             const file: TestFile = 'tailwindPrefix';
-            const {codeUpdator, elementInstances} = setupGitRepo(file, 'hw-');
+            const {codeUpdator, elementInstances} = await setupGitRepo(file, 'hw-');
             const updateInfos: UpdateInfo[] = [
                 {
                     component: elementInstances[0],
@@ -103,7 +102,7 @@ describe("code-updator", () => {
 
         it("Should handle non tailwind classes", async () => {
             const file: TestFile = 'nonTailwindClass';
-            const {codeUpdator, elementInstances} = setupGitRepo(file);
+            const {codeUpdator, elementInstances} = await setupGitRepo(file);
             const updateInfos: UpdateInfo[] = [
                 {
                     component: elementInstances[0],
@@ -121,6 +120,48 @@ describe("code-updator", () => {
             expect(changes.length).toBe(1);
             expect(changes[0].updatedCode).toBe('flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm ml-[3px]')
             expectLocationOfString(file, changes[0].location, 'flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm');
+        })
+    })
+
+    describe("updateFiles", () => {
+        it("Should apply className to parent when parent does not already have class name but can", async () => {
+            const file: TestFile = 'classNameParent';
+            const {codeUpdator, elementInstances} = await setupGitRepo(file);
+            const updates: ComponentUpdate[] = [
+                {
+                    value: 'background-color:#000;',
+                    oldValue: '',
+                    type: 'className',
+                    name: '',
+                    componentId: elementInstances[3].id,
+                    childIndex: 0,
+                    isGlobal: false
+                },
+                {
+                    value: 'padding-left:4px;',
+                    oldValue: '',
+                    type: 'className',
+                    name: '',
+                    componentId: elementInstances[4].id,
+                    childIndex: 0,
+                    isGlobal: false
+                }
+            ]
+
+            const fileUpdates = await codeUpdator.updateFiles(updates);
+            expect(Object.keys(fileUpdates).length).toBe(1);
+            expect(fileUpdates.classNameParent).toBeTruthy();
+
+            const codeUpdates = fileUpdates.classNameParent;
+            expect(codeUpdates.filePath).toBe('classNameParent');
+            expect(codeUpdates.locations.length).toBe(2);
+            expect(codeUpdates.locations[0].snippet).toBe(' className="bg-black"')
+            expect(codeUpdates.locations[0].start).toBe(368)
+            expect(codeUpdates.locations[0].end).toBe(368)
+
+            expect(codeUpdates.locations[1].snippet).toBe(' innerClass="pl-1"')
+            expect(codeUpdates.locations[1].start).toBe(389)
+            expect(codeUpdates.locations[1].end).toBe(389)
         })
     })
 })
@@ -142,6 +183,23 @@ const testFiles = {
                 <div className="flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm">
                     Bob
                 </div>
+            )
+        }
+    `,
+    'classNameParent': `
+        const Child = ({className, innerClass}) => {
+            return (
+                <div className={cn('flex mx-2', className)}>
+                    <div className={innerClass}>
+                        Thank you
+                    </div>
+                </div>
+            )
+        }
+
+        const Parent = () => {
+            return (
+                <Child />
             )
         }
     `
