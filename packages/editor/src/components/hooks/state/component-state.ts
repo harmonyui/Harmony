@@ -118,13 +118,12 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
             globalUpdate: undefined,
             onApplyGlobal: (updates: ComponentUpdateWithoutGlobal[] | undefined) => {
                 if (!updates) return set({ globalUpdate: undefined })
-                let components = updates.map(update => get().harmonyComponents.find(component => component.id === update.componentId));
-                let globalChange = false;
-                components.forEach(component => {
+                const components = updates.map(update => get().harmonyComponents.find(component => component.id === update.componentId));
+                const globalChange = components.some(component => {
                     const updateType = updates.find(update => update.componentId === component?.id)?.type;
                     const prop = component?.props.find(prop => prop.propName === updateType);
-                    if (prop && !prop.isStatic) globalChange = true;
-                })
+                    return prop && !prop.isStatic;
+                });
                 if (globalChange) {
                     set({ globalUpdate: updates });
                 }

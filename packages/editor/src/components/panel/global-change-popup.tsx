@@ -11,25 +11,17 @@ interface GlobalUpdatePopupProps {
 }
 export const GlobalUpdatePopup: React.FunctionComponent<GlobalUpdatePopupProps> = ({ onUndo, executeCommand }) => {
     const updates = useHarmonyStore(state => state.globalUpdate);
-    const [show, setShow] = useState(Boolean(updates));
     const onApplyGlobal = useHarmonyStore(state => state.onApplyGlobal);
 
     useEffect(() => {
-        if (updates && !show) {
-            setShow(true);
-        }
-    }, [show, updates]);
-
-    useEffect(() => {
-        if (show) {
+        if (updates) {
             const timer = setTimeout(() => {
-                setShow(false);
                 onApplyGlobal(undefined);
             }, 5000);
 
             return () => clearTimeout(timer);
         }
-    }, [show, updates])
+    }, [updates])
 
     const allInstances = useMemo<number>(() => {
         if (updates) {
@@ -44,16 +36,24 @@ export const GlobalUpdatePopup: React.FunctionComponent<GlobalUpdatePopupProps> 
         return 0;
     }, [updates]);
 
+    const handleUndo = () => {
+        onUndo();
+        onApplyGlobal(undefined);
+    }
+
+    const handleApplyAll = () => {
+        if (!updates) return;
+        onUndo();
+        executeCommand(updates.map(update => ({ ...update, isGlobal: true })), true);
+        onApplyGlobal(undefined);
+    }
+
     return (
-        <Popup show={show && allInstances > 1} onClose={() => { setShow(false); onApplyGlobal(undefined) }}>
+        <Popup show={updates != undefined && allInstances > 1} onClose={() => { onApplyGlobal(undefined) }}>
             <div className="hw-flex hw-justify-between hw-items-center hw-gap-4 hw-mx-4">
                 <div>You have unlinked this property</div>
-                {updates && (
-                    <>
-                        <Button onClick={() => { onUndo(); onApplyGlobal(undefined); setShow(false) }}>Undo</Button>
-                        <Button onClick={() => { onUndo(); executeCommand(updates.map(update => ({ ...update, isGlobal: true })), true);; onApplyGlobal(undefined); setShow(false) }}>Apply All</Button>
-                    </>
-                )}
+                <Button onClick={handleUndo}>Undo</Button>
+                <Button onClick={handleApplyAll}>Apply All</Button>
             </div>
         </Popup>
     )
