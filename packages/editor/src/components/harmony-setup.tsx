@@ -80,16 +80,9 @@ const appendChild = (container: Element, child: Element | Node) => {
 
             parent = parent.return;
         }
-        if (!parent) {
-            throw new Error("Cannot find parent")
-        }
-        if (parent.stateNode instanceof HTMLElement) {
+        
+        if (parent?.stateNode instanceof HTMLElement) {
             parent.stateNode = container;
-        } //else if (typeof parent.stateNode === 'object' && 'containerInfo' in parent.stateNode) {
-            //parent.stateNode.containerInfo = container;
-        //} 
-        else {
-            throw new Error("Invalid state node");
         }
         container.appendChild(child);
         // parentFiber.setFiber(parent);
@@ -107,12 +100,13 @@ const createPortal = ReactDOM.createPortal;
 export interface Setup {
     setContainer: (container: Element) => void;
     changeMode: (mode: DisplayMode) => void;
+    harmonyContainer: Element
 }
-class Setuper implements Setup {
+export class Setuper implements Setup {
     private bodyObserver: MutationObserver;
     private mode: DisplayMode = 'preview-full';
     private container: Element | undefined;
-    constructor(private harmonyContainer: Element) {
+    constructor(public harmonyContainer: Element) {
         this.bodyObserver = new MutationObserver(() => undefined);
     }
 
