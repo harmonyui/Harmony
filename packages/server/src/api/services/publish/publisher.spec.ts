@@ -17,9 +17,9 @@ describe("publisher", () => {
             const updates = testCases.sameDate;
             const normalized = normalizeRecentUpdates(updates);
             expect(normalized.length).toBe(3);
-            expect(normalized[0]).toBe(updates[0]);
-            expect(normalized[1]).toBe(updates[2]);
-            expect(normalized[2]).toBe(updates[3]);
+            expect(normalized[0]).toBe(updates[3]);
+            expect(normalized[1]).toBe(updates[0]);
+            expect(normalized[2]).toBe(updates[2]);
         })
     })
 

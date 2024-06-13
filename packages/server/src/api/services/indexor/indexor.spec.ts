@@ -583,6 +583,12 @@ describe("indexor", () => {
 
             //Spread 2 -> h1
             expect(componentElements[10].props.length).toBe(4);
+            expect(componentElements[10].props[0].type).toBe('text');
+            expect(componentElements[10].props[0].name).toBe('string');
+            expect(componentElements[10].props[0].value).toBe('This is a spread: label::')
+            expect(componentElements[10].props[0].locationType).toBe('component');
+
+            expect(componentElements[10].props.length).toBe(4);
             expect(componentElements[10].props[3].type).toBe('className');
             expect(componentElements[10].props[3].name).toBe('string');
             expect(componentElements[10].props[3].value).toBe('border-1')
@@ -1068,7 +1074,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     }
 
    const App = () => {
-        const spreadLabel = "This is a spread label";
+        const spreadLabel = "This is a spread: label::";
         return (<>
             <Component><Icon/> Filter</Component>
             <ComponentComplex><Icon/> Hello</ComponentComplex>
