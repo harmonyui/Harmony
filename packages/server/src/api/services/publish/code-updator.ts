@@ -7,14 +7,14 @@ import { DEFAULT_WIDTH } from "@harmony/util/src/constants";
 import { getCodeSnippet } from "../indexor/github";
 import type { HarmonyComponent, Attribute } from "../indexor/types";
 import type { GitRepository } from "../../repository/git/types";
-import { indexForComponents } from "../indexor/indexor";
+import { HarmonyComponentWithNode, indexForComponents } from "../indexor/indexor";
 import { addPrefixToClassName, converter } from "./css-conveter";
 
 export type FileUpdateInfo = Record<string, { filePath: string, locations: { snippet: string, start: number, end: number, updatedTo: number, diff: number }[] }>
 
 export interface UpdateInfo {
     componentId: string
-    component: HarmonyComponent,
+    component: HarmonyComponentWithNode,
 	attributes: Attribute[],
 	name: string,
 	type: ComponentUpdate['type'],
@@ -48,7 +48,7 @@ export class CodeUpdator {
         return fileUpdates;
     }
 
-    private async getUpdateInfo(updates: ComponentUpdate[], indexedElements: HarmonyComponent[]): Promise<UpdateInfo[]> {
+    private async getUpdateInfo(updates: ComponentUpdate[], indexedElements: HarmonyComponentWithNode[]): Promise<UpdateInfo[]> {
         return updates.reduce<Promise<UpdateInfo[]>>(async (prevPromise, curr) => {
             const prev = await prevPromise;
             if (curr.type === 'className') {
@@ -75,7 +75,7 @@ export class CodeUpdator {
                     classNameUpdate.font = curr.value;
                 }
             } else {
-                const getComponent = (currId: string): Promise<HarmonyComponent | undefined> => {
+                const getComponent = (currId: string): Promise<HarmonyComponentWithNode | undefined> => {
                     const currElement = indexedElements.find(instance => instance.id === currId);
 
                     return Promise.resolve(currElement);
@@ -155,21 +155,12 @@ export class CodeUpdator {
         const results: CodeUpdateInfo[] = [];
     
         const addCommentToJSXElement = async ({ location, commentValue, attribute }: { location: ComponentLocation, commentValue: string, attribute: Attribute | undefined }): Promise<CodeUpdateInfo> => {
-            const code = await getCodeSnippet(gitRepository)(component.location, branchName);
-            const comment = `/** ${commentValue} */`;
-            const match = /<([a-zA-Z0-9]+)(\s?)/.exec(code);
-            if (!match) {
-                throw new Error(`There was no update to add comment to jsx: snippet: ${code}, commentValue: ${commentValue}`);
-            }
-    
-            //If there are no attributes in the tag, then add a space before the comment;
-            const value = match[2] ? `${comment} ` : ` ${comment} `;
-            //The start of the comment is right after the opening tag
-            const matchEnd = match.index + match[0].length;
-            const start = matchEnd;
-            const end = start;
-            const updatedTo = value.length + start;
-            return { location: { file: location.file, start: location.start + start, end: location.start + end, updatedTo: location.start + updatedTo }, updatedCode: value, dbLocation: location, attribute };
+            const comment = ` /** ${commentValue} */`;
+            
+            const start = location.start
+            const end = location.end;
+            const updatedTo = comment.length + start;
+            return { location: { file: location.file, start, end, updatedTo }, updatedCode: comment, dbLocation: location, attribute };
         }
     
         interface AddClassName {
@@ -327,10 +318,12 @@ export class CodeUpdator {
     
                         // result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute, isDefinedAndDynamic});
                     } else {
-                        const locationAndValue = getLocationAndValue(classNameAttributes[0], component);
-                        //TODO: This is temporary. It shouldn't have 'className:'
-                        locationAndValue.value = locationAndValue.value?.replace('className:', '');
-                        const { location } = locationAndValue;
+                        const componentWithNode: HarmonyComponentWithNode = classNameAttributes[0]?.reference || component;
+                        const location: ComponentLocation = {
+                            file: componentWithNode.location.file,
+                            start: componentWithNode.node.openingElement.name.loc?.end.index || 0,
+                            end: componentWithNode.node.openingElement.name.loc?.end.index || 0
+                        }
                         let valuesNewLined = replaceAll(update.value, ';', ';\n');
                         valuesNewLined = update.font ? `font className: ${update.value}\n\n${valuesNewLined}` : valuesNewLined;
                         results.push(await addCommentToJSXElement({ location, commentValue: valuesNewLined, attribute: classNameAttributes[0] }));
