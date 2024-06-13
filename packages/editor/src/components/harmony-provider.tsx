@@ -76,7 +76,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [mode, setMode] = useState<SelectMode>('tweezer');
 	const [scale, _setScale] = useState(.8);
 	const [isDirty, setIsDirty] = useState(false);
-	const [updateOverlay, setUpdateOverlay] = useState(0);
 	const [isSaving, setIsSaving] = useState(false);
 	const [displayMode, setDisplayMode] = useState<DisplayMode>();
 	const [cursorX, setCursorX] = useState(0);
@@ -96,10 +95,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const updateComponentsFromIds = useHarmonyStore((state) => state.updateComponentsFromIds);
 	const selectedComponent = useHarmonyStore(state => state.selectedComponent?.element);
 	const setSelectedComponent = useHarmonyStore(state => state.selectElement);
+	const updateTheCounter = useHarmonyStore(state => state.updateTheCounter);
 
 	const executeCommand = useComponentUpdator({
 		isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
-			setUpdateOverlay(updateOverlay + 1);
+			updateTheCounter();
 		}, onError: setError
 	});
 
@@ -408,7 +408,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 									setRootComponent(harmonyContainerRef.current);
 								}
 							}} style={{ width: `${WIDTH}px`, minHeight: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})` }}>
-								{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange} /> : null}
+								{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} scale={scale} onChange={onElementChange} /> : null}
 								{children}
 							</div>
 						</div>

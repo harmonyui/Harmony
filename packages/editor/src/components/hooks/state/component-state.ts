@@ -9,6 +9,9 @@ export interface ComponentState {
     selectedComponent: ComponentElement | undefined
     rootComponent: ComponentElement | undefined
     selectElement: (element: HTMLElement | undefined) => void
+    //This is temporary until we move execute command into zustand
+    updateCounter: number,
+    updateTheCounter: () => void
 }
 
 export const createComponentStateSlice = createHarmonySlice<ComponentState, HarmonyComponentsState>((set, get) => {
@@ -110,6 +113,10 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
                 const id = element.dataset.harmonyText === 'true' ? element.parentElement?.dataset.harmonyId : element.dataset.harmonyId;
                 const component = findElement(rootComponent, id || '');
                 set({selectedComponent: component ? {...component, element} : undefined});
+            },
+            updateCounter: 0,
+            updateTheCounter() {
+                set({updateCounter: get().updateCounter + 1});
             },
         },
         dependencies: {

@@ -77,7 +77,7 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 	return elementInstances;
 }
 
-export async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
+export async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponentWithNode[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
@@ -761,7 +761,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		return `${parentId}#${instance.id}`;
 	}
 
-	const findAttributeReference = (element: HarmonyComponent | undefined, attributeId: string): {id: string} | undefined=> {
+	const findAttributeReference = (element: HarmonyComponentWithNode | undefined, attributeId: string): HarmonyComponentWithNode | undefined=> {
 		if (!element) return undefined;
 
 		const id = element.id.split('#')[element.id.split('#').length - 1];
@@ -769,7 +769,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 			return element;
 		}
 
-		return findAttributeReference(element.getParent(), attributeId);
+		return findAttributeReference(element.getParent() as HarmonyComponentWithNode, attributeId);
 	}
 
 	for (let i = 0; i < elementInstances.length; i++) {

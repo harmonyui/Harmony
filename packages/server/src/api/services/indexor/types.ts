@@ -1,6 +1,7 @@
 import type { ComponentLocation} from "@harmony/util/src/types/component";
 import { locationSchema } from "@harmony/util/src/types/component";
 import { z } from "zod";
+import { HarmonyComponentWithNode } from "./indexor";
 
 export const attributeSchema = z.object({
 	id: z.string(),
@@ -12,7 +13,16 @@ export const attributeSchema = z.object({
 	locationType: z.string(),
 	reference: z.object({id: z.string()})
 })
-export type Attribute = z.infer<typeof attributeSchema>;
+export interface Attribute {
+	id: string
+	type: 'text' | 'className' | 'property'
+	name: string
+	value: string
+	index: number
+	location: ComponentLocation
+	locationType: string
+	reference: HarmonyComponentWithNode
+}
 
 export interface HarmonyComponent {
 	id: string;
