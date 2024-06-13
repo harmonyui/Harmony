@@ -13,6 +13,9 @@ export async function onSubmit({repositoryId, file}: {repositoryId: string, file
 
     const content = await githubRepository.getContentOrDirectory(file);
     
+    if ('content' in content) {
+        return content.content;
+    }
 
-    return 'content' in content ? content.content : Array.isArray(content) ? content.map(c => c.path).join('\n') : content.path;
+    return Array.isArray(content) ? content.map(c => c.path).join('\n') : content.path;
 }
