@@ -203,9 +203,11 @@ export const editorRouter = createTRPCRouter({
 				throw new Error("This project has already been published");
 			}
 
+			const updates = await ctx.componentUpdateRepository.getUpdates(branchId, ['dateModified']);
+
 			const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
 			const publisher = new Publisher(gitRepository);
-			const newPullRequest = await publisher.publishChanges(branch.updates, branch, pullRequest);
+			const newPullRequest = await publisher.publishChanges(updates, branch, pullRequest);
 
 			const response: PublishResponse = { pullRequest: newPullRequest };
 

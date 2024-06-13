@@ -134,8 +134,8 @@ function getAttributeValue(attribute: Attribute): string {
 	}
 
 	if (attribute.type === 'property') {
-		const [_, propertyValue] = attribute.value.split(':');
-		return propertyValue;
+		const [_, ...propertyValue] = attribute.value.split(':');
+		return propertyValue.join(':')
 	}
 
 	return attribute.value;

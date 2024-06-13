@@ -35,17 +35,16 @@ export function prepareUpdatesForGenerator(updatesRaw: ComponentUpdateWithDate[]
 }
 
 export function normalizeRecentUpdates(updates: ComponentUpdateWithDate[]): ComponentUpdateWithDate[] {
-    return updates.reduce<ComponentUpdateWithDate[]>((prev, curr) => {
+    const ascUpdates = updates.slice().sort((a, b) => a.dateModified.getTime() - b.dateModified.getTime());
+    return ascUpdates.reduce<ComponentUpdateWithDate[]>((prev, curr) => {
         const prevUpdateIndex = prev.findIndex(p => p.type === curr.type && p.name === curr.name && p.componentId === curr.componentId);
-        const prevUpdate = prev[prevUpdateIndex];
-        //If there isn't a similar update, add this to the list
+       //If there isn't a similar update, add this to the list
         if (prevUpdateIndex < 0) {
             prev.push(curr);
-        //If the similar update has the same date modified, then we want to take the newer one (curr)
-        } else if (prevUpdate.dateModified.getTime() === curr.dateModified.getTime()) {
+        } else {
+            //Otherwise replace because we are doing ascending, so last one wins
             prev[prevUpdateIndex] = curr;
         }
-        //Otherwise, do not add the update because we already have it
         
         return prev;
     }, []);
