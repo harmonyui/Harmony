@@ -135,14 +135,14 @@ export interface InspectorProps {
 	mode: SelectMode;
 	onReorder: (props: {from: number, to: number, element: HTMLElement}) => void;
 	onChange: (component: HTMLElement, update: ComponentUpdateWithoutGlobal[], execute?: boolean) => void;
-	updateOverlay: number;
 	scale: number;
 }
-export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onChange, rootElement, parentElement, mode, updateOverlay, scale}) => {
+export const Inspector: React.FunctionComponent<InspectorProps> = ({hoveredComponent, selectedComponent, onHover: onHoverProps, onSelect, onElementTextChange, onChange, rootElement, parentElement, mode, scale}) => {
 	const containerRef = useRef<HTMLDivElement>(null);
 	const overlayRef = useRef<Overlay>();
 	const {onFlexToggle: onFlexClick, error, setError} = useHarmonyContext();
 	const isDemo = useHarmonyStore(state => state.isDemo);
+	const updateOverlay = useHarmonyStore(state => state.updateCounter);
 
 	const previousError = usePrevious(error);
 	const {panel} = useSidePanel();
