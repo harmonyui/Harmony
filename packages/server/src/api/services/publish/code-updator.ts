@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/require-await -- oj*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation, ComponentUpdate } from "@harmony/util/src/types/component";
