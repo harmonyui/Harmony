@@ -1,7 +1,8 @@
 import { describe, it, expect } from "vitest"
 import type {HarmonyComponent } from "./types";
 import type { HarmonyComponentWithNode} from "./indexor";
-import { getCodeInfoAndNormalizeFromFiles, getCodeInfoFromFile} from "./indexor";
+import { getCodeInfoAndNormalizeFromFiles} from "./indexor";
+import { getCodeInfoFromFile } from "./ast";
 
 describe("indexor", () => {
     const expectLocationOfString = (file: TestFile, actualLocation: {start: number, end: number}, expectedString: string): void => {
