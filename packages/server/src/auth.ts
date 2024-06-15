@@ -22,6 +22,8 @@ export const accountSchema = z.object({
 	seenWelcomeScreen: z.boolean()
 })
 
+export type Account = z.infer<typeof accountSchema>;
+
 export interface AuthContext {
 	userId: string;
 	//oauthToken: string;
@@ -109,7 +111,6 @@ export const getServerAuthSession = async (userId: string | null, mockUserId?: s
 		}
 		const email = user.emailAddresses[0].emailAddress;
 		const role = await getRole(email);
-		console.log(role);
 		ourAuth = {
 			user: {
 				id: user.id,
