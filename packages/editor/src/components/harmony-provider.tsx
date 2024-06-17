@@ -24,6 +24,7 @@ import { HarmonyPanel } from "./panel/harmony-panel";
 import { WelcomeModal } from "./panel/welcome/welcome-modal";
 import { getBoundingRect } from "./snapping/calculations";
 import { useHarmonyStore } from "./hooks/state";
+import { GlobalUpdatePopup } from "./panel/global-change-popup";
 
 export function findElementFromId(componentId: string, childIndex: number): HTMLElement | undefined {
 	const selector = `[data-harmony-id="${componentId}"]`;
@@ -91,13 +92,15 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const componentUpdates = useHarmonyStore((state) => state.componentUpdates);
 	const isInitialized = useHarmonyStore((state) => state.isInitialized);
 	const publishState = useHarmonyStore(state => state.pullRequest);
+	const globalUpdate = useHarmonyStore(state => state.globalUpdate);
+	const onApplyGlobal = useHarmonyStore(state => state.onApplyGlobal);
 	const initializeProject = useHarmonyStore(state => state.initializeProject);
 	const updateComponentsFromIds = useHarmonyStore((state) => state.updateComponentsFromIds);
 	const selectedComponent = useHarmonyStore(state => state.selectedComponent?.element);
 	const setSelectedComponent = useHarmonyStore(state => state.selectElement);
 	const updateTheCounter = useHarmonyStore(state => state.updateTheCounter);
 
-	const executeCommand = useComponentUpdator({
+	const { executeCommand, onUndo } = useComponentUpdator({
 		isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
 			updateTheCounter();
 		}, onError: setError
@@ -127,7 +130,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const initialize = async () => {
 			onHistoryChange();
 
-			await initializeProject({branchId, repositoryId});
+			await initializeProject({ branchId, repositoryId });
 		}
 
 		void initialize();
@@ -219,9 +222,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (rootComponent && isInitialized) {
 			const recurseAndUpdateElements = () => {
 				const componentIds: string[] = [];
-				recurseElements(rootComponent, [updateElements(componentUpdates, componentIds)]);
+				recurseElements(rootComponent, [initElements(componentIds)]);
+				recurseElements(rootComponent, [updateElements]);
 
-				void updateComponentsFromIds({branchId, components: componentIds}, rootComponent);
+				void updateComponentsFromIds({ branchId, components: componentIds }, rootComponent);
 			}
 			const mutationObserver = new MutationObserver(() => {
 				recurseAndUpdateElements();
@@ -240,9 +244,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 	}, [rootComponent, isInitialized]);
 
-	const updateElements = (componentUpdates: ComponentUpdate[], componentIds: string[]) => (element: HTMLElement): void => {
+	const initElements = (componentIds: string[]) => (element: HTMLElement): void => {
 		if (!rootComponent) return;
-	
+
 		let id = element.dataset.harmonyId;
 		if (id && id !== 'undefined') {
 			const split = id.split('#');
@@ -256,7 +260,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
 			id && componentIds.push(id);
 		}
-		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
+
 		const children = Array.from(element.childNodes);
 		const textNodes = children.filter(child => child.nodeType === Node.TEXT_NODE);
 		const styles = getComputedStyle(element);
@@ -272,6 +276,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			replaceTextContentWithSpans(element);
 		}
 
+
+	}
+
+	const updateElements = (element: HTMLElement) => {
+		if (!rootComponent) return;
+		const id = element.dataset.harmonyId
+		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (id !== undefined) {
 			const updates = componentUpdates.filter(up => up.componentId === id && up.childIndex === childIndex);
 			makeUpdates(element, updates, rootComponent, fonts);
@@ -350,24 +361,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		if (childIndex < 0) throw new Error("Cannot get right child index");
 
 		const update: ComponentUpdateWithoutGlobal = { componentId, type: 'component', name: 'reorder', value, oldValue, childIndex };
-		
+
 		onAttributesChange([update], false);
 	})
 
 	const onAttributesChange = (updates: ComponentUpdateWithoutGlobal[], execute = true) => {
-		let components = updates.map(update => harmonyComponents.find(component => component.id === update.componentId));
-		let globalChange = false;
-		components.forEach(component => {
-			const updateType = updates.find(update => update.componentId === component?.id)?.type;
-			const prop = component?.props.find(prop => prop.propName === updateType);
-			if (prop && !prop.isStatic) globalChange = true;
-		})
-
 		executeCommand(updates.map(update => ({ ...update, isGlobal: false })), execute);
-
-		console.log('global change', globalChange)
-
-		//setCurrUpdates({updates, execute});
+		onApplyGlobal(updates);
 	}
 
 	const onElementChange = (element: HTMLElement, update: ComponentUpdateWithoutGlobal[], execute = true) => {
@@ -419,7 +419,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 					</button>
 				</div>}
 				<WelcomeModal />
-				{/* {currUpdates ? <GlobalUpdateModal updates={currUpdates.updates || []} onFinish={onFinishGlobalUpdates}/> : null} */}
+				<GlobalUpdatePopup onUndo={onUndo} executeCommand={executeCommand} />
 			</HarmonyContext.Provider>}
 		</>
 	)
@@ -646,7 +646,7 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 	// }, []);
 
 
-	return executeCommand;
+	return { executeCommand, onUndo };
 }
 
 const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
