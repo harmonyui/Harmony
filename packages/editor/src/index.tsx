@@ -1,10 +1,8 @@
 'use client';
 import { getClass } from '@harmony/util/src/utils/common';
-import { useEffect, useRef } from 'react';
-import ReactDOM from 'react-dom';
-import type { HarmonyProviderProps } from './components/harmony-provider';
-import { HarmonyProvider } from './components/harmony-provider';
-import { HarmonySetup } from './components/harmony-setup';
+import type { HarmonyProviderProps} from './components/harmony-provider';
+import {HarmonyProvider} from './components/harmony-provider';
+import { HarmonySetup, Setuper } from './components/harmony-setup';
 
 type HarmonyProvider = (options: Omit<HarmonyProviderProps, 'children'>, harmonyContainer: HTMLDivElement) => void;
 
@@ -20,6 +18,7 @@ export function HarmonyProviderFunc(options: Omit<HarmonyProviderProps, 'childre
         const ref = useRef<HTMLBodyElement>(null);
         useEffect(() => {
             if (ref.current) {
+                options.setup = new Setuper(options.setup.harmonyContainer);
                 options.setup.setContainer(ref.current);
                 options.setup.changeMode('designer');
             }

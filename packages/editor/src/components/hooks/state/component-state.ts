@@ -10,9 +10,10 @@ import { ComponentUpdateWithoutGlobal } from "../../harmony-context";
 export interface ComponentState {
     selectedComponent: ComponentElement | undefined
     rootComponent: ComponentElement | undefined
-    selectElement: (element: HTMLElement | undefined) => void,
-    globalUpdate: ComponentUpdateWithoutGlobal[] | undefined,
-    onApplyGlobal: (updates: ComponentUpdateWithoutGlobal[] | undefined) => void,
+    selectElement: (element: HTMLElement | undefined) => void
+    //This is temporary until we move execute command into zustand
+    updateCounter: number,
+    updateTheCounter: () => void
 }
 
 export const createComponentStateSlice = createHarmonySlice<ComponentState, HarmonyComponentsState>((set, get) => {
@@ -113,20 +114,11 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
 
                 const id = element.dataset.harmonyText === 'true' ? element.parentElement?.dataset.harmonyId : element.dataset.harmonyId;
                 const component = findElement(rootComponent, id || '');
-                set({ selectedComponent: component ? { ...component, element } : undefined });
+                set({selectedComponent: component ? {...component, element} : undefined});
             },
-            globalUpdate: undefined,
-            onApplyGlobal: (updates: ComponentUpdateWithoutGlobal[] | undefined) => {
-                if (!updates) return set({ globalUpdate: undefined })
-                const components = updates.map(update => get().harmonyComponents.find(component => component.id === update.componentId));
-                const globalChange = components.some(component => {
-                    const updateType = updates.find(update => update.componentId === component?.id)?.type;
-                    const prop = component?.props.find(prop => prop.propName === updateType);
-                    return prop && !prop.isStatic;
-                });
-                if (globalChange) {
-                    set({ globalUpdate: updates });
-                }
+            updateCounter: 0,
+            updateTheCounter() {
+                set({updateCounter: get().updateCounter + 1});
             },
         },
         dependencies: {

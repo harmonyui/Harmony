@@ -62,13 +62,13 @@ export class GithubRepository implements GitRepository {
 
     public async getContentOrDirectory(filePath: string, branchName?: string) {
         const octokit = await this.getOctokit();
-        const refKey = await this.getBranchRef(branchName || this.repository.branch);
+        const refKey = branchName ? await this.getBranchRef(branchName) : this.repository.ref;
         const cacheKey = {repo: this.repository.name, path: filePath, ref: refKey}
         
         const cachedFile = await this.gitCache.getFileOrDirectoryContents(cacheKey);
         if (cachedFile) {
             if (typeof cachedFile === 'string') {
-                return {content: cachedFile, path: filePath};
+                return {content: this.decodeContent(cachedFile), path: filePath};
             }
 
             return cachedFile;
@@ -84,7 +84,7 @@ export class GithubRepository implements GitRepository {
         const cacheContent = 'content' in fileInfo ? fileInfo.content : Array.isArray(fileInfo) ? fileInfo : [fileInfo];
         await this.gitCache.setFileOrDirectoryContents(cacheKey, cacheContent)
 
-        return fileInfo;
+        return 'content' in fileInfo ? {content: this.decodeContent(fileInfo.content), path: fileInfo.path} : fileInfo;
     }
 
     public async createBranch(newBranch: string) {
@@ -158,13 +158,9 @@ export class GithubRepository implements GitRepository {
     }
 
     public async getContent(file: string, ref?: string, rawContent=false) {
-        const decodeContent = (content: string): string => {
+        const decodeContent = (content: string) => {
             if (rawContent) return content;
-            //We have to do this fancy decoding because some special characters do not decode right 
-            //with atob
-            return decodeURIComponent(atob(content).split('').map(function map(c) {
-                return `%${  (`00${  c.charCodeAt(0).toString(16)}`).slice(-2)}`;
-            }).join(''));
+            return this.decodeContent(content);
         }
         const octokit = await this.getOctokit();
 
@@ -338,6 +334,14 @@ export class GithubRepository implements GitRepository {
         });
 
         return response.data.html_url;
+    }
+
+    private decodeContent(content: string): string {
+        //We have to do this fancy decoding because some special characters do not decode right 
+        //with atob
+        return decodeURIComponent(atob(content).split('').map(function map(c) {
+            return `%${  (`00${  c.charCodeAt(0).toString(16)}`).slice(-2)}`;
+        }).join(''));
     }
 }
 

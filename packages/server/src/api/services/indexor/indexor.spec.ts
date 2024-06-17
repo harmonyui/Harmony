@@ -410,21 +410,22 @@ describe("indexor", () => {
             expect(result).toBeTruthy();
 
             //Comp
-            // expect(componentElements[2].props.length).toBe(4);
-            // expect(componentElements[2].props[0].type).toBe('className');
-            // expect(componentElements[2].props[0].name).toBe('string');
-            // expect(componentElements[2].props[0].value).toBe('outline');
-            // expectLocationOfString(file, componentElements[2].props[0].location, '"outline"');
+            expect(componentElements[2].props.length).toBe(6);
+            expect(componentElements[2].props[0].type).toBe('property');
+            expect(componentElements[2].props[0].name).toBe('string');
+            expect(componentElements[2].props[0].value).toBe('variant:outline');
+            expectLocationOfString(file, componentElements[2].props[0].location, '"outline"');
 
-            // expect(componentElements[2].props[1].type).toBe('className');
-            // expect(componentElements[2].props[1].name).toBe('property');
-            // expect(componentElements[2].props[1].value).toBe('className:size');
-            // expectLocationOfString(file, componentElements[2].props[1].location, 'size');
+            expect(componentElements[2].props[2].type).toBe('className');
+            expect(componentElements[2].props[2].name).toBe('string');
+            expect(componentElements[2].props[2].value).toBe('bg-sky-50');
+            expectLocationOfString(file, componentElements[2].props[2].location, '"bg-sky-50"');
 
-            // expect(componentElements[2].props[2].type).toBe('className');
-            // expect(componentElements[2].props[2].name).toBe('string');
-            // expect(componentElements[2].props[2].value).toBe('bg-sky-50');
-            // expectLocationOfString(file, componentElements[2].props[2].location, '"bg-sky-50"');
+            expect(componentElements[2].props[5].type).toBe('text');
+            expect(componentElements[2].props[5].name).toBe('string');
+            expect(componentElements[2].props[5].value).toBe('This is a child');
+            expect(componentElements[2].props[5].index).toBe(0);
+            expectLocationOfString(file, componentElements[2].props[5].location, 'This is a child');
 
             //ScrollView
             expect(componentElements[5].props.length).toBe(4);
@@ -467,7 +468,7 @@ describe("indexor", () => {
             expect(result).toBeTruthy();
             expect(componentElements.length).toBe(8);
 
-            expect(componentElements[0].props.length).toBe(3);
+            expect(componentElements[0].props.length).toBe(4);
             expect(componentElements[0].props[0].type).toBe('property');
             expect(componentElements[0].props[0].name).toBe('property');
             expect(componentElements[0].props[0].value).toBe('variant:variant');
@@ -479,7 +480,7 @@ describe("indexor", () => {
             expect(componentElements[0].props[2].locationType).toBe('props');
             expectLocationOfString(file, componentElements[0].props[2].location, 'buttonClass');
 
-            expect(componentElements[4].props.length).toBe(3);
+            expect(componentElements[4].props.length).toBe(5);
             expect(componentElements[4].props[0].type).toBe('property');
             expect(componentElements[4].props[0].name).toBe('string');
             expect(componentElements[4].props[0].value).toBe('variant:secondary');
@@ -518,7 +519,7 @@ describe("indexor", () => {
             expect(componentElements[5].props[0].locationType).toBe('component');
             expect(componentElements[5].props[0].index).toBe(1);
 
-            expect(componentElements[6].props.length).toBe(3);
+            expect(componentElements[6].props.length).toBe(5);
             expect(componentElements[6].props[0].type).toBe('property');
             expect(componentElements[6].props[0].name).toBe('property');
             expect(componentElements[6].props[0].value).toBe('variant:variant');
@@ -539,19 +540,59 @@ describe("indexor", () => {
 
             const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
             expect(result).toBeTruthy();
-            expect(componentElements.length).toBe(15);
+            expect(componentElements.length).toBe(20);
 
-            expect(componentElements[2].props.length).toBe(2);
-            expect(componentElements[2].props[0].type).toBe('text');
-            expect(componentElements[2].props[0].name).toBe('string');
-            expect(componentElements[2].props[0].value).toContain('Filter');
-            expect(componentElements[2].props[0].index).toBe(1);
+            expect(componentElements[3].props.length).toBe(2);
+            expect(componentElements[3].props[0].type).toBe('text');
+            expect(componentElements[3].props[0].name).toBe('string');
+            expect(componentElements[3].props[0].value).toContain('Filter');
+            expect(componentElements[3].props[0].index).toBe(1);
 
-            expect(componentElements[7].props.length).toBe(2);
-            expect(componentElements[7].props[0].type).toBe('text');
-            expect(componentElements[7].props[0].name).toBe('string');
-            expect(componentElements[7].props[0].value).toContain('Hello');
-            expect(componentElements[7].props[0].index).toBe(2);
+            expect(componentElements[12].props.length).toBe(2);
+            expect(componentElements[12].props[0].type).toBe('text');
+            expect(componentElements[12].props[0].name).toBe('string');
+            expect(componentElements[12].props[0].value).toContain('Hello');
+            expect(componentElements[12].props[0].index).toBe(2);
+        })
+
+        it("Should give the parent a classname when given a spread parameter", () => {
+            const componentElements: HarmonyComponentWithNode[] = [];
+            const componentDefinitions: Record<string, HarmonyComponent> = {};
+            const file: TestFile = 'app/complexText.tsx';
+
+            const content = testCases[file];
+
+            const result = getCodeInfoFromFile(file, content, componentDefinitions, componentElements, {});
+            expect(result).toBeTruthy();
+            expect(componentElements.length).toBe(20);
+
+            //Spread -> h1
+            expect(componentElements[1].props.length).toBe(3);
+            expect(componentElements[1].props[2].type).toBe('className');
+            expect(componentElements[1].props[2].name).toBe('string');
+            expect(componentElements[1].props[2].value).toBe('');
+            expect(componentElements[1].props[2].locationType).toBe('add');
+            expectLocationOfString(file, componentElements[1].props[2].location, '');
+
+            //Spread 1 -> h1
+            expect(componentElements[8].props.length).toBe(4);
+            expect(componentElements[8].props[3].type).toBe('className');
+            expect(componentElements[8].props[3].name).toBe('string');
+            expect(componentElements[8].props[3].value).toBe('className')
+            expect(componentElements[8].props[3].locationType).toBe('add');
+
+            //Spread 2 -> h1
+            expect(componentElements[10].props.length).toBe(4);
+            expect(componentElements[10].props[0].type).toBe('text');
+            expect(componentElements[10].props[0].name).toBe('string');
+            expect(componentElements[10].props[0].value).toBe('This is a spread: label::')
+            expect(componentElements[10].props[0].locationType).toBe('component');
+
+            expect(componentElements[10].props.length).toBe(4);
+            expect(componentElements[10].props[3].type).toBe('className');
+            expect(componentElements[10].props[3].name).toBe('string');
+            expect(componentElements[10].props[3].value).toBe('border-1')
+            expect(componentElements[10].props[3].locationType).toBe('component');
         })
 
         //TODO: Finish this
@@ -930,7 +971,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     export { Button, buttonVariants }
 
     const ButtonInstance = () => {
-        return (<Button className="bg-sky-50" variant="outline"/>)
+        return (<Button className="bg-sky-50" variant="outline">This is a child</Button>)
     }
 
     type Props = {
@@ -1027,11 +1068,18 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
             <div>{children}</div>
         )
     }
-    
-    const App = () => {
+
+    const SpreadComponent = ({label, ...rest}) => {
+        return <h1 {...rest}>{label}</h1>
+    }
+
+   const App = () => {
+        const spreadLabel = "This is a spread: label::";
         return (<>
             <Component><Icon/> Filter</Component>
             <ComponentComplex><Icon/> Hello</ComponentComplex>
+            <SpreadComponent label="Thank you friend" />
+            <SpreadComponent label={spreadLabel} className="border-1"/>
         </>)
     }
 

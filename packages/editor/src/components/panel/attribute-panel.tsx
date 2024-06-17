@@ -42,7 +42,8 @@ type ComponentAttributeProviderProps = ComponentAttributePanelProps & {
 export const ComponentAttributeProvider: React.FunctionComponent<ComponentAttributeProviderProps> = ({children, onChange}) => {
     const {fonts} = useHarmonyContext();
     const selectedComponent = useHarmonyStore(state => state.selectedComponent);
-    const data = useMemo(() => selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined, [selectedComponent, fonts]);
+    const updateCounter = useHarmonyStore(state => state.updateCounter);
+    const data = useMemo(() => selectedComponent ? getTextToolsFromAttributes(selectedComponent, fonts) : undefined, [selectedComponent, fonts, updateCounter]);
     
     const onAttributeChange = (values: {name: string, value: string}) => {
 		if (!data || !selectedComponent) return;

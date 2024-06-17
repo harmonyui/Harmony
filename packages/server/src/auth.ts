@@ -87,7 +87,17 @@ export const getAccount = async (userId: string): Promise<Account | undefined> =
 	}
 }
 
-const harmonyAdmins = ['bradofrado@gmail.com', 'braydon.jones28@gmail.com', 'jacobwyliehansen@gmail.com', 'wyattthacker12@gmail.com', 'tannerhelms01@gmail.com', 'tannerhelmsllc@gmail.com'];
+const getRole = async (id:string): Promise< string> => {
+	const user = await prisma.user.findFirst({
+		where: {
+			id
+		}
+	});
+
+	if ( user === null) return 'user';
+	return user.role;
+}
+
 export const getServerAuthSession = async (userId: string | null, mockUserId?: string): Promise<Session | undefined> => {
 	//const {userId} = auth()// : {userId: null};
 	//const {userId} = _auth;
@@ -100,6 +110,7 @@ export const getServerAuthSession = async (userId: string | null, mockUserId?: s
 			throw new Error("User does not have an email address");
 		}
 		const email = user.emailAddresses[0].emailAddress;
+		const role = await getRole(email);
 		ourAuth = {
 			user: {
 				id: user.id,
@@ -108,7 +119,7 @@ export const getServerAuthSession = async (userId: string | null, mockUserId?: s
 				email
 			},
 			userId,
-			role: harmonyAdmins.includes(email) ? 'harmony-admin' : 'user'
+			role: role,
 		}
 	}
 

@@ -77,7 +77,7 @@ export const indexCodebase = async (dirname: string, gitRepository: GitRepositor
 	return elementInstances;
 }
 
-export async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponent[]> {
+export async function indexForComponents(componentIds: string[], gitRepository: GitRepository): Promise<HarmonyComponentWithNode[]> {
 	const readFile = async (filepath: string) => {
 		//TOOD: Need to deal with actual branch probably at some point
 		const content = await gitRepository.getContent(filepath, gitRepository.repository.branch);
@@ -134,8 +134,8 @@ function getAttributeValue(attribute: Attribute): string {
 	}
 
 	if (attribute.type === 'property') {
-		const [_, propertyValue] = attribute.value.split(':');
-		return propertyValue;
+		const [_, ...propertyValue] = attribute.value.split(':');
+		return propertyValue.join(':')
 	}
 
 	return attribute.value;
@@ -307,10 +307,12 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 
 						function connectAttributesToParent(elementAttributes: Attribute[], parent: HarmonyComponentWithNode): Attribute[] {
 							const attributes: Attribute[] = [];
+							const addedFromParents: Attribute[] = [];
 							for (const attribute of elementAttributes) {
 								const propertyName = getPropertyName(attribute);
 								if (propertyName) {
-									const sameAttributesInElement = parent.props.filter(attr => getAttributeName(attr) === propertyName).map(attr => {
+									const filtered = parent.props.filter(attr => getAttributeName(attr) === propertyName);
+									const sameAttributesInElement = filtered.map(attr => {
 										const newAttribute = {...attr};
 										if (attribute.type === 'text') {
 											newAttribute.value = getAttributeValue(newAttribute);
@@ -338,6 +340,8 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 										}
 										return newAttribute;
 									})
+									addedFromParents.push(...filtered);
+
 									//If there is a props className attribute but the parent doesn't have a className attribute already applied to it, then add it
 									//on to the parent.
 									if (attribute.type === 'className' && attribute.locationType === 'props' && sameAttributesInElement.length === 0) {
@@ -351,11 +355,28 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									//If we have some things to add, cheerio!
 									if (sameAttributesInElement.length > 0) {
 										attributes.push(...sameAttributesInElement);
+										
 										continue;
 									}
 									//Otherwise just add this attribute
 								}
 								attributes.push({...attribute});
+							}
+
+							//If the child has a spread attribute, lets pull down every attribute from the parent that has not been already
+							//connected
+							if (elementAttributes.find(attr => getAttributeName(attr) === 'harmony-spread' && attr.locationType === 'props')) {
+								const parentAttributesNotAlreadyAdded = parent.props.filter(parentProp => !addedFromParents.includes(parentProp));
+								attributes.push(...parentAttributesNotAlreadyAdded);
+								//If one of the parent's attribute doesn't include children, we can add that one
+								if (!attributes.find(attribute => attribute.type === 'className' && attribute.reference === parent)) {
+									if (!parent.node.openingElement.name.loc) {
+										throw new Error("Invalid location");
+									}
+									const {end} = parent.node.openingElement.name.loc;
+									//Even though this is type string, we need to know what the name of the class is we are adding, so we set that as the attribute value
+									attributes.push({id: '', type: 'className', index: -1, reference: parent, name: 'string', value: 'className', locationType: 'add', location: {file: parent.location.file, start: end.index, end: end.index}});
+								}
 							}
 
 							return attributes;
@@ -664,18 +685,23 @@ export function getCodeInfoFromFile(file: string, originalCode: string, componen
 									} else if (t.isJSXExpressionContainer(attr.value)) {
 										jsxElementDefinition.props.push(...createExpressionAttribute(attr.value.expression, type, String(attr.name.name)).map(expression => createAttribute(type, expression.name, getAttributeName(expression), getAttributeValue(expression), expression.locationType, expression.location)));
 									}
+								} else if (t.isJSXSpreadAttribute(attr) && t.isIdentifier(attr.argument)) {
+									const prop = createIdentifierAttribute(attr.argument, 'property', 'harmony-spread')[0];
+									prop && jsxElementDefinition.props.push(createAttribute('property', prop.name, getAttributeName(prop), getAttributeValue(prop), prop.locationType, prop.location))
 								}
 							}
 
 							//If this is a native html element and there is not className props, then we want the ability to add one
+							let defaultClassName: Attribute | undefined;
 							if (!jsxElementDefinition.isComponent && !jsxElementDefinition.props.find(attr => attr.type === 'className')) {
 								if (!node.openingElement.name.loc) {
 									throw new Error("Invalid location");
 								}
 								const {end} = node.openingElement.name.loc;
-								jsxElementDefinition.props.push(createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index}))
+								defaultClassName = createAttribute('className', 'string', undefined, '', 'add', {file, start: end.index, end: end.index})
+								jsxElementDefinition.props.push(defaultClassName)
 							}
-							
+
 							//console.log(`Adding ${jsxElementDefinition.name}`);
 							jsxElements.forEach(element => {
 								element.children.push(jsxElementDefinition);
@@ -735,7 +761,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 		return `${parentId}#${instance.id}`;
 	}
 
-	const findAttributeReference = (element: HarmonyComponent | undefined, attributeId: string): {id: string} | undefined=> {
+	const findAttributeReference = (element: HarmonyComponentWithNode | undefined, attributeId: string): HarmonyComponentWithNode | undefined=> {
 		if (!element) return undefined;
 
 		const id = element.id.split('#')[element.id.split('#').length - 1];
@@ -743,7 +769,7 @@ function normalizeCodeInfo(componentDefinitions: Record<string, HarmonyComponent
 			return element;
 		}
 
-		return findAttributeReference(element.getParent(), attributeId);
+		return findAttributeReference(element.getParent() as HarmonyComponentWithNode, attributeId);
 	}
 
 	for (let i = 0; i < elementInstances.length; i++) {

@@ -77,7 +77,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [mode, setMode] = useState<SelectMode>('tweezer');
 	const [scale, _setScale] = useState(.8);
 	const [isDirty, setIsDirty] = useState(false);
-	const [updateOverlay, setUpdateOverlay] = useState(0);
 	const [isSaving, setIsSaving] = useState(false);
 	const [displayMode, setDisplayMode] = useState<DisplayMode>();
 	const [cursorX, setCursorX] = useState(0);
@@ -99,10 +98,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const updateComponentsFromIds = useHarmonyStore((state) => state.updateComponentsFromIds);
 	const selectedComponent = useHarmonyStore(state => state.selectedComponent?.element);
 	const setSelectedComponent = useHarmonyStore(state => state.selectElement);
+	const updateTheCounter = useHarmonyStore(state => state.updateTheCounter);
 
 	const { executeCommand, onUndo } = useComponentUpdator({
 		isSaving, environment, setIsSaving, fonts, isPublished: Boolean(pullRequest), branchId, repositoryId, rootComponent, forceSave, behaviors, onChange() {
-			setUpdateOverlay(updateOverlay + 1);
+			updateTheCounter();
 		}, onError: setError
 	});
 
@@ -258,7 +258,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				element.dataset.harmonyId = id;
 			}
 
-			componentIds.push(id);
+			id && componentIds.push(id);
 		}
 
 		const children = Array.from(element.childNodes);
@@ -326,7 +326,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const onTextChange = useEffectEvent((value: string, oldValue: string) => {
 		if (!selectedComponent) return;
 
-		const componentId = selectedComponent.dataset.harmonyText === 'true' ? selectedComponent.parentElement!.dataset.harmonyId : selectedComponent.dataset.harmonyId;
+		let componentId = selectedComponent.dataset.harmonyId;
 		let index = 0;
 		let childIndex = Array.from(selectedComponent.parentElement!.children).indexOf(selectedComponent);
 		if (!componentId) {
@@ -337,6 +337,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 				}
 				index = Array.from(element.children).indexOf(selectedComponent);
 				childIndex = Array.from(element.parentElement!.children).indexOf(element)
+				componentId = element.dataset.harmonyId;
 			}
 
 			if (!componentId || index < 0) {
@@ -407,7 +408,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 									setRootComponent(harmonyContainerRef.current);
 								}
 							}} style={{ width: `${WIDTH}px`, minHeight: `${HEIGHT}px`, transformOrigin: "0 0", transform: `scale(${scale})` }}>
-								{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} updateOverlay={updateOverlay} scale={scale} onChange={onElementChange} /> : null}
+								{isToggled ? <Inspector rootElement={rootComponent} parentElement={rootComponent} selectedComponent={selectedComponent} hoveredComponent={hoveredComponent} onHover={setHoveredComponent} onSelect={setSelectedComponent} onElementTextChange={onTextChange} onReorder={onReorder} mode={mode} scale={scale} onChange={onElementChange} /> : null}
 								{children}
 							</div>
 						</div>

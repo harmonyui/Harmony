@@ -2,30 +2,45 @@ import type { Db, Prisma } from "@harmony/db/lib/prisma";
 import type { ComponentUpdate} from "@harmony/util/src/types/component";
 import { updateTypesSchema } from "@harmony/util/src/types/component";
 
+interface Selector {
+    dateModified: Date
+}
+
 export interface ComponentUpdateRepository {
-    getUpdates: (branchId: string) => Promise<ComponentUpdate[]>;
+    getUpdates: <T extends keyof Selector>(branchId: string, select?: T[]) => Promise<(ComponentUpdate & Pick<Selector, T>)[]>;
     createUpdates: (updates: ComponentUpdate[], branchId: string) => Promise<ComponentUpdate[]>;
 }
 
 export class PrismaComponentUpdateRepository implements ComponentUpdateRepository {
     constructor(private prisma: Db) {}
 
-    public async getUpdates(branchId: string) {
-        const query = await this.prisma.$queryRaw<{ type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, isGlobal: boolean }[]>`
-            SELECT u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", u.component_id as "id" FROM "ComponentUpdate" u
+    public async getUpdates<T extends keyof Selector>(branchId: string, select?: T[]) {
+        const query = await this.prisma.$queryRaw<{ type: string, childIndex: number, name: string, value: string, oldValue: string, id: string, isGlobal: boolean, dateModified: Date }[]>`
+            SELECT u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", u.component_id as "id", u.date_modified as "dateModified" FROM "ComponentUpdate" u
             WHERE u.branch_id = ${branchId}
             ORDER BY u.date_modified ASC`
 
 
-        const updates: ComponentUpdate[] = query.map(up => ({
-            type: up.type as ComponentUpdate['type'],
-            name: up.name,
-            value: up.value,
-            oldValue: up.oldValue,
-            componentId: up.id,
-            childIndex: up.childIndex,
-            isGlobal: up.isGlobal
-        }));
+        
+        const updates: (ComponentUpdate & Pick<Selector, T>)[] = query.map(up => {
+            const selector: Selector = {
+                dateModified: up.dateModified
+            }
+            const selected: Pick<Selector, T> = {} as Pick<Selector, T>
+            for (const key of select || []) {
+                selected[key] = selector[key];
+            }
+            return ({
+                type: up.type as ComponentUpdate['type'],
+                name: up.name,
+                value: up.value,
+                oldValue: up.oldValue,
+                componentId: up.id,
+                childIndex: up.childIndex,
+                isGlobal: up.isGlobal,
+                ...selected
+            })
+        });
 
         return updates;
     }

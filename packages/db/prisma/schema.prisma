@@ -155,3 +155,8 @@ model ChangeLog {
     features     String
     bugs         String
 }
+
+model User {
+    id String @id
+    role String
+}
