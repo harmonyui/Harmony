@@ -2,6 +2,7 @@ import { enableRipple } from "@syncfusion/ej2-base";
 import {
 	DragAndDropEventArgs,
 	NodeSelectEventArgs,
+	DrawNodeEventArgs,
 	TreeViewComponent
 } from "@syncfusion/ej2-react-navigations";
 import { useEffect, useMemo, useState } from "react";
@@ -114,42 +115,17 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		onAttributesChange([update])
 	}
 
-	function onMouseOver(item: HTMLElement, link: string) {
+	function onMouseOver(link: string) {
 		const node = document.querySelector(`[data-link="${link}"]`)
 		if (node) {
 			onComponentHover(node as HTMLElement)
 		}
 	}
-	function onMouseClick(item: HTMLElement, link: string) {
+	function onMouseClick(link: string) {
 		const node = document.querySelector(`[data-link="${link}"]`)
 		if (node) {
 			onComponentSelect(node as HTMLElement)
 		}
-	}
-
-	function addEvents(tree: HTMLElement[]) {
-		tree.forEach((item, idx) => {
-			if (item.dataset.uid) {
-				if (item.children[0] && item.children[0].classList.contains('e-fullrow') && item.children[1].innerHTML.includes('data-node')) {
-					const link = item.children[1].innerHTML.split('data-node=')[1].split('"')[1]
-					item.dataset.harmonyError = item.children[1].innerHTML.split('harmony-error=')[1].split('"')[1]
-					item.children[0].addEventListener('mouseover', () => {
-						onMouseOver(item, link!)
-					})
-					item.children[0].addEventListener('click', () => {
-						onMouseClick(item, link!)
-					})
-
-					item.children[1].addEventListener('mouseover', () => {
-						onMouseOver(item, link!)
-					})
-					item.children[1].addEventListener('click', () => {
-						onMouseClick(item, link!)
-					})
-				}
-			}
-			addEvents(Array.from(item.children) as HTMLElement[])
-		})
 	}
 
 	function dragStop(event: DragAndDropEventArgs) {
@@ -176,10 +152,16 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		}
 	}
 
-	function onCreated() {
-		if (treeObj) {
-			addEvents([treeObj.element])
-		}
+	function drawNode(event: DrawNodeEventArgs) {
+		event.node.addEventListener('mouseover', (e) => {
+			e.stopPropagation();
+			onMouseOver(event.nodeData.id as string);
+		})
+
+		event.node.addEventListener('click', (e) => {
+			e.stopPropagation();
+			onMouseClick(event.nodeData.id as string);
+		})
 	}
 
 	function handleAddElement(position: string) {
@@ -291,8 +273,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 					ref={(treeview) => { treeObj = treeview; }}
 					nodeDropped={handleNodeDropped}
 					nodeTemplate={TreeViewItem}
-					created={onCreated}
-					dataBound={onCreated}
+					drawNode={drawNode}
 					allowMultiSelection={true}
 					selectedNodes={selectedNodes}
 					nodeSelected={nodeSelected}
