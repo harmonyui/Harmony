@@ -16,5 +16,5 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                 componentUpdates: copy
             }
         })
-    }
+    },
 }));

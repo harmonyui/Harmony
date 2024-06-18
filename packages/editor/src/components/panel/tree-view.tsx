@@ -1,12 +1,14 @@
 import { enableRipple } from "@syncfusion/ej2-base";
 import {
 	DragAndDropEventArgs,
+	NodeSelectEventArgs,
 	TreeViewComponent
 } from "@syncfusion/ej2-react-navigations";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
 import { ComponentElement } from "../inspector/component-identifier";
+import { Button } from "@harmony/ui/src/components/core/button";
 enableRipple(true);
 
 export interface TreeViewItem<T = string> {
@@ -40,10 +42,11 @@ const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 
 
 export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeViewItem<ComponentElement>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void }) => {
-	const { onAttributesChange, onComponentHover, onComponentSelect, setError } = useHarmonyContext()
+	const { onAttributesChange, onComponentHover, onComponentSelect, setError, selectedComponent } = useHarmonyContext()
+	const [multiSelect, setMultiSelect] = useState<{ start: HTMLElement, end: HTMLElement }>()
 
 	const [transformedItems, setTransformedItems] = useState<TransformNode[]>();
-	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex' };
+	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex', selected: 'isSelected' };
 
 	function transform(node: TreeViewItem<any>, componentError = ''): TransformNode {
 		const { id, name, element }: { id: string, name: string, element: HTMLElement } = node.id;
@@ -179,8 +182,123 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		}
 	}
 
+	function handleAddElement(position: string) {
+		if (!selectedComponent) return;
+		const link = selectedComponent.dataset.link
+		const component = document.querySelector(`[data-link="${link}"]`)!!
+		const childIndex = Array.from(component.parentElement!!.childNodes).indexOf(selectedComponent)
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "create",
+			componentId: selectedComponent.dataset.harmonyId!!,
+			childIndex,
+			oldValue: JSON.stringify({ created: false, position: "", baseIndex: childIndex }),
+			value: JSON.stringify({ created: true, position: position, baseIndex: position === "above" ? childIndex + 1 : childIndex })
+		}
+		onAttributesChange([update])
+	}
+
+	function handleDeleteElement() {
+		if (!selectedComponent) return;
+		const link = selectedComponent.dataset.link
+		const component = document.querySelector(`[data-link="${link}"]`)!!
+		const childIndex = Array.from(component.parentElement!!.childNodes).indexOf(selectedComponent)
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "delete",
+			componentId: selectedComponent.dataset.harmonyId!!,
+			childIndex,
+			oldValue: JSON.stringify({ index: childIndex }),
+			value: JSON.stringify({ index: -1 })
+		}
+		onAttributesChange([update])
+	}
+	let selectedNodes = ['2', '6'];
+	function nodeSelected(e: NodeSelectEventArgs) {
+		const start = treeObj!!.startNode as HTMLElement
+		const startId = start.children[1].innerHTML.split('data-node=')[1].split('"')[1]
+		const startNode = document.querySelector(`[data-link="${startId}"]`) as HTMLElement
+		const end = e.node
+		const endId = end.children[1].innerHTML.split('data-node=')[1].split('"')[1]
+		const endNode = document.querySelector(`[data-link="${endId}"]`) as HTMLElement
+		setMultiSelect({ start: startNode, end: endNode })
+	}
+
+	function handleWrapElement() {
+		const startComponent = document.querySelector(`[data-link="${multiSelect?.start.dataset.link}"]`)!!
+		const startChildIndex = Array.from(startComponent.parentElement!!.childNodes).indexOf(startComponent)
+		const endComponent = document.querySelector(`[data-link="${multiSelect?.end.dataset.link}"]`)!!
+		const endChildIndex = Array.from(endComponent.parentElement!!.childNodes).indexOf(endComponent)
+
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "wrap",
+			componentId: multiSelect?.start.dataset.harmonyId!!,
+			childIndex: startChildIndex,
+			oldValue: JSON.stringify({}),
+			value: JSON.stringify({
+				start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
+				end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex }
+			})
+		}
+		onAttributesChange([update])
+	}
+
+	const isGroup = useMemo(() => {
+		if (selectedComponent) {
+			if (selectedComponent.children.length > 0) {
+				return true
+			}
+		}
+		return false
+	}, [selectedComponent])
+
 	return (
-		<TreeViewComponent fields={fields} allowDragAndDrop={true} nodeDragStart={nodeDragStart.bind(this)} nodeDragStop={dragStop.bind(this)} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} created={onCreated} />
+		transformedItems && (
+			<div>
+				{selectedComponent && (
+					<>
+						<div className="hw-flex hw-flex-row hw-space-x-4">
+							<div onClick={() => handleAddElement("above")}>
+								<Button >Add Element Above</Button>
+							</div>
+							<div onClick={() => handleAddElement("below")}>
+								<Button>Add Element Below</Button>
+							</div>
+							<div onClick={handleDeleteElement}>
+								<Button>Delete Element</Button>
+							</div>
+						</div>
+						<div className="hw-flex hw-flex-row hw-space-x-4 hw-mt-4">
+							{multiSelect && (
+								<div onClick={handleWrapElement}>
+									<Button>Wrap Element</Button>
+								</div>
+							)}
+							{isGroup && (
+								<div onClick={handleWrapElement}>
+									<Button>Ungroup</Button>
+								</div>
+							)}
+						</div>
+					</>
+				)}
+				<TreeViewComponent
+					fields={fields}
+					allowDragAndDrop={true}
+					nodeDragStart={nodeDragStart.bind(this)}
+					nodeDragStop={dragStop.bind(this)}
+					ref={(treeview) => { treeObj = treeview; }}
+					nodeDropped={handleNodeDropped}
+					nodeTemplate={TreeViewItem}
+					created={onCreated}
+					dataBound={onCreated}
+					allowMultiSelection={true}
+					selectedNodes={selectedNodes}
+					nodeSelected={nodeSelected}
+				/>
+			</div>
+		)
 	);
 }
 

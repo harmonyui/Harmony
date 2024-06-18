@@ -711,7 +711,7 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 	for (const update of translated) {
 		const parent = el.parentElement;
 		if (!parent) throw new Error("Element does not have a parent");
-
+		console.log(update.name, update)
 		if (update.type === 'component') {
 			if (update.name === 'reorder') {
 
@@ -750,6 +750,62 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 				} else {
 					throw new Error(`makeUpdates: Cannot find the elements parent with data-harmony-id: ${newParent}`);
 				}
+			}
+			if (update.name === "create") {
+				const { value, oldValue } = update;
+				const { baseIndex } = JSON.parse(oldValue)
+				const { position } = JSON.parse(value);
+				const component = findElementFromId(update.componentId, baseIndex);
+				if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
+				const newComponent = document.createElement('div');
+				newComponent.classList.add('hw-bg-primary-light');
+				newComponent.classList.add('hw-w-full');
+				newComponent.classList.add('hw-min-h-[10px]');
+				if (position === "below") {
+					component.after(newComponent);
+				} else {
+					component.before(newComponent);
+				}
+			}
+
+			if (update.name === "delete") {
+				const { oldValue } = update;
+				const { index } = JSON.parse(oldValue)
+				const component = findElementFromId(update.componentId, index);
+				if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
+				component.remove();
+			}
+
+			function getElementsBetween(start: Element, end: Element): Element[] {
+				let elements: Element[] = [];
+				elements.push(start);
+				elements.push(end)
+				let next = start.nextElementSibling;
+
+				while (next && next !== end) {
+					elements.push(next);
+					next = next.nextElementSibling;
+				}
+
+				return elements;
+			}
+
+			if (update.name === "wrap") {
+				const { oldValue, value } = update;
+				const { start, end } = JSON.parse(value);
+				const startElement = findElementFromId(start.id, start.childIndex);
+				const parent = startElement?.parentElement;
+				const endElement = findElementFromId(end.id, end.childIndex);
+				if (!startElement || !endElement) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
+				const newComponent = document.createElement('div');
+				newComponent.classList.add('hw-bg-primary-light');
+				parent?.appendChild(newComponent);
+
+				const elements = getElementsBetween(startElement, endElement)
+				elements.forEach(element => {
+					element.remove();
+					newComponent.appendChild(element);
+				})
 			}
 		}
 
