@@ -1,18 +1,21 @@
 import React, { useRef, useMemo, useState, useEffect, forwardRef } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
 import { getClass } from '@harmony/util/src/utils/common'
+import { SideDrawer } from '@harmony/ui/src/components/core/side-drawer'
 import { recurseElements } from '../../utils/element-utils'
 import { useHarmonyStore } from '../hooks/state'
 
 type ImageType = 'image' | 'svg'
 
 interface AddImagePanelProps {
+  isOpen: boolean
   onSave: (image: string, type: ImageType) => void
-  onCancel: () => void
+  onClose: () => void
 }
 export const AddImagePanel: React.FunctionComponent<AddImagePanelProps> = ({
+  isOpen,
   onSave: onSaveProps,
-  onCancel,
+  onClose,
 }) => {
   const rootComponent = useHarmonyStore((state) => state.rootComponent)
   const { imageTags, svgTags } = useMemo(() => {
@@ -58,32 +61,34 @@ export const AddImagePanel: React.FunctionComponent<AddImagePanelProps> = ({
   }
 
   return (
-    <div className='hw-flex hw-flex-col hw-justify-between hw-max-w-[300px] hw-p-5 hw-h-full'>
-      <div className='hw-grid hw-grid-cols-3 hw-gap-x-2 hw-gap-y-4'>
-        {imageTags.map((image) => (
-          <ImageCard
-            selected={selectedImage === image}
-            image={image}
-            onClick={() => onImageClick(image)}
-          />
-        ))}
-        {svgTags.map((svg) => (
-          <SVGCard
-            selected={selectedImage === svg}
-            svg={svg}
-            onClick={() => onImageClick(svg)}
-          />
-        ))}
+    <SideDrawer header='Images' isOpen={isOpen} onClose={onClose}>
+      <div className='hw-flex hw-flex-col hw-justify-between hw-max-w-[300px] hw-h-full'>
+        <div className='hw-grid hw-grid-cols-3 hw-gap-x-2 hw-gap-y-4'>
+          {imageTags.map((image) => (
+            <ImageCard
+              selected={selectedImage === image}
+              image={image}
+              onClick={() => onImageClick(image)}
+            />
+          ))}
+          {svgTags.map((svg) => (
+            <SVGCard
+              selected={selectedImage === svg}
+              svg={svg}
+              onClick={() => onImageClick(svg)}
+            />
+          ))}
+        </div>
+        <div className='hw-flex hw-justify-end hw-mt-4'>
+          <Button mode='secondary' onClick={onClose}>
+            Cancel
+          </Button>
+          <Button className='hw-ml-2' onClick={onSave}>
+            Select
+          </Button>
+        </div>
       </div>
-      <div className='hw-flex hw-justify-end hw-mt-4'>
-        <Button mode='secondary' onClick={onCancel}>
-          Cancel
-        </Button>
-        <Button className='hw-ml-2' onClick={onSave}>
-          Select
-        </Button>
-      </div>
-    </div>
+    </SideDrawer>
   )
 }
 

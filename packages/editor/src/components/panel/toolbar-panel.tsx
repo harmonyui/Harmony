@@ -91,6 +91,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
   const currentBranch = useHarmonyStore((state) => state.currentBranch)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
   const selectedElement = selectedComponent?.element
+  const [isImagePanelOpen, setIsImagePanelOpen] = useState(false)
 
   const {
     isSaving,
@@ -143,13 +144,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
   })
 
   const onImageClick = useEffectEvent(() => {
-    !isDemo &&
-      setPanel({
-        id: 'image',
-        content: (
-          <AddImagePanel onSave={() => undefined} onCancel={() => undefined} />
-        ),
-      })
+    !isDemo && setIsImagePanelOpen(!isImagePanelOpen)
   })
 
   const onGlobalClick = () => {
@@ -260,6 +255,11 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
           </button>
         ) : null}
       </div>
+      <AddImagePanel
+        isOpen={isImagePanelOpen}
+        onClose={() => setIsImagePanelOpen(false)}
+        onSave={() => undefined}
+      />
     </div>
   )
 }
