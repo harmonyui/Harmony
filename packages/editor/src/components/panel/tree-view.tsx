@@ -229,7 +229,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		const wrap = {
 			action: "wrap",
 			start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
-			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex }
+			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex },
 		}
 
 		const update: ComponentUpdateWithoutGlobal = {

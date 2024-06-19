@@ -4,13 +4,22 @@ import type { Font } from "@harmony/util/src/fonts";
 import { findElementFromId, findElementsFromId, findSameElementsFromId } from "../../../utils/element-utils";
 import { createHarmonySlice } from "./factory";
 
+type CachedElement = {
+    id: string,
+    element: Element,
+    parent: HTMLElement,
+    children: Element[]
+}
+
 export interface ComponentUpdateState {
     componentUpdates: ComponentUpdate[],
     addComponentUpdates: (values: ComponentUpdate[]) => void
-    makeUpdates: (updates: ComponentUpdate[], fonts: Font[] | undefined) => void
+    makeUpdates: (updates: ComponentUpdate[], fonts: Font[] | undefined) => void,
+    cachedElements: CachedElement[]
 }
 
-export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateState>((set) => ({
+export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateState>((set, get) => ({
+    cachedElements: [],
     componentUpdates: [],
     addComponentUpdates(value) {
         set(state => {
@@ -118,23 +127,54 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                     const { value } = update;
                     const { start, end, action } = JSON.parse(value) as { action: string, start: { id: string, childIndex: number }, end: { id: string, childIndex: number } };
                     if (action === "wrap") {
-                        const startElement = findElementFromId(start.id, start.childIndex);
-                        const parent = startElement?.parentElement;
-                        const endElement = findElementFromId(end.id, end.childIndex);
-                        if (!startElement || !endElement) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
-                        const newComponent = document.createElement('div');
-                        newComponent.dataset.harmonyId = update.componentId;
-                        newComponent.classList.add('hw-bg-primary-light');
-                        parent?.appendChild(newComponent);
+                        const cachedElement = get().cachedElements.find(c => c.id === update.componentId);
+                        if (cachedElement) {
+                            // const startElement = findElementFromId(start.id, start.childIndex);
+                            // const endElement = findElementFromId(end.id, end.childIndex);
+                            // const elements = getElementsBetween(startElement!!, endElement!!)
+                            // elements.forEach(element => {
+                            //     element.remove();
+                            // })
+                            const parent = cachedElement.parent;
+                            parent?.childNodes.forEach((child, index) => {
+                                if (index === start.childIndex) {
+                                    parent.insertBefore(cachedElement.element, child);
+                                    set((state) => {
+                                        state.cachedElements = state.cachedElements.filter(c => c.id !== update.componentId);
+                                        return state;
+                                    });
+                                    cachedElement.children.forEach(c => {
+                                        c.remove()
+                                    });
+                                    return;
+                                }
+                            })
+                        } else {
+                            const startElement = findElementFromId(start.id, start.childIndex);
+                            const parent = startElement?.parentElement;
+                            const endElement = findElementFromId(end.id, end.childIndex);
+                            if (!startElement || !endElement) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
 
-                        const elements = getElementsBetween(startElement, endElement)
-                        elements.forEach(element => {
-                            element.remove();
-                            newComponent.appendChild(element);
-                        })
+
+                            const newComponent = document.createElement('div');
+                            newComponent.dataset.harmonyId = update.componentId;
+                            newComponent.classList.add('hw-bg-primary-light');
+                            parent?.appendChild(newComponent);
+
+                            const elements = getElementsBetween(startElement, endElement)
+                            elements.forEach(element => {
+                                element.remove();
+                                newComponent.appendChild(element);
+                            })
+                        }
                     } else if (action === "unwrap") {
                         const element = document.querySelector(`[data-harmony-id="${update.componentId}"]`)
                         const parent = element?.parentElement;
+                        set((state) => {
+                            state.cachedElements.push({ id: update.componentId, element: element?.cloneNode(true) as HTMLElement, parent: parent!, children: Array.from(element?.children || []) });
+                            return state;
+                        });
+
                         if (!element) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
                         const children = Array.from(element.children);
                         children.forEach(child => {
