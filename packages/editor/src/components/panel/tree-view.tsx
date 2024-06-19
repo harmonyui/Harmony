@@ -237,6 +237,20 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		onAttributesChange([update])
 	}
 
+	const handleAddText = () => {
+		if (!selectedComponent) return;
+		const childIndex = Array.from(selectedComponent.parentElement!!.childNodes).indexOf(selectedComponent)
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "add-text",
+			componentId: selectedComponent.dataset.harmonyId!!,
+			childIndex,
+			oldValue: JSON.stringify({ text: "" }),
+			value: JSON.stringify({ text: "[Insert Text]" })
+		}
+		onAttributesChange([update])
+	}
+
 	const isGroup = useMemo(() => {
 		if (selectedComponent) {
 			if (selectedComponent.children.length > 0) {
@@ -244,6 +258,14 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 			}
 		}
 		return false
+	}, [selectedComponent])
+
+	const isEmptyDiv = useMemo(() => {
+		if (selectedComponent) {
+			if (selectedComponent.children.length === 0 && selectedComponent.tagName === "DIV") {
+				return true
+			}
+		}
 	}, [selectedComponent])
 
 	return (
@@ -271,6 +293,11 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 							{isGroup && (
 								<div onClick={() => handleWrapElement("unwrap")}>
 									<Button>UnWrap</Button>
+								</div>
+							)}
+							{isEmptyDiv && (
+								<div onClick={handleAddText}>
+									<Button>Add Text</Button>
 								</div>
 							)}
 						</div>

@@ -211,6 +211,18 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                         element.remove();
                     }
                 }
+                if (update.name === "add-text") {
+                    const { value } = update;
+                    const { text } = JSON.parse(value) as { text: string };
+                    const element = findElementFromId(update.componentId, update.childIndex);
+                    if (!element) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
+                    if (text !== "") {
+                        const textNode = document.createTextNode(text);
+                        element.appendChild(textNode);
+                    } else {
+                        element.innerHTML = "";
+                    }
+                }
             }
 
             //TODO: Need to figure out when a text component should update everywhere and where it should update just this element
