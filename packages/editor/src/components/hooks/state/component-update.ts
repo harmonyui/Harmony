@@ -95,7 +95,7 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                                 undoComponent.remove();
                                 return;
                             }
-                            throw new Error(`makeUpdates: Cannot find the elements data-harmony-id: ${id}`);
+                            throw new Error(`makeUpdates: Cannot find the component with data-harmony-id: ${id}`);
                         }
                         set((state) => {
                             state.cachedElements.push({ id, element: component.cloneNode(true) as Element, parent: component.parentElement! });
