@@ -143,7 +143,13 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
   })
 
   const onImageClick = useEffectEvent(() => {
-    !isDemo && setPanel({ id: 'image', content: <AddImagePanel /> })
+    !isDemo &&
+      setPanel({
+        id: 'image',
+        content: (
+          <AddImagePanel onSave={() => undefined} onCancel={() => undefined} />
+        ),
+      })
   })
 
   const onGlobalClick = () => {
