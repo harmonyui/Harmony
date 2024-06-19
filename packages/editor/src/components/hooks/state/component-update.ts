@@ -32,10 +32,10 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
             if (sameElements.length > 1) {
                 update.childIndex = -1;
             }
-    
+
             return update;
         })
-    
+
         //Updates that should happen just for the element (reordering)
         for (const update of translated) {
             if (update.type === 'component') {
@@ -44,24 +44,24 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                     const { parentId: oldParent, childIndex: oldChildIndex } = JSON.parse(oldValue) as { parentId: string, childIndex: number };
                     const { parentId: newParent, childIndex: newChildIndex } = JSON.parse(value) as { parentId: string, childIndex: number };
                     const error = `makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`
-    
+
                     const validateId = (id: string) => {
                         return id.trim().length > 0;
                     }
-    
+
                     if (!validateId(update.componentId) || !validateId(oldParent) || !validateId(newParent)) {
                         throw new Error(error);
                     }
-    
+
                     const oldElement = findElementFromId(update.componentId, oldChildIndex);
-    
+
                     // Verify that we could find the old element to be deleted from the DOM
                     if (!oldElement) {
                         throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${oldChildIndex}`);
                     }
-    
+
                     oldElement.remove();
-    
+
                     // Add element to new parent
                     const newElement = document.querySelector(`[data-harmony-id="${newParent}"]`);
                     if (newElement) {
@@ -77,8 +77,8 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                 }
                 if (update.name === "create") {
                     const { value, oldValue } = update;
-                    const { baseIndex } = JSON.parse(oldValue) as {baseIndex: number}
-                    const { position } = JSON.parse(value) as {position: string};
+                    const { baseIndex } = JSON.parse(oldValue) as { baseIndex: number }
+                    const { position } = JSON.parse(value) as { position: string };
                     const component = findElementFromId(update.componentId, baseIndex);
                     if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
                     const newComponent = document.createElement('div');
@@ -91,53 +91,65 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                         component.before(newComponent);
                     }
                 }
-    
+
                 if (update.name === "delete") {
                     const { oldValue } = update;
-                    const { index } = JSON.parse(oldValue) as {index: number}
+                    const { index } = JSON.parse(oldValue) as { index: number }
                     const component = findElementFromId(update.componentId, index);
                     if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
                     component.remove();
                 }
-    
+
                 const getElementsBetween = (start: Element, end: Element): Element[] => {
                     const elements: Element[] = [];
                     elements.push(start);
                     elements.push(end)
                     let next = start.nextElementSibling;
-    
+
                     while (next && next !== end) {
                         elements.push(next);
                         next = next.nextElementSibling;
                     }
-    
+
                     return elements;
                 }
-    
-                if (update.name === "wrap") {
+
+                if (update.name === "wrap-unwrap") {
                     const { value } = update;
-                    const { start, end } = JSON.parse(value) as {start: {id: string, childIndex: number}, end: {id: string, childIndex: number}}; 
-                    const startElement = findElementFromId(start.id, start.childIndex);
-                    const parent = startElement?.parentElement;
-                    const endElement = findElementFromId(end.id, end.childIndex);
-                    if (!startElement || !endElement) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
-                    const newComponent = document.createElement('div');
-                    newComponent.classList.add('hw-bg-primary-light');
-                    parent?.appendChild(newComponent);
-    
-                    const elements = getElementsBetween(startElement, endElement)
-                    elements.forEach(element => {
+                    const { start, end, action } = JSON.parse(value) as { action: string, start: { id: string, childIndex: number }, end: { id: string, childIndex: number } };
+                    if (action === "wrap") {
+                        const startElement = findElementFromId(start.id, start.childIndex);
+                        const parent = startElement?.parentElement;
+                        const endElement = findElementFromId(end.id, end.childIndex);
+                        if (!startElement || !endElement) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
+                        const newComponent = document.createElement('div');
+                        newComponent.dataset.harmonyId = update.componentId;
+                        newComponent.classList.add('hw-bg-primary-light');
+                        parent?.appendChild(newComponent);
+
+                        const elements = getElementsBetween(startElement, endElement)
+                        elements.forEach(element => {
+                            element.remove();
+                            newComponent.appendChild(element);
+                        })
+                    } else if (action === "unwrap") {
+                        const element = document.querySelector(`[data-harmony-id="${update.componentId}"]`)
+                        const parent = element?.parentElement;
+                        if (!element) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
+                        const children = Array.from(element.children);
+                        children.forEach(child => {
+                            parent?.appendChild(child);
+                        })
                         element.remove();
-                        newComponent.appendChild(element);
-                    })
+                    }
                 }
             }
-    
+
             //TODO: Need to figure out when a text component should update everywhere and where it should update just this element
             if (update.type === 'text') {
                 const el = findElementFromId(update.componentId, update.childIndex);
                 if (!el) throw new Error(`Cannot find element with id ${update.componentId}`);
-    
+
                 const textNodes = Array.from(el.childNodes)
                 const index = parseInt(update.name);
                 if (isNaN(index)) {
@@ -148,7 +160,7 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                 }
             }
         }
-    
+
         //Updates that should happen for every element in a component
         for (const update of translated) {
             const id = update.componentId;
@@ -157,10 +169,10 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
             for (const element of Array.from(sameElements)) {
                 const childIndex = Array.from(element.parentElement!.children).indexOf(element);
                 const htmlElement = element;
-    
+
                 //Setting childIndex to -1 means that we want to update all items in a list
                 if (!update.isGlobal && update.childIndex > -1 && update.childIndex !== childIndex) continue;
-    
+
                 if (update.type === 'className') {
                     if (update.name === 'font') {
                         if (!fonts) {
@@ -169,11 +181,11 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                         }
                         const font = fonts.find(f => f.id === update.value);
                         if (!font) throw new Error(`Invlaid font ${update.value}`);
-    
+
                         fonts.forEach(f => {
                             htmlElement.className = htmlElement.className.replace(f.id, '');
                         })
-    
+
                         htmlElement.classList.add(font.font.className);
                     } else {
                         htmlElement.style[update.name as unknown as number] = update.value;

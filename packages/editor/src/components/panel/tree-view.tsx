@@ -206,22 +206,39 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		setMultiSelect({ start: startNode, end: endNode })
 	}
 
-	function handleWrapElement() {
+	function handleWrapElement(action: "wrap" | "unwrap") {
 		const startComponent = document.querySelector(`[data-link="${multiSelect?.start.dataset.link}"]`)!!
 		const startChildIndex = Array.from(startComponent.parentElement!!.childNodes).indexOf(startComponent)
 		const endComponent = document.querySelector(`[data-link="${multiSelect?.end.dataset.link}"]`)!!
 		const endChildIndex = Array.from(endComponent.parentElement!!.childNodes).indexOf(endComponent)
 
+		const componentId = () => {
+			if (action === "wrap") {
+				return uuidv4()
+			} else {
+				return multiSelect?.start.dataset.harmonyId
+			}
+		}
+
+		const unwrap = {
+			action: "unwrap",
+			start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
+			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex }
+		}
+
+		const wrap = {
+			action: "wrap",
+			start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
+			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex }
+		}
+
 		const update: ComponentUpdateWithoutGlobal = {
 			type: "component",
-			name: "wrap",
-			componentId: multiSelect?.start.dataset.harmonyId!!,
+			name: "wrap-unwrap",
+			componentId: componentId()!!,
 			childIndex: startChildIndex,
-			oldValue: JSON.stringify({}),
-			value: JSON.stringify({
-				start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
-				end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex }
-			})
+			oldValue: JSON.stringify(action === "wrap" ? unwrap : wrap),
+			value: JSON.stringify(action === "wrap" ? wrap : unwrap)
 		}
 		onAttributesChange([update])
 	}
@@ -242,24 +259,24 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 					<>
 						<div className="hw-flex hw-flex-row hw-space-x-4">
 							<div onClick={() => handleAddElement("above")}>
-								<Button >Add Element Above</Button>
+								<Button >Add Above</Button>
 							</div>
 							<div onClick={() => handleAddElement("below")}>
-								<Button>Add Element Below</Button>
+								<Button>Add Below</Button>
 							</div>
 							<div onClick={handleDeleteElement}>
-								<Button>Delete Element</Button>
+								<Button>Delete</Button>
 							</div>
 						</div>
 						<div className="hw-flex hw-flex-row hw-space-x-4 hw-mt-4">
 							{multiSelect && (
-								<div onClick={handleWrapElement}>
-									<Button>Wrap Element</Button>
+								<div onClick={() => handleWrapElement("wrap")}>
+									<Button>Wrap</Button>
 								</div>
 							)}
 							{isGroup && (
-								<div onClick={handleWrapElement}>
-									<Button>Ungroup</Button>
+								<div onClick={() => handleWrapElement("unwrap")}>
+									<Button>UnWrap</Button>
 								</div>
 							)}
 						</div>
