@@ -187,6 +187,7 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                             const newComponent = document.createElement('div');
                             newComponent.dataset.harmonyId = update.componentId;
                             newComponent.classList.add('hw-bg-primary-light');
+                            newComponent.classList.add('hw-p-[24px]');
                             parent?.appendChild(newComponent);
 
                             const elements = getElementsBetween(startElement, endElement)
