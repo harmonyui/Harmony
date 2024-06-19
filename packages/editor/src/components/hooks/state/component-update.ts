@@ -131,7 +131,7 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                             const newComponent = document.createElement('div');
                             newComponent.classList.add('hw-bg-primary-light');
                             newComponent.classList.add('hw-w-full');
-                            newComponent.classList.add('hw-min-h-[10px]');
+                            newComponent.classList.add('hw-p-[24px]');
                             newComponent.dataset.harmonyId = id;
                             if (position === "below") {
                                 component.after(newComponent);
