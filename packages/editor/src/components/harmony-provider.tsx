@@ -10,7 +10,7 @@ import type { Font } from "@harmony/util/src/fonts";
 import type { BehaviorType, ComponentUpdate } from "@harmony/util/src/types/component";
 import type { UpdateRequest } from "@harmony/util/src/types/network";
 import type { Environment } from '@harmony/util/src/utils/component';
-import { getWebUrl, reverseUpdates, translateUpdatesToCss } from '@harmony/util/src/utils/component';
+import { getWebUrl, reverseUpdates } from '@harmony/util/src/utils/component';
 import hotkeys from 'hotkeys-js';
 import $ from 'jquery';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
@@ -87,12 +87,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 	const [showGiveFeedback, setShowGiveFeedback] = useState(false);
 	const [behaviors, setBehaviors] = useState<BehaviorType[]>([]);
 	const [isGlobal, setIsGlobal] = useState(false);
-	const harmonyComponents = useHarmonyStore((state) => state.harmonyComponents);
 	const pullRequest = useHarmonyStore((state) => state.pullRequest);
 	const componentUpdates = useHarmonyStore((state) => state.componentUpdates);
 	const isInitialized = useHarmonyStore((state) => state.isInitialized);
 	const publishState = useHarmonyStore(state => state.pullRequest);
-	const globalUpdate = useHarmonyStore(state => state.globalUpdate);
 	const onApplyGlobal = useHarmonyStore(state => state.onApplyGlobal);
 	const initializeProject = useHarmonyStore(state => state.initializeProject);
 	const updateComponentsFromIds = useHarmonyStore((state) => state.updateComponentsFromIds);
@@ -285,7 +283,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
 		if (id !== undefined) {
 			const updates = componentUpdates.filter(up => up.componentId === id && up.childIndex === childIndex);
-			makeUpdates(element, updates, rootComponent, fonts);
+			makeUpdates(updates, fonts);
 		}
 	}
 
@@ -576,10 +574,7 @@ const useComponentUpdator = ({ onChange, branchId, repositoryId, isSaving, isPub
 	const change = ({ update }: HarmonyCommandChange): void => {
 		if (!rootComponent) return;
 		for (const up of update) {
-			const element = findElementFromId(up.componentId, up.childIndex);
-			if (element === undefined) return;
-
-			makeUpdates(element, [up], rootComponent, fonts);
+			makeUpdates([up], fonts);
 		}
 
 		onChange && onChange();
@@ -684,19 +679,11 @@ const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
 	return stopBackgroundLoop;
 };
 
-function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent: HTMLElement, fonts: Font[] | undefined) {
-	const id = el.dataset.harmonyId;
-	if (!id) {
-		return;
-	}
-	const componentId = id.split('#')[id.split('#').length - 1];
-
-	let translated = translateUpdatesToCss(updates);
-
+function makeUpdates(updates: ComponentUpdate[], fonts: Font[] | undefined) {
 	//TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
 	//When we want global in this scenario, we are going to assume it is the next layer up (which is what isGlobal false does)
 	//This might not hold true in all scenarios, but we will assume for now
-	translated = translated.map(orig => {
+	const translated = updates.map(orig => {
 		const update = { ...orig };
 		const id = update.componentId;
 		const sameElements = findElementsFromId(id);
@@ -709,16 +696,11 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 	//Updates that should happen just for the element (reordering)
 	for (const update of translated) {
-		const parent = el.parentElement;
-		if (!parent) throw new Error("Element does not have a parent");
-		console.log(update.name, update)
 		if (update.type === 'component') {
 			if (update.name === 'reorder') {
-
-
 				const { oldValue, value } = update;
-				const { parentId: oldParent, childIndex: oldChildIndex }: { parentId: string, childIndex: number } = JSON.parse(oldValue);
-				const { parentId: newParent, childIndex: newChildIndex }: { parentId: string, childIndex: number } = JSON.parse(value);
+				const { parentId: oldParent, childIndex: oldChildIndex } = JSON.parse(oldValue) as { parentId: string, childIndex: number };
+				const { parentId: newParent, childIndex: newChildIndex } = JSON.parse(value) as { parentId: string, childIndex: number };
 				const error = `makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`
 
 				const validateId = (id: string) => {
@@ -753,8 +735,8 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 			}
 			if (update.name === "create") {
 				const { value, oldValue } = update;
-				const { baseIndex } = JSON.parse(oldValue)
-				const { position } = JSON.parse(value);
+				const { baseIndex } = JSON.parse(oldValue) as {baseIndex: number}
+				const { position } = JSON.parse(value) as {position: string};
 				const component = findElementFromId(update.componentId, baseIndex);
 				if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
 				const newComponent = document.createElement('div');
@@ -770,14 +752,14 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 			if (update.name === "delete") {
 				const { oldValue } = update;
-				const { index } = JSON.parse(oldValue)
+				const { index } = JSON.parse(oldValue) as {index: number}
 				const component = findElementFromId(update.componentId, index);
 				if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
 				component.remove();
 			}
 
-			function getElementsBetween(start: Element, end: Element): Element[] {
-				let elements: Element[] = [];
+			const getElementsBetween = (start: Element, end: Element): Element[] => {
+				const elements: Element[] = [];
 				elements.push(start);
 				elements.push(end)
 				let next = start.nextElementSibling;
@@ -791,8 +773,8 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 			}
 
 			if (update.name === "wrap") {
-				const { oldValue, value } = update;
-				const { start, end } = JSON.parse(value);
+				const { value } = update;
+				const { start, end } = JSON.parse(value) as {start: {id: string, childIndex: number}, end: {id: string, childIndex: number}}; 
 				const startElement = findElementFromId(start.id, start.childIndex);
 				const parent = startElement?.parentElement;
 				const endElement = findElementFromId(end.id, end.childIndex);
@@ -811,6 +793,9 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 		//TODO: Need to figure out when a text component should update everywhere and where it should update just this element
 		if (update.type === 'text') {
+			const el = findElementFromId(update.componentId, update.childIndex);
+			if (!el) throw new Error(`Cannot find element with id ${update.componentId}`);
+
 			const textNodes = Array.from(el.childNodes)
 			const index = parseInt(update.name);
 			if (isNaN(index)) {
@@ -824,6 +809,8 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 
 	//Updates that should happen for every element in a component
 	for (const update of translated) {
+		const id = update.componentId;
+		const componentId = id.split('#')[id.split('#').length - 1];
 		const sameElements = update.isGlobal ? findSameElementsFromId(componentId) : findElementsFromId(id);
 		for (const element of Array.from(sameElements)) {
 			const childIndex = Array.from(element.parentElement!.children).indexOf(element);
@@ -853,47 +840,3 @@ function makeUpdates(el: HTMLElement, updates: ComponentUpdate[], rootComponent:
 		}
 	}
 }
-
-// interface GlobalUpdateModalProps {
-// 	updates: ComponentUpdateWithoutGlobal[]
-// 	onFinish: (updates: ComponentUpdate[]) => void;
-// }
-// const GlobalUpdateModal: React.FunctionComponent<GlobalUpdateModalProps> = ({updates, onFinish}) => {
-// 	const [currUpdates, setCurrUpdates] = useState<ComponentUpdate[]>([]);
-// 	useEffect(() => {
-// 		if (updates.length) {
-// 			setCurrUpdates([]);
-// 		}
-// 	}, [updates])
-// 	const currUpdate = updates[currUpdates.length];
-// 	const name = currUpdate.componentId;
-
-// 	const addUpdate = (update: ComponentUpdateWithoutGlobal, isGlobal: boolean) => {
-// 		const copy = currUpdates.slice();
-// 		copy.push({...update, isGlobal});
-
-// 		if (copy.length === updates.length) {
-// 			onFinish(copy);
-// 		}
-// 		setCurrUpdates(copy);
-// 	}
-
-// 	const onSingleInstance = useEffectEvent(() => {
-// 		addUpdate(currUpdate, false);
-// 	})
-
-// 	const onAllInstances = useEffectEvent(() => {
-// 		addUpdate(currUpdate, true);
-// 	});
-
-// 	return (
-// 		<HarmonyModal show={updates.length > 0 && currUpdates.length < updates.length} onClose={onSingleInstance} editor>
-// 			<Header level={3}>Update {name}</Header>
-// 			You are updating {name} component. Would you like to make changes for all components or just this one instance?
-// 			<div className="hw-flex hw-justify-end hw-gap-2">
-// 				<Button mode="secondary" onClick={onSingleInstance}>Single Instance</Button>
-// 				<Button mode="primary" onClick={onAllInstances}>All Instances</Button>
-// 			</div>
-// 		</HarmonyModal>
-// 	)
-// }
