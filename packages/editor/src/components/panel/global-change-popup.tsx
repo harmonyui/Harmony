@@ -2,8 +2,8 @@ import { Button } from "@harmony/ui/src/components/core/button";
 import { Popup } from "@harmony/ui/src/components/core/popup";
 import { ComponentUpdate } from "@harmony/util/src/types/component";
 import { useState, useEffect, useMemo } from "react";
-import { findSameElementsFromId } from "../harmony-provider";
 import { useHarmonyStore } from "../hooks/state";
+import { findSameElementsFromId } from "../../utils/element-utils";
 
 interface GlobalUpdatePopupProps {
     onUndo: () => void;
