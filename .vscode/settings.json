@@ -1,6 +1,23 @@
 {
-    "rust-analyzer.linkedProjects": [
-        "packages/swc-plugin/Cargo.toml"
-    ],
-    "vitest.commandLine": "npx vitest"
+  "editor.fontSize": 12,
+  "editor.tabSize": 2,
+  "editor.insertSpaces": true,
+  "[javascript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescriptreact]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "[typescript]": {
+    "editor.defaultFormatter": "esbenp.prettier-vscode"
+  },
+  "editor.formatOnSave": true,
+  "editor.codeActionsOnSave": {
+    "source.fixAll.eslint": "explicit"
+  },
+  "prettier.singleQuote": true,
+  "prettier.semi": false,
+  "prettier.useTabs": false,
+  "prettier.tabWidth": 2,
+  "prettier.configPath": "./tooling/prettier-config/index.mjs"
 }
