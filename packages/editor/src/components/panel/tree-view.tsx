@@ -164,34 +164,24 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		})
 	}
 
-	function handleAddElement(position: string) {
-		if (!selectedComponent) return;
-		const link = selectedComponent.dataset.link
-		const component = document.querySelector(`[data-link="${link}"]`)!!
-		const childIndex = Array.from(component.parentElement!!.childNodes).indexOf(selectedComponent)
-		const update: ComponentUpdateWithoutGlobal = {
-			type: "component",
-			name: "create",
-			componentId: selectedComponent.dataset.harmonyId!!,
-			childIndex,
-			oldValue: JSON.stringify({ created: false, position: "", baseIndex: childIndex }),
-			value: JSON.stringify({ created: true, position: position, baseIndex: position === "above" ? childIndex + 1 : childIndex })
-		}
-		onAttributesChange([update])
-	}
 
-	function handleDeleteElement() {
+	function handleAddDeleteElement(action: "delete" | "create", position: "above" | "below" | "" = "") {
 		if (!selectedComponent) return;
 		const link = selectedComponent.dataset.link
 		const component = document.querySelector(`[data-link="${link}"]`)!!
 		const childIndex = Array.from(component.parentElement!!.childNodes).indexOf(selectedComponent)
+
+		const cacheId = uuidv4()
+
+		const index = position === "above" ? childIndex : childIndex + 1
+
 		const update: ComponentUpdateWithoutGlobal = {
 			type: "component",
-			name: "delete",
+			name: "delete-create",
 			componentId: selectedComponent.dataset.harmonyId!!,
 			childIndex,
-			oldValue: JSON.stringify({ index: childIndex }),
-			value: JSON.stringify({ index: -1 })
+			oldValue: JSON.stringify({ id: cacheId, action: action === "delete" ? "create" : "delete", index: action === "delete" ? childIndex : index, position: "" }),
+			value: JSON.stringify({ id: cacheId, action, index: childIndex, position })
 		}
 		onAttributesChange([update])
 	}
@@ -220,16 +210,20 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 			}
 		}
 
+		const cacheId = uuidv4()
+
 		const unwrap = {
 			action: "unwrap",
 			start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
-			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex }
+			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex },
+			id: cacheId
 		}
 
 		const wrap = {
 			action: "wrap",
 			start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
 			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex },
+			id: cacheId
 		}
 
 		const update: ComponentUpdateWithoutGlobal = {
@@ -258,13 +252,13 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 				{selectedComponent && (
 					<>
 						<div className="hw-flex hw-flex-row hw-space-x-4">
-							<div onClick={() => handleAddElement("above")}>
+							<div onClick={() => handleAddDeleteElement("create", "above")}>
 								<Button >Add Above</Button>
 							</div>
-							<div onClick={() => handleAddElement("below")}>
+							<div onClick={() => handleAddDeleteElement("create", "below")}>
 								<Button>Add Below</Button>
 							</div>
-							<div onClick={handleDeleteElement}>
+							<div onClick={() => handleAddDeleteElement("delete")}>
 								<Button>Delete</Button>
 							</div>
 						</div>

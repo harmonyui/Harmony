@@ -8,7 +8,7 @@ type CachedElement = {
     id: string,
     element: Element,
     parent: HTMLElement,
-    children: Element[]
+    children?: Element[]
 }
 
 export interface ComponentUpdateState {
@@ -84,30 +84,64 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                         throw new Error(`makeUpdates: Cannot find the elements parent with data-harmony-id: ${newParent}`);
                     }
                 }
-                if (update.name === "create") {
-                    const { value, oldValue } = update;
-                    const { baseIndex } = JSON.parse(oldValue) as { baseIndex: number }
-                    const { position } = JSON.parse(value) as { position: string };
-                    const component = findElementFromId(update.componentId, baseIndex);
-                    if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
-                    const newComponent = document.createElement('div');
-                    newComponent.classList.add('hw-bg-primary-light');
-                    newComponent.classList.add('hw-w-full');
-                    newComponent.classList.add('hw-min-h-[10px]');
-                    if (position === "below") {
-                        component.after(newComponent);
-                    } else {
-                        component.before(newComponent);
+                if (update.name === "delete-create") {
+                    const { value } = update;
+                    const { id, index, action } = JSON.parse(value) as { id: string, index: number, action: string }
+                    if (action === "delete") {
+                        const component = findElementFromId(update.componentId, index);
+                        if (!component) {
+                            const undoComponent = findElementFromId(id, index)
+                            if (undoComponent) {
+                                undoComponent.remove();
+                                return;
+                            }
+                            throw new Error(`makeUpdates: Cannot find the elements data-harmony-id: ${id}`);
+                        }
+                        set((state) => {
+                            state.cachedElements.push({ id, element: component.cloneNode(true) as Element, parent: component.parentElement! });
+                            return state;
+                        });
+                        component.remove();
+                    }
+                    if (action === "create") {
+
+                        const cachedElement = get().cachedElements.find(c => c.id === id);
+                        if (cachedElement) {
+                            const parent = cachedElement.parent;
+                            let inserted = false;
+                            parent.childNodes.forEach((child, idx) => {
+                                if (idx === index) {
+                                    parent.insertBefore(cachedElement.element, child);
+                                    inserted = true;
+                                    set((state) => {
+                                        state.cachedElements = state.cachedElements.filter(c => c.id !== id);
+                                        return state;
+                                    });
+                                    return;
+                                }
+                            })
+                            if (!inserted) {
+                                parent.appendChild(cachedElement.element);
+                            }
+                        } else {
+                            const { value } = update;
+                            const { id, index, position } = JSON.parse(value) as { id: string, index: number, position: string }
+                            const component = findElementFromId(update.componentId, index);
+                            if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
+                            const newComponent = document.createElement('div');
+                            newComponent.classList.add('hw-bg-primary-light');
+                            newComponent.classList.add('hw-w-full');
+                            newComponent.classList.add('hw-min-h-[10px]');
+                            newComponent.dataset.harmonyId = id;
+                            if (position === "below") {
+                                component.after(newComponent);
+                            } else {
+                                component.before(newComponent);
+                            }
+                        }
                     }
                 }
 
-                if (update.name === "delete") {
-                    const { oldValue } = update;
-                    const { index } = JSON.parse(oldValue) as { index: number }
-                    const component = findElementFromId(update.componentId, index);
-                    if (!component) throw new Error(`makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`);
-                    component.remove();
-                }
 
                 const getElementsBetween = (start: Element, end: Element): Element[] => {
                     const elements: Element[] = [];
@@ -125,25 +159,19 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
 
                 if (update.name === "wrap-unwrap") {
                     const { value } = update;
-                    const { start, end, action } = JSON.parse(value) as { action: string, start: { id: string, childIndex: number }, end: { id: string, childIndex: number } };
+                    const { id, start, end, action } = JSON.parse(value) as { id: string, action: string, start: { id: string, childIndex: number }, end: { id: string, childIndex: number } };
                     if (action === "wrap") {
-                        const cachedElement = get().cachedElements.find(c => c.id === update.componentId);
+                        const cachedElement = get().cachedElements.find(c => c.id === id);
                         if (cachedElement) {
-                            // const startElement = findElementFromId(start.id, start.childIndex);
-                            // const endElement = findElementFromId(end.id, end.childIndex);
-                            // const elements = getElementsBetween(startElement!!, endElement!!)
-                            // elements.forEach(element => {
-                            //     element.remove();
-                            // })
                             const parent = cachedElement.parent;
                             parent?.childNodes.forEach((child, index) => {
                                 if (index === start.childIndex) {
                                     parent.insertBefore(cachedElement.element, child);
                                     set((state) => {
-                                        state.cachedElements = state.cachedElements.filter(c => c.id !== update.componentId);
+                                        state.cachedElements = state.cachedElements.filter(c => c.id !== id);
                                         return state;
                                     });
-                                    cachedElement.children.forEach(c => {
+                                    cachedElement.children!!.forEach(c => {
                                         c.remove()
                                     });
                                     return;
@@ -171,7 +199,7 @@ export const createComponentUpdateSlice = createHarmonySlice<ComponentUpdateStat
                         const element = document.querySelector(`[data-harmony-id="${update.componentId}"]`)
                         const parent = element?.parentElement;
                         set((state) => {
-                            state.cachedElements.push({ id: update.componentId, element: element?.cloneNode(true) as HTMLElement, parent: parent!, children: Array.from(element?.children || []) });
+                            state.cachedElements.push({ id, element: element?.cloneNode(true) as HTMLElement, parent: parent!, children: Array.from(element?.children || []) });
                             return state;
                         });
 
