@@ -197,7 +197,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 	}
 	let selectedNodes = ['2', '6'];
 	function nodeSelected(e: NodeSelectEventArgs) {
-		const start = treeObj!!.startNode as HTMLElement
+		const start = treeObj!!['startNode'] as HTMLElement
 		const startId = start.children[1].innerHTML.split('data-node=')[1].split('"')[1]
 		const startNode = document.querySelector(`[data-link="${startId}"]`) as HTMLElement
 		const end = e.node
