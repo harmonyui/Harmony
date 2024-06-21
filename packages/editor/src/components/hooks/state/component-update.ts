@@ -293,19 +293,21 @@ export const createComponentUpdateSlice =
             if (actionValue === "") {
               element.innerHTML = "";
             } else if (type === "text") {
-              const textNode = document.createTextNode(actionValue);
+              const textNode = document.createElement('span');
+              textNode.textContent = actionValue;
+              textNode.dataset.harmonyText = 'true';
               element.appendChild(textNode);
             } else if (type === "image") {
               const img = document.createElement("img");
               img.src = actionValue;
+              img.dataset.harmonyId = update.componentId;
+              img.className = ''
+              img.style.width = '100px';
+              img.style.height = '100px';
               element.replaceWith(img);
             } else {
-              const svg = document.createElementNS(
-                "http://www.w3.org/2000/svg",
-                "svg",
-              );
-              svg.innerHTML = actionValue;
-              element.replaceWith(svg);
+              element.outerHTML = actionValue;
+              element.dataset.harmonyId = update.componentId;
             }
           }
         }

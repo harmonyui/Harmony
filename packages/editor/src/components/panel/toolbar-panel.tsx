@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
-/* eslint-disable no-constant-condition -- ok*/
+ 
 /* eslint-disable no-nested-ternary -- ok*/
 import type { Font } from '@harmony/util/src/fonts'
 import { useMemo, useState } from 'react'
@@ -50,7 +50,6 @@ import {
   useComponentAttribute,
 } from './attribute-panel'
 import { PublishButton } from './publish-button'
-import { AddImagePanel } from './add-image-panel'
 
 export const buttonTools = [
   'backgroundColor',
@@ -91,7 +90,6 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
   const currentBranch = useHarmonyStore((state) => state.currentBranch)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
   const selectedElement = selectedComponent?.element
-  const [isImagePanelOpen, setIsImagePanelOpen] = useState(false)
 
   const {
     isSaving,
@@ -143,10 +141,6 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
       })
   })
 
-  const onImageClick = useEffectEvent(() => {
-    !isDemo && setIsImagePanelOpen(!isImagePanelOpen)
-  })
-
   const onGlobalClick = () => {
     setIsGlobal(!isGlobal)
   }
@@ -158,20 +152,13 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
           {currentBranch ? currentBranch.name : 'Invalid Branch'}
         </Header>
       </div>
-      {!isDemo && false ? (
+      {!isDemo && true ? (
         <div className='hw-px-4'>
           <button
             className='hw-text-base hw-font-light'
             onClick={onLayoutClick}
           >
             Layout
-          </button>
-        </div>
-      ) : null}
-      {!isDemo ? (
-        <div className='hw-px-4'>
-          <button className='hw-text-base hw-font-light' onClick={onImageClick}>
-            Image
           </button>
         </div>
       ) : null}
@@ -255,11 +242,6 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
           </button>
         ) : null}
       </div>
-      <AddImagePanel
-        isOpen={isImagePanelOpen}
-        onClose={() => setIsImagePanelOpen(false)}
-        onSave={() => undefined}
-      />
     </div>
   )
 }

@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/dot-notation -- ok*/
 import { enableRipple } from "@syncfusion/ej2-base";
 import type {
 	DragAndDropEventArgs,
@@ -193,12 +194,12 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 	}
 	const selectedNodes = ['2', '6'];
 	function nodeSelected(e: NodeSelectEventArgs) {
-		const start = treeObj!.startNode as HTMLElement
+		const start = treeObj!['startNode'] as HTMLElement
 		const startId = start.children[1].innerHTML.split('data-node=')[1].split('"')[1]
-		const startNode = document.querySelector(`[data-link="${startId}"]`)!
+		const startNode: HTMLElement = document.querySelector(`[data-link="${startId}"]`)!
 		const end = e.node
 		const endId = end.children[1].innerHTML.split('data-node=')[1].split('"')[1]
-		const endNode = document.querySelector(`[data-link="${endId}"]`)!
+		const endNode: HTMLElement = document.querySelector(`[data-link="${endId}"]`)!
 		setMultiSelect({ start: startNode, end: endNode })
 	}
 
@@ -258,6 +259,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 	}
 
 	const handleAddImage = (value: string, type: ImageType) => {
+		if (!selectedComponent) return;
 		setIsImageOpen(false);
 		const childIndex = Array.from(selectedComponent.parentElement!.childNodes).indexOf(selectedComponent)
 		const update: ComponentUpdateWithoutGlobal = {
