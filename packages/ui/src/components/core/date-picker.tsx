@@ -467,7 +467,7 @@ type PopoverProps = React.PropsWithChildren<
     state: OverlayTriggerState;
     className?: string;
   }
-> & {container?: HTMLElement};
+> & { container?: HTMLElement };
 export const Popover = (props: PopoverProps): JSX.Element => {
   const ref = useRef<HTMLDivElement>(null);
   const { children, state } = props;
@@ -481,13 +481,13 @@ export const Popover = (props: PopoverProps): JSX.Element => {
   );
 
   const onBlur: FocusEventHandler<HTMLDivElement> = (e) => {
-    const parentPopover = e.currentTarget.closest('[data-popover]');
+    const parentPopover = e.currentTarget.closest("[data-popover]");
     if (!parentPopover) {
       popoverProps.onBlur && popoverProps.onBlur(e);
     }
-  }
-  return (
-    createPortal(<>
+  };
+  return createPortal(
+    <>
       <div {...underlayProps} className="fixed inset-0" />
       <div
         {...popoverProps}
@@ -502,7 +502,8 @@ export const Popover = (props: PopoverProps): JSX.Element => {
         {children}
         <DismissButton onDismiss={state.close.bind(state)} />
       </div>
-    </>, props.container || document.body)
+    </>,
+    props.container || document.body,
   );
 };
 

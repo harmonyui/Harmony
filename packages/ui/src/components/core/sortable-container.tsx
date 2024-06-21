@@ -109,15 +109,15 @@ export const SortableContainerContext = <T extends SortableContainerItem>({
   const activeItem = items.find((item) => item.id === activeId);
 
   return (
-      <DndContext
-        collisionDetection={closestCenter}
-        onDragEnd={onDragEnd}
-        onDragOver={onDragOver}
-        onDragStart={onDragStart}
-        sensors={sensors}
-      >
-        {children({ activeItem, items })}
-      </DndContext>
+    <DndContext
+      collisionDetection={closestCenter}
+      onDragEnd={onDragEnd}
+      onDragOver={onDragOver}
+      onDragStart={onDragStart}
+      sensors={sensors}
+    >
+      {children({ activeItem, items })}
+    </DndContext>
   );
 };
 
@@ -134,17 +134,17 @@ export const SortableContainer = <T extends SortableContainerItem>({
   const { setNodeRef } = useDroppable({ id, data: { type: "Column" } });
   return (
     <SortableContext
-        items={items.map((item) => item.id)}
-        strategy={verticalListSortingStrategy}
-      >
-        <div className="flex flex-col gap-2 w-96" ref={setNodeRef}>
-          {items.map((item) => (
-            <SortableItem id={item.id} key={item.id}>
-              {children(item)}
-            </SortableItem>
-          ))}
-        </div>
-      </SortableContext>
+      items={items.map((item) => item.id)}
+      strategy={verticalListSortingStrategy}
+    >
+      <div className="flex flex-col gap-2 w-96" ref={setNodeRef}>
+        {items.map((item) => (
+          <SortableItem id={item.id} key={item.id}>
+            {children(item)}
+          </SortableItem>
+        ))}
+      </div>
+    </SortableContext>
   );
 };
 
@@ -152,7 +152,10 @@ export interface SortableItemType {
   id: UniqueIdentifier;
   children: (isDragging: boolean) => React.ReactNode;
 }
-export const SortableItem = ({ id, children }: SortableItemType): JSX.Element => {
+export const SortableItem = ({
+  id,
+  children,
+}: SortableItemType): JSX.Element => {
   const {
     attributes,
     listeners,

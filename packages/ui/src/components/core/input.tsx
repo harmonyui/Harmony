@@ -5,25 +5,25 @@ import { Label } from "./label";
 
 interface InputProps {
   onChange?: (value: string) => void;
-	onBlur?: (value: string) => void;
+  onBlur?: (value: string) => void;
   value?: string | number | readonly string[] | undefined;
   className?: string;
   type?: "input" | "textarea" | "password" | "email";
   label?: string;
   placeholder?: string;
   required?: boolean;
-	inlineLabel?: string;
+  inlineLabel?: string;
 }
 export const Input: React.FunctionComponent<InputProps> = ({
   onChange,
-	onBlur,
+  onBlur,
   value,
   className,
   label,
   type = "input",
   placeholder,
   required,
-	inlineLabel
+  inlineLabel,
 }) => {
   const props = {
     className: `${
@@ -34,9 +34,9 @@ export const Input: React.FunctionComponent<InputProps> = ({
     ) => {
       onChange && onChange(e.target.value);
     },
-		onBlur: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-			onBlur && onBlur(e.target.value);
-		},
+    onBlur: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+      onBlur && onBlur(e.target.value);
+    },
     placeholder,
     required,
   };
@@ -46,37 +46,47 @@ export const Input: React.FunctionComponent<InputProps> = ({
     ) : (
       <input {...props} type={type} value={value} />
     );
-	if (inlineLabel !== undefined) {
-		input = <div className="hw-flex hw-border hw-border-gray-300 hw-rounded-[3px] hw-shadow-sm focus-within:hw-ring-primary focus-within:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none sm:hw-max-w-md">
-			<span className="hw-flex hw-select-none hw-items-center hw-pl-3 hw-text-gray-500 sm:hw-text-sm">{inlineLabel}</span>
-			<input
-				className="hw-block hw-flex-1 hw-border-0 hw-bg-transparent hw-py-1.5 hw-pl-1 hw-text-gray-900 placeholder:hw-text-gray-400 focus:hw-ring-0 sm:hw-text-sm sm:hw-leading-6"
-				placeholder={placeholder}
-				type="text"
-			/>
-		</div>
-	}
+  if (inlineLabel !== undefined) {
+    input = (
+      <div className="hw-flex hw-border hw-border-gray-300 hw-rounded-[3px] hw-shadow-sm focus-within:hw-ring-primary focus-within:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none sm:hw-max-w-md">
+        <span className="hw-flex hw-select-none hw-items-center hw-pl-3 hw-text-gray-500 sm:hw-text-sm">
+          {inlineLabel}
+        </span>
+        <input
+          className="hw-block hw-flex-1 hw-border-0 hw-bg-transparent hw-py-1.5 hw-pl-1 hw-text-gray-900 placeholder:hw-text-gray-400 focus:hw-ring-0 sm:hw-text-sm sm:hw-leading-6"
+          placeholder={placeholder}
+          type="text"
+        />
+      </div>
+    );
+  }
   if (label) {
     return <Label label={label}>{input}</Label>;
   }
   return input;
 };
 
-export const InputBlur: React.FunctionComponent<Omit<InputProps, 'onBlur'>> = ({onChange, value: valueProps, ...rest}) => {
-	const [value, setValue] = useState(valueProps);
+export const InputBlur: React.FunctionComponent<Omit<InputProps, "onBlur">> = ({
+  onChange,
+  value: valueProps,
+  ...rest
+}) => {
+  const [value, setValue] = useState(valueProps);
   const prevValue = usePrevious(valueProps);
 
   useEffect(() => {
     if (prevValue !== valueProps) {
       setValue(valueProps);
     }
-  }, [prevValue, valueProps])
+  }, [prevValue, valueProps]);
 
-	const onInputChange = (_value: string): void => {
-		setValue(_value);
-	}
-	return <Input {...rest} value={value} onChange={onInputChange} onBlur={onChange} />
-}
+  const onInputChange = (_value: string): void => {
+    setValue(_value);
+  };
+  return (
+    <Input {...rest} value={value} onChange={onInputChange} onBlur={onChange} />
+  );
+};
 
 export interface CheckboxInputProps {
   className?: string;
@@ -122,20 +132,21 @@ interface NumberStepperInputProps {
   value: number;
   onChange: (value: number) => void;
 }
-export const NumberStepperInput: React.FunctionComponent<NumberStepperInputProps> = ({value: valueProp, onChange: onChangeProps}) => {
+export const NumberStepperInput: React.FunctionComponent<
+  NumberStepperInputProps
+> = ({ value: valueProp, onChange: onChangeProps }) => {
   const [value, setValue] = useState(String(valueProp));
 
   const onChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const _value = e.target.value;
     setValue(_value);
-  }
-
+  };
 
   const changeValue = (newVal: number) => {
     const _newVal = Math.min(Math.max(0, newVal), 99);
     setValue(String(_newVal));
     onChangeProps(_newVal);
-  }
+  };
 
   const onBlur = () => {
     let num = parseInt(value);
@@ -144,13 +155,32 @@ export const NumberStepperInput: React.FunctionComponent<NumberStepperInputProps
     }
 
     changeValue(num);
-  }
+  };
 
   return (
     <div className="hw-flex hw-rounded-[3px] hw-border hw-border-gray-400 hw-items-center hw-overflow-auto">
-      <button className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-r hw-border-gray-400" onClick={() => {changeValue(valueProp - 1)}}>-</button>
-      <input className="hw-px-1.5 hw-text-sm hw-py-[1px] hw-border-none hw-w-8 focus:hw-ring-0" value={value} onChange={onChange} onBlur={onBlur}/>
-      <button className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-l hw-border-gray-400" onClick={() => {changeValue(valueProp + 1)}}>+</button>
+      <button
+        className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-r hw-border-gray-400"
+        onClick={() => {
+          changeValue(valueProp - 1);
+        }}
+      >
+        -
+      </button>
+      <input
+        className="hw-px-1.5 hw-text-sm hw-py-[1px] hw-border-none hw-w-8 focus:hw-ring-0"
+        value={value}
+        onChange={onChange}
+        onBlur={onBlur}
+      />
+      <button
+        className="hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-l hw-border-gray-400"
+        onClick={() => {
+          changeValue(valueProp + 1);
+        }}
+      >
+        +
+      </button>
     </div>
-  )
-}
+  );
+};

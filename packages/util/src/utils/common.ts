@@ -1,4 +1,3 @@
-/* eslint-disable no-useless-escape -- ok*/
 /* eslint-disable no-bitwise -- Allow bitwise for some functions here*/
 import dayjs from "dayjs";
 import { z } from "zod";
@@ -9,11 +8,11 @@ export const displayDate = (date: Date) => {
 
 export const displayDateFull = (date: Date) => {
   return dayjs(date).format("MMM DD, YYYY");
-}
+};
 
 export const displayTime = (date: Date): string => {
-	return dayjs(date).format("h:mm A");
-}
+  return dayjs(date).format("h:mm A");
+};
 
 export const formatDollarAmount = (amount: number): string => {
   const digits = Math.floor(amount).toString().split("").reverse();
@@ -21,7 +20,7 @@ export const formatDollarAmount = (amount: number): string => {
   for (let i = 0; i < digits.length; i++) {
     str = digits[i] + str;
     if (i % 3 === 2 && i > 0 && i < digits.length - 1) {
-      str = "," + str;
+      str = `,${str}`;
     }
   }
 
@@ -36,12 +35,14 @@ export const minute = 60000;
 export const hour = 3600000;
 export const day = 86400000;
 export const week = 604800000;
-export const calculateDateDifference = (milisecondsSinceToday: number): Date => {
-	const today = new Date();
-	today.setTime(today.getTime() - milisecondsSinceToday);
+export const calculateDateDifference = (
+  milisecondsSinceToday: number,
+): Date => {
+  const today = new Date();
+  today.setTime(today.getTime() - milisecondsSinceToday);
 
-	return today;
-}
+  return today;
+};
 
 export const displayElapsedTime = (time: Date): string => {
   const currTime = new Date();
@@ -67,23 +68,24 @@ export const displayElapsedTime = (time: Date): string => {
 };
 
 export const displayRelativeDate = (date: Date): string => {
-	const elapsedTime = new Date().getTime() - date.getTime();
-	if (elapsedTime < day) {
-		return 'Today';
-	}
+  const elapsedTime = new Date().getTime() - date.getTime();
+  if (elapsedTime < day) {
+    return "Today";
+  }
 
-	if (elapsedTime < day * 2) {
-		return 'Yesterday';
-	}
+  if (elapsedTime < day * 2) {
+    return "Yesterday";
+  }
 
-	return displayDate(date);
-}
+  return displayDate(date);
+};
 
-export const round = (value: number, digits = 0, floor=false): number => {
-  if (digits < 0) throw new Error("Invalid argument digits. Must be less than zero");
-  
+export const round = (value: number, digits = 0, floor = false): number => {
+  if (digits < 0)
+    throw new Error("Invalid argument digits. Must be less than zero");
+
   const places = Math.pow(10, digits);
-  const func = floor ? 'floor' : 'round'
+  const func = floor ? "floor" : "round";
   return Math[func](value * places) / places;
 };
 
@@ -103,7 +105,10 @@ export const displayStorageSpace = (value: number): string => {
   return `${Math.round(value / 100000000) / 10} GB`;
 };
 
-export const compare = <T extends string | number | Date>(f1: T, f2: T): number => {
+export const compare = <T extends string | number | Date>(
+  f1: T,
+  f2: T,
+): number => {
   if (typeof f1 === "string" && typeof f2 === "string") {
     return f1.localeCompare(f2);
   }
@@ -112,9 +117,9 @@ export const compare = <T extends string | number | Date>(f1: T, f2: T): number 
     return f1 - f2;
   }
 
-	if (typeof f1 === 'object' && typeof f2 === 'object') {
-		return compare(f1.getTime(), f2.getTime());
-	}
+  if (typeof f1 === "object" && typeof f2 === "object") {
+    return compare(f1.getTime(), f2.getTime());
+  }
 
   return 0;
 };
@@ -133,7 +138,7 @@ export const getNumberFromString = (str: string): number => {
   // return Number(match[1]);
 
   return parseFloat(str);
-}
+};
 
 export const groupBy = function <T extends Pick<T, K>, K extends keyof T>(
   arr: T[],
@@ -186,19 +191,26 @@ export const groupTogetherDistinct = function <
   return Object.keys(groups);
 };
 
-export const mergeArraysOnId = <Key extends string, T extends {[K in Key]: string}>(currArray: T[], newArray: T[], idKey: Key) => {
+export const mergeArraysOnId = <
+  Key extends string,
+  T extends { [K in Key]: string },
+>(
+  currArray: T[],
+  newArray: T[],
+  idKey: Key,
+) => {
   const copy = currArray.slice();
   for (const item of newArray) {
-      const currItemIndex = copy.findIndex(curr => curr[idKey] === item[idKey]);
-      if (currItemIndex >= 0) {
-          copy[currItemIndex] = item;
-      } else {
-          copy.push(item);
-      }
+    const currItemIndex = copy.findIndex((curr) => curr[idKey] === item[idKey]);
+    if (currItemIndex >= 0) {
+      copy[currItemIndex] = item;
+    } else {
+      copy.push(item);
+    }
   }
 
   return copy;
-}
+};
 
 export function isDateInBetween(
   test: Date | undefined,
@@ -214,80 +226,96 @@ export function isDateInBetween(
   );
 }
 
-export const arrayOfAll = <T,>() => <U extends T[]>(
-  array: U & (T extends U[number] ? unknown : Exclude<T, U[number]>)
-) => array;
+export const arrayOfAll =
+  <T>() =>
+  <U extends T[]>(
+    array: U & (T extends U[number] ? unknown : Exclude<T, U[number]>),
+  ) =>
+    array;
 
-export const constArray = <T,>() => <U extends T[]>(
-  array: U
-) => array;
+export const constArray =
+  <T>() =>
+  <U extends T[]>(array: U) =>
+    array;
 
-export const stringUnionSchema = <T extends readonly string[]>(array: T) => z.custom<T[number]>((data) => typeof data === 'string' && array.includes(data));
+export const stringUnionSchema = <T extends readonly string[]>(array: T) =>
+  z.custom<T[number]>(
+    (data) => typeof data === "string" && array.includes(data),
+  );
 
-
-export function convertRgbToHex(rgb: string) { 
-  let match = rgb.match(/^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/); 
+export function convertRgbToHex(rgb: string) {
+  let match = /^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/.exec(rgb);
   if (match === null) {
-    match = rgb.match(/^rgba\((\d+), \s*(\d+), \s*(\d+), \s*(\d+(?:\.\d+)?)\)$/)
+    match = /^rgba\((\d+), \s*(\d+), \s*(\d+), \s*(\d+(?:\.\d+)?)\)$/.exec(rgb);
     if (!match) {
-      console.error('Invalid rgb ' + rgb);
-      return '#000000';
+      console.error(`Invalid rgb ${rgb}`);
+      return "#000000";
     }
   }
-  function hexCode(i: string) { 
-        
-      // Take the last 2 characters and convert 
-      // them to Hexadecimal. 
-      return ("0" + parseInt(i).toString(16)).slice(-2); 
-  } 
-  
-  return "#" + hexCode(match[1]) + hexCode(match[2]) 
-                  + hexCode(match[3]) + (match[4] ? hexCode(`${parseFloat(match[4]) * 255}`) : ''); 
+  function hexCode(i: string) {
+    // Take the last 2 characters and convert
+    // them to Hexadecimal.
+    return `0${parseInt(i).toString(16)}`.slice(-2);
+  }
+
+  return `#${hexCode(match[1])}${hexCode(match[2])}${hexCode(
+    match[3],
+  )}${match[4] ? hexCode(`${parseFloat(match[4]) * 255}`) : ""}`;
 }
 
 export function capitalizeFirstLetter(str: string): string {
   return `${str[0].toUpperCase()}${str.slice(1)}`;
 }
 
-export const hashCode = function(str: string, seed = 0): number {
-	let h1 = 0xdeadbeef ^ seed, h2 = 0x41c6ce57 ^ seed;
-	for(let i = 0, ch; i < str.length; i++) {
-			ch = str.charCodeAt(i);
-			h1 = Math.imul(h1 ^ ch, 2654435761);
-			h2 = Math.imul(h2 ^ ch, 1597334677);
-	}
-	h1  = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
-	h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
-	h2  = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
-	h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
+export const hashCode = function (str: string, seed = 0): number {
+  let h1 = 0xdeadbeef ^ seed,
+    h2 = 0x41c6ce57 ^ seed;
+  for (let i = 0, ch; i < str.length; i++) {
+    ch = str.charCodeAt(i);
+    h1 = Math.imul(h1 ^ ch, 2654435761);
+    h2 = Math.imul(h2 ^ ch, 1597334677);
+  }
+  h1 = Math.imul(h1 ^ (h1 >>> 16), 2246822507);
+  h1 ^= Math.imul(h2 ^ (h2 >>> 13), 3266489909);
+  h2 = Math.imul(h2 ^ (h2 >>> 16), 2246822507);
+  h2 ^= Math.imul(h1 ^ (h1 >>> 13), 3266489909);
 
-	return 4294967296 * (2097151 & h2) + (h1 >>> 0);
-}
+  return 4294967296 * (2097151 & h2) + (h1 >>> 0);
+};
 
-export function replaceByIndex(s: string, replaceText: string, start: number, end?: number): string {
+export function replaceByIndex(
+  s: string,
+  replaceText: string,
+  start: number,
+  end?: number,
+): string {
   if (start < 0 || start >= s.length) return s.toString();
 
-	let ret = `${s.substring(0, start)}${replaceText}`;
-	if (end !== undefined) {
-		ret += s.substring(end);
-	}
+  let ret = `${s.substring(0, start)}${replaceText}`;
+  if (end !== undefined) {
+    ret += s.substring(end);
+  }
 
-	return ret;
+  return ret;
 }
 
 export const close = (a: number, b: number, threshold: number): boolean => {
-	return Math.abs(a-b) <= threshold;
-}
+  return Math.abs(a - b) <= threshold;
+};
 
 export const wordToKebabCase = (str: string): string => {
-  return str.split(' ').map(word => `${word[0].toLowerCase()}${word.substring(1)}`).join('-');
-}
+  return str
+    .split(" ")
+    .map((word) => `${word[0].toLowerCase()}${word.substring(1)}`)
+    .join("-");
+};
 
 export const camelToKebab = (camelCase: string): string => {
-	return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase();
-}
+  return camelCase.replace(/([a-z])([A-Z])/g, "$1-$2").toLowerCase();
+};
 
-export const validPathRegex = /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx|js)$/;
+export const validPathRegex =
+  /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx|js)$/;
 export const isValidPath = (path: string): boolean => {
-    return validPathRegex.test(path);
-}
+  return validPathRegex.test(path);
+};

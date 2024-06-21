@@ -20,7 +20,8 @@
     "build:rollup": "rollup -c",
     "build:esm": "tsc && tsc-alias",
     "build:cjs": "tsc --module commonjs --outDir dist/cjs && tsc-alias",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "tsc --noEmit",
+    "format": "prettier --write \"**/*.{ts,md,json}\" && eslint --fix ."
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.0.2",

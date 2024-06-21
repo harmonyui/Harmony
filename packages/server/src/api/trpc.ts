@@ -10,23 +10,27 @@
 import { initTRPC, TRPCError } from "@trpc/server";
 import superjson from "superjson";
 import { ZodError } from "zod";
-import type { Db} from "@harmony/db/lib/prisma";
+import type { Db } from "@harmony/db/lib/prisma";
 import { prisma } from "@harmony/db/lib/prisma";
-import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch';
-import type { CreateExpressContextOptions } from '@trpc/server/adapters/express';
-import type {
-  WithAuthProp,
-} from '@clerk/clerk-sdk-node';
-import type { Request } from 'express';
+import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
+import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
+import type { WithAuthProp } from "@clerk/clerk-sdk-node";
+import type { Request } from "express";
 import { auth } from "@clerk/nextjs";
 import type { FullSession, Session } from "../auth";
 import { getServerAuthSession } from "../auth";
-import type { EmailService} from "./services/email-service";
-import type { GitRepositoryFactory} from "./repository/git/types";
-import {PrismaHarmonyComponentRepository, type HarmonyComponentRepository} from './repository/database/component-element'
-import {gitRepositoryFactory, mailer, componentUpdateRepository } from "./index";
-import { ComponentUpdateRepository } from "./repository/database/component-update";
-
+import type { EmailService } from "./services/email-service";
+import type { GitRepositoryFactory } from "./repository/git/types";
+import {
+  PrismaHarmonyComponentRepository,
+  type HarmonyComponentRepository,
+} from "./repository/database/component-element";
+import type { ComponentUpdateRepository } from "./repository/database/component-update";
+import {
+  gitRepositoryFactory,
+  mailer,
+  componentUpdateRepository,
+} from "./index";
 
 /**
  * 1. CONTEXT
@@ -39,25 +43,23 @@ import { ComponentUpdateRepository } from "./repository/database/component-updat
 interface CreateContextOptions {
   session: Session | undefined;
   gitRepositoryFactory: GitRepositoryFactory;
-  harmonyComponentRepository: HarmonyComponentRepository
-  componentUpdateRepository: ComponentUpdateRepository
+  harmonyComponentRepository: HarmonyComponentRepository;
+  componentUpdateRepository: ComponentUpdateRepository;
 }
 
 interface AuthContextOptions {
-  session: FullSession
+  session: FullSession;
 }
 
 export interface CreateContext extends CreateContextOptions {
-  prisma: Db,
-  mailer: EmailService,
+  prisma: Db;
+  mailer: EmailService;
 }
 
 export interface AuthContext extends AuthContextOptions {
-  prisma: Db,
-  mailer: EmailService
+  prisma: Db;
+  mailer: EmailService;
 }
-
-
 
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export
@@ -70,7 +72,6 @@ export interface AuthContext extends AuthContextOptions {
  * @see https://create.t3.gg/en/usage/trpc#-serverapitrpcts
  */
 const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
-
   return {
     ...opts,
     prisma,
@@ -84,20 +85,25 @@ const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
 //   })
 // }
 
-const createTRPCContext = async (cookies: string | null | undefined, userId: string | null) => {
+const createTRPCContext = async (
+  cookies: string | null | undefined,
+  userId: string | null,
+) => {
   let mockUserId: string | undefined;
   if (cookies) {
-    const cookieValues = cookies.split('; ');
+    const cookieValues = cookies.split("; ");
     for (const cookieValue of cookieValues) {
-      const [name, value] = cookieValue.split('=');
-      if (name === 'harmony-user-id') {
+      const [name, value] = cookieValue.split("=");
+      if (name === "harmony-user-id") {
         mockUserId = value;
       }
     }
   }
   // Get the session from the server using the getServerSession wrapper function
   const session = await getServerAuthSession(userId, mockUserId);
-  const harmonyComponentRepository = new PrismaHarmonyComponentRepository(prisma);
+  const harmonyComponentRepository = new PrismaHarmonyComponentRepository(
+    prisma,
+  );
 
   return createInnerTRPCContext({
     session,
@@ -106,7 +112,7 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
     componentUpdateRepository,
     //req
   });
-}
+};
 
 /**
  * This is the actual context you will use in your router. It will be used to process every request
@@ -114,13 +120,20 @@ const createTRPCContext = async (cookies: string | null | undefined, userId: str
  *
  * @see https://trpc.io/docs/context
  */
-export const createTRPCContextFetch = async ({ req }: FetchCreateContextFnOptions) => {
-  return createTRPCContext(req.headers.get('cookie'), auth().userId);
+export const createTRPCContextFetch = async ({
+  req,
+}: FetchCreateContextFnOptions) => {
+  return createTRPCContext(req.headers.get("cookie"), auth().userId);
 };
 
-export const createTRPCContextExpress = async ({ req }: { res: CreateExpressContextOptions['res'], req: WithAuthProp<Request> }) => {
+export const createTRPCContextExpress = async ({
+  req,
+}: {
+  res: CreateExpressContextOptions["res"];
+  req: WithAuthProp<Request>;
+}) => {
   return createTRPCContext(req.headers.cookie, req.auth.userId);
-}
+};
 
 /**
  * 2. INITIALIZATION

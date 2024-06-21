@@ -1,91 +1,139 @@
-import { Change, diffChars } from "diff";
-import { ComponentUpdate } from "../types/component";
-import { BranchItem } from "../types/branch";
+import type { Change } from "diff";
+import { diffChars } from "diff";
+import type { ComponentUpdate } from "../types/component";
+import type { BranchItem } from "../types/branch";
 
-export const LOCALHOST = 'localhost';
-export const environment = process.env.ENV as Environment | undefined || process.env.NEXT_PUBLIC_ENV as Environment | undefined || 'production'
+export const LOCALHOST = "localhost";
+export const environment =
+  (process.env.ENV as Environment | undefined) ||
+  (process.env.NEXT_PUBLIC_ENV as Environment | undefined) ||
+  "production";
 
-export type ResizeCoords = 'n' | 'e' | 's' | 'w';
+export type ResizeCoords = "n" | "e" | "s" | "w";
 //Some update values are not already in css form (like spacing and size). Convert them
-export function translateUpdatesToCss(updates: ComponentUpdate[]): ComponentUpdate[] {
+export function translateUpdatesToCss(
+  updates: ComponentUpdate[],
+): ComponentUpdate[] {
   const translated: ComponentUpdate[] = [];
 
   for (const update of updates) {
-    if (update.type !== 'className') {
+    if (update.type !== "className") {
       translated.push(update);
-    } else {
-      if (update.name === 'spacing') {
-        const [line, letter] = update.value.split('-');
-        const lineHeight: ComponentUpdate = { ...update, name: 'lineHeight', value: line };
-        const letterSpacing: ComponentUpdate = { ...update, name: 'letterSpacing', value: letter };
-        translated.push(...[lineHeight, letterSpacing]);
-      } else if (update.name === 'size') {
-        const useHeight = update.value.startsWith('h');
-        const value = update.value.replace('h', '');
-        const directionsStr = value.split(':');
-        const mappingPadding: Record<ResizeCoords, 'paddingTop' | 'paddingBottom' | 'paddingLeft' | 'paddingRight'> = {
-          n: 'paddingTop',
-          e: 'paddingRight',
-          s: 'paddingBottom',
-          w: 'paddingLeft'
-        }
-        const mappingHeight: Record<ResizeCoords, 'width' | 'height'> = {
-          n: 'height',
-          e: 'width',
-          s: 'height',
-          w: 'width'
-        }
-        for (const directionStr of directionsStr) {
-          const [direction, _value] = directionStr.split('=');
-          if (isNaN(Number(_value))) throw new Error("Value must be a number: " + _value);
-          if (direction.length !== 1 || !'nesw'.includes(direction)) throw new Error("Invalid direction " + direction);
+    } else if (update.name === "spacing") {
+      const [line, letter] = update.value.split("-");
+      const lineHeight: ComponentUpdate = {
+        ...update,
+        name: "lineHeight",
+        value: line,
+      };
+      const letterSpacing: ComponentUpdate = {
+        ...update,
+        name: "letterSpacing",
+        value: letter,
+      };
+      translated.push(...[lineHeight, letterSpacing]);
+    } else if (update.name === "size") {
+      const useHeight = update.value.startsWith("h");
+      const value = update.value.replace("h", "");
+      const directionsStr = value.split(":");
+      const mappingPadding: Record<
+        ResizeCoords,
+        "paddingTop" | "paddingBottom" | "paddingLeft" | "paddingRight"
+      > = {
+        n: "paddingTop",
+        e: "paddingRight",
+        s: "paddingBottom",
+        w: "paddingLeft",
+      };
+      const mappingHeight: Record<ResizeCoords, "width" | "height"> = {
+        n: "height",
+        e: "width",
+        s: "height",
+        w: "width",
+      };
+      for (const directionStr of directionsStr) {
+        const [direction, _value] = directionStr.split("=");
+        if (isNaN(Number(_value)))
+          throw new Error(`Value must be a number: ${_value}`);
+        if (direction.length !== 1 || !"nesw".includes(direction))
+          throw new Error(`Invalid direction ${direction}`);
 
-          const valueStyle = `${_value}px`;
-          const mapping = useHeight ? mappingHeight : mappingPadding;
-          const spaceUpdate = { ...update, name: mapping[direction as ResizeCoords], value: valueStyle };
-          translated.push(spaceUpdate);
-        }
-      } else {
-        translated.push(update);
+        const valueStyle = `${_value}px`;
+        const mapping = useHeight ? mappingHeight : mappingPadding;
+        const spaceUpdate = {
+          ...update,
+          name: mapping[direction as ResizeCoords],
+          value: valueStyle,
+        };
+        translated.push(spaceUpdate);
       }
+    } else {
+      translated.push(update);
     }
   }
 
   return translated;
 }
 
-export function hashComponentId(locations: { file: string, startLine: number, startColumn: number, endLine: number, endColumn: number }[]): string {
-  return locations.map(({ file, startLine, startColumn, endLine, endColumn }) => btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`)).join('#');
+export function hashComponentId(
+  locations: {
+    file: string;
+    startLine: number;
+    startColumn: number;
+    endLine: number;
+    endColumn: number;
+  }[],
+): string {
+  return locations
+    .map(({ file, startLine, startColumn, endLine, endColumn }) =>
+      btoa(`${file}:${startLine}:${startColumn}:${endLine}:${endColumn}`),
+    )
+    .join("#");
 }
 
-export function getLocationsFromComponentId(id: string): { file: string, startLine: number, startColumn: number, endLine: number, endColumn: number }[] {
-  const stuffs = id.split('#').map(i => atob(i));
-  const locations = stuffs.map(stuff => {
-    const [file, startLine, startColumn, endLine, endColumn] = stuff.split(':');
+export function getLocationsFromComponentId(id: string): {
+  file: string;
+  startLine: number;
+  startColumn: number;
+  endLine: number;
+  endColumn: number;
+}[] {
+  const stuffs = id.split("#").map((i) => atob(i));
+  const locations = stuffs.map((stuff) => {
+    const [file, startLine, startColumn, endLine, endColumn] = stuff.split(":");
 
     return {
       file,
       startLine: Number(startLine),
       startColumn: Number(startColumn),
       endLine: Number(endLine),
-      endColumn: Number(endColumn)
+      endColumn: Number(endColumn),
     };
   });
 
   return locations;
 }
 
-export const reverseUpdates = <T extends ComponentUpdate>(updates: T[]): T[] => {
+export const reverseUpdates = <T extends ComponentUpdate>(
+  updates: T[],
+): T[] => {
   const reversed: T[] = [];
   for (let i = updates.length - 1; i >= 0; i--) {
     const update = updates[i];
-    reversed.push({ ...update, oldValue: update.value, value: update.oldValue });
+    reversed.push({
+      ...update,
+      oldValue: update.value,
+      value: update.oldValue,
+    });
   }
 
-  return reversed
-}
+  return reversed;
+};
 
-export function getLineAndColumn(text: string, index: number): { line: number; column: number } {
+export function getLineAndColumn(
+  text: string,
+  index: number,
+): { line: number; column: number } {
   const lines = text.split("\n");
   let currentLine = 0;
   let currentColumn = index;
@@ -103,7 +151,11 @@ export function getLineAndColumn(text: string, index: number): { line: number; c
   return { line: currentLine + 1, column: currentColumn };
 }
 
-export function getIndexFromLineAndColumn(text: string, line: number, column: number): number | undefined {
+export function getIndexFromLineAndColumn(
+  text: string,
+  line: number,
+  column: number,
+): number | undefined {
   const lines = text.split("\n");
   let currentIndex = 0;
 
@@ -123,23 +175,23 @@ export function getIndexFromLineAndColumn(text: string, line: number, column: nu
   return undefined; // Column number out of range
 }
 
-export type Environment = 'production' | 'staging' | 'development';
+export type Environment = "production" | "staging" | "development";
 
 export function getWebUrl(_environment: Environment) {
-  if (_environment === 'production') {
-    return 'https://dashboard.harmonyui.app'
-  } else if (_environment === 'staging') {
-    return 'https://harmony-xi.vercel.app'
+  if (_environment === "production") {
+    return "https://dashboard.harmonyui.app";
+  } else if (_environment === "staging") {
+    return "https://harmony-xi.vercel.app";
   }
 
   return `http://${LOCALHOST}:3000`;
 }
 
 export function getEditorUrl(_environment: Environment) {
-  if (_environment === 'production') {
-    return 'https://harmony-ui.fly.dev'
-  } else if (_environment === 'staging') {
-    return 'https://harmony-ui-staging.fly.dev'
+  if (_environment === "production") {
+    return "https://harmony-ui.fly.dev";
+  } else if (_environment === "staging") {
+    return "https://harmony-ui-staging.fly.dev";
   }
 
   return `http://${LOCALHOST}:4200`;
@@ -147,44 +199,85 @@ export function getEditorUrl(_environment: Environment) {
 
 export function createUrlFromProject(branch: BranchItem) {
   const url = new URL(branch.url);
-  if (environment === 'staging' || environment === 'development') {
-    url.searchParams.append('harmony-environment', environment);
+  if (environment === "staging" || environment === "development") {
+    url.searchParams.append("harmony-environment", environment);
   }
-  url.searchParams.append('branch-id', branch.id);
+  url.searchParams.append("branch-id", branch.id);
 
   return url;
 }
 
-export function updateLocationFromContent({ file, startLine, startColumn, endLine, endColumn }: { file: string, startLine: number, startColumn: number, endLine: number, endColumn: number }, oldContent: string, newContent: string) {
+export function updateLocationFromContent(
+  {
+    file,
+    startLine,
+    startColumn,
+    endLine,
+    endColumn,
+  }: {
+    file: string;
+    startLine: number;
+    startColumn: number;
+    endLine: number;
+    endColumn: number;
+  },
+  oldContent: string,
+  newContent: string,
+) {
   const diffs = diffChars(oldContent, newContent);
 
-  const startIndex = getIndexFromLineAndColumn(oldContent, startLine, startColumn);
-  if (startIndex === undefined) throw new Error(`Invalid line and column ${startLine} ${startColumn} of content ${oldContent}`);
+  const startIndex = getIndexFromLineAndColumn(
+    oldContent,
+    startLine,
+    startColumn,
+  );
+  if (startIndex === undefined)
+    throw new Error(
+      `Invalid line and column ${startLine} ${startColumn} of content ${oldContent}`,
+    );
 
   const newStartIndex = updateIndexFromDiffs(startIndex, diffs);
   if (newStartIndex === undefined) return undefined;
 
   const endIndex = getIndexFromLineAndColumn(oldContent, endLine, endColumn);
-  if (endIndex === undefined) throw new Error(`Invalid line and column ${endLine} ${endColumn} of content ${oldContent}`);
+  if (endIndex === undefined)
+    throw new Error(
+      `Invalid line and column ${endLine} ${endColumn} of content ${oldContent}`,
+    );
 
   const newEndIndex = updateIndexFromDiffs(endIndex, diffs);
   if (newEndIndex === undefined) return undefined;
 
-  const { line: newLineStart, column: newColumnStart } = getLineAndColumn(newContent, newStartIndex);
-  const { line: newLineEnd, column: newColumnEnd } = getLineAndColumn(newContent, newEndIndex);
+  const { line: newLineStart, column: newColumnStart } = getLineAndColumn(
+    newContent,
+    newStartIndex,
+  );
+  const { line: newLineEnd, column: newColumnEnd } = getLineAndColumn(
+    newContent,
+    newEndIndex,
+  );
 
-  return { file, startLine: newLineStart, endLine: newLineEnd, startColumn: newColumnStart, endColumn: newColumnEnd };
+  return {
+    file,
+    startLine: newLineStart,
+    endLine: newLineEnd,
+    startColumn: newColumnStart,
+    endColumn: newColumnEnd,
+  };
 }
 
-export function updateIndexFromDiffs(index: number, diffs: Change[]): number | undefined {
+export function updateIndexFromDiffs(
+  index: number,
+  diffs: Change[],
+): number | undefined {
   let currIndex = 0;
   let newIndex = index;
   for (let i = 0; i < diffs.length; i++) {
     const diff = diffs[i];
-    if (diff.count === undefined) throw new Error("Why is there no line count?");
+    if (diff.count === undefined)
+      throw new Error("Why is there no line count?");
     //const lineCount = diff.count;
     const valueCount = diff.value.length;
-
 
     if (currIndex > index) break;
 
@@ -204,7 +297,7 @@ export function updateIndexFromDiffs(index: number, diffs: Change[]): number | u
         //       let sign = diffChar.added ? 1 : -1;
         //       if (currColumn <= startColumn) {
         //         newColumnStart += diffChar.count * sign;
-        //       } 
+        //       }
         //     } else {
         //       currColumn += diffChar.count;
         //     }
