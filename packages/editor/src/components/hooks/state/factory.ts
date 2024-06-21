@@ -3,7 +3,7 @@ import type { StateCreator } from "zustand";
 import { create } from "zustand";
 import { subscribeWithSelector } from "zustand/middleware";
 
-export type HarmonyPipeCreator<State, Dependencies> = {[P in keyof (State & Dependencies)]?: (values: (State & Dependencies)[P]) => void}
+export type HarmonyPipeCreator<State, Dependencies> = {[P in keyof (State & Dependencies)]?: (state: (State & Dependencies)[P], previousState: (State & Dependencies)[P]) => void}
 export type HarmonyStateCreator<State> = State
 
 export type HarmonySlice<State, Dependencies = unknown> = (...params: Parameters<StateCreator<State & Dependencies>>) => HarmonyStateCreator<State extends {state: any, dependencies?: any} ? never : State> | {
