@@ -37,6 +37,7 @@ module.exports = {
     // add specific rules configurations here
     'react/function-component-definition': 'off',
     'react/no-array-index-key': 'off',
+    "no-useless-escape": 'off',
     '@typescript-eslint/no-confusing-void-expression': 'off',
   },
 }

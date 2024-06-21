@@ -41,6 +41,7 @@ module.exports = {
     'react/function-component-definition': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     'import/no-default-export': 'off',
+    "no-useless-escape": 'off',
     '@typescript-eslint/no-confusing-void-expression': 'off',
   },
 }
