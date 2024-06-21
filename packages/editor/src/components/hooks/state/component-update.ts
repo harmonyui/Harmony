@@ -8,12 +8,12 @@ import {
 } from "../../../utils/element-utils";
 import { createHarmonySlice } from "./factory";
 
-type CachedElement = {
+interface CachedElement {
   id: string;
   element: Element;
   parent: HTMLElement;
   children?: Element[];
-};
+}
 
 export interface ComponentUpdateState {
   componentUpdates: ComponentUpdate[];
@@ -150,7 +150,6 @@ export const createComponentUpdateSlice =
                       );
                       return state;
                     });
-                    return;
                   }
                 });
                 if (!inserted) {
@@ -213,7 +212,7 @@ export const createComponentUpdateSlice =
               );
               if (cachedElement) {
                 const parent = cachedElement.parent;
-                parent?.childNodes.forEach((child, index) => {
+                parent.childNodes.forEach((child, index) => {
                   if (index === start.childIndex) {
                     parent.insertBefore(cachedElement.element, child);
                     set((state) => {
@@ -222,10 +221,9 @@ export const createComponentUpdateSlice =
                       );
                       return state;
                     });
-                    cachedElement.children!!.forEach((c) => {
+                    cachedElement.children!.forEach((c) => {
                       c.remove();
                     });
-                    return;
                   }
                 });
               } else {
@@ -278,9 +276,12 @@ export const createComponentUpdateSlice =
               element.remove();
             }
           }
-          if (update.name === "add-text") {
+          if (update.name === "replace-element") {
             const { value } = update;
-            const { text } = JSON.parse(value) as { text: string };
+            const { value: actionValue, type } = JSON.parse(value) as {
+              value: string;
+              type: "text" | "image" | "svg";
+            };
             const element = findElementFromId(
               update.componentId,
               update.childIndex,
@@ -289,11 +290,22 @@ export const createComponentUpdateSlice =
               throw new Error(
                 `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
               );
-            if (text !== "") {
-              const textNode = document.createTextNode(text);
-              element.appendChild(textNode);
-            } else {
+            if (actionValue === "") {
               element.innerHTML = "";
+            } else if (type === "text") {
+              const textNode = document.createTextNode(actionValue);
+              element.appendChild(textNode);
+            } else if (type === "image") {
+              const img = document.createElement("img");
+              img.src = actionValue;
+              element.replaceWith(img);
+            } else {
+              const svg = document.createElementNS(
+                "http://www.w3.org/2000/svg",
+                "svg",
+              );
+              svg.innerHTML = actionValue;
+              element.replaceWith(svg);
             }
           }
         }

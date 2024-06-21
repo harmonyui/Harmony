@@ -1,15 +1,20 @@
 import { enableRipple } from "@syncfusion/ej2-base";
-import {
+import type {
 	DragAndDropEventArgs,
 	NodeSelectEventArgs,
-	DrawNodeEventArgs,
+	DrawNodeEventArgs} from "@syncfusion/ej2-react-navigations";
+import {
 	TreeViewComponent
 } from "@syncfusion/ej2-react-navigations";
 import { useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
-import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
-import { ComponentElement } from "../inspector/component-identifier";
 import { Button } from "@harmony/ui/src/components/core/button";
+import type { ComponentUpdateWithoutGlobal} from "../harmony-context";
+import { useHarmonyContext } from "../harmony-context";
+import type { ComponentElement } from "../inspector/component-identifier";
+import type { ImageType } from "./add-image-panel";
+import { AddImagePanel } from "./add-image-panel";
+
 enableRipple(true);
 
 export interface TreeViewItem<T = string> {
@@ -45,6 +50,7 @@ const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeViewItem<ComponentElement>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void }) => {
 	const { onAttributesChange, onComponentHover, onComponentSelect, setError, selectedComponent } = useHarmonyContext()
 	const [multiSelect, setMultiSelect] = useState<{ start: HTMLElement, end: HTMLElement }>()
+	const [isImageOpen, setIsImageOpen] = useState(false);
 
 	const [transformedItems, setTransformedItems] = useState<TransformNode[]>();
 	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex', selected: 'isSelected' };
@@ -67,7 +73,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 			if (node.id.element.dataset.harmonyError === "component") {
 				componentError = 'component'
 			}
-			let children = node.items.map(node => transform(node, componentError));
+			const children = node.items.map(node => transform(node, componentError));
 			transformedNode.subChild = children.map((child, index) => {
 				child.childIndex = index;
 				return child;
@@ -78,7 +84,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 	}
 
 	useEffect(() => {
-		let i = items.map((item) => {
+		const i = items.map((item) => {
 			return transform(item)
 		})
 		i[0].expanded = true
@@ -88,15 +94,15 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 	function handleNodeDropped(event: DragAndDropEventArgs) {
 		const { draggedParentNode: oldParentElement, dropTarget: newParentElement, dropIndex: newIndex, droppedNode, draggedNode, droppedNodeData: node } = event;
 		const componentId = draggedNode.children[1].innerHTML.split('data-component=')[1].split('"')[1]
-		const link = draggedNode.children[1].innerHTML.split("data-node=")[1].split('"')[1] as string
-		const domNode = document.querySelector(`[data-link="${link}"]`) as HTMLElement
+		const link = draggedNode.children[1].innerHTML.split("data-node=")[1].split('"')[1]
+		const domNode = document.querySelector(`[data-link="${link}"]`)!
 
 		const oldParent = oldParentElement as HTMLElement
 		const oldParentId = oldParent.children[1].innerHTML.split('data-component=')[1].split('"')[1]
 		const newParent = newParentElement as HTMLElement
 		const newParentId = newParent.children[1].innerHTML.split('data-component=')[1].split('"')[1]
 
-		const oldChildIndex = Array.from(domNode.parentElement!!.childNodes).indexOf(domNode)
+		const oldChildIndex = Array.from(domNode.parentElement!.childNodes).indexOf(domNode)
 
 		if (newParent.dataset.harmonyError === "component" || droppedNode.dataset.harmonyError === "component") {
 			event.cancel = true
@@ -134,18 +140,18 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		const oldParent = oldParentElement as HTMLElement
 		const newParent = newParentElement as HTMLElement
 
-		if (oldParent?.dataset.harmonyError === "component" || newParent?.dataset.harmonyError === "component") {
+		if (oldParent.dataset.harmonyError === "component" || newParent.dataset.harmonyError === "component") {
 			event.cancel = true;
 			event.dropIndicator = 'e-no-drop';
 			setError("This component cannot be moved into this location")
-			return;
+			
 		}
 	}
 
 	function nodeDragStart(event: DragAndDropEventArgs) {
 		const { draggedNode } = event;
 
-		if (draggedNode?.dataset.harmonyError === "component") {
+		if (draggedNode.dataset.harmonyError === "component") {
 			event.cancel = true;
 			event.dropIndicator = 'e-no-drop';
 			setError("This component cannot be moved!")
@@ -168,8 +174,8 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 	function handleAddDeleteElement(action: "delete" | "create", position: "above" | "below" | "" = "") {
 		if (!selectedComponent) return;
 		const link = selectedComponent.dataset.link
-		const component = document.querySelector(`[data-link="${link}"]`)!!
-		const childIndex = Array.from(component.parentElement!!.childNodes).indexOf(selectedComponent)
+		const component = document.querySelector(`[data-link="${link}"]`)!
+		const childIndex = Array.from(component.parentElement!.childNodes).indexOf(selectedComponent)
 
 		const cacheId = uuidv4()
 
@@ -178,36 +184,36 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		const update: ComponentUpdateWithoutGlobal = {
 			type: "component",
 			name: "delete-create",
-			componentId: selectedComponent.dataset.harmonyId!!,
+			componentId: selectedComponent.dataset.harmonyId!,
 			childIndex,
 			oldValue: JSON.stringify({ id: cacheId, action: action === "delete" ? "create" : "delete", index: action === "delete" ? childIndex : index, position: "" }),
 			value: JSON.stringify({ id: cacheId, action, index: childIndex, position })
 		}
 		onAttributesChange([update])
 	}
-	let selectedNodes = ['2', '6'];
+	const selectedNodes = ['2', '6'];
 	function nodeSelected(e: NodeSelectEventArgs) {
-		const start = treeObj!!['startNode'] as HTMLElement
+		const start = treeObj!.startNode as HTMLElement
 		const startId = start.children[1].innerHTML.split('data-node=')[1].split('"')[1]
-		const startNode = document.querySelector(`[data-link="${startId}"]`) as HTMLElement
+		const startNode = document.querySelector(`[data-link="${startId}"]`)!
 		const end = e.node
 		const endId = end.children[1].innerHTML.split('data-node=')[1].split('"')[1]
-		const endNode = document.querySelector(`[data-link="${endId}"]`) as HTMLElement
+		const endNode = document.querySelector(`[data-link="${endId}"]`)!
 		setMultiSelect({ start: startNode, end: endNode })
 	}
 
 	function handleWrapElement(action: "wrap" | "unwrap") {
-		const startComponent = document.querySelector(`[data-link="${multiSelect?.start.dataset.link}"]`)!!
-		const startChildIndex = Array.from(startComponent.parentElement!!.childNodes).indexOf(startComponent)
-		const endComponent = document.querySelector(`[data-link="${multiSelect?.end.dataset.link}"]`)!!
-		const endChildIndex = Array.from(endComponent.parentElement!!.childNodes).indexOf(endComponent)
+		const startComponent = document.querySelector(`[data-link="${multiSelect?.start.dataset.link}"]`)!
+		const startChildIndex = Array.from(startComponent.parentElement!.childNodes).indexOf(startComponent)
+		const endComponent = document.querySelector(`[data-link="${multiSelect?.end.dataset.link}"]`)!
+		const endChildIndex = Array.from(endComponent.parentElement!.childNodes).indexOf(endComponent)
 
 		const componentId = () => {
 			if (action === "wrap") {
 				return uuidv4()
-			} else {
+			} 
 				return multiSelect?.start.dataset.harmonyId
-			}
+			
 		}
 
 		const cacheId = uuidv4()
@@ -229,7 +235,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		const update: ComponentUpdateWithoutGlobal = {
 			type: "component",
 			name: "wrap-unwrap",
-			componentId: componentId()!!,
+			componentId: componentId()!,
 			childIndex: startChildIndex,
 			oldValue: JSON.stringify(action === "wrap" ? unwrap : wrap),
 			value: JSON.stringify(action === "wrap" ? wrap : unwrap)
@@ -239,14 +245,28 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 
 	const handleAddText = () => {
 		if (!selectedComponent) return;
-		const childIndex = Array.from(selectedComponent.parentElement!!.childNodes).indexOf(selectedComponent)
+		const childIndex = Array.from(selectedComponent.parentElement!.childNodes).indexOf(selectedComponent)
 		const update: ComponentUpdateWithoutGlobal = {
 			type: "component",
-			name: "add-text",
-			componentId: selectedComponent.dataset.harmonyId!!,
+			name: "replace-element",
+			componentId: selectedComponent.dataset.harmonyId!,
 			childIndex,
-			oldValue: JSON.stringify({ text: "" }),
-			value: JSON.stringify({ text: "[Insert Text]" })
+			oldValue: JSON.stringify({ type: 'text', value: "" }),
+			value: JSON.stringify({ type: 'text', value: "[Insert Text]" })
+		}
+		onAttributesChange([update])
+	}
+
+	const handleAddImage = (value: string, type: ImageType) => {
+		setIsImageOpen(false);
+		const childIndex = Array.from(selectedComponent.parentElement!.childNodes).indexOf(selectedComponent)
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "replace-element",
+			componentId: selectedComponent.dataset.harmonyId!,
+			childIndex,
+			oldValue: JSON.stringify({ type, value: "" }),
+			value: JSON.stringify({ type, value })
 		}
 		onAttributesChange([update])
 	}
@@ -295,11 +315,14 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 									<Button>UnWrap</Button>
 								</div>
 							)}
-							{isEmptyDiv && (
+							{isEmptyDiv && <>
 								<div onClick={handleAddText}>
 									<Button>Add Text</Button>
 								</div>
-							)}
+								<div onClick={() => setIsImageOpen(true)}>
+									<Button>Add Image/SVG</Button>
+								</div>
+							</>}
 						</div>
 					</>
 				)}
@@ -316,6 +339,7 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 					selectedNodes={selectedNodes}
 					nodeSelected={nodeSelected}
 				/>
+				<AddImagePanel isOpen={isImageOpen} onClose={() => setIsImageOpen(false)} onSave={handleAddImage}/>
 			</div>
 		)
 	);

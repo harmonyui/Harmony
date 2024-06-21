@@ -5,7 +5,7 @@ import { SideDrawer } from '@harmony/ui/src/components/core/side-drawer'
 import { recurseElements } from '../../utils/element-utils'
 import { useHarmonyStore } from '../hooks/state'
 
-type ImageType = 'image' | 'svg'
+export type ImageType = 'image' | 'svg'
 
 interface AddImagePanelProps {
   isOpen: boolean
