@@ -37,21 +37,22 @@ export const FileUploadArea: React.FunctionComponent<FileUploadAreaProps> = ({
       className="flex items-center justify-center w-full relative"
       onDragEnter={handleDrag}
     >
-			<label
+      <label
         className={`flex flex-col items-center justify-center w-full h-32 border border-gray-300 border-dashed rounded-md cursor-pointer ${
-          dragActive
-            ? "bg-gray-50 dark:bg-gray-600"
-            : "dark:bg-gray-700"
+          dragActive ? "bg-gray-50 dark:bg-gray-600" : "dark:bg-gray-700"
         } hover:bg-gray-50 dark:border-gray-600 dark:hover:border-gray-500 dark:hover:bg-gray-600`}
         htmlFor="dropzone-file"
       >
-				<PhotoIcon aria-hidden="true" className="mx-auto h-12 w-12 text-gray-300" />
-      
+        <PhotoIcon
+          aria-hidden="true"
+          className="mx-auto h-12 w-12 text-gray-300"
+        />
+
         <div className="flex flex-col items-center justify-center py-2">
           {/* <UploadIcon className="w-8 h-8 mb-4 text-gray-500 dark:text-gray-400" /> */}
           <p className="text-sm text-gray-500 dark:text-gray-400">
-            <span className="font-semibold text-primary">Upload a file</span> or drag and
-            drop
+            <span className="font-semibold text-primary">Upload a file</span> or
+            drag and drop
           </p>
         </div>
         <input
@@ -59,7 +60,7 @@ export const FileUploadArea: React.FunctionComponent<FileUploadAreaProps> = ({
           id="dropzone-file"
           onChange={onChange}
           type="file"
-					multiple
+          multiple
         />
       </label>
       {dragActive ? (

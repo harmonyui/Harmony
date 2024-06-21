@@ -1,216 +1,258 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 /* eslint-disable @typescript-eslint/require-await -- ok*/
 import { z } from "zod";
-import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
-import { BranchItem, Repository, branchItemSchema } from "@harmony/util/src/types/branch";
-import { Db, Prisma } from "@harmony/db/lib/prisma";
+import type { BranchItem, Repository } from "@harmony/util/src/types/branch";
+import { branchItemSchema } from "@harmony/util/src/types/branch";
+import type { Db, Prisma } from "@harmony/db/lib/prisma";
 import { compare } from "@harmony/util/src/utils/common";
-import { ComponentUpdate } from "@harmony/util/src/types/component";
-import {load} from 'cheerio';
+import type { ComponentUpdate } from "@harmony/util/src/types/component";
+import { load } from "cheerio";
+import { createTRPCRouter, protectedProcedure, publicProcedure } from "../trpc";
 
 const branchPayload = {
-	include: {
-		pullRequest: true,
-		updates: {
-			orderBy: {
-				date_modified: 'desc'
-			}
-		},
-	}
-} satisfies Prisma.BranchDefaultArgs
+  include: {
+    pullRequest: true,
+    updates: {
+      orderBy: {
+        date_modified: "desc",
+      },
+    },
+  },
+} satisfies Prisma.BranchDefaultArgs;
 type Branch = Prisma.BranchGetPayload<typeof branchPayload>;
 
 export const branchRoute = createTRPCRouter({
-	getBranches: protectedProcedure
-		.query(async ({ctx}) => {
-			if (!ctx.session.account.repository) {
-				return undefined;
-			}
+  getBranches: protectedProcedure.query(async ({ ctx }) => {
+    if (!ctx.session.account.repository) {
+      return undefined;
+    }
 
-			return getBranches({prisma: ctx.prisma, repositoryId: ctx.session.account.repository.id})
-		}),
-	createBranch: protectedProcedure
-		.input(z.object({branch: branchItemSchema}))
-		.mutation(async ({ctx, input}) => {
-			if (!ctx.session.account.repository) {
-				throw new Error("Cannot create a branch without a repository");
-			}
-			
-			return createBranch({prisma: ctx.prisma, branch: input.branch, repositoryId: ctx.session.account.repository.id, accountId: ctx.session.account.id})
-		}),
-	deleteBranch: protectedProcedure
-		.input(z.object({branchId: z.string()}))
-		.mutation(async ({ctx, input}) => {
-			await ctx.prisma.branch.update({
-				where: {
-					id: input.branchId
-				},
-				data: {
-					is_deleted: true
-				}
-			});
-		}),
-	getURLThumbnail: publicProcedure
-		.input(z.object({url: z.string()}))
-		.query(async ({ctx, input}) => {
-			const response = await fetch(input.url, {
-				method: 'GET'
-			});
-			const html = await response.text();
-		
-			return createWebpageThumbnail(html);
-		})
+    return getBranches({
+      prisma: ctx.prisma,
+      repositoryId: ctx.session.account.repository.id,
+    });
+  }),
+  createBranch: protectedProcedure
+    .input(z.object({ branch: branchItemSchema }))
+    .mutation(async ({ ctx, input }) => {
+      if (!ctx.session.account.repository) {
+        throw new Error("Cannot create a branch without a repository");
+      }
+
+      return createBranch({
+        prisma: ctx.prisma,
+        branch: input.branch,
+        repositoryId: ctx.session.account.repository.id,
+        accountId: ctx.session.account.id,
+      });
+    }),
+  deleteBranch: protectedProcedure
+    .input(z.object({ branchId: z.string() }))
+    .mutation(async ({ ctx, input }) => {
+      await ctx.prisma.branch.update({
+        where: {
+          id: input.branchId,
+        },
+        data: {
+          is_deleted: true,
+        },
+      });
+    }),
+  getURLThumbnail: publicProcedure
+    .input(z.object({ url: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const response = await fetch(input.url, {
+        method: "GET",
+      });
+      const html = await response.text();
+
+      return createWebpageThumbnail(html);
+    }),
 });
 
 async function createWebpageThumbnail(html: string): Promise<string> {
-    //return 'https://assets-global.website-files.com/61c1c0b4e368108c5ab02f30/62385d67c46d9a32873c39aa_canopy_dark.png'
-    
-    const $ = load(html);
+  //return 'https://assets-global.website-files.com/61c1c0b4e368108c5ab02f30/62385d67c46d9a32873c39aa_canopy_dark.png'
 
-    // Extract title
-    //const title = doc.querySelector('title')?.textContent;
+  const $ = load(html);
 
-    // Extract thumbnail image (you may need to adjust this based on webpage structure)
-    const thumbnailImage = $('meta[property="og:image"]').attr('content');
+  // Extract title
+  //const title = doc.querySelector('title')?.textContent;
 
-	if (!thumbnailImage) {
-		// const dataUrl = await domtoimage.toSvg($('body')[0]);
-		// thumbnailImage = dataUrl;
-		// const base64Encoded = btoa(harmonySVG);
+  // Extract thumbnail image (you may need to adjust this based on webpage structure)
+  const thumbnailImage = $('meta[property="og:image"]').attr("content");
 
-		// // Create a data URL with the Base64-encoded SVG content
-		// const dataUrl = `data:image/svg+xml;base64,${base64Encoded}`;
-		//const dataUrl = `data:image/svg+xml;utf8, ${harmonySVG}`;
-		return '/harmony-project-placeholder.svg';
-	}
+  if (!thumbnailImage) {
+    // const dataUrl = await domtoimage.toSvg($('body')[0]);
+    // thumbnailImage = dataUrl;
+    // const base64Encoded = btoa(harmonySVG);
 
-    return thumbnailImage || '';
+    // // Create a data URL with the Base64-encoded SVG content
+    // const dataUrl = `data:image/svg+xml;base64,${base64Encoded}`;
+    //const dataUrl = `data:image/svg+xml;utf8, ${harmonySVG}`;
+    return "/harmony-project-placeholder.svg";
+  }
+
+  return thumbnailImage || "";
 }
 
-export const getRepository = async ({prisma, repositoryId}: {prisma: Db, repositoryId: string}): Promise<Repository | undefined> => {
-	const repository = await prisma.repository.findUnique({
-		where: {
-			id: repositoryId
-		}
-	})
+export const getRepository = async ({
+  prisma,
+  repositoryId,
+}: {
+  prisma: Db;
+  repositoryId: string;
+}): Promise<Repository | undefined> => {
+  const repository = await prisma.repository.findUnique({
+    where: {
+      id: repositoryId,
+    },
+  });
 
-	if (!repository) return undefined;
+  if (!repository) return undefined;
 
-	return {
-		id: repository.id,
-		branch: repository.branch,
-		name: repository.name,
-		owner: repository.owner,
-		ref: repository.ref,
-		installationId: repository.installationId,
-		cssFramework: repository.css_framework,
-		tailwindPrefix: repository.tailwind_prefix || undefined,
-		defaultUrl: repository.default_url
-	}
-}
+  return {
+    id: repository.id,
+    branch: repository.branch,
+    name: repository.name,
+    owner: repository.owner,
+    ref: repository.ref,
+    installationId: repository.installationId,
+    cssFramework: repository.css_framework,
+    tailwindPrefix: repository.tailwind_prefix || undefined,
+    defaultUrl: repository.default_url,
+  };
+};
 
-export const getBranches = async ({prisma, repositoryId, accountId}: {prisma: Db, repositoryId: string, accountId?: string}): Promise<BranchItem[]> => {
-	const branches = await prisma.branch.findMany({
-		where: {
-			repository_id: repositoryId,
-			is_deleted: false,
-			account_id: accountId
-		},
-		orderBy: {
-			date_modified: 'desc'
-		},
-		...branchPayload
-	});
+export const getBranches = async ({
+  prisma,
+  repositoryId,
+  accountId,
+}: {
+  prisma: Db;
+  repositoryId: string;
+  accountId?: string;
+}): Promise<BranchItem[]> => {
+  const branches = await prisma.branch.findMany({
+    where: {
+      repository_id: repositoryId,
+      is_deleted: false,
+      account_id: accountId,
+    },
+    orderBy: {
+      date_modified: "desc",
+    },
+    ...branchPayload,
+  });
 
-	
-
-	return await Promise.all(branches.map(branch => prismaToBranch(branch))) satisfies BranchItem[];
-}
+  return (await Promise.all(
+    branches.map((branch) => prismaToBranch(branch)),
+  )) satisfies BranchItem[];
+};
 
 const getLastUpdated = (branch: Branch): Date => {
-	if (branch.updates.length) {
-		return branch.updates.sort((a, b) => compare(b.date_modified, a.date_modified))[0].date_modified
-	}
+  if (branch.updates.length) {
+    return branch.updates.sort((a, b) =>
+      compare(b.date_modified, a.date_modified),
+    )[0].date_modified;
+  }
 
-	return branch.date_modified;
-} 
+  return branch.date_modified;
+};
 
 const prismaToBranch = (branch: Branch): BranchItem => {
-	
+  return {
+    id: branch.id,
+    name: branch.name,
+    label: branch.label,
+    url: branch.url,
+    pullRequestUrl: branch.pullRequest?.url ?? undefined,
+    commits: [],
+    lastUpdated: getLastUpdated(branch),
+  };
+};
 
-	return {
-		id: branch.id,
-		name: branch.name,
-		label: branch.label,
-		url: branch.url,
-		pullRequestUrl: branch.pullRequest?.url ?? undefined,
-		commits: [],
-		lastUpdated: getLastUpdated(branch)
-	}
-}
+export const getBranch = async ({
+  prisma,
+  branchId,
+}: {
+  prisma: Db;
+  branchId: string;
+}) => {
+  const branch = await prisma.branch.findUnique({
+    where: {
+      id: branchId,
+      is_deleted: false,
+    },
+    ...branchPayload,
+  });
 
-export const getBranch = async({prisma, branchId}: {prisma: Db, branchId: string}) => {
-	const branch = await prisma.branch.findUnique({
-		where: {
-			id: branchId,
-			is_deleted: false
-		},
-		...branchPayload
-	});
+  if (!branch) return undefined;
 
-	if (!branch) return undefined;
+  //TODO: Get rid of hacky property additions and make that global
+  return {
+    id: branch.id,
+    name: branch.name,
+    label: branch.label,
+    url: branch.url,
+    repositoryId: branch.repository_id,
+    pullRequestUrl: branch.pullRequest?.url ?? undefined,
+    commits: [], //await githubRepository.getCommits(branch.name),
+    lastUpdated: getLastUpdated(branch),
+    updates: branch.updates.map((update) => ({
+      type: update.type as ComponentUpdate["type"],
+      name: update.name,
+      value: update.value,
+      oldValue: update.old_value,
+      componentId: update.component_id,
+      childIndex: update.childIndex,
+      isGlobal: update.is_global,
+      dateModified: update.date_modified,
+    })),
+    old: branch.updates.map((update) => update.old_value),
+  } satisfies BranchItem & {
+    repositoryId: string;
+    updates: (ComponentUpdate & { dateModified: Date })[];
+    old: string[];
+  };
+};
 
-	//TODO: Get rid of hacky property additions and make that global
-	return {
-		id: branch.id,
-		name: branch.name,
-		label: branch.label,
-		url: branch.url,
-		repositoryId: branch.repository_id,
-		pullRequestUrl: branch.pullRequest?.url ?? undefined,
-		commits: [],//await githubRepository.getCommits(branch.name),
-		lastUpdated: getLastUpdated(branch),
-		updates: branch.updates.map(update => ({
-			type: update.type as ComponentUpdate['type'],
-			name: update.name,
-			value: update.value,
-			oldValue: update.old_value,
-			componentId: update.component_id,
-			childIndex: update.childIndex,
-			isGlobal: update.is_global,
-			dateModified: update.date_modified
-		})),
-		old: branch.updates.map(update => update.old_value)
-	} satisfies BranchItem & {repositoryId: string, updates: (ComponentUpdate & {dateModified: Date})[], old: string[]};
-}
+export const createBranch = async ({
+  prisma,
+  branch,
+  accountId,
+  repositoryId,
+}: {
+  prisma: Db;
+  branch: BranchItem;
+  accountId: string;
+  repositoryId: string;
+}) => {
+  const newBranch = await prisma.branch.create({
+    data: {
+      repository_id: repositoryId,
+      label: branch.label,
+      name: branch.name,
+      url: branch.url,
+      account: {
+        connect: {
+          id: accountId,
+        },
+      },
+    },
+    ...branchPayload,
+  });
 
-export const createBranch = async ({prisma, branch, accountId, repositoryId}: {prisma: Db, branch: BranchItem, accountId: string, repositoryId: string}) => {
-	const newBranch = await prisma.branch.create({
-		data: {
-			repository_id: repositoryId,
-			label: branch.label,
-			name: branch.name,
-			url: branch.url,
-			account: {
-				connect: {
-					id: accountId
-				}
-			}
-		},
-		...branchPayload
-	});
+  const lastUpdated = getLastUpdated(newBranch);
 
-	const lastUpdated = getLastUpdated(newBranch);
-
-	return {
-		id: newBranch.id,
-		label: newBranch.label,
-		name: newBranch.name,
-		url: newBranch.url, 
-		commits: [], 
-		lastUpdated
-	} satisfies BranchItem;
-}
+  return {
+    id: newBranch.id,
+    label: newBranch.label,
+    name: newBranch.name,
+    url: newBranch.url,
+    commits: [],
+    lastUpdated,
+  } satisfies BranchItem;
+};
 
 const harmonySVG = `<svg width='177' height='179' viewBox='0 0 177 179' fill='none' xmlns='http://www.w3.org/2000/svg'>
 <g clip-path='url(#clip0_368_506)'>
@@ -302,4 +344,4 @@ const harmonySVG = `<svg width='177' height='179' viewBox='0 0 177 179' fill='no
 <rect x='176.611' y='178.073' width='176.611' height='177.765' rx='40' transform='rotate(-180 176.611 178.073)' fill='white'/>
 </clipPath>
 </defs>
-</svg>`
+</svg>`;

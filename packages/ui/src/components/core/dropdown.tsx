@@ -72,8 +72,8 @@ interface DropdownProps<T> extends PropsWithChildren {
   className?: string;
   chevron?: boolean;
   onChange?: ItemAction<T>;
-	beforeIcon?: IconComponent;
-  showValue?: boolean
+  beforeIcon?: IconComponent;
+  showValue?: boolean;
   mode?: "primary" | "secondary" | "none";
 }
 
@@ -84,9 +84,9 @@ export const Dropdown = <T,>({
   items,
   chevron = true,
   className,
-	beforeIcon,
-  showValue=true,
-  mode='secondary'
+  beforeIcon,
+  showValue = true,
+  mode = "secondary",
 }: DropdownProps<T>): JSX.Element => {
   const [value, setValue] = useState<DropdownItem<T> | undefined>(
     items.find((x) => x.id === initialValue),
@@ -118,7 +118,7 @@ export const Dropdown = <T,>({
     ),
   }));
 
-	const BeforeIcon = beforeIcon;
+  const BeforeIcon = beforeIcon;
   return (
     <ListBox
       className={className}
@@ -127,9 +127,11 @@ export const Dropdown = <T,>({
       mode={mode}
       setIsOpen={setIsOpen}
     >
-			{BeforeIcon ? <BeforeIcon className="hw-w-4 hw-h-4 hw-mr-1"/> : null}
-      <div className="hw-flex hw-w-full hw-justify-between hw-items-center">{value === undefined || !showValue ? children : value.name}{" "}
-      {chevron ? <ChevronDownIcon className="hw-w-4 hw-h-4 hw-ml-1" /> : null}</div>
+      {BeforeIcon ? <BeforeIcon className="hw-w-4 hw-h-4 hw-mr-1" /> : null}
+      <div className="hw-flex hw-w-full hw-justify-between hw-items-center">
+        {value === undefined || !showValue ? children : value.name}{" "}
+        {chevron ? <ChevronDownIcon className="hw-w-4 hw-h-4 hw-ml-1" /> : null}
+      </div>
     </ListBox>
   );
 };
@@ -139,14 +141,23 @@ export interface DropdownLineItemProps {
   children: React.ReactNode;
   className?: string;
 }
-export const DropdownLineItem = <C extends React.ElementType>({ selected, children, as, className, ...rest }:  PolymorphicComponentProps<C, DropdownLineItemProps>) => {
-  const Component = as || 'button';
-	const restProps = Component === 'button' ? {type: 'button', ...rest} : rest;
-	return (
+export const DropdownLineItem = <C extends React.ElementType>({
+  selected,
+  children,
+  as,
+  className,
+  ...rest
+}: PolymorphicComponentProps<C, DropdownLineItemProps>) => {
+  const Component = as || "button";
+  const restProps = Component === "button" ? { type: "button", ...rest } : rest;
+  return (
     <Component
-			{...restProps}
-			className={getClass(
-        selected ? "hw-bg-primary-light" : "hw-text-gray-900", className, 'group hw-flex hw-w-full hw-items-center hw-rounded-md hw-p-2 hw-text-sm hw-cursor-pointer hover:hw-bg-gray-100 [&>*]:hw-flex-1')}
+      {...restProps}
+      className={getClass(
+        selected ? "hw-bg-primary-light" : "hw-text-gray-900",
+        className,
+        "group hw-flex hw-w-full hw-items-center hw-rounded-md hw-p-2 hw-text-sm hw-cursor-pointer hover:hw-bg-gray-100 [&>*]:hw-flex-1",
+      )}
     >
       {children}
     </Component>
@@ -224,7 +235,13 @@ export const DropdownIcon = <T,>({
   ...rest
 }: DropdownIconProps<T>): JSX.Element => {
   const Icon = icon;
-  const _class = mode === 'none' ? className : getClass('hover:hw-bg-gray-100 dark:hover:hw-bg-gray-700 focus:hw-ring-4 focus:hw-outline-none focus:hw-ring-gray-200 dark:focus:hw-ring-gray-700 hw-rounded-lg hw-text-sm hw-p-1.5', className);
+  const _class =
+    mode === "none"
+      ? className
+      : getClass(
+          "hover:hw-bg-gray-100 dark:hover:hw-bg-gray-700 focus:hw-ring-4 focus:hw-outline-none focus:hw-ring-gray-200 dark:focus:hw-ring-gray-700 hw-rounded-lg hw-text-sm hw-p-1.5",
+          className,
+        );
   return (
     <Dropdown
       className={_class}

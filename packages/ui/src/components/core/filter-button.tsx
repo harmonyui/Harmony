@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useChangeArray } from "../../hooks/change-property";
 import { Button } from "./button";
-import type { DropdownItem} from "./dropdown";
+import type { DropdownItem } from "./dropdown";
 import { ListBox, DropdownListItem } from "./dropdown";
 import { Header } from "./header";
 import { FilterIcon } from "./icons";
@@ -10,18 +10,17 @@ type Deconstruct<T> = {
   [K in keyof T]: { id: K; value: T[K] | undefined; defaultValue: T[K] };
 }[keyof T];
 
-
 export type FilterItem<T> = Deconstruct<T> & {
   label: string;
 };
 export type FilterChildren<T> = (
-	item: FilterItem<T>,
-	changeItem: <R extends keyof T>(value: T[R]) => void,
+  item: FilterItem<T>,
+  changeItem: <R extends keyof T>(value: T[R]) => void,
 ) => React.ReactNode;
 export interface FilterButtonProps<T> {
   items: FilterItem<T>[];
   onChange: (items: FilterItem<T>[]) => void;
-  children: FilterChildren<T>
+  children: FilterChildren<T>;
 }
 export const FilterButton = <T,>({
   items: initialItems,

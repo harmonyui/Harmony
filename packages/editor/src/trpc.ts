@@ -1,7 +1,11 @@
-import { createTRPCProxyClient, httpBatchLink } from '@trpc/client';
-import type { AppRouter } from '@harmony/server/src/api/root';
-import superjson from 'superjson';
-import { Environment, getEditorUrl, LOCALHOST } from '@harmony/util/src/utils/component';
+import { createTRPCProxyClient, httpBatchLink } from "@trpc/client";
+import type { AppRouter } from "@harmony/server/src/api/root";
+import superjson from "superjson";
+import {
+  Environment,
+  getEditorUrl,
+  LOCALHOST,
+} from "@harmony/util/src/utils/component";
 
 export const PORT = 4200;
 
@@ -19,7 +23,7 @@ export const client = createTRPCProxyClient<AppRouter>({
       fetch(url, options) {
         return fetch(url, {
           ...options,
-          credentials: 'include',
+          credentials: "include",
         });
       },
     }),
