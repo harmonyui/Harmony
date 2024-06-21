@@ -6,6 +6,7 @@ import type { HarmonyComponentsState } from "./harmony-components";
 import { createHarmonySlice } from "./factory";
 import { Component } from "react";
 import { ComponentUpdateWithoutGlobal } from "../../harmony-context";
+import { ComponentUpdateState } from "./component-update";
 
 export interface ComponentState {
     selectedComponent: ComponentElement | undefined
@@ -18,7 +19,7 @@ export interface ComponentState {
     updateTheCounter: () => void
 }
 
-export const createComponentStateSlice = createHarmonySlice<ComponentState, HarmonyComponentsState>((set, get) => {
+export const createComponentStateSlice = createHarmonySlice<ComponentState, HarmonyComponentsState & ComponentUpdateState>((set, get) => {
     const updateRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
         const rootElement = document.getElementById('harmony-section');
         if (!rootElement) {
@@ -139,6 +140,9 @@ export const createComponentStateSlice = createHarmonySlice<ComponentState, Harm
         dependencies: {
             harmonyComponents(harmonyComponents) {
                 updateRootElement(harmonyComponents);
+            },
+            componentUpdates() {
+                updateRootElement(get().harmonyComponents);
             },
         }
     }

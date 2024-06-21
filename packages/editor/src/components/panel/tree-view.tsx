@@ -1,12 +1,15 @@
 import { enableRipple } from "@syncfusion/ej2-base";
 import {
 	DragAndDropEventArgs,
+	NodeSelectEventArgs,
+	DrawNodeEventArgs,
 	TreeViewComponent
 } from "@syncfusion/ej2-react-navigations";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { v4 as uuidv4 } from 'uuid';
 import { ComponentUpdateWithoutGlobal, useHarmonyContext } from "../harmony-context";
 import { ComponentElement } from "../inspector/component-identifier";
+import { Button } from "@harmony/ui/src/components/core/button";
 enableRipple(true);
 
 export interface TreeViewItem<T = string> {
@@ -40,10 +43,11 @@ const isSelected = <T,>(item: TreeViewItem<T>): boolean => {
 
 
 export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeViewItem<ComponentElement>[], expand?: boolean, onClick: (item: HTMLElement) => void, onHover: (item: HTMLElement) => void }) => {
-	const { onAttributesChange, onComponentHover, onComponentSelect, setError } = useHarmonyContext()
+	const { onAttributesChange, onComponentHover, onComponentSelect, setError, selectedComponent } = useHarmonyContext()
+	const [multiSelect, setMultiSelect] = useState<{ start: HTMLElement, end: HTMLElement }>()
 
 	const [transformedItems, setTransformedItems] = useState<TransformNode[]>();
-	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex' };
+	const fields: Object = { dataSource: transformedItems, id: 'id', text: 'type', child: 'subChild', childIndex: 'childIndex', selected: 'isSelected' };
 
 	function transform(node: TreeViewItem<any>, componentError = ''): TransformNode {
 		const { id, name, element }: { id: string, name: string, element: HTMLElement } = node.id;
@@ -111,42 +115,17 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		onAttributesChange([update])
 	}
 
-	function onMouseOver(item: HTMLElement, link: string) {
+	function onMouseOver(link: string) {
 		const node = document.querySelector(`[data-link="${link}"]`)
 		if (node) {
 			onComponentHover(node as HTMLElement)
 		}
 	}
-	function onMouseClick(item: HTMLElement, link: string) {
+	function onMouseClick(link: string) {
 		const node = document.querySelector(`[data-link="${link}"]`)
 		if (node) {
 			onComponentSelect(node as HTMLElement)
 		}
-	}
-
-	function addEvents(tree: HTMLElement[]) {
-		tree.forEach((item, idx) => {
-			if (item.dataset.uid) {
-				if (item.children[0] && item.children[0].classList.contains('e-fullrow') && item.children[1].innerHTML.includes('data-node')) {
-					const link = item.children[1].innerHTML.split('data-node=')[1].split('"')[1]
-					item.dataset.harmonyError = item.children[1].innerHTML.split('harmony-error=')[1].split('"')[1]
-					item.children[0].addEventListener('mouseover', () => {
-						onMouseOver(item, link!)
-					})
-					item.children[0].addEventListener('click', () => {
-						onMouseClick(item, link!)
-					})
-
-					item.children[1].addEventListener('mouseover', () => {
-						onMouseOver(item, link!)
-					})
-					item.children[1].addEventListener('click', () => {
-						onMouseClick(item, link!)
-					})
-				}
-			}
-			addEvents(Array.from(item.children) as HTMLElement[])
-		})
 	}
 
 	function dragStop(event: DragAndDropEventArgs) {
@@ -173,14 +152,172 @@ export const TreeView = <T,>({ items, expand, onClick, onHover }: { items: TreeV
 		}
 	}
 
-	function onCreated() {
-		if (treeObj) {
-			addEvents([treeObj.element])
-		}
+	function drawNode(event: DrawNodeEventArgs) {
+		event.node.addEventListener('mouseover', (e) => {
+			e.stopPropagation();
+			onMouseOver(event.nodeData.id as string);
+		})
+
+		event.node.addEventListener('click', (e) => {
+			e.stopPropagation();
+			onMouseClick(event.nodeData.id as string);
+		})
 	}
 
+
+	function handleAddDeleteElement(action: "delete" | "create", position: "above" | "below" | "" = "") {
+		if (!selectedComponent) return;
+		const link = selectedComponent.dataset.link
+		const component = document.querySelector(`[data-link="${link}"]`)!!
+		const childIndex = Array.from(component.parentElement!!.childNodes).indexOf(selectedComponent)
+
+		const cacheId = uuidv4()
+
+		const index = position === "above" ? childIndex : childIndex + 1
+
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "delete-create",
+			componentId: selectedComponent.dataset.harmonyId!!,
+			childIndex,
+			oldValue: JSON.stringify({ id: cacheId, action: action === "delete" ? "create" : "delete", index: action === "delete" ? childIndex : index, position: "" }),
+			value: JSON.stringify({ id: cacheId, action, index: childIndex, position })
+		}
+		onAttributesChange([update])
+	}
+	let selectedNodes = ['2', '6'];
+	function nodeSelected(e: NodeSelectEventArgs) {
+		const start = treeObj!!['startNode'] as HTMLElement
+		const startId = start.children[1].innerHTML.split('data-node=')[1].split('"')[1]
+		const startNode = document.querySelector(`[data-link="${startId}"]`) as HTMLElement
+		const end = e.node
+		const endId = end.children[1].innerHTML.split('data-node=')[1].split('"')[1]
+		const endNode = document.querySelector(`[data-link="${endId}"]`) as HTMLElement
+		setMultiSelect({ start: startNode, end: endNode })
+	}
+
+	function handleWrapElement(action: "wrap" | "unwrap") {
+		const startComponent = document.querySelector(`[data-link="${multiSelect?.start.dataset.link}"]`)!!
+		const startChildIndex = Array.from(startComponent.parentElement!!.childNodes).indexOf(startComponent)
+		const endComponent = document.querySelector(`[data-link="${multiSelect?.end.dataset.link}"]`)!!
+		const endChildIndex = Array.from(endComponent.parentElement!!.childNodes).indexOf(endComponent)
+
+		const componentId = () => {
+			if (action === "wrap") {
+				return uuidv4()
+			} else {
+				return multiSelect?.start.dataset.harmonyId
+			}
+		}
+
+		const cacheId = uuidv4()
+
+		const unwrap = {
+			action: "unwrap",
+			start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
+			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex },
+			id: cacheId
+		}
+
+		const wrap = {
+			action: "wrap",
+			start: { id: multiSelect?.start.dataset.harmonyId, childIndex: startChildIndex },
+			end: { id: multiSelect?.end.dataset.harmonyId, childIndex: endChildIndex },
+			id: cacheId
+		}
+
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "wrap-unwrap",
+			componentId: componentId()!!,
+			childIndex: startChildIndex,
+			oldValue: JSON.stringify(action === "wrap" ? unwrap : wrap),
+			value: JSON.stringify(action === "wrap" ? wrap : unwrap)
+		}
+		onAttributesChange([update])
+	}
+
+	const handleAddText = () => {
+		if (!selectedComponent) return;
+		const childIndex = Array.from(selectedComponent.parentElement!!.childNodes).indexOf(selectedComponent)
+		const update: ComponentUpdateWithoutGlobal = {
+			type: "component",
+			name: "add-text",
+			componentId: selectedComponent.dataset.harmonyId!!,
+			childIndex,
+			oldValue: JSON.stringify({ text: "" }),
+			value: JSON.stringify({ text: "[Insert Text]" })
+		}
+		onAttributesChange([update])
+	}
+
+	const isGroup = useMemo(() => {
+		if (selectedComponent) {
+			if (selectedComponent.children.length > 0) {
+				return true
+			}
+		}
+		return false
+	}, [selectedComponent])
+
+	const isEmptyDiv = useMemo(() => {
+		if (selectedComponent) {
+			if (selectedComponent.children.length === 0 && selectedComponent.tagName === "DIV") {
+				return true
+			}
+		}
+	}, [selectedComponent])
+
 	return (
-		<TreeViewComponent fields={fields} allowDragAndDrop={true} nodeDragStart={nodeDragStart.bind(this)} nodeDragStop={dragStop.bind(this)} ref={(treeview) => { treeObj = treeview; }} nodeDropped={handleNodeDropped} nodeTemplate={TreeViewItem} created={onCreated} />
+		transformedItems && (
+			<div>
+				{selectedComponent && (
+					<>
+						<div className="hw-flex hw-flex-row hw-space-x-4">
+							<div onClick={() => handleAddDeleteElement("create", "above")}>
+								<Button >Add Above</Button>
+							</div>
+							<div onClick={() => handleAddDeleteElement("create", "below")}>
+								<Button>Add Below</Button>
+							</div>
+							<div onClick={() => handleAddDeleteElement("delete")}>
+								<Button>Delete</Button>
+							</div>
+						</div>
+						<div className="hw-flex hw-flex-row hw-space-x-4 hw-mt-4">
+							{multiSelect && (
+								<div onClick={() => handleWrapElement("wrap")}>
+									<Button>Wrap</Button>
+								</div>
+							)}
+							{isGroup && (
+								<div onClick={() => handleWrapElement("unwrap")}>
+									<Button>UnWrap</Button>
+								</div>
+							)}
+							{isEmptyDiv && (
+								<div onClick={handleAddText}>
+									<Button>Add Text</Button>
+								</div>
+							)}
+						</div>
+					</>
+				)}
+				<TreeViewComponent
+					fields={fields}
+					allowDragAndDrop={true}
+					nodeDragStart={nodeDragStart.bind(this)}
+					nodeDragStop={dragStop.bind(this)}
+					ref={(treeview) => { treeObj = treeview; }}
+					nodeDropped={handleNodeDropped}
+					nodeTemplate={TreeViewItem}
+					drawNode={drawNode}
+					allowMultiSelection={true}
+					selectedNodes={selectedNodes}
+					nodeSelected={nodeSelected}
+				/>
+			</div>
+		)
 	);
 }
 
