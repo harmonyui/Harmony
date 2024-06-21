@@ -7,27 +7,34 @@ import { cookies } from "next/headers";
 import { auth } from "@clerk/nextjs";
 import { WelcomeDisplay } from "./components/setup";
 
-export default async function SetupPage({searchParams}: {searchParams?: { [key: string]: string | string[] | undefined }}) {
-	const teamId = searchParams?.teamId || undefined;
+export default async function SetupPage({
+  searchParams,
+}: {
+  searchParams?: { [key: string]: string | string[] | undefined };
+}) {
+  const teamId = searchParams?.teamId || undefined;
 
-	if (teamId && typeof teamId === 'string') {
-		const team = await prisma.team.findUnique({
-			where: {
-				id: teamId
-			}
-		});
-		if (!team) {
-			notFound();
-		}
-	}
+  if (teamId && typeof teamId === "string") {
+    const team = await prisma.team.findUnique({
+      where: {
+        id: teamId,
+      },
+    });
+    if (!team) {
+      notFound();
+    }
+  }
 
-	if (teamId && typeof teamId !== 'string') {
-		notFound();
-	}
+  if (teamId && typeof teamId !== "string") {
+    notFound();
+  }
 
-	const cookie = cookies();
-	const {userId} = auth();
-	const authSession = await getServerAuthSession(userId, cookie.get('harmony-user-id')?.value);
+  const cookie = cookies();
+  const { userId } = auth();
+  const authSession = await getServerAuthSession(
+    userId,
+    cookie.get("harmony-user-id")?.value,
+  );
 
-	return <WelcomeDisplay teamId={teamId} account={authSession?.account}/>
+  return <WelcomeDisplay teamId={teamId} account={authSession?.account} />;
 }

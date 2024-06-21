@@ -1,168 +1,211 @@
-import { describe, it, expect } from "vitest"
-import { getEditorUrl, getLineAndColumn, getWebUrl, updateLocationFromContent } from "./component";
+import { describe, it, expect } from "vitest";
+import {
+  getEditorUrl,
+  getLineAndColumn,
+  getWebUrl,
+  updateLocationFromContent,
+} from "./component";
 
 describe("index", () => {
-    describe("updateLocationFromDiffs", () => {
-        
-
-        it("Should update startLine and endLine when adding near the top of the file", () => {
-const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
+  describe("updateLocationFromDiffs", () => {
+    it("Should update startLine and endLine when adding near the top of the file", () => {
+      const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
 					<Input className="hw-w-full" value={project.label} onChange={changeProperty.formFunc('label', project)}/>
-				</Label>`
-            const {location, oldContent, newContent} = setup('add-to-top-file', target);
+				</Label>`;
+      const { location, oldContent, newContent } = setup(
+        "add-to-top-file",
+        target,
+      );
 
-            const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			if (!newLocation) {
-				throw new Error("New location should be defined")
-			}
-			const {startLine, startColumn, endLine, endColumn} = newLocation;
-            expect(startLine).toBe(79);
-			expect(startColumn).toBe(4);
-            expect(endLine).toBe(81);
-			expect(endColumn).toBe(12);
-        })
+      const newLocation = updateLocationFromContent(
+        location,
+        oldContent,
+        newContent,
+      );
+      if (!newLocation) {
+        throw new Error("New location should be defined");
+      }
+      const { startLine, startColumn, endLine, endColumn } = newLocation;
+      expect(startLine).toBe(79);
+      expect(startColumn).toBe(4);
+      expect(endLine).toBe(81);
+      expect(endColumn).toBe(12);
+    });
 
-		it("Should update startLine and endLine when deleting after the target", () => {
-			const target = `<span>{item.label}</span>`
-			const {location, oldContent, newContent} = setup('add-to-top-file', target);
+    it("Should update startLine and endLine when deleting after the target", () => {
+      const target = `<span>{item.label}</span>`;
+      const { location, oldContent, newContent } = setup(
+        "add-to-top-file",
+        target,
+      );
 
-			const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			if (!newLocation) {
-				throw new Error("New location should be defined")
-			}
-			const {startLine, startColumn, endLine, endColumn} = newLocation;
-			expect(startLine).toBe(129);
-			expect(startColumn).toBe(20);
-			expect(endLine).toBe(129);
-			expect(endColumn).toBe(45);
-		})
+      const newLocation = updateLocationFromContent(
+        location,
+        oldContent,
+        newContent,
+      );
+      if (!newLocation) {
+        throw new Error("New location should be defined");
+      }
+      const { startLine, startColumn, endLine, endColumn } = newLocation;
+      expect(startLine).toBe(129);
+      expect(startColumn).toBe(20);
+      expect(endLine).toBe(129);
+      expect(endColumn).toBe(45);
+    });
 
-		it("Should update startLine and endLine when adding right before to previous start line", () => {
-			const target = `<p className="flex text-sm text-slate-600">
+    it("Should update startLine and endLine when adding right before to previous start line", () => {
+      const target = `<p className="flex text-sm text-slate-600">
 			  {label}
 			  {percentage && percentage !== "NaN%" && (
 				<span className="ml-1 rounded-xl bg-slate-100 px-2 py-1 text-xs">{percentage}</span>
 			  )}
 			</p>`;
-			const {location, oldContent, newContent} = setup('add-right-before-start', target);
+      const { location, oldContent, newContent } = setup(
+        "add-right-before-start",
+        target,
+      );
 
-			const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			if (!newLocation) {
-				throw new Error("New location should be defined")
-			}
-			const {startLine, startColumn, endLine, endColumn} = newLocation;
-			expect(startLine).toBe(26);
-			expect(startColumn).toBe(3);
-			expect(endLine).toBe(31);
-			expect(endColumn).toBe(7);
-		})
+      const newLocation = updateLocationFromContent(
+        location,
+        oldContent,
+        newContent,
+      );
+      if (!newLocation) {
+        throw new Error("New location should be defined");
+      }
+      const { startLine, startColumn, endLine, endColumn } = newLocation;
+      expect(startLine).toBe(26);
+      expect(startColumn).toBe(3);
+      expect(endLine).toBe(31);
+      expect(endColumn).toBe(7);
+    });
 
-
-		it("Should not update startLine and endLine when adding near bottom of the file", () => {
-const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
+    it("Should not update startLine and endLine when adding near bottom of the file", () => {
+      const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
 					<Input className="hw-w-full" value={project.label} onChange={changeProperty.formFunc('label', project)}/>
-				</Label>`
-            const {location, oldContent, newContent} = setup('add-to-bottom-file', target);
+				</Label>`;
+      const { location, oldContent, newContent } = setup(
+        "add-to-bottom-file",
+        target,
+      );
 
-            const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			if (!newLocation) {
-				throw new Error("New location should be defined")
-			}
-			const {startLine, startColumn, endLine, endColumn} = newLocation;
-            expect(startLine).toBe(77);
-			expect(startColumn).toBe(4);
-            expect(endLine).toBe(79);
-			expect(endColumn).toBe(12);
-		})
+      const newLocation = updateLocationFromContent(
+        location,
+        oldContent,
+        newContent,
+      );
+      if (!newLocation) {
+        throw new Error("New location should be defined");
+      }
+      const { startLine, startColumn, endLine, endColumn } = newLocation;
+      expect(startLine).toBe(77);
+      expect(startColumn).toBe(4);
+      expect(endLine).toBe(79);
+      expect(endColumn).toBe(12);
+    });
 
-		it("Should update startColumn when adding on same line before startColumn", () => {
-const target = `<Label label="Hello there">
+    it("Should update startColumn when adding on same line before startColumn", () => {
+      const target = `<Label label="Hello there">
 					<div>Thank you</div>
-				</Label>`
-			const {location, oldContent, newContent} = setup('add-before-start-column', target);
+				</Label>`;
+      const { location, oldContent, newContent } = setup(
+        "add-before-start-column",
+        target,
+      );
 
-			const newLocation = updateLocationFromContent(location, oldContent, newContent);
-			expect(newLocation).not.toBeDefined();
+      const newLocation = updateLocationFromContent(
+        location,
+        oldContent,
+        newContent,
+      );
+      expect(newLocation).not.toBeDefined();
 
-			//TODO: Make this function actually work
-			// expect(newLocation).toBeDefined();
-			// const {startLine, startColumn, endLine, endColumn} = newLocation!;
-			// expect(startLine).toBe(location.startLine);
-			// expect(startColumn).toBe(location.startColumn + 27);
-			// expect(endLine).toBe(location.endLine + 1);
-			// expect(endColumn).toBe(location.endColumn);
-		})
+      //TODO: Make this function actually work
+      // expect(newLocation).toBeDefined();
+      // const {startLine, startColumn, endLine, endColumn} = newLocation!;
+      // expect(startLine).toBe(location.startLine);
+      // expect(startColumn).toBe(location.startColumn + 27);
+      // expect(endLine).toBe(location.endLine + 1);
+      // expect(endColumn).toBe(location.endColumn);
+    });
 
-// 		it("Should update everything when component is moved", () => {
-// const target = `<Label label="Hello there">
-// 					<div>Thank you</div>
-// 				</Label>`
-// 			const {location, oldContent, newContent} = setup('move-component', target);
+    // 		it("Should update everything when component is moved", () => {
+    // const target = `<Label label="Hello there">
+    // 					<div>Thank you</div>
+    // 				</Label>`
+    // 			const {location, oldContent, newContent} = setup('move-component', target);
 
-// 			const newLocation = updateLocationFromContent(location, oldContent, newContent);
-// 			//expect(newLocation).not.toBeDefined();
-// 			expect(newLocation).toBeDefined();
-// 			const {startLine, startColumn, endLine, endColumn} = newLocation!;
-// 			expect(startLine).toBe(location.startLine + 4);
-// 			expect(startColumn).toBe(location.startColumn + 27);
-// 			expect(endLine).toBe(location.endLine + 5);
-// 			expect(endColumn).toBe(location.endColumn + 20);
-// 		})
+    // 			const newLocation = updateLocationFromContent(location, oldContent, newContent);
+    // 			//expect(newLocation).not.toBeDefined();
+    // 			expect(newLocation).toBeDefined();
+    // 			const {startLine, startColumn, endLine, endColumn} = newLocation!;
+    // 			expect(startLine).toBe(location.startLine + 4);
+    // 			expect(startColumn).toBe(location.startColumn + 27);
+    // 			expect(endLine).toBe(location.endLine + 5);
+    // 			expect(endColumn).toBe(location.endColumn + 20);
+    // 		})
 
-// 		it("Should return undefined when component is deleted", () => {
-// const target = `<Label label="Hello there">
-// 					<div>Thank you</div>
-// 				</Label>`
-// 			const {location, oldContent, newContent} = setup('delete-component', target);
+    // 		it("Should return undefined when component is deleted", () => {
+    // const target = `<Label label="Hello there">
+    // 					<div>Thank you</div>
+    // 				</Label>`
+    // 			const {location, oldContent, newContent} = setup('delete-component', target);
 
-// 			const newLocation = updateLocationFromContent(location, oldContent, newContent);
-// 			expect(newLocation).not.toBeDefined();
-// 		})
-    })
+    // 			const newLocation = updateLocationFromContent(location, oldContent, newContent);
+    // 			expect(newLocation).not.toBeDefined();
+    // 		})
+  });
 
-	describe("getWebUrl", () => {
-		it("Should return http://localhost:3000 when in development mode", () => {
-			const url = getWebUrl('development');
-			expect(url).toBe('http://localhost:3000');
-		})
+  describe("getWebUrl", () => {
+    it("Should return http://localhost:3000 when in development mode", () => {
+      const url = getWebUrl("development");
+      expect(url).toBe("http://localhost:3000");
+    });
 
-		it("Should return production url when in production mode", () => {
-			const url = getWebUrl('production');
-			expect(url).toBe('https://dashboard.harmonyui.app');
-		})
-	})
+    it("Should return production url when in production mode", () => {
+      const url = getWebUrl("production");
+      expect(url).toBe("https://dashboard.harmonyui.app");
+    });
+  });
 
-	describe("getEditorUrl", () => {
-		it("Should return http://localhost:4200 when in development mode", () => {
-			const url = getEditorUrl('development');
-			expect(url).toBe('http://localhost:4200');
-		})
+  describe("getEditorUrl", () => {
+    it("Should return http://localhost:4200 when in development mode", () => {
+      const url = getEditorUrl("development");
+      expect(url).toBe("http://localhost:4200");
+    });
 
-		it("Should return production url when in production mode", () => {
-			const url = getEditorUrl('production');
-			expect(url).toBe('https://harmony-ui.fly.dev');
-		})
-	})
+    it("Should return production url when in production mode", () => {
+      const url = getEditorUrl("production");
+      expect(url).toBe("https://harmony-ui.fly.dev");
+    });
+  });
 });
 
-export const setup = (name: keyof (typeof testCases), target: string) => {
-	const {oldContent, newContent} = testCases[name];
-	const location = getLocationFromContent(oldContent, target);
-	return {location, oldContent, newContent};
-}
+export const setup = (name: keyof typeof testCases, target: string) => {
+  const { oldContent, newContent } = testCases[name];
+  const location = getLocationFromContent(oldContent, target);
+  return { location, oldContent, newContent };
+};
 
 export const getLocationFromContent = (content: string, target: string) => {
-	const targetIndex = content.indexOf(target);
-	expect(targetIndex).toBeGreaterThan(-1);
-	const {line: startLine, column: startColumn} = getLineAndColumn(content, targetIndex);
-	const {line: endLine, column: endColumn} = getLineAndColumn(content, targetIndex + target.length);
+  const targetIndex = content.indexOf(target);
+  expect(targetIndex).toBeGreaterThan(-1);
+  const { line: startLine, column: startColumn } = getLineAndColumn(
+    content,
+    targetIndex,
+  );
+  const { line: endLine, column: endColumn } = getLineAndColumn(
+    content,
+    targetIndex + target.length,
+  );
 
-	return {file: '', startLine, startColumn, endLine, endColumn}
-}
+  return { file: "", startLine, startColumn, endLine, endColumn };
+};
 
 export const testCases = {
-    'add-to-top-file': {
-        oldContent: `'use client';
+  "add-to-top-file": {
+    oldContent: `'use client';
 import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 import {Button} from '../core/button';
 import { useEffect, useState } from "react";
@@ -307,7 +350,7 @@ async function createWebpageThumbnail(url: string): Promise<string> {
     return thumbnailImage || '';
 }`,
 
-newContent: `'use client';
+    newContent: `'use client';
 import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 import {Button} from '../core/button';
 import { useEffect, useState } from "react";
@@ -442,10 +485,10 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
             </div>
 		</div>
 	)
-}`
-    },
-	'add-to-bottom-file': {
-        oldContent: `'use client';
+}`,
+  },
+  "add-to-bottom-file": {
+    oldContent: `'use client';
 import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 import {Button} from '../core/button';
 import { useEffect, useState } from "react";
@@ -590,7 +633,7 @@ async function createWebpageThumbnail(url: string): Promise<string> {
     return thumbnailImage || '';
 }`,
 
-newContent: `'use client';
+    newContent: `'use client';
 import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 import {Button} from '../core/button';
 import { useEffect, useState } from "react";
@@ -723,10 +766,10 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
             </div>
 		</div>
 	)
-}`
-    },
-	'add-before-start-column': {
-		oldContent: `'use client';
+}`,
+  },
+  "add-before-start-column": {
+    oldContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
 		import { useEffect, useState } from "react";
@@ -753,7 +796,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 				</div>
 			</>)
 		}`,
-		newContent: `'use client';
+    newContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
 		import { useEffect, useState } from "react";
@@ -777,10 +820,10 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 					<p>Well look at you</p>
 				</Label> /** Thank you */
 			</>)
-		}`
-	},
-	'add-right-before-start': {
-		oldContent: `import React from "react";
+		}`,
+  },
+  "add-right-before-start": {
+    oldContent: `import React from "react";
 
 		import { TSurveySummary } from "@formbricks/types/responses";
 		import { TSurvey } from "@formbricks/types/surveys";
@@ -837,7 +880,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 		  );
 		}
 		`,
-		newContent: `import React from "react";
+    newContent: `import React from "react";
 
 		import { cn } from "@formbricks/lib/cn";
 		import { TSurveySummary } from "@formbricks/types/responses";
@@ -899,10 +942,10 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 			</div>
 		  );
 		}
-		`
-	},
-	'move-component': {
-		oldContent: `'use client';
+		`,
+  },
+  "move-component": {
+    oldContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
 		import { useEffect, useState } from "react";
@@ -929,7 +972,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 				</div>
 			</>)
 		}`,
-		newContent: `'use client';
+    newContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
 		import { useEffect, useState } from "react";
@@ -957,10 +1000,10 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 					<p>Well look at you</p>
 				/** more buggers */ </Label> /** Thank you */
 			</>)
-		}`
-	},
-	'delete-component': {
-		oldContent: `'use client';
+		}`,
+  },
+  "delete-component": {
+    oldContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
 		import { useEffect, useState } from "react";
@@ -987,7 +1030,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 				</div>
 			</>)
 		}`,
-		newContent: `'use client';
+    newContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
 		import { useEffect, useState } from "react";
@@ -1010,6 +1053,6 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 					Another one
 				</div>
 			</>)
-		}`
-	},
-}
+		}`,
+  },
+};
