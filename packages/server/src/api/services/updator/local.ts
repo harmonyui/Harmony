@@ -1,43 +1,43 @@
 /* eslint-disable no-await-in-loop -- Let's deal with this one later*/
-import fs from "node:fs";
-import { z } from "zod";
+import fs from 'node:fs'
+import { z } from 'zod'
 import {
   getLocationsFromComponentId,
   hashComponentId,
   updateLocationFromContent,
-} from "@harmony/util/src/utils/component";
-import { prisma } from "@harmony/db/lib/prisma";
-import { replaceByIndex } from "@harmony/util/src/utils/common";
-import type { ComponentUpdate } from "@harmony/util/src/types/component";
-import type { GitRepository } from "../../repository/git/types";
-import type { HarmonyComponent } from "../indexor/types";
+} from '@harmony/util/src/utils/component'
+import { prisma } from '@harmony/db/lib/prisma'
+import { replaceByIndex } from '@harmony/util/src/utils/common'
+import type { ComponentUpdate } from '@harmony/util/src/types/component'
+import type { GitRepository } from '../../repository/git/types'
+import type { HarmonyComponent } from '../indexor/types'
 
 export const changesSchema = z.object({
   oldCode: z.string(),
   newCode: z.string(),
   snippetIndex: z.number(),
-});
+})
 
-export type Changes = z.infer<typeof changesSchema>;
+export type Changes = z.infer<typeof changesSchema>
 
-// eslint-disable-next-line @typescript-eslint/require-await -- This function is polymorphic so we need the await
+ 
 export async function makeChanges(
   referencedComponent: HarmonyComponent,
   newSnippet: string,
 ): Promise<void> {
-  const file = fs.readFileSync(referencedComponent.location.file, "utf-8");
+  const file = fs.readFileSync(referencedComponent.location.file, 'utf-8')
   const updatedFile = replaceByIndex(
     file,
     newSnippet,
     referencedComponent.location.start,
     referencedComponent.location.end,
-  );
-  fs.writeFileSync(referencedComponent.location.file, updatedFile);
+  )
+  fs.writeFileSync(referencedComponent.location.file, updatedFile)
 }
 
 export interface FileContentRetriever {
-  getOldFileContent: (file: string) => Promise<string>;
-  getNewFileContent: (file: string) => Promise<string>;
+  getOldFileContent: (file: string) => Promise<string>
+  getNewFileContent: (file: string) => Promise<string>
 }
 export class ComponentIdUpdator {
   constructor(private fileRetriever: FileContentRetriever) {}
@@ -46,35 +46,35 @@ export class ComponentIdUpdator {
     file: string,
     elementIds: string[],
   ) {
-    const oldContent = await this.fileRetriever.getOldFileContent(file);
-    const newContent = await this.fileRetriever.getNewFileContent(file);
+    const oldContent = await this.fileRetriever.getOldFileContent(file)
+    const newContent = await this.fileRetriever.getNewFileContent(file)
 
-    if (oldContent === newContent) return [];
+    if (oldContent === newContent) return []
 
-    const idMapping: { oldId: string; newId: string }[] = [];
+    const idMapping: { oldId: string; newId: string }[] = []
     for (const id of elementIds) {
-      const locations = getLocationsFromComponentId(id);
-      const locationIndex = locations.findIndex((loc) => loc.file === file);
+      const locations = getLocationsFromComponentId(id)
+      const locationIndex = locations.findIndex((loc) => loc.file === file)
       if (locationIndex < 0) {
-        throw new Error(`Cannot find location from id ${id} and file ${file}`);
+        throw new Error(`Cannot find location from id ${id} and file ${file}`)
       }
-      const location = locations[locationIndex];
+      const location = locations[locationIndex]
       const newLocation = updateLocationFromContent(
         location,
         oldContent,
         newContent,
-      );
+      )
 
       if (newLocation) {
-        locations[locationIndex] = newLocation;
-        const newId = hashComponentId(locations);
-        id !== newId && idMapping.push({ oldId: id, newId });
+        locations[locationIndex] = newLocation
+        const newId = hashComponentId(locations)
+        id !== newId && idMapping.push({ oldId: id, newId })
       } else {
-        console.log(`Conflict in a saved component: ${id}`);
+        console.log(`Conflict in a saved component: ${id}`)
       }
     }
 
-    return idMapping;
+    return idMapping
   }
 }
 
@@ -85,18 +85,18 @@ export class GithubFileRetriver implements FileContentRetriever {
   ) {}
 
   public async getOldFileContent(file: string) {
-    const content = await this.gitRepository.getContent(file, this.oldRef);
+    const content = await this.gitRepository.getContent(file, this.oldRef)
 
-    return content;
+    return content
   }
 
   public async getNewFileContent(file: string) {
     const content = await this.gitRepository.getContent(
       file,
       this.gitRepository.repository.branch,
-    );
+    )
 
-    return content;
+    return content
   }
 }
 
@@ -112,25 +112,25 @@ export async function updateComponentIdsFromUpdates(
   ref: string,
   gitRepository: GitRepository,
 ) {
-  const filesRetrieved: string[] = [];
+  const filesRetrieved: string[] = []
   for (const update of updates) {
-    const oldId = update.componentId;
-    const locations = getLocationsFromComponentId(oldId);
+    const oldId = update.componentId
+    const locations = getLocationsFromComponentId(oldId)
 
-    const componentIdMappings: { newId: string; oldId: string }[] = [];
+    const componentIdMappings: { newId: string; oldId: string }[] = []
     for (const componentLocation of locations) {
       const mappings = !filesRetrieved.includes(componentLocation.file)
         ? await getNewIdsFromFile(componentLocation.file, ref, gitRepository)
-        : [];
-      filesRetrieved.push(componentLocation.file);
+        : []
+      filesRetrieved.push(componentLocation.file)
 
-      componentIdMappings.push(...mappings);
+      componentIdMappings.push(...mappings)
     }
 
     for (const mapping of componentIdMappings) {
-      const { oldId: _oldId, newId } = mapping;
+      const { oldId: _oldId, newId } = mapping
 
-      await updateElementIds(_oldId, newId, updates);
+      await updateElementIds(_oldId, newId, updates)
     }
   }
 }
@@ -142,9 +142,9 @@ async function getElementsInFile(file: string) {
         file,
       },
     },
-  });
+  })
 
-  return elements;
+  return elements
 }
 
 async function getNewIdsFromFile(
@@ -152,17 +152,17 @@ async function getNewIdsFromFile(
   oldRef: string,
   gitRepository: GitRepository,
 ) {
-  const elementsInFile = await getElementsInFile(file);
+  const elementsInFile = await getElementsInFile(file)
 
-  const fileRetriever = new GithubFileRetriver(oldRef, gitRepository);
-  const componentIdUpdator = new ComponentIdUpdator(fileRetriever);
+  const fileRetriever = new GithubFileRetriver(oldRef, gitRepository)
+  const componentIdUpdator = new ComponentIdUpdator(fileRetriever)
   const componentIdMappings =
     await componentIdUpdator.getNewIdsForComponentsFromFile(
       file,
       elementsInFile.map((el) => el.id),
-    );
+    )
 
-  return componentIdMappings;
+  return componentIdMappings
 }
 
 async function updateElementIds(
@@ -177,7 +177,7 @@ async function updateElementIds(
     data: {
       parent_id: newId,
     },
-  });
+  })
   await prisma.componentElement.updateMany({
     where: {
       id: oldId,
@@ -185,10 +185,10 @@ async function updateElementIds(
     data: {
       id: newId,
     },
-  });
+  })
   updates.forEach((up) => {
     if (up.componentId === oldId) {
-      up.componentId = newId;
+      up.componentId = newId
     }
-  });
+  })
 }
