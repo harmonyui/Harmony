@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
  
-/* eslint-disable @typescript-eslint/no-confusing-void-expression -- ok*/
+ 
 /* eslint-disable @typescript-eslint/no-empty-interface -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import { Button } from "@harmony/ui/src/components/core/button";

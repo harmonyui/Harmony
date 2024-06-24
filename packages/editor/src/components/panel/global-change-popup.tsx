@@ -1,6 +1,6 @@
 import { Button } from "@harmony/ui/src/components/core/button";
 import { Popup } from "@harmony/ui/src/components/core/popup";
-import { ComponentUpdate } from "@harmony/util/src/types/component";
+import type { ComponentUpdate } from "@harmony/util/src/types/component";
 import { useState, useEffect, useMemo } from "react";
 import { useHarmonyStore } from "../hooks/state";
 import { findSameElementsFromId } from "../../utils/element-utils";

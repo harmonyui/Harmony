@@ -89,7 +89,7 @@ export const useHighlighter = ({handlers: {onClick, onHover, onPointerUp: onPoin
 
 	//Disables the event
 	const onMouseEvent = (event: MouseEvent): boolean | undefined => {
-		let target = event.target as HTMLElement | null;
+		const target = event.target as HTMLElement | null;
 		if (noEvents.some(no => no.contains(target))) return;
 		event.preventDefault();
 		event.stopPropagation();

@@ -1,12 +1,14 @@
 "use client";
 import React, { useEffect} from "react";
 import ReactDOM from "react-dom";
-import { HarmonyProviderProps } from "./harmony-provider";
-import { FiberHTMLElement, getElementFiber } from "./inspector/inspector-dev";
+import type { Fiber } from "react-reconciler";
+import type { Environment} from "@harmony/util/src/utils/component";
+import { getEditorUrl } from "@harmony/util/src/utils/component";
+import type { HarmonyProviderProps } from "./harmony-provider";
+import type { FiberHTMLElement} from "./inspector/inspector-dev";
+import { getElementFiber } from "./inspector/inspector-dev";
 import { getComponentElementFiber } from "./inspector/component-identifier";
-import { Fiber } from "react-reconciler";
-import { Environment, getEditorUrl } from "@harmony/util/src/utils/component";
-import { DisplayMode } from "./harmony-context";
+import type { DisplayMode } from "./harmony-context";
     
 export const HarmonySetup: React.FunctionComponent<Pick<HarmonyProviderProps, 'repositoryId' | 'fonts' | 'environment'> & {local?: boolean}> = ({local=false, ...options}) => {
 	const setBranchId = (branchId: string) => {

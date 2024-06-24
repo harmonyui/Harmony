@@ -1,5 +1,5 @@
-import { HarmonyProviderFunc } from "./index";
 import { HarmonySetup } from "./components/harmony-setup";
+import { HarmonyProviderFunc } from "./index";
 import './global.css';
 
 export {HarmonySetup};

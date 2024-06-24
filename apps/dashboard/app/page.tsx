@@ -1,11 +1,11 @@
-import { redirect } from "next/navigation";
-import { withAuth } from "../utils/protected-routes-hoc";
+import { redirect } from 'next/navigation'
+import { withAuth } from '../utils/protected-routes-hoc'
 
 const Home = withAuth(() => {
-  redirect("/projects");
-});
+  redirect('/projects')
+})
 
-export default Home;
+export default Home
 
 //psql postgres://default:CYUB4V2hsxve@ep-floral-queen-a6pjljye-pooler.us-west-2.aws.neon.tech:5432/verceldb -c 'COPY "Account" TO STDOUT WITH (FORMAT CSV, HEADER);' > Account.csv
 //psql postgres://default:CYUB4V2hsxve@ep-floral-queen-a6pjljye-pooler.us-west-2.aws.neon.tech:5432/verceldb -c 'COPY "ComponentSettings" TO STDOUT WITH (FORMAT CSV, HEADER);' > ComponentSettings.csv

@@ -10,7 +10,7 @@
 //export const maxDuration = 300;
 
 export function POST(_req: Request): Promise<Response> {
-  throw new Error("This is not implemented");
+  throw new Error('This is not implemented')
   // const session = await getServerAuthSession();
   // if (session === undefined || session.account === undefined) {
   //     return new Response(null, {
