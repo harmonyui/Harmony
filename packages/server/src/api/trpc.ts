@@ -7,30 +7,30 @@
  * need to use are documented accordingly near the end.
  */
 
-import { initTRPC, TRPCError } from "@trpc/server";
-import superjson from "superjson";
-import { ZodError } from "zod";
-import type { Db } from "@harmony/db/lib/prisma";
-import { prisma } from "@harmony/db/lib/prisma";
-import type { FetchCreateContextFnOptions } from "@trpc/server/adapters/fetch";
-import type { CreateExpressContextOptions } from "@trpc/server/adapters/express";
-import type { WithAuthProp } from "@clerk/clerk-sdk-node";
-import type { Request } from "express";
-import { auth } from "@clerk/nextjs";
-import type { FullSession, Session } from "../auth";
-import { getServerAuthSession } from "../auth";
-import type { EmailService } from "./services/email-service";
-import type { GitRepositoryFactory } from "./repository/git/types";
+import { initTRPC, TRPCError } from '@trpc/server'
+import superjson from 'superjson'
+import { ZodError } from 'zod'
+import type { Db } from '@harmony/db/lib/prisma'
+import { prisma } from '@harmony/db/lib/prisma'
+import type { FetchCreateContextFnOptions } from '@trpc/server/adapters/fetch'
+import type { CreateExpressContextOptions } from '@trpc/server/adapters/express'
+import type { WithAuthProp } from '@clerk/clerk-sdk-node'
+import type { Request } from 'express'
+import { auth } from '@clerk/nextjs'
+import type { FullSession, Session } from '../auth'
+import { getServerAuthSession } from '../auth'
+import type { EmailService } from './services/email-service'
+import type { GitRepositoryFactory } from './repository/git/types'
 import {
   PrismaHarmonyComponentRepository,
   type HarmonyComponentRepository,
-} from "./repository/database/component-element";
-import type { ComponentUpdateRepository } from "./repository/database/component-update";
+} from './repository/database/component-element'
+import type { ComponentUpdateRepository } from './repository/database/component-update'
 import {
   gitRepositoryFactory,
   mailer,
   componentUpdateRepository,
-} from "./index";
+} from './index'
 
 /**
  * 1. CONTEXT
@@ -41,24 +41,24 @@ import {
  */
 
 interface CreateContextOptions {
-  session: Session | undefined;
-  gitRepositoryFactory: GitRepositoryFactory;
-  harmonyComponentRepository: HarmonyComponentRepository;
-  componentUpdateRepository: ComponentUpdateRepository;
+  session: Session | undefined
+  gitRepositoryFactory: GitRepositoryFactory
+  harmonyComponentRepository: HarmonyComponentRepository
+  componentUpdateRepository: ComponentUpdateRepository
 }
 
 interface AuthContextOptions {
-  session: FullSession;
+  session: FullSession
 }
 
 export interface CreateContext extends CreateContextOptions {
-  prisma: Db;
-  mailer: EmailService;
+  prisma: Db
+  mailer: EmailService
 }
 
 export interface AuthContext extends AuthContextOptions {
-  prisma: Db;
-  mailer: EmailService;
+  prisma: Db
+  mailer: EmailService
 }
 
 /**
@@ -76,8 +76,8 @@ const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
     ...opts,
     prisma,
     mailer,
-  };
-};
+  }
+}
 
 // export const createAuthContext = (session: Session) => {
 //   return createInnerTRPCContext({
@@ -89,21 +89,21 @@ const createTRPCContext = async (
   cookies: string | null | undefined,
   userId: string | null,
 ) => {
-  let mockUserId: string | undefined;
+  let mockUserId: string | undefined
   if (cookies) {
-    const cookieValues = cookies.split("; ");
+    const cookieValues = cookies.split('; ')
     for (const cookieValue of cookieValues) {
-      const [name, value] = cookieValue.split("=");
-      if (name === "harmony-user-id") {
-        mockUserId = value;
+      const [name, value] = cookieValue.split('=')
+      if (name === 'harmony-user-id') {
+        mockUserId = value
       }
     }
   }
   // Get the session from the server using the getServerSession wrapper function
-  const session = await getServerAuthSession(userId, mockUserId);
+  const session = await getServerAuthSession(userId, mockUserId)
   const harmonyComponentRepository = new PrismaHarmonyComponentRepository(
     prisma,
-  );
+  )
 
   return createInnerTRPCContext({
     session,
@@ -111,8 +111,8 @@ const createTRPCContext = async (
     harmonyComponentRepository,
     componentUpdateRepository,
     //req
-  });
-};
+  })
+}
 
 /**
  * This is the actual context you will use in your router. It will be used to process every request
@@ -123,17 +123,17 @@ const createTRPCContext = async (
 export const createTRPCContextFetch = async ({
   req,
 }: FetchCreateContextFnOptions) => {
-  return createTRPCContext(req.headers.get("cookie"), auth().userId);
-};
+  return createTRPCContext(req.headers.get('cookie'), auth().userId)
+}
 
 export const createTRPCContextExpress = async ({
   req,
 }: {
-  res: CreateExpressContextOptions["res"];
-  req: WithAuthProp<Request>;
+  res: CreateExpressContextOptions['res']
+  req: WithAuthProp<Request>
 }) => {
-  return createTRPCContext(req.headers.cookie, req.auth.userId);
-};
+  return createTRPCContext(req.headers.cookie, req.auth.userId)
+}
 
 /**
  * 2. INITIALIZATION
@@ -153,9 +153,9 @@ const t = initTRPC.context<typeof createTRPCContextFetch>().create({
         zodError:
           error.cause instanceof ZodError ? error.cause.flatten() : null,
       },
-    };
+    }
   },
-});
+})
 
 /**
  * 3. ROUTER & PROCEDURE (THE IMPORTANT BIT)
@@ -169,7 +169,7 @@ const t = initTRPC.context<typeof createTRPCContextFetch>().create({
  *
  * @see https://trpc.io/docs/router
  */
-export const createTRPCRouter = t.router;
+export const createTRPCRouter = t.router
 
 /**
  * Public (unauthenticated) procedure
@@ -178,32 +178,32 @@ export const createTRPCRouter = t.router;
  * guarantee that a user querying is authorized, but you can still access user session data if they
  * are logged in.
  */
-export const publicProcedure = t.procedure;
+export const publicProcedure = t.procedure
 
 /** Reusable middleware that enforces users are logged in before running the procedure. */
 const enforceUserIsAuthed = t.middleware(({ ctx, next }) => {
   if (!ctx.session?.account) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
       // infers the `session` as non-nullable
       session: { ...ctx.session, account: ctx.session.account },
     },
-  });
-});
+  })
+})
 
 const enforceUserIsRegistered = t.middleware(({ ctx, next }) => {
   if (!ctx.session?.auth) {
-    throw new TRPCError({ code: "UNAUTHORIZED" });
+    throw new TRPCError({ code: 'UNAUTHORIZED' })
   }
   return next({
     ctx: {
       // infers the `session` as non-nullable
       session: { ...ctx.session, auth: ctx.session.auth },
     },
-  });
-});
+  })
+})
 
 /**
  * Protected (authenticated) procedure
@@ -213,5 +213,5 @@ const enforceUserIsRegistered = t.middleware(({ ctx, next }) => {
  *
  * @see https://trpc.io/docs/procedures
  */
-export const protectedProcedure = t.procedure.use(enforceUserIsAuthed);
-export const registerdProcedure = t.procedure.use(enforceUserIsRegistered);
+export const protectedProcedure = t.procedure.use(enforceUserIsAuthed)
+export const registerdProcedure = t.procedure.use(enforceUserIsRegistered)

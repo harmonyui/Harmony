@@ -1,21 +1,21 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-import type { Prisma, Db } from "@harmony/db/lib/prisma";
-import { INDEXING_VERSION } from "@harmony/util/src/constants";
-import type { HarmonyComponent } from "../../services/indexor/types";
+import type { Prisma, Db } from '@harmony/db/lib/prisma'
+import { INDEXING_VERSION } from '@harmony/util/src/constants'
+import type { HarmonyComponent } from '../../services/indexor/types'
 
 export type HarmonyComponentPrisma = Prisma.ComponentElementGetPayload<
   typeof harmonyComponentPayload
->;
+>
 
 export interface HarmonyComponentRepository {
   createOrUpdateElement: (
     element: HarmonyComponent,
     repositoryId: string,
-  ) => Promise<HarmonyComponentPrisma>;
+  ) => Promise<HarmonyComponentPrisma>
   createOrUpdateElements: (
     elements: HarmonyComponent[],
     repositoryId: string,
-  ) => Promise<void>;
+  ) => Promise<void>
 }
 
 const harmonyComponentPayload = {
@@ -28,7 +28,7 @@ const harmonyComponentPayload = {
     },
     location: true,
   },
-};
+}
 export class PrismaHarmonyComponentRepository
   implements HarmonyComponentRepository
 {
@@ -75,7 +75,7 @@ export class PrismaHarmonyComponentRepository
         version: INDEXING_VERSION,
       },
       ...harmonyComponentPayload,
-    });
+    })
 
     // await this.prisma.componentAttribute.deleteMany({
     // 	where: {
@@ -109,7 +109,7 @@ export class PrismaHarmonyComponentRepository
     //     ...harmonyComponentPayload.include.attributes
     // })));
 
-    return newInstance;
+    return newInstance
   }
 
   public async createOrUpdateElements(
@@ -123,21 +123,21 @@ export class PrismaHarmonyComponentRepository
         },
         repository_id: repositoryId,
       },
-    });
-    const updateElements = existingElements;
+    })
+    const updateElements = existingElements
     let newElements = elements.filter(
       ({ id }) => !updateElements.find(({ id: updateId }) => updateId === id),
-    );
+    )
     newElements = newElements.filter(
       (a) => newElements.filter((b) => a.id === b.id).length < 2,
-    );
+    )
     const locations = await this.prisma.location.createManyAndReturn({
       data: newElements.map((element) => ({
         file: element.location.file,
         start: element.location.start,
         end: element.location.end,
       })),
-    });
+    })
 
     await this.prisma.componentElement.createMany({
       data: newElements.map((element, i) => ({
@@ -148,7 +148,7 @@ export class PrismaHarmonyComponentRepository
         location_id: locations[i].id,
         version: INDEXING_VERSION,
       })),
-    });
+    })
   }
 
   // public async getHarmonyComponent(id: string): Promise<HarmonyComponent | undefined> {
