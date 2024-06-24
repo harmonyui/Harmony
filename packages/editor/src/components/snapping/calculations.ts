@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-type-assertion -- ok*/
- 
+
 /* eslint-disable no-param-reassign -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/prefer-includes -- ok*/
@@ -11,8 +11,7 @@
 /* eslint-disable import/no-cycle -- ok*/
 import { capitalizeFirstLetter, close } from '@harmony/util/src/utils/common'
 import $ from 'jquery'
-import type {
-  Rect} from '../inspector/inspector';
+import type { Rect } from '../inspector/inspector'
 import {
   isImageElement,
   selectDesignerElementReverse,
@@ -565,32 +564,30 @@ function isElementFluid(
     }
     /// otherwise, calculate the percentages each time - if they
     /// match then it's likely this is a fluid element
-    
-      p1 = Math.floor((100 / 500) * ow)
-      p2 = Math.floor(
-        (100 / 600) *
-          clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'],
-      )
-      /// tidy up
-      elm.parentNode?.removeChild(wrapper)
-      const val = p1 === p2 ? `${Math.round(p1)  }%` : false
-      // if (val) {
-      // 	elm.dataset[harmonyFixed] = 'false';
-      // } else {
-      // 	elm.dataset[harmonyFixed] = 'true';
-      // }
-      return val
-    
-  } 
-    p1 = value && String(value).indexOf('%') !== -1
-    const val = p1 ? value : false
+
+    p1 = Math.floor((100 / 500) * ow)
+    p2 = Math.floor(
+      (100 / 600) *
+        clone[`offset${capitalizeFirstLetter(side)}` as 'offsetWidth'],
+    )
+    /// tidy up
+    elm.parentNode?.removeChild(wrapper)
+    const val = p1 === p2 ? `${Math.round(p1)}%` : false
     // if (val) {
     // 	elm.dataset[harmonyFixed] = 'false';
     // } else {
     // 	elm.dataset[harmonyFixed] = 'true';
     // }
     return val
-  
+  }
+  p1 = value && String(value).indexOf('%') !== -1
+  const val = p1 ? value : false
+  // if (val) {
+  // 	elm.dataset[harmonyFixed] = 'false';
+  // } else {
+  // 	elm.dataset[harmonyFixed] = 'true';
+  // }
+  return val
 }
 
 export function getFitContentSize(
@@ -646,22 +643,20 @@ export function getFitContentSize(
     // }
 
     return { width: naturalWidth, height: naturalHeight }
-  } 
-    const styles = getComputedStyle(element)
-    const padding = styles.padding
-    const oldRect = element.getBoundingClientRect()
-    element.style.padding = '10px'
-    const withPadding = element.getBoundingClientRect()
-    element.style.padding = '0px'
-    const withoutPadding = element.getBoundingClientRect()
-    element.style.padding = padding
+  }
+  const styles = getComputedStyle(element)
+  const padding = styles.padding
+  const oldRect = element.getBoundingClientRect()
+  element.style.padding = '10px'
+  const withPadding = element.getBoundingClientRect()
+  element.style.padding = '0px'
+  const withoutPadding = element.getBoundingClientRect()
+  element.style.padding = padding
 
-    const width = withPadding.width > withoutPadding.width ? oldRect.width : 0
-    const height =
-      withPadding.height > withoutPadding.height ? oldRect.height : 0
+  const width = withPadding.width > withoutPadding.width ? oldRect.width : 0
+  const height = withPadding.height > withoutPadding.height ? oldRect.height : 0
 
-    return { width, height }
-  
+  return { width, height }
 }
 
 interface ElementEdgeInfo {

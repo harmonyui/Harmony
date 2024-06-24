@@ -1,162 +1,238 @@
 /* eslint-disable @typescript-eslint/no-empty-function  -- ok*/
 /* eslint-disable @typescript-eslint/no-floating-promises  -- ok*/
- 
- 
+
 /* eslint-disable import/no-cycle  -- ok*/
-import { ArrowLeftIcon, MaximizeIcon, ShareArrowIcon, LinkIcon, SendIcon } from "@harmony/ui/src/components/core/icons";
-import { useMemo, useState } from "react";
-import { Button } from "@harmony/ui/src/components/core/button";
-import { Popover } from "@harmony/ui/src/components/core/popover";
-import type { PublishRequest } from "@harmony/util/src/types/network";
-import { getEditorUrl } from "@harmony/util/src/utils/component";
-import { usePinchGesture } from "../harmony-provider";
-import type { ComponentUpdateWithoutGlobal, SelectMode} from "../harmony-context";
-import { useHarmonyContext } from "../harmony-context";
-import { useHarmonyStore } from "../hooks/state";
-import { ComponentAttributeProvider } from "./attribute-panel";
-import { GiveFeedbackModal, HelpGuide } from "./welcome/help-guide";
-import { SidePanel, SidePanelProvider } from "./side-panel";
-import { ToolbarPanel } from "./toolbar-panel";
-import { PublishButton } from "./publish-button";
+import {
+  ArrowLeftIcon,
+  MaximizeIcon,
+  ShareArrowIcon,
+  LinkIcon,
+  SendIcon,
+} from '@harmony/ui/src/components/core/icons'
+import { useMemo, useState } from 'react'
+import { Button } from '@harmony/ui/src/components/core/button'
+import { Popover } from '@harmony/ui/src/components/core/popover'
+import type { PublishRequest } from '@harmony/util/src/types/network'
+import { getEditorUrl } from '@harmony/util/src/utils/component'
+import { usePinchGesture } from '../harmony-provider'
+import type {
+  ComponentUpdateWithoutGlobal,
+  SelectMode,
+} from '../harmony-context'
+import { useHarmonyContext } from '../harmony-context'
+import { useHarmonyStore } from '../hooks/state'
+import { ComponentAttributeProvider } from './attribute-panel'
+import { GiveFeedbackModal, HelpGuide } from './welcome/help-guide'
+import { SidePanel, SidePanelProvider } from './side-panel'
+import { ToolbarPanel } from './toolbar-panel'
+import { PublishButton } from './publish-button'
 
 export interface HarmonyPanelProps {
-	root: HTMLElement | undefined;
-	onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void;
-	mode: SelectMode;
-	onModeChange: (mode: SelectMode) => void;
-	children: React.ReactNode;
-	toggle: boolean;
-	onToggleChange: (toggle: boolean) => void;
-	isDirty: boolean;
-	setIsDirty: (value: boolean) => void;
+  root: HTMLElement | undefined
+  onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void
+  mode: SelectMode
+  onModeChange: (mode: SelectMode) => void
+  children: React.ReactNode
+  toggle: boolean
+  onToggleChange: (toggle: boolean) => void
+  isDirty: boolean
+  setIsDirty: (value: boolean) => void
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (props) => {
-	const {displayMode, onScaleChange, scale, showGiveFeedback, setShowGiveFeedback} = useHarmonyContext();
-	const isDemo = useHarmonyStore(state => state.isDemo);
-	const {onTouch} = usePinchGesture({scale, onTouching(newScale, cursorPos) {
-		onScaleChange(newScale, cursorPos);
-	}})
-	const {onTouch: onTouchHeader} = usePinchGesture({scale, onTouching() {}});
-	const {children} = props;
+export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (
+  props,
+) => {
+  const {
+    displayMode,
+    onScaleChange,
+    scale,
+    showGiveFeedback,
+    setShowGiveFeedback,
+  } = useHarmonyContext()
+  const isDemo = useHarmonyStore((state) => state.isDemo)
+  const { onTouch } = usePinchGesture({
+    scale,
+    onTouching(newScale, cursorPos) {
+      onScaleChange(newScale, cursorPos)
+    },
+  })
+  const { onTouch: onTouchHeader } = usePinchGesture({ scale, onTouching() {} })
+  const { children } = props
 
-	//TODO: Fix bug where getting rid of these parameters gives a "cannot read 'data-harmony-id' of undefined"
-	const getPanel = (_?: string, _2?: string) => {
-		if (displayMode === 'designer') {
-			return <EditorPanel {...props}/>
-		}
+  //TODO: Fix bug where getting rid of these parameters gives a "cannot read 'data-harmony-id' of undefined"
+  const getPanel = (_?: string, _2?: string) => {
+    if (displayMode === 'designer') {
+      return <EditorPanel {...props} />
+    }
 
-		return <PreviewPanel/>
-	}
-	return (
-		<SidePanelProvider>
-			<ComponentAttributeProvider onChange={props.onAttributesChange}>
-			<div className="hw-flex hw-h-full" ref={(ref) => {
-				ref?.addEventListener('wheel', onTouchHeader);
-			}}>
-				<SidePanel/>
-				<div className="hw-relative hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow-md">
-					<div data-name="harmony-panel">
-						{getPanel()}
-					</div>
-					<div id="harmony-scroll-container" ref={(ref) => {
-						ref?.addEventListener('wheel', onTouch);
-					}} className="hw-relative hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-px-[250px] hw-bg-gray-200">
-						{children}
-					</div>
-					<div className="hw-absolute hw-left-4 hw-bottom-4">
-						{isDemo ? <Button as='a' href='https://j48inpgngmc.typeform.com/to/Ch60XpCt' className="hw-mr-4" target="_blank">Join Beta</Button> : null}
-						<Button mode='secondary' onClick={() => setShowGiveFeedback(true)}>Give us feedback</Button>
-					</div>
-					<div className="hw-absolute hw-right-0 hw-bottom-0">
-						<HelpGuide className="hw-mr-4 hw-mb-4"/>
-					</div>
-					{/* <div className="hw-px-4 hw-py-4 sm:hw-px-6">
+    return <PreviewPanel />
+  }
+  return (
+    <SidePanelProvider>
+      <ComponentAttributeProvider onChange={props.onAttributesChange}>
+        <div
+          className='hw-flex hw-h-full'
+          ref={(ref) => {
+            ref?.addEventListener('wheel', onTouchHeader)
+          }}
+        >
+          <SidePanel />
+          <div className='hw-relative hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow-md'>
+            <div data-name='harmony-panel'>{getPanel()}</div>
+            <div
+              id='harmony-scroll-container'
+              ref={(ref) => {
+                ref?.addEventListener('wheel', onTouch)
+              }}
+              className='hw-relative hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-px-[250px] hw-bg-gray-200'
+            >
+              {children}
+            </div>
+            <div className='hw-absolute hw-left-4 hw-bottom-4'>
+              {isDemo ? (
+                <Button
+                  as='a'
+                  href='https://j48inpgngmc.typeform.com/to/Ch60XpCt'
+                  className='hw-mr-4'
+                  target='_blank'
+                >
+                  Join Beta
+                </Button>
+              ) : null}
+              <Button
+                mode='secondary'
+                onClick={() => setShowGiveFeedback(true)}
+              >
+                Give us feedback
+              </Button>
+            </div>
+            <div className='hw-absolute hw-right-0 hw-bottom-0'>
+              <HelpGuide className='hw-mr-4 hw-mb-4' />
+            </div>
+            {/* <div className="hw-px-4 hw-py-4 sm:hw-px-6">
 						<Slider value={scale * 100} onChange={(value) => onScaleChange(value/100, {x: 0, y: 0})} max={500}/>
 					</div> */}
-				</div>
-				<GiveFeedbackModal show={showGiveFeedback} onClose={() => setShowGiveFeedback(false)}/>
-				{/* <ToolbarPanel mode={mode} onModeChange={onModeChange}/>
+          </div>
+          <GiveFeedbackModal
+            show={showGiveFeedback}
+            onClose={() => setShowGiveFeedback(false)}
+          />
+          {/* <ToolbarPanel mode={mode} onModeChange={onModeChange}/>
 				<div className="hw-text-center">
 					
 				</div>
 				<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/> */}
-			</div>
-			</ComponentAttributeProvider>
-		</SidePanelProvider>
-	) 
+        </div>
+      </ComponentAttributeProvider>
+    </SidePanelProvider>
+  )
 }
 
-const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({mode, onModeChange, toggle, onToggleChange, isDirty}) => {
-	const {environment} = useHarmonyContext();
+const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({
+  mode,
+  onModeChange,
+  toggle,
+  onToggleChange,
+  isDirty,
+}) => {
+  const { environment } = useHarmonyContext()
 
-	const EDITOR_URL = useMemo(() => getEditorUrl(environment), [environment]);
+  const EDITOR_URL = useMemo(() => getEditorUrl(environment), [environment])
 
-	return (
-		<div className="hw-flex hw-w-full hw-items-center hw-shadow-2xl">
-			<div className="hw-h-10 hw-ml-4">
-				<img alt="Harmony Logo" className="hw-h-full" src={`${EDITOR_URL}/Harmony_logo.svg`}/>
-			</div>
-			<div className="hw-pl-4 hw-pr-2 hw-py-2 hw-w-full">
-				<ToolbarPanel mode={mode} onModeChange={onModeChange} toggle={toggle} onToggleChange={onToggleChange} isDirty={isDirty}/>
-			</div>
-		</div>
-	)
+  return (
+    <div className='hw-flex hw-w-full hw-items-center hw-shadow-2xl'>
+      <div className='hw-h-10 hw-ml-4'>
+        <img
+          alt='Harmony Logo'
+          className='hw-h-full'
+          src={`${EDITOR_URL}/Harmony_logo.svg`}
+        />
+      </div>
+      <div className='hw-pl-4 hw-pr-2 hw-py-2 hw-w-full'>
+        <ToolbarPanel
+          mode={mode}
+          onModeChange={onModeChange}
+          toggle={toggle}
+          onToggleChange={onToggleChange}
+          isDirty={isDirty}
+        />
+      </div>
+    </div>
+  )
 }
 
 const PreviewPanel: React.FunctionComponent = () => {
-	const {changeMode} = useHarmonyContext();
-	const upadatePublishState = useHarmonyStore(state => state.updatePublishState);
-	const publishState = useHarmonyStore(state => state.publishState);
-	const currentBranch = useHarmonyStore(state => state.currentBranch);
-	const publish = useHarmonyStore(state => state.publishChanges);
+  const { changeMode } = useHarmonyContext()
+  const upadatePublishState = useHarmonyStore(
+    (state) => state.updatePublishState,
+  )
+  const publishState = useHarmonyStore((state) => state.publishState)
+  const currentBranch = useHarmonyStore((state) => state.currentBranch)
+  const publish = useHarmonyStore((state) => state.publishChanges)
 
-	const [loading, setLoading] = useState(false);
-	const onMaximize = () => {
-		changeMode('preview-full')
-	}
+  const [loading, setLoading] = useState(false)
+  const onMaximize = () => {
+    changeMode('preview-full')
+  }
 
-	const onBack = () => {
-		changeMode('designer');
-		upadatePublishState(undefined);
-	}
+  const onBack = () => {
+    changeMode('designer')
+    upadatePublishState(undefined)
+  }
 
-	const onSendRequest = () => {
-		if (!publishState) throw new Error("There should be a publish state");
+  const onSendRequest = () => {
+    if (!publishState) throw new Error('There should be a publish state')
 
-		const request: PublishRequest = {
-			branchId: currentBranch.id,
-			pullRequest: publishState
-		}
+    const request: PublishRequest = {
+      branchId: currentBranch.id,
+      pullRequest: publishState,
+    }
 
-		setLoading(true);
-		publish(request).then(() => {
-			setLoading(false);
-		})
-	}
+    setLoading(true)
+    publish(request).then(() => {
+      setLoading(false)
+    })
+  }
 
-	const url = new URL(window.location.href);
-	url.searchParams.set('mode', 'preview-full');
+  const url = new URL(window.location.href)
+  url.searchParams.set('mode', 'preview-full')
 
-	return (
-		<div className="hw-flex hw-w-full hw-items-center hw-shadow-2xl hw-justify-between hw-pl-4 hw-pr-2 hw-py-2">
-			<div>
-				<div className="hw-flex hw-gap-4">
-					<button className="hw-p-1 hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md" onClick={onBack}>
-						<ArrowLeftIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-white hw-stroke-[2.5]"/>
-					</button>
-					<button className="hw-bg-[#11283B] hw-rounded-md hw-p-1 hover:hw-bg-[#11283B]/80">
-						<MaximizeIcon className="hw-h-5 hw-w-5 hw-fill-white hw-stroke-none" onClick={onMaximize}/>
-					</button>
-				</div>
-			</div>
-			<div>
-				<div className="hw-flex hw-gap-4 hw-items-center">
-					<ShareButton />
-					{!publishState ? <PublishButton/> : <Button className="hw-h-7" mode="dark" onClick={onSendRequest} loading={loading}>Send Request <SendIcon className="hw-h-5 hw-w-5"/></Button>}
-				</div>
-			</div>
-		</div>
-	)
+  return (
+    <div className='hw-flex hw-w-full hw-items-center hw-shadow-2xl hw-justify-between hw-pl-4 hw-pr-2 hw-py-2'>
+      <div>
+        <div className='hw-flex hw-gap-4'>
+          <button
+            className='hw-p-1 hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md'
+            onClick={onBack}
+          >
+            <ArrowLeftIcon className='hw-h-5 hw-w-5 hw-fill-white hw-stroke-white hw-stroke-[2.5]' />
+          </button>
+          <button className='hw-bg-[#11283B] hw-rounded-md hw-p-1 hover:hw-bg-[#11283B]/80'>
+            <MaximizeIcon
+              className='hw-h-5 hw-w-5 hw-fill-white hw-stroke-none'
+              onClick={onMaximize}
+            />
+          </button>
+        </div>
+      </div>
+      <div>
+        <div className='hw-flex hw-gap-4 hw-items-center'>
+          <ShareButton />
+          {!publishState ? (
+            <PublishButton />
+          ) : (
+            <Button
+              className='hw-h-7'
+              mode='dark'
+              onClick={onSendRequest}
+              loading={loading}
+            >
+              Send Request <SendIcon className='hw-h-5 hw-w-5' />
+            </Button>
+          )}
+        </div>
+      </div>
+    </div>
+  )
 }
 
 // interface SidePanelToolbarItem {
@@ -200,7 +276,7 @@ const PreviewPanel: React.FunctionComponent = () => {
 // 	}
 // 	return (
 // 		<div className="hw-flex hw-flex-col hw-text-white/75 hw-h-full hw-text-xs hw-bg-slate-800">
-// 			{items.map(item => 
+// 			{items.map(item =>
 // 				<button key={item.id} className="hw-flex hw-flex-col hw-items-center hw-gap-1 hw-p-2 hover:hw-bg-slate-700 hover:hw-text-white" onClick={() => onShow(item)}>
 // 					<item.icon className="hw-h-8 hw-w-8"/>
 // 					<span>{item.label}</span>
@@ -211,36 +287,45 @@ const PreviewPanel: React.FunctionComponent = () => {
 // }
 
 const ShareButton = () => {
-	//const [show, setShow] = useState(false);
-	const [copyText, setCopyText] = useState('Copy Link');
+  //const [show, setShow] = useState(false);
+  const [copyText, setCopyText] = useState('Copy Link')
 
-	const url = new URL(window.location.href);
-	url.searchParams.set('mode', 'preview-full');
-	const href = url.href;
+  const url = new URL(window.location.href)
+  url.searchParams.set('mode', 'preview-full')
+  const href = url.href
 
-	// const onClose = () => {
-	// 	setShow(false);
-	// }
+  // const onClose = () => {
+  // 	setShow(false);
+  // }
 
-	// const onClick = () => {
-	// 	setShow(true);
-	// }
+  // const onClick = () => {
+  // 	setShow(true);
+  // }
 
-	const onCopy = () => {
-		window.navigator.clipboard.writeText(href);
-		setCopyText('Copied!')
-	}
+  const onCopy = () => {
+    window.navigator.clipboard.writeText(href)
+    setCopyText('Copied!')
+  }
 
-	return (<>
-		<Popover buttonClass="hw-h-8" button={<button className="hw-text-[#11283B] hover:hw-text-[#11283B]/80" >
-			<ShareArrowIcon className="hw-h-8 hw-w-8 hw-fill-white hw-stroke-none"/>
-		</button>}>
-			<button className="hw-text-sm hw-text-blue-500 hw-flex hw-items-center hw-gap-1" onClick={onCopy}>
-				<LinkIcon className="hw-h-4 hw-w-4 hw-fill-blue-500"/>
-				{copyText}
-			</button>
-		</Popover>
-		{/* <HarmonyModal show={show} onClose={onClose} editor>
+  return (
+    <>
+      <Popover
+        buttonClass='hw-h-8'
+        button={
+          <button className='hw-text-[#11283B] hover:hw-text-[#11283B]/80'>
+            <ShareArrowIcon className='hw-h-8 hw-w-8 hw-fill-white hw-stroke-none' />
+          </button>
+        }
+      >
+        <button
+          className='hw-text-sm hw-text-blue-500 hw-flex hw-items-center hw-gap-1'
+          onClick={onCopy}
+        >
+          <LinkIcon className='hw-h-4 hw-w-4 hw-fill-blue-500' />
+          {copyText}
+        </button>
+      </Popover>
+      {/* <HarmonyModal show={show} onClose={onClose} editor>
 			<div className="hw-flex hw-gap-2 hw-items-center">
 				<Header level={3}>Share Project</Header>
 			</div> 
@@ -249,7 +334,8 @@ const ShareButton = () => {
 				{copyText}
 			</button>
 		</HarmonyModal> */}
-	</>)
+    </>
+  )
 }
 
 // interface AttributePanelProps {
@@ -287,7 +373,7 @@ const ShareButton = () => {
 // 		onAttributesCancel();
 // 		setIsDirty(false);
 // 	}
-	
+
 // 	return (
 // 		<div className="hw-absolute hw-right-0 hw-flex hw-flex-col hw-h-full hw-border hw-border-gray-200 hw-p-4 hw-bg-white hw-pointer-events-auto hw-overflow-auto" style={{minWidth: '400px'}}>
 // 			<div className="hw-flex-1">
@@ -312,7 +398,7 @@ const ShareButton = () => {
 // type SpacingType = typeof spacingTypes[number]
 // type SpacingDirection = typeof spacingDirections[number];
 // interface SpacingValue {
-// 	direction: SpacingDirection, 
+// 	direction: SpacingDirection,
 // 	value: number,
 // }
 // const spacingConvesions = {
@@ -343,7 +429,7 @@ const ShareButton = () => {
 // 			// 	values[spacingType].push(...finalDirections.map(direction => ({direction, value, attribute })))
 // 			// }
 // 		}
-	
+
 // 		return values;
 // 	},
 // 	//padding -> p
@@ -381,7 +467,7 @@ const ShareButton = () => {
 // }
 // const ComponentDisplay: React.FunctionComponent<ComponentDisplayProps> = ({value, onAttributesChange}) => {
 // 	const {name, attributes} = value;
-	
+
 // 	return (
 // 		<div className="hw-inline-flex hw-flex-col hw-gap-2">
 // 			<Header level={2}>{name}</Header>
@@ -398,10 +484,10 @@ const ShareButton = () => {
 // }
 // const SpacingDisplay: React.FunctionComponent<SpacingDisplayProps> = ({attributes, onChange}) => {
 // 	const {getSpacingValues, getAttributes} = useSpacingAttributeConverter();
-	
+
 // 	const spacingValues = getSpacingValues(attributes);
 // 	const {border, padding, margin} = spacingValues;
-	
+
 // 	const onSpacingChange = (type: SpacingType) => (values: SpacingValue[]): void => {
 // 		const copy = {...spacingValues};
 // 		copy[type] = values;
@@ -409,7 +495,7 @@ const ShareButton = () => {
 // 		const newAttributes = getAttributes(copy);
 // 		onChange(newAttributes);
 // 	}
-	
+
 // 	const borderItemTabs: TabItem[] = [
 // 		{
 // 			id: 0,
@@ -479,7 +565,6 @@ const ShareButton = () => {
 // 		onChange(copy);
 // 	}
 
-	
 // 	return (
 // 		<div className="hw-flex hw-flex-col hw-gap-2">
 // 			<div className="hw-flex hw-flex-col hw-gap-2">
@@ -507,11 +592,10 @@ const ShareButton = () => {
 // 	)
 // }
 
-
 // type Alignments = 'top-left' | 'top-center' | 'top-right' | 'middle-left' | 'middle-center' | 'middle-right'
-// | 'bottom-left' | 'bottom-center' | 'bottom-right' 
+// | 'bottom-left' | 'bottom-center' | 'bottom-right'
 // interface AlignmentSelectorProps {
-// 	value: Alignments, 
+// 	value: Alignments,
 // 	onChange: (value: Alignments) => void;
 // 	className?: string
 // }
@@ -567,4 +651,3 @@ const ShareButton = () => {
 // 		</div>
 // 	)
 // }
-

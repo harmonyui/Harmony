@@ -2,14 +2,11 @@
  * mirror from https://github.com/facebook/react/blob/v16.13.1/packages/react-devtools-shared/src/backend/views/utils.js
  */
 
-
-
-
 interface Box {
-  top: number;
-  left: number;
-  width: number;
-  height: number;
+  top: number
+  left: number
+  width: number
+  height: number
 }
 
 // Note that the Overlay components are not affected by the active Theme,
@@ -55,31 +52,29 @@ export class OverlayRect {
   }
 
   update(box: Rect, dims: BoxSizing) {
-		dims.borderBottom = 1;
-		dims.borderLeft = 1;
-		dims.borderRight = 1;
-		dims.borderTop = 1;
+    dims.borderBottom = 1
+    dims.borderLeft = 1
+    dims.borderRight = 1
+    dims.borderTop = 1
     boxWrap(dims, 'margin', this.node)
     boxWrap(dims, 'border', this.border)
     boxWrap(dims, 'padding', this.padding)
 
     Object.assign(this.content.style, {
-      height:
-        `${
-          box.height
-          - dims.borderTop
-          - dims.borderBottom
-          - dims.paddingTop
-          - dims.paddingBottom
-        }px`,
-      width:
-        `${
-          box.width
-          - dims.borderLeft
-          - dims.borderRight
-          - dims.paddingLeft
-          - dims.paddingRight
-        }px`,
+      height: `${
+        box.height -
+        dims.borderTop -
+        dims.borderBottom -
+        dims.paddingTop -
+        dims.paddingBottom
+      }px`,
+      width: `${
+        box.width -
+        dims.borderLeft -
+        dims.borderRight -
+        dims.paddingLeft -
+        dims.paddingRight
+      }px`,
     })
 
     Object.assign(this.node.style, {
@@ -89,7 +84,11 @@ export class OverlayRect {
   }
 }
 
-function boxWrap(dims: BoxSizing, what: 'margin' | 'padding' | 'border', node: HTMLElement) {
+function boxWrap(
+  dims: BoxSizing,
+  what: 'margin' | 'padding' | 'border',
+  node: HTMLElement,
+) {
   Object.assign(node.style, {
     borderTopWidth: `${dims[`${what}Top`]}px`,
     borderLeftWidth: `${dims[`${what}Left`]}px`,
@@ -113,34 +112,36 @@ const overlayStyles = {
  * which will deal multiple levels of nesting iframe.
  */
 
-
 export interface Rect {
-  bottom: number;
-  height: number;
-  left: number;
-  right: number;
-  top: number;
-  width: number;
+  bottom: number
+  height: number
+  left: number
+  right: number
+  top: number
+  width: number
 }
 
 export interface BoxSizing {
-  borderTop: number;
-  borderBottom: number;
-  borderLeft: number;
-  borderRight: number;
-  paddingTop: number;
-  paddingBottom: number;
-  paddingLeft: number;
-  paddingRight: number;
-  marginTop: number;
-  marginBottom: number;
-  marginLeft: number;
-  marginRight: number;
+  borderTop: number
+  borderBottom: number
+  borderLeft: number
+  borderRight: number
+  paddingTop: number
+  paddingBottom: number
+  paddingLeft: number
+  paddingRight: number
+  marginTop: number
+  marginBottom: number
+  marginLeft: number
+  marginRight: number
 }
 
 // Calculate a boundingClientRect for a node relative to boundaryWindow,
 // taking into account any offsets caused by intermediate iframes.
-export function getNestedBoundingClientRect(node: HTMLElement, boundaryWindow: Window | HTMLElement): Rect
+export function getNestedBoundingClientRect(
+  node: HTMLElement,
+  boundaryWindow: Window | HTMLElement,
+): Rect
 export function getNestedBoundingClientRect(node: HTMLElement): Rect {
   return node.getBoundingClientRect()
 }

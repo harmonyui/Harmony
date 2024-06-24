@@ -1,16 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 /* eslint-disable @typescript-eslint/prefer-includes -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
- 
- 
- 
+
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable import/no-cycle -- ok*/
 import { close, round } from '@harmony/util/src/utils/common'
-import type { Rect} from '../inspector/inspector';
+import type { Rect } from '../inspector/inspector'
 import { selectDesignerElementReverse } from '../inspector/inspector'
-import type {
-  RectSide} from './calculations';
+import type { RectSide } from './calculations'
 import {
   calculateFlexParentEdgeInfoWithSizing,
   calculateParentEdgeInfoWithSizing,

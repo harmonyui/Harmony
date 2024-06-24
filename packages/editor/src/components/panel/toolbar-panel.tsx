@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-duplicate-type-constituents -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
- 
+
 /* eslint-disable no-nested-ternary -- ok*/
 import type { Font } from '@harmony/util/src/fonts'
 import { useMemo, useState } from 'react'

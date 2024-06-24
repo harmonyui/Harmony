@@ -39,14 +39,13 @@ import {
   selectDesignerElement,
   selectDesignerElementReverse,
 } from '../inspector/inspector'
-import type {
-  Rect,
-  RectBox} from '../inspector/inspector';
+import type { Rect, RectBox } from '../inspector/inspector'
 import type {
   Axis,
   ChildEdgeInfo,
   ParentEdgeInfoRequired,
-  RectSide} from './calculations';
+  RectSide,
+} from './calculations'
 import {
   calculateEdgesInfo,
   calculateFlexParentEdgeInfo,
@@ -63,7 +62,8 @@ import type {
   PositionUpdator,
   UpdateRect,
   UpdateRectsProps,
-  UpdatedElement} from './position-updator';
+  UpdatedElement,
+} from './position-updator'
 import {
   absoluteUpdator,
   elementUpdator,

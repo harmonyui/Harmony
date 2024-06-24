@@ -1,12 +1,8 @@
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
 import type { AppRouter } from '@harmony/server/src/api/root'
 import superjson from 'superjson'
-import type {
-  Environment} from '@harmony/util/src/utils/component';
-import {
-  getEditorUrl,
-  LOCALHOST,
-} from '@harmony/util/src/utils/component'
+import type { Environment } from '@harmony/util/src/utils/component'
+import { getEditorUrl, LOCALHOST } from '@harmony/util/src/utils/component'
 
 export const PORT = 4200
 

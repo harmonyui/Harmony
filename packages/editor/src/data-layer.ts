@@ -6,7 +6,8 @@ import type {
   PublishRequest,
   PublishResponse,
   UpdateRequest,
-  UpdateResponse} from '@harmony/util/src/types/network';
+  UpdateResponse,
+} from '@harmony/util/src/types/network'
 import {
   indexComponentsResponseSchema,
   loadResponseSchema,
