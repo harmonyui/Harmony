@@ -187,7 +187,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 			const recurseAndUpdateElements = () => {
 				const componentIds: string[] = [];
 				recurseElements(rootComponent, [initElements(componentIds)]);
-				recurseElements(rootComponent, [updateElements]);
+				makeUpdates(componentUpdates, fonts);
 
 				void updateComponentsFromIds({ branchId, components: componentIds }, rootComponent);
 			}
@@ -241,16 +241,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 		}
 
 
-	}
-
-	const updateElements = (element: HTMLElement) => {
-		if (!rootComponent) return;
-		const id = element.dataset.harmonyId
-		const childIndex = Array.from(element.parentElement!.children).indexOf(element);
-		if (id !== undefined) {
-			const updates = componentUpdates.filter(up => up.componentId === id && up.childIndex === childIndex);
-			makeUpdates(updates, fonts);
-		}
 	}
 
 	const setScale = useCallback((newScale: number, _: { x: number, y: number }) => {
