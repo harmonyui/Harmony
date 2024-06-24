@@ -8,7 +8,12 @@ import type {
 import { TreeViewComponent } from '@syncfusion/ej2-react-navigations'
 import { useEffect, useMemo, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
-import { Button } from '@harmony/ui/src/components/core/button'
+import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
+import {
+  DropdownLineItem,
+  ListBoxPopover,
+} from '@harmony/ui/src/components/core/dropdown'
+import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
 import type { ComponentElement } from '../inspector/component-identifier'
@@ -231,41 +236,41 @@ export const TreeView = <T,>({
     })
   }
 
-  function handleAddDeleteElement(
-    action: 'delete' | 'create',
-    position: 'above' | 'below' | '' = '',
-  ) {
-    if (!selectedComponent) return
-    const link = selectedComponent.dataset.link
-    const component = document.querySelector(`[data-link="${link}"]`)!
-    const childIndex = Array.from(component.parentElement!.childNodes).indexOf(
-      selectedComponent,
-    )
+  const handleAddDeleteElement = useEffectEvent(
+    (action: 'delete' | 'create', position: 'above' | 'below' | '' = '') => {
+      if (!selectedComponent) return
+      const link = selectedComponent.dataset.link
+      const component = document.querySelector(`[data-link="${link}"]`)!
+      const childIndex = Array.from(
+        component.parentElement!.childNodes,
+      ).indexOf(selectedComponent)
 
-    const cacheId = uuidv4()
+      const cacheId = uuidv4()
 
-    const index = position === 'above' ? childIndex : childIndex + 1
+      const index = position === 'above' ? childIndex : childIndex + 1
 
-    const update: ComponentUpdateWithoutGlobal = {
-      type: 'component',
-      name: 'delete-create',
-      componentId: selectedComponent.dataset.harmonyId!,
-      childIndex,
-      oldValue: JSON.stringify({
-        id: cacheId,
-        action: action === 'delete' ? 'create' : 'delete',
-        index: action === 'delete' ? childIndex : index,
-        position: '',
-      }),
-      value: JSON.stringify({
-        id: cacheId,
-        action,
-        index: childIndex,
-        position,
-      }),
-    }
-    onAttributesChange([update])
-  }
+      const update: ComponentUpdateWithoutGlobal = {
+        type: 'component',
+        name: 'delete-create',
+        componentId: selectedComponent.dataset.harmonyId!,
+        childIndex,
+        oldValue: JSON.stringify({
+          id: cacheId,
+          action: action === 'delete' ? 'create' : 'delete',
+          index: action === 'delete' ? childIndex : index,
+          position: '',
+        }),
+        value: JSON.stringify({
+          id: cacheId,
+          action,
+          index: childIndex,
+          position,
+        }),
+      }
+      onAttributesChange([update])
+    },
+  )
+
   const selectedNodes = ['2', '6']
   function nodeSelected(e: NodeSelectEventArgs) {
     const start = treeObj!['startNode'] as HTMLElement
@@ -283,7 +288,7 @@ export const TreeView = <T,>({
     setMultiSelect({ start: startNode, end: endNode })
   }
 
-  function handleWrapElement(action: 'wrap' | 'unwrap') {
+  const handleWrapElement = useEffectEvent((action: 'wrap' | 'unwrap') => {
     const startComponent = document.querySelector(
       `[data-link="${multiSelect?.start.dataset.link}"]`,
     )!
@@ -341,9 +346,9 @@ export const TreeView = <T,>({
       value: JSON.stringify(action === 'wrap' ? wrap : unwrap),
     }
     onAttributesChange([update])
-  }
+  })
 
-  const handleAddText = () => {
+  const handleAddText = useEffectEvent(() => {
     if (!selectedComponent) return
     const childIndex = Array.from(
       selectedComponent.parentElement!.childNodes,
@@ -357,9 +362,9 @@ export const TreeView = <T,>({
       value: JSON.stringify({ type: 'text', value: '[Insert Text]' }),
     }
     onAttributesChange([update])
-  }
+  })
 
-  const handleAddImage = (value: string, type: ImageType) => {
+  const handleAddImage = useEffectEvent((value: string, type: ImageType) => {
     if (!selectedComponent) return
     setIsImageOpen(false)
     const childIndex = Array.from(
@@ -374,68 +379,26 @@ export const TreeView = <T,>({
       value: JSON.stringify({ type, value }),
     }
     onAttributesChange([update])
-  }
+  })
 
-  const isGroup = useMemo(() => {
-    if (selectedComponent) {
-      if (selectedComponent.children.length > 0) {
-        return true
-      }
-    }
-    return false
-  }, [selectedComponent])
-
-  const isEmptyDiv = useMemo(() => {
-    if (selectedComponent) {
-      if (
-        selectedComponent.children.length === 0 &&
-        selectedComponent.tagName === 'DIV'
-      ) {
-        return true
-      }
-    }
-  }, [selectedComponent])
+  const treeViewItem = useMemo(
+    () =>
+      TreeViewItem({
+        onAddAbove: () => handleAddDeleteElement('create', 'above'),
+        onAddBelow: () => handleAddDeleteElement('create', 'below'),
+        onDelete: () => handleAddDeleteElement('delete'),
+        onWrap: () => handleWrapElement('wrap'),
+        onUnWrap: () => handleWrapElement('unwrap'),
+        onAddText: () => handleAddText(),
+        onAddImage: () => setIsImageOpen(true),
+        onClick: onMouseClick,
+      }),
+    [],
+  )
 
   return (
     transformedItems && (
       <div>
-        {selectedComponent && (
-          <>
-            <div className='hw-flex hw-flex-row hw-space-x-4'>
-              <div onClick={() => handleAddDeleteElement('create', 'above')}>
-                <Button>Add Above</Button>
-              </div>
-              <div onClick={() => handleAddDeleteElement('create', 'below')}>
-                <Button>Add Below</Button>
-              </div>
-              <div onClick={() => handleAddDeleteElement('delete')}>
-                <Button>Delete</Button>
-              </div>
-            </div>
-            <div className='hw-flex hw-flex-row hw-space-x-4 hw-mt-4'>
-              {multiSelect && (
-                <div onClick={() => handleWrapElement('wrap')}>
-                  <Button>Wrap</Button>
-                </div>
-              )}
-              {isGroup && (
-                <div onClick={() => handleWrapElement('unwrap')}>
-                  <Button>UnWrap</Button>
-                </div>
-              )}
-              {isEmptyDiv && (
-                <>
-                  <div onClick={handleAddText}>
-                    <Button>Add Text</Button>
-                  </div>
-                  <div onClick={() => setIsImageOpen(true)}>
-                    <Button>Add Image/SVG</Button>
-                  </div>
-                </>
-              )}
-            </div>
-          </>
-        )}
         <TreeViewComponent
           fields={fields}
           allowDragAndDrop={true}
@@ -445,7 +408,7 @@ export const TreeView = <T,>({
             treeObj = treeview
           }}
           nodeDropped={handleNodeDropped}
-          nodeTemplate={TreeViewItem}
+          nodeTemplate={treeViewItem}
           drawNode={drawNode}
           allowMultiSelection={true}
           selectedNodes={selectedNodes}
@@ -461,22 +424,146 @@ export const TreeView = <T,>({
   )
 }
 
-function TreeViewItem(data: TransformNode) {
+interface TreeViewItemProps {
+  onAddAbove: () => void
+  onAddBelow: () => void
+  onDelete: () => void
+  onWrap: () => void
+  onUnWrap: () => void
+  onAddText: () => void
+  onAddImage: () => void
+  onClick: (id: string) => void
+}
+const TreeViewItem =
+  ({
+    onAddAbove,
+    onAddBelow,
+    onDelete,
+    onWrap,
+    onUnWrap,
+    onAddImage,
+    onAddText,
+    onClick,
+  }: TreeViewItemProps) =>
+  (data: TransformNode) => {
+    const { selectedComponent } = useHarmonyContext()
+    const isGroup = useMemo(() => {
+      if (selectedComponent) {
+        if (selectedComponent.children.length > 0) {
+          return true
+        }
+      }
+      return false
+    }, [selectedComponent])
+
+    const isEmptyDiv = useMemo(() => {
+      if (selectedComponent) {
+        if (
+          selectedComponent.children.length === 0 &&
+          selectedComponent.tagName === 'DIV'
+        ) {
+          return true
+        }
+      }
+    }, [selectedComponent])
+
+    const items: DropdownItem<string>[] = [
+      {
+        id: 'add-above',
+        name: (
+          <TreeViewPopupLineItem onClick={onAddAbove}>
+            Add Above
+          </TreeViewPopupLineItem>
+        ),
+      },
+      {
+        id: 'add-below',
+        name: (
+          <TreeViewPopupLineItem onClick={onAddBelow}>
+            Add Below
+          </TreeViewPopupLineItem>
+        ),
+      },
+      {
+        id: 'delete',
+        name: (
+          <TreeViewPopupLineItem onClick={onDelete}>
+            Delete
+          </TreeViewPopupLineItem>
+        ),
+      },
+      {
+        id: 'wrap',
+        name: (
+          <TreeViewPopupLineItem onClick={onWrap}>Wrap</TreeViewPopupLineItem>
+        ),
+      },
+    ]
+
+    if (isGroup) {
+      items.push({
+        id: 'unwrap',
+        name: (
+          <TreeViewPopupLineItem onClick={onUnWrap}>
+            UnWrap
+          </TreeViewPopupLineItem>
+        ),
+      })
+    }
+
+    if (isEmptyDiv) {
+      items.push({
+        id: 'add-text',
+        name: (
+          <TreeViewPopupLineItem onClick={onAddText}>
+            Add Text
+          </TreeViewPopupLineItem>
+        ),
+      })
+      items.push({
+        id: 'add-image',
+        name: (
+          <TreeViewPopupLineItem onClick={onAddImage}>
+            Add Image/SVG
+          </TreeViewPopupLineItem>
+        ),
+      })
+    }
+
+    return (
+      <ListBoxPopover items={items}>
+        <div
+          data-child={data.childIndex}
+          data-node={data.id}
+          harmony-error={data.error || 'none'}
+          data-component={data.component}
+          onClick={() => onClick(data.id)}
+        >
+          <p>
+            {data.error === 'component' ? (
+              <span style={{ color: 'red' }}>⚠️</span>
+            ) : (
+              ''
+            )}
+            {data.type}
+          </p>
+        </div>
+      </ListBoxPopover>
+    )
+  }
+
+const TreeViewPopupLineItem: React.FunctionComponent<{
+  onClick: () => void
+  children: string
+}> = ({ onClick, children }) => {
   return (
-    <div
-      data-child={data.childIndex}
-      data-node={data.id}
-      harmony-error={data.error || 'none'}
-      data-component={data.component}
+    <DropdownLineItem
+      onPointerDown={(e: React.MouseEvent) => {
+        e.preventDefault()
+        onClick()
+      }}
     >
-      <p>
-        {data.error === 'component' ? (
-          <span style={{ color: 'red' }}>⚠️</span>
-        ) : (
-          ''
-        )}
-        {data.type}
-      </p>
-    </div>
+      <span>{children}</span>
+    </DropdownLineItem>
   )
 }
