@@ -1,8 +1,8 @@
-import { DeveloperSetup } from "../../components/setup";
+import { DeveloperSetup } from '../../components/setup'
 
-const clientId = process.env.GITHUB_APP_CLIENT_ID || "";
+const clientId = process.env.GITHUB_APP_CLIENT_ID || ''
 const DeveloperSetupPage = ({ params }: { params: { teamId: string } }) => {
-  const { teamId } = params;
+  const { teamId } = params
 
   return (
     <DeveloperSetup
@@ -10,7 +10,7 @@ const DeveloperSetupPage = ({ params }: { params: { teamId: string } }) => {
       teamId={teamId}
       clientId={clientId}
     />
-  );
-};
+  )
+}
 
-export default DeveloperSetupPage;
+export default DeveloperSetupPage

@@ -34,14 +34,15 @@ module.exports = {
       },
     },
   },
-  ignorePatterns: ['node_modules/', 'dist/'],
+  ignorePatterns: ['node_modules/', 'dist/', 'dev/', 'dist-server/'],
   // add rules configurations here
   rules: {
     'import/no-default-export': 'off',
     'react/function-component-definition': 'off',
     '@typescript-eslint/explicit-function-return-type': 'off',
     'import/no-default-export': 'off',
-    "no-useless-escape": 'off',
+    'no-useless-escape': 'off',
     '@typescript-eslint/no-confusing-void-expression': 'off',
+    '@typescript-eslint/require-await': 'off',
   },
 }

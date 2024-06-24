@@ -4,15 +4,16 @@ import {
   useState,
   useEffect,
   useRef,
-  type ReactNode,
-	useLayoutEffect as _useLayoutEffect,
-	MutableRefObject,
-	useMemo,
+  useLayoutEffect as _useLayoutEffect,
+  useMemo,
 } from 'react'
+import type { MutableRefObject, ReactNode } from 'react'
 import type { Fiber, Source } from 'react-reconciler'
 import hotkeys from 'hotkeys-js'
 
-export const useEffectEvent = <T extends (...args: any[]) => any>(callback?: T) => {
+export const useEffectEvent = <T extends (...args: any[]) => any>(
+  callback?: T,
+) => {
   const callbackRef = useRef(callback)
 
   /**
@@ -24,62 +25,61 @@ export const useEffectEvent = <T extends (...args: any[]) => any>(callback?: T) 
 
   // init once
   if (!stableRef.current) {
-    stableRef.current = (
-      function (this: ThisParameterType<T>, ...args) {
-        return callbackRef.current?.apply(this, args)
-      }
-    ) as T
+    stableRef.current = function (this: ThisParameterType<T>, ...args) {
+      return callbackRef.current?.apply(this, args)
+    } as T
   }
 
-  return stableRef.current as T
+  return stableRef.current
 }
 
-export const useLayoutEffect = (
-  typeof window !== 'undefined'
+export const useLayoutEffect =
+  typeof window !== 'undefined' &&
   // @ts-expect-error `window` is not available in SSR
-  && window?.document?.createElement
-)
-  ? _useLayoutEffect
-  : useEffect
+  window.document.createElement
+    ? _useLayoutEffect
+    : useEffect
 
-	export const useMousePosition = ({ disable }: {
-		disable?: boolean;
-	}): MutableRefObject<{ x: number; y: number }> => {
-		const mouseRef = useRef<{ x: number; y: number }>({
-			x: 0,
-			y: 0,
-		})
-	
-		const recordMousePoint = (ev: MouseEvent) => {
-			mouseRef.current.x = ev.clientX
-			mouseRef.current.y = ev.clientY
-		}
-	
-		useEffect(() => {
-			if (!disable) {
-				document.addEventListener('mousemove', recordMousePoint, true)
-			}
-	
-			return () => {
-				document.removeEventListener('mousemove', recordMousePoint, true)
-			}
-		}, [disable])
-	
-		return mouseRef
-	}
+export const useMousePosition = ({
+  disable,
+}: {
+  disable?: boolean
+}): MutableRefObject<{ x: number; y: number }> => {
+  const mouseRef = useRef<{ x: number; y: number }>({
+    x: 0,
+    y: 0,
+  })
+
+  const recordMousePoint = (ev: MouseEvent) => {
+    mouseRef.current.x = ev.clientX
+    mouseRef.current.y = ev.clientY
+  }
+
+  useEffect(() => {
+    if (!disable) {
+      document.addEventListener('mousemove', recordMousePoint, true)
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', recordMousePoint, true)
+    }
+  }, [disable])
+
+  return mouseRef
+}
 
 /**
  * the inspect meta info that is sent to the callback when an element is hovered over or clicked.
  */
 export interface InspectParams {
   /** hover / click event target dom element */
-  element: HTMLElement;
+  element: HTMLElement
   /** nearest named react component fiber for dom element */
-  fiber?: Fiber;
+  fiber?: Fiber
   /** source file line / column / path info for react component */
-  codeInfo?: CodeInfo;
+  codeInfo?: CodeInfo
   /** react component name for dom element */
-  name?: string;
+  name?: string
 }
 
 /**
@@ -87,9 +87,10 @@ export interface InspectParams {
  *   - make 'Ctrl + Shift + Alt + C' as default shortcut on Windows/Linux
  *   - export `defaultHotkeys`
  */
-export const defaultHotkeys = () => navigator.platform?.startsWith('Mac')
-  ? ['Ctrl', 'Shift', 'Command', 'C']
-  : ['Ctrl', 'Shift', 'Alt', 'C']
+export const defaultHotkeys = () =>
+  navigator.platform.startsWith('Mac')
+    ? ['Ctrl', 'Shift', 'Command', 'C']
+    : ['Ctrl', 'Shift', 'Alt', 'C']
 
 export interface InspectorProps {
   /**
@@ -101,7 +102,7 @@ export interface InspectorProps {
    *
    * Setting `keys={null}` explicitly means that disable use hotkeys to trigger it.
    */
-  keys?: string[] | null;
+  keys?: string[] | null
 
   /**
    * If setting `active` prop, the Inspector will be a Controlled React Component,
@@ -112,7 +113,7 @@ export interface InspectorProps {
    *
    * > add in version `v2.0.0`
    */
-  active?: boolean;
+  active?: boolean
 
   /**
    * Trigger by `active` state change, includes:
@@ -123,7 +124,7 @@ export interface InspectorProps {
    *
    * > add in version `v2.0.0`
    */
-  onActiveChange?: (active: boolean) => void;
+  onActiveChange?: (active: boolean) => void
 
   /**
    * Whether to disable all behavior include hotkeys listening or trigger,
@@ -132,7 +133,7 @@ export interface InspectorProps {
    * @default `true` if `NODE_ENV` is 'production', otherwise is `false`.
    * > add in version `v2.0.0`
    */
-  disable?: boolean;
+  disable?: boolean
 
   /**
    * Callback when left-clicking on an element, with ensuring the source code info is found.
@@ -156,18 +157,18 @@ export interface InspectorProps {
    *
    * > add in version `v2.0.0`
    */
-  onInspectElement?: (params: Required<InspectParams>) => void;
+  onInspectElement?: (params: Required<InspectParams>) => void
 
   /** Callback when hovering on an element */
-  onHoverElement?: (params: InspectParams) => void;
+  onHoverElement?: (params: InspectParams) => void
 
   /**
    * Callback when left-clicking on an element.
    */
-  onClickElement?: (params: InspectParams) => void;
+  onClickElement?: (params: InspectParams) => void
 
   /** any children of react nodes */
-  children?: ReactNode;
+  children?: ReactNode
 
   /**
    * Whether to disable default behavior: "launch to local IDE when click on component".
@@ -175,7 +176,7 @@ export interface InspectorProps {
    * @default `true` if setting `onInspectElement` callback, otherwise is `false`.
    * @deprecated please use `onInspectElement` callback instead for fully custom controlling.
    */
-  disableLaunchEditor?: boolean;
+  disableLaunchEditor?: boolean
 }
 
 export const Inspector = (props: InspectorProps) => {
@@ -187,8 +188,8 @@ export const Inspector = (props: InspectorProps) => {
     active: controlledActive,
     onActiveChange,
     disableLaunchEditor,
-    disable = (process.env.NODE_ENV !== 'development'),
-    children
+    disable = process.env.NODE_ENV !== 'development',
+    children,
   } = props
 
   const [isActive, setActive] = useState<boolean>(controlledActive ?? false)
@@ -201,17 +202,13 @@ export const Inspector = (props: InspectorProps) => {
   }, [controlledActive])
 
   useEffect(() => {
-    isActive
-      ? startInspect()
-      : null
+    isActive ? startInspect() : null
 
     return stopInspect
   }, [isActive])
 
   // hotkeys-js params need string
-  const hotkey: string | null = keys === null
-    ? null
-    : (keys ?? []).join('+')
+  const hotkey: string | null = keys === null ? null : (keys ?? []).join('+')
 
   /** inspector tooltip overlay */
   //const overlayRef = useRef<Overlay>()
@@ -312,9 +309,8 @@ export const Inspector = (props: InspectorProps) => {
       //   : activate()
     }
 
-    const bindKey = (hotkey === null || disable)
-      ? null
-      : (hotkey || defaultHotkeys().join('+'))
+    const bindKey =
+      hotkey === null || disable ? null : hotkey || defaultHotkeys().join('+')
 
     if (bindKey) {
       // https://github.com/jaywcjlove/hotkeys
@@ -326,19 +322,17 @@ export const Inspector = (props: InspectorProps) => {
     }
   }, [hotkey, disable])
 
-  return (<>{children ?? null}</>)
+  return <>{children ?? null}</>
 }
 
-let iframesListeningTo: Set<HTMLIFrameElement> = new Set()
+let iframesListeningTo = new Set<HTMLIFrameElement>()
 
 export type StopFunction = () => void
 
-export function setupHighlighter(
-  handlers: {
-    onPointerOver?: (element: HTMLElement) => void;
-    onClick?: (element: HTMLElement) => void;
-  },
-): StopFunction {
+export function setupHighlighter(handlers: {
+  onPointerOver?: (element: HTMLElement) => void
+  onClick?: (element: HTMLElement) => void
+}): StopFunction {
   function startInspectingNative() {
     registerListenersOnWindow(window)
   }
@@ -361,8 +355,7 @@ export function setupHighlighter(
     iframesListeningTo.forEach((frame) => {
       try {
         removeListenersOnWindow(frame.contentWindow)
-      }
-      catch (error) {
+      } catch (error) {
         // This can error when the iframe is on a cross-origin.
       }
     })
@@ -415,8 +408,7 @@ export function setupHighlighter(
           registerListenersOnWindow(window)
           iframesListeningTo.add(iframe)
         }
-      }
-      catch (error) {
+      } catch (error) {
         // This can error when the iframe is on a cross-origin.
       }
     }
@@ -438,47 +430,51 @@ export function setupHighlighter(
  * only native html tag fiber's type will be string,
  * all the others (component / functional component / context) type will be function or object
  */
-export const isNativeTagFiber = (fiber?: Fiber): boolean => typeof fiber?.type === 'string'
+export const isNativeTagFiber = (fiber?: Fiber): boolean =>
+  typeof fiber?.type === 'string'
 
 /**
  * react fiber symbol types see:
  * https://github.com/facebook/react/blob/v17.0.0/packages/shared/ReactSymbols.js#L39-L58
  */
-export const isReactSymbolFiber = (fiber?: Fiber): boolean => typeof fiber?.type?.$$typeof === 'symbol'
+export const isReactSymbolFiber = (fiber?: Fiber): boolean =>
+  typeof fiber?.type?.$$typeof === 'symbol'
 
 export const isForwardRef = (fiber?: Fiber): boolean =>
   fiber?.type?.$$typeof === Symbol.for('react.forward_ref')
 
-
-export type FiberHTMLElement = HTMLElement & {
-  [fiberKey: string]: Fiber | undefined;
-}
+export type FiberHTMLElement = HTMLElement & Record<string, Fiber | undefined>
 
 /**
  * https://stackoverflow.com/questions/29321742/react-getting-a-component-from-a-dom-element-for-debugging
  */
-export const getElementFiber = (element: FiberHTMLElement): Fiber | undefined => {
-  const fiberKey = Object.keys(element).find(key => (
-    /**
-     * for react <= v16.13.1
-     * https://github.com/facebook/react/blob/v16.13.1/packages/react-dom/src/client/ReactDOMComponentTree.js#L21
-     */
-    key.startsWith('__reactInternalInstance$')
-    /**
-     * for react >= v16.14.0
-     * https://github.com/facebook/react/blob/v16.14.0/packages/react-dom/src/client/ReactDOMComponentTree.js#L39
-     */
-    || key.startsWith('__reactFiber$')
-  ))
+export const getElementFiber = (
+  element: FiberHTMLElement,
+): Fiber | undefined => {
+  const fiberKey = Object.keys(element).find(
+    (key) =>
+      /**
+       * for react <= v16.13.1
+       * https://github.com/facebook/react/blob/v16.13.1/packages/react-dom/src/client/ReactDOMComponentTree.js#L21
+       */
+      key.startsWith('__reactInternalInstance$') ||
+      /**
+       * for react >= v16.14.0
+       * https://github.com/facebook/react/blob/v16.14.0/packages/react-dom/src/client/ReactDOMComponentTree.js#L39
+       */
+      key.startsWith('__reactFiber$'),
+  )
 
   if (fiberKey) {
-    return element[fiberKey] as Fiber
+    return element[fiberKey]!
   }
 
   return undefined
 }
 
-export const getElementFiberUpward = (element: HTMLElement | null): Fiber | undefined => {
+export const getElementFiberUpward = (
+  element: HTMLElement | null,
+): Fiber | undefined => {
   if (!element) return undefined
   const fiber = getElementFiber(element as FiberHTMLElement)
   if (fiber) return fiber
@@ -504,7 +500,6 @@ export const getDirectParentFiber = (child: Fiber): Fiber | null => {
   return null
 }
 
-
 /**
  * The displayName property is not guaranteed to be a string.
  * It's only safe to use for our purposes if it's a string.
@@ -519,30 +514,28 @@ export const getFiberName = (fiber?: Fiber): string | undefined => {
 
   if (typeof displayName === 'string') {
     return displayName
-  }
-  else if (typeof name === 'string') {
+  } else if (typeof name === 'string') {
     return name
   } else if (typeof fiberType === 'string') {
-		return fiberType;
-	}
+    return fiberType
+  }
 
   return undefined
 }
 
-
 export interface CodeInfo {
-  lineNumber: string;
-  columnNumber: string;
+  lineNumber: string
+  columnNumber: string
   /**
    * code source file relative path to dev-server cwd(current working directory)
    * need use with `react-dev-inspector/plugins/babel`
    */
-  relativePath?: string;
+  relativePath?: string
   /**
    * code source file absolute path
    * just need use with `@babel/plugin-transform-react-jsx-source` which auto set by most framework
    */
-  absolutePath?: string;
+  absolutePath?: string
 }
 
 /**
@@ -552,9 +545,9 @@ export interface CodeInfo {
  * this props will be record in fiber
  */
 export interface CodeDataAttribute {
-  'data-inspector-line': string;
-  'data-inspector-column': string;
-  'data-inspector-relative-path': string;
+  'data-inspector-line': string
+  'data-inspector-column': string
+  'data-inspector-relative-path': string
 }
 
 /**
@@ -569,14 +562,13 @@ export interface CodeDataAttribute {
  * finally, used by `createFiberFromElement` to become a fiber property `_debugSource`.
  *     https://github.com/facebook/react/blob/v18.0.0/packages/react-reconciler/src/ReactFiber.new.js#L648-L649
  */
-export const getCodeInfoFromDebugSource = (fiber?: Fiber): CodeInfo | undefined => {
+export const getCodeInfoFromDebugSource = (
+  fiber?: Fiber,
+): CodeInfo | undefined => {
   if (!fiber?._debugSource) return undefined
 
-  const {
-    fileName,
-    lineNumber,
-    columnNumber,
-  } = fiber._debugSource as Source & { columnNumber?: number }
+  const { fileName, lineNumber, columnNumber } =
+    fiber._debugSource as Source & { columnNumber?: number }
 
   if (fileName && lineNumber) {
     return {
@@ -589,7 +581,7 @@ export const getCodeInfoFromDebugSource = (fiber?: Fiber): CodeInfo | undefined 
        *
        * compatible with the incorrect `fileName: "</xxx/file>"` by [rspack](https://github.com/web-infra-dev/rspack)
        */
-      absolutePath: fileName.match(/^<.*>$/)
+      absolutePath: /^<.*>$/.exec(fileName)
         ? fileName.replace(/^<|>$/g, '')
         : fileName,
     }
@@ -621,10 +613,8 @@ export const getCodeInfoFromProps = (fiber?: Fiber): CodeInfo | undefined => {
   return undefined
 }
 
-export const getCodeInfoFromFiber = (fiber?: Fiber): CodeInfo | undefined => (
-  getCodeInfoFromProps(fiber)
-  ?? getCodeInfoFromDebugSource(fiber)
-)
+export const getCodeInfoFromFiber = (fiber?: Fiber): CodeInfo | undefined =>
+  getCodeInfoFromProps(fiber) ?? getCodeInfoFromDebugSource(fiber)
 
 /**
  * give a `base` dom fiber,
@@ -680,9 +670,8 @@ export const getReferenceFiber = (baseFiber?: Fiber): Fiber | undefined => {
   const isParentNative = isNativeTagFiber(directParent)
   const isOnlyOneChild = !directParent.child?.sibling
 
-  let referenceFiber = (!isParentNative && isOnlyOneChild)
-    ? directParent
-    : baseFiber
+  let referenceFiber =
+    !isParentNative && isOnlyOneChild ? directParent : baseFiber
 
   // fallback for cannot find code-info fiber when traverse to root
   const originReferenceFiber = referenceFiber
@@ -696,7 +685,9 @@ export const getReferenceFiber = (baseFiber?: Fiber): Fiber | undefined => {
   return originReferenceFiber
 }
 
-export const getElementCodeInfo = (element: HTMLElement): CodeInfo | undefined => {
+export const getElementCodeInfo = (
+  element: HTMLElement,
+): CodeInfo | undefined => {
   const fiber: Fiber | undefined = getElementFiberUpward(element)
 
   const referenceFiber = getReferenceFiber(fiber)
@@ -736,10 +727,12 @@ export const getNamedFiber = (baseFiber?: Fiber): Fiber | undefined => {
   return originNamedFiber
 }
 
-export const getElementInspect = (element: HTMLElement): {
-  fiber?: Fiber;
-  name?: string;
-  title: string;
+export const getElementInspect = (
+  element: HTMLElement,
+): {
+  fiber?: Fiber
+  name?: string
+  title: string
 } => {
   const fiber = getElementFiberUpward(element)
   const referenceFiber = getReferenceFiber(fiber)
@@ -749,9 +742,7 @@ export const getElementInspect = (element: HTMLElement): {
   const fiberName = getFiberName(namedFiber)
   const nodeName = element.nodeName.toLowerCase()
 
-  const title = fiberName
-    ? `${nodeName} in <${fiberName}>`
-    : nodeName
+  const title = fiberName ? `${nodeName} in <${fiberName}>` : nodeName
 
   return {
     fiber: referenceFiber,

@@ -1,14 +1,14 @@
-import type { ComponentError } from "@harmony/util/src/types/component";
-import { mergeArraysOnId } from "@harmony/util/src/utils/common";
-import { recurseElements } from "../../../utils/element-utils";
-import { createHarmonySlice } from "./factory";
+import type { ComponentError } from '@harmony/util/src/types/component'
+import { mergeArraysOnId } from '@harmony/util/src/utils/common'
+import { recurseElements } from '../../../utils/element-utils'
+import { createHarmonySlice } from './factory'
 
 export interface ComponentErrorState {
-  errorElements: ComponentError[];
+  errorElements: ComponentError[]
   updateErrorElements: (
     errorElements: ComponentError[],
     rootElement: HTMLElement,
-  ) => void;
+  ) => void
 }
 export const createComponentErrorsSlice =
   createHarmonySlice<ComponentErrorState>((set) => ({
@@ -18,23 +18,23 @@ export const createComponentErrorsSlice =
         (element) => {
           const errorComponent = errorElements.find(
             (el) => el.componentId === element.dataset.harmonyId,
-          );
+          )
           if (errorComponent) {
-            const type = errorComponent.type;
-            element.dataset.harmonyError = type;
+            const type = errorComponent.type
+            element.dataset.harmonyError = type
           }
         },
-      ]);
+      ])
 
       set((state) => {
         const newErrors = mergeArraysOnId(
           state.errorElements,
           errorElements,
-          "componentId",
-        );
+          'componentId',
+        )
         return {
           errorElements: newErrors,
-        };
-      });
+        }
+      })
     },
-  }));
+  }))
