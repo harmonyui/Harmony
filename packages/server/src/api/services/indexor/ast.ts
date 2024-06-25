@@ -260,8 +260,6 @@ export function getCodeInfoFromFile(
                   //If we have some things to add, cheerio!
                   if (sameAttributesInElement.length > 0) {
                     attributes.push(...sameAttributesInElement)
-
-                    continue
                   }
                   //Otherwise just add this attribute
                 }

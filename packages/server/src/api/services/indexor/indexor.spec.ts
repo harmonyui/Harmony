@@ -272,7 +272,7 @@ describe('indexor', () => {
         {},
       )
       expect(result).toBeTruthy()
-      expect(componentElements[6].props.length).toBe(2)
+      expect(componentElements[6].props.length).toBe(3)
       expect(componentElements[6].getParent()).toBe(componentElements[5])
       expect(componentElements[6].props[0].type).toBe('className')
       expect(componentElements[6].props[0].name).toBe('string')
@@ -293,8 +293,9 @@ describe('indexor', () => {
         componentElements[6].props[1].location,
         '"bg-gray-50"',
       )
+      expect(componentElements[6].props[1].reference).toBe(componentElements[5])
 
-      expect(componentElements[7].props.length).toBe(3)
+      expect(componentElements[7].props.length).toBe(4)
       expect(componentElements[7].getParent()).toBe(componentElements[5])
       expect(componentElements[7].props[0].type).toBe('text')
       expect(componentElements[7].props[0].name).toBe('string')
@@ -305,8 +306,9 @@ describe('indexor', () => {
         componentElements[7].props[0].location,
         '"Displays"',
       )
+      expect(componentElements[7].props[0].reference).toBe(componentElements[5])
 
-      expect(componentElements[12].props.length).toBe(4)
+      expect(componentElements[12].props.length).toBe(5)
       expect(componentElements[12].getParent()).toBe(componentElements[11])
       expect(componentElements[12].props[1].type).toBe('className')
       expect(componentElements[12].props[1].name).toBe('string')
@@ -317,7 +319,7 @@ describe('indexor', () => {
         '"text-sm"',
       )
 
-      expect(componentElements[12].props.length).toBe(4)
+      expect(componentElements[12].props.length).toBe(5)
       expect(componentElements[12].props[2].type).toBe('className')
       expect(componentElements[12].props[2].name).toBe('string')
       expect(componentElements[12].props[2].value).toBe('bg-blue-50')
@@ -327,7 +329,7 @@ describe('indexor', () => {
         '"bg-blue-50"',
       )
 
-      expect(componentElements[12].props.length).toBe(4)
+      expect(componentElements[12].props.length).toBe(5)
       expect(componentElements[12].props[3].type).toBe('className')
       expect(componentElements[12].props[3].name).toBe('string')
       expect(componentElements[12].props[3].value).toBe('flex')
@@ -391,7 +393,7 @@ describe('indexor', () => {
 
       //Layer 2
       //Component1:1 -> div
-      expect(componentElements[3].props.length).toBe(3)
+      expect(componentElements[3].props.length).toBe(4)
       expect(componentElements[3].props[0].type).toBe('className')
       expect(componentElements[3].props[0].name).toBe('string')
       expect(componentElements[3].props[0].value).toBe('m-2')
@@ -401,7 +403,6 @@ describe('indexor', () => {
         '"m-2"',
       )
 
-      expect(componentElements[3].props.length).toBe(3)
       expect(componentElements[3].props[1].type).toBe('className')
       expect(componentElements[3].props[1].name).toBe('property')
       expect(componentElements[3].props[1].value).toBe('className:className')
@@ -412,20 +413,19 @@ describe('indexor', () => {
         'className',
       )
 
-      expect(componentElements[3].props.length).toBe(3)
-      expect(componentElements[3].props[2].type).toBe('className')
-      expect(componentElements[3].props[2].name).toBe('string')
-      expect(componentElements[3].props[2].value).toBe(
+      expect(componentElements[3].props[3].type).toBe('className')
+      expect(componentElements[3].props[3].name).toBe('string')
+      expect(componentElements[3].props[3].value).toBe(
         'bg-blue-50 flex flex-col',
       )
       expectLocationOfString(
         file,
-        componentElements[3].props[2].location,
+        componentElements[3].props[3].location,
         '"bg-blue-50 flex flex-col"',
       )
 
       //Component1:2 -> div
-      expect(componentElements[4].props.length).toBe(2)
+      expect(componentElements[4].props.length).toBe(3)
       expect(componentElements[4].props[0].type).toBe('className')
       expect(componentElements[4].props[0].name).toBe('string')
       expect(componentElements[4].props[0].value).toBe('m-3')
@@ -435,7 +435,7 @@ describe('indexor', () => {
         '"m-3"',
       )
 
-      expect(componentElements[6].props.length).toBe(2)
+      expect(componentElements[6].props.length).toBe(3)
       expect(componentElements[6].props[0].type).toBe('text')
       expect(componentElements[6].props[0].name).toBe('property')
       expect(componentElements[6].props[0].value).toBe('name')
@@ -447,18 +447,18 @@ describe('indexor', () => {
 
       //Layer 3
       //Component1 --> Should keep property name, but get value of parent
-      expect(componentElements[9].props.length).toBe(3)
-      expect(componentElements[9].props[2].type).toBe('property')
-      expect(componentElements[9].props[2].name).toBe('string')
-      expect(componentElements[9].props[2].value).toBe('label:Hello there')
+      expect(componentElements[9].props.length).toBe(5)
+      expect(componentElements[9].props[3].type).toBe('property')
+      expect(componentElements[9].props[3].name).toBe('string')
+      expect(componentElements[9].props[3].value).toBe('label:Hello there')
       expectLocationOfString(
         file,
-        componentElements[9].props[2].location,
+        componentElements[9].props[3].location,
         '"Hello there"',
       )
 
       //div
-      expect(componentElements[10].props.length).toBe(3)
+      expect(componentElements[10].props.length).toBe(5)
       expect(componentElements[10].props[0].type).toBe('className')
       expect(componentElements[10].props[0].name).toBe('string')
       expect(componentElements[10].props[0].value).toBe('m-2')
@@ -468,8 +468,7 @@ describe('indexor', () => {
         '"m-2"',
       )
 
-      //h1
-      expect(componentElements[10].props.length).toBe(3)
+      expect(componentElements[10].props.length).toBe(5)
       expect(componentElements[10].props[1].type).toBe('className')
       expect(componentElements[10].props[1].name).toBe('string')
       expect(componentElements[10].props[1].value).toBe('p-3')
@@ -478,20 +477,29 @@ describe('indexor', () => {
         componentElements[10].props[1].location,
         'p-3',
       )
+      expect(componentElements[10].props[1].reference).toBe(
+        componentElements[8],
+      )
+      expect(componentElements[10].props[2].reference.id).toBe(
+        componentElements[9].id,
+      )
+      expect(componentElements[10].props[3].reference.id).toBe(
+        componentElements[10].id,
+      )
 
-      expect(componentElements[10].props.length).toBe(3)
-      expect(componentElements[10].props[2].type).toBe('className')
-      expect(componentElements[10].props[2].name).toBe('string')
-      expect(componentElements[10].props[2].value).toBe(
+      expect(componentElements[10].props[4].type).toBe('className')
+      expect(componentElements[10].props[4].name).toBe('string')
+      expect(componentElements[10].props[4].value).toBe(
         'bg-blue-50 flex flex-col',
       )
       expectLocationOfString(
         file,
-        componentElements[10].props[2].location,
+        componentElements[10].props[4].location,
         '"bg-blue-50 flex flex-col"',
       )
 
-      expect(componentElements[11].props.length).toBe(2)
+      //h1
+      expect(componentElements[11].props.length).toBe(4)
       expect(componentElements[11].props[0].type).toBe('text')
       expect(componentElements[11].props[0].name).toBe('string')
       expect(componentElements[11].props[0].value).toBe('Hello there')
@@ -499,6 +507,15 @@ describe('indexor', () => {
         file,
         componentElements[11].props[0].location,
         '"Hello there"',
+      )
+      expect(componentElements[11].props[0].reference).toBe(
+        componentElements[8],
+      )
+      expect(componentElements[11].props[1].reference.id).toBe(
+        componentElements[9].id,
+      )
+      expect(componentElements[11].props[2].reference.id).toBe(
+        componentElements[11].id,
       )
     })
 
@@ -519,7 +536,7 @@ describe('indexor', () => {
       expect(result).toBeTruthy()
       expect(componentElements.length).toBe(9)
 
-      expect(componentElements[4].props.length).toBe(2)
+      expect(componentElements[4].props.length).toBe(3)
       expect(componentElements[4].props[1].type).toBe('className')
       expect(componentElements[4].props[1].name).toBe('property')
       expect(componentElements[4].props[1].value).toBe('className:innerClass')
@@ -529,7 +546,7 @@ describe('indexor', () => {
         'innerClass',
       )
 
-      expect(componentElements[8].props.length).toBe(2)
+      expect(componentElements[8].props.length).toBe(4)
       expect(componentElements[8].props[1].type).toBe('className')
       expect(componentElements[8].props[1].name).toBe('string')
       expect(componentElements[8].props[1].value).toBe('bg-primary')
@@ -619,7 +636,7 @@ describe('indexor', () => {
       )
 
       //div -> layer 2
-      expect(componentElements[4].props.length).toBe(3)
+      expect(componentElements[4].props.length).toBe(4)
       expect(componentElements[4].props[1].type).toBe('className')
       expect(componentElements[4].props[1].name).toBe('string')
       expect(componentElements[4].props[1].value).toBe('bg-white')
@@ -638,7 +655,7 @@ describe('indexor', () => {
       )
 
       //h1
-      expect(componentElements[5].props.length).toBe(2)
+      expect(componentElements[5].props.length).toBe(3)
       expect(componentElements[5].props[0].type).toBe('text')
       expect(componentElements[5].props[0].name).toBe('string')
       expect(componentElements[5].props[0].value).toBe('Hello there')
@@ -666,7 +683,7 @@ describe('indexor', () => {
       expect(result).toBeTruthy()
 
       //Comp
-      expect(componentElements[2].props.length).toBe(6)
+      expect(componentElements[2].props.length).toBe(8)
       expect(componentElements[2].props[0].type).toBe('property')
       expect(componentElements[2].props[0].name).toBe('string')
       expect(componentElements[2].props[0].value).toBe('variant:outline')
@@ -676,22 +693,22 @@ describe('indexor', () => {
         '"outline"',
       )
 
-      expect(componentElements[2].props[2].type).toBe('className')
-      expect(componentElements[2].props[2].name).toBe('string')
-      expect(componentElements[2].props[2].value).toBe('bg-sky-50')
+      expect(componentElements[2].props[3].type).toBe('className')
+      expect(componentElements[2].props[3].name).toBe('string')
+      expect(componentElements[2].props[3].value).toBe('bg-sky-50')
       expectLocationOfString(
         file,
-        componentElements[2].props[2].location,
+        componentElements[2].props[3].location,
         '"bg-sky-50"',
       )
 
-      expect(componentElements[2].props[5].type).toBe('text')
-      expect(componentElements[2].props[5].name).toBe('string')
-      expect(componentElements[2].props[5].value).toBe('This is a child')
-      expect(componentElements[2].props[5].index).toBe(0)
+      expect(componentElements[2].props[7].type).toBe('text')
+      expect(componentElements[2].props[7].name).toBe('string')
+      expect(componentElements[2].props[7].value).toBe('This is a child')
+      expect(componentElements[2].props[7].index).toBe(0)
       expectLocationOfString(
         file,
-        componentElements[2].props[5].location,
+        componentElements[2].props[7].location,
         'This is a child',
       )
 
@@ -708,7 +725,7 @@ describe('indexor', () => {
       )
 
       //div -> ScrollView
-      expect(componentElements[6].props.length).toBe(4)
+      expect(componentElements[6].props.length).toBe(5)
       expect(componentElements[6].props[2].type).toBe('className')
       expect(componentElements[6].props[2].name).toBe('string')
       expect(componentElements[6].props[2].value).toBe('flex')
@@ -717,22 +734,22 @@ describe('indexor', () => {
         componentElements[6].props[2].location,
         '"flex"',
       )
-      expect(componentElements[6].props[3].type).toBe('className')
-      expect(componentElements[6].props[3].name).toBe('string')
-      expect(componentElements[6].props[3].value).toBe('dark:hover:text-sm')
+      expect(componentElements[6].props[4].type).toBe('className')
+      expect(componentElements[6].props[4].name).toBe('string')
+      expect(componentElements[6].props[4].value).toBe('dark:hover:text-sm')
       expectLocationOfString(
         file,
-        componentElements[6].props[3].location,
+        componentElements[6].props[4].location,
         '"dark:hover:text-sm"',
       )
 
-      expect(componentElements[7].props.length).toBe(5)
-      expect(componentElements[7].props[3].type).toBe('className')
-      expect(componentElements[7].props[3].name).toBe('string')
-      expect(componentElements[7].props[3].value).toBe('styles')
+      expect(componentElements[7].props.length).toBe(7)
+      expect(componentElements[7].props[4].type).toBe('className')
+      expect(componentElements[7].props[4].name).toBe('string')
+      expect(componentElements[7].props[4].value).toBe('styles')
       expectLocationOfString(
         file,
-        componentElements[7].props[3].location,
+        componentElements[7].props[4].location,
         '"styles"',
       )
 
@@ -785,7 +802,7 @@ describe('indexor', () => {
         'buttonClass',
       )
 
-      expect(componentElements[4].props.length).toBe(5)
+      expect(componentElements[4].props.length).toBe(8)
       expect(componentElements[4].props[0].type).toBe('property')
       expect(componentElements[4].props[0].name).toBe('string')
       expect(componentElements[4].props[0].value).toBe('variant:secondary')
@@ -795,13 +812,13 @@ describe('indexor', () => {
         componentElements[4].props[0].location,
         '"secondary"',
       )
-      expect(componentElements[4].props[2].type).toBe('className')
-      expect(componentElements[4].props[2].name).toBe('string')
-      expect(componentElements[4].props[2].value).toBe('border')
-      expect(componentElements[4].props[2].locationType).toBe('component')
+      expect(componentElements[4].props[4].type).toBe('className')
+      expect(componentElements[4].props[4].name).toBe('string')
+      expect(componentElements[4].props[4].value).toBe('border')
+      expect(componentElements[4].props[4].locationType).toBe('component')
       expectLocationOfString(
         file,
-        componentElements[4].props[2].location,
+        componentElements[4].props[4].location,
         '"border"',
       )
     })
@@ -846,7 +863,7 @@ describe('indexor', () => {
       expect(componentElements[5].props[0].locationType).toBe('component')
       expect(componentElements[5].props[0].index).toBe(1)
 
-      expect(componentElements[6].props.length).toBe(5)
+      expect(componentElements[6].props.length).toBe(7)
       expect(componentElements[6].props[0].type).toBe('property')
       expect(componentElements[6].props[0].name).toBe('property')
       expect(componentElements[6].props[0].value).toBe('variant:variant')
@@ -856,16 +873,16 @@ describe('indexor', () => {
         componentElements[6].props[0].location,
         'variant',
       )
-      expect(componentElements[6].props[2].type).toBe('className')
-      expect(componentElements[6].props[2].name).toBe('string')
-      expect(componentElements[6].props[2].value).toBe('buttonClass')
-      expect(componentElements[6].props[2].locationType).toBe('add')
+      expect(componentElements[6].props[3].type).toBe('className')
+      expect(componentElements[6].props[3].name).toBe('string')
+      expect(componentElements[6].props[3].value).toBe('buttonClass')
+      expect(componentElements[6].props[3].locationType).toBe('add')
       expect(
-        t.isJSXOpeningElement(componentElements[6].props[2].node),
+        t.isJSXOpeningElement(componentElements[6].props[3].node),
       ).toBeTruthy()
       expectLocationOfString(
         file,
-        componentElements[6].props[2].location,
+        componentElements[6].props[3].location,
         '<Button size="lg">',
       )
     })
@@ -887,13 +904,13 @@ describe('indexor', () => {
       expect(result).toBeTruthy()
       expect(componentElements.length).toBe(20)
 
-      expect(componentElements[3].props.length).toBe(2)
+      expect(componentElements[3].props.length).toBe(3)
       expect(componentElements[3].props[0].type).toBe('text')
       expect(componentElements[3].props[0].name).toBe('string')
       expect(componentElements[3].props[0].value).toContain('Filter')
       expect(componentElements[3].props[0].index).toBe(1)
 
-      expect(componentElements[12].props.length).toBe(2)
+      expect(componentElements[12].props.length).toBe(3)
       expect(componentElements[12].props[0].type).toBe('text')
       expect(componentElements[12].props[0].name).toBe('string')
       expect(componentElements[12].props[0].value).toContain('Hello')
@@ -934,17 +951,17 @@ describe('indexor', () => {
       )
 
       //Spread 1 -> h1
-      expect(componentElements[8].props.length).toBe(4)
-      expect(componentElements[8].props[3].type).toBe('className')
-      expect(componentElements[8].props[3].name).toBe('string')
-      expect(componentElements[8].props[3].value).toBe('className')
-      expect(componentElements[8].props[3].locationType).toBe('add')
+      expect(componentElements[8].props.length).toBe(5)
+      expect(componentElements[8].props[4].type).toBe('className')
+      expect(componentElements[8].props[4].name).toBe('string')
+      expect(componentElements[8].props[4].value).toBe('className')
+      expect(componentElements[8].props[4].locationType).toBe('add')
       expect(
-        t.isJSXOpeningElement(componentElements[8].props[3].node),
+        t.isJSXOpeningElement(componentElements[8].props[4].node),
       ).toBeTruthy()
 
       //Spread 2 -> h1
-      expect(componentElements[10].props.length).toBe(4)
+      expect(componentElements[10].props.length).toBe(5)
       expect(componentElements[10].props[0].type).toBe('text')
       expect(componentElements[10].props[0].name).toBe('string')
       expect(componentElements[10].props[0].value).toBe(
@@ -952,11 +969,11 @@ describe('indexor', () => {
       )
       expect(componentElements[10].props[0].locationType).toBe('component')
 
-      expect(componentElements[10].props.length).toBe(4)
-      expect(componentElements[10].props[3].type).toBe('className')
-      expect(componentElements[10].props[3].name).toBe('string')
-      expect(componentElements[10].props[3].value).toBe('border-1')
-      expect(componentElements[10].props[3].locationType).toBe('component')
+      expect(componentElements[10].props.length).toBe(5)
+      expect(componentElements[10].props[4].type).toBe('className')
+      expect(componentElements[10].props[4].name).toBe('string')
+      expect(componentElements[10].props[4].value).toBe('border-1')
+      expect(componentElements[10].props[4].locationType).toBe('component')
     })
 
     //TODO: Finish this
@@ -1029,7 +1046,7 @@ describe('indexor', () => {
         const parent = parents[0]
 
         const textAttributes = pTag.props.filter((attr) => attr.type === 'text')
-        expect(textAttributes.length).toBe(2)
+        expect(textAttributes.length).toBe(3)
         const textAttribute = textAttributes[0]
 
         expect(textAttribute.name).toBe('string')
@@ -1065,7 +1082,7 @@ describe('indexor', () => {
       if (!result) return
 
       expect(result.length).toBe(30)
-      expect(componentElements[16].props.length).toBe(3)
+      expect(componentElements[16].props.length).toBe(5)
       expect(componentElements[16].props[1].type).toBe('className')
       expect(componentElements[16].props[1].name).toBe('string')
       expect(componentElements[16].props[1].value).toBe('bg-white')
@@ -1074,17 +1091,25 @@ describe('indexor', () => {
         componentElements[16].props[1].location,
         '"bg-white"',
       )
+      expect(componentElements[16].props[1].reference.id).toBe(
+        componentElements[16].getParent()?.id,
+      )
 
-      expect(componentElements[16].props[2].type).toBe('property')
-      expect(componentElements[16].props[2].name).toBe('string')
-      expect(componentElements[16].props[2].value).toBe('label:A Name')
+      expect(componentElements[16].props[2].type).toBe('className')
+      expect(componentElements[16].props[2].reference.id).toBe(
+        componentElements[16].id,
+      )
+
+      expect(componentElements[16].props[3].type).toBe('property')
+      expect(componentElements[16].props[3].name).toBe('string')
+      expect(componentElements[16].props[3].value).toBe('label:A Name')
       expectLocationOfString(
         'app/multipleLayers2.tsx',
-        componentElements[16].props[2].location,
+        componentElements[16].props[3].location,
         '"A Name"',
       )
 
-      expect(componentElements[18].props.length).toBe(2)
+      expect(componentElements[18].props.length).toBe(4)
       expect(componentElements[18].props[0].type).toBe('text')
       expect(componentElements[18].props[0].name).toBe('string')
       expect(componentElements[18].props[0].value).toBe('A Name')
