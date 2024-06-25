@@ -1,4 +1,5 @@
 import { describe, it, expect } from 'vitest'
+import * as t from '@babel/types'
 import type { HarmonyComponent, HarmonyContainingComponent } from './types'
 import { getCodeInfoAndNormalizeFromFiles } from './indexor'
 import { getCodeInfoFromFile } from './ast'
@@ -379,7 +380,14 @@ describe('indexor', () => {
       expect(componentElements[5].props[1].name).toBe('string')
       expect(componentElements[5].props[1].value).toBe('')
       expect(componentElements[5].props[1].locationType).toBe('add')
-      expectLocationOfString(file, componentElements[5].props[1].location, '')
+      expect(
+        t.isJSXOpeningElement(componentElements[5].props[1].node),
+      ).toBeTruthy()
+      expectLocationOfString(
+        file,
+        componentElements[5].props[1].location,
+        '<h1>',
+      )
 
       //Layer 2
       //Component1:1 -> div
@@ -821,7 +829,14 @@ describe('indexor', () => {
       expect(componentElements[2].props[1].name).toBe('string')
       expect(componentElements[2].props[1].value).toBe('')
       expect(componentElements[2].props[1].locationType).toBe('add')
-      expectLocationOfString(file, componentElements[2].props[1].location, '')
+      expect(
+        t.isJSXOpeningElement(componentElements[2].props[1].node),
+      ).toBeTruthy()
+      expectLocationOfString(
+        file,
+        componentElements[2].props[1].location,
+        '<h1>',
+      )
 
       //Text child should have the correct index
       expect(componentElements[5].props.length).toBe(2)
@@ -845,7 +860,14 @@ describe('indexor', () => {
       expect(componentElements[6].props[2].name).toBe('string')
       expect(componentElements[6].props[2].value).toBe('buttonClass')
       expect(componentElements[6].props[2].locationType).toBe('add')
-      expectLocationOfString(file, componentElements[6].props[2].location, '')
+      expect(
+        t.isJSXOpeningElement(componentElements[6].props[2].node),
+      ).toBeTruthy()
+      expectLocationOfString(
+        file,
+        componentElements[6].props[2].location,
+        '<Button size="lg">',
+      )
     })
 
     it('Should keep parent index of text element', () => {
@@ -902,7 +924,14 @@ describe('indexor', () => {
       expect(componentElements[1].props[2].name).toBe('string')
       expect(componentElements[1].props[2].value).toBe('')
       expect(componentElements[1].props[2].locationType).toBe('add')
-      expectLocationOfString(file, componentElements[1].props[2].location, '')
+      expect(
+        t.isJSXOpeningElement(componentElements[1].props[2].node),
+      ).toBeTruthy()
+      expectLocationOfString(
+        file,
+        componentElements[1].props[2].location,
+        '<h1 {...rest}>',
+      )
 
       //Spread 1 -> h1
       expect(componentElements[8].props.length).toBe(4)
@@ -910,6 +939,9 @@ describe('indexor', () => {
       expect(componentElements[8].props[3].name).toBe('string')
       expect(componentElements[8].props[3].value).toBe('className')
       expect(componentElements[8].props[3].locationType).toBe('add')
+      expect(
+        t.isJSXOpeningElement(componentElements[8].props[3].node),
+      ).toBeTruthy()
 
       //Spread 2 -> h1
       expect(componentElements[10].props.length).toBe(4)

@@ -47,6 +47,15 @@ export function getAttributeValue(attribute: Attribute): string {
   return attribute.value
 }
 
+export type LiteralNode = t.JSXText | t.StringLiteral | t.TemplateElement
+export const isLiteralNode = (
+  node: t.Node | undefined,
+): node is LiteralNode => {
+  return (
+    t.isJSXText(node) || t.isStringLiteral(node) || t.isTemplateElement(node)
+  )
+}
+
 export function getCodeInfoFromFile(
   file: string,
   originalCode: string,
@@ -229,10 +238,10 @@ export function getCodeInfoFromFile(
                     attribute.locationType === 'props' &&
                     sameAttributesInElement.length === 0
                   ) {
-                    if (!parent.node.openingElement.name.loc) {
+                    if (!parent.node.openingElement.loc) {
                       throw new Error('Invalid location')
                     }
-                    const { end } = parent.node.openingElement.name.loc
+                    const { end, start } = parent.node.openingElement.loc
                     //Even though this is type string, we need to know what the name of the class is we are adding, so we set that as the attribute value
                     sameAttributesInElement.push({
                       ...attribute,
@@ -242,9 +251,10 @@ export function getCodeInfoFromFile(
                       locationType: 'add',
                       location: {
                         file: parent.location.file,
-                        start: end.index,
+                        start: start.index,
                         end: end.index,
                       },
+                      node: parent.node.openingElement,
                     })
                   }
                   //If we have some things to add, cheerio!
@@ -279,10 +289,10 @@ export function getCodeInfoFromFile(
                       attribute.reference === parent,
                   )
                 ) {
-                  if (!parent.node.openingElement.name.loc) {
+                  if (!parent.node.openingElement.loc) {
                     throw new Error('Invalid location')
                   }
-                  const { end } = parent.node.openingElement.name.loc
+                  const { start, end } = parent.node.openingElement.loc
                   //Even though this is type string, we need to know what the name of the class is we are adding, so we set that as the attribute value
                   attributes.push({
                     id: '',
@@ -294,7 +304,7 @@ export function getCodeInfoFromFile(
                     locationType: 'add',
                     location: {
                       file: parent.location.file,
-                      start: end.index,
+                      start: start.index,
                       end: end.index,
                     },
                     node: parent.node.openingElement,
@@ -813,7 +823,7 @@ export function getCodeInfoFromFile(
               }
 
               const createStringAttribute = (
-                node: t.StringLiteral | t.TemplateElement | t.JSXText,
+                node: LiteralNode,
                 type: AttributeType,
                 propertyName: string | undefined,
                 value: string,
@@ -990,17 +1000,17 @@ export function getCodeInfoFromFile(
                   (attr) => attr.type === 'className',
                 )
               ) {
-                if (!node.openingElement.name.loc) {
+                if (!node.openingElement.loc) {
                   throw new Error('Invalid location')
                 }
-                const { end } = node.openingElement.name.loc
+                const { end, start } = node.openingElement.loc
                 defaultClassName = createAttribute(
                   'className',
                   'string',
                   undefined,
                   '',
                   'add',
-                  { file, start: end.index, end: end.index },
+                  { file, start: start.index, end: end.index },
                   node.openingElement,
                 )
                 jsxElementDefinition.props.push(defaultClassName)
