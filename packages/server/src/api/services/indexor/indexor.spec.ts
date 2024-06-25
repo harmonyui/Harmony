@@ -1,6 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import type { HarmonyComponent } from './types'
-import type { HarmonyComponentWithNode } from './indexor'
+import type { HarmonyComponent, HarmonyContainingComponent } from './types'
 import { getCodeInfoAndNormalizeFromFiles } from './indexor'
 import { getCodeInfoFromFile } from './ast'
 
@@ -16,8 +15,9 @@ describe('indexor', () => {
   }
   describe('getCodeInfoFromFile', () => {
     it('Should index dynamic text with multiple children properly', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
@@ -44,8 +44,9 @@ describe('indexor', () => {
     })
 
     it('Should index attributes properly', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
@@ -133,8 +134,9 @@ describe('indexor', () => {
     })
 
     it('Should index strings in containers', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
@@ -162,8 +164,9 @@ describe('indexor', () => {
     })
 
     it('Can find the property in a call and template literal expression', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/harderDyanmic.tsx'
       const content = testCases[file]
 
@@ -222,8 +225,9 @@ describe('indexor', () => {
     })
 
     it('Should index compoennt with multiple text broken up', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/text_stuff.tsx'
       const content = testCases[file]
 
@@ -253,8 +257,9 @@ describe('indexor', () => {
     })
 
     it('Should connect to correct parent attributes', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
@@ -333,8 +338,9 @@ describe('indexor', () => {
     })
 
     it('Should handle multiple layers of parents', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/multipleLayers1.tsx'
       const content = testCases[file]
 
@@ -489,8 +495,9 @@ describe('indexor', () => {
     })
 
     it('Should handle inner classNames', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/innerClassName.tsx'
       const content = testCases[file]
 
@@ -526,8 +533,9 @@ describe('indexor', () => {
     })
 
     it('Should handle object properties', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/objectProperties.tsx'
       const content = testCases[file]
 
@@ -634,8 +642,9 @@ describe('indexor', () => {
     })
 
     it('Should be able to handle complex dynamic instances', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/complexDynamicCases.tsx'
       const content = testCases[file]
 
@@ -730,8 +739,9 @@ describe('indexor', () => {
     })
 
     it("Should not include classNames that are params and don't have 'class' in the name of the property", () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/classNameTests.tsx'
       const content = testCases[file]
 
@@ -789,8 +799,9 @@ describe('indexor', () => {
     })
 
     it('Should add className to element if has props className', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/classNameTests.tsx'
       const content = testCases[file]
 
@@ -838,8 +849,9 @@ describe('indexor', () => {
     })
 
     it('Should keep parent index of text element', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/complexText.tsx'
       const content = testCases[file]
 
@@ -867,8 +879,9 @@ describe('indexor', () => {
     })
 
     it('Should give the parent a classname when given a spread parameter', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/complexText.tsx'
 
       const content = testCases[file]
@@ -916,8 +929,9 @@ describe('indexor', () => {
 
     //TODO: Finish this
     it('Should handle imports from various files', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file1: TestFile = 'app/multipleLayers1.tsx'
       const content1 = testCases[file1]
 
@@ -946,8 +960,9 @@ describe('indexor', () => {
 
   describe('getCodeInfoAndNormalizeFromFiles', () => {
     it('Should index dynamic text with multiple children properly', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
@@ -994,8 +1009,9 @@ describe('indexor', () => {
     })
 
     it('Should index and normalize across files', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const contents: { file: TestFile; content: string }[] = [
         {
           file: 'app/multipleLayers1.tsx',
@@ -1048,8 +1064,9 @@ describe('indexor', () => {
     })
 
     it('Should index and normalize across files reverse', () => {
-      const componentElements: HarmonyComponentWithNode[] = []
-      const componentDefinitions: Record<string, HarmonyComponent> = {}
+      const componentElements: HarmonyComponent[] = []
+      const componentDefinitions: Record<string, HarmonyContainingComponent> =
+        {}
       const contents: { file: TestFile; content: string }[] = [
         {
           file: 'app/multipleLayers2.tsx',

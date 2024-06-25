@@ -1,22 +1,6 @@
 import type { ComponentLocation } from '@harmony/util/src/types/component'
-import { locationSchema } from '@harmony/util/src/types/component'
-import { z } from 'zod'
-import type { HarmonyComponentWithNode } from './indexor'
+import type * as t from '@babel/types'
 
-export const attributeSchema = z.object({
-  id: z.string(),
-  type: z.union([
-    z.literal('text'),
-    z.literal('className'),
-    z.literal('property'),
-  ]),
-  name: z.string(),
-  value: z.string(),
-  index: z.number(),
-  location: locationSchema,
-  locationType: z.string(),
-  reference: z.object({ id: z.string() }),
-})
 export interface Attribute {
   id: string
   type: 'text' | 'className' | 'property'
@@ -25,7 +9,8 @@ export interface Attribute {
   index: number
   location: ComponentLocation
   locationType: string
-  reference: HarmonyComponentWithNode
+  reference: HarmonyComponent
+  node: t.Node
 }
 
 export interface HarmonyComponent {
@@ -34,7 +19,12 @@ export interface HarmonyComponent {
   props: Attribute[]
   isComponent: boolean
   getParent: () => HarmonyComponent | undefined
-  containingComponent?: HarmonyComponent
+  containingComponent?: HarmonyContainingComponent
   location: ComponentLocation
   children: HarmonyComponent[]
+  node: t.JSXElement
+}
+
+export type HarmonyContainingComponent = Omit<HarmonyComponent, 'node'> & {
+  node: t.FunctionDeclaration | t.ArrowFunctionExpression
 }

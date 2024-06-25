@@ -1,4 +1,3 @@
- 
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import type {
@@ -11,7 +10,6 @@ import { DEFAULT_WIDTH } from '@harmony/util/src/constants'
 import { getCodeSnippet } from '../indexor/github'
 import type { HarmonyComponent, Attribute } from '../indexor/types'
 import type { GitRepository } from '../../repository/git/types'
-import type { HarmonyComponentWithNode } from '../indexor/indexor'
 import { indexForComponents } from '../indexor/indexor'
 import { addPrefixToClassName, converter } from './css-conveter'
 
@@ -31,7 +29,7 @@ export type FileUpdateInfo = Record<
 
 export interface UpdateInfo {
   componentId: string
-  component: HarmonyComponentWithNode
+  component: HarmonyComponent
   attributes: Attribute[]
   name: string
   type: ComponentUpdate['type']
@@ -77,7 +75,7 @@ export class CodeUpdator {
 
   private async getUpdateInfo(
     updates: ComponentUpdate[],
-    indexedElements: HarmonyComponentWithNode[],
+    indexedElements: HarmonyComponent[],
   ): Promise<UpdateInfo[]> {
     return updates.reduce<Promise<UpdateInfo[]>>(async (prevPromise, curr) => {
       const prev = await prevPromise
@@ -113,7 +111,7 @@ export class CodeUpdator {
       } else {
         const getComponent = (
           currId: string,
-        ): Promise<HarmonyComponentWithNode | undefined> => {
+        ): Promise<HarmonyComponent | undefined> => {
           const currElement = indexedElements.find(
             (instance) => instance.id === currId,
           )
@@ -557,7 +555,7 @@ export class CodeUpdator {
 
             // result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute, isDefinedAndDynamic});
           } else {
-            const componentWithNode: HarmonyComponentWithNode =
+            const componentWithNode: HarmonyComponent =
               classNameAttributes[0]?.reference || component
             const location: ComponentLocation = {
               file: componentWithNode.location.file,

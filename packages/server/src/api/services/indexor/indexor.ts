@@ -7,15 +7,12 @@ import type {
   HarmonyComponentInfo,
 } from '@harmony/util/src/types/component'
 import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
-import type * as t from '@babel/types'
 import { PrismaHarmonyComponentRepository } from '../../repository/database/component-element'
 import type { GithubCache } from '../../repository/cache/types'
 import type { GitRepository } from '../../repository/git/types'
-import type { HarmonyComponent } from './types'
+import type { HarmonyComponent, HarmonyContainingComponent } from './types'
 import { IndexingFiles } from './github'
 import { getAttributeName, getAttributeValue, getCodeInfoFromFile } from './ast'
-
-export type HarmonyComponentWithNode = HarmonyComponent & { node: t.JSXElement }
 
 export type ReadFiles = (
   dirname: string,
@@ -46,13 +43,13 @@ export const indexFiles = async (
   readFile: (filepath: string) => Promise<string>,
 ): Promise<
   | {
-      elementInstance: HarmonyComponentWithNode[]
-      componentDefinitions: Record<string, HarmonyComponent>
+      elementInstance: HarmonyComponent[]
+      componentDefinitions: Record<string, HarmonyContainingComponent>
     }
   | false
 > => {
-  const componentDefinitions: Record<string, HarmonyComponent> = {}
-  const instances: HarmonyComponentWithNode[] = []
+  const componentDefinitions: Record<string, HarmonyContainingComponent> = {}
+  const instances: HarmonyComponent[] = []
   const importDeclarations: Record<string, { name: string; path: string }> = {}
   const visitedFiles: Set<string> = new Set<string>()
   const fileContents: FileAndContent[] = []
@@ -91,8 +88,8 @@ export const indexCodebase = async (
   gitRepository: GitRepository,
   gitCache: GithubCache,
 ) => {
-  const componentDefinitions: Record<string, HarmonyComponent> = {}
-  const instances: HarmonyComponentWithNode[] = []
+  const componentDefinitions: Record<string, HarmonyContainingComponent> = {}
+  const instances: HarmonyComponent[] = []
 
   const indexingFiles = new IndexingFiles(gitRepository, gitCache)
   const fileContents = await indexingFiles.getIndexingFilesAndContent(dirname)
@@ -109,7 +106,7 @@ export const indexCodebase = async (
 export async function indexForComponents(
   componentIds: string[],
   gitRepository: GitRepository,
-): Promise<HarmonyComponentWithNode[]> {
+): Promise<HarmonyComponent[]> {
   const readFile = async (filepath: string) => {
     //TOOD: Need to deal with actual branch probably at some point
     const content = await gitRepository.getContent(
@@ -201,10 +198,10 @@ interface FileAndContent {
 }
 export function getCodeInfoAndNormalizeFromFiles(
   files: FileAndContent[],
-  componentDefinitions: Record<string, HarmonyComponent>,
-  elementInstances: HarmonyComponentWithNode[],
+  componentDefinitions: Record<string, HarmonyContainingComponent>,
+  elementInstances: HarmonyComponent[],
   importDeclarations: Record<string, { name: string; path: string }>,
-): HarmonyComponentWithNode[] | false {
+): HarmonyComponent[] | false {
   for (const { file, content } of files) {
     try {
       if (
@@ -228,8 +225,8 @@ export function getCodeInfoAndNormalizeFromFiles(
 }
 
 function normalizeCodeInfo(
-  componentDefinitions: Record<string, HarmonyComponent>,
-  elementInstances: HarmonyComponentWithNode[],
+  componentDefinitions: Record<string, HarmonyContainingComponent>,
+  elementInstances: HarmonyComponent[],
 ) {
   function getIdFromParents(instance: HarmonyComponent): string {
     const parent = instance.getParent()
@@ -247,9 +244,9 @@ function normalizeCodeInfo(
   }
 
   const findAttributeReference = (
-    element: HarmonyComponentWithNode | undefined,
+    element: HarmonyComponent | undefined,
     attributeId: string,
-  ): HarmonyComponentWithNode | undefined => {
+  ): HarmonyComponent | undefined => {
     if (!element) return undefined
 
     const id = element.id.split('#')[element.id.split('#').length - 1]
@@ -257,10 +254,7 @@ function normalizeCodeInfo(
       return element
     }
 
-    return findAttributeReference(
-      element.getParent() as HarmonyComponentWithNode,
-      attributeId,
-    )
+    return findAttributeReference(element.getParent(), attributeId)
   }
 
   for (let i = 0; i < elementInstances.length; i++) {
@@ -311,17 +305,16 @@ export async function updateDatabaseComponentDefinitions(
   elementInstances: HarmonyComponent[],
   repositoryId: string,
 ): Promise<void> {
-  const containingComponents = elementInstances.reduce<HarmonyComponent[]>(
-    (prev, curr) => {
-      const def = prev.find((d) => d.id === curr.containingComponent?.id)
-      if (!def) {
-        prev.push(curr.containingComponent!)
-      }
+  const containingComponents = elementInstances.reduce<
+    HarmonyContainingComponent[]
+  >((prev, curr) => {
+    const def = prev.find((d) => d.id === curr.containingComponent?.id)
+    if (!def) {
+      prev.push(curr.containingComponent!)
+    }
 
-      return prev
-    },
-    [],
-  )
+    return prev
+  }, [])
 
   const alreadyCreated = await prisma.componentDefinition.findMany({
     where: {
@@ -416,7 +409,7 @@ export async function updateDatabaseComponentErrors(
 }
 
 async function updateDatabase(
-  componentDefinitions: Record<string, HarmonyComponent>,
+  componentDefinitions: Record<string, HarmonyContainingComponent>,
   elementInstances: HarmonyComponent[],
   repositoryId: string,
   onProgress?: (progress: number) => void,

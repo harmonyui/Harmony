@@ -6,8 +6,11 @@ import {
   getLineAndColumn,
   hashComponentId,
 } from '@harmony/util/src/utils/component'
-import type { Attribute, HarmonyComponent } from './types'
-import type { HarmonyComponentWithNode } from './indexor'
+import type {
+  Attribute,
+  HarmonyComponent,
+  HarmonyContainingComponent,
+} from './types'
 
 export function getAttributeName(attribute: Attribute): string {
   if (attribute.type === 'className') {
@@ -47,8 +50,8 @@ export function getAttributeValue(attribute: Attribute): string {
 export function getCodeInfoFromFile(
   file: string,
   originalCode: string,
-  componentDefinitions: Record<string, HarmonyComponent>,
-  elementInstances: HarmonyComponentWithNode[],
+  componentDefinitions: Record<string, HarmonyContainingComponent>,
+  elementInstances: HarmonyComponent[],
   importDeclarations: Record<string, { name: string; path: string }>,
 ): boolean {
   const ast = parse(originalCode, {
@@ -104,10 +107,10 @@ export function getCodeInfoFromFile(
   function createJSXElementDefinition(
     node: t.JSXElement,
     parentElement: HarmonyComponent | undefined,
-    containingComponent: HarmonyComponent,
+    containingComponent: HarmonyContainingComponent,
     path: string,
     snippet: string,
-  ): HarmonyComponentWithNode | undefined {
+  ): HarmonyComponent | undefined {
     const name = getNameFromNode(node.openingElement.name)
     const isComponent = name[0].toLowerCase() !== name[0]
     const location = getLocation(node, path)
@@ -159,7 +162,7 @@ export function getCodeInfoFromFile(
         throw new Error('Cannot find location')
       }
 
-      const containingComponent: HarmonyComponent = {
+      const containingComponent: HarmonyContainingComponent = {
         id: getHashFromLocation(location, originalCode),
         name: '',
         children: [],
@@ -167,6 +170,7 @@ export function getCodeInfoFromFile(
         isComponent: true,
         location,
         getParent: () => undefined,
+        node: path.node as t.FunctionDeclaration | t.ArrowFunctionExpression,
       }
 
       // Visitor for extracting JSX elements within the function body
@@ -175,7 +179,7 @@ export function getCodeInfoFromFile(
           enter(jsPath) {
             function connectAttributesToParent(
               elementAttributes: Attribute[],
-              parent: HarmonyComponentWithNode,
+              parent: HarmonyComponent,
             ): Attribute[] {
               const attributes: Attribute[] = []
               const addedFromParents: Attribute[] = []
@@ -293,6 +297,7 @@ export function getCodeInfoFromFile(
                       start: end.index,
                       end: end.index,
                     },
+                    node: parent.node.openingElement,
                   })
                 }
               }
@@ -301,9 +306,9 @@ export function getCodeInfoFromFile(
             }
 
             function connectChildToParent(
-              child: HarmonyComponentWithNode,
-              parent: HarmonyComponentWithNode,
-            ): HarmonyComponentWithNode {
+              child: HarmonyComponent,
+              parent: HarmonyComponent,
+            ): HarmonyComponent {
               const recurseConnectLog = (el: HarmonyComponent): string => {
                 const _parent = el.getParent()
                 if (_parent) {
@@ -316,7 +321,7 @@ export function getCodeInfoFromFile(
                   `Connecting ${child.name} to ${parent.name} ${recurseConnectLog(parent)}`,
                 )
               const props = connectAttributesToParent(child.props, parent)
-              const newElement: HarmonyComponentWithNode = {
+              const newElement: HarmonyComponent = {
                 ...child,
                 props,
                 getParent: () => parent,
@@ -367,7 +372,7 @@ export function getCodeInfoFromFile(
               }
               if (!id) {
                 const definition = componentDefinitions[element.name] as
-                  | HarmonyComponent
+                  | HarmonyContainingComponent
                   | undefined
                 id = definition?.id
               }
@@ -376,7 +381,7 @@ export function getCodeInfoFromFile(
             }
 
             function connectInstanceToChildren(
-              element: HarmonyComponentWithNode,
+              element: HarmonyComponent,
             ): void {
               const id = getComponentsBindingId(element)
 
@@ -392,9 +397,7 @@ export function getCodeInfoFromFile(
               })
             }
 
-            function connectInstanceToParent(
-              element: HarmonyComponentWithNode,
-            ): void {
+            function connectInstanceToParent(element: HarmonyComponent): void {
               const bindings: Record<string, string | undefined> = {}
               const parents = elementInstances.filter((parent) => {
                 let binding = bindings[parent.name]
@@ -453,6 +456,7 @@ export function getCodeInfoFromFile(
                   propertyName,
                   locationType,
                   _location,
+                  node,
                 )
               }
               const createIdentifierAttribute = (
@@ -575,6 +579,7 @@ export function getCodeInfoFromFile(
                       value,
                       attribute.locationType,
                       attribute.location,
+                      attribute.node,
                     )
                     attributes.push(newAttribute)
                   }
@@ -669,6 +674,7 @@ export function getCodeInfoFromFile(
                           value,
                           attr.locationType,
                           attr.location,
+                          attr.node,
                         )
                       }),
                     )
@@ -828,6 +834,7 @@ export function getCodeInfoFromFile(
                   value,
                   'component',
                   _location,
+                  node,
                 )
               }
 
@@ -838,6 +845,7 @@ export function getCodeInfoFromFile(
                 value: string | undefined,
                 locationType: string,
                 _location: ComponentLocation,
+                node: Attribute['node'],
               ): Attribute => {
                 //For className attributes in the props, only include them as className if it has class in the name
                 //in order to filter out properties that don't have classes (see app/classNameTests.tsx for more details)
@@ -853,6 +861,7 @@ export function getCodeInfoFromFile(
                     value,
                     locationType,
                     _location,
+                    node,
                   )
                 }
 
@@ -869,6 +878,7 @@ export function getCodeInfoFromFile(
                     index: -1,
                     location: _location,
                     locationType,
+                    node,
                   }
                 }
 
@@ -883,6 +893,7 @@ export function getCodeInfoFromFile(
                   index: -1,
                   location: _location,
                   locationType,
+                  node,
                 }
               }
 
@@ -942,6 +953,7 @@ export function getCodeInfoFromFile(
                           getAttributeValue(expression),
                           expression.locationType,
                           expression.location,
+                          expression.node,
                         ),
                       ),
                     )
@@ -964,6 +976,7 @@ export function getCodeInfoFromFile(
                         getAttributeValue(prop),
                         prop.locationType,
                         prop.location,
+                        prop.node,
                       ),
                     )
                 }
@@ -988,6 +1001,7 @@ export function getCodeInfoFromFile(
                   '',
                   'add',
                   { file, start: end.index, end: end.index },
+                  node.openingElement,
                 )
                 jsxElementDefinition.props.push(defaultClassName)
               }
