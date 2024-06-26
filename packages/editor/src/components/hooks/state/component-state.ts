@@ -2,6 +2,7 @@ import type {
   ComponentProp,
   HarmonyComponentInfo,
 } from '@harmony/util/src/types/component'
+import { getComponentUpdateLayerAndUnlinkInfo } from '@harmony/util/src/utils/component'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { getComponentElementFiber } from '../../inspector/component-identifier'
 import { getFiberName } from '../../inspector/inspector-dev'
@@ -140,21 +141,20 @@ export const createComponentStateSlice = createHarmonySlice<
       },
       globalUpdate: undefined,
       onApplyGlobal: (updates: ComponentUpdateWithoutGlobal[] | undefined) => {
-        if (!updates) return set({ globalUpdate: undefined })
-        const components = updates.map((update) =>
-          get().harmonyComponents.find(
-            (component) => component.id === update.componentId,
-          ),
-        )
-        const globalChange = components.some((component) => {
-          const updateType = updates.find(
-            (update) => update.componentId === component?.id,
-          )?.type
-          const prop = component?.props.find(
-            (prop) => prop.propName === updateType,
+        if (!updates) {
+          return set({ globalUpdate: undefined })
+        }
+
+        const harmonyComponents = get().harmonyComponents
+        const globalChange = updates.some((update) => {
+          const { unlinkComponents } = getComponentUpdateLayerAndUnlinkInfo(
+            update,
+            harmonyComponents,
           )
-          return prop && !prop.isStatic
+
+          return unlinkComponents.length > 0
         })
+
         if (globalChange) {
           set({ globalUpdate: updates })
         }

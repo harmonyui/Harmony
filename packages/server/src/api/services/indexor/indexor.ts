@@ -158,6 +158,7 @@ export function convertToHarmonyInfo(
         getBaseId(instance.id)
       return {
         id: instance.id,
+        parentId: instance.getParent()?.id,
         isComponent: isRootElement,
         name: isRootElement
           ? instance.containingComponent!.name
@@ -167,7 +168,7 @@ export function convertToHarmonyInfo(
           propName: getAttributeName(prop),
           propValue: getAttributeValue(prop),
           type: prop.type,
-          componentId: instance.id,
+          componentId: prop.reference.id,
         })),
       }
     })

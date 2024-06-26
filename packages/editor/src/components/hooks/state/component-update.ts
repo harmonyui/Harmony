@@ -51,6 +51,12 @@ export const createComponentUpdateSlice =
       })
 
       //Updates that should happen just for the element (reordering)
+      /**
+       * <div>
+       * <div>1</div>
+       * <div>2</div>
+       * </div>
+       */
       for (const update of translated) {
         if (update.type === 'component') {
           if (update.name === 'reorder') {

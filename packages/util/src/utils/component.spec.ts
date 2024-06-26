@@ -1,125 +1,127 @@
-import { describe, it, expect } from "vitest";
+import { describe, it, expect } from 'vitest'
+import type { ComponentUpdate, HarmonyComponentInfo } from '../types/component'
 import {
+  getComponentUpdateLayerAndUnlinkInfo,
   getEditorUrl,
   getLineAndColumn,
   getWebUrl,
   updateLocationFromContent,
-} from "./component";
+} from './component'
 
-describe("index", () => {
-  describe("updateLocationFromDiffs", () => {
-    it("Should update startLine and endLine when adding near the top of the file", () => {
+describe('index', () => {
+  describe('updateLocationFromDiffs', () => {
+    it('Should update startLine and endLine when adding near the top of the file', () => {
       const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
 					<Input className="hw-w-full" value={project.label} onChange={changeProperty.formFunc('label', project)}/>
-				</Label>`;
+				</Label>`
       const { location, oldContent, newContent } = setup(
-        "add-to-top-file",
+        'add-to-top-file',
         target,
-      );
+      )
 
       const newLocation = updateLocationFromContent(
         location,
         oldContent,
         newContent,
-      );
+      )
       if (!newLocation) {
-        throw new Error("New location should be defined");
+        throw new Error('New location should be defined')
       }
-      const { startLine, startColumn, endLine, endColumn } = newLocation;
-      expect(startLine).toBe(79);
-      expect(startColumn).toBe(4);
-      expect(endLine).toBe(81);
-      expect(endColumn).toBe(12);
-    });
+      const { startLine, startColumn, endLine, endColumn } = newLocation
+      expect(startLine).toBe(79)
+      expect(startColumn).toBe(4)
+      expect(endLine).toBe(81)
+      expect(endColumn).toBe(12)
+    })
 
-    it("Should update startLine and endLine when deleting after the target", () => {
-      const target = `<span>{item.label}</span>`;
+    it('Should update startLine and endLine when deleting after the target', () => {
+      const target = `<span>{item.label}</span>`
       const { location, oldContent, newContent } = setup(
-        "add-to-top-file",
+        'add-to-top-file',
         target,
-      );
+      )
 
       const newLocation = updateLocationFromContent(
         location,
         oldContent,
         newContent,
-      );
+      )
       if (!newLocation) {
-        throw new Error("New location should be defined");
+        throw new Error('New location should be defined')
       }
-      const { startLine, startColumn, endLine, endColumn } = newLocation;
-      expect(startLine).toBe(129);
-      expect(startColumn).toBe(20);
-      expect(endLine).toBe(129);
-      expect(endColumn).toBe(45);
-    });
+      const { startLine, startColumn, endLine, endColumn } = newLocation
+      expect(startLine).toBe(129)
+      expect(startColumn).toBe(20)
+      expect(endLine).toBe(129)
+      expect(endColumn).toBe(45)
+    })
 
-    it("Should update startLine and endLine when adding right before to previous start line", () => {
+    it('Should update startLine and endLine when adding right before to previous start line', () => {
       const target = `<p className="flex text-sm text-slate-600">
 			  {label}
 			  {percentage && percentage !== "NaN%" && (
 				<span className="ml-1 rounded-xl bg-slate-100 px-2 py-1 text-xs">{percentage}</span>
 			  )}
-			</p>`;
+			</p>`
       const { location, oldContent, newContent } = setup(
-        "add-right-before-start",
+        'add-right-before-start',
         target,
-      );
+      )
 
       const newLocation = updateLocationFromContent(
         location,
         oldContent,
         newContent,
-      );
+      )
       if (!newLocation) {
-        throw new Error("New location should be defined");
+        throw new Error('New location should be defined')
       }
-      const { startLine, startColumn, endLine, endColumn } = newLocation;
-      expect(startLine).toBe(26);
-      expect(startColumn).toBe(3);
-      expect(endLine).toBe(31);
-      expect(endColumn).toBe(7);
-    });
+      const { startLine, startColumn, endLine, endColumn } = newLocation
+      expect(startLine).toBe(26)
+      expect(startColumn).toBe(3)
+      expect(endLine).toBe(31)
+      expect(endColumn).toBe(7)
+    })
 
-    it("Should not update startLine and endLine when adding near bottom of the file", () => {
+    it('Should not update startLine and endLine when adding near bottom of the file', () => {
       const target = `<Label className="sm:hw-col-span-full" label="Project Label:">
 					<Input className="hw-w-full" value={project.label} onChange={changeProperty.formFunc('label', project)}/>
-				</Label>`;
+				</Label>`
       const { location, oldContent, newContent } = setup(
-        "add-to-bottom-file",
+        'add-to-bottom-file',
         target,
-      );
+      )
 
       const newLocation = updateLocationFromContent(
         location,
         oldContent,
         newContent,
-      );
+      )
       if (!newLocation) {
-        throw new Error("New location should be defined");
+        throw new Error('New location should be defined')
       }
-      const { startLine, startColumn, endLine, endColumn } = newLocation;
-      expect(startLine).toBe(77);
-      expect(startColumn).toBe(4);
-      expect(endLine).toBe(79);
-      expect(endColumn).toBe(12);
-    });
+      const { startLine, startColumn, endLine, endColumn } = newLocation
+      expect(startLine).toBe(77)
+      expect(startColumn).toBe(4)
+      expect(endLine).toBe(79)
+      expect(endColumn).toBe(12)
+    })
 
-    it("Should update startColumn when adding on same line before startColumn", () => {
+    it('Should update startColumn when adding on same line before startColumn', () => {
       const target = `<Label label="Hello there">
 					<div>Thank you</div>
-				</Label>`;
+				</Label>`
       const { location, oldContent, newContent } = setup(
-        "add-before-start-column",
+        'add-before-start-column',
         target,
-      );
+      )
 
       const newLocation = updateLocationFromContent(
         location,
         oldContent,
         newContent,
-      );
-      expect(newLocation).not.toBeDefined();
+      )
+      expect(newLocation).not.toBeDefined()
 
       //TODO: Make this function actually work
       // expect(newLocation).toBeDefined();
@@ -128,7 +130,7 @@ describe("index", () => {
       // expect(startColumn).toBe(location.startColumn + 27);
       // expect(endLine).toBe(location.endLine + 1);
       // expect(endColumn).toBe(location.endColumn);
-    });
+    })
 
     // 		it("Should update everything when component is moved", () => {
     // const target = `<Label label="Hello there">
@@ -155,56 +157,362 @@ describe("index", () => {
     // 			const newLocation = updateLocationFromContent(location, oldContent, newContent);
     // 			expect(newLocation).not.toBeDefined();
     // 		})
-  });
+  })
 
-  describe("getWebUrl", () => {
-    it("Should return http://localhost:3000 when in development mode", () => {
-      const url = getWebUrl("development");
-      expect(url).toBe("http://localhost:3000");
-    });
+  describe('getWebUrl', () => {
+    it('Should return http://localhost:3000 when in development mode', () => {
+      const url = getWebUrl('development')
+      expect(url).toBe('http://localhost:3000')
+    })
 
-    it("Should return production url when in production mode", () => {
-      const url = getWebUrl("production");
-      expect(url).toBe("https://dashboard.harmonyui.app");
-    });
-  });
+    it('Should return production url when in production mode', () => {
+      const url = getWebUrl('production')
+      expect(url).toBe('https://dashboard.harmonyui.app')
+    })
+  })
 
-  describe("getEditorUrl", () => {
-    it("Should return http://localhost:4200 when in development mode", () => {
-      const url = getEditorUrl("development");
-      expect(url).toBe("http://localhost:4200");
-    });
+  describe('getEditorUrl', () => {
+    it('Should return http://localhost:4200 when in development mode', () => {
+      const url = getEditorUrl('development')
+      expect(url).toBe('http://localhost:4200')
+    })
 
-    it("Should return production url when in production mode", () => {
-      const url = getEditorUrl("production");
-      expect(url).toBe("https://harmony-ui.fly.dev");
-    });
-  });
-});
+    it('Should return production url when in production mode', () => {
+      const url = getEditorUrl('production')
+      expect(url).toBe('https://harmony-ui.fly.dev')
+    })
+  })
+
+  describe('getComponentUpdateLayerAndUnlinkInfo', () => {
+    it('Should return the layer 0 for unique component', () => {
+      const update: ComponentUpdate = {
+        componentId: '123#456',
+        childIndex: 0,
+        type: 'className',
+        name: 'padding-left',
+        value: '10px',
+        oldValue: '12px',
+        isGlobal: false,
+      }
+      const harmonyComponents: HarmonyComponentInfo[] = [
+        {
+          id: '123#456',
+          name: 'div',
+          props: [
+            {
+              componentId: '123#456',
+              type: 'className',
+              propName: 'className',
+              propValue: 'pl-2.5',
+              isStatic: true,
+            },
+            {
+              componentId: '123',
+              type: 'className',
+              propName: 'className',
+              propValue: 'value',
+              isStatic: true,
+            },
+          ],
+          isComponent: false,
+          parentId: '123',
+        },
+        {
+          id: '123#457',
+          name: 'h1',
+          props: [],
+          isComponent: false,
+          parentId: '123',
+        },
+        {
+          id: '123',
+          name: 'Parent',
+          props: [
+            {
+              componentId: '123',
+              type: 'className',
+              propName: 'className',
+              propValue: 'value',
+              isStatic: true,
+            },
+          ],
+          isComponent: true,
+          parentId: undefined,
+        },
+      ]
+      const { layer, component, unlinkComponents } =
+        getComponentUpdateLayerAndUnlinkInfo(update, harmonyComponents)
+      expect(layer).toBe(0)
+      expect(component).toBe(harmonyComponents[0])
+      expect(unlinkComponents.length).toBe(0)
+    })
+
+    it('Should return the layer 1 for component that is not unique but has unqiue parent', () => {
+      const update: ComponentUpdate = {
+        componentId: '123#456',
+        childIndex: 0,
+        type: 'className',
+        name: 'padding-left',
+        value: '10px',
+        oldValue: '12px',
+        isGlobal: false,
+      }
+      const harmonyComponents: HarmonyComponentInfo[] = [
+        {
+          id: '123#456',
+          name: 'div',
+          props: [
+            {
+              componentId: '123#456',
+              type: 'className',
+              propName: 'className',
+              propValue: 'pl-2.5',
+              isStatic: true,
+            },
+            {
+              componentId: '123',
+              type: 'className',
+              propName: 'className',
+              propValue: 'value',
+              isStatic: true,
+            },
+          ],
+          isComponent: false,
+          parentId: '123',
+        },
+        {
+          id: '124#456',
+          name: 'div',
+          props: [
+            {
+              componentId: '124#456',
+              type: 'className',
+              propName: 'className',
+              propValue: 'pl-2.5',
+              isStatic: true,
+            },
+            {
+              componentId: '124',
+              type: 'className',
+              propName: 'className',
+              propValue: 'value',
+              isStatic: true,
+            },
+          ],
+          isComponent: false,
+          parentId: '124',
+        },
+        {
+          id: '123#457',
+          name: 'h1',
+          props: [],
+          isComponent: false,
+          parentId: '123',
+        },
+        {
+          id: '123',
+          name: 'Parent1',
+          props: [
+            {
+              componentId: '123',
+              type: 'className',
+              propName: 'className',
+              propValue: 'value',
+              isStatic: true,
+            },
+          ],
+          isComponent: true,
+          parentId: undefined,
+        },
+        {
+          id: '124',
+          name: 'Parent2',
+          props: [
+            {
+              componentId: '124',
+              type: 'className',
+              propName: 'className',
+              propValue: 'value',
+              isStatic: true,
+            },
+          ],
+          isComponent: true,
+          parentId: undefined,
+        },
+      ]
+      const { layer, component, unlinkComponents } =
+        getComponentUpdateLayerAndUnlinkInfo(update, harmonyComponents)
+      expect(layer).toBe(1)
+      expect(component).toBe(harmonyComponents[3])
+      expect(unlinkComponents.length).toBe(1)
+      expect(unlinkComponents[0].component).toBe(harmonyComponents[0])
+      expect(unlinkComponents[0].layer).toBe(0)
+    })
+
+    it('Should return layer 2 for component that is not static and the parent is not unique', () => {
+      const update: ComponentUpdate = {
+        componentId: '123#456#789',
+        childIndex: 0,
+        type: 'className',
+        name: 'padding-left',
+        value: '10px',
+        oldValue: '12px',
+        isGlobal: false,
+      }
+      const harmonyComponents: HarmonyComponentInfo[] = [
+        {
+          id: '123#456#789',
+          name: 'div',
+          props: [
+            {
+              componentId: '123#456#789',
+              type: 'className',
+              propName: 'className',
+              propValue: 'className',
+              isStatic: false,
+            },
+            {
+              componentId: '123#456',
+              type: 'className',
+              propName: 'className',
+              propValue: 'pl-2.5',
+              isStatic: true,
+            },
+          ],
+          isComponent: false,
+          parentId: '123#456',
+        },
+        {
+          id: '124#456#789',
+          name: 'div',
+          props: [
+            {
+              componentId: '124#456#789',
+              type: 'className',
+              propName: 'className',
+              propValue: 'className',
+              isStatic: false,
+            },
+            {
+              componentId: '124#456',
+              type: 'className',
+              propName: 'className',
+              propValue: 'pl-2.5',
+              isStatic: true,
+            },
+          ],
+          isComponent: false,
+          parentId: '124#456',
+        },
+        {
+          id: '123#456',
+          name: 'Component1',
+          props: [
+            {
+              componentId: '123#456',
+              type: 'className',
+              propName: 'className',
+              propValue: 'pl-2.5',
+              isStatic: true,
+            },
+            {
+              componentId: '123',
+              type: 'className',
+              propName: 'className',
+              propValue: 'className',
+              isStatic: false,
+            },
+          ],
+          isComponent: true,
+          parentId: '123',
+        },
+        {
+          id: '124#456',
+          name: 'Component1',
+          props: [
+            {
+              componentId: '124#456',
+              type: 'className',
+              propName: 'className',
+              propValue: 'pl-2.5',
+              isStatic: true,
+            },
+            {
+              componentId: '124',
+              type: 'className',
+              propName: 'className',
+              propValue: 'className',
+              isStatic: false,
+            },
+          ],
+          isComponent: true,
+          parentId: '124',
+        },
+        {
+          id: '123',
+          name: 'Parent1',
+          props: [
+            {
+              componentId: '123',
+              type: 'className',
+              propName: 'className',
+              propValue: 'className',
+              isStatic: false,
+            },
+          ],
+          isComponent: true,
+          parentId: undefined,
+        },
+        {
+          id: '124',
+          name: 'Parent1',
+          props: [
+            {
+              componentId: '124',
+              type: 'className',
+              propName: 'className',
+              propValue: 'className',
+              isStatic: false,
+            },
+          ],
+          isComponent: true,
+          parentId: undefined,
+        },
+      ]
+      const { layer, component, unlinkComponents } =
+        getComponentUpdateLayerAndUnlinkInfo(update, harmonyComponents)
+      expect(layer).toBe(2)
+      expect(component).toBe(harmonyComponents[4])
+      expect(unlinkComponents.length).toBe(1)
+      expect(unlinkComponents[0].component).toBe(harmonyComponents[2])
+      expect(unlinkComponents[0].layer).toBe(1)
+    })
+  })
+})
 
 export const setup = (name: keyof typeof testCases, target: string) => {
-  const { oldContent, newContent } = testCases[name];
-  const location = getLocationFromContent(oldContent, target);
-  return { location, oldContent, newContent };
-};
+  const { oldContent, newContent } = testCases[name]
+  const location = getLocationFromContent(oldContent, target)
+  return { location, oldContent, newContent }
+}
 
 export const getLocationFromContent = (content: string, target: string) => {
-  const targetIndex = content.indexOf(target);
-  expect(targetIndex).toBeGreaterThan(-1);
+  const targetIndex = content.indexOf(target)
+  expect(targetIndex).toBeGreaterThan(-1)
   const { line: startLine, column: startColumn } = getLineAndColumn(
     content,
     targetIndex,
-  );
+  )
   const { line: endLine, column: endColumn } = getLineAndColumn(
     content,
     targetIndex + target.length,
-  );
+  )
 
-  return { file: "", startLine, startColumn, endLine, endColumn };
-};
+  return { file: '', startLine, startColumn, endLine, endColumn }
+}
 
 export const testCases = {
-  "add-to-top-file": {
+  'add-to-top-file': {
     oldContent: `'use client';
 import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 import {Button} from '../core/button';
@@ -487,7 +795,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 	)
 }`,
   },
-  "add-to-bottom-file": {
+  'add-to-bottom-file': {
     oldContent: `'use client';
 import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 import {Button} from '../core/button';
@@ -768,7 +1076,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 	)
 }`,
   },
-  "add-before-start-column": {
+  'add-before-start-column': {
     oldContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
@@ -822,7 +1130,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 			</>)
 		}`,
   },
-  "add-right-before-start": {
+  'add-right-before-start': {
     oldContent: `import React from "react";
 
 		import { TSurveySummary } from "@formbricks/types/responses";
@@ -944,7 +1252,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 		}
 		`,
   },
-  "move-component": {
+  'move-component': {
     oldContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
@@ -1002,7 +1310,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 			</>)
 		}`,
   },
-  "delete-component": {
+  'delete-component': {
     oldContent: `'use client';
 		import { EllipsisHorizontalIcon, GitBranchIcon } from "../core/icons";
 		import {Button} from '../core/button';
@@ -1055,4 +1363,4 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 			</>)
 		}`,
   },
-};
+}
