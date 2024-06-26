@@ -1,4 +1,3 @@
- 
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
 import type {
@@ -8,11 +7,14 @@ import type {
 import { camelToKebab, round } from '@harmony/util/src/utils/common'
 import { mergeClassesWithScreenSize } from '@harmony/util/src/utils/tailwind-merge'
 import { DEFAULT_WIDTH } from '@harmony/util/src/constants'
+import * as t from '@babel/types'
+import generator from '@babel/generator'
 import { getCodeSnippet } from '../indexor/github'
 import type { HarmonyComponent, Attribute } from '../indexor/types'
 import type { GitRepository } from '../../repository/git/types'
-import type { HarmonyComponentWithNode } from '../indexor/indexor'
 import { indexForComponents } from '../indexor/indexor'
+import type { LiteralNode } from '../indexor/ast'
+import { isLiteralNode } from '../indexor/ast'
 import { addPrefixToClassName, converter } from './css-conveter'
 
 export type FileUpdateInfo = Record<
@@ -31,7 +33,7 @@ export type FileUpdateInfo = Record<
 
 export interface UpdateInfo {
   componentId: string
-  component: HarmonyComponentWithNode
+  component: HarmonyComponent
   attributes: Attribute[]
   name: string
   type: ComponentUpdate['type']
@@ -42,9 +44,8 @@ export interface UpdateInfo {
 
 export interface CodeUpdateInfo {
   dbLocation: ComponentLocation
-  location: ComponentLocation & { updatedTo: number }
-  updatedCode: string
-  attribute?: Attribute
+  location: ComponentLocation
+  node: t.Node
 }
 
 export class CodeUpdator {
@@ -77,7 +78,7 @@ export class CodeUpdator {
 
   private async getUpdateInfo(
     updates: ComponentUpdate[],
-    indexedElements: HarmonyComponentWithNode[],
+    indexedElements: HarmonyComponent[],
   ): Promise<UpdateInfo[]> {
     return updates.reduce<Promise<UpdateInfo[]>>(async (prevPromise, curr) => {
       const prev = await prevPromise
@@ -93,7 +94,7 @@ export class CodeUpdator {
             curr.value = `${round(value)}${unit}`
           }
           curr.value = `${cssName}:${curr.value};`
-          curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue}`
+          curr.oldValue = `${camelToKebab(curr.name)}:${curr.oldValue};`
         }
       }
       const classNameUpdate =
@@ -113,7 +114,7 @@ export class CodeUpdator {
       } else {
         const getComponent = (
           currId: string,
-        ): Promise<HarmonyComponentWithNode | undefined> => {
+        ): Promise<HarmonyComponent | undefined> => {
           const currElement = indexedElements.find(
             (instance) => instance.id === currId,
           )
@@ -255,22 +256,20 @@ export class CodeUpdator {
     const addCommentToJSXElement = async ({
       location,
       commentValue,
-      attribute,
+      node,
     }: {
       location: ComponentLocation
       commentValue: string
-      attribute: Attribute | undefined
+      node: t.JSXElement
     }): Promise<CodeUpdateInfo> => {
-      const comment = ` /** ${commentValue} */`
+      const newNode = t.addComment(node.openingElement, 'leading', commentValue)
 
-      const start = location.start
-      const end = location.end
-      const updatedTo = comment.length + start
+      const start = node.openingElement.loc?.start.index || 0
+      const end = node.openingElement.loc?.end.index || 0
       return {
-        location: { file: location.file, start, end, updatedTo },
-        updatedCode: comment,
+        location: { file: location.file, start, end },
         dbLocation: location,
-        attribute,
+        node: newNode,
       }
     }
 
@@ -280,48 +279,47 @@ export class CodeUpdator {
       newClass: string
       oldClass: string | undefined
       commentValue: string
+      node: t.Node
       attribute: Attribute | undefined
       isDefinedAndDynamic: boolean
     }
     //This is when we do not have the className data (either className does not exist on a tag or it is dynamic)
     const addNewClassOrComment = async ({
       location,
-      code,
       newClass,
-      oldClass,
       commentValue,
+      node,
       attribute,
     }: AddClassName): Promise<CodeUpdateInfo> => {
-      if (oldClass === undefined) {
-        return addCommentToJSXElement({ location, commentValue, attribute })
-      } else if (attribute?.locationType === 'add') {
-        const classPropertyName = attribute.value || 'className'
-        // eslint-disable-next-line no-param-reassign -- It is ok
-        newClass = ` ${classPropertyName}="${newClass}"`
-        // eslint-disable-next-line no-param-reassign -- It is ok
-        oldClass = ''
-      }
+      if (!isLiteralNode(node) && !t.isJSXOpeningElement(node)) {
+        return addCommentToJSXElement({
+          location,
+          commentValue,
+          node: component.node,
+        })
+      } else if (t.isJSXOpeningElement(node)) {
+        if (attribute?.locationType !== 'add')
+          throw new Error('Attribute type must be add')
 
-      const oldValue = oldClass
-      const start = code.indexOf(oldValue)
-      const end = oldValue.length + start
-      const updatedTo = newClass.length + start
-      if (start < 0) {
-        throw new Error(
-          `There was no update for tailwind classes, snippet: ${code}, oldValue: ${oldValue}`,
+        const classPropertyName = attribute.value || 'className'
+        node.attributes.push(
+          t.jsxAttribute(
+            t.jsxIdentifier(classPropertyName),
+            t.stringLiteral(newClass),
+          ),
         )
+      } else {
+        updateLiteralNode(node, newClass)
       }
 
       return {
         location: {
           file: location.file,
-          start: location.start + start,
-          end: location.start + end,
-          updatedTo: location.start + updatedTo,
+          start: location.start,
+          end: location.end,
         },
-        updatedCode: newClass,
         dbLocation: location,
-        attribute,
+        node,
       }
     }
 
@@ -335,39 +333,29 @@ export class CodeUpdator {
           const textAttribute = textAttributes.find(
             (attr) => attr.index === index,
           )
-          const { location, value } = getLocationAndValue(
-            textAttribute,
-            component,
-          )
 
-          const elementSnippet = await getCodeSnippet(gitRepository)(
-            location,
-            branchName,
-          )
-          const oldValue = value || _oldValue
-          const start = elementSnippet.indexOf(oldValue)
-          const end = oldValue.length + start
-          const updatedTo = update.value.length + start
-          if (start < 0) {
-            const commentValue = `Change inner text for ${component.name} tag from ${oldValue} to ${update.value}`
+          if (!isLiteralNode(textAttribute?.node)) {
+            const node = component.node
+            const commentValue = `Change inner text for ${component.name} tag from ${_oldValue} to ${update.value}`
             results.push(
               await addCommentToJSXElement({
-                location,
-                attribute: textAttribute,
+                location: component.location,
+                node,
                 commentValue,
               }),
             )
           } else {
+            const location = textAttribute.location
+            updateLiteralNode(textAttribute.node, update.value)
+
             results.push({
               location: {
                 file: location.file,
-                start: location.start + start,
-                end: location.start + end,
-                updatedTo: location.start + updatedTo,
+                start: location.start,
+                end: location.end,
               },
-              updatedCode: update.value,
               dbLocation: location,
-              attribute: textAttribute,
+              node: textAttribute.node,
             })
           }
         }
@@ -431,6 +419,7 @@ export class CodeUpdator {
                   isDefinedAndDynamic,
                   commentValue,
                   attribute,
+                  node: attribute?.node || component.node,
                 },
                 oldClass,
               }
@@ -544,20 +533,8 @@ export class CodeUpdator {
                 ),
               )),
             )
-
-            //TODO: Make the tailwind prefix part dynamic
-            // const oldClasses = repository.tailwindPrefix ? value?.replaceAll(repository.tailwindPrefix, '') : value;
-
-            // const mergedIt = mergeClassesWithScreenSize(oldClasses, newClasses, DEFAULT_WIDTH);
-            // let mergedClasses = repository.tailwindPrefix ? addPrefixToClassName(mergedIt, repository.tailwindPrefix) : mergedIt;
-
-            // let withPrefix = repository.tailwindPrefix ? addPrefixToClassName(newClasses, repository.tailwindPrefix) : newClasses;
-            // mergedClasses = update.font ? `${update.font} ${mergedClasses}` : mergedClasses;
-            // withPrefix = update.font ? `${update.font} ${withPrefix}` : withPrefix;
-
-            // result = addNewClassOrComment({location, code: elementSnippet, newClass: mergedClasses, oldClass: value, commentValue: withPrefix, attribute: classNameAttribute, isDefinedAndDynamic});
           } else {
-            const componentWithNode: HarmonyComponentWithNode =
+            const componentWithNode: HarmonyComponent =
               classNameAttributes[0]?.reference || component
             const location: ComponentLocation = {
               file: componentWithNode.location.file,
@@ -574,7 +551,7 @@ export class CodeUpdator {
               await addCommentToJSXElement({
                 location,
                 commentValue: valuesNewLined,
-                attribute: classNameAttributes[0],
+                node: componentWithNode.node,
               }),
             )
           }
@@ -599,11 +576,14 @@ export class CodeUpdator {
         change = { filePath: update.location.file, locations: [] }
         commitChanges[update.location.file] = change
       }
+      const snippet = getSnippetFromNode(update.node)
+      const updatedTo = update.location.start + snippet.length
+
       const newLocation = {
-        snippet: update.updatedCode,
+        snippet,
         start: update.location.start,
         end: update.location.end,
-        updatedTo: update.location.updatedTo,
+        updatedTo,
         diff: 0,
       }
       const last = change.locations[change.locations.length - 1]
@@ -637,6 +617,20 @@ export class CodeUpdator {
     }
 
     return commitChanges
+  }
+}
+
+const getSnippetFromNode = (node: t.Node): string => {
+  const result = generator(node)
+
+  return result.code
+}
+
+const updateLiteralNode = (node: LiteralNode, value: string) => {
+  if (typeof node.value === 'object' && 'raw' in node.value) {
+    node.value.raw = value
+  } else {
+    node.value = value
   }
 }
 
