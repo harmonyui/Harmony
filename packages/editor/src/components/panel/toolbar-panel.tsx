@@ -152,7 +152,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
           {currentBranch ? currentBranch.name : 'Invalid Branch'}
         </Header>
       </div>
-      {!isDemo && true ? (
+      {!isDemo && false ? (
         <div className='hw-px-4'>
           <button
             className='hw-text-base hw-font-light'
