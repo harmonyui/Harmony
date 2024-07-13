@@ -1,6 +1,6 @@
 import type { Fiber } from 'react-reconciler'
 import type { ComponentProp } from '@harmony/util/src/types/component'
-import { getElementFiberUpward, getReferenceFiber } from './inspector-dev'
+import { getElementFiberUpward, getReferenceFiber } from './fiber'
 
 export interface ComponentElement {
   id: string

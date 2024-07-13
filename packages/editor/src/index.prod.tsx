@@ -9,7 +9,7 @@ if (typeof window !== 'undefined') {
 }
 
 if (module.hot) {
-  module.hot.accept('./components/harmony-setup', function () {
+  module.hot.accept('./components/harmony-setup', () => {
     // const { HarmonyProviderFunc: NewHarmonyProviderFunc } = import('./index');
     // window.HarmonyProvider = NewHarmonyProviderFunc;
     // // Optionally, you can re-initialize or re-render the application here

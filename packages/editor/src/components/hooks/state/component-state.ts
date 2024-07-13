@@ -4,7 +4,7 @@ import type {
 } from '@harmony/util/src/types/component'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { getComponentElementFiber } from '../../inspector/component-identifier'
-import { getFiberName } from '../../inspector/inspector-dev'
+import { getFiberName } from '../../inspector/fiber'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
@@ -151,7 +151,7 @@ export const createComponentStateSlice = createHarmonySlice<
             (update) => update.componentId === component?.id,
           )?.type
           const prop = component?.props.find(
-            (prop) => prop.propName === updateType,
+            (_prop) => _prop.propName === updateType,
           )
           return prop && !prop.isStatic
         })
