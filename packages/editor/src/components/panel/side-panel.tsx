@@ -1,5 +1,5 @@
 import { Transition } from '@headlessui/react'
-import { createContext, Fragment, useContext, useState } from 'react'
+import { createContext, useContext, useState } from 'react'
 
 export interface SidePanelItem {
   id: string

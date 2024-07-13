@@ -29,7 +29,6 @@ export const useHighlighter = ({
     onHover,
     onPointerUp: onPointerUpProps,
     onDoubleClick: onDoubleClickProps,
-    onHold,
   },
   container,
   noEvents,

@@ -4,7 +4,7 @@
 
 /* eslint-disable no-nested-ternary -- ok*/
 import type { Font } from '@harmony/util/src/fonts'
-import { useMemo, useState } from 'react'
+import { useMemo } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
 import ColorPicker from '@harmony/ui/src/components/core/color-picker'
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
@@ -18,14 +18,7 @@ import {
   AlignRightIcon,
   AlignJustifyIcon,
   BarsArrowDownIcon,
-  BorderAllIcon,
-  CancelCircle,
-  SolidLine,
-  DottedLine,
-  DashedLine,
   BorderIcon,
-  ChevronUpIcon,
-  ChevronDownIcon,
   SquareIcon,
   DottedSquareIcon,
 } from '@harmony/ui/src/components/core/icons'
@@ -36,11 +29,10 @@ import {
 import { Slider } from '@harmony/ui/src/components/core/slider'
 import { HexColorSchema } from '@harmony/util/src/types/colors'
 import { Popover } from '@harmony/ui/src/components/core/popover'
-import { useEffectEvent } from '../inspector/inspector-dev'
+import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { selectDesignerElement, isTextElement } from '../inspector/inspector'
 import { useHarmonyContext } from '../harmony-context'
 import type { SelectMode } from '../harmony-context'
-import type { ComponentElement } from '../inspector/component-identifier'
 import { useHarmonyStore } from '../hooks/state'
 import { ComponentLayoutPanel } from './layout-panel'
 import { useSidePanel } from './side-panel'
@@ -50,6 +42,8 @@ import {
   useComponentAttribute,
 } from './attribute-panel'
 import { PublishButton } from './publish-button'
+
+const showLayoutTool = false
 
 export const buttonTools = [
   'backgroundColor',
@@ -152,7 +146,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
           {currentBranch ? currentBranch.name : 'Invalid Branch'}
         </Header>
       </div>
-      {!isDemo && false ? (
+      {!isDemo && showLayoutTool ? (
         <div className='hw-px-4'>
           <button
             className='hw-text-base hw-font-light'
@@ -494,11 +488,9 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
           </Popover>
         )
       },
-      borderAttrs: ({ data, onChange, getAttribute }) => {
+      borderAttrs: ({ onChange, getAttribute }) => {
         const borderAttr = getAttribute('borderWidth')
-        const borderAttrRadius = getAttribute('borderRadius')
         const borderStr = borderAttr.replace('px', '')
-        const borderRadiusStr = borderAttrRadius.replace('px', '')
 
         const borderWidth = borderStr
           .split(' ')
@@ -508,7 +500,6 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
         if (borderWidth.length === 2)
           borderWidth.push(borderWidth[0], borderWidth[1])
         if (borderWidth.length === 3) borderWidth.push(borderWidth[1])
-        const borderRadius = Number(borderRadiusStr)
 
         const value = getAttribute('borderColor')
         const _data = value === '#00000000' ? '#FFFFFF' : value
@@ -531,26 +522,26 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
           },
         ]
 
-        function updateBorderWidth(type: string, value: number) {
+        function updateBorderWidth(type: string, _value: number) {
           if (type === 'T') {
             onChange({
               name: 'borderWidth',
-              value: `${value}px ${borderWidth[1]}px ${borderWidth[2]}px ${borderWidth[3]}px`,
+              value: `${_value}px ${borderWidth[1]}px ${borderWidth[2]}px ${borderWidth[3]}px`,
             })
           } else if (type === 'R') {
             onChange({
               name: 'borderWidth',
-              value: `${borderWidth[0]}px ${value}px ${borderWidth[2]}px ${borderWidth[3]}px`,
+              value: `${borderWidth[0]}px ${_value}px ${borderWidth[2]}px ${borderWidth[3]}px`,
             })
           } else if (type === 'B') {
             onChange({
               name: 'borderWidth',
-              value: `${borderWidth[0]}px ${borderWidth[1]}px ${value}px ${borderWidth[3]}px`,
+              value: `${borderWidth[0]}px ${borderWidth[1]}px ${_value}px ${borderWidth[3]}px`,
             })
           } else if (type === 'L') {
             onChange({
               name: 'borderWidth',
-              value: `${borderWidth[0]}px ${borderWidth[1]}px ${borderWidth[2]}px ${value}px`,
+              value: `${borderWidth[0]}px ${borderWidth[1]}px ${borderWidth[2]}px ${_value}px`,
             })
           }
         }
@@ -589,8 +580,8 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
                   <InputBlur
                     className='hw-border hw-border-gray-200 hw-rounded-md hw-w-full hw-text-center hw-h-12'
                     value={borderWidth[0].toFixed(0)}
-                    onChange={(value) => {
-                      onChange({ name: 'borderWidth', value: `${value}px` })
+                    onChange={(_value) => {
+                      onChange({ name: 'borderWidth', value: `${_value}px` })
                     }}
                   />
                   <div className='hw-border hw-border-gray-200 hw-rounded-md hw-flex hw-flex-row hw-items-center hw-justify-center hw-space-x-2 hw-h-12'>
@@ -610,8 +601,8 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
                     <InputBlur
                       className='hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200 hw-rounded-tl-md hw-rounded-bl-md'
                       value={borderWidth[0]}
-                      onChange={(value) => {
-                        updateBorderWidth('T', parseInt(value))
+                      onChange={(_value) => {
+                        updateBorderWidth('T', parseInt(_value))
                       }}
                     />
                     <p className='hw-mt-2'>T</p>
@@ -620,8 +611,8 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
                     <InputBlur
                       className='hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200'
                       value={borderWidth[1]}
-                      onChange={(value) => {
-                        updateBorderWidth('R', parseInt(value))
+                      onChange={(_value) => {
+                        updateBorderWidth('R', parseInt(_value))
                       }}
                     />
                     <p className='hw-mt-2'>R</p>
@@ -630,8 +621,8 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
                     <InputBlur
                       className='hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200'
                       value={borderWidth[2]}
-                      onChange={(value) => {
-                        updateBorderWidth('B', parseInt(value))
+                      onChange={(_value) => {
+                        updateBorderWidth('B', parseInt(_value))
                       }}
                     />
                     <p className='hw-mt-2'>B</p>
@@ -640,8 +631,8 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
                     <InputBlur
                       className='hw-p-4 hw-w-full hw-h-12 hw-border hw-border-gray-200 hw-rounded-tr-md hw-rounded-br-md'
                       value={borderWidth[3]}
-                      onChange={(value) => {
-                        updateBorderWidth('L', parseInt(value))
+                      onChange={(_value) => {
+                        updateBorderWidth('L', parseInt(_value))
                       }}
                     />
                     <p className='hw-mt-2'>L</p>

@@ -139,7 +139,7 @@ export const createComponentUpdateSlice =
               )
               if (cachedElement) {
                 const parent = cachedElement.parent
-                let inserted = false
+                let inserted = false as boolean
                 parent.childNodes.forEach((child, idx) => {
                   if (idx === index) {
                     parent.insertBefore(cachedElement.element, child)
@@ -156,13 +156,17 @@ export const createComponentUpdateSlice =
                   parent.appendChild(cachedElement.element)
                 }
               } else {
-                const { value } = update
-                const { id, index, position } = JSON.parse(value) as {
+                const { value: _value } = update
+                const {
+                  id: _id,
+                  index: _index,
+                  position,
+                } = JSON.parse(_value) as {
                   id: string
                   index: number
                   position: string
                 }
-                const component = findElementFromId(update.componentId, index)
+                const component = findElementFromId(update.componentId, _index)
                 if (!component)
                   throw new Error(
                     `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
@@ -171,7 +175,7 @@ export const createComponentUpdateSlice =
                 newComponent.classList.add('hw-bg-primary-light')
                 newComponent.classList.add('hw-w-full')
                 newComponent.classList.add('hw-p-[24px]')
-                newComponent.dataset.harmonyId = id
+                newComponent.dataset.harmonyId = _id
                 if (position === 'below') {
                   component.after(newComponent)
                 } else {
