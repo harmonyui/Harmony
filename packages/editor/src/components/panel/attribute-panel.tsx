@@ -114,7 +114,10 @@ export const ComponentAttributeProvider: React.FunctionComponent<
       old.element,
     )
     if (childIndex < 0) throw new Error('Cannot get right child index')
-    const componentId = old.element.dataset.harmonyId
+    const componentId =
+      old.element.dataset.harmonyText === 'true'
+        ? old.element.parentElement!.dataset.harmonyId
+        : old.element.dataset.harmonyId
     if (!componentId) {
       throw new Error('Element does not have a data id')
     }
