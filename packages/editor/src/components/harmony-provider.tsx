@@ -20,7 +20,11 @@ import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { saveProject } from '../data-layer'
-import { findElementsFromId, recurseElements } from '../utils/element-utils'
+import {
+  findElementsFromId,
+  getComponentIdAndChildIndex,
+  recurseElements,
+} from '../utils/element-utils'
 import type {
   ComponentUpdateWithoutGlobal,
   DisplayMode,
@@ -334,30 +338,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const onTextChange = useEffectEvent((value: string, oldValue: string) => {
     if (!selectedComponent) return
 
-    let componentId = selectedComponent.dataset.harmonyId
-    let index = 0
-    let childIndex = Array.from(
-      selectedComponent.parentElement!.children,
-    ).indexOf(selectedComponent)
-    if (!componentId) {
-      if (selectedComponent.dataset.harmonyText === 'true') {
-        const element = selectedComponent.parentElement
-        if (!element) {
-          throw new Error('Error when getting component parent in harmony text')
-        }
-        index = Array.from(element.children).indexOf(selectedComponent)
-        childIndex = Array.from(element.parentElement!.children).indexOf(
-          element,
-        )
-        componentId = element.dataset.harmonyId
-      }
-
-      if (!componentId || index < 0) {
-        throw new Error('Error when getting component')
-      }
-    }
-
-    if (childIndex < 0) throw new Error('Cannot get right child index')
+    const { componentId, childIndex, index } =
+      getComponentIdAndChildIndex(selectedComponent)
 
     const update: ComponentUpdateWithoutGlobal = {
       componentId,
