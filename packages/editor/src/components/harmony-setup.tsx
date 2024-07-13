@@ -5,10 +5,10 @@ import type { Fiber } from 'react-reconciler'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { getEditorUrl } from '@harmony/util/src/utils/component'
 import type { HarmonyProviderProps } from './harmony-provider'
-import type { FiberHTMLElement } from './inspector/inspector-dev'
-import { getElementFiber } from './inspector/inspector-dev'
 import { getComponentElementFiber } from './inspector/component-identifier'
 import type { DisplayMode } from './harmony-context'
+import type { FiberHTMLElement } from './inspector/fiber'
+import { getElementFiber } from './inspector/fiber'
 
 export const HarmonySetup: React.FunctionComponent<
   Pick<HarmonyProviderProps, 'repositoryId' | 'fonts' | 'environment'> & {
@@ -157,7 +157,7 @@ export class Setuper implements Setup {
   private setupNormalMode(container: Element) {
     for (let i = 0; i < container.children.length; i++) {
       const child = container.children[i]
-      if (child && isNativeElement(child)) {
+      if (isNativeElement(child)) {
         appendChild(document.body, child)
         i--
       }
@@ -181,7 +181,7 @@ export class Setuper implements Setup {
 
     for (let i = 0; i < document.body.children.length; i++) {
       const child = document.body.children[i]
-      if (child && isNativeElement(child)) {
+      if (isNativeElement(child)) {
         appendChild(container, child)
         i--
       }

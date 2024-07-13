@@ -1,7 +1,7 @@
 import { Button } from '@harmony/ui/src/components/core/button'
 import { Popup } from '@harmony/ui/src/components/core/popup'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
-import { useState, useEffect, useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { useHarmonyStore } from '../hooks/state'
 import { findSameElementsFromId } from '../../utils/element-utils'
 
@@ -55,7 +55,7 @@ export const GlobalUpdatePopup: React.FunctionComponent<
 
   return (
     <Popup
-      show={updates != undefined && allInstances > 1}
+      show={updates !== undefined && allInstances > 1}
       onClose={() => {
         onApplyGlobal(undefined)
       }}
