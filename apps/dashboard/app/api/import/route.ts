@@ -10,37 +10,37 @@
 //export const maxDuration = 300;
 
 export function POST(_req: Request): Promise<Response> {
-    throw new Error("This is not implemented");
-    // const session = await getServerAuthSession();
-    // if (session === undefined || session.account === undefined) {
-    //     return new Response(null, {
-    //         status: 401
-    //     })
-    // }
+  throw new Error('This is not implemented')
+  // const session = await getServerAuthSession();
+  // if (session === undefined || session.account === undefined) {
+  //     return new Response(null, {
+  //         status: 401
+  //     })
+  // }
 
-    // const result = z.object({repository: repositorySchema}).safeParse(await req.json());
-    // if (result.success === false) {
-    //     return new Response(null, {
-	// 		status: 400
-	// 	});
-    // }
+  // const result = z.object({repository: repositorySchema}).safeParse(await req.json());
+  // if (result.success === false) {
+  //     return new Response(null, {
+  // 		status: 400
+  // 	});
+  // }
 
-    // const {repository} = result.data;
-    // const githubRepository = new GithubRepository(repository);
+  // const {repository} = result.data;
+  // const githubRepository = new GithubRepository(repository);
 
-    // const encoder = new TextEncoder();
-    // const stream = new ReadableStream({
-    //     async start(controller) {
-    //         const onProgress = (progress: number) => {
-    //             controller.enqueue(encoder.encode(String(progress)));
-    //         }
-    //         await indexCodebase('', fromGithub(githubRepository), repository.id, onProgress);
-    //         controller.close()
-    //     }
-    // })
+  // const encoder = new TextEncoder();
+  // const stream = new ReadableStream({
+  //     async start(controller) {
+  //         const onProgress = (progress: number) => {
+  //             controller.enqueue(encoder.encode(String(progress)));
+  //         }
+  //         await indexCodebase('', fromGithub(githubRepository), repository.id, onProgress);
+  //         controller.close()
+  //     }
+  // })
 
-    // return new Response(stream, {
-    //     status: 200,
-    //     headers: { "Content-Type": "text/plain; charset=utf-8" },
-    // });
+  // return new Response(stream, {
+  //     status: 200,
+  //     headers: { "Content-Type": "text/plain; charset=utf-8" },
+  // });
 }

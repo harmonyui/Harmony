@@ -1,10 +1,10 @@
-import { branchRoute } from "./routers/branch";
-import { changeLogRouter } from "./routers/change-log";
-import { editorRouter } from "./routers/editor";
-import { pullRequestRouter } from "./routers/pull-request";
-import { setupRoute } from "./routers/setup";
-import { teamRouter } from "./routers/team";
-import { createTRPCRouter } from "./trpc";
+import { branchRoute } from './routers/branch'
+import { changeLogRouter } from './routers/change-log'
+import { editorRouter } from './routers/editor'
+import { pullRequestRouter } from './routers/pull-request'
+import { setupRoute } from './routers/setup'
+import { teamRouter } from './routers/team'
+import { createTRPCRouter } from './trpc'
 
 /**
  * This is the primary router for your server.
@@ -13,12 +13,12 @@ import { createTRPCRouter } from "./trpc";
  */
 export const appRouter = createTRPCRouter({
   setup: setupRoute,
-	branch: branchRoute,
+  branch: branchRoute,
   team: teamRouter,
   changeLog: changeLogRouter,
   editor: editorRouter,
-  pullRequest: pullRequestRouter
-});
+  pullRequest: pullRequestRouter,
+})
 
 // export type definition of API
-export type AppRouter = typeof appRouter;
+export type AppRouter = typeof appRouter

@@ -263,13 +263,25 @@ export const ColorPickerFull = <T extends Color | HexColor>({
             xChannel={sChannel}
             yChannel={lChannel}
           />
-          <InputBlur key={colorToHex(color)} value={colorToHex(color).substring(1, colorToHex(color).length === 9 ? 7 : undefined)} onChange={(value) => onColorChange(getHslaColor(`#${value}`))}/>
+          <InputBlur
+            key={colorToHex(color)}
+            value={colorToHex(color).substring(
+              1,
+              colorToHex(color).length === 9 ? 7 : undefined,
+            )}
+            onChange={(value) => onColorChange(getHslaColor(`#${value}`))}
+          />
           <ColorSlider
             channel={hChannel}
             value={color}
             onChange={onColorChange}
           />
-          <ColorSlider label="Transparency" channel="alpha" value={color} onChange={onColorChange} />
+          <ColorSlider
+            label="Transparency"
+            channel="alpha"
+            value={color}
+            onChange={onColorChange}
+          />
         </div>
         {(preview == true || preview == "true") && (
           <div
@@ -306,14 +318,13 @@ export const ColorPickerFull = <T extends Color | HexColor>({
 const ColorPicker = <T extends Color | HexColor>({
   value,
   onChange,
-  className
-}: ColorPickerProps<T> & {container?: HTMLElement, className?: string}) => {
+  className,
+}: ColorPickerProps<T> & { container?: HTMLElement; className?: string }) => {
   return (
     <>
       <Popover
         button={
           <ColorSwatch
-
             value={value}
             aria-label={`current color swatch: ${value.toString("rgb")}`}
           />

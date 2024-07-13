@@ -1,22 +1,14 @@
 {
-    "extends": "@harmony/tsconfig/nextjs.json",
-    "compilerOptions": {
-      "plugins": [
-        {
-          "name": "next"
-        }
-      ],
-      "strictNullChecks": true,
-      "forceConsistentCasingInFileNames": true
-    },
-    "include": [
-      "next-env.d.ts",
-      "**/*.ts",
-      "**/*.tsx",
-      ".next/types/**/*.ts"
+  "extends": "@harmony/tsconfig/nextjs.json",
+  "compilerOptions": {
+    "plugins": [
+      {
+        "name": "next"
+      }
     ],
-    "exclude": [
-      "node_modules"
-    ]
-  }
-  
+    "strictNullChecks": true,
+    "forceConsistentCasingInFileNames": true
+  },
+  "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts"],
+  "exclude": ["node_modules"]
+}

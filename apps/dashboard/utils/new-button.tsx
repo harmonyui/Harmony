@@ -1,18 +1,17 @@
-'use client';
+'use client'
 
-import { Button } from "@harmony/ui/src/components/core/button";
-import { setCookie } from "./server-actions";
-import { redirect } from "next/navigation";
-import { useEffect } from "react";
+import { redirect } from 'next/navigation'
+import { useEffect } from 'react'
+import { setCookie } from './server-actions'
 
 export const NewButton = () => {
-    useEffect(() => {
-        async function initialize() {
-            await setCookie('harmony-user-id', 'none');
-            redirect('/');
-        }
-        initialize();
-    }, [])
+  useEffect(() => {
+    async function initialize() {
+      await setCookie('harmony-user-id', 'none')
+      redirect('/')
+    }
+    void initialize()
+  }, [])
 
-    return <></>
+  return <></>
 }

@@ -7,7 +7,6 @@
     "format": "prettier --write \"**/*.{mjs,ts,md,json}\" && eslint --fix"
   },
   "dependencies": {
-    "@ianvs/prettier-plugin-sort-imports": "^4.1.0",
     "prettier": "^3.0.3"
   },
   "devDependencies": {

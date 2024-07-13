@@ -5,10 +5,11 @@
   },
   "include": ["."],
   "exclude": [
-    "webpack.config.setup.js","webpack.config.editor.js", 
+    "webpack.config.setup.js",
+    "webpack.config.editor.js",
     "webpack.config.dev.ts",
-    "tailwind.config.ts", 
-    "postcss.config.js", 
+    "tailwind.config.ts",
+    "postcss.config.js",
     "dist",
     "dev",
     "node_modules"

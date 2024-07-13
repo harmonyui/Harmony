@@ -3,18 +3,17 @@
 
 /** @type { PrettierConfig | SortImportsConfig } */
 const config = {
-  plugins: ["@ianvs/prettier-plugin-sort-imports", "prettier-plugin-prisma"],
-  importOrder: [
-    "^(react/(.*)$)|^(react$)",
-    "^(next/(.*)$)|^(next$)",
-    "<THIRD_PARTY_MODULES>",
-    "",
-    "^~/",
-    "^[../]",
-    "^[./]",
+  plugins: ["prettier-plugin-prisma"],
+  overrides: [
+    {
+      files: "*.{js,ts,jsx,tsx}",
+      options: {
+        semi: false,
+        singleQuote: true,
+        jsxSingleQuote: true,
+      },
+    },
   ],
-  importOrderParserPlugins: ["typescript", "jsx", "decorators-legacy"],
-  importOrderTypeScriptVersion: "4.4.0",
 };
 
 export default config;
