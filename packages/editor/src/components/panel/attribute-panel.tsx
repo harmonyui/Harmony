@@ -23,6 +23,7 @@ import {
 } from '../inspector/inspector'
 import type { ComponentElement } from '../inspector/component-identifier'
 import { useHarmonyStore } from '../hooks/state'
+import { getComponentIdAndChildIndex } from '../../utils/element-utils'
 
 export const attributeTools = [
   'font',
@@ -110,17 +111,7 @@ export const ComponentAttributeProvider: React.FunctionComponent<
     const old = data.find((t) => t.name === values.name)
     if (!old) throw new Error('Cannot find old property')
     const oldValue = old.value
-    const childIndex = Array.from(old.element.parentElement!.children).indexOf(
-      old.element,
-    )
-    if (childIndex < 0) throw new Error('Cannot get right child index')
-    const componentId =
-      old.element.dataset.harmonyText === 'true'
-        ? old.element.parentElement!.dataset.harmonyId
-        : old.element.dataset.harmonyId
-    if (!componentId) {
-      throw new Error('Element does not have a data id')
-    }
+    const { componentId, childIndex } = getComponentIdAndChildIndex(old.element)
 
     const update: ComponentUpdateWithoutGlobal = {
       componentId,
