@@ -16,13 +16,13 @@ export const recurseElements = (
 export function findElementFromId(
   componentId: string,
   childIndex: number,
+  rootElement: HTMLElement | undefined,
 ): HTMLElement | undefined {
   const selector = `[data-harmony-id="${componentId}"]`
-  const container = document.getElementById('harmony-container')
-  if (!container) {
-    throw new Error('Cannot find container harmony-container')
+  if (!rootElement) {
+    throw new Error('Cannot find root element')
   }
-  const elements = container.querySelectorAll(selector)
+  const elements = rootElement.querySelectorAll(selector)
   for (const element of Array.from(elements)) {
     const elementChildIndex = Array.from(
       element.parentElement?.children || [],
@@ -33,9 +33,12 @@ export function findElementFromId(
   return undefined
 }
 
-export function findElementsFromId(componentId: string): HTMLElement[] {
+export function findElementsFromId(
+  componentId: string,
+  rootElement: HTMLElement | undefined,
+): HTMLElement[] {
   const selector = `[data-harmony-id="${componentId}"]`
-  const container = document.getElementById('harmony-container')
+  const container = rootElement
   if (!container) {
     throw new Error('Cannot find container harmony-container')
   }
@@ -43,9 +46,12 @@ export function findElementsFromId(componentId: string): HTMLElement[] {
   return Array.from(elements) as HTMLElement[]
 }
 
-export function findSameElementsFromId(componentId: string): HTMLElement[] {
+export function findSameElementsFromId(
+  componentId: string,
+  rootElement: HTMLElement | undefined,
+): HTMLElement[] {
   const selector = `[data-harmony-component-id="${componentId}"]`
-  const container = document.getElementById('harmony-container')
+  const container = rootElement
   if (!container) {
     throw new Error('Cannot find container harmony-container')
   }

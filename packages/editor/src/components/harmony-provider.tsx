@@ -43,6 +43,7 @@ import { WelcomeModal } from './panel/welcome/welcome-modal'
 import { getBoundingRect } from './snapping/calculations'
 import { useHarmonyStore } from './hooks/state'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
+import type { Source } from './hooks/state/component-state'
 
 export interface HarmonyProviderProps {
   repositoryId: string
@@ -51,6 +52,7 @@ export interface HarmonyProviderProps {
   setup: Setup
   fonts?: Font[]
   environment?: Environment
+  source?: Source
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   repositoryId,
@@ -59,10 +61,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   fonts,
   setup,
   environment = 'production',
+  source = 'document',
 }) => {
   const [isToggled, setIsToggled] = useState(true)
   const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>()
-  const [rootComponent, setRootComponent] = useState<HTMLElement | undefined>()
   const harmonyContainerRef = useRef<HTMLDivElement | null>(null)
   const [mode, setMode] = useState<SelectMode>('tweezer')
   const [scale, _setScale] = useState(0.8)
@@ -92,6 +94,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const setSelectedComponent = useHarmonyStore((state) => state.selectElement)
   const updateTheCounter = useHarmonyStore((state) => state.updateTheCounter)
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
+  const rootComponent = useHarmonyStore((state) => state.rootComponent)?.element
+  const setSource = useHarmonyStore((state) => state.setSource)
 
   const { executeCommand, onUndo } = useComponentUpdator({
     isSaving,
@@ -132,6 +136,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     const initialize = async () => {
       onHistoryChange()
 
+      setSource(source)
       await initializeProject({ branchId, repositoryId })
     }
 
@@ -227,7 +232,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
       const recurseAndUpdateElements = () => {
         const componentIds: string[] = []
         recurseElements(rootComponent, [initElements(componentIds)])
-        makeUpdates(componentUpdates, fonts)
+        makeUpdates(componentUpdates, fonts, rootComponent)
 
         void updateComponentsFromIds(
           { branchId, components: componentIds },
@@ -481,7 +486,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                     ref={(d) => {
                       if (d && d !== harmonyContainerRef.current) {
                         harmonyContainerRef.current = d
-                        setRootComponent(harmonyContainerRef.current)
                       }
                     }}
                     style={{
@@ -494,7 +498,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                     {isToggled ? (
                       <Inspector
                         rootElement={rootComponent}
-                        parentElement={rootComponent}
+                        parentElement={
+                          harmonyContainerRef.current || rootComponent
+                        }
                         selectedComponent={selectedComponent}
                         hoveredComponent={hoveredComponent}
                         onHover={setHoveredComponent}
@@ -591,6 +597,7 @@ const useComponentUpdator = ({
   const [editTimeout, setEditTimeout] = useState(new Date().getTime())
   const addUpdates = useHarmonyStore((state) => state.addComponentUpdates)
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
+  const rootElement = useHarmonyStore((state) => state.rootComponent)?.element
 
   const WEB_URL = useMemo(() => getWebUrl(environment), [environment])
 
@@ -602,7 +609,10 @@ const useComponentUpdator = ({
           if (errorUpdates.length > 0) {
             change({ name: 'change', update: errorUpdates })
             errorUpdates.forEach((error) => {
-              const elements = findElementsFromId(error.componentId)
+              const elements = findElementsFromId(
+                error.componentId,
+                rootElement,
+              )
               elements.forEach((element) => {
                 element.dataset.harmonyError = error.errorType
               })
@@ -717,7 +727,7 @@ const useComponentUpdator = ({
   const change = ({ update }: HarmonyCommandChange): void => {
     if (!rootComponent) return
     for (const up of update) {
-      makeUpdates([up], fonts)
+      makeUpdates([up], fonts, rootElement)
     }
 
     onChange && onChange()

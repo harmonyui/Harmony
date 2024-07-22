@@ -1,6 +1,8 @@
+/* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { translateUpdatesToCss } from '@harmony/util/src/utils/component'
 import type { BranchItem, PullRequest } from '@harmony/util/src/types/branch'
+import { replaceByIndex } from '@harmony/util/src/utils/common'
 import type { GitRepository } from '../../repository/git/types'
 import { createPullRequest } from '../../repository/database/pull-request'
 import { CodeUpdator } from './code-updator'
@@ -33,6 +35,40 @@ export class Publisher {
     })
 
     return newPullRequest
+  }
+
+  public async updateChanges(updatesRaw: ComponentUpdateWithDate[]) {
+    const _updates = prepareUpdatesForGenerator(updatesRaw)
+
+    const codeUpdator = new CodeUpdator(this.gitRepository)
+    const fileUpdates = await codeUpdator.updateFiles(_updates)
+
+    const updates: {
+      oldContent: string
+      newContent: string
+      filePath: string
+    }[] = []
+    for (const change of Object.values(fileUpdates)) {
+      const contentText = await this.gitRepository.getContent(change.filePath)
+
+      let newContent = contentText
+      for (const location of change.locations) {
+        newContent = replaceByIndex(
+          newContent,
+          location.snippet,
+          location.start,
+          location.end,
+        )
+      }
+
+      updates.push({
+        oldContent: contentText,
+        newContent,
+        filePath: change.filePath,
+      })
+    }
+
+    return updates
   }
 }
 
