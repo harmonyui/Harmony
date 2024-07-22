@@ -18,7 +18,11 @@ interface CachedElement {
 export interface ComponentUpdateState {
   componentUpdates: ComponentUpdate[]
   addComponentUpdates: (values: ComponentUpdate[]) => void
-  makeUpdates: (updates: ComponentUpdate[], fonts: Font[] | undefined) => void
+  makeUpdates: (
+    updates: ComponentUpdate[],
+    fonts: Font[] | undefined,
+    rootElement: HTMLElement | undefined,
+  ) => void
   cachedElements: CachedElement[]
 }
 
@@ -35,14 +39,18 @@ export const createComponentUpdateSlice =
         }
       })
     },
-    makeUpdates(updates: ComponentUpdate[], fonts: Font[] | undefined) {
+    makeUpdates(
+      updates: ComponentUpdate[],
+      fonts: Font[] | undefined,
+      rootElement: HTMLElement | undefined,
+    ) {
       //TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
       //When we want global in this scenario, we are going to assume it is the next layer up (which is what isGlobal false does)
       //This might not hold true in all scenarios, but we will assume for now
       const translated = updates.map((orig) => {
         const update = { ...orig }
         const id = update.componentId
-        const sameElements = findElementsFromId(id)
+        const sameElements = findElementsFromId(id, rootElement)
         if (sameElements.length > 1) {
           update.childIndex = -1
         }
@@ -76,6 +84,7 @@ export const createComponentUpdateSlice =
             const oldElement = findElementFromId(
               update.componentId,
               oldChildIndex,
+              rootElement,
             )
 
             // Verify that we could find the old element to be deleted from the DOM
@@ -112,9 +121,13 @@ export const createComponentUpdateSlice =
               action: string
             }
             if (action === 'delete') {
-              const component = findElementFromId(update.componentId, index)
+              const component = findElementFromId(
+                update.componentId,
+                index,
+                rootElement,
+              )
               if (!component) {
-                const undoComponent = findElementFromId(id, index)
+                const undoComponent = findElementFromId(id, index, rootElement)
                 if (undoComponent) {
                   undoComponent.remove()
                   return
@@ -166,7 +179,11 @@ export const createComponentUpdateSlice =
                   index: number
                   position: string
                 }
-                const component = findElementFromId(update.componentId, _index)
+                const component = findElementFromId(
+                  update.componentId,
+                  _index,
+                  rootElement,
+                )
                 if (!component)
                   throw new Error(
                     `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
@@ -234,9 +251,14 @@ export const createComponentUpdateSlice =
                 const startElement = findElementFromId(
                   start.id,
                   start.childIndex,
+                  rootElement,
                 )
                 const parent = startElement?.parentElement
-                const endElement = findElementFromId(end.id, end.childIndex)
+                const endElement = findElementFromId(
+                  end.id,
+                  end.childIndex,
+                  rootElement,
+                )
                 if (!startElement || !endElement)
                   throw new Error(
                     `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
@@ -289,6 +311,7 @@ export const createComponentUpdateSlice =
             const element = findElementFromId(
               update.componentId,
               update.childIndex,
+              rootElement,
             )
             if (!element)
               throw new Error(
@@ -318,9 +341,12 @@ export const createComponentUpdateSlice =
 
         //TODO: Need to figure out when a text component should update everywhere and where it should update just this element
         if (update.type === 'text') {
-          const el = findElementFromId(update.componentId, update.childIndex)
-          if (!el)
-            throw new Error(`Cannot find element with id ${update.componentId}`)
+          const el = findElementFromId(
+            update.componentId,
+            update.childIndex,
+            rootElement,
+          )
+          if (!el) return //throw new Error(`Cannot find element with id ${update.componentId}`)
 
           const textNodes = Array.from(el.childNodes)
           const index = parseInt(update.name)
@@ -341,8 +367,8 @@ export const createComponentUpdateSlice =
         const id = update.componentId
         const componentId = id.split('#')[id.split('#').length - 1]
         const sameElements = update.isGlobal
-          ? findSameElementsFromId(componentId)
-          : findElementsFromId(id)
+          ? findSameElementsFromId(componentId, rootElement)
+          : findElementsFromId(id, rootElement)
         for (const element of Array.from(sameElements)) {
           const childIndex = Array.from(
             element.parentElement!.children,

@@ -11,7 +11,10 @@ import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
 
 export const HarmonySetup: React.FunctionComponent<
-  Pick<HarmonyProviderProps, 'repositoryId' | 'fonts' | 'environment'> & {
+  Pick<
+    HarmonyProviderProps,
+    'repositoryId' | 'fonts' | 'environment' | 'source'
+  > & {
     local?: boolean
   }
 > = ({ local = false, ...options }) => {
@@ -69,7 +72,10 @@ export const HarmonySetup: React.FunctionComponent<
 }
 
 function createProductionScript(
-  options: Pick<HarmonyProviderProps, 'repositoryId' | 'environment'>,
+  options: Pick<
+    HarmonyProviderProps,
+    'repositoryId' | 'environment' | 'source'
+  >,
   branchId: string,
   harmonyContainer: HTMLDivElement,
   setup: Setuper,

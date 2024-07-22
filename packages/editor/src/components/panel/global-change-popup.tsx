@@ -14,6 +14,7 @@ export const GlobalUpdatePopup: React.FunctionComponent<
 > = ({ onUndo, executeCommand }) => {
   const updates = useHarmonyStore((state) => state.globalUpdate)
   const onApplyGlobal = useHarmonyStore((state) => state.onApplyGlobal)
+  const rootElement = useHarmonyStore((state) => state.rootComponent)?.element
 
   useEffect(() => {
     if (updates) {
@@ -30,7 +31,7 @@ export const GlobalUpdatePopup: React.FunctionComponent<
       const ids = updates[0].componentId.split('#')
       const baseId = ids[ids.length - 1]
 
-      const instances = findSameElementsFromId(baseId)
+      const instances = findSameElementsFromId(baseId, rootElement)
 
       return instances.length
     }
