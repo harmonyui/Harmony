@@ -13,6 +13,7 @@ import type {
   UpdateResponse,
 } from '@harmony/util/src/types/network'
 import { reverseUpdates } from '@harmony/util/src/utils/component'
+import { z } from 'zod'
 import {
   formatComponentAndErrors,
   indexForComponents,
@@ -282,5 +283,50 @@ export const editorRouter = createTRPCRouter({
           type: error.type,
         })),
       }
+    }),
+
+  getPublishedFiles: publicProcedure
+    .input(z.object({ branchId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const data = input
+      const { branchId } = data
+      const { prisma } = ctx
+
+      const branch = await getBranch({ prisma, branchId })
+      if (!branch) {
+        throw new Error(`Cannot find branch with id ${branchId}`)
+      }
+
+      const repository = await getRepository({
+        prisma,
+        repositoryId: branch.repositoryId,
+      })
+      if (!repository) {
+        throw new Error(`Cannot find repository with id ${branch.repositoryId}`)
+      }
+
+      const alreadyPublished = await prisma.pullRequest.findUnique({
+        where: {
+          branch_id: branch.id,
+        },
+      })
+
+      if (!alreadyPublished) {
+        return undefined
+      }
+
+      const updates = await ctx.componentUpdateRepository.getUpdates(branchId, [
+        'dateModified',
+      ])
+
+      const gitRepository =
+        ctx.gitRepositoryFactory.createGitRepository(repository)
+      const publisher = new Publisher(gitRepository)
+      const updateChanges = await publisher.updateChanges(updates)
+
+      return updateChanges.map((change) => ({
+        content: change.newContent,
+        path: change.filePath,
+      }))
     }),
 })

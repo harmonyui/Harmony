@@ -1,5 +1,5 @@
 /* eslint-disable no-nested-ternary -- ok*/
- 
+
 /* eslint-disable no-await-in-loop -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 import fs from 'node:fs'
@@ -446,20 +446,23 @@ export class LocalGitRepository implements GitRepository {
   }
   public getContent(file: string, ref?: string): Promise<string> {
     return this.githubRepo.getContent(file, ref)
-    // const absolute = path.join('/Users/braydonjones/Documents/Projects/Harmony', file);
+    // const absolute = path.join(
+    //   '/Users/braydonjones/Documents/Projects/react-email',
+    //   file,
+    // )
     // if (!fs.existsSync(absolute)) {
-    //     throw new Error("Invalid path " + absolute);
+    //   throw new Error(`Invalid path ${absolute}`)
     // }
 
     // return new Promise<string>((resolve, reject) => {
-    //     fs.readFile(absolute, 'utf-8', (err, data) => {
-    //         if (err) {
-    //             reject(new Error(err.message));
-    //         }
+    //   fs.readFile(absolute, 'utf-8', (err, data) => {
+    //     if (err) {
+    //       reject(new Error(err.message))
+    //     }
 
-    //         resolve(data);
-    //     })
-    // });
+    //     resolve(data)
+    //   })
+    // })
   }
 
   public async getUpdatedFiles(branch: string, oldRef: string) {

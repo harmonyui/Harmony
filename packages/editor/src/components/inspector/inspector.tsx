@@ -198,14 +198,29 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   const { onFlexToggle: onFlexClick, error, setError } = useHarmonyContext()
   const isDemo = useHarmonyStore((state) => state.isDemo)
   const updateOverlay = useHarmonyStore((state) => state.updateCounter)
+  const source = useHarmonyStore((state) => state.source)
 
   const previousError = usePrevious(error)
   const { panel } = useSidePanel()
+
+  //If the source is not the document, then the overlay needs an offset to get it's position right
+  const offsetElement =
+    source === 'iframe' ? document.getElementsByTagName('iframe')[0] : undefined
 
   const inspectorState: InspectorState = useMemo(
     () => ({ showingLayoutPanel: panel?.id === 'attribute' }),
     [panel],
   )
+
+  useEffect(() => {
+    if (containerRef.current && overlayRef.current?.parent !== parentElement) {
+      overlayRef.current = new Overlay(
+        containerRef.current,
+        parentElement!,
+        offsetElement,
+      )
+    }
+  }, [overlayRef, parentElement, containerRef])
 
   const { isDragging } = useSnapping({
     enabled: isDemo,
@@ -217,7 +232,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       if (container === null || parentElement === undefined) return
 
       if (overlayRef.current === undefined) {
-        overlayRef.current = new Overlay(container, parentElement)
+        overlayRef.current = new Overlay(
+          container,
+          parentElement,
+          offsetElement,
+        )
       }
 
       if (selectedComponent) {
@@ -305,7 +324,11 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       if (container === null || parentElement === undefined) return
 
       if (overlayRef.current === undefined) {
-        overlayRef.current = new Overlay(container, parentElement)
+        overlayRef.current = new Overlay(
+          container,
+          parentElement,
+          offsetElement,
+        )
       }
 
       if (selectedComponent) {
@@ -329,7 +352,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     if (container === null || parentElement === undefined) return
 
     if (overlayRef.current === undefined) {
-      overlayRef.current = new Overlay(container, parentElement)
+      overlayRef.current = new Overlay(container, parentElement, offsetElement)
     }
 
     if (selectedComponent) {
@@ -371,7 +394,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       return
 
     if (overlayRef.current === undefined) {
-      overlayRef.current = new Overlay(container, parentElement)
+      overlayRef.current = new Overlay(container, parentElement, offsetElement)
     }
 
     //TODO: Hacky fix. Inline elements are not affected by vertical margin, so the only way to get them to move when next
@@ -455,7 +478,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       return
 
     if (overlayRef.current === undefined) {
-      overlayRef.current = new Overlay(container, parentElement)
+      overlayRef.current = new Overlay(container, parentElement, offsetElement)
     }
     if (hoveredComponent && !isDragging) {
       overlayRef.current.hover(hoveredComponent, scale, inspectorState)
@@ -662,7 +685,8 @@ class Overlay {
 
   constructor(
     private container: HTMLElement,
-    private parent: HTMLElement,
+    public parent: HTMLElement,
+    private offsetElement: HTMLElement | undefined,
   ) {
     // Find the root window, because overlays are positioned relative to it.
     const currentWindow =
@@ -855,7 +879,11 @@ class Overlay {
       bottom: Number.NEGATIVE_INFINITY,
       left: Number.POSITIVE_INFINITY,
     }
-    const box = getNestedBoundingClientRect(element, this.parent)
+    const box = getNestedBoundingClientRect({
+      node: element,
+      boundaryWindow: this.parent,
+      offsetElement: this.offsetElement,
+    })
     const dims = getElementDimensions(element)
 
     outerBox.top = Math.min(outerBox.top, box.top)
@@ -1198,11 +1226,25 @@ function boxWrap(
 
 // Calculate a boundingClientRect for a node relative to boundaryWindow,
 // taking into account any offsets caused by intermediate iframes.
-export function getNestedBoundingClientRect(
-  node: HTMLElement,
-  boundaryWindow?: HTMLElement,
-): Rect {
-  const targetRect = node.getBoundingClientRect()
+interface NestedBoundingClientRectOptions {
+  node: HTMLElement
+  boundaryWindow?: HTMLElement
+  offsetElement?: HTMLElement
+}
+export function getNestedBoundingClientRect({
+  node,
+  boundaryWindow,
+  offsetElement,
+}: NestedBoundingClientRectOptions): Rect {
+  const rect = node.getBoundingClientRect()
+  const targetRect = {
+    top: rect.top,
+    left: rect.left,
+    right: rect.right,
+    bottom: rect.bottom,
+    width: rect.width,
+    height: rect.height,
+  }
 
   if (boundaryWindow) {
     const boundaryRect = boundaryWindow.getBoundingClientRect()
@@ -1229,6 +1271,21 @@ export function getNestedBoundingClientRect(
     // Extract the scaling factors from the transform matrix
     const scaleX = transformMatrix.a
     const scaleY = transformMatrix.d
+
+    if (offsetElement) {
+      targetRect.top *= scaleY
+      targetRect.left *= scaleX
+      targetRect.right *= scaleX
+      targetRect.bottom *= scaleY
+      targetRect.width *= scaleX
+      targetRect.height *= scaleY
+
+      const offsetRect = offsetElement.getBoundingClientRect()
+      targetRect.top += offsetRect.top
+      targetRect.left += offsetRect.left
+      targetRect.right += offsetRect.left
+      targetRect.bottom += offsetRect.top
+    }
 
     // Calculate the relative position
     const relativePosition = {

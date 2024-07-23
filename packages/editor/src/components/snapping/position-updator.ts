@@ -45,7 +45,7 @@ export const getComputedValue = (
   property: string,
 ): string => {
   const styleMap =
-    element instanceof Element ? element.computedStyleMap() : element
+    'computedStyleMap' in element ? element.computedStyleMap() : element
   const styleValue = styleMap.get(property)
   if (!styleValue) return ''
 

@@ -10,6 +10,7 @@ import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
 import type { ComponentUpdateState } from './component-update'
 
+export type Source = 'document' | 'iframe'
 export interface ComponentState {
   selectedComponent: ComponentElement | undefined
   rootComponent: ComponentElement | undefined
@@ -19,6 +20,8 @@ export interface ComponentState {
   //This is temporary until we move execute command into zustand
   updateCounter: number
   updateTheCounter: () => void
+  source: Source
+  setSource: (value: Source) => void
 }
 
 export const createComponentStateSlice = createHarmonySlice<
@@ -26,7 +29,20 @@ export const createComponentStateSlice = createHarmonySlice<
   HarmonyComponentsState & ComponentUpdateState
 >((set, get) => {
   const updateRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
-    const rootElement = document.getElementById('harmony-section')
+    const source = get().source
+
+    let rootElement = document.getElementById('harmony-section')
+    if (source === 'iframe') {
+      const iframeRoot =
+        document.getElementsByTagName('iframe')[0].contentDocument?.body
+      if (!iframeRoot) {
+        throw new Error(
+          'Source is set to iframe but cannot find iframe root element',
+        )
+      }
+      rootElement = iframeRoot
+    }
+
     if (!rootElement) {
       throw new Error('Cannot find root element')
     }
@@ -102,6 +118,10 @@ export const createComponentStateSlice = createHarmonySlice<
     state: {
       selectedComponent: undefined,
       rootComponent: undefined,
+      source: 'document',
+      setSource(value: Source) {
+        set({ source: value })
+      },
       selectElement(element: HTMLElement | undefined) {
         const rootComponent = get().rootComponent
         if (!rootComponent || !element) {
