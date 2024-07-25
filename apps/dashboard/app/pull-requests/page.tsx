@@ -4,8 +4,12 @@ import { SideNav } from '../../utils/side-nav'
 import { withAuth } from '../../utils/protected-routes-hoc'
 import { PullRequestDisplay } from './components/pull-request'
 
-const PullRequestPage = withAuth(async () => {
-  const pullRequests = await prisma.pullRequest.findMany()
+const PullRequestPage = withAuth(async ({ ctx }) => {
+  const pullRequests = await prisma.pullRequest.findMany({
+    where: {
+      repository_id: ctx.session.account.repository?.id,
+    },
+  })
 
   return (
     <ModalProvider>
