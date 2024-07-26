@@ -1,11 +1,14 @@
 import typographyPlugin from '@tailwindcss/typography'
 import { type Config } from 'tailwindcss'
+import baseConfig from '@harmony/tailwind-config/tailwind.config'
 
 export default {
   content: ['./src/**/*.{js,jsx,ts,tsx,md}'],
   darkMode: 'selector',
   theme: {
+    ...baseConfig.theme,
     fontSize: {
+      ...baseConfig.theme?.fontSize,
       xs: ['0.75rem', { lineHeight: '1rem' }],
       sm: ['0.875rem', { lineHeight: '1.5rem' }],
       base: ['1rem', { lineHeight: '2rem' }],
@@ -21,6 +24,7 @@ export default {
       '9xl': ['8rem', { lineHeight: '1' }],
     },
     extend: {
+      ...baseConfig.theme?.extend,
       fontFamily: {
         sans: 'var(--font-inter)',
         display: ['var(--font-lexend)', { fontFeatureSettings: '"ss01"' }],

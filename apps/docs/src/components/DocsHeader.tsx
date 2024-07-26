@@ -1,12 +1,11 @@
 'use client'
 
 import { usePathname } from 'next/navigation'
-
 import { navigation } from '@/lib/navigation'
 
 export function DocsHeader({ title }: { title?: string }) {
-  let pathname = usePathname()
-  let section = navigation.find((section) =>
+  const pathname = usePathname()
+  const section = navigation.find((section) =>
     section.links.find((link) => link.href === pathname),
   )
 
@@ -15,14 +14,14 @@ export function DocsHeader({ title }: { title?: string }) {
   }
 
   return (
-    <header className="mb-9 space-y-1">
+    <header className='mb-9 space-y-1'>
       {section && (
-        <p className="font-display text-sm font-medium text-sky-500">
+        <p className='font-display text-sm font-medium text-primary'>
           {section.title}
         </p>
       )}
       {title && (
-        <h1 className="font-display text-3xl tracking-tight text-slate-900 dark:text-white">
+        <h1 className='font-display text-3xl tracking-tight text-slate-900 dark:text-white'>
           {title}
         </h1>
       )}

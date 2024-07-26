@@ -3,10 +3,11 @@
   "version": "0.1.0",
   "private": true,
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "lint": "next lint"
+    "withenv": "dotenv -e ../../.env --",
+    "dev": "pnpm withenv next dev",
+    "build": "pnpm withenv next build",
+    "start": "pnpm withenv next start",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix ."
   },
   "browserslist": "defaults, not ie <= 11",
   "dependencies": {
@@ -21,6 +22,7 @@
     "@types/react-dom": "^18.2.18",
     "@types/react-highlight-words": "^0.16.4",
     "autoprefixer": "^10.4.12",
+    "dotenv-cli": "^7.3.0",
     "clsx": "^2.1.0",
     "fast-glob": "^3.2.12",
     "flexsearch": "^0.7.31",
@@ -36,10 +38,20 @@
     "typescript": "^5.3.3"
   },
   "devDependencies": {
+    "@harmony/eslint-config-custom": "workspace:*",
+    "@harmony/prettier-config": "workspace:^",
+    "@harmony/tailwind-config": "workspace:^",
     "eslint": "^8.56.0",
     "eslint-config-next": "^14.0.4",
     "prettier": "^3.3.2",
     "prettier-plugin-tailwindcss": "^0.6.5",
     "sharp": "0.33.1"
-  }
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@harmony/eslint-config-custom/library"
+    ]
+  },
+  "prettier": "@harmony/prettier-config"
 }

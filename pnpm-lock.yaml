@@ -252,6 +252,9 @@ importers:
       clsx:
         specifier: ^2.1.0
         version: 2.1.1
+      dotenv-cli:
+        specifier: ^7.3.0
+        version: 7.4.1
       fast-glob:
         specifier: ^3.2.12
         version: 3.3.2
@@ -289,6 +292,15 @@ importers:
         specifier: ^5.3.3
         version: 5.4.5
     devDependencies:
+      '@harmony/eslint-config-custom':
+        specifier: workspace:*
+        version: link:../../tooling/eslint-config-custom
+      '@harmony/prettier-config':
+        specifier: workspace:^
+        version: link:../../tooling/prettier-config
+      '@harmony/tailwind-config':
+        specifier: workspace:^
+        version: link:../../tooling/tailwind
       eslint:
         specifier: ^8.56.0
         version: 8.57.0

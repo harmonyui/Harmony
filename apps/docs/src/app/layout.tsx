@@ -2,7 +2,6 @@ import { type Metadata } from 'next'
 import { Inter } from 'next/font/google'
 import localFont from 'next/font/local'
 import clsx from 'clsx'
-
 import { Providers } from '@/app/providers'
 import { Layout } from '@/components/Layout'
 
@@ -37,11 +36,11 @@ export default function RootLayout({
 }) {
   return (
     <html
-      lang="en"
+      lang='en'
       className={clsx('h-full antialiased', inter.variable, lexend.variable)}
       suppressHydrationWarning
     >
-      <body className="flex min-h-full bg-white dark:bg-slate-900">
+      <body className='flex min-h-full bg-white dark:bg-slate-900'>
         <Providers>
           <Layout>{children}</Layout>
         </Providers>
