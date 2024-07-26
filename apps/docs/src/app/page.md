@@ -2,23 +2,23 @@
 title: Getting started
 ---
 
-Learn how to get CacheAdvance set up in your project in under thirty minutes or it's free. {% .lead %}
+Learn how to get Harmony set up in your project in under thirty minutes. {% .lead %}
 
 {% quick-links %}
 
-{% quick-link title="Installation" icon="installation" href="/" description="Step-by-step guides to setting up your system and installing the library." /%}
+{% quick-link title="Installation" icon="installation" href="/" description="Step-by-step guides to setting up your Harmony editor and installing the library." /%}
 
-{% quick-link title="Architecture guide" icon="presets" href="/" description="Learn how the internals work and contribute." /%}
+<!-- {% quick-link title="Architecture guide" icon="presets" href="/" description="Learn how the internals work and contribute." /%}
 
 {% quick-link title="Plugins" icon="plugins" href="/" description="Extend the library with third-party plugins or write your own." /%}
 
-{% quick-link title="API reference" icon="theming" href="/" description="Learn to easily customize and modify your app's visual design to fit your brand." /%}
+{% quick-link title="API reference" icon="theming" href="/" description="Learn to easily customize and modify your app's visual design to fit your brand." /%} -->
 
 {% /quick-links %}
 
-Possimus saepe veritatis sint nobis et quam eos. Architecto consequatur odit perferendis fuga eveniet possimus rerum cumque. Ea deleniti voluptatum deserunt voluptatibus ut non iste.
+Setup Harmony in your project using the installation steps based on your framework.
 
----
+<!-- ---
 
 ## Quick start
 
@@ -45,12 +45,12 @@ Sit commodi iste iure molestias qui amet voluptatem sed quaerat. Nostrum aut par
 ```js
 // cache-advance.config.js
 export default {
-  strategy: 'predictive',
+  strategy: "predictive",
   engine: {
     cpus: 12,
-    backups: ['./storage/cache.wtf'],
+    backups: ["./storage/cache.wtf"],
   },
-}
+};
 ```
 
 Possimus saepe veritatis sint nobis et quam eos. Architecto consequatur odit perferendis fuga eveniet possimus rerum cumque. Ea deleniti voluptatum deserunt voluptatibus ut non iste. Provident nam asperiores vel laboriosam omnis ducimus enim nesciunt quaerat. Minus tempora cupiditate est quod.
@@ -109,4 +109,4 @@ Praesentium facilis iste aliquid quo quia a excepturi. Fuga reprehenderit illo s
 
 Eum et ut. Qui facilis est ipsa. Non facere quia sequi commodi autem. Dicta autem sit sequi omnis impedit. Eligendi amet dolorum magnam repudiandae in a.
 
-Molestiae iusto ut exercitationem dolorem unde iusto tempora atque nihil. Voluptatem velit facere laboriosam nobis ea. Consequatur rerum velit ipsum ipsam. Et qui saepe consequatur minima laborum tempore voluptatum et. Quia eveniet eaque sequi consequatur nihil eos.
+Molestiae iusto ut exercitationem dolorem unde iusto tempora atque nihil. Voluptatem velit facere laboriosam nobis ea. Consequatur rerum velit ipsum ipsam. Et qui saepe consequatur minima laborum tempore voluptatum et. Quia eveniet eaque sequi consequatur nihil eos. -->
