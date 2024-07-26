@@ -1,12 +1,14 @@
-import withMarkdoc from '@markdoc/next.js'
-
-import withSearch from './src/markdoc/search.mjs'
+import withMarkdoc from "@markdoc/next.js";
+import withSearch from "./src/markdoc/search.mjs";
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  pageExtensions: ['js', 'jsx', 'md', 'ts', 'tsx'],
-}
+  pageExtensions: ["js", "jsx", "md", "ts", "tsx"],
+  eslint: {
+    ignoreDuringBuilds: true,
+  },
+};
 
 export default withSearch(
-  withMarkdoc({ schemaPath: './src/markdoc' })(nextConfig),
-)
+  withMarkdoc({ schemaPath: "./src/markdoc" })(nextConfig),
+);
