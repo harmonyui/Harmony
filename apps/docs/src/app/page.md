@@ -6,7 +6,7 @@ Learn how to get Harmony set up in your project in under thirty minutes. {% .lea
 
 {% quick-links %}
 
-{% quick-link title="Installation" icon="installation" href="/" description="Step-by-step guides to setting up your Harmony editor and installing the library." /%}
+{% quick-link title="Installation" icon="installation" href="/docs/installation/nextjs" description="Step-by-step guides to setting up your Harmony editor and installing the library." /%}
 
 <!-- {% quick-link title="Architecture guide" icon="presets" href="/" description="Learn how the internals work and contribute." /%}
 
