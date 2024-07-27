@@ -11,18 +11,20 @@ const getBaseUrl = (): string => {
   return `http://${LOCALHOST}:${PORT}` // dev SSR should use localhost
 }
 
-export const client = createTRPCProxyClient<AppRouter>({
-  transformer: superjson,
-  links: [
-    httpBatchLink({
-      url: `${getBaseUrl()}/trpc`,
-      // You can pass any HTTP headers you wish here
-      fetch(url, options) {
-        return fetch(url, {
-          ...options,
-          credentials: 'include',
-        })
-      },
-    }),
-  ],
-})
+export const createClient = () => {
+  return createTRPCProxyClient<AppRouter>({
+    transformer: superjson,
+    links: [
+      httpBatchLink({
+        url: `${getBaseUrl()}/trpc`,
+        // You can pass any HTTP headers you wish here
+        fetch(url, options) {
+          return fetch(url, {
+            ...options,
+            credentials: 'include',
+          })
+        },
+      }),
+    ],
+  })
+}

@@ -8,7 +8,7 @@ import {
 } from '../../../utils/element-utils'
 import { createHarmonySlice } from './factory'
 
-interface CachedElement {
+export interface CachedElement {
   id: string
   element: Element
   parent: HTMLElement

@@ -1,7 +1,7 @@
-import { loadProject } from '../../../data-layer'
 import type { PullRequestState } from './pull-request'
 import type { ComponentUpdateState } from './component-update'
 import { createHarmonySlice } from './factory'
+import type { DataLayerState } from './data-layer'
 
 export interface ProjectInfoState {
   currentBranch: { name: string; id: string }
@@ -19,8 +19,8 @@ export interface ProjectInfoState {
 
 export const createProjectInfoSlice = createHarmonySlice<
   ProjectInfoState,
-  PullRequestState & ComponentUpdateState
->((set) => ({
+  PullRequestState & ComponentUpdateState & DataLayerState
+>((set, get) => ({
   branches: [],
   showWelcomeScreen: false,
   isDemo: false,
@@ -31,8 +31,9 @@ export const createProjectInfoSlice = createHarmonySlice<
     set({ showWelcomeScreen: value })
   },
   async initializeProject({ branchId, repositoryId }) {
+    get().initializeDataLayer()
     try {
-      const response = await loadProject({ branchId, repositoryId })
+      const response = await get().loadProject({ branchId, repositoryId })
 
       const { updates, branches, pullRequest, showWelcomeScreen, isDemo } =
         response

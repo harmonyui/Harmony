@@ -19,7 +19,6 @@ import { getWebUrl, reverseUpdates } from '@harmony/util/src/utils/component'
 import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { saveProject } from '../data-layer'
 import {
   findElementsFromId,
   getComponentIdAndChildIndex,
@@ -598,6 +597,7 @@ const useComponentUpdator = ({
   const addUpdates = useHarmonyStore((state) => state.addComponentUpdates)
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
   const rootElement = useHarmonyStore((state) => state.rootComponent)?.element
+  const saveProject = useHarmonyStore((state) => state.saveProject)
 
   const WEB_URL = useMemo(() => getWebUrl(environment), [environment])
 
