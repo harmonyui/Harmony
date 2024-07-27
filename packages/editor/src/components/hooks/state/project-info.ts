@@ -1,3 +1,4 @@
+import type { Environment } from '@harmony/util/src/utils/component'
 import type { PullRequestState } from './pull-request'
 import type { ComponentUpdateState } from './component-update'
 import { createHarmonySlice } from './factory'
@@ -14,6 +15,7 @@ export interface ProjectInfoState {
   initializeProject: (props: {
     branchId: string
     repositoryId: string
+    environment: Environment
   }) => Promise<void>
 }
 
@@ -30,8 +32,8 @@ export const createProjectInfoSlice = createHarmonySlice<
   updateWelcomeScreen(value: boolean) {
     set({ showWelcomeScreen: value })
   },
-  async initializeProject({ branchId, repositoryId }) {
-    get().initializeDataLayer()
+  async initializeProject({ branchId, repositoryId, environment }) {
+    get().initializeDataLayer(environment)
     try {
       const response = await get().loadProject({ branchId, repositoryId })
 

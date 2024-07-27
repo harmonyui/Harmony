@@ -1,7 +1,8 @@
 {
   "extends": "@harmony/tsconfig/react-library.json",
   "compilerOptions": {
-    "outDir": "./extension/dist/esm"
+    "outDir": "./extension/dist/esm",
+    "allowJs": true
   },
   "include": ["."],
   "exclude": ["webpack.config.js", "dist", "node_modules"]

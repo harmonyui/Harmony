@@ -61,7 +61,7 @@ export const HarmonySetup: React.FunctionComponent<
         )
       } else {
         window.HarmonyProvider(
-          { ...options, branchId, setup: result.setup },
+          { ...options, environment, branchId, setup: result.setup },
           harmonyContainer,
         )
       }
