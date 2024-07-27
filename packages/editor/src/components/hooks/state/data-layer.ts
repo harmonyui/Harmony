@@ -15,6 +15,7 @@ import {
   publishResponseSchema,
   indexComponentsResponseSchema,
 } from '@harmony/util/src/types/network'
+import type { Environment } from '@harmony/util/src/utils/component'
 import { createClient } from '../../../trpc'
 import { createHarmonySlice } from './factory'
 
@@ -28,7 +29,7 @@ const dataFetch =
   }
 
 export interface DataLayerState {
-  initializeDataLayer: () => void
+  initializeDataLayer: (environment: Environment) => void
   loadProject: (args: LoadRequest) => Promise<LoadResponse>
   saveProject: (args: UpdateRequest) => Promise<UpdateResponse>
   publishProject: (args: PublishRequest) => Promise<PublishResponse>
@@ -50,8 +51,8 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
     indexComponents() {
       throw new Error('Data layer not initialized')
     },
-    initializeDataLayer() {
-      const client = createClient()
+    initializeDataLayer(environment: Environment) {
+      const client = createClient(environment)
       set({
         loadProject: dataFetch<LoadRequest, LoadResponse>(
           client.editor.loadProject.query,

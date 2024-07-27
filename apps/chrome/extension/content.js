@@ -3,7 +3,7 @@ const harmonyEntryPoint = document.createElement('div')
 const harmonyScript = document.createElement('script')
 
 harmonyEntryPoint.id = 'harmony'
-harmonyScript.src = 'dist/bundle.js'
+harmonyScript.src = chrome.runtime.getURL('dist/bundle.js')
 
 harmonyEntryPoint.appendChild(harmonyScript)
 
