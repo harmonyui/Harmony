@@ -10,13 +10,12 @@ import type { DisplayMode } from './harmony-context'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
 
+type HarmonySetupProps = Pick<
+  HarmonyProviderProps,
+  'repositoryId' | 'fonts' | 'environment' | 'source'
+>
 export const HarmonySetup: React.FunctionComponent<
-  Pick<
-    HarmonyProviderProps,
-    'repositoryId' | 'fonts' | 'environment' | 'source'
-  > & {
-    local?: boolean
-  }
+  HarmonySetupProps & { local?: boolean }
 > = ({ local = false, ...options }) => {
   const setBranchId = (branchId: string) => {
     const url = new URL(window.location.href)
@@ -72,10 +71,7 @@ export const HarmonySetup: React.FunctionComponent<
 }
 
 function createProductionScript(
-  options: Pick<
-    HarmonyProviderProps,
-    'repositoryId' | 'environment' | 'source'
-  >,
+  options: HarmonySetupProps,
   branchId: string,
   harmonyContainer: HTMLDivElement,
   setup: Setuper,

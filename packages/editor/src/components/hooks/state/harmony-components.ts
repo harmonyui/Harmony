@@ -1,9 +1,9 @@
 import type { HarmonyComponentInfo } from '@harmony/util/src/types/component'
 import type { IndexComponentsRequest } from '@harmony/util/src/types/network'
 import { mergeArraysOnId } from '@harmony/util/src/utils/common'
-import { indexComponents } from '../../../data-layer'
 import type { ComponentErrorState } from './component-error'
 import { createHarmonySlice } from './factory'
+import type { DataLayerState } from './data-layer'
 
 export interface HarmonyComponentsState {
   harmonyComponents: HarmonyComponentInfo[]
@@ -15,7 +15,7 @@ export interface HarmonyComponentsState {
 
 export const createHarmonyComponentSlice = createHarmonySlice<
   HarmonyComponentsState,
-  ComponentErrorState
+  ComponentErrorState & DataLayerState
 >((set, get) => ({
   harmonyComponents: [],
   async updateComponentsFromIds(request, rootElement) {
@@ -24,7 +24,7 @@ export const createHarmonyComponentSlice = createHarmonySlice<
       (component) =>
         !currHarmonyComponents.find((comp) => comp.id === component),
     )
-    const { harmonyComponents, errorElements } = await indexComponents({
+    const { harmonyComponents, errorElements } = await get().indexComponents({
       ...request,
       components: uniqueElements,
     })
