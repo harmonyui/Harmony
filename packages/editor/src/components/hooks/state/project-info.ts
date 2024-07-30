@@ -11,6 +11,8 @@ export interface ProjectInfoState {
   showWelcomeScreen: boolean
   isDemo: boolean
   isInitialized: boolean
+  isOverlay: boolean
+  setIsOverlay: (value: boolean) => void
   updateWelcomeScreen: (value: boolean) => void
   initializeProject: (props: {
     branchId: string
@@ -29,6 +31,10 @@ export const createProjectInfoSlice = createHarmonySlice<
   currentBranch: { name: '', id: '' },
   repositoryId: '',
   isInitialized: false,
+  isOverlay: false,
+  setIsOverlay(value: boolean) {
+    set({ isOverlay: value })
+  },
   updateWelcomeScreen(value: boolean) {
     set({ showWelcomeScreen: value })
   },

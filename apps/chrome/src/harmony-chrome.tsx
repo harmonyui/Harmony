@@ -17,7 +17,7 @@ export const HarmonyChrome: React.FunctionComponent = () => {
   }, [onToggleEditor])
 
   useHarmonySetup(
-    { local: true, repositoryId: '', mode: 'preview-full', show },
+    { local: true, repositoryId: '', overlay: true, show },
     undefined,
   )
 

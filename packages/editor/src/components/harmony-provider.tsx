@@ -52,7 +52,7 @@ export interface HarmonyProviderProps {
   fonts?: Font[]
   environment?: Environment
   source?: Source
-  mode?: DisplayMode
+  overlay?: boolean
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   repositoryId,
@@ -62,7 +62,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   setup,
   environment = 'production',
   source = 'document',
-  mode: modeProps = 'designer',
+  overlay = false,
 }) => {
   const [isToggled, setIsToggled] = useState(true)
   const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>()
@@ -97,6 +97,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const setSource = useHarmonyStore((state) => state.setSource)
   const displayMode = useHarmonyStore((state) => state.displayMode)
   const setDisplayMode = useHarmonyStore((state) => state.setDisplayMode)
+  const setIsOverlay = useHarmonyStore((state) => state.setIsOverlay)
 
   const { executeCommand, onUndo } = useComponentUpdator({
     isSaving,
@@ -121,10 +122,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
   useEffect(() => {
     const initialize = async () => {
+      setSource(source)
+      setIsOverlay(overlay)
+
       onHistoryChange()
 
-      setSource(source)
-      //setDisplayMode(modeProps)
       await initializeProject({ branchId, repositoryId, environment })
     }
 
@@ -403,7 +405,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const changeMode = (_mode: DisplayMode) => {
     if ((viewModes as readonly string[]).includes(_mode)) {
       setDisplayMode(_mode as DisplayMode)
-      setup.changeMode(_mode as DisplayMode)
+      setup.changeMode(!overlay)
     }
   }
 

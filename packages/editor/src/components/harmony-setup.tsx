@@ -6,14 +6,13 @@ import type { Environment } from '@harmony/util/src/utils/component'
 import { getEditorUrl } from '@harmony/util/src/utils/component'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
-import { viewModes, type DisplayMode } from './harmony-context'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
 import { QueryStateProvider, useQueryState } from './hooks/query-state'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
-  'repositoryId' | 'fonts' | 'environment' | 'source' | 'mode'
+  'repositoryId' | 'fonts' | 'environment' | 'source' | 'overlay'
 > & {
   local?: boolean
 }
@@ -55,7 +54,7 @@ export const useHarmonySetup = (
 
   useEffect(() => {
     if (!show) {
-      resultRef.current?.setup.changeMode('preview-full')
+      resultRef.current?.setup.changeMode(false)
       const container = document.getElementById('harmony-container')
       if (container) container.remove()
 
@@ -147,12 +146,11 @@ const createPortal = ReactDOM.createPortal
 
 export interface Setup {
   setContainer: (container: Element) => void
-  changeMode: (mode: DisplayMode) => void
+  changeMode: (inEditor: boolean) => void
   harmonyContainer: Element
 }
 export class Setuper implements Setup {
   private bodyObserver: MutationObserver
-  private mode: DisplayMode = 'preview-full'
   private container: Element | undefined
   constructor(public harmonyContainer: Element) {
     this.bodyObserver = new MutationObserver(() => undefined)
@@ -162,20 +160,12 @@ export class Setuper implements Setup {
     this.container = container
   }
 
-  public changeMode(mode: DisplayMode) {
-    let res = true
-    if (mode === 'preview-full' && this.mode !== 'preview-full') {
-      res = this.setupNormalMode()
-    } else if (mode === 'designer-slim' && this.mode !== 'designer-slim') {
-      res = this.setupDesignerSlimeMode()
-    } else if (viewModes.includes(mode)) {
-      res = this.setupHarmonyMode()
+  public changeMode(inEditor: boolean) {
+    if (inEditor) {
+      this.setupHarmonyMode()
+    } else {
+      this.setupNormalMode()
     }
-    if (res) this.mode = mode
-  }
-
-  private setupDesignerSlimeMode(): boolean {
-    return this.setupNormalMode()
   }
 
   private setupNormalMode() {

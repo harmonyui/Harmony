@@ -9,7 +9,7 @@ import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
 import type { ComponentUpdateState } from './component-update'
-import type { QueryState } from './query-state'
+import type { ProjectInfoState } from './project-info'
 
 export type Source = 'document' | 'iframe'
 export interface ComponentState {
@@ -27,7 +27,7 @@ export interface ComponentState {
 
 export const createComponentStateSlice = createHarmonySlice<
   ComponentState,
-  HarmonyComponentsState & ComponentUpdateState & QueryState
+  HarmonyComponentsState & ComponentUpdateState & ProjectInfoState
 >((set, get) => {
   const updateRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
     const source = get().source
@@ -44,7 +44,7 @@ export const createComponentStateSlice = createHarmonySlice<
       rootElement = iframeRoot
     }
 
-    if (get().displayMode === 'designer-slim') {
+    if (get().isOverlay) {
       rootElement = document.body
     }
 
