@@ -83,6 +83,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
   const pullRequest = useHarmonyStore((state) => state.pullRequest)
   const currentBranch = useHarmonyStore((state) => state.currentBranch)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
+  const displayMode = useHarmonyStore((state) => state.displayMode)
   const selectedElement = selectedComponent?.element
 
   const {
@@ -221,12 +222,14 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
       </div>
       <div className='hw-pl-4 hw-flex hw-gap-4 hw-items-center'>
         <PublishButton preview />
-        <button
-          className='hw-text-[#11283B] hover:hw-text-[#11283B]/80'
-          onClick={onPreview}
-        >
-          <PlayIcon className='hw-h-7 hw-w-7 hw-fill-white hw-stroke-none' />
-        </button>
+        {!displayMode.includes('slim') ? (
+          <button
+            className='hw-text-[#11283B] hover:hw-text-[#11283B]/80'
+            onClick={onPreview}
+          >
+            <PlayIcon className='hw-h-7 hw-w-7 hw-fill-white hw-stroke-none' />
+          </button>
+        ) : null}
         {!isDemo ? (
           <button
             className='hover:hw-fill-slate-400 hw-group'

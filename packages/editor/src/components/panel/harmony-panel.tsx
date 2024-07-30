@@ -9,7 +9,7 @@ import {
   LinkIcon,
   SendIcon,
 } from '@harmony/ui/src/components/core/icons'
-import { useMemo, useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
 import { Popover } from '@harmony/ui/src/components/core/popover'
 import type { PublishRequest } from '@harmony/util/src/types/network'
@@ -28,7 +28,6 @@ import { ToolbarPanel } from './toolbar-panel'
 import { PublishButton } from './publish-button'
 
 export interface HarmonyPanelProps {
-  root: HTMLElement | undefined
   onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void
   mode: SelectMode
   onModeChange: (mode: SelectMode) => void
@@ -38,17 +37,97 @@ export interface HarmonyPanelProps {
   isDirty: boolean
   setIsDirty: (value: boolean) => void
 }
-export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (
-  props,
-) => {
-  const {
-    displayMode,
-    onScaleChange,
-    scale,
-    showGiveFeedback,
-    setShowGiveFeedback,
-  } = useHarmonyContext()
+export const HarmonyPanel: React.FunctionComponent<
+  HarmonyPanelProps & { inspector: React.ReactNode }
+> = ({ inspector, ...props }) => {
+  const { displayMode } = useHarmonyContext()
+  const { children } = props
+
+  return (
+    <SidePanelProvider>
+      <ComponentAttributeProvider onChange={props.onAttributesChange}>
+        {displayMode === 'designer-slim' ? (
+          <div className='hw-fixed hw-h-full hw-w-full hw-z-[10000] hw-pointer-events-none'>
+            <div className='hw-pointer-events-auto'>
+              <div className='hw-absolute hw-top-0 hw-left-0 hw-right-0'>
+                <MainPanel {...props} />
+              </div>
+              <div className='hw-absolute hw-top-[52px] hw-bottom-0 hw-left-0'>
+                <SidePanel />
+              </div>
+              <FeedbackOverlay />
+              {inspector}
+            </div>
+          </div>
+        ) : (
+          <WheelContainer
+            toolbarPanel={<MainPanel {...props} />}
+            sidePanel={<SidePanel />}
+            overlay={<FeedbackOverlay />}
+          >
+            {children}
+          </WheelContainer>
+        )}
+      </ComponentAttributeProvider>
+    </SidePanelProvider>
+  )
+}
+
+const MainPanel: React.FunctionComponent<HarmonyPanelProps> = (props) => {
+  const { displayMode } = useHarmonyContext()
+
+  if (displayMode.includes('designer')) {
+    return <EditorPanel {...props} />
+  }
+
+  return <PreviewPanel />
+}
+
+const FeedbackOverlay: React.FunctionComponent = () => {
   const isDemo = useHarmonyStore((state) => state.isDemo)
+  const { showGiveFeedback, setShowGiveFeedback } = useHarmonyContext()
+
+  return (
+    <>
+      <div className='hw-absolute hw-left-4 hw-bottom-4'>
+        {isDemo ? (
+          <Button
+            as='a'
+            href='https://j48inpgngmc.typeform.com/to/Ch60XpCt'
+            className='hw-mr-4'
+            target='_blank'
+          >
+            Join Beta
+          </Button>
+        ) : null}
+        <Button mode='secondary' onClick={() => setShowGiveFeedback(true)}>
+          Give us feedback
+        </Button>
+      </div>
+      <div className='hw-absolute hw-right-0 hw-bottom-0'>
+        <HelpGuide className='hw-mr-4 hw-mb-4' />
+      </div>
+      <GiveFeedbackModal
+        show={showGiveFeedback}
+        onClose={() => setShowGiveFeedback(false)}
+      />
+    </>
+  )
+}
+
+interface WheelContainerProps {
+  children: React.ReactNode
+  sidePanel: React.ReactNode
+  toolbarPanel: React.ReactNode
+  overlay: React.ReactNode
+}
+const WheelContainer: React.FunctionComponent<WheelContainerProps> = ({
+  children,
+  sidePanel,
+  toolbarPanel,
+  overlay,
+}) => {
+  const { scale, onScaleChange } = useHarmonyContext()
   const { onTouch } = usePinchGesture({
     scale,
     onTouching(newScale, cursorPos) {
@@ -56,74 +135,29 @@ export const HarmonyPanel: React.FunctionComponent<HarmonyPanelProps> = (
     },
   })
   const { onTouch: onTouchHeader } = usePinchGesture({ scale, onTouching() {} })
-  const { children } = props
 
-  //TODO: Fix bug where getting rid of these parameters gives a "cannot read 'data-harmony-id' of undefined"
-  const getPanel = (_?: string, _2?: string) => {
-    if (displayMode === 'designer') {
-      return <EditorPanel {...props} />
-    }
-
-    return <PreviewPanel />
-  }
   return (
-    <SidePanelProvider>
-      <ComponentAttributeProvider onChange={props.onAttributesChange}>
+    <div
+      className='hw-flex hw-h-full'
+      ref={(ref) => {
+        ref?.addEventListener('wheel', onTouchHeader)
+      }}
+    >
+      {sidePanel}
+      <div className='hw-relative hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow-md'>
+        <div data-name='harmony-panel'>{toolbarPanel}</div>
         <div
-          className='hw-flex hw-h-full'
+          id='harmony-scroll-container'
           ref={(ref) => {
-            ref?.addEventListener('wheel', onTouchHeader)
+            ref?.addEventListener('wheel', onTouch)
           }}
+          className='hw-relative hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-px-[250px] hw-bg-gray-200'
         >
-          <SidePanel />
-          <div className='hw-relative hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow-md'>
-            <div data-name='harmony-panel'>{getPanel()}</div>
-            <div
-              id='harmony-scroll-container'
-              ref={(ref) => {
-                ref?.addEventListener('wheel', onTouch)
-              }}
-              className='hw-relative hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-px-[250px] hw-bg-gray-200'
-            >
-              {children}
-            </div>
-            <div className='hw-absolute hw-left-4 hw-bottom-4'>
-              {isDemo ? (
-                <Button
-                  as='a'
-                  href='https://j48inpgngmc.typeform.com/to/Ch60XpCt'
-                  className='hw-mr-4'
-                  target='_blank'
-                >
-                  Join Beta
-                </Button>
-              ) : null}
-              <Button
-                mode='secondary'
-                onClick={() => setShowGiveFeedback(true)}
-              >
-                Give us feedback
-              </Button>
-            </div>
-            <div className='hw-absolute hw-right-0 hw-bottom-0'>
-              <HelpGuide className='hw-mr-4 hw-mb-4' />
-            </div>
-            {/* <div className="hw-px-4 hw-py-4 sm:hw-px-6">
-						<Slider value={scale * 100} onChange={(value) => onScaleChange(value/100, {x: 0, y: 0})} max={500}/>
-					</div> */}
-          </div>
-          <GiveFeedbackModal
-            show={showGiveFeedback}
-            onClose={() => setShowGiveFeedback(false)}
-          />
-          {/* <ToolbarPanel mode={mode} onModeChange={onModeChange}/>
-				<div className="hw-text-center">
-					
-				</div>
-				<AttributePanel root={root} selectedComponent={selectedComponent} onAttributesChange={onAttributesChange} onComponentHover={(component) => component.element && onComponentHover(component.element)} onComponentSelect={(component) => component.element && onComponentSelect(component.element)} onAttributesSave={onAttributesSave} onAttributesCancel={onAttributesCancel}/> */}
+          {children}
         </div>
-      </ComponentAttributeProvider>
-    </SidePanelProvider>
+        {overlay}
+      </div>
+    </div>
   )
 }
 
@@ -139,7 +173,7 @@ const EditorPanel: React.FunctionComponent<HarmonyPanelProps> = ({
   const EDITOR_URL = useMemo(() => getEditorUrl(environment), [environment])
 
   return (
-    <div className='hw-flex hw-w-full hw-items-center hw-shadow-2xl'>
+    <div className='hw-flex hw-w-full hw-items-center hw-shadow-2xl hw-bg-white'>
       <div className='hw-h-10 hw-ml-4'>
         <img
           alt='Harmony Logo'

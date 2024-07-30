@@ -563,6 +563,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     return true
   })
 
+  const harmonyContainer = document.getElementById('harmony-container')
   useHighlighter({
     handlers: {
       onClick,
@@ -618,7 +619,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       },
     },
     container: rootElement,
-    noEvents: [],
+    noEvents: harmonyContainer ? [harmonyContainer] : [],
   })
 
   return (
