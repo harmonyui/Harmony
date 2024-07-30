@@ -43,7 +43,6 @@ import { getBoundingRect } from './snapping/calculations'
 import { useHarmonyStore } from './hooks/state'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import type { Source } from './hooks/state/component-state'
-import { useQueryStorageState } from './hooks/query-storage-state'
 
 export interface HarmonyProviderProps {
   repositoryId: string
@@ -72,10 +71,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const [scale, _setScale] = useState(0.8)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [displayMode, setDisplayMode] = useQueryStorageState<DisplayMode>({
-    key: 'mode',
-    defaultValue: modeProps,
-  })
   const [cursorX, setCursorX] = useState(0)
   const [cursorY, setCursorY] = useState(0)
   const [oldScale, setOldSclae] = useState(scale)
@@ -100,6 +95,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
   const rootComponent = useHarmonyStore((state) => state.rootComponent)?.element
   const setSource = useHarmonyStore((state) => state.setSource)
+  const displayMode = useHarmonyStore((state) => state.displayMode)
+  const setDisplayMode = useHarmonyStore((state) => state.setDisplayMode)
 
   const { executeCommand, onUndo } = useComponentUpdator({
     isSaving,
@@ -127,6 +124,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
       onHistoryChange()
 
       setSource(source)
+      //setDisplayMode(modeProps)
       await initializeProject({ branchId, repositoryId, environment })
     }
 
@@ -417,10 +415,21 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     setForceSave(forceSave + 1)
   }
 
-  // const onFinishGlobalUpdates = (updates: ComponentUpdate[]) => {
-  // 	executeCommand(updates, currUpdates?.execute);
-  // 	setCurrUpdates(undefined);
-  // }
+  const inspector = isToggled ? (
+    <Inspector
+      rootElement={rootComponent}
+      parentElement={harmonyContainerRef.current || rootComponent}
+      selectedComponent={selectedComponent}
+      hoveredComponent={hoveredComponent}
+      onHover={setHoveredComponent}
+      onSelect={setSelectedComponent}
+      onElementTextChange={onTextChange}
+      onReorder={onReorder}
+      mode={mode}
+      scale={scale}
+      onChange={onElementChange}
+    />
+  ) : null
 
   return (
     <>
@@ -454,7 +463,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
           {displayMode !== 'preview-full' ? (
             <>
               <HarmonyPanel
-                root={rootComponent}
                 onAttributesChange={onAttributesChange}
                 mode={mode}
                 onModeChange={setMode}
@@ -462,6 +470,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                 onToggleChange={setIsToggled}
                 isDirty={isDirty}
                 setIsDirty={setIsDirty}
+                inspector={inspector}
               >
                 <div
                   style={{
@@ -483,23 +492,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                       transform: `scale(${scale})`,
                     }}
                   >
-                    {isToggled ? (
-                      <Inspector
-                        rootElement={rootComponent}
-                        parentElement={
-                          harmonyContainerRef.current || rootComponent
-                        }
-                        selectedComponent={selectedComponent}
-                        hoveredComponent={hoveredComponent}
-                        onHover={setHoveredComponent}
-                        onSelect={setSelectedComponent}
-                        onElementTextChange={onTextChange}
-                        onReorder={onReorder}
-                        mode={mode}
-                        scale={scale}
-                        onChange={onElementChange}
-                      />
-                    ) : null}
+                    {inspector}
                     {children}
                   </div>
                 </div>

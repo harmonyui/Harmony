@@ -114,7 +114,9 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
   //Whenever the urlRef changes, update the url
   useEffect(() => {
     if (window.location.href !== urlRef.current) {
-      window.history.pushState(undefined, '', urlRef.current)
+      const url = new URL(urlRef.current)
+      const path = url.pathname + url.search + url.hash
+      window.history.pushState({}, '', path)
     }
   }, [urlRef, forceRerender, router])
 

@@ -52,8 +52,11 @@ export const SidePanel: React.FunctionComponent = () => {
       leaveFrom='hw-opacity-100 hw-translate-x-0'
       leaveTo='hw-opacity-0 -hw-translate-x-1'
       show={panel !== undefined}
+      className='hw-h-full'
     >
-      <div className='hw-h-full hw-overflow-auto'>{panel?.content}</div>
+      <div className='hw-h-full hw-overflow-auto hw-relative hw-z-[1000] hw-bg-white'>
+        {panel?.content}
+      </div>
     </Transition>
   )
 }

@@ -6,11 +6,10 @@ import type { Environment } from '@harmony/util/src/utils/component'
 import { getEditorUrl } from '@harmony/util/src/utils/component'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
-import type { DisplayMode } from './harmony-context'
+import { viewModes, type DisplayMode } from './harmony-context'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
-import { useQueryStorageState } from './hooks/query-storage-state'
-import { QueryStateProvider } from './hooks/query-state'
+import { QueryStateProvider, useQueryState } from './hooks/query-state'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
@@ -31,8 +30,8 @@ export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> = (
 const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
   options,
 ) => {
-  const [branchId] = useQueryStorageState<string>({ key: 'branch-id' })
-  const [_environment] = useQueryStorageState<Environment | undefined>({
+  const [branchId] = useQueryState<string>({ key: 'branch-id' })
+  const [_environment] = useQueryState<Environment | undefined>({
     key: 'harmony-environment',
     defaultValue: options.environment,
   })
@@ -167,10 +166,16 @@ export class Setuper implements Setup {
     let res = true
     if (mode === 'preview-full' && this.mode !== 'preview-full') {
       res = this.setupNormalMode()
-    } else if (mode !== 'preview-full' && this.mode === 'preview-full') {
+    } else if (mode === 'designer-slim' && this.mode !== 'designer-slim') {
+      res = this.setupDesignerSlimeMode()
+    } else if (viewModes.includes(mode)) {
       res = this.setupHarmonyMode()
     }
     if (res) this.mode = mode
+  }
+
+  private setupDesignerSlimeMode(): boolean {
+    return this.setupNormalMode()
   }
 
   private setupNormalMode() {

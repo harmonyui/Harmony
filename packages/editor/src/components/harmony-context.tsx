@@ -6,7 +6,12 @@ import type {
 import type { Environment } from '@harmony/util/src/utils/component'
 import { createContext, useContext } from 'react'
 
-export const viewModes = ['designer', 'preview', 'preview-full'] as const
+export const viewModes = [
+  'designer',
+  'preview',
+  'preview-full',
+  'designer-slim',
+] as const
 export type DisplayMode = (typeof viewModes)[number]
 export type SelectMode = 'scope' | 'tweezer'
 export type ComponentUpdateWithoutGlobal = Omit<ComponentUpdate, 'isGlobal'>
