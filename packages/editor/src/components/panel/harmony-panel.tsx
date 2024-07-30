@@ -40,14 +40,17 @@ export interface HarmonyPanelProps {
 export const HarmonyPanel: React.FunctionComponent<
   HarmonyPanelProps & { inspector: React.ReactNode }
 > = ({ inspector, ...props }) => {
-  const { displayMode } = useHarmonyContext()
+  const isOverlay = useHarmonyStore((state) => state.isOverlay)
   const { children } = props
 
   return (
     <SidePanelProvider>
       <ComponentAttributeProvider onChange={props.onAttributesChange}>
-        {displayMode === 'designer-slim' ? (
-          <div className='hw-fixed hw-h-full hw-w-full hw-z-[10000] hw-pointer-events-none'>
+        {isOverlay ? (
+          <div
+            className='hw-fixed hw-h-full hw-w-full hw-z-[10000] hw-pointer-events-none hw-top-0'
+            id='harmony-overlay'
+          >
             <div className='hw-pointer-events-auto'>
               <div className='hw-absolute hw-top-0 hw-left-0 hw-right-0'>
                 <MainPanel {...props} />
