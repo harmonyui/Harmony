@@ -1,8 +1,4 @@
 import ReactDOM from 'react-dom'
-import { HarmonySetup } from 'harmony-ai-editor/src'
-import 'harmony-ai-editor/src/global.css'
+import { HarmonyChrome } from './harmony-chrome'
 
-ReactDOM.render(
-  <HarmonySetup repositoryId='' local />,
-  document.getElementById('harmony'),
-)
+ReactDOM.render(<HarmonyChrome />, document.getElementById('harmony'))
