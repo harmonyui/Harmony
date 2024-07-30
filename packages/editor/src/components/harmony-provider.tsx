@@ -43,6 +43,7 @@ import { getBoundingRect } from './snapping/calculations'
 import { useHarmonyStore } from './hooks/state'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import type { Source } from './hooks/state/component-state'
+import { useQueryStorageState } from './hooks/query-storage-state'
 
 export interface HarmonyProviderProps {
   repositoryId: string
@@ -52,6 +53,7 @@ export interface HarmonyProviderProps {
   fonts?: Font[]
   environment?: Environment
   source?: Source
+  mode?: DisplayMode
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   repositoryId,
@@ -61,6 +63,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   setup,
   environment = 'production',
   source = 'document',
+  mode: modeProps = 'designer',
 }) => {
   const [isToggled, setIsToggled] = useState(true)
   const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>()
@@ -69,7 +72,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const [scale, _setScale] = useState(0.8)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [displayMode, setDisplayMode] = useState<DisplayMode>()
+  const [displayMode, setDisplayMode] = useQueryStorageState<DisplayMode>({
+    key: 'mode',
+    defaultValue: modeProps,
+  })
   const [cursorX, setCursorX] = useState(0)
   const [cursorY, setCursorY] = useState(0)
   const [oldScale, setOldSclae] = useState(scale)
@@ -81,7 +87,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const pullRequest = useHarmonyStore((state) => state.pullRequest)
   const componentUpdates = useHarmonyStore((state) => state.componentUpdates)
   const isInitialized = useHarmonyStore((state) => state.isInitialized)
-  const publishState = useHarmonyStore((state) => state.pullRequest)
   const onApplyGlobal = useHarmonyStore((state) => state.onApplyGlobal)
   const initializeProject = useHarmonyStore((state) => state.initializeProject)
   const updateComponentsFromIds = useHarmonyStore(
@@ -114,21 +119,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   })
 
   const onHistoryChange = () => {
-    const url = new URL(window.location.href)
-    let _mode = url.searchParams.get('mode')
-    if (!_mode) {
-      _mode = window.sessionStorage.getItem('harmony-mode')
-      _mode && url.searchParams.set('mode', _mode)
-      window.history.pushState(publishState, 'mode', url.href)
-    }
-    if (_mode && (viewModes as readonly string[]).includes(_mode)) {
-      setDisplayMode(_mode as DisplayMode)
-      setup.changeMode(_mode as DisplayMode)
-    }
-
-    if (!_mode) {
-      changeMode('designer')
-    }
+    changeMode(displayMode)
   }
 
   useEffect(() => {
@@ -149,7 +140,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   }, [])
 
   useEffect(() => {
-    if (displayMode?.includes('preview')) {
+    if (displayMode.includes('preview')) {
       setIsToggled(false)
       setScale(0.5, { x: 0, y: 0 })
     }
@@ -411,13 +402,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     onAttributesChange(update, execute)
   }
 
-  const changeMode = (mode: DisplayMode) => {
-    const url = new URL(window.location.href)
-    url.searchParams.set('mode', mode)
-
-    window.history.pushState(publishState, 'mode', url.href)
-    window.sessionStorage.setItem('harmony-mode', mode)
-    onHistoryChange()
+  const changeMode = (_mode: DisplayMode) => {
+    if ((viewModes as readonly string[]).includes(_mode)) {
+      setDisplayMode(_mode as DisplayMode)
+      setup.changeMode(_mode as DisplayMode)
+    }
   }
 
   const onMinimize = () => {
@@ -440,7 +429,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
           value={{
             isSaving,
             setIsSaving,
-            displayMode: displayMode || 'designer',
+            displayMode,
             changeMode,
             fonts,
             onFlexToggle: onFlexClick,
@@ -462,7 +451,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             onAttributesChange,
           }}
         >
-          {displayMode && displayMode !== 'preview-full' ? (
+          {displayMode !== 'preview-full' ? (
             <>
               <HarmonyPanel
                 root={rootComponent}
@@ -517,7 +506,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
               </HarmonyPanel>
             </>
           ) : (
-            <div className='hw-fixed hw-z-[100] hw-group hw-p-2'>
+            <div className='hw-fixed hw-z-[100] hw-group hw-p-2 hw-bottom-0 hw-left-0'>
               <button
                 className='hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2'
                 onClick={onMinimize}

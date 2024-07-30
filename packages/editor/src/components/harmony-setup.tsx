@@ -1,5 +1,5 @@
 'use client'
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import type { Fiber } from 'react-reconciler'
 import type { Environment } from '@harmony/util/src/utils/component'
@@ -9,65 +9,83 @@ import { getComponentElementFiber } from './inspector/component-identifier'
 import type { DisplayMode } from './harmony-context'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
+import { useQueryStorageState } from './hooks/query-storage-state'
+import { QueryStateProvider } from './hooks/query-state'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
-  'repositoryId' | 'fonts' | 'environment' | 'source'
->
-export const HarmonySetup: React.FunctionComponent<
-  HarmonySetupProps & { local?: boolean }
-> = ({ local = false, ...options }) => {
-  const setBranchId = (branchId: string) => {
-    const url = new URL(window.location.href)
-    if (!url.searchParams.has('branch-id')) {
-      url.searchParams.set('branch-id', branchId)
-      window.history.replaceState(null, '', url.href)
-    }
-    window.sessionStorage.setItem('branch-id', branchId)
-  }
+  'repositoryId' | 'fonts' | 'environment' | 'source' | 'mode'
+> & {
+  local?: boolean
+}
+export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> = (
+  options,
+) => {
+  return (
+    <QueryStateProvider>
+      <HarmonySetupPrimitive {...options} />
+    </QueryStateProvider>
+  )
+}
+
+const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
+  options,
+) => {
+  const [branchId] = useQueryStorageState<string>({ key: 'branch-id' })
+  const [_environment] = useQueryStorageState<Environment | undefined>({
+    key: 'harmony-environment',
+    defaultValue: options.environment,
+  })
+  const environment = (_environment ||
+    process.env.ENV ||
+    process.env.NEXT_PUBLIC_ENV) as Environment | undefined
+
+  useHarmonySetup(
+    { ...options, environment, show: Boolean(branchId) },
+    branchId,
+  )
+
+  return <></>
+}
+
+export const useHarmonySetup = (
+  { local = false, show, ...options }: HarmonySetupProps & { show?: boolean },
+  branchId: string | undefined,
+) => {
+  const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>()
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    let branchId = urlParams.get('branch-id')
-    if (!branchId) {
-      branchId = window.sessionStorage.getItem('branch-id')
-      branchId && setBranchId(branchId)
+    if (!show) {
+      resultRef.current?.setup.changeMode('preview-full')
+      const container = document.getElementById('harmony-container')
+      if (container) container.remove()
+
+      return
     }
 
-    if (!branchId) return
+    resultRef.current = setupHarmonyProvider()
 
-    const environment =
-      (urlParams.get('harmony-environment') as Environment | undefined) ||
-      (window.sessionStorage.getItem('harmony-environment') as
-        | Environment
-        | undefined) ||
-      options.environment
-    window.sessionStorage.setItem(
-      'harmony-environment',
-      environment || 'production',
-    )
-
-    const result = setupHarmonyProvider()
-    if (result) {
-      setBranchId(branchId)
-
-      const { harmonyContainer } = result
+    if (resultRef.current) {
+      const { harmonyContainer } = resultRef.current
       if (!local) {
         createProductionScript(
-          { ...options, environment },
-          branchId,
+          options,
+          branchId || '',
           harmonyContainer,
-          result.setup,
+          resultRef.current.setup,
         )
       } else {
         window.HarmonyProvider(
-          { ...options, environment, branchId, setup: result.setup },
+          {
+            ...options,
+            branchId: branchId || '',
+            setup: resultRef.current.setup,
+          },
           harmonyContainer,
         )
       }
     }
-  }, [])
-  return <></>
+  }, [show, resultRef])
 }
 
 function createProductionScript(
@@ -146,22 +164,23 @@ export class Setuper implements Setup {
   }
 
   public changeMode(mode: DisplayMode) {
-    if (!this.container) return
     let res = true
     if (mode === 'preview-full' && this.mode !== 'preview-full') {
-      res = this.setupNormalMode(this.container)
+      res = this.setupNormalMode()
     } else if (mode !== 'preview-full' && this.mode === 'preview-full') {
-      res = this.setupHarmonyMode(this.container)
+      res = this.setupHarmonyMode()
     }
     if (res) this.mode = mode
   }
 
-  private setupNormalMode(container: Element) {
-    for (let i = 0; i < container.children.length; i++) {
-      const child = container.children[i]
-      if (isNativeElement(child)) {
-        appendChild(document.body, child)
-        i--
+  private setupNormalMode() {
+    if (this.container) {
+      for (let i = 0; i < this.container.children.length; i++) {
+        const child = this.container.children[i]
+        if (isNativeElement(child)) {
+          appendChild(document.body, child)
+          i--
+        }
       }
     }
 
@@ -173,53 +192,52 @@ export class Setuper implements Setup {
     return true
   }
 
-  private setupHarmonyMode(container: Element): boolean {
-    const containerFiber = getElementFiber(container as FiberHTMLElement)
-    if (!containerFiber) {
-      return false
-    }
-    // const containerParent = new ParentFiber();
-    // containerParent.setFiber(containerFiber);
+  private setupHarmonyMode(): boolean {
+    const container = this.container
 
-    for (let i = 0; i < document.body.children.length; i++) {
-      const child = document.body.children[i]
-      if (isNativeElement(child)) {
-        appendChild(container, child)
-        i--
+    if (container) {
+      for (let i = 0; i < document.body.children.length; i++) {
+        const child = document.body.children[i]
+        if (isNativeElement(child)) {
+          appendChild(container, child)
+          i--
+        }
       }
+
+      ReactDOM.createPortal = function create(
+        children: React.ReactNode,
+        _container: Element | DocumentFragment,
+        key?: string | null | undefined,
+      ) {
+        if (_container === document.body) {
+          // eslint-disable-next-line no-param-reassign -- ok
+          _container = container
+        }
+
+        return createPortal(children, _container, key)
+      }
+
+      this.bodyObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          // eslint-disable-next-line @typescript-eslint/no-loop-func -- ok
+          mutation.addedNodes.forEach((node) => {
+            if (
+              node.parentElement === document.body &&
+              isNativeElement(node as Element)
+            ) {
+              appendChild(container, node)
+            }
+          })
+        }
+      })
     }
+
     this.harmonyContainer.className = 'hw-h-full hw-w-full'
-    if (document.body.dataset.harmonyId) {
+    if (document.body.dataset.harmonyId && this.container) {
       ;(this.container as HTMLElement).dataset.harmonyId =
         document.body.dataset.harmonyId
     }
 
-    ReactDOM.createPortal = function create(
-      children: React.ReactNode,
-      _container: Element | DocumentFragment,
-      key?: string | null | undefined,
-    ) {
-      if (_container === document.body) {
-        // eslint-disable-next-line no-param-reassign -- ok
-        _container = container
-      }
-
-      return createPortal(children, _container, key)
-    }
-
-    this.bodyObserver = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        // eslint-disable-next-line @typescript-eslint/no-loop-func -- ok
-        mutation.addedNodes.forEach((node) => {
-          if (
-            node.parentElement === document.body &&
-            isNativeElement(node as Element)
-          ) {
-            appendChild(container, node)
-          }
-        })
-      }
-    })
     this.bodyObserver.observe(document.body, {
       attributeOldValue: true,
       attributes: true,

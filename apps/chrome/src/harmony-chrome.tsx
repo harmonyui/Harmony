@@ -1,11 +1,13 @@
-import { HarmonySetup } from 'harmony-ai-editor/src'
+import { useHarmonySetup } from 'harmony-ai-editor/src'
 import 'harmony-ai-editor/src/global.css'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 
 export const HarmonyChrome: React.FunctionComponent = () => {
+  const [show, setShow] = useState(false)
+
   const onToggleEditor = useCallback(() => {
-    console.log('Toggled!')
-  }, [])
+    setShow(!show)
+  }, [show, setShow])
 
   useEffect(() => {
     window.addEventListener('toggleEditor', onToggleEditor)
@@ -13,5 +15,11 @@ export const HarmonyChrome: React.FunctionComponent = () => {
       window.removeEventListener('toggleEditor', onToggleEditor)
     }
   }, [onToggleEditor])
-  return <HarmonySetup repositoryId='' local />
+
+  useHarmonySetup(
+    { local: true, repositoryId: '', mode: 'preview-full', show },
+    undefined,
+  )
+
+  return <></>
 }
