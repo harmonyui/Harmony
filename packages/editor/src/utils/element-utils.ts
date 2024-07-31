@@ -91,13 +91,15 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
 }
 
 export const createComponentId = (element: HTMLElement): string => {
-  if (element.id !== '') {
-    return `#${element.id}`
+  const actualElement =
+    element.dataset.harmonyText === 'true' ? element.parentElement! : element
+  if (actualElement.id !== '') {
+    return `#${actualElement.id}`
   }
   const path = []
-  let currElement = element
+  let currElement = actualElement
   while (currElement.parentElement) {
-    let tagName = element.tagName.toLowerCase()
+    let tagName = currElement.tagName.toLowerCase()
     if (currElement.id) {
       tagName += `#${currElement.id}`
     }

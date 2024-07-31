@@ -346,7 +346,7 @@ export const createComponentUpdateSlice =
             update.childIndex,
             rootElement,
           )
-          if (!el) return //throw new Error(`Cannot find element with id ${update.componentId}`)
+          if (!el) continue //throw new Error(`Cannot find element with id ${update.componentId}`)
 
           const textNodes = Array.from(el.childNodes)
           const index = parseInt(update.name)
