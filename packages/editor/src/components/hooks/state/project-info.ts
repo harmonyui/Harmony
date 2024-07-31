@@ -6,17 +6,18 @@ import type { DataLayerState } from './data-layer'
 
 export interface ProjectInfoState {
   currentBranch: { name: string; id: string }
-  repositoryId: string
+  repositoryId: string | undefined
   branches: { name: string; id: string }[]
   showWelcomeScreen: boolean
   isDemo: boolean
   isInitialized: boolean
+  isRepositoryConnected: boolean
   isOverlay: boolean
   setIsOverlay: (value: boolean) => void
   updateWelcomeScreen: (value: boolean) => void
   initializeProject: (props: {
     branchId: string
-    repositoryId: string
+    repositoryId: string | undefined
     environment: Environment
   }) => Promise<void>
 }
@@ -29,9 +30,10 @@ export const createProjectInfoSlice = createHarmonySlice<
   showWelcomeScreen: false,
   isDemo: false,
   currentBranch: { name: '', id: '' },
-  repositoryId: '',
+  repositoryId: undefined,
   isInitialized: false,
   isOverlay: false,
+  isRepositoryConnected: false,
   setIsOverlay(value: boolean) {
     set({ isOverlay: value })
   },
@@ -39,7 +41,17 @@ export const createProjectInfoSlice = createHarmonySlice<
     set({ showWelcomeScreen: value })
   },
   async initializeProject({ branchId, repositoryId, environment }) {
-    get().initializeDataLayer(environment)
+    if (get().client === undefined) {
+      get().initializeDataLayer(environment)
+    }
+    if (!branchId && !repositoryId) {
+      set({
+        isInitialized: true,
+        isRepositoryConnected: false,
+      })
+      return
+    }
+
     try {
       const response = await get().loadProject({ branchId, repositoryId })
 
@@ -59,6 +71,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         currentBranch,
         repositoryId,
         isInitialized: true,
+        isRepositoryConnected: repositoryId !== undefined,
       })
     } catch (err) {
       console.log(err)

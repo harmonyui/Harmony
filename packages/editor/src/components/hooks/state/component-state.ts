@@ -6,6 +6,7 @@ import type { ComponentElement } from '../../inspector/component-identifier'
 import { getComponentElementFiber } from '../../inspector/component-identifier'
 import { getFiberName } from '../../inspector/fiber'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
+import { createComponentId } from '../../../utils/element-utils'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
 import type { ComponentUpdateState } from './component-update'
@@ -29,7 +30,7 @@ export const createComponentStateSlice = createHarmonySlice<
   ComponentState,
   HarmonyComponentsState & ComponentUpdateState & ProjectInfoState
 >((set, get) => {
-  const updateRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
+  const getRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
     const source = get().source
 
     let rootElement = document.getElementById('harmony-section')
@@ -55,7 +56,14 @@ export const createComponentStateSlice = createHarmonySlice<
     const getComponentFromElement = (
       element: HTMLElement,
     ): ComponentElement | undefined => {
-      const id = element.dataset.harmonyId
+      let id = element.dataset.harmonyId
+
+      // If the element doesn't have an id, we need to create one
+      if (!id && !get().isRepositoryConnected) {
+        id = createComponentId(element)
+        element.dataset.harmonyId = id
+      }
+
       const harmonyComponent = harmonyComponents.find((c) => c.id === id)
 
       if (harmonyComponent && id) {
@@ -116,6 +124,11 @@ export const createComponentStateSlice = createHarmonySlice<
     }
 
     const rootComponent = getComponentFromElement(rootElement)
+
+    return rootComponent
+  }
+  const updateRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
+    const rootComponent = getRootElement(harmonyComponents)
     set({ rootComponent })
   }
 
@@ -191,6 +204,11 @@ export const createComponentStateSlice = createHarmonySlice<
       },
       componentUpdates() {
         updateRootElement(get().harmonyComponents)
+      },
+      isInitialized(curr, prev) {
+        if (curr && !prev) {
+          updateRootElement(get().harmonyComponents)
+        }
       },
     },
   }

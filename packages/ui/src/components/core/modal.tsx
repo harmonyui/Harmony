@@ -140,7 +140,7 @@ export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({
       <div className='hw-flex hw-justify-center hw-items-center hw-h-full hw-w-full'>
         <ClosableContent
           className={getClass(
-            'hw-mx-auto hw-w-full',
+            'hw-mx-auto hw-w-full hw-h-full',
             maxWidthClassName || 'hw-max-w-3xl',
           )}
           onClose={onClose}

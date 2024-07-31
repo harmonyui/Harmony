@@ -6,7 +6,8 @@
   "license": "ISC",
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
-    "build": "rm -r extension/dist && NODE_ENV=production pnpm withenv webpack",
+    "build": "rm -rf extension/dist && NODE_ENV=production pnpm withenv webpack",
+    "dev": "rm -rf extension/dist && NODE_ENV=development pnpm withenv webpack --watch --devtool eval-source-map",
     "test": "vitest run",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix ."
   },
@@ -15,6 +16,8 @@
   ],
   "preferUnplugged": true,
   "dependencies": {
+    "@clerk/clerk-react": "^5.2.10",
+    "@harmony/ui": "workspace:*",
     "@harmony/util": "workspace:*",
     "harmony-ai-editor": "workspace:*",
     "react": "^18",
