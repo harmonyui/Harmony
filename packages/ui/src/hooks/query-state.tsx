@@ -96,9 +96,9 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
       const url = new URL(urlRef.current)
       url.searchParams.set(key, value)
       setUrl(url.href)
-      setForceRerender(forceRerender + 1)
+      setForceRerender((prev) => prev + 1)
     },
-    [urlRef, forceRerender, setForceRerender],
+    [urlRef, setForceRerender],
   )
 
   const deleteSearchParam = useCallback(
@@ -106,9 +106,9 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
       const url = new URL(urlRef.current)
       url.searchParams.delete(key)
       setUrl(url.href)
-      setForceRerender(forceRerender + 1)
+      setForceRerender((prev) => prev + 1)
     },
-    [forceRerender],
+    [urlRef, setForceRerender],
   )
 
   //Whenever the urlRef changes, update the url
