@@ -21,7 +21,7 @@ export interface HighlighterProps {
     onDoubleClick: HighlighterDispatch
   }
   container: HTMLElement | undefined
-  noEvents: HTMLElement[]
+  noEvents: string[]
 }
 export const useHighlighter = ({
   handlers: {
@@ -93,7 +93,7 @@ export const useHighlighter = ({
     useEffectEvent((event: MouseEvent) => {
       let target = event.target as HTMLElement | null
       if (
-        noEvents.some((no) => no.contains(target)) ||
+        noEvents.some((no) => document.querySelector(no)?.contains(target)) ||
         target?.dataset.nonSelectable === 'true'
       )
         return
@@ -117,15 +117,18 @@ export const useHighlighter = ({
     })
 
   //Disables the event
-  const onMouseEvent = (event: MouseEvent): boolean | undefined => {
-    const target = event.target as HTMLElement | null
-    if (noEvents.some((no) => no.contains(target))) return
-    event.preventDefault()
-    event.stopPropagation()
-    event.stopImmediatePropagation()
+  const onMouseEvent = useEffectEvent(
+    (event: MouseEvent): boolean | undefined => {
+      const target = event.target as HTMLElement | null
+      if (noEvents.some((no) => document.querySelector(no)?.contains(target)))
+        return
+      event.preventDefault()
+      event.stopPropagation()
+      event.stopImmediatePropagation()
 
-    return false
-  }
+      return false
+    },
+  )
 
   const onPointerUp = highligherDispatcher(onPointerUpProps)
   // const onPointerUp = () => {

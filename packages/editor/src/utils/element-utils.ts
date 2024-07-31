@@ -89,3 +89,28 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
 
   return { childIndex, componentId, index }
 }
+
+export const createComponentId = (element: HTMLElement): string => {
+  if (element.id !== '') {
+    return `#${element.id}`
+  }
+  const path = []
+  let currElement = element
+  while (currElement.parentElement) {
+    let tagName = element.tagName.toLowerCase()
+    if (currElement.id) {
+      tagName += `#${currElement.id}`
+    }
+    // else if (currElement.className) {
+    //   tagName += `.${currElement.className.split(' ').join('.')}`
+    // }
+    else {
+      const siblings = Array.from(currElement.parentElement.children)
+      const index = siblings.indexOf(currElement) + 1
+      tagName += `:nth-child(${index})`
+    }
+    path.unshift(tagName)
+    currElement = currElement.parentElement
+  }
+  return btoa(path.join(' > '))
+}

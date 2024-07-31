@@ -2,10 +2,10 @@
 import { getClass } from '@harmony/util/src/utils/common'
 import { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
+import { QueryStateProvider } from '@harmony/ui/src/hooks/query-state'
 import type { HarmonyProviderProps } from './components/harmony-provider'
 import { HarmonyProvider } from './components/harmony-provider'
 import { HarmonySetup, useHarmonySetup } from './components/harmony-setup'
-import { QueryStateProvider } from './components/hooks/query-state'
 
 type HarmonyProvider = (
   options: Omit<HarmonyProviderProps, 'children'>,

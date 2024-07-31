@@ -23,6 +23,12 @@ importers:
 
   apps/chrome:
     dependencies:
+      '@clerk/clerk-react':
+        specifier: ^5.2.10
+        version: 5.2.10(react-dom@18.3.1)(react@18.3.1)
+      '@harmony/ui':
+        specifier: workspace:*
+        version: link:../../packages/ui
       '@harmony/util':
         specifier: workspace:*
         version: link:../../packages/util
@@ -3528,6 +3534,20 @@ packages:
       tslib: 2.4.1
     dev: false
 
+  /@clerk/clerk-react@5.2.10(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-qJZ79aiB80cUuqccKqhk6QImGIji4y1bjK1xbGnqiAthtMegxFShLJwEsrF7nl0Rw5yM9cphiwETEqBWfIPL4Q==}
+    engines: {node: '>=18.17.0'}
+    peerDependencies:
+      react: '>=18 || >=19.0.0-beta'
+      react-dom: '>=18 || >=19.0.0-beta'
+    dependencies:
+      '@clerk/shared': 2.4.1(react-dom@18.3.1)(react@18.3.1)
+      '@clerk/types': 4.9.1
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      tslib: 2.4.1
+    dev: false
+
   /@clerk/clerk-sdk-node@4.13.15(react@18.3.1):
     resolution: {integrity: sha512-+6abejj+5Q8Yg7nhcth53MUxGV++YHnvjjsW2nH7xUTpY/BOLDKcPRBMELzXMOhSSibffrQ8yNS9LwZZEmazAg==}
     engines: {node: '>=14'}
@@ -3612,9 +3632,38 @@ packages:
       swr: 2.2.0(react@18.3.1)
     dev: false
 
+  /@clerk/shared@2.4.1(react-dom@18.3.1)(react@18.3.1):
+    resolution: {integrity: sha512-sApuz6hDRIai4Jwo/fBcihX74+DdrKLt08LkEVrooh/7zc0ipDOSGlqmAy15yNuKPaxpemp/9nW4T8gq6uIr9Q==}
+    engines: {node: '>=18.17.0'}
+    requiresBuild: true
+    peerDependencies:
+      react: '>=18 || >=19.0.0-beta'
+      react-dom: '>=18 || >=19.0.0-beta'
+    peerDependenciesMeta:
+      react:
+        optional: true
+      react-dom:
+        optional: true
+    dependencies:
+      '@clerk/types': 4.9.1
+      glob-to-regexp: 0.4.1
+      js-cookie: 3.0.5
+      react: 18.3.1
+      react-dom: 18.3.1(react@18.3.1)
+      std-env: 3.7.0
+      swr: 2.2.0(react@18.3.1)
+    dev: false
+
   /@clerk/types@3.64.0:
     resolution: {integrity: sha512-fthhIAXaNIYQZ+82kUA00IUR8fwjewb/9sQI1J1NhoGbLp5rtxjKmNa6EQGKfcSG0svJyQ56kdSUUfawxRm5fw==}
     engines: {node: '>=14'}
+    dependencies:
+      csstype: 3.1.1
+    dev: false
+
+  /@clerk/types@4.9.1:
+    resolution: {integrity: sha512-fCmqzPBFh0rH9TlUVPpvPW225DtGJDuCv5GecwuuzD8hcgwGetTfRSDRNl5Dub5aJuqYWGQQCCnKfnfCrhZvrA==}
+    engines: {node: '>=18.17.0'}
     dependencies:
       csstype: 3.1.1
     dev: false
@@ -11367,6 +11416,11 @@ packages:
   /js-cookie@3.0.1:
     resolution: {integrity: sha512-+0rgsUXZu4ncpPxRL+lNEptWMOWl9etvPHc/koSRp6MPwpRYAhmk0dUG00J4bxVV3r9uUzfo24wW0knS07SKSw==}
     engines: {node: '>=12'}
+    dev: false
+
+  /js-cookie@3.0.5:
+    resolution: {integrity: sha512-cEiJEAEoIbWfCZYKWhVwFuvPX1gETRYPw6LlaTKoxD3s2AkXzkCjnp6h0V77ozyqj0jakteJ4YqDJT830+lVGw==}
+    engines: {node: '>=14'}
     dev: false
 
   /js-tokens@4.0.0:

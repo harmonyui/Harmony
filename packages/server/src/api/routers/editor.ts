@@ -31,9 +31,6 @@ export const editorRouter = createTRPCRouter({
       const { repositoryId, branchId } = input
       const { prisma } = ctx
 
-      const repository = await getRepository({ prisma, repositoryId })
-      if (!repository) throw new Error('No repo')
-
       const pullRequest = await prisma.pullRequest.findUnique({
         where: {
           branch_id: branchId,
@@ -56,32 +53,40 @@ export const editorRouter = createTRPCRouter({
 
       const updates = await ctx.componentUpdateRepository.getUpdates(branchId)
 
-      const githubRepository =
-        ctx.gitRepositoryFactory.createGitRepository(repository)
-
-      const ref = await githubRepository.getBranchRef(repository.branch)
-
-      //If the current repository ref is out of date, that means we have some
-      //new commits that might affect our previously indexed component elements.
-      //Let's go through the diffs and update those component ids
-      if (ref !== repository.ref) {
-        if (!repository.ref.startsWith('http')) {
-          // await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
-          await updateFileCache(
-            ctx.gitRepositoryFactory,
-            repository,
-            repository.ref,
-            ref,
-          )
-        }
-        await prisma.repository.update({
-          where: {
-            id: repository.id,
-          },
-          data: {
-            ref,
-          },
+      if (repositoryId !== undefined) {
+        const repository = await getRepository({
+          prisma,
+          repositoryId,
         })
+        if (!repository) throw new Error('No repo')
+
+        const githubRepository =
+          ctx.gitRepositoryFactory.createGitRepository(repository)
+
+        const ref = await githubRepository.getBranchRef(repository.branch)
+
+        //If the current repository ref is out of date, that means we have some
+        //new commits that might affect our previously indexed component elements.
+        //Let's go through the diffs and update those component ids
+        if (ref !== repository.ref) {
+          if (!repository.ref.startsWith('http')) {
+            // await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
+            await updateFileCache(
+              ctx.gitRepositoryFactory,
+              repository,
+              repository.ref,
+              ref,
+            )
+          }
+          await prisma.repository.update({
+            where: {
+              id: repository.id,
+            },
+            data: {
+              ref,
+            },
+          })
+        }
       }
 
       const branches = await prisma.branch.findMany({
@@ -252,7 +257,7 @@ export const editorRouter = createTRPCRouter({
     .input(indexComponentsRequestSchema)
     .output(indexComponentsResponseSchema)
     .mutation(async ({ ctx, input }) => {
-      const { branchId } = input
+      const { branchId, repositoryId } = input
       const branch = await getBranch({ prisma: ctx.prisma, branchId })
       if (!branch) {
         throw new Error(`Cannot find branch with id ${branchId}`)
@@ -260,7 +265,7 @@ export const editorRouter = createTRPCRouter({
 
       const repository = await getRepository({
         prisma: ctx.prisma,
-        repositoryId: branch.repositoryId,
+        repositoryId,
       })
       if (!repository) {
         throw new Error(`Cannot find repository with id ${branch.repositoryId}`)

@@ -15,10 +15,10 @@ import type {
 } from '@harmony/util/src/types/component'
 import type { UpdateRequest } from '@harmony/util/src/types/network'
 import type { Environment } from '@harmony/util/src/utils/component'
-import { getWebUrl, reverseUpdates } from '@harmony/util/src/utils/component'
+import { reverseUpdates } from '@harmony/util/src/utils/component'
 import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   findElementsFromId,
   getComponentIdAndChildIndex,
@@ -43,9 +43,10 @@ import { getBoundingRect } from './snapping/calculations'
 import { useHarmonyStore } from './hooks/state'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import type { Source } from './hooks/state/component-state'
+import { dispatchToggleEvent } from './hooks/toggle-event'
 
 export interface HarmonyProviderProps {
-  repositoryId: string
+  repositoryId: string | undefined
   branchId: string
   children: React.ReactNode
   setup: Setup
@@ -74,7 +75,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const [cursorX, setCursorX] = useState(0)
   const [cursorY, setCursorY] = useState(0)
   const [oldScale, setOldSclae] = useState(scale)
-  const [forceSave, setForceSave] = useState(0)
   const [error, setError] = useState<string | undefined>()
   const [showGiveFeedback, setShowGiveFeedback] = useState(false)
   const [behaviors, setBehaviors] = useState<BehaviorType[]>([])
@@ -98,17 +98,15 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const displayMode = useHarmonyStore((state) => state.displayMode)
   const setDisplayMode = useHarmonyStore((state) => state.setDisplayMode)
   const setIsOverlay = useHarmonyStore((state) => state.setIsOverlay)
+  const initMutationObserverRef = useRef<MutationObserver | null>(null)
 
-  const { executeCommand, onUndo } = useComponentUpdator({
+  const { executeCommand, onUndo, clearUpdates } = useComponentUpdator({
     isSaving,
     environment,
     setIsSaving,
     fonts,
     isPublished: Boolean(pullRequest),
     branchId,
-    repositoryId,
-    rootComponent,
-    forceSave,
     behaviors,
     onChange() {
       updateTheCounter()
@@ -224,16 +222,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         recurseElements(rootComponent, [initElements(componentIds)])
         makeUpdates(componentUpdates, fonts, rootComponent)
 
-        void updateComponentsFromIds(
-          { branchId, components: componentIds },
-          rootComponent,
-        )
+        if (repositoryId) {
+          void updateComponentsFromIds(
+            { branchId, components: componentIds, repositoryId },
+            rootComponent,
+          )
+        }
       }
-      const mutationObserver = new MutationObserver(() => {
+      initMutationObserverRef.current = new MutationObserver(() => {
         recurseAndUpdateElements()
       })
       const body = rootComponent.querySelector('body')
-      mutationObserver.observe(body || rootComponent, {
+      initMutationObserverRef.current.observe(body || rootComponent, {
         childList: true,
       })
       recurseAndUpdateElements()
@@ -414,7 +414,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   }
 
   const onClose = () => {
-    setForceSave(forceSave + 1)
+    clearUpdates()
+    initMutationObserverRef.current?.disconnect()
+    dispatchToggleEvent()
   }
 
   const inspector = isToggled ? (
@@ -549,14 +551,10 @@ type HarmonyCommand = HarmonyCommandChange
 interface ComponentUpdatorProps {
   onChange?: () => void
   branchId: string
-  repositoryId: string
   isSaving: boolean
   setIsSaving: (value: boolean) => void
   isPublished: boolean
-  rootComponent: HTMLElement | undefined
   fonts: Font[] | undefined
-  //TODO: This is super hacky
-  forceSave: number
   onError: (error: string) => void
   environment: Environment
   behaviors: BehaviorType[]
@@ -564,15 +562,11 @@ interface ComponentUpdatorProps {
 const useComponentUpdator = ({
   onChange,
   branchId,
-  repositoryId,
   isSaving,
   isPublished,
   setIsSaving,
-  rootComponent,
   fonts,
-  forceSave,
   onError,
-  environment,
 }: ComponentUpdatorProps) => {
   const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([])
   const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([])
@@ -582,8 +576,9 @@ const useComponentUpdator = ({
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
   const rootElement = useHarmonyStore((state) => state.rootComponent)?.element
   const saveProject = useHarmonyStore((state) => state.saveProject)
-
-  const WEB_URL = useMemo(() => getWebUrl(environment), [environment])
+  const repositoryId = useHarmonyStore((state) => state.repositoryId)
+  const rootComponent = useHarmonyStore((state) => state.rootComponent)
+  const updates = useHarmonyStore((state) => state.componentUpdates)
 
   const save = useEffectEvent(() => {
     return new Promise<void>((resolve) => {
@@ -622,21 +617,11 @@ const useComponentUpdator = ({
     })
   })
 
-  useBackgroundLoop(() => {
+  useEffect(() => {
     if (saveStack.length && !isSaving && !isPublished) {
       void save()
     }
-  }, 10)
-
-  useEffect(() => {
-    if (forceSave > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises -- ok
-      save().then(() => {
-        window.sessionStorage.removeItem('branch-id')
-        window.location.replace(WEB_URL)
-      })
-    }
-  }, [forceSave])
+  }, [saveStack, isSaving, isPublished])
 
   const onLeave = useEffectEvent((e: BeforeUnloadEvent) => {
     if ((saveStack.length > 0 || isSaving) && !isPublished) {
@@ -708,6 +693,10 @@ const useComponentUpdator = ({
     setRedoStack([])
   }
 
+  const clearUpdates = (): void => {
+    change({ name: 'change', update: reverseUpdates(updates) })
+  }
+
   const change = ({ update }: HarmonyCommandChange): void => {
     if (!rootComponent) return
     for (const up of update) {
@@ -767,7 +756,7 @@ const useComponentUpdator = ({
 
   const saveCommand = async (
     commands: HarmonyCommand[],
-    save: { branchId: string; repositoryId: string },
+    save: { branchId: string; repositoryId: string | undefined },
   ) => {
     setIsSaving(true)
     const cmds = commands.map((cmd) => ({ update: cmd.update }))
@@ -792,44 +781,5 @@ const useComponentUpdator = ({
     }
   }, [])
 
-  // useEffect(() => {
-
-  // }, []);
-
-  return { executeCommand, onUndo }
-}
-
-const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
-  const callbackRef = useRef(callback)
-  const intervalRef = useRef<NodeJS.Timeout>()
-
-  // Update the callback function if it changes
-  useEffect(() => {
-    callbackRef.current = callback
-  }, [callback])
-
-  // Start the background loop when the component mounts
-  useEffect(() => {
-    const handle = () => {
-      callbackRef.current()
-    }
-
-    // Call the callback immediately when the component mounts
-    handle()
-
-    // Start the interval
-    intervalRef.current = setInterval(handle, intervalInSeconds * 1000)
-
-    // Clear the interval when the component unmounts
-    return () => {
-      clearInterval(intervalRef.current)
-    }
-  }, [intervalInSeconds])
-
-  // Function to manually stop the background loop
-  const stopBackgroundLoop = () => {
-    clearInterval(intervalRef.current)
-  }
-
-  return stopBackgroundLoop
+  return { executeCommand, onUndo, clearUpdates }
 }

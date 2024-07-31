@@ -4,11 +4,17 @@ import ReactDOM from 'react-dom'
 import type { Fiber } from 'react-reconciler'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { getEditorUrl } from '@harmony/util/src/utils/component'
+import {
+  QueryStateProvider,
+  useQueryState,
+} from '@harmony/ui/src/hooks/query-state'
+import { WEB_URL } from '@harmony/util/src/constants'
+import { useQueryStorageState } from '@harmony/ui/src/hooks/query-storage-state'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
-import { QueryStateProvider, useQueryState } from './hooks/query-state'
+import { useToggleEvent } from './hooks/toggle-event'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
@@ -29,7 +35,9 @@ export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> = (
 const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
   options,
 ) => {
-  const [branchId] = useQueryState<string>({ key: 'branch-id' })
+  const [branchId, setBranchId] = useQueryStorageState<string>({
+    key: 'branch-id',
+  })
   const [_environment] = useQueryState<Environment | undefined>({
     key: 'harmony-environment',
     defaultValue: options.environment,
@@ -42,6 +50,11 @@ const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
     { ...options, environment, show: Boolean(branchId) },
     branchId,
   )
+
+  useToggleEvent(() => {
+    setBranchId(undefined)
+    window.location.replace(WEB_URL)
+  })
 
   return <></>
 }

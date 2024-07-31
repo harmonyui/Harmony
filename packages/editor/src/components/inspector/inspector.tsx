@@ -199,6 +199,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   const isDemo = useHarmonyStore((state) => state.isDemo)
   const updateOverlay = useHarmonyStore((state) => state.updateCounter)
   const source = useHarmonyStore((state) => state.source)
+  const isOverlay = useHarmonyStore((state) => state.isOverlay)
 
   const previousError = usePrevious(error)
   const { panel } = useSidePanel()
@@ -563,7 +564,15 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     return true
   })
 
-  const overlayElement = document.getElementById('harmony-overlay')
+  const noEvents = useMemo(() => {
+    const _noEvents = ['#harmony-overlay']
+    if (isOverlay) {
+      _noEvents.push('#harmony-container')
+    }
+
+    return _noEvents
+  }, [isOverlay])
+
   useHighlighter({
     handlers: {
       onClick,
@@ -619,7 +628,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       },
     },
     container: rootElement,
-    noEvents: overlayElement ? [overlayElement] : [],
+    noEvents,
   })
 
   return (

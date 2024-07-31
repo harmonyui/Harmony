@@ -19,5 +19,6 @@
   "prettier.semi": false,
   "prettier.useTabs": false,
   "prettier.tabWidth": 2,
-  "prettier.configPath": "./tooling/prettier-config/index.mjs"
+  "prettier.configPath": "./tooling/prettier-config/index.mjs",
+  "vitest.disableWorkspaceWarning": true
 }
