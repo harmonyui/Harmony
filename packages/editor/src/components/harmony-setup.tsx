@@ -165,12 +165,17 @@ export interface Setup {
 export class Setuper implements Setup {
   private bodyObserver: MutationObserver
   private container: Element | undefined
+  private waitingForContainer: { inEditor: boolean } | undefined
   constructor(public harmonyContainer: Element) {
     this.bodyObserver = new MutationObserver(() => undefined)
   }
 
   public setContainer(container: Element) {
     this.container = container
+    if (this.waitingForContainer) {
+      this.changeMode(this.waitingForContainer.inEditor)
+      this.waitingForContainer = undefined
+    }
   }
 
   public changeMode(inEditor: boolean) {
@@ -201,17 +206,21 @@ export class Setuper implements Setup {
   }
 
   private setupHarmonyMode(): boolean {
-    const container = this.container
-
-    if (container) {
-      for (let i = 0; i < document.body.children.length; i++) {
-        const child = document.body.children[i]
-        if (isNativeElement(child)) {
-          appendChild(container, child)
-          i--
+    if (this.container) {
+      if (document.body.contains(this.container)) {
+        for (let i = 0; i < document.body.children.length; i++) {
+          const child = document.body.children[i]
+          if (isNativeElement(child)) {
+            appendChild(this.container, child)
+            i--
+          }
         }
+      } else {
+        this.waitingForContainer = { inEditor: true }
       }
 
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- ok
+      const self = this
       ReactDOM.createPortal = function create(
         children: React.ReactNode,
         _container: Element | DocumentFragment,
@@ -219,21 +228,23 @@ export class Setuper implements Setup {
       ) {
         if (_container === document.body) {
           // eslint-disable-next-line no-param-reassign -- ok
-          _container = container
+          _container = self.container as HTMLElement
         }
 
         return createPortal(children, _container, key)
       }
 
+      this.bodyObserver.disconnect()
       this.bodyObserver = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
           // eslint-disable-next-line @typescript-eslint/no-loop-func -- ok
           mutation.addedNodes.forEach((node) => {
             if (
               node.parentElement === document.body &&
-              isNativeElement(node as Element)
+              isNativeElement(node as Element) &&
+              this.container
             ) {
-              appendChild(container, node)
+              appendChild(this.container, node)
             }
           })
         }

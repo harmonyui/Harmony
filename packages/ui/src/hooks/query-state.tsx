@@ -84,21 +84,26 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
     [urlRef.current],
   )
 
-  const setUrl = (newUrl: string) => {
-    const url = new URL(newUrl)
-    //Removes dependency on the path so that only the search params are updated
-    url.pathname = window.location.pathname
-    urlRef.current = url.href
-  }
+  const setUrl = useCallback(
+    (newUrl: string) => {
+      const url = new URL(newUrl)
+      //Removes dependency on the path so that only the search params are updated
+      url.pathname = window.location.pathname
+
+      const hasChanged = url.href !== urlRef.current
+      urlRef.current = url.href
+      hasChanged && setForceRerender((prev) => prev + 1)
+    },
+    [urlRef, setForceRerender],
+  )
 
   const setSearchParam = useCallback(
     (key: string, value: string) => {
       const url = new URL(urlRef.current)
       url.searchParams.set(key, value)
       setUrl(url.href)
-      setForceRerender((prev) => prev + 1)
     },
-    [urlRef, setForceRerender],
+    [urlRef, setUrl],
   )
 
   const deleteSearchParam = useCallback(
@@ -106,9 +111,8 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
       const url = new URL(urlRef.current)
       url.searchParams.delete(key)
       setUrl(url.href)
-      setForceRerender((prev) => prev + 1)
     },
-    [urlRef, setForceRerender],
+    [urlRef, setUrl],
   )
 
   //Whenever the urlRef changes, update the url
