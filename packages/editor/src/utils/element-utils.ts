@@ -96,7 +96,7 @@ export const createComponentId = (element: HTMLElement): string => {
   if (actualElement.id !== '') {
     return `#${actualElement.id}`
   }
-  const path = []
+  const path: string[] = []
   let currElement = actualElement
   while (currElement.parentElement) {
     let tagName = currElement.tagName.toLowerCase()
