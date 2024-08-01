@@ -405,7 +405,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const changeMode = (_mode: DisplayMode) => {
     if ((viewModes as readonly string[]).includes(_mode)) {
       setDisplayMode(_mode as DisplayMode)
-      setup.changeMode(!overlay)
+      setup.changeMode(!overlay && _mode !== 'preview-full')
     }
   }
 

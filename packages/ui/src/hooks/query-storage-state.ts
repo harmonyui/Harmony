@@ -28,17 +28,21 @@ export function useQueryStorageState<T>({
     return sessionStorage
   }
 
+  const putValueIntoStorage = useCallback((_value: T | undefined) => {
+    if (_value === undefined) {
+      getStorage().removeItem(key)
+    } else {
+      getStorage().setItem(key, encodeState(_value))
+    }
+  }, [])
+
   const setStorageValue = useCallback(
     (storageValue: T | undefined): void => {
-      if (storageValue === undefined) {
-        getStorage().removeItem(key)
-      } else {
-        getStorage().setItem(key, encodeState(storageValue))
-      }
+      putValueIntoStorage(storageValue)
 
       setValue(storageValue)
     },
-    [setValue],
+    [setValue, putValueIntoStorage],
   )
 
   useEffect(() => {
@@ -50,14 +54,17 @@ export function useQueryStorageState<T>({
   //Prioritize the url, then the storage
   const storageValue = useMemo(() => {
     if (value) {
+      putValueIntoStorage(value)
       return value
     }
 
     const storageValueString = getStorage().getItem(key)
-    return storageValueString
+    const retValue = storageValueString
       ? decodeState<T>(storageValueString)
       : defaultValue
-  }, [value, defaultValue])
+    setValue(retValue)
+    return retValue
+  }, [value, defaultValue, setValue])
 
   return [storageValue, setStorageValue]
 }

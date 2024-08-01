@@ -1,3 +1,4 @@
+'use client'
 import type { ProjectDisplayProps } from '@harmony/ui/src/components/features/projects/project-display'
 import { ProjectDisplay as ProjectDisplayPrimitive } from '@harmony/ui/src/components/features/projects/project-display'
 import type { BranchItem } from '@harmony/util/src/types/branch'
