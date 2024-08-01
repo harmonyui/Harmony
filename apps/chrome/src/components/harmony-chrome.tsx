@@ -8,7 +8,7 @@ import {
 } from '@harmony/ui/src/hooks/query-state'
 import { ClerkProvider } from '@clerk/clerk-react'
 import { useToggleEvent } from 'harmony-ai-editor/src/components/hooks/toggle-event'
-import { StartModal } from './start-modal'
+import { StartModal } from './start-modal/start-modal'
 
 export const HarmonyChrome: React.FunctionComponent = () => {
   return (
