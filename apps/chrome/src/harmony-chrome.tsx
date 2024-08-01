@@ -1,7 +1,7 @@
 import { environment } from '@harmony/util/src/utils/component'
 import { useHarmonySetup } from 'harmony-ai-editor/src'
 import 'harmony-ai-editor/src/global.css'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import {
   QueryStateProvider,
   useQueryState,
@@ -22,7 +22,6 @@ export const HarmonyChrome: React.FunctionComponent = () => {
 
 const HarmonyChromeWithProviders: React.FunctionComponent = () => {
   const [branchId, setBranchId] = useQueryState<string>({ key: 'branch-id' })
-  //const [show, setShow] = useState(Boolean(branchId))
   const [showStartModal, setShowStartModal] = useQueryState({
     key: 'start-modal',
     defaultValue: false,
