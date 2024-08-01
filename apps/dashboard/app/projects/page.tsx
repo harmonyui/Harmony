@@ -23,7 +23,7 @@ const ProjectsPage = withAuth(async ({ ctx }) => {
       <SideNav>
         {branches ? (
           <ProjectDisplay
-            Projectes={branches}
+            projects={branches}
             defaultUrl={ctx.session.account.repository!.defaultUrl}
           />
         ) : (

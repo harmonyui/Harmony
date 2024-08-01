@@ -13,6 +13,7 @@ export default {
     globalObject: 'this',
   },
   target: 'web',
+  watch: true,
   devtool: 'eval-source-map',
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],

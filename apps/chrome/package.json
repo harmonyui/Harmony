@@ -1,0 +1,59 @@
+{
+  "name": "chrome",
+  "version": "1.0.0",
+  "description": "",
+  "author": "",
+  "license": "ISC",
+  "scripts": {
+    "withenv": "dotenv -e ../../.env --",
+    "build": "rm -rf extension/dist && NODE_ENV=production pnpm withenv webpack",
+    "dev": "rm -rf extension/dist && NODE_ENV=development pnpm withenv webpack --watch --devtool eval-source-map",
+    "test": "vitest run",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix ."
+  },
+  "files": [
+    "dist"
+  ],
+  "preferUnplugged": true,
+  "dependencies": {
+    "@clerk/clerk-react": "^5.2.10",
+    "@harmony/ui": "workspace:*",
+    "@harmony/util": "workspace:*",
+    "harmony-ai-editor": "workspace:*",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@babel/core": "^7.23.7",
+    "@babel/preset-env": "^7.24.8",
+    "@harmony/eslint-config-custom": "workspace:^",
+    "@harmony/prettier-config": "workspace:^",
+    "@harmony/tailwind-config": "workspace:^",
+    "@harmony/tsconfig": "workspace:^",
+    "@types/chrome": "^0.0.269",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "babel-loader": "^9.1.3",
+    "css-loader": "^6.9.0",
+    "dotenv-cli": "^7.3.0",
+    "eslint": "^8.48.0",
+    "postcss": "^8.4.40",
+    "postcss-loader": "^8.0.0",
+    "prettier": "^3.0.3",
+    "style-loader": "^3.3.4",
+    "tailwindcss": "^3.4.7",
+    "ts-loader": "^9.5.1",
+    "typescript": "^5.2.2",
+    "vitest": "^1.5.0",
+    "webpack": "^5.90.0",
+    "webpack-cli": "^5.1.4"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@harmony/eslint-config-custom/library"
+    ]
+  },
+  "prettier": "@harmony/prettier-config"
+}

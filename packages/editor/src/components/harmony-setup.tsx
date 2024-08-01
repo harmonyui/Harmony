@@ -1,81 +1,106 @@
 'use client'
-import React, { useEffect } from 'react'
+import React, { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import type { Fiber } from 'react-reconciler'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { getEditorUrl } from '@harmony/util/src/utils/component'
+import {
+  QueryStateProvider,
+  useQueryState,
+} from '@harmony/ui/src/hooks/query-state'
+import { WEB_URL } from '@harmony/util/src/constants'
+import { useQueryStorageState } from '@harmony/ui/src/hooks/query-storage-state'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
-import type { DisplayMode } from './harmony-context'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
+import { useToggleEvent } from './hooks/toggle-event'
 
-export const HarmonySetup: React.FunctionComponent<
-  Pick<
-    HarmonyProviderProps,
-    'repositoryId' | 'fonts' | 'environment' | 'source'
-  > & {
-    local?: boolean
-  }
-> = ({ local = false, ...options }) => {
-  const setBranchId = (branchId: string) => {
-    const url = new URL(window.location.href)
-    if (!url.searchParams.has('branch-id')) {
-      url.searchParams.set('branch-id', branchId)
-      window.history.replaceState(null, '', url.href)
-    }
-    window.sessionStorage.setItem('branch-id', branchId)
-  }
+type HarmonySetupProps = Pick<
+  HarmonyProviderProps,
+  'repositoryId' | 'fonts' | 'environment' | 'source' | 'overlay'
+> & {
+  local?: boolean
+}
+export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> = (
+  options,
+) => {
+  return (
+    <QueryStateProvider>
+      <HarmonySetupPrimitive {...options} />
+    </QueryStateProvider>
+  )
+}
+
+const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
+  options,
+) => {
+  const [branchId, setBranchId] = useQueryStorageState<string>({
+    key: 'branch-id',
+  })
+  const [_environment] = useQueryState<Environment | undefined>({
+    key: 'harmony-environment',
+    defaultValue: options.environment,
+  })
+  const environment = (_environment ||
+    process.env.ENV ||
+    process.env.NEXT_PUBLIC_ENV) as Environment | undefined
+
+  useHarmonySetup(
+    { ...options, environment, show: Boolean(branchId) },
+    branchId,
+  )
+
+  useToggleEvent(() => {
+    setBranchId(undefined)
+    window.location.replace(WEB_URL)
+  })
+
+  return <></>
+}
+
+export const useHarmonySetup = (
+  { local = false, show, ...options }: HarmonySetupProps & { show?: boolean },
+  branchId: string | undefined,
+) => {
+  const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>()
 
   useEffect(() => {
-    const urlParams = new URLSearchParams(window.location.search)
-    let branchId = urlParams.get('branch-id')
-    if (!branchId) {
-      branchId = window.sessionStorage.getItem('branch-id')
-      branchId && setBranchId(branchId)
+    if (!show) {
+      resultRef.current?.setup.changeMode(false)
+      const container = document.getElementById('harmony-container')
+      if (container) container.remove()
+
+      return
     }
 
-    if (!branchId) return
+    resultRef.current = setupHarmonyProvider()
 
-    const environment =
-      (urlParams.get('harmony-environment') as Environment | undefined) ||
-      (window.sessionStorage.getItem('harmony-environment') as
-        | Environment
-        | undefined) ||
-      options.environment
-    window.sessionStorage.setItem(
-      'harmony-environment',
-      environment || 'production',
-    )
-
-    const result = setupHarmonyProvider()
-    if (result) {
-      setBranchId(branchId)
-
-      const { harmonyContainer } = result
+    if (resultRef.current) {
+      const { harmonyContainer } = resultRef.current
       if (!local) {
         createProductionScript(
-          { ...options, environment },
-          branchId,
+          options,
+          branchId || '',
           harmonyContainer,
-          result.setup,
+          resultRef.current.setup,
         )
       } else {
         window.HarmonyProvider(
-          { ...options, branchId, setup: result.setup },
+          {
+            ...options,
+            branchId: branchId || '',
+            setup: resultRef.current.setup,
+          },
           harmonyContainer,
         )
       }
     }
-  }, [])
-  return <></>
+  }, [show, resultRef])
 }
 
 function createProductionScript(
-  options: Pick<
-    HarmonyProviderProps,
-    'repositoryId' | 'environment' | 'source'
-  >,
+  options: HarmonySetupProps,
   branchId: string,
   harmonyContainer: HTMLDivElement,
   setup: Setuper,
@@ -134,38 +159,41 @@ const createPortal = ReactDOM.createPortal
 
 export interface Setup {
   setContainer: (container: Element) => void
-  changeMode: (mode: DisplayMode) => void
+  changeMode: (inEditor: boolean) => void
   harmonyContainer: Element
 }
 export class Setuper implements Setup {
   private bodyObserver: MutationObserver
-  private mode: DisplayMode = 'preview-full'
   private container: Element | undefined
+  private waitingForContainer: { inEditor: boolean } | undefined
   constructor(public harmonyContainer: Element) {
     this.bodyObserver = new MutationObserver(() => undefined)
   }
 
   public setContainer(container: Element) {
     this.container = container
-  }
-
-  public changeMode(mode: DisplayMode) {
-    if (!this.container) return
-    let res = true
-    if (mode === 'preview-full' && this.mode !== 'preview-full') {
-      res = this.setupNormalMode(this.container)
-    } else if (mode !== 'preview-full' && this.mode === 'preview-full') {
-      res = this.setupHarmonyMode(this.container)
+    if (this.waitingForContainer) {
+      this.changeMode(this.waitingForContainer.inEditor)
+      this.waitingForContainer = undefined
     }
-    if (res) this.mode = mode
   }
 
-  private setupNormalMode(container: Element) {
-    for (let i = 0; i < container.children.length; i++) {
-      const child = container.children[i]
-      if (isNativeElement(child)) {
-        appendChild(document.body, child)
-        i--
+  public changeMode(inEditor: boolean) {
+    if (inEditor) {
+      this.setupHarmonyMode()
+    } else {
+      this.setupNormalMode()
+    }
+  }
+
+  private setupNormalMode() {
+    if (this.container) {
+      for (let i = 0; i < this.container.children.length; i++) {
+        const child = this.container.children[i]
+        if (isNativeElement(child)) {
+          appendChild(document.body, child)
+          i--
+        }
       }
     }
 
@@ -177,53 +205,58 @@ export class Setuper implements Setup {
     return true
   }
 
-  private setupHarmonyMode(container: Element): boolean {
-    const containerFiber = getElementFiber(container as FiberHTMLElement)
-    if (!containerFiber) {
-      return false
-    }
-    // const containerParent = new ParentFiber();
-    // containerParent.setFiber(containerFiber);
-
-    for (let i = 0; i < document.body.children.length; i++) {
-      const child = document.body.children[i]
-      if (isNativeElement(child)) {
-        appendChild(container, child)
-        i--
+  private setupHarmonyMode(): boolean {
+    if (this.container) {
+      if (document.body.contains(this.container)) {
+        for (let i = 0; i < document.body.children.length; i++) {
+          const child = document.body.children[i]
+          if (isNativeElement(child)) {
+            appendChild(this.container, child)
+            i--
+          }
+        }
+      } else {
+        this.waitingForContainer = { inEditor: true }
       }
+
+      // eslint-disable-next-line @typescript-eslint/no-this-alias -- ok
+      const self = this
+      ReactDOM.createPortal = function create(
+        children: React.ReactNode,
+        _container: Element | DocumentFragment,
+        key?: string | null | undefined,
+      ) {
+        if (_container === document.body) {
+          // eslint-disable-next-line no-param-reassign -- ok
+          _container = self.container as HTMLElement
+        }
+
+        return createPortal(children, _container, key)
+      }
+
+      this.bodyObserver.disconnect()
+      this.bodyObserver = new MutationObserver((mutations) => {
+        for (const mutation of mutations) {
+          // eslint-disable-next-line @typescript-eslint/no-loop-func -- ok
+          mutation.addedNodes.forEach((node) => {
+            if (
+              node.parentElement === document.body &&
+              isNativeElement(node as Element) &&
+              this.container
+            ) {
+              appendChild(this.container, node)
+            }
+          })
+        }
+      })
     }
+
     this.harmonyContainer.className = 'hw-h-full hw-w-full'
-    if (document.body.dataset.harmonyId) {
+    if (document.body.dataset.harmonyId && this.container) {
       ;(this.container as HTMLElement).dataset.harmonyId =
         document.body.dataset.harmonyId
     }
 
-    ReactDOM.createPortal = function create(
-      children: React.ReactNode,
-      _container: Element | DocumentFragment,
-      key?: string | null | undefined,
-    ) {
-      if (_container === document.body) {
-        // eslint-disable-next-line no-param-reassign -- ok
-        _container = container
-      }
-
-      return createPortal(children, _container, key)
-    }
-
-    this.bodyObserver = new MutationObserver((mutations) => {
-      for (const mutation of mutations) {
-        // eslint-disable-next-line @typescript-eslint/no-loop-func -- ok
-        mutation.addedNodes.forEach((node) => {
-          if (
-            node.parentElement === document.body &&
-            isNativeElement(node as Element)
-          ) {
-            appendChild(container, node)
-          }
-        })
-      }
-    })
     this.bodyObserver.observe(document.body, {
       attributeOldValue: true,
       attributes: true,

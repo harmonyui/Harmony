@@ -15,11 +15,10 @@ import type {
 } from '@harmony/util/src/types/component'
 import type { UpdateRequest } from '@harmony/util/src/types/network'
 import type { Environment } from '@harmony/util/src/utils/component'
-import { getWebUrl, reverseUpdates } from '@harmony/util/src/utils/component'
+import { reverseUpdates } from '@harmony/util/src/utils/component'
 import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { saveProject } from '../data-layer'
+import React, { useCallback, useEffect, useRef, useState } from 'react'
 import {
   findElementsFromId,
   getComponentIdAndChildIndex,
@@ -44,15 +43,17 @@ import { getBoundingRect } from './snapping/calculations'
 import { useHarmonyStore } from './hooks/state'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import type { Source } from './hooks/state/component-state'
+import { dispatchToggleEvent } from './hooks/toggle-event'
 
 export interface HarmonyProviderProps {
-  repositoryId: string
+  repositoryId: string | undefined
   branchId: string
   children: React.ReactNode
   setup: Setup
   fonts?: Font[]
   environment?: Environment
   source?: Source
+  overlay?: boolean
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   repositoryId,
@@ -62,6 +63,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   setup,
   environment = 'production',
   source = 'document',
+  overlay = false,
 }) => {
   const [isToggled, setIsToggled] = useState(true)
   const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>()
@@ -70,11 +72,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const [scale, _setScale] = useState(0.8)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [displayMode, setDisplayMode] = useState<DisplayMode>()
   const [cursorX, setCursorX] = useState(0)
   const [cursorY, setCursorY] = useState(0)
   const [oldScale, setOldSclae] = useState(scale)
-  const [forceSave, setForceSave] = useState(0)
   const [error, setError] = useState<string | undefined>()
   const [showGiveFeedback, setShowGiveFeedback] = useState(false)
   const [behaviors, setBehaviors] = useState<BehaviorType[]>([])
@@ -82,7 +82,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const pullRequest = useHarmonyStore((state) => state.pullRequest)
   const componentUpdates = useHarmonyStore((state) => state.componentUpdates)
   const isInitialized = useHarmonyStore((state) => state.isInitialized)
-  const publishState = useHarmonyStore((state) => state.pullRequest)
   const onApplyGlobal = useHarmonyStore((state) => state.onApplyGlobal)
   const initializeProject = useHarmonyStore((state) => state.initializeProject)
   const updateComponentsFromIds = useHarmonyStore(
@@ -96,17 +95,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
   const rootComponent = useHarmonyStore((state) => state.rootComponent)?.element
   const setSource = useHarmonyStore((state) => state.setSource)
+  const displayMode = useHarmonyStore((state) => state.displayMode)
+  const setDisplayMode = useHarmonyStore((state) => state.setDisplayMode)
+  const setIsOverlay = useHarmonyStore((state) => state.setIsOverlay)
+  const initMutationObserverRef = useRef<MutationObserver | null>(null)
 
-  const { executeCommand, onUndo } = useComponentUpdator({
+  const { executeCommand, onUndo, clearUpdates } = useComponentUpdator({
     isSaving,
     environment,
     setIsSaving,
     fonts,
     isPublished: Boolean(pullRequest),
     branchId,
-    repositoryId,
-    rootComponent,
-    forceSave,
     behaviors,
     onChange() {
       updateTheCounter()
@@ -115,29 +115,17 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   })
 
   const onHistoryChange = () => {
-    const url = new URL(window.location.href)
-    let _mode = url.searchParams.get('mode')
-    if (!_mode) {
-      _mode = window.sessionStorage.getItem('harmony-mode')
-      _mode && url.searchParams.set('mode', _mode)
-      window.history.pushState(publishState, 'mode', url.href)
-    }
-    if (_mode && (viewModes as readonly string[]).includes(_mode)) {
-      setDisplayMode(_mode as DisplayMode)
-      setup.changeMode(_mode as DisplayMode)
-    }
-
-    if (!_mode) {
-      changeMode('designer')
-    }
+    changeMode(displayMode)
   }
 
   useEffect(() => {
     const initialize = async () => {
+      setSource(source)
+      setIsOverlay(overlay)
+
       onHistoryChange()
 
-      setSource(source)
-      await initializeProject({ branchId, repositoryId })
+      await initializeProject({ branchId, repositoryId, environment })
     }
 
     void initialize()
@@ -150,7 +138,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   }, [])
 
   useEffect(() => {
-    if (displayMode?.includes('preview')) {
+    if (displayMode.includes('preview')) {
       setIsToggled(false)
       setScale(0.5, { x: 0, y: 0 })
     }
@@ -234,16 +222,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         recurseElements(rootComponent, [initElements(componentIds)])
         makeUpdates(componentUpdates, fonts, rootComponent)
 
-        void updateComponentsFromIds(
-          { branchId, components: componentIds },
-          rootComponent,
-        )
+        if (repositoryId) {
+          void updateComponentsFromIds(
+            { branchId, components: componentIds, repositoryId },
+            rootComponent,
+          )
+        }
       }
-      const mutationObserver = new MutationObserver(() => {
+      initMutationObserverRef.current = new MutationObserver(() => {
         recurseAndUpdateElements()
       })
       const body = rootComponent.querySelector('body')
-      mutationObserver.observe(body || rootComponent, {
+      initMutationObserverRef.current.observe(body || rootComponent, {
         childList: true,
       })
       recurseAndUpdateElements()
@@ -412,13 +402,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     onAttributesChange(update, execute)
   }
 
-  const changeMode = (mode: DisplayMode) => {
-    const url = new URL(window.location.href)
-    url.searchParams.set('mode', mode)
-
-    window.history.pushState(publishState, 'mode', url.href)
-    window.sessionStorage.setItem('harmony-mode', mode)
-    onHistoryChange()
+  const changeMode = (_mode: DisplayMode) => {
+    if ((viewModes as readonly string[]).includes(_mode)) {
+      setDisplayMode(_mode as DisplayMode)
+      setup.changeMode(!overlay && _mode !== 'preview-full')
+    }
   }
 
   const onMinimize = () => {
@@ -426,13 +414,26 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   }
 
   const onClose = () => {
-    setForceSave(forceSave + 1)
+    clearUpdates()
+    initMutationObserverRef.current?.disconnect()
+    dispatchToggleEvent()
   }
 
-  // const onFinishGlobalUpdates = (updates: ComponentUpdate[]) => {
-  // 	executeCommand(updates, currUpdates?.execute);
-  // 	setCurrUpdates(undefined);
-  // }
+  const inspector = isToggled ? (
+    <Inspector
+      rootElement={rootComponent}
+      parentElement={harmonyContainerRef.current || rootComponent}
+      selectedComponent={selectedComponent}
+      hoveredComponent={hoveredComponent}
+      onHover={setHoveredComponent}
+      onSelect={setSelectedComponent}
+      onElementTextChange={onTextChange}
+      onReorder={onReorder}
+      mode={mode}
+      scale={scale}
+      onChange={onElementChange}
+    />
+  ) : null
 
   return (
     <>
@@ -441,7 +442,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
           value={{
             isSaving,
             setIsSaving,
-            displayMode: displayMode || 'designer',
+            displayMode,
             changeMode,
             fonts,
             onFlexToggle: onFlexClick,
@@ -463,10 +464,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             onAttributesChange,
           }}
         >
-          {displayMode && displayMode !== 'preview-full' ? (
+          {displayMode !== 'preview-full' ? (
             <>
               <HarmonyPanel
-                root={rootComponent}
                 onAttributesChange={onAttributesChange}
                 mode={mode}
                 onModeChange={setMode}
@@ -474,6 +474,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                 onToggleChange={setIsToggled}
                 isDirty={isDirty}
                 setIsDirty={setIsDirty}
+                inspector={inspector}
               >
                 <div
                   style={{
@@ -495,30 +496,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                       transform: `scale(${scale})`,
                     }}
                   >
-                    {isToggled ? (
-                      <Inspector
-                        rootElement={rootComponent}
-                        parentElement={
-                          harmonyContainerRef.current || rootComponent
-                        }
-                        selectedComponent={selectedComponent}
-                        hoveredComponent={hoveredComponent}
-                        onHover={setHoveredComponent}
-                        onSelect={setSelectedComponent}
-                        onElementTextChange={onTextChange}
-                        onReorder={onReorder}
-                        mode={mode}
-                        scale={scale}
-                        onChange={onElementChange}
-                      />
-                    ) : null}
+                    {inspector}
                     {children}
                   </div>
                 </div>
               </HarmonyPanel>
             </>
           ) : (
-            <div className='hw-fixed hw-z-[100] hw-group hw-p-2'>
+            <div className='hw-fixed hw-z-[100] hw-group hw-p-2 hw-bottom-0 hw-left-0'>
               <button
                 className='hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2'
                 onClick={onMinimize}
@@ -566,14 +551,10 @@ type HarmonyCommand = HarmonyCommandChange
 interface ComponentUpdatorProps {
   onChange?: () => void
   branchId: string
-  repositoryId: string
   isSaving: boolean
   setIsSaving: (value: boolean) => void
   isPublished: boolean
-  rootComponent: HTMLElement | undefined
   fonts: Font[] | undefined
-  //TODO: This is super hacky
-  forceSave: number
   onError: (error: string) => void
   environment: Environment
   behaviors: BehaviorType[]
@@ -581,15 +562,11 @@ interface ComponentUpdatorProps {
 const useComponentUpdator = ({
   onChange,
   branchId,
-  repositoryId,
   isSaving,
   isPublished,
   setIsSaving,
-  rootComponent,
   fonts,
-  forceSave,
   onError,
-  environment,
 }: ComponentUpdatorProps) => {
   const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([])
   const [redoStack, setRedoStack] = useState<HarmonyCommand[]>([])
@@ -598,8 +575,10 @@ const useComponentUpdator = ({
   const addUpdates = useHarmonyStore((state) => state.addComponentUpdates)
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
   const rootElement = useHarmonyStore((state) => state.rootComponent)?.element
-
-  const WEB_URL = useMemo(() => getWebUrl(environment), [environment])
+  const saveProject = useHarmonyStore((state) => state.saveProject)
+  const repositoryId = useHarmonyStore((state) => state.repositoryId)
+  const rootComponent = useHarmonyStore((state) => state.rootComponent)
+  const updates = useHarmonyStore((state) => state.componentUpdates)
 
   const save = useEffectEvent(() => {
     return new Promise<void>((resolve) => {
@@ -638,21 +617,11 @@ const useComponentUpdator = ({
     })
   })
 
-  useBackgroundLoop(() => {
+  useEffect(() => {
     if (saveStack.length && !isSaving && !isPublished) {
       void save()
     }
-  }, 10)
-
-  useEffect(() => {
-    if (forceSave > 0) {
-      // eslint-disable-next-line @typescript-eslint/no-floating-promises -- ok
-      save().then(() => {
-        window.sessionStorage.removeItem('branch-id')
-        window.location.replace(WEB_URL)
-      })
-    }
-  }, [forceSave])
+  }, [saveStack, isSaving, isPublished])
 
   const onLeave = useEffectEvent((e: BeforeUnloadEvent) => {
     if ((saveStack.length > 0 || isSaving) && !isPublished) {
@@ -724,6 +693,10 @@ const useComponentUpdator = ({
     setRedoStack([])
   }
 
+  const clearUpdates = (): void => {
+    change({ name: 'change', update: reverseUpdates(updates) })
+  }
+
   const change = ({ update }: HarmonyCommandChange): void => {
     if (!rootComponent) return
     for (const up of update) {
@@ -783,7 +756,7 @@ const useComponentUpdator = ({
 
   const saveCommand = async (
     commands: HarmonyCommand[],
-    save: { branchId: string; repositoryId: string },
+    save: { branchId: string; repositoryId: string | undefined },
   ) => {
     setIsSaving(true)
     const cmds = commands.map((cmd) => ({ update: cmd.update }))
@@ -808,44 +781,5 @@ const useComponentUpdator = ({
     }
   }, [])
 
-  // useEffect(() => {
-
-  // }, []);
-
-  return { executeCommand, onUndo }
-}
-
-const useBackgroundLoop = (callback: () => void, intervalInSeconds: number) => {
-  const callbackRef = useRef(callback)
-  const intervalRef = useRef<NodeJS.Timeout>()
-
-  // Update the callback function if it changes
-  useEffect(() => {
-    callbackRef.current = callback
-  }, [callback])
-
-  // Start the background loop when the component mounts
-  useEffect(() => {
-    const handle = () => {
-      callbackRef.current()
-    }
-
-    // Call the callback immediately when the component mounts
-    handle()
-
-    // Start the interval
-    intervalRef.current = setInterval(handle, intervalInSeconds * 1000)
-
-    // Clear the interval when the component unmounts
-    return () => {
-      clearInterval(intervalRef.current)
-    }
-  }, [intervalInSeconds])
-
-  // Function to manually stop the background loop
-  const stopBackgroundLoop = () => {
-    clearInterval(intervalRef.current)
-  }
-
-  return stopBackgroundLoop
+  return { executeCommand, onUndo, clearUpdates }
 }

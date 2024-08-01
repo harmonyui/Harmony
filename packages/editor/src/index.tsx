@@ -2,9 +2,10 @@
 import { getClass } from '@harmony/util/src/utils/common'
 import { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
+import { QueryStateProvider } from '@harmony/ui/src/hooks/query-state'
 import type { HarmonyProviderProps } from './components/harmony-provider'
 import { HarmonyProvider } from './components/harmony-provider'
-import { HarmonySetup } from './components/harmony-setup'
+import { HarmonySetup, useHarmonySetup } from './components/harmony-setup'
 
 type HarmonyProvider = (
   options: Omit<HarmonyProviderProps, 'children'>,
@@ -29,7 +30,7 @@ export function HarmonyProviderFunc(
     useEffect(() => {
       if (ref.current) {
         options.setup.setContainer(ref.current)
-        options.setup.changeMode('designer')
+        //options.setup.changeMode(options.mode || 'designer')
       }
     }, [ref])
     return (
@@ -48,12 +49,14 @@ export function HarmonyProviderFunc(
     />
   ) //document.createElement('body');
   ReactDOM.render(
-    <HarmonyProvider {...options}>{container}</HarmonyProvider>,
+    <QueryStateProvider>
+      <HarmonyProvider {...options}>{container}</HarmonyProvider>
+    </QueryStateProvider>,
     harmonyContainer,
   )
 }
 
-export { HarmonySetup }
+export { HarmonySetup, useHarmonySetup }
 
 if (typeof window !== 'undefined') {
   window.HarmonyProvider = HarmonyProviderFunc

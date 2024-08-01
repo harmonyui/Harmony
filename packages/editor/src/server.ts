@@ -7,7 +7,6 @@ import { createTRPCContextExpress } from '@harmony/server/src/api/trpc'
 import type { LooseAuthProp } from '@clerk/clerk-sdk-node'
 import { ClerkExpressWithAuth } from '@clerk/clerk-sdk-node'
 import cors from 'cors'
-import { prisma } from '@harmony/db/lib/prisma'
 import morgan from 'morgan'
 import { PORT } from './trpc'
 
@@ -24,22 +23,7 @@ declare global {
 app.use(
   cors({
     origin(origin, callback) {
-      prisma.repository
-        .findFirst({
-          where: {
-            default_url: origin || '',
-          },
-        })
-        .then((value) => {
-          if (value || origin === 'https://formbricks-web-psi.vercel.app') {
-            callback(null, origin)
-          } else {
-            callback(null, [])
-          }
-        })
-        .catch((err) => {
-          callback(new Error(String(err)))
-        })
+      callback(null, origin)
     },
     credentials: true,
   }),

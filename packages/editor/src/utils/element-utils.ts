@@ -89,3 +89,30 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
 
   return { childIndex, componentId, index }
 }
+
+export const createComponentId = (element: HTMLElement): string => {
+  const actualElement =
+    element.dataset.harmonyText === 'true' ? element.parentElement! : element
+  if (actualElement.id !== '') {
+    return `#${actualElement.id}`
+  }
+  const path: string[] = []
+  let currElement = actualElement
+  while (currElement.parentElement) {
+    let tagName = currElement.tagName.toLowerCase()
+    if (currElement.id) {
+      tagName += `#${currElement.id}`
+    }
+    // else if (currElement.className) {
+    //   tagName += `.${currElement.className.split(' ').join('.')}`
+    // }
+    else {
+      const siblings = Array.from(currElement.parentElement.children)
+      const index = siblings.indexOf(currElement) + 1
+      tagName += `:nth-child(${index})`
+    }
+    path.unshift(tagName)
+    currElement = currElement.parentElement
+  }
+  return btoa(path.join(' > '))
+}

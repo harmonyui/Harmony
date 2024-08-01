@@ -213,7 +213,7 @@ const ParentChildSvg: IconComponent = () => {
         width='48.7108'
         height='42.0602'
         stroke='#0094FF'
-        stroke-width='2'
+        strokeWidth='2'
       />
       <rect
         x='129.023'
@@ -221,7 +221,7 @@ const ParentChildSvg: IconComponent = () => {
         width='48.7108'
         height='42.0602'
         stroke='#0094FF'
-        stroke-width='2'
+        strokeWidth='2'
       />
       <rect
         x='1'
@@ -230,7 +230,7 @@ const ParentChildSvg: IconComponent = () => {
         height='77.8072'
         stroke='#0094FF'
         stroke-opacity='0.5'
-        stroke-width='2'
+        strokeWidth='2'
         stroke-dasharray='4 4'
       />
       <path
