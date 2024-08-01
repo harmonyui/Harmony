@@ -1,7 +1,10 @@
 'use client'
 
 import type { BranchItem } from '@harmony/util/src/types/branch'
-import { displayElapsedTime } from '@harmony/util/src/utils/common'
+import {
+  displayElapsedTime,
+  wordToKebabCase,
+} from '@harmony/util/src/utils/common'
 import { useState } from 'react'
 import { WEB_URL } from '@harmony/util/src/constants'
 import { useChangeProperty } from '../../../hooks/change-property'
@@ -110,10 +113,7 @@ const CreateNewProjectModal: React.FunctionComponent<
       setError('Please fill out all fields')
       return
     }
-    const name = project.label
-      .split(' ')
-      .map((word) => `${word[0].toLowerCase()}${word.substring(1)}`)
-      .join('-')
+    const name = wordToKebabCase(project.label)
     setLoading(true)
     setError('')
     onCreate(
