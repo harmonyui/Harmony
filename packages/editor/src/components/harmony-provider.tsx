@@ -125,7 +125,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
       onHistoryChange()
 
-      await initializeProject({ branchId, repositoryId, environment })
+      await initializeProject({
+        branchId,
+        repositoryId,
+        environment,
+      })
     }
 
     void initialize()

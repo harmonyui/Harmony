@@ -29,7 +29,7 @@ const dataFetch =
   }
 
 export interface DataLayerState {
-  initializeDataLayer: (environment: Environment, token?: string | null) => void
+  initializeDataLayer: (environment: Environment, token?: string) => void
   loadProject: (args: LoadRequest) => Promise<LoadResponse>
   saveProject: (args: UpdateRequest) => Promise<UpdateResponse>
   publishProject: (args: PublishRequest) => Promise<PublishResponse>
@@ -37,6 +37,7 @@ export interface DataLayerState {
     args: IndexComponentsRequest,
   ) => Promise<IndexComponentsResponse>
   client: ReturnType<typeof createClient> | undefined
+  clientHasToken: boolean
 }
 export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
   (set) => ({
@@ -53,10 +54,12 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
       throw new Error('Data layer not initialized')
     },
     client: undefined,
-    initializeDataLayer(environment: Environment, token?: string | null) {
+    clientHasToken: false,
+    initializeDataLayer(environment: Environment, token?: string) {
       const client = createClient(environment, token)
       set({
         client,
+        clientHasToken: Boolean(token),
         loadProject: dataFetch<LoadRequest, LoadResponse>(
           client.editor.loadProject.query,
           loadResponseSchema,

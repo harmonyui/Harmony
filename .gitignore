@@ -56,3 +56,6 @@ dist-server
 
 #prisma
 generated
+
+#chrome
+*.zip

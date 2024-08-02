@@ -69,7 +69,10 @@ export const useHarmonySetup = (
     if (!show) {
       resultRef.current?.setup.changeMode(false)
       const container = document.getElementById('harmony-container')
-      if (container) container.remove()
+      if (container) {
+        ReactDOM.unmountComponentAtNode(container)
+        container.remove()
+      }
 
       return
     }

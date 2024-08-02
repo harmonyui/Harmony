@@ -1,4 +1,5 @@
 import path from 'node:path'
+import type { Configuration } from 'webpack'
 import webpack from 'webpack'
 
 export default {
@@ -13,7 +14,7 @@ export default {
     globalObject: 'this',
   },
   target: 'web',
-  watch: true,
+  mode: 'development',
   devtool: 'eval-source-map',
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],
@@ -61,4 +62,4 @@ export default {
   //     }],
   //     static: './public'
   // }
-}
+} satisfies Configuration
