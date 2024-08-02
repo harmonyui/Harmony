@@ -25,6 +25,7 @@
     "lint": "pnpm withenv eslint ."
   },
   "dependencies": {
+    "@clerk/clerk-react": "^5.2.10",
     "@clerk/clerk-sdk-node": "^5.0.2",
     "@harmony/db": "workspace:*",
     "@harmony/server": "workspace:*",
