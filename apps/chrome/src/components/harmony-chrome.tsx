@@ -1,7 +1,7 @@
 import { environment } from '@harmony/util/src/utils/component'
 import { useHarmonySetup } from 'harmony-ai-editor/src'
 import 'harmony-ai-editor/src/global.css'
-import { useCallback, useState } from 'react'
+import { useCallback } from 'react'
 import {
   QueryStateProvider,
   useQueryState,
@@ -26,7 +26,6 @@ const HarmonyChromeWithProviders: React.FunctionComponent = () => {
     key: 'start-modal',
     defaultValue: false,
   })
-  const [token, setToken] = useState<string | null>(null)
 
   const onToggleEditor = useCallback(() => {
     if (branchId === undefined) {
