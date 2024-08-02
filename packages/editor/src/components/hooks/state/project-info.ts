@@ -44,6 +44,7 @@ export const createProjectInfoSlice = createHarmonySlice<
     if (get().client === undefined) {
       get().initializeDataLayer(environment)
     }
+
     if (!branchId && !repositoryId) {
       set({
         isInitialized: true,

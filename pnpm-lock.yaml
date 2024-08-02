@@ -107,7 +107,7 @@ importers:
         version: 5.4.5
       vitest:
         specifier: ^1.5.0
-        version: 1.5.2(@types/node@20.12.7)
+        version: 1.5.2(@types/node@20.12.7)(jsdom@24.0.0)
       webpack:
         specifier: ^5.90.0
         version: 5.91.0(webpack-cli@5.1.4)
@@ -467,7 +467,7 @@ importers:
         version: 5.4.5
       vitest:
         specifier: ^1.5.0
-        version: 1.5.2(@types/node@20.12.7)
+        version: 1.5.2(@types/node@20.12.7)(jsdom@24.0.0)
       webpack:
         specifier: ^5.90.0
         version: 5.91.0(webpack-cli@5.1.4)
@@ -511,6 +511,9 @@ importers:
 
   packages/editor:
     dependencies:
+      '@clerk/clerk-react':
+        specifier: ^5.2.10
+        version: 5.2.10(react-dom@18.3.1)(react@18.3.1)
       '@clerk/clerk-sdk-node':
         specifier: ^5.0.2
         version: 5.0.2(react-dom@18.3.1)(react@18.3.1)
@@ -836,7 +839,7 @@ importers:
         version: 5.4.5
       vitest:
         specifier: ^1.5.0
-        version: 1.5.2(@types/node@20.12.7)
+        version: 1.5.2(@types/node@20.12.7)(jsdom@24.0.0)
 
   packages/swc-plugin: {}
 
@@ -1011,7 +1014,7 @@ importers:
         version: 5.4.5
       vitest:
         specifier: ^1.5.0
-        version: 1.5.2(@types/node@20.12.7)
+        version: 1.5.2(@types/node@20.12.7)(jsdom@24.0.0)
 
   packages/vite-plugin:
     dependencies:
@@ -1057,7 +1060,7 @@ importers:
         version: 5.2.10(@types/node@20.12.7)
       vitest:
         specifier: ^1.5.0
-        version: 1.5.2(@types/node@20.12.7)
+        version: 1.5.2(@types/node@20.12.7)(jsdom@24.0.0)
       webpack:
         specifier: ^5.90.0
         version: 5.91.0(webpack-cli@5.1.4)
@@ -8098,7 +8101,7 @@ packages:
       webpack: 5.x.x
       webpack-cli: 5.x.x
     dependencies:
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.91.0)
     dev: true
 
@@ -8109,7 +8112,7 @@ packages:
       webpack: 5.x.x
       webpack-cli: 5.x.x
     dependencies:
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.91.0)
     dev: true
 
@@ -8124,7 +8127,7 @@ packages:
       webpack-dev-server:
         optional: true
     dependencies:
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
       webpack-cli: 5.1.4(webpack@5.91.0)
     dev: true
 
@@ -9116,7 +9119,7 @@ packages:
       postcss-modules-values: 4.0.0(postcss@8.4.40)
       postcss-value-parser: 4.2.0
       semver: 7.6.0
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
     dev: true
 
   /css-select@5.1.0:
@@ -13940,7 +13943,7 @@ packages:
     peerDependencies:
       webpack: ^5.0.0
     dependencies:
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
     dev: true
 
   /styled-jsx@5.1.1(@babel/core@7.24.4)(react@18.3.1):
@@ -14312,7 +14315,7 @@ packages:
       semver: 7.6.0
       source-map: 0.7.4
       typescript: 5.4.5
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
     dev: true
 
   /tsc-alias@1.8.8:
@@ -14781,62 +14784,6 @@ packages:
       fsevents: 2.3.3
     dev: true
 
-  /vitest@1.5.2(@types/node@20.12.7):
-    resolution: {integrity: sha512-l9gwIkq16ug3xY7BxHwcBQovLZG75zZL0PlsiYQbf76Rz6QGs54416UWMtC0jXeihvHvcHrf2ROEjkQRVpoZYw==}
-    engines: {node: ^18.0.0 || >=20.0.0}
-    hasBin: true
-    peerDependencies:
-      '@edge-runtime/vm': '*'
-      '@types/node': ^18.0.0 || >=20.0.0
-      '@vitest/browser': 1.5.2
-      '@vitest/ui': 1.5.2
-      happy-dom: '*'
-      jsdom: '*'
-    peerDependenciesMeta:
-      '@edge-runtime/vm':
-        optional: true
-      '@types/node':
-        optional: true
-      '@vitest/browser':
-        optional: true
-      '@vitest/ui':
-        optional: true
-      happy-dom:
-        optional: true
-      jsdom:
-        optional: true
-    dependencies:
-      '@types/node': 20.12.7
-      '@vitest/expect': 1.5.2
-      '@vitest/runner': 1.5.2
-      '@vitest/snapshot': 1.5.2
-      '@vitest/spy': 1.5.2
-      '@vitest/utils': 1.5.2
-      acorn-walk: 8.3.2
-      chai: 4.4.1
-      debug: 4.3.4
-      execa: 8.0.1
-      local-pkg: 0.5.0
-      magic-string: 0.30.10
-      pathe: 1.1.2
-      picocolors: 1.0.1
-      std-env: 3.7.0
-      strip-literal: 2.1.0
-      tinybench: 2.8.0
-      tinypool: 0.8.4
-      vite: 5.2.13(@types/node@20.12.7)
-      vite-node: 1.5.2(@types/node@20.12.7)
-      why-is-node-running: 2.2.2
-    transitivePeerDependencies:
-      - less
-      - lightningcss
-      - sass
-      - stylus
-      - sugarss
-      - supports-color
-      - terser
-    dev: true
-
   /vitest@1.5.2(@types/node@20.12.7)(jsdom@24.0.0):
     resolution: {integrity: sha512-l9gwIkq16ug3xY7BxHwcBQovLZG75zZL0PlsiYQbf76Rz6QGs54416UWMtC0jXeihvHvcHrf2ROEjkQRVpoZYw==}
     engines: {node: ^18.0.0 || >=20.0.0}
@@ -14876,12 +14823,12 @@ packages:
       local-pkg: 0.5.0
       magic-string: 0.30.10
       pathe: 1.1.2
-      picocolors: 1.0.0
+      picocolors: 1.0.1
       std-env: 3.7.0
       strip-literal: 2.1.0
       tinybench: 2.8.0
       tinypool: 0.8.4
-      vite: 5.2.10(@types/node@20.12.7)
+      vite: 5.2.13(@types/node@20.12.7)
       vite-node: 1.5.2(@types/node@20.12.7)
       why-is-node-running: 2.2.2
     transitivePeerDependencies:
@@ -14971,7 +14918,7 @@ packages:
       import-local: 3.1.0
       interpret: 3.1.1
       rechoir: 0.8.0
-      webpack: 5.91.0(webpack-cli@5.1.4)
+      webpack: 5.91.0(esbuild@0.19.12)(webpack-cli@5.1.4)
       webpack-merge: 5.10.0
     dev: true
 

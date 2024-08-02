@@ -14,13 +14,11 @@ export const CreateProjectPage: StartPageComponent = ({ onOpenProject }) => {
   const client = useDataLayer()
 
   const onCreate = (): void => {
-    const url = new URL(window.location.href)
-    url.search = ''
     const branch: BranchItem = {
       id: '',
       label: projectName,
       name: wordToKebabCase(projectName),
-      url: url.href,
+      url: window.location.origin,
       commits: [],
       lastUpdated: new Date(),
     }
