@@ -11,7 +11,7 @@ export const CreateProjectPage: StartPageComponent = ({ onOpenProject }) => {
   const [projectName, setProjectName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const client = useDataLayer()
+  const { client } = useDataLayer()
 
   const onCreate = (): void => {
     const branch: BranchItem = {

@@ -6,7 +6,8 @@
   "license": "ISC",
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
-    "build": "rm -rf extension/dist && NODE_ENV=production pnpm withenv webpack",
+    "build": "rm -rf extension/dist &&  NODE_ENV=production pnpm withenv webpack",
+    "build:popup": "NODE_ENV=production pnpm withenv webpack --config webpack.config.popup.js",
     "dev": "rm -rf extension/dist && NODE_ENV=development pnpm withenv webpack --watch --devtool eval-source-map",
     "test": "vitest run",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix ."
@@ -16,16 +17,20 @@
   ],
   "preferUnplugged": true,
   "dependencies": {
+    "@clerk/chrome-extension": "^1.1.9",
+    "@clerk/clerk-js": "^5.14.1",
     "@clerk/clerk-react": "^5.2.10",
     "@harmony/ui": "workspace:*",
     "@harmony/util": "workspace:*",
     "harmony-ai-editor": "workspace:*",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-router-dom": "^6.26.0"
   },
   "devDependencies": {
     "@babel/core": "^7.23.7",
     "@babel/preset-env": "^7.24.8",
+    "@babel/preset-react": "^7.23.3",
     "@harmony/eslint-config-custom": "workspace:^",
     "@harmony/prettier-config": "workspace:^",
     "@harmony/tailwind-config": "workspace:^",

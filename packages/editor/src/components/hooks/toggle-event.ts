@@ -5,7 +5,9 @@ export const dispatchToggleEvent = () => {
   window.dispatchEvent(new CustomEvent(TOGGLE_EVENT))
 }
 
-export const useToggleEvent = (callback: () => void) => {
+export const useToggleEvent = (
+  callback: (e: CustomEventInit<string>) => void,
+) => {
   useEffect(() => {
     window.addEventListener(TOGGLE_EVENT, callback)
     return () => {

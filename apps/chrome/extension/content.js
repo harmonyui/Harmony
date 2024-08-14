@@ -3,6 +3,7 @@ const harmonyEntryPoint = document.createElement('div')
 const harmonyScript = document.createElement('script')
 
 harmonyEntryPoint.id = 'harmony'
+//harmonyEntryPoint.dataset.harmonyClerk = chrome.runtime.getURL('dist/clerk.js')
 harmonyScript.src = chrome.runtime.getURL('dist/bundle.js')
 
 harmonyEntryPoint.appendChild(harmonyScript)
@@ -11,7 +12,9 @@ document.querySelector('body').appendChild(harmonyEntryPoint)
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
   if (request.action === 'extensionIconClicked') {
-    window.dispatchEvent(new CustomEvent('toggleEditor'))
+    window.dispatchEvent(
+      new CustomEvent('toggleEditor', { detail: request.token }),
+    )
     sendResponse({ status: 'action performed' })
   }
 })
