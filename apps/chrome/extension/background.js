@@ -1,10 +1,12 @@
 /*global chrome -- ok*/
 chrome.action.onClicked.addListener((tab) => {
-  chrome.tabs.sendMessage(
-    tab.id,
-    { action: 'extensionIconClicked' },
-    (response) => {
-      console.log(response.status)
-    },
-  )
+  chrome.storage.local.get('token', ({ token }) => {
+    if (token) {
+      chrome.tabs.sendMessage(tab.id, { action: 'extensionIconClicked', token })
+    } else {
+      chrome.tabs.create({
+        url: `${chrome.runtime.getURL('popup.html')}?tabId=${tab.id}`,
+      })
+    }
+  })
 })

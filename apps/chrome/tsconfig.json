@@ -4,6 +4,6 @@
     "outDir": "./extension/dist/esm",
     "allowJs": true
   },
-  "include": ["."],
+  "include": ["**/*.ts", "**/*.tsx"],
   "exclude": ["webpack.config.js", "dist", "node_modules"]
 }

@@ -6,7 +6,7 @@ import { useDataLayer } from '../../../hooks/data-layer'
 
 export const SelectProjectsPage: StartPageComponent = ({ onOpenProject }) => {
   const [projects, setProjects] = useState<BranchItem[]>([])
-  const client = useDataLayer()
+  const { client } = useDataLayer()
 
   useEffect(() => {
     const initialize = async () => {
