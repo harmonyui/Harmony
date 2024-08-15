@@ -1,8 +1,6 @@
 import {
   ChatTeardropIcon,
   LogsIcon,
-  MonitorPlayIcon,
-  StackIcon,
   SquareIcon,
   TextIcon,
 } from '@harmony/ui/src/components/core/icons'
@@ -12,10 +10,8 @@ import { usePublishButton } from '../publish/publish-button'
 import { usePreviewButton } from '../preview/preview-button'
 import { useLayersButton } from '../layers/layers-button'
 
-interface HarmonyToolbar {
-  // TODO
-}
-export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = ({}) => {
+type HarmonyToolbar = object
+export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
   const { icon: PublishIcon, loading, disabled, onPublish } = usePublishButton()
   const { icon: PreviewIcon, onPreview } = usePreviewButton()
   const { icon: LayersIcon, onLayers } = useLayersButton()
@@ -29,26 +25,26 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = ({}) => {
     },
     {
       icon: TextIcon,
-      onClick: () => {},
+      onClick: () => undefined,
       mode: 'none',
       label: 'Text',
     },
     {
       icon: SquareIcon,
-      onClick: () => {},
+      onClick: () => undefined,
       mode: 'none',
       label: 'Shapes',
     },
 
     {
       icon: LogsIcon,
-      onClick: () => {},
+      onClick: () => undefined,
       mode: 'none',
       label: 'Logs',
     },
     {
       icon: ChatTeardropIcon,
-      onClick: () => {},
+      onClick: () => undefined,
       mode: 'none',
       label: 'Comments',
     },
