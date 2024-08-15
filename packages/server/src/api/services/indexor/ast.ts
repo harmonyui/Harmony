@@ -724,6 +724,7 @@ export function getCodeInfoFromFile(
                 type: AttributeType,
                 name: string | undefined,
               ): Attribute[] => {
+                // eslint-disable-next-line @typescript-eslint/no-unnecessary-type-assertion -- ok
                 const expressions = params.filter((param) =>
                   t.isExpression(param),
                 ) as t.Expression[]

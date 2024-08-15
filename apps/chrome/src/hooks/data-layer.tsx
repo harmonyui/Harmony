@@ -1,7 +1,7 @@
 //import { useAuth } from '@clerk/clerk-react'
 import { environment } from '@harmony/util/src/utils/component'
 import { useHarmonyStore } from 'harmony-ai-editor/src/components/hooks/state'
-import { createContext, useContext, useEffect, useMemo, useState } from 'react'
+import { createContext, useContext, useEffect } from 'react'
 
 type ClientType = Parameters<Parameters<typeof useHarmonyStore>[0]>[0]['client']
 

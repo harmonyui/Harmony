@@ -610,10 +610,11 @@ export const flexUpdator: PositionUpdator = {
         }
       } else {
         const minSpace = parentInfo[minGapBetweenX]
-        if (!info[left].siblingEdge)
+        const leftSibling = info[left].siblingEdge
+        if (!leftSibling)
           throw new Error('A non 0 index item should have a sibling')
 
-        const spaceDiff = info[left].siblingEdge!.gap - minSpace
+        const spaceDiff = leftSibling.gap - minSpace
         parentInfo.element.style.gap = `${minSpace}px`
         if (spaceDiff > 0.1) {
           setSpaceForElement(info[left].element, 'margin', left, spaceDiff)
