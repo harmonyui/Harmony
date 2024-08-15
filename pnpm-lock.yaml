@@ -1015,6 +1015,9 @@ importers:
 
   packages/util:
     dependencies:
+      clsx:
+        specifier: ^2.1.0
+        version: 2.1.1
       dayjs:
         specifier: ^1.11.10
         version: 1.11.10

@@ -25,7 +25,8 @@ import { ComponentAttributeProvider } from './attribute-panel'
 import { GiveFeedbackModal, HelpGuide } from './welcome/help-guide'
 import { SidePanel, SidePanelProvider } from './side-panel'
 import { ToolbarPanel } from './toolbar-panel'
-import { PublishButton } from './publish-button'
+import { PublishProvider, PublishButton } from './publish/publish-button'
+import { HarmonyToolbar } from './toolbar/harmony-toolbar'
 
 export interface HarmonyPanelProps {
   onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void
@@ -44,35 +45,38 @@ export const HarmonyPanel: React.FunctionComponent<
   const { children } = props
 
   return (
-    <SidePanelProvider>
-      <ComponentAttributeProvider onChange={props.onAttributesChange}>
-        {isOverlay ? (
-          <div
-            className='hw-fixed hw-h-full hw-w-full hw-z-[10000] hw-pointer-events-none hw-top-0'
-            id='harmony-overlay'
-          >
-            <div className='hw-pointer-events-auto'>
-              <div className='hw-absolute hw-top-0 hw-left-0 hw-right-0'>
-                <MainPanel {...props} />
+    <PublishProvider>
+      <SidePanelProvider>
+        <ComponentAttributeProvider onChange={props.onAttributesChange}>
+          {isOverlay ? (
+            <div
+              className='hw-fixed hw-h-full hw-w-full hw-z-[10000] hw-pointer-events-none hw-top-0'
+              id='harmony-overlay'
+            >
+              <div className='hw-pointer-events-auto'>
+                <div className='hw-absolute hw-top-0 hw-left-0 hw-right-0'>
+                  <MainPanel {...props} />
+                </div>
+                <div className='hw-absolute hw-top-[52px] hw-bottom-0 hw-left-0'>
+                  <SidePanel />
+                </div>
+                <FeedbackOverlay />
+                <HarmonyToolbar />
+                {inspector}
               </div>
-              <div className='hw-absolute hw-top-[52px] hw-bottom-0 hw-left-0'>
-                <SidePanel />
-              </div>
-              <FeedbackOverlay />
-              {inspector}
             </div>
-          </div>
-        ) : (
-          <WheelContainer
-            toolbarPanel={<MainPanel {...props} />}
-            sidePanel={<SidePanel />}
-            overlay={<FeedbackOverlay />}
-          >
-            {children}
-          </WheelContainer>
-        )}
-      </ComponentAttributeProvider>
-    </SidePanelProvider>
+          ) : (
+            <WheelContainer
+              toolbarPanel={<MainPanel {...props} />}
+              sidePanel={<SidePanel />}
+              overlay={<FeedbackOverlay />}
+            >
+              {children}
+            </WheelContainer>
+          )}
+        </ComponentAttributeProvider>
+      </SidePanelProvider>
+    </PublishProvider>
   )
 }
 

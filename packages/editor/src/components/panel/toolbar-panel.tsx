@@ -11,7 +11,6 @@ import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
 import { Dropdown } from '@harmony/ui/src/components/core/dropdown'
 import { Header } from '@harmony/ui/src/components/core/header'
 import {
-  PlayIcon,
   XMarkIcon,
   AlignLeftIcon,
   AlignCenterIcon,
@@ -29,19 +28,19 @@ import {
 import { Slider } from '@harmony/ui/src/components/core/slider'
 import { HexColorSchema } from '@harmony/util/src/types/colors'
 import { Popover } from '@harmony/ui/src/components/core/popover'
-import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { selectDesignerElement, isTextElement } from '../inspector/inspector'
 import { useHarmonyContext } from '../harmony-context'
 import type { SelectMode } from '../harmony-context'
 import { useHarmonyStore } from '../hooks/state'
-import { ComponentLayoutPanel } from './layout-panel'
 import { useSidePanel } from './side-panel'
 import type { CommonTools, ComponentToolData } from './attribute-panel'
 import {
   ComponentAttributePanel,
   useComponentAttribute,
 } from './attribute-panel'
-import { PublishButton } from './publish-button'
+import { PublishButton } from './publish/publish-button'
+import { PreviewButton } from './preview/preview-button'
+import { useLayersButton } from './layers/layers-button'
 
 const showLayoutTool = false
 
@@ -86,24 +85,14 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
   const displayMode = useHarmonyStore((state) => state.displayMode)
   const selectedElement = selectedComponent?.element
 
-  const {
-    isSaving,
-    changeMode,
-    fonts,
-    onFlexToggle,
-    onClose,
-    isGlobal,
-    setIsGlobal,
-  } = useHarmonyContext()
+  const { isSaving, fonts, onFlexToggle, onClose, isGlobal, setIsGlobal } =
+    useHarmonyContext()
   const { setPanel } = useSidePanel()
   const { toolNames, toolComponents } = useToolbarTools({
     element: selectedElement,
     fonts,
   })
-
-  const onPreview = () => {
-    changeMode('preview')
-  }
+  const { onLayers } = useLayersButton()
 
   const savingText = isSaving ? 'Saving...' : pullRequest ? 'Published' : null
 
@@ -128,14 +117,6 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
       setPanel({ id: 'attribute', content: <ComponentAttributePanel /> })
   }
 
-  const onLayoutClick = useEffectEvent(() => {
-    !isDemo &&
-      setPanel({
-        id: 'layout',
-        content: <ComponentLayoutPanel selectedComponent={selectedComponent} />,
-      })
-  })
-
   const onGlobalClick = () => {
     setIsGlobal(!isGlobal)
   }
@@ -149,10 +130,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
       </div>
       {!isDemo && showLayoutTool ? (
         <div className='hw-px-4'>
-          <button
-            className='hw-text-base hw-font-light'
-            onClick={onLayoutClick}
-          >
+          <button className='hw-text-base hw-font-light' onClick={onLayers}>
             Layout
           </button>
         </div>
@@ -221,15 +199,9 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
         />
       </div>
       <div className='hw-pl-4 hw-flex hw-gap-4 hw-items-center'>
-        <PublishButton preview />
-        {!displayMode.includes('slim') ? (
-          <button
-            className='hw-text-[#11283B] hover:hw-text-[#11283B]/80'
-            onClick={onPreview}
-          >
-            <PlayIcon className='hw-h-7 hw-w-7 hw-fill-white hw-stroke-none' />
-          </button>
-        ) : null}
+        {!displayMode.includes('slim') ? <PreviewButton /> : null}
+
+        <PublishButton />
         {!isDemo ? (
           <button
             className='hover:hw-fill-slate-400 hw-group'

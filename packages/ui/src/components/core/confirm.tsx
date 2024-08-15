@@ -1,20 +1,21 @@
-import { useState } from "react";
-import { ButtonType, Button, TextProps } from "./button";
-import { Header } from "./header";
-import { HarmonyModal, ModalPortal } from "./modal";
+import { useState } from 'react'
+import type { ButtonType, ButtonProps } from './button'
+import { Button } from './button'
+import { Header } from './header'
+import { HarmonyModal } from './modal'
 
 interface ButtonInfo {
-  mode: Exclude<ButtonType, "other">;
-  handler: () => void;
-  label: string;
+  mode: Exclude<ButtonType, 'other'>
+  handler: () => void
+  label: string
 }
 
 interface ConfirmModalProps {
-  onConfirm: () => void;
-  onCancel: () => void;
-  header: string;
-  message: string;
-  show: boolean;
+  onConfirm: () => void
+  onCancel: () => void
+  header: string
+  message: string
+  show: boolean
 }
 export const ConfirmModal: React.FunctionComponent<ConfirmModalProps> = ({
   onConfirm,
@@ -25,22 +26,22 @@ export const ConfirmModal: React.FunctionComponent<ConfirmModalProps> = ({
 }) => {
   const buttons: ButtonInfo[] = [
     {
-      mode: "secondary",
-      label: "Cancel",
+      mode: 'secondary',
+      label: 'Cancel',
       handler: onCancel,
     },
     {
-      mode: "primary",
-      label: "Confirm",
+      mode: 'primary',
+      label: 'Confirm',
       handler: onConfirm,
     },
-  ];
+  ]
 
   return (
     <HarmonyModal show={show} onClose={onCancel}>
       <Header level={3}>{header}</Header>
       {message}
-      <div className="hw-flex hw-justify-end hw-gap-2">
+      <div className='hw-flex hw-justify-end hw-gap-2'>
         {buttons.map(({ mode, label, handler }) => (
           <Button key={label} mode={mode} onClick={handler}>
             {label}
@@ -48,28 +49,28 @@ export const ConfirmModal: React.FunctionComponent<ConfirmModalProps> = ({
         ))}
       </div>
     </HarmonyModal>
-  );
-};
+  )
+}
 
-type ConfirmButtonProps<C extends React.ElementType> = TextProps<C> &
-  ConfirmModalProps;
+type ConfirmButtonProps<C extends React.ElementType> = ButtonProps<C> &
+  ConfirmModalProps
 export const ConfirmButton = <C extends React.ElementType>(
   props: ConfirmButtonProps<C>,
 ) => {
-  const [isOpen, setIsOpen] = useState(false);
-  const { onConfirm, onCancel, message, header } = props;
+  const [isOpen, setIsOpen] = useState(false)
+  const { onConfirm, onCancel, message, header } = props
 
   const onButtonClick = () => {
-    setIsOpen(true);
-  };
+    setIsOpen(true)
+  }
   const onCancelClick = () => {
-    setIsOpen(false);
-    onCancel && onCancel();
-  };
+    setIsOpen(false)
+    onCancel()
+  }
   const onOk = () => {
-    setIsOpen(false);
-    onConfirm();
-  };
+    setIsOpen(false)
+    onConfirm()
+  }
 
   return (
     <>
@@ -82,5 +83,5 @@ export const ConfirmButton = <C extends React.ElementType>(
         message={message}
       />
     </>
-  );
-};
+  )
+}
