@@ -25,8 +25,8 @@ import { ComponentAttributeProvider } from './attribute-panel'
 import { GiveFeedbackModal, HelpGuide } from './welcome/help-guide'
 import { SidePanel, SidePanelProvider } from './side-panel'
 import { ToolbarPanel } from './toolbar-panel'
-import { PublishProvider, PublishButton } from './publish-button'
-import { HarmonyToolbar } from './overlays/harmony-toolbar'
+import { PublishProvider, PublishButton } from './publish/publish-button'
+import { HarmonyToolbar } from './toolbar/harmony-toolbar'
 
 export interface HarmonyPanelProps {
   onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void

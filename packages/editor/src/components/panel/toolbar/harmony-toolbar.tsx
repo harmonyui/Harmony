@@ -8,13 +8,15 @@ import {
 } from '@harmony/ui/src/components/core/icons'
 import type { ToolbarItem } from '@harmony/ui/src/components/core/toolbar'
 import { Toolbar } from '@harmony/ui/src/components/core/toolbar'
-import { usePublishButton } from '../publish-button'
+import { usePublishButton } from '../publish/publish-button'
+import { usePreviewButton } from '../preview/preview-button'
 
 interface HarmonyToolbar {
   // TODO
 }
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = ({}) => {
   const { icon: PublishIcon, loading, disabled, onPublish } = usePublishButton()
+  const { icon: PreviewIcon, onPreview } = usePreviewButton()
 
   const items: ToolbarItem[] = [
     {
@@ -49,8 +51,8 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = ({}) => {
       label: 'Comments',
     },
     {
-      icon: MonitorPlayIcon,
-      onClick: () => {},
+      icon: PreviewIcon,
+      onClick: onPreview,
       mode: 'none',
       label: 'Preview',
     },

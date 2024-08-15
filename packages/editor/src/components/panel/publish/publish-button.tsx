@@ -19,8 +19,8 @@ import {
   useMemo,
   useState,
 } from 'react'
-import { useHarmonyContext } from '../harmony-context'
-import { useHarmonyStore } from '../hooks/state'
+import { useHarmonyContext } from '../../harmony-context'
+import { useHarmonyStore } from '../../hooks/state'
 
 interface PublishState {
   show: boolean
