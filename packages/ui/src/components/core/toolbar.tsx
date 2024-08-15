@@ -7,6 +7,8 @@ export interface ToolbarItem {
   onClick: () => void
   mode: Exclude<ButtonType, 'other'>
   label: string
+  loading?: boolean
+  disabled?: boolean
 }
 export interface ToolbarProps {
   items: ToolbarItem[]
@@ -39,12 +41,16 @@ const ToolbarItem: React.FunctionComponent<ToolbarItem> = ({
   onClick,
   mode,
   label,
+  loading,
+  disabled,
 }) => {
   return (
     <Button
       className='hw-group hw-flex hw-items-center hw-justify-center hw-w-12 hw-h-10 !hw-rounded-lg hover:hw-bg-[#E5E7EB]'
       onClick={onClick}
       mode={mode}
+      loading={loading}
+      disabled={disabled}
     >
       <div className='hw-block group-hover:hw-hidden hw-h-5 hw-w-5'>
         <Icon className='hw-w-full hw-h-full' />

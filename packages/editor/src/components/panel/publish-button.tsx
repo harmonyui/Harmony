@@ -1,6 +1,6 @@
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
 import { Button } from '@harmony/ui/src/components/core/button'
 import { Header } from '@harmony/ui/src/components/core/header'
+import type { IconComponent } from '@harmony/ui/src/components/core/icons'
 import {
   GitBranchIcon,
   PreviewIcon,
@@ -12,86 +12,78 @@ import { HarmonyModal } from '@harmony/ui/src/components/core/modal'
 import { useChangeProperty } from '@harmony/ui/src/hooks/change-property'
 import type { PullRequest } from '@harmony/util/src/types/branch'
 import type { PublishRequest } from '@harmony/util/src/types/network'
-import { useState } from 'react'
+import {
+  createContext,
+  useCallback,
+  useContext,
+  useMemo,
+  useState,
+} from 'react'
 import { useHarmonyContext } from '../harmony-context'
 import { useHarmonyStore } from '../hooks/state'
 
-export const PublishButton: React.FunctionComponent<{ preview?: boolean }> = ({
-  preview = false,
-}) => {
-  const { changeMode, isSaving, setError: setErrorProps } = useHarmonyContext()
-  const updatePublishState = useHarmonyStore(
-    (state) => state.updatePublishState,
-  )
-  const publishState = useHarmonyStore((state) => state.publishState)
-  const pullRequestProps = useHarmonyStore((state) => state.pullRequest)
-  const branchId = useHarmonyStore((state) => state.currentBranch.id)
-  const isDemo = useHarmonyStore((state) => state.isDemo)
-  const publish = useHarmonyStore((state) => state.publishChanges)
-  const currentBranch = useHarmonyStore((state) => state.currentBranch)
+interface PublishState {
+  show: boolean
+  setShow: (show: boolean) => void
+  onPublish: () => void
+  error: string
+  setError: (error: string) => void
+  loading: boolean
+  setLoading: (loading: boolean) => void
+  sendPullRequest: (request: PullRequest) => Promise<void>
+  currentBranch:
+    | {
+        name: string
+        id: string
+      }
+    | undefined
+}
+type PublishButtonState = Pick<PublishState, 'onPublish' | 'loading'> & {
+  icon: IconComponent
+  disabled: boolean
+}
+const PublishContext = createContext<PublishState | undefined>(undefined)
 
+export const PublishProvider: React.FunctionComponent<{
+  children: React.ReactNode
+  preview?: boolean
+}> = ({ children, preview }) => {
   const [show, setShow] = useState(false)
-  const changeProperty = useChangeProperty<PullRequest>(updatePublishState)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const { isSaving, setError: setErrorProps } = useHarmonyContext()
+  const publish = useHarmonyStore((state) => state.publishChanges)
+  const branchId = useHarmonyStore((state) => state.currentBranch.id)
+  const currentBranch = useHarmonyStore((state) => state.currentBranch)
+  const pullRequestProps = useHarmonyStore((state) => state.pullRequest)
+  const isDemo = useHarmonyStore((state) => state.isDemo)
 
-  const pullRequest: PullRequest = publishState || {
-    id: '',
-    title: '',
-    body: '',
-    url: '',
-  }
+  const isPublished = useMemo(
+    () => Boolean(pullRequestProps),
+    [pullRequestProps],
+  )
 
-  const isPublished = Boolean(pullRequestProps)
-
-  const onNewPullRequest = () => {
-    if (!validate()) return
-
-    void sendPullRequest(pullRequest).then((published) => {
-      if (published) {
-        window.open(published.pullRequest.url, '_blank')?.focus()
-      } else {
-        setErrorProps('There was an error when publishing')
+  const sendPullRequest = useCallback(
+    async (pullRequest: PullRequest) => {
+      setLoading(true)
+      const request: PublishRequest = {
+        branchId,
+        pullRequest,
       }
-    })
-  }
+      const published = await publish(request)
+      setLoading(false)
+      setShow(false)
+      if (!published) {
+        setError('There was an error when publishing')
+        return
+      }
 
-  const sendPullRequest = async (pullRequest: PullRequest) => {
-    setLoading(true)
-    const request: PublishRequest = {
-      branchId,
-      pullRequest,
-    }
-    const published = await publish(request)
-    setLoading(false)
-    setShow(false)
-    if (!published) {
-      setError('There was an error when publishing')
-    }
+      window.open(published.pullRequest.url, '_blank')?.focus()
+    },
+    [setLoading, setError, setShow, publish, branchId],
+  )
 
-    return published
-  }
-
-  const onPreview = () => {
-    if (!validate()) return
-    changeMode('preview')
-  }
-
-  const validate = (): boolean => {
-    if (!pullRequest.body || !pullRequest.title) {
-      setError('Please fill out all fields')
-      return false
-    }
-
-    return true
-  }
-
-  const onClose = () => {
-    setShow(false)
-    setError('')
-  }
-
-  const onViewCode = () => {
+  const onViewCode = useCallback(() => {
     if (!currentBranch.id) return
 
     if (isSaving) {
@@ -106,50 +98,130 @@ export const PublishButton: React.FunctionComponent<{ preview?: boolean }> = ({
       url: '',
     }
     if (!pullRequestProps) {
-      void sendPullRequest(pullRequest).then((published) => {
-        if (published) {
-          window.open(published.pullRequest.url, '_blank')?.focus()
-        } else {
-          setErrorProps('There was an error viewing the code')
-        }
-      })
+      void sendPullRequest(pullRequest)
     } else {
       window.open(pullRequestProps.url, '_blank')?.focus()
     }
-  }
+  }, [
+    currentBranch,
+    isSaving,
+    setErrorProps,
+    pullRequestProps,
+    sendPullRequest,
+  ])
 
-  const onPublishClick = () => {
+  const onPublish = useCallback(() => {
+    if (isDemo || isPublished) {
+      onViewCode()
+      return
+    }
+
     if (isSaving) {
       setErrorProps('Please wait to finish saving before publishing')
       return
     }
     setShow(true)
+  }, [setShow, setErrorProps, isSaving, onViewCode, isDemo, isPublished])
+
+  return (
+    <PublishContext.Provider
+      value={{
+        show,
+        setShow,
+        onPublish,
+        loading,
+        setLoading,
+        error,
+        setError,
+        sendPullRequest,
+        currentBranch,
+      }}
+    >
+      {children}
+      <PublishModal preview={preview} />
+    </PublishContext.Provider>
+  )
+}
+
+export const usePublishButton = (): PublishButtonState => {
+  const context = useContext(PublishContext)
+  if (!context)
+    throw new Error('Must wrap the publish button in a PublishProvider')
+
+  const { onPublish, loading, currentBranch } = context
+  return { onPublish, loading, icon: PreviewIcon, disabled: !currentBranch }
+}
+
+export const PublishButton: React.FunctionComponent = () => {
+  const { onPublish, loading, disabled, icon: Icon } = usePublishButton()
+
+  return (
+    <Button
+      mode='dark'
+      className='hw-h-7'
+      onClick={onPublish}
+      loading={loading}
+      disabled={disabled}
+    >
+      <Icon className='hw-h-5 hw-w-5' />
+    </Button>
+  )
+}
+
+const PublishModal: React.FunctionComponent<{ preview?: boolean }> = ({
+  preview = false,
+}) => {
+  const { changeMode } = useHarmonyContext()
+  const publishState = useHarmonyStore((state) => state.publishState)
+  const updatePublishState = useHarmonyStore(
+    (state) => state.updatePublishState,
+  )
+  const pullRequest: PullRequest = useMemo(
+    () =>
+      publishState || {
+        id: '',
+        title: '',
+        body: '',
+        url: '',
+      },
+    [publishState],
+  )
+
+  const publishContext = useContext(PublishContext)
+  if (!publishContext)
+    throw new Error('Must wrap the publish button in a PublishProvider')
+  const { show, setShow, error, setError, loading, sendPullRequest } =
+    publishContext
+
+  const changeProperty = useChangeProperty<PullRequest>(updatePublishState)
+
+  const onPreview = () => {
+    if (!validate()) return
+    changeMode('preview')
   }
 
-  if (isDemo || isPublished) {
-    return (
-      <Button
-        mode='dark'
-        className='hw-h-7 hw-px-8'
-        onClick={onViewCode}
-        loading={loading}
-        disabled={!currentBranch}
-      >
-        View Code
-      </Button>
-    )
+  const onClose = () => {
+    setShow(false)
+    setError('')
   }
+
+  const validate = (): boolean => {
+    if (!pullRequest.body || !pullRequest.title) {
+      setError('Please fill out all fields')
+      return false
+    }
+
+    return true
+  }
+
+  const onNewPullRequest = useCallback(() => {
+    if (!validate()) return
+
+    void sendPullRequest(pullRequest)
+  }, [pullRequest, sendPullRequest])
 
   return (
     <>
-      <Button
-        mode='dark'
-        className='hw-h-7 hw-px-8'
-        onClick={onPublishClick}
-        disabled={isPublished}
-      >
-        Publish
-      </Button>
       <HarmonyModal show={show} onClose={onClose} editor>
         <div className='hw-flex hw-gap-2 hw-items-center'>
           <GitBranchIcon className='hw-w-6 hw-h-6' />

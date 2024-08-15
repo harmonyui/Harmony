@@ -221,7 +221,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
         />
       </div>
       <div className='hw-pl-4 hw-flex hw-gap-4 hw-items-center'>
-        <PublishButton preview />
+        <PublishButton />
         {!displayMode.includes('slim') ? (
           <button
             className='hw-text-[#11283B] hover:hw-text-[#11283B]/80'
