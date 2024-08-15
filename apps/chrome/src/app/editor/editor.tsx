@@ -8,15 +8,14 @@ import {
 } from '@harmony/ui/src/hooks/query-state'
 import { useToggleEvent } from 'harmony-ai-editor/src/components/hooks/toggle-event'
 import { DataLayerProvider } from '../../hooks/data-layer'
+import { Actions, AuthUrl } from '../../utils/helpers'
+import { sendMessage } from '../../utils/listeners'
 import { StartModal } from './start-modal/start-modal'
 
 export const EditorChrome: React.FunctionComponent = () => {
-  const getToken = useCallback(() => {
-    return new Promise<string>((resolve) => {
-      chrome.runtime.sendMessage({ action: 'getToken' }, (token: string) => {
-        resolve(token)
-      })
-    })
+  const getToken = useCallback(async () => {
+    const token = await sendMessage<string>({ action: Actions.GetToken })
+    return token
   }, [])
 
   return (
@@ -52,10 +51,6 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
 
   useToggleEvent(onToggleEditor)
 
-  useAuthenticated(() => {
-    setShowStartModal(true)
-  })
-
   useHarmonySetup(
     {
       local: true,
@@ -85,29 +80,20 @@ const useSendAuthentication = () => {
       (event: MessageEvent<{ isSignedIn: boolean }>) => {
         if (
           event.data.isSignedIn &&
-          window.location.origin === 'http://localhost:3000'
+          window.location.origin === AuthUrl.getAuthUrlBase(environment)
         ) {
-          chrome.runtime.sendMessage(
-            { action: 'setCookie', cookie: document.cookie, tabId },
-            () => {
-              console.log('cookie set')
-              window.close()
+          void sendMessage({
+            action: Actions.SetCookie,
+            payload: {
+              cookie: document.cookie,
+              tabId,
             },
-          )
-          // chrome.storage.local.set({ cookie: document.cookie }, () => {
-          //   console.log('cookie set')
-          // })
+          }).then(() => {
+            console.log('cookie set')
+            window.close()
+          })
         }
       },
     )
   }, [])
-}
-
-export const useAuthenticated = (callback: () => void) => {
-  useEffect(() => {
-    window.addEventListener('onAuthenticated', callback)
-    return () => {
-      window.removeEventListener('onAuthenticated', callback)
-    }
-  }, [callback])
 }
