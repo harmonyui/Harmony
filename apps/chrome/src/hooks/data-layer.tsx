@@ -6,40 +6,32 @@ import { createContext, useContext, useEffect, useMemo, useState } from 'react'
 type ClientType = Parameters<Parameters<typeof useHarmonyStore>[0]>[0]['client']
 
 interface DataLayerState {
-  setToken: (token: string) => void
   client: ClientType | undefined
 }
 const DataLayerContext = createContext<DataLayerState>({
-  setToken: () => undefined,
   client: undefined,
 })
 
 export const DataLayerProvider: React.FunctionComponent<{
   children: React.ReactNode
-}> = ({ children }) => {
+  getToken: () => Promise<string>
+}> = ({ children, getToken }) => {
   const client = useHarmonyStore((state) => state.client)
-  const clientHasToken = useHarmonyStore((state) => state.clientHasToken)
   const initializeDataLayer = useHarmonyStore(
     (state) => state.initializeDataLayer,
   )
-  const [token, setToken] = useState<string>()
 
   useEffect(() => {
     const initialize = async () => {
-      if ((!client || !clientHasToken) && token) {
-        initializeDataLayer(environment, token)
+      if (!client) {
+        initializeDataLayer(environment, getToken)
       }
     }
     void initialize()
-  }, [client, clientHasToken, token])
-
-  const clientWithToken = useMemo(
-    () => (clientHasToken ? client : undefined),
-    [clientHasToken, client],
-  )
+  }, [client, getToken])
 
   return (
-    <DataLayerContext.Provider value={{ client: clientWithToken, setToken }}>
+    <DataLayerContext.Provider value={{ client }}>
       {children}
     </DataLayerContext.Provider>
   )

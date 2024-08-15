@@ -10,10 +10,13 @@ const getBaseUrl = (environment: Environment): string => {
   return getEditorUrl(environment)
 }
 
-export const createClient = (
-  environment: Environment,
-  token?: string | null,
-) => {
+export const createClient = ({
+  environment,
+  getToken,
+}: {
+  environment: Environment
+  getToken: () => Promise<string>
+}) => {
   return createTRPCProxyClient<AppRouter>({
     transformer: superjson,
     links: [
@@ -21,17 +24,25 @@ export const createClient = (
         url: `${getBaseUrl(environment)}/trpc`,
         // You can pass any HTTP headers you wish here
         fetch(url, options) {
-          return fetch(url, {
-            ...options,
-            credentials: 'include',
-            headers: {
-              ...options?.headers,
-              ...(token
-                ? {
-                    Authorization: `Bearer ${token}`,
-                  }
-                : {}),
-            },
+          return new Promise<Response>((resolve, reject) => {
+            getToken()
+              .then((token) => {
+                resolve(
+                  fetch(url, {
+                    ...options,
+                    credentials: 'include',
+                    headers: {
+                      ...options?.headers,
+                      ...(token
+                        ? {
+                            Authorization: `Bearer ${token}`,
+                          }
+                        : {}),
+                    },
+                  }),
+                )
+              })
+              .catch(reject)
           })
         },
       }),
