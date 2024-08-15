@@ -28,12 +28,10 @@ import {
 import { Slider } from '@harmony/ui/src/components/core/slider'
 import { HexColorSchema } from '@harmony/util/src/types/colors'
 import { Popover } from '@harmony/ui/src/components/core/popover'
-import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { selectDesignerElement, isTextElement } from '../inspector/inspector'
 import { useHarmonyContext } from '../harmony-context'
 import type { SelectMode } from '../harmony-context'
 import { useHarmonyStore } from '../hooks/state'
-import { ComponentLayoutPanel } from './layout-panel'
 import { useSidePanel } from './side-panel'
 import type { CommonTools, ComponentToolData } from './attribute-panel'
 import {
@@ -42,6 +40,7 @@ import {
 } from './attribute-panel'
 import { PublishButton } from './publish/publish-button'
 import { PreviewButton } from './preview/preview-button'
+import { useLayersButton } from './layers/layers-button'
 
 const showLayoutTool = false
 
@@ -93,6 +92,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
     element: selectedElement,
     fonts,
   })
+  const { onLayers } = useLayersButton()
 
   const savingText = isSaving ? 'Saving...' : pullRequest ? 'Published' : null
 
@@ -117,14 +117,6 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
       setPanel({ id: 'attribute', content: <ComponentAttributePanel /> })
   }
 
-  const onLayoutClick = useEffectEvent(() => {
-    !isDemo &&
-      setPanel({
-        id: 'layout',
-        content: <ComponentLayoutPanel selectedComponent={selectedComponent} />,
-      })
-  })
-
   const onGlobalClick = () => {
     setIsGlobal(!isGlobal)
   }
@@ -138,10 +130,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
       </div>
       {!isDemo && showLayoutTool ? (
         <div className='hw-px-4'>
-          <button
-            className='hw-text-base hw-font-light'
-            onClick={onLayoutClick}
-          >
+          <button className='hw-text-base hw-font-light' onClick={onLayers}>
             Layout
           </button>
         </div>

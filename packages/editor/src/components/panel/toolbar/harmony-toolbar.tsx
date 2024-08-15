@@ -10,6 +10,7 @@ import type { ToolbarItem } from '@harmony/ui/src/components/core/toolbar'
 import { Toolbar } from '@harmony/ui/src/components/core/toolbar'
 import { usePublishButton } from '../publish/publish-button'
 import { usePreviewButton } from '../preview/preview-button'
+import { useLayersButton } from '../layers/layers-button'
 
 interface HarmonyToolbar {
   // TODO
@@ -17,11 +18,12 @@ interface HarmonyToolbar {
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = ({}) => {
   const { icon: PublishIcon, loading, disabled, onPublish } = usePublishButton()
   const { icon: PreviewIcon, onPreview } = usePreviewButton()
+  const { icon: LayersIcon, onLayers } = useLayersButton()
 
   const items: ToolbarItem[] = [
     {
-      icon: StackIcon,
-      onClick: () => {},
+      icon: LayersIcon,
+      onClick: onLayers,
       mode: 'none',
       label: 'Layers',
     },

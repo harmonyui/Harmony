@@ -1,10 +1,10 @@
 import { useCallback, useMemo } from 'react'
-import { useHarmonyContext } from '../harmony-context'
-import { isSelectable } from '../inspector/inspector'
-import type { ComponentElement } from '../inspector/component-identifier'
-import { useHarmonyStore } from '../hooks/state'
-import type { TreeViewItem } from './tree-view'
-import { TreeView } from './tree-view'
+import { useHarmonyContext } from '../../harmony-context'
+import { isSelectable } from '../../inspector/inspector'
+import type { ComponentElement } from '../../inspector/component-identifier'
+import { useHarmonyStore } from '../../hooks/state'
+import type { TreeViewItem } from '../tree-view'
+import { TreeView } from '../tree-view'
 
 export const ComponentLayoutPanel: React.FunctionComponent<
   ComponentTreeViewProps
