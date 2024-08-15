@@ -7,41 +7,43 @@ import {
   useQueryState,
 } from '@harmony/ui/src/hooks/query-state'
 import { useToggleEvent } from 'harmony-ai-editor/src/components/hooks/toggle-event'
-import { DataLayerProvider, useDataLayer } from '../hooks/data-layer'
+import { DataLayerProvider } from '../../hooks/data-layer'
 import { StartModal } from './start-modal/start-modal'
 
-export const HarmonyChrome: React.FunctionComponent = () => {
+export const EditorChrome: React.FunctionComponent = () => {
+  const getToken = useCallback(() => {
+    return new Promise<string>((resolve) => {
+      chrome.runtime.sendMessage({ action: 'getToken' }, (token: string) => {
+        resolve(token)
+      })
+    })
+  }, [])
+
   return (
     <QueryStateProvider>
-      <DataLayerProvider>
-        <HarmonyChromeWithProviders />
+      <DataLayerProvider getToken={getToken}>
+        <EditorChromeAfterProviders />
       </DataLayerProvider>
     </QueryStateProvider>
   )
 }
 
-const HarmonyChromeWithProviders: React.FunctionComponent = () => {
+const EditorChromeAfterProviders: React.FunctionComponent = () => {
   const [branchId, setBranchId] = useQueryState<string>({ key: 'branch-id' })
   const [showStartModal, setShowStartModal] = useQueryState({
     key: 'start-modal',
     defaultValue: false,
   })
-  const { setToken } = useDataLayer()
 
-  const onToggleEditor = useCallback(
-    (e: CustomEventInit<string>) => {
-      const token = e.detail
-      if (token) {
-        setToken(token)
-      }
-      if (branchId === undefined) {
-        setShowStartModal(true)
-      } else {
-        setBranchId(undefined)
-      }
-    },
-    [setBranchId, setShowStartModal, branchId],
-  )
+  useSendAuthentication()
+
+  const onToggleEditor = useCallback(() => {
+    if (branchId === undefined) {
+      setShowStartModal(true)
+    } else {
+      setBranchId(undefined)
+    }
+  }, [setBranchId, setShowStartModal, branchId])
 
   const onSelectProject = useCallback((_branchId: string) => {
     setShowStartModal(false)
@@ -72,6 +74,33 @@ const HarmonyChromeWithProviders: React.FunctionComponent = () => {
       onSelectProject={onSelectProject}
     />
   )
+}
+
+const useSendAuthentication = () => {
+  const [tabId] = useQueryState<string>({ key: 'tabId' })
+
+  useEffect(() => {
+    window.addEventListener(
+      'message',
+      (event: MessageEvent<{ isSignedIn: boolean }>) => {
+        if (
+          event.data.isSignedIn &&
+          window.location.origin === 'http://localhost:3000'
+        ) {
+          chrome.runtime.sendMessage(
+            { action: 'setCookie', cookie: document.cookie, tabId },
+            () => {
+              console.log('cookie set')
+              window.close()
+            },
+          )
+          // chrome.storage.local.set({ cookie: document.cookie }, () => {
+          //   console.log('cookie set')
+          // })
+        }
+      },
+    )
+  }, [])
 }
 
 export const useAuthenticated = (callback: () => void) => {

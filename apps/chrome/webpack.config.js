@@ -2,11 +2,14 @@ const path = require('node:path')
 const webpack = require('webpack')
 
 module.exports = {
-  entry: './src/index.tsx',
+  entry: {
+    auth: './src/app/auth/index.tsx',
+    background: './src/app/background/index.ts',
+    content: './src/app/editor/index.tsx',
+  },
   output: {
     path: path.resolve(__dirname, 'extension/dist'),
-    filename: 'bundle.js',
-    globalObject: 'this',
+    filename: '[name].js',
   },
   target: 'web',
   resolve: {
@@ -30,5 +33,8 @@ module.exports = {
         use: ['style-loader', 'css-loader', 'postcss-loader'],
       },
     ],
+  },
+  externals: {
+    chrome: 'chrome',
   },
 }

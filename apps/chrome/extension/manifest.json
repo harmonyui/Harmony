@@ -4,12 +4,12 @@
   "version": "1.0",
   "permissions": ["activeTab", "storage"],
   "background": {
-    "service_worker": "background.js"
+    "service_worker": "dist/background.js"
   },
   "content_scripts": [
     {
       "matches": ["<all_urls>"],
-      "js": ["content.js"]
+      "js": ["dist/content.js"]
     }
   ],
   "action": {
@@ -21,15 +21,7 @@
   },
   "web_accessible_resources": [
     {
-      "resources": ["dist/bundle.js"],
-      "matches": ["<all_urls>"]
-    },
-    {
-      "resources": ["dist/clerk.js"],
-      "matches": ["<all_urls>"]
-    },
-    {
-      "resources": ["dist/popup.js", "popup.html"],
+      "resources": ["dist/auth.js", "auth.html"],
       "matches": ["<all_urls>"]
     }
   ],

@@ -5,5 +5,5 @@
     "allowJs": true
   },
   "include": ["**/*.ts", "**/*.tsx"],
-  "exclude": ["webpack.config.js", "dist", "node_modules"]
+  "exclude": ["webpack.config.js", "extension", "node_modules"]
 }
