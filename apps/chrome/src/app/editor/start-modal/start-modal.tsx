@@ -1,4 +1,3 @@
-import { SignedIn, SignedOut, SignInButton } from '@clerk/clerk-react'
 import { HarmonyModal } from '@harmony/ui/src/components/core/modal'
 import { EDITOR_URL } from '@harmony/util/src/constants'
 import { PageSelector } from './page-selector'
@@ -23,14 +22,9 @@ export const StartModal: React.FunctionComponent<StartModalProps> = ({
         <div className='hw-w-52 hw-h-12'>
           <img className='hw-w-full' src={`${EDITOR_URL}/Logo_navy.png`} />
         </div>
-        <SignedOut>
-          <SignInButton mode='modal' />
-        </SignedOut>
-        <SignedIn>
-          <div className='hw-w-full'>
-            <PageSelector onOpenProject={onSelectProject} />
-          </div>
-        </SignedIn>
+        <div className='hw-w-full'>
+          <PageSelector onOpenProject={onSelectProject} />
+        </div>
       </div>
     </HarmonyModal>
   )

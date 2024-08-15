@@ -5,13 +5,13 @@ import type { BranchItem } from '@harmony/util/src/types/branch'
 import { wordToKebabCase } from '@harmony/util/src/utils/common'
 import { useState } from 'react'
 import type { StartPageComponent } from '../types'
-import { useDataLayer } from '../../../hooks/data-layer'
+import { useDataLayer } from '../../../../hooks/data-layer'
 
 export const CreateProjectPage: StartPageComponent = ({ onOpenProject }) => {
   const [projectName, setProjectName] = useState('')
   const [error, setError] = useState('')
   const [loading, setLoading] = useState(false)
-  const client = useDataLayer()
+  const { client } = useDataLayer()
 
   const onCreate = (): void => {
     const branch: BranchItem = {

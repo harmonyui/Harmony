@@ -44,12 +44,14 @@ export function useQueryState<T>({
   }
 
   useEffect(() => {
-    if (defaultValue && !searchParams.get(key)) {
+    if (defaultValue && !searchParams?.get(key)) {
       setUrlValue(defaultValue)
     }
   }, [])
 
   const value: T | undefined = useMemo(() => {
+    if (!searchParams)
+      throw new Error('Must use QueryStateProvider to use useQueryState')
     const val = searchParams.get(key)
     return val ? decodeState<T>(val) : defaultValue
   }, [key, searchParams, defaultValue])
@@ -59,13 +61,13 @@ export function useQueryState<T>({
 
 interface QueryStateContextType {
   url: string
-  searchParams: URLSearchParams
+  searchParams?: URLSearchParams
   setSearchParam: (key: string, value: string) => void
   deleteSearchParam: (key: string) => void
 }
 const QueryStateContext = createContext<QueryStateContextType>({
   url: '',
-  searchParams: new URLSearchParams(),
+  searchParams: undefined,
   setSearchParam: () => undefined,
   deleteSearchParam: () => undefined,
 })

@@ -2,11 +2,11 @@ import type { BranchItem } from '@harmony/util/src/types/branch'
 import { useState, useEffect, useMemo } from 'react'
 import { EDITOR_URL } from '@harmony/util/src/constants'
 import type { StartPageComponent } from '../types'
-import { useDataLayer } from '../../../hooks/data-layer'
+import { useDataLayer } from '../../../../hooks/data-layer'
 
 export const SelectProjectsPage: StartPageComponent = ({ onOpenProject }) => {
   const [projects, setProjects] = useState<BranchItem[]>([])
-  const client = useDataLayer()
+  const { client } = useDataLayer()
 
   useEffect(() => {
     const initialize = async () => {
