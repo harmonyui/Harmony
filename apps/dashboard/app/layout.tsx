@@ -29,6 +29,7 @@ export default function RootLayout({
                 repositoryId='da286f25-b5de-4003-94ed-2944162271ed'
                 fonts={fonts}
                 environment='staging'
+                overlay
               />
             ) : null}
             {process.env.ENV === 'development' ? (
