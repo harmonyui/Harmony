@@ -4,27 +4,28 @@
   "description": "",
   "main": "index.js",
   "dependencies": {
-    "react": "^18",
-    "react-dom": "^18",
-    "next": "14.2.1",
+    "clsx": "^2.1.0",
     "dayjs": "^1.11.10",
     "diff": "^5.2.0",
     "dotenv-cli": "^7.3.0",
+    "next": "14.2.1",
+    "react": "^18",
+    "react-dom": "^18",
     "tailwind-merge": "^2.2.1",
     "zod": "^3.22.4"
   },
   "devDependencies": {
-    "vitest": "^1.5.0",
+    "@harmony/eslint-config-custom": "workspace:^",
+    "@harmony/prettier-config": "workspace:^",
+    "@harmony/tsconfig": "workspace:^",
     "@types/diff": "^5.0.9",
     "@types/node": "^20",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "eslint": "^8.48.0",
-    "@harmony/eslint-config-custom": "workspace:^",
     "prettier": "^3.0.3",
-    "@harmony/prettier-config": "workspace:^",
-    "@harmony/tsconfig": "workspace:^",
-    "typescript": "^5.2.2"
+    "typescript": "^5.2.2",
+    "vitest": "^1.5.0"
   },
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
