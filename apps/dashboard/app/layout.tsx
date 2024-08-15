@@ -36,6 +36,7 @@ export default function RootLayout({
                 repositoryId={repositoryId}
                 fonts={fonts}
                 environment='development'
+                overlay
               />
             ) : null}
             {/* <Script id="harmony-tag" src="bundle.js"></Script>

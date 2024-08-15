@@ -3,7 +3,7 @@
   "compilerOptions": {
     "outDir": "./dist/esm"
   },
-  "include": [".", "../ui/src/hooks/query-storage-state.ts"],
+  "include": ["."],
   "exclude": [
     "webpack.config.setup.js",
     "webpack.config.editor.js",

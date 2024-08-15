@@ -26,6 +26,7 @@ import { GiveFeedbackModal, HelpGuide } from './welcome/help-guide'
 import { SidePanel, SidePanelProvider } from './side-panel'
 import { ToolbarPanel } from './toolbar-panel'
 import { PublishButton } from './publish-button'
+import { HarmonyToolbar } from './overlays/harmony-toolbar'
 
 export interface HarmonyPanelProps {
   onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void
@@ -59,6 +60,7 @@ export const HarmonyPanel: React.FunctionComponent<
                 <SidePanel />
               </div>
               <FeedbackOverlay />
+              <HarmonyToolbar />
               {inspector}
             </div>
           </div>

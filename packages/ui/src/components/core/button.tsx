@@ -1,9 +1,10 @@
 import React, { useEffect, useRef, useState } from 'react'
 import type { PolymorphicComponentProps } from '@harmony/util/src/types/polymorphics'
+import { getClass } from '@harmony/util/src/utils/common'
 import { Spinner } from './spinner'
 
 export type ButtonType = 'primary' | 'secondary' | 'other' | 'none' | 'dark'
-type ButtonProps = {
+type ButtonPropsNative = {
   loading?: boolean
   disabled?: boolean
 } & (
@@ -18,10 +19,8 @@ type ButtonProps = {
       className?: string
     }
 )
-export type TextProps<C extends React.ElementType> = PolymorphicComponentProps<
-  C,
-  ButtonProps
->
+export type ButtonProps<C extends React.ElementType> =
+  PolymorphicComponentProps<C, ButtonPropsNative>
 export function Button<T extends React.ElementType>({
   children,
   as,
@@ -31,7 +30,7 @@ export function Button<T extends React.ElementType>({
   loading,
   disabled,
   ...rest
-}: TextProps<T>): JSX.Element {
+}: ButtonProps<T>): JSX.Element {
   const ref = useRef<HTMLButtonElement>(null)
   const [size, setSize] = useState<{ width: number; height: number }>()
 
@@ -53,10 +52,13 @@ export function Button<T extends React.ElementType>({
     none: `hw-text-sm hw-font-semibold hw-leading-6 hw-text-gray-900`,
   }
   const style = mode === 'other' ? { backgroundColor } : undefined
-  const _class =
+  const _class = getClass(
+    buttonClasses[mode],
     mode !== 'none'
-      ? `${buttonClasses[mode]} hw-inline-flex hw-items-center hw-justify-center hw-rounded-md hw-px-2.5 hw-py-1.5 hw-text-sm hw-border hw-border-gray-400 focus:hw-outline-none focus-visible:hw-ring-2 focus-visible:hw-ring-white focus-visible:hw-ring-opacity-75 ${className}`
-      : `${buttonClasses[mode]} ${className}`
+      ? 'hw-inline-flex hw-items-center hw-justify-center hw-rounded-md hw-px-2.5 hw-py-1.5 hw-text-sm hw-border hw-border-gray-400 focus:hw-outline-none focus-visible:hw-ring-2 focus-visible:hw-ring-white focus-visible:hw-ring-opacity-75'
+      : '',
+    className,
+  )
   return (
     <Component
       className={_class}

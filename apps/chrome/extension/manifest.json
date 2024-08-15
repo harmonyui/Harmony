@@ -19,11 +19,6 @@
       "128": "icons/icon-128.png"
     }
   },
-  "web_accessible_resources": [
-    {
-      "resources": ["dist/auth.js", "auth.html"],
-      "matches": ["<all_urls>"]
-    }
-  ],
+
   "host_permissions": ["https://neutral-mink-38.accounts.dev/*"]
 }
