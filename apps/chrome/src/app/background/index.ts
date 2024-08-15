@@ -1,4 +1,5 @@
 import { environment } from '@harmony/util/src/utils/component'
+import type { ActionsPayload } from '../../utils/helpers'
 import { Actions, AuthUrl, Clerk, Storage } from '../../utils/helpers'
 import {
   createTab,
@@ -31,7 +32,7 @@ setupMessageListeners([
   },
   {
     action: Actions.SetCookie,
-    handler: async ({ cookie, tabId }: { cookie: string; tabId: number }) => {
+    handler: async ({ cookie, tabId }: ActionsPayload.SetCookie) => {
       await Storage.setCookie(cookie)
 
       sendInitEditorMessage(tabId)

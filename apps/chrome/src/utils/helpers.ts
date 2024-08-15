@@ -65,3 +65,12 @@ export enum Actions {
   GetToken = 'getToken',
   SetCookie = 'setCookie',
 }
+// eslint-disable-next-line @typescript-eslint/no-namespace -- ok
+export namespace ActionsPayload {
+  export type InitEditor = object
+  export type GetToken = object
+  export interface SetCookie {
+    cookie: string
+    tabId: number
+  }
+}

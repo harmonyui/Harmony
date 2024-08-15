@@ -8,13 +8,16 @@ import {
 } from '@harmony/ui/src/hooks/query-state'
 import { useToggleEvent } from 'harmony-ai-editor/src/components/hooks/toggle-event'
 import { DataLayerProvider } from '../../hooks/data-layer'
+import type { ActionsPayload } from '../../utils/helpers'
 import { Actions, AuthUrl } from '../../utils/helpers'
 import { sendMessage } from '../../utils/listeners'
 import { StartModal } from './start-modal/start-modal'
 
 export const EditorChrome: React.FunctionComponent = () => {
   const getToken = useCallback(async () => {
-    const token = await sendMessage<string>({ action: Actions.GetToken })
+    const token = await sendMessage<object, string>({
+      action: Actions.GetToken,
+    })
     return token
   }, [])
 
@@ -82,11 +85,11 @@ const useSendAuthentication = () => {
           event.data.isSignedIn &&
           window.location.origin === AuthUrl.getAuthUrlBase(environment)
         ) {
-          void sendMessage({
+          void sendMessage<ActionsPayload.SetCookie, undefined>({
             action: Actions.SetCookie,
             payload: {
               cookie: document.cookie,
-              tabId,
+              tabId: parseInt(tabId || '0'),
             },
           }).then(() => {
             console.log('cookie set')

@@ -23,6 +23,10 @@ export const updateActiveTab = (tabId: number) => {
   void chrome.tabs.update(tabId, { active: true })
 }
 
+export const removeTab = (tabId: number) => {
+  void chrome.tabs.remove(tabId)
+}
+
 interface Message {
   action: string
   handler: (payload: any) => Promise<any>
@@ -43,12 +47,12 @@ export const setupMessageListeners = (messages: Message[]) => {
   )
 }
 
-export const sendMessage = <R>({
+export const sendMessage = <T, R>({
   action,
   payload,
 }: {
   action: string
-  payload?: any
+  payload?: T
 }): Promise<R> => {
   return new Promise<R>((resolve) => {
     chrome.runtime.sendMessage({ action, ...payload }, (ret: R) => {
