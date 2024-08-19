@@ -15,6 +15,7 @@
     "@harmony/util": "workspace:*",
     "@headlessui/react": "^2.0",
     "@internationalized/date": "^3.5.2",
+    "@radix-ui/react-accordion": "^1.2.0",
     "@react-aria/calendar": "^3.5.0",
     "@react-aria/color": "^3.0.0-beta.21",
     "@react-aria/focus": "^3.16.2",
@@ -31,17 +32,17 @@
     "zod": "^3.22.4"
   },
   "devDependencies": {
+    "@harmony/eslint-config-custom": "workspace:*",
+    "@harmony/prettier-config": "workspace:^",
+    "@harmony/tailwind-config": "workspace:^",
+    "@harmony/tsconfig": "workspace:*",
     "@types/react": "^18",
     "@types/react-dom": "^18",
     "@types/react-syntax-highlighter": "^15.5.11",
     "eslint": "^8.48.0",
-    "typescript": "^5.2.2",
     "prettier": "^3.0.3",
     "tailwindcss": "^3.4.1",
-    "@harmony/eslint-config-custom": "workspace:*",
-    "@harmony/prettier-config": "workspace:^",
-    "@harmony/tailwind-config": "workspace:^",
-    "@harmony/tsconfig": "workspace:*"
+    "typescript": "^5.2.2"
   },
   "scripts": {
     "format": "prettier --write \"**/*.{prisma,ts,tsx,md,json}\" && eslint --fix"

@@ -1,76 +1,80 @@
-import React, { Fragment, useState, type PropsWithChildren } from "react";
+'use client'
 
-import { MinusIcon, PlusIcon } from "./icons";
+import * as React from 'react'
+import * as AccordionPrimitive from '@radix-ui/react-accordion'
+import { getClass } from '@harmony/util/src/utils/common'
+import { ChevronDownIcon } from './icons'
 
-interface AccordionItemBase {
-  content: React.ReactNode;
+const AccordionRoot = AccordionPrimitive.Root
+
+const AccordionItem = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Item>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Item>
+>(({ className, ...props }, ref) => (
+  <AccordionPrimitive.Item
+    ref={ref}
+    className={getClass('border-b', className)}
+    {...props}
+  />
+))
+AccordionItem.displayName = 'AccordionItem'
+
+const AccordionTrigger = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Trigger>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Trigger>
+>(({ className, children, ...props }, ref) => (
+  <AccordionPrimitive.Header className='flex'>
+    <AccordionPrimitive.Trigger
+      ref={ref}
+      className={getClass(
+        'flex flex-1 items-center justify-between py-4 font-medium transition-all hover:underline [&[data-state=open]>svg]:rotate-180',
+        className,
+      )}
+      {...props}
+    >
+      {children}
+      <ChevronDownIcon className='h-4 w-4 shrink-0 transition-transform duration-200' />
+    </AccordionPrimitive.Trigger>
+  </AccordionPrimitive.Header>
+))
+AccordionTrigger.displayName = AccordionPrimitive.Trigger.displayName
+
+const AccordionContent = React.forwardRef<
+  React.ElementRef<typeof AccordionPrimitive.Content>,
+  React.ComponentPropsWithoutRef<typeof AccordionPrimitive.Content>
+>(({ className, children, ...props }, ref) => (
+  <AccordionPrimitive.Content
+    ref={ref}
+    className='overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down'
+    {...props}
+  >
+    <div className={getClass('pb-4 pt-0', className)}>{children}</div>
+  </AccordionPrimitive.Content>
+))
+
+AccordionContent.displayName = AccordionPrimitive.Content.displayName
+
+export interface AccordionItem {
+  id: string
+  label: string
+  content: React.ReactNode
 }
-interface AccordionItemLabel extends AccordionItemBase {
-  label: string;
-}
-interface AccordionItemLabelContent extends AccordionItemBase {
-  labelContent: React.ReactNode;
-}
-export type AccordionItem = AccordionItemLabel | AccordionItemLabelContent;
-export interface AccordionProps {
-  items: AccordionItem[];
+interface AccordionProps {
+  className?: string
+  items: AccordionItem[]
 }
 export const Accordion: React.FunctionComponent<AccordionProps> = ({
+  className,
   items,
 }) => {
-  const [selected, setSelected] = useState<number>(-1);
-  const onSelect = (value: boolean, i: number): void => {
-    setSelected(value ? i : -1);
-  };
   return (
-    <div className={`group ${selected}`}>
-      {items.map((item, i) => (
-        <Fragment key={i}>
-          <ExpandableComponent
-            label={LabelContent(item)}
-            onChange={(value) => {
-              onSelect(value, i);
-            }}
-            value={selected === i}
-          >
-            {item.content}
-          </ExpandableComponent>
-        </Fragment>
+    <AccordionRoot className={className} type='multiple'>
+      {items.map((item, index) => (
+        <AccordionItem key={index} value={item.id}>
+          <AccordionTrigger>{item.label}</AccordionTrigger>
+          <AccordionContent>{item.content}</AccordionContent>
+        </AccordionItem>
       ))}
-    </div>
-  );
-};
-
-export interface ExpandableComponentProps extends PropsWithChildren {
-  value: boolean;
-  onChange?: (value: boolean) => void;
-  label: React.ReactNode;
+    </AccordionRoot>
+  )
 }
-export const ExpandableComponent: React.FunctionComponent<
-  ExpandableComponentProps
-> = ({ value, onChange, label, children }) => {
-  return (
-    <div className="hw-flex hw-flex-col hw-gap-2">
-      <button
-        onClick={() => {
-          onChange && onChange(!value);
-        }}
-        type="button"
-      >
-        {label}
-      </button>
-      {value ? <div>{children}</div> : null}
-    </div>
-  );
-};
-
-const LabelContent = (item: AccordionItem): React.ReactNode =>
-  "labelContent" in item ? (
-    item.labelContent
-  ) : (
-    <>
-      <span>{item.label}</span>
-      <PlusIcon className="hw-w-4 hw-h-4 group-[.accordion-1]:hw-hidden" />
-      <MinusIcon className="hw-w-4 hw-h-4 hw-hidden group-[.accordion-1]:hw-block" />
-    </>
-  );

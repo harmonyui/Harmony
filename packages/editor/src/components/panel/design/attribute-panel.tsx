@@ -14,16 +14,16 @@ import {
 } from '@harmony/util/src/utils/common'
 import { createContext, useCallback, useContext, useMemo } from 'react'
 import type { Font } from '@harmony/util/src/fonts'
-import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
-import { useHarmonyContext } from '../harmony-context'
-import { getComputedValue } from '../snapping/position-updator'
+import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
+import { useHarmonyContext } from '../../harmony-context'
+import { getComputedValue } from '../../snapping/position-updator'
 import {
   isDesignerElementSelectable,
   overlayStyles,
-} from '../inspector/inspector'
-import type { ComponentElement } from '../inspector/component-identifier'
-import { useHarmonyStore } from '../hooks/state'
-import { getComponentIdAndChildIndex } from '../../utils/element-utils'
+} from '../../inspector/inspector'
+import type { ComponentElement } from '../../inspector/component-identifier'
+import { useHarmonyStore } from '../../hooks/state'
+import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
 
 export const attributeTools = [
   'font',
