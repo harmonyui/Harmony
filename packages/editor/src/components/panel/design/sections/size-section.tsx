@@ -1,7 +1,7 @@
-import { Input } from '@harmony/ui/src/components/core/input'
-import { useComponentAttribute } from '../attribute-panel'
+import { useComponentAttribute } from '../attribute-provider'
 import type { CommonTools } from '../types'
-import { Section } from './section'
+import { Section } from './components/section'
+import { InputLabel } from './components/input-label'
 
 export const SizeSection: React.FunctionComponent = () => {
   const { getAttribute, onAttributeChange } = useComponentAttribute()
@@ -43,23 +43,5 @@ export const SizeSection: React.FunctionComponent = () => {
         />
       </div>
     </Section>
-  )
-}
-
-interface InputLabelProps {
-  label: string
-  value: string
-  onChange: (value: string) => void
-}
-const InputLabel: React.FunctionComponent<InputLabelProps> = ({
-  label,
-  value,
-  onChange,
-}) => {
-  return (
-    <>
-      <label>{label}</label>
-      <Input value={value} onChange={onChange} />
-    </>
   )
 }

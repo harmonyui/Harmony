@@ -21,7 +21,7 @@ import type {
 } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
 import { useHarmonyStore } from '../hooks/state'
-import { ComponentAttributeProvider } from './design/attribute-panel'
+import { ComponentAttributeProvider } from './design/attribute-provider'
 import { GiveFeedbackModal, HelpGuide } from './welcome/help-guide'
 import { SidePanel, SidePanelProvider } from './side-panel'
 import { ToolbarPanel } from './toolbar-panel'

@@ -1,3 +1,5 @@
+import type { CSSProperties } from 'react'
+
 /** Register */
 export const attributeTools = [
   'font',
@@ -7,6 +9,7 @@ export const attributeTools = [
   'justifyContent',
   'alignItems',
   'flexDirection',
+  'alignSelf',
   'rowGap',
   'columnGap',
   'gap',
@@ -41,7 +44,7 @@ export const attributeTools = [
   'borderStyle',
   'borderWidth',
   'borderRadius',
-] as const
+] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {
   Frame = 'frame',

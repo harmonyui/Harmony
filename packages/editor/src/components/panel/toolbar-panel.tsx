@@ -12,10 +12,10 @@ import { Dropdown } from '@harmony/ui/src/components/core/dropdown'
 import { Header } from '@harmony/ui/src/components/core/header'
 import {
   XMarkIcon,
-  AlignLeftIcon,
-  AlignCenterIcon,
-  AlignRightIcon,
-  AlignJustifyIcon,
+  TextAlignLeftIcon,
+  TextAlignCenterIcon,
+  TextAlignRightIcon,
+  TextAlignJustifyIcon,
   BarsArrowDownIcon,
   BorderIcon,
   SquareIcon,
@@ -32,7 +32,7 @@ import { selectDesignerElement, isTextElement } from '../inspector/inspector'
 import { useHarmonyContext } from '../harmony-context'
 import type { SelectMode } from '../harmony-context'
 import { useHarmonyStore } from '../hooks/state'
-import { useComponentAttribute } from './design/attribute-panel'
+import { useComponentAttribute } from './design/attribute-provider'
 import { PublishButton } from './publish/publish-button'
 import { PreviewButton } from './preview/preview-button'
 import { useLayersButton } from './layers/layers-button'
@@ -360,10 +360,10 @@ const useToolbarTools = ({ element, fonts }: ToolbarToolsProps) => {
       },
       textAlign: ({ onChange, getAttribute }) => {
         const icons: Record<string, React.ReactNode> = {
-          left: <AlignLeftIcon className='hw-h-7 hw-w-7' />,
-          center: <AlignCenterIcon className='hw-h-7 hw-w-7' />,
-          right: <AlignRightIcon className='hw-h-7 hw-w-7' />,
-          justify: <AlignJustifyIcon className='hw-h-7 hw-w-7' />,
+          left: <TextAlignLeftIcon className='hw-h-7 hw-w-7' />,
+          center: <TextAlignCenterIcon className='hw-h-7 hw-w-7' />,
+          right: <TextAlignRightIcon className='hw-h-7 hw-w-7' />,
+          justify: <TextAlignJustifyIcon className='hw-h-7 hw-w-7' />,
         }
         const value = getAttribute('textAlign')
         const data =
