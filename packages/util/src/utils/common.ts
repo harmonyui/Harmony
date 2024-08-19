@@ -2,6 +2,7 @@
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import { z } from 'zod'
+import type { HexColor } from '../types/colors'
 
 export const displayDate = (date: Date) => {
   return dayjs(date).format('MM/DD/YY')
@@ -244,7 +245,7 @@ export const stringUnionSchema = <T extends readonly string[]>(array: T) =>
     (data) => typeof data === 'string' && array.includes(data),
   )
 
-export function convertRgbToHex(rgb: string) {
+export function convertRgbToHex(rgb: string): HexColor {
   let match = /^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/.exec(rgb)
   if (match === null) {
     match = /^rgba\((\d+), \s*(\d+), \s*(\d+), \s*(\d+(?:\.\d+)?)\)$/.exec(rgb)

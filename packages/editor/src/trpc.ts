@@ -1,3 +1,4 @@
+import type { CreateTRPCProxyClient } from '@trpc/client'
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
 import type { AppRouter } from '@harmony/server/src/api/root'
 import superjson from 'superjson'
@@ -16,7 +17,7 @@ export const createClient = ({
 }: {
   environment: Environment
   getToken: () => Promise<string>
-}) => {
+}): CreateTRPCProxyClient<AppRouter> => {
   return createTRPCProxyClient<AppRouter>({
     transformer: superjson,
     links: [

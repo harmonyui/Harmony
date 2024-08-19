@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
-/* eslint-disable import/no-cycle -- TODO: Fix later */
+
 'use client'
 import { MinimizeIcon } from '@harmony/ui/src/components/core/icons'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
@@ -466,6 +466,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             onComponentSelect: setSelectedComponent,
             selectedComponent,
             onAttributesChange,
+            onToggleInspector: onToggle,
           }}
         >
           {displayMode !== 'preview-full' ? (

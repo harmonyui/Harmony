@@ -209,7 +209,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     source === 'iframe' ? document.getElementsByTagName('iframe')[0] : undefined
 
   const inspectorState: InspectorState = useMemo(
-    () => ({ showingLayoutPanel: panel?.id === 'attribute' }),
+    () => ({ showingLayoutPanel: true }),
     [panel],
   )
 
