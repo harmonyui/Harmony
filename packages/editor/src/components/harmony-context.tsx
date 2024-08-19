@@ -46,6 +46,7 @@ interface HarmonyContextProps {
     updates: ComponentUpdateWithoutGlobal[],
     execute?: boolean,
   ) => void
+  onToggleInspector: () => void
 }
 export const HarmonyContext = createContext<HarmonyContextProps>({
   isSaving: false,
@@ -69,6 +70,7 @@ export const HarmonyContext = createContext<HarmonyContextProps>({
   onComponentSelect: noop,
   selectedComponent: undefined,
   onAttributesChange: noop,
+  onToggleInspector: noop,
 })
 
 export const useHarmonyContext = () => {
