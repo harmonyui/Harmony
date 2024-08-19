@@ -43,7 +43,15 @@ export const attributeTools = [
   'maxHeight',
   'borderStyle',
   'borderWidth',
+  'borderLeftWidth',
+  'borderRightWidth',
+  'borderTopWidth',
+  'borderBottomWidth',
   'borderRadius',
+  'borderTopLeftRadius',
+  'borderTopRightRadius',
+  'borderBottomLeftRadius',
+  'borderBottomRightRadius',
 ] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {
