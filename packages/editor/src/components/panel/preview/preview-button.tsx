@@ -2,17 +2,17 @@ import type { IconComponent } from '@harmony/ui/src/components/core/icons'
 import { MonitorPlayIcon } from '@harmony/ui/src/components/core/icons'
 import { useCallback } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
-import { useHarmonyContext } from '../../harmony-context'
+import { useSetHarmonyPanels } from '../_common/panel/panel'
 
 interface PreviewButtonState {
   onPreview: () => void
   icon: IconComponent
 }
 export const usePreviewButton = (): PreviewButtonState => {
-  const { changeMode } = useHarmonyContext()
+  const toggleAllActive = useSetHarmonyPanels()
 
   const onPreview = useCallback(() => {
-    changeMode('preview')
+    toggleAllActive()
   }, [])
 
   return { onPreview, icon: MonitorPlayIcon }

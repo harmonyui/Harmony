@@ -32,15 +32,13 @@ import { selectDesignerElement, isTextElement } from '../inspector/inspector'
 import { useHarmonyContext } from '../harmony-context'
 import type { SelectMode } from '../harmony-context'
 import { useHarmonyStore } from '../hooks/state'
-import { useSidePanel } from './side-panel'
 import type { CommonTools, ComponentToolData } from './attribute-panel'
-import {
-  ComponentAttributePanel,
-  useComponentAttribute,
-} from './attribute-panel'
+import { useComponentAttribute } from './attribute-panel'
 import { PublishButton } from './publish/publish-button'
 import { PreviewButton } from './preview/preview-button'
 import { useLayersButton } from './layers/layers-button'
+import { useHarmonyPanel } from './_common/panel/panel'
+import { Panels } from './_common/panel/types'
 
 const showLayoutTool = false
 
@@ -87,12 +85,13 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
 
   const { isSaving, fonts, onFlexToggle, onClose, isGlobal, setIsGlobal } =
     useHarmonyContext()
-  const { setPanel } = useSidePanel()
   const { toolNames, toolComponents } = useToolbarTools({
     element: selectedElement,
     fonts,
   })
   const { onLayers } = useLayersButton()
+  const { show: showActivePanel, setShow: setShowActivePanel } =
+    useHarmonyPanel(Panels.Design)
 
   const savingText = isSaving ? 'Saving...' : pullRequest ? 'Published' : null
 
@@ -113,8 +112,7 @@ export const ToolbarPanel: React.FunctionComponent<ToolbarPanelProps> = ({
   // }
 
   const onAttributeClick = () => {
-    !isDemo &&
-      setPanel({ id: 'attribute', content: <ComponentAttributePanel /> })
+    !isDemo && setShowActivePanel(!showActivePanel)
   }
 
   const onGlobalClick = () => {
