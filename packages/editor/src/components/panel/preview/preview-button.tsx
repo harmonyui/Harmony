@@ -3,6 +3,7 @@ import { MonitorPlayIcon } from '@harmony/ui/src/components/core/icons'
 import { useCallback } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
 import { useSetHarmonyPanels } from '../_common/panel/panel'
+import { useHarmonyContext } from '../../harmony-context'
 
 interface PreviewButtonState {
   onPreview: () => void
@@ -10,9 +11,11 @@ interface PreviewButtonState {
 }
 export const usePreviewButton = (): PreviewButtonState => {
   const toggleAllActive = useSetHarmonyPanels()
+  const { onToggleInspector } = useHarmonyContext()
 
   const onPreview = useCallback(() => {
     toggleAllActive()
+    onToggleInspector()
   }, [])
 
   return { onPreview, icon: MonitorPlayIcon }
