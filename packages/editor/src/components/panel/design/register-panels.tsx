@@ -5,12 +5,14 @@ import { ComponentType } from './types'
 import { LayoutSection } from './sections/layout-section'
 import { BorderSection } from './sections/border-section'
 import { BackgroundSection } from './sections/background-section'
+import { SpacingSection } from './sections/spacing-section'
 
 export const useDesignPanels = () => {
   const panels: Record<ComponentType, DesignPanelSectionComponent[]> = useMemo(
     () => ({
       [ComponentType.Frame]: [
         SizeSection,
+        SpacingSection,
         LayoutSection,
         BorderSection,
         BackgroundSection,
