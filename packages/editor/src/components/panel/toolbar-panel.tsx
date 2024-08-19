@@ -32,13 +32,13 @@ import { selectDesignerElement, isTextElement } from '../inspector/inspector'
 import { useHarmonyContext } from '../harmony-context'
 import type { SelectMode } from '../harmony-context'
 import { useHarmonyStore } from '../hooks/state'
-import type { CommonTools, ComponentToolData } from './design/attribute-panel'
 import { useComponentAttribute } from './design/attribute-panel'
 import { PublishButton } from './publish/publish-button'
 import { PreviewButton } from './preview/preview-button'
 import { useLayersButton } from './layers/layers-button'
 import { useHarmonyPanel } from './_common/panel/panel'
 import { Panels } from './_common/panel/types'
+import type { CommonTools, ComponentToolData } from './design/types'
 
 const showLayoutTool = false
 

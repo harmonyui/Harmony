@@ -24,58 +24,14 @@ import {
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { useHarmonyStore } from '../../hooks/state'
 import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
-
-export const attributeTools = [
-  'font',
-  'fontSize',
-  'textAlign',
-  'display',
-  'justifyContent',
-  'alignItems',
-  'flexDirection',
-  'rowGap',
-  'columnGap',
-  'gap',
-  'flexWrap',
-  'flexGrow',
-  'flexShrink',
-  'gridTemplateColumns',
-  'gridTemplateRows',
-  'gridColumn',
-  'gridRow',
-  'position',
-  'top',
-  'left',
-  'right',
-  'bottom',
-  'letterSpacing',
-  'lineHeight',
-  'marginRight',
-  'marginLeft',
-  'marginTop',
-  'marginBottom',
-  'paddingRight',
-  'paddingLeft',
-  'paddingTop',
-  'paddingBottom',
-  'width',
-  'height',
-  'borderStyle',
-  'borderWidth',
-  'borderRadius',
-] as const
-const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
-type AttributeTools = (typeof attributeTools)[number]
-type ColorTools = (typeof colorTools)[number]
-export type CommonTools = AttributeTools | ColorTools
-export interface ComponentToolData {
-  name: CommonTools
-  value: string
-}
+import { useDesignPanels } from './register-panels'
+import { getComponentType } from './utils'
+import type { CommonTools, ComponentToolData } from './types'
+import { attributeTools, colorTools } from './types'
 
 interface ComponentAttributeContextProps {
   selectedComponent: HTMLElement | undefined
-  onAttributeChange: (value: { name: string; value: string }) => void
+  onAttributeChange: (value: ComponentToolData) => void
   data: ReturnType<typeof getTextToolsFromAttributes> | undefined
   getAttribute: (value: CommonTools, isComputed?: boolean) => string
 }
@@ -105,7 +61,7 @@ export const ComponentAttributeProvider: React.FunctionComponent<
     [selectedComponent, fonts, updateCounter],
   )
 
-  const onAttributeChange = (values: { name: string; value: string }) => {
+  const onAttributeChange = (values: ComponentToolData) => {
     if (!data || !selectedComponent) return
 
     const old = data.find((t) => t.name === values.name)
@@ -274,30 +230,25 @@ interface ComponentAttributePanelProps {}
 export const ComponentAttributePanel: React.FunctionComponent<
   ComponentAttributePanelProps
 > = () => {
+  const panels = useDesignPanels()
+  const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
+  const componentType = useMemo(
+    () =>
+      selectedComponent
+        ? getComponentType(selectedComponent.element)
+        : undefined,
+    [selectedComponent],
+  )
+  const currPanels = useMemo(
+    () => (componentType ? panels[componentType] : []),
+    [panels, componentType],
+  )
+
   return (
     <div className='hw-flex hw-flex-col hw-divide-y-2 hw-max-w-[300px]'>
-      <Section>
-        <EditSpacing spacing='margin' />
-        <EditSpacing spacing='padding' />
-        <EditSize size='width' />
-        <EditSize size='height' />
-      </Section>
-      <Section>
-        <EditDisplay />
-      </Section>
-      <Section>
-        <EditPosition />
-      </Section>
-    </div>
-  )
-}
-
-const Section: React.FunctionComponent<{ children: React.ReactNode }> = ({
-  children,
-}) => {
-  return (
-    <div className='hw-flex hw-flex-col hw-gap-2 hw-py-4 hw-px-4'>
-      {children}
+      {currPanels.map((Panel, index) => (
+        <Panel key={index} />
+      ))}
     </div>
   )
 }
