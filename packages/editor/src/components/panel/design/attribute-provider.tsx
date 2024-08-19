@@ -8,6 +8,7 @@ import {
 } from '@harmony/util/src/utils/common'
 import { createContext, useCallback, useContext, useMemo } from 'react'
 import type { Font } from '@harmony/util/src/fonts'
+import type { HexColor } from '@harmony/util/src/types/colors'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
 import { getComputedValue } from '../../snapping/position-updator'
@@ -15,14 +16,17 @@ import { isDesignerElementSelectable } from '../../inspector/inspector'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { useHarmonyStore } from '../../hooks/state'
 import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
-import type { CommonTools, ComponentToolData } from './types'
+import type { ColorTools, CommonTools, ComponentToolData } from './types'
 import { attributeTools, colorTools } from './types'
 
 interface ComponentAttributeContextProps {
   selectedComponent: HTMLElement | undefined
   onAttributeChange: (value: ComponentToolData) => void
   data: ReturnType<typeof getTextToolsFromAttributes> | undefined
-  getAttribute: (value: CommonTools, isComputed?: boolean) => string
+  getAttribute: <T extends CommonTools>(
+    value: T,
+    isComputed?: boolean,
+  ) => ToolAttributeValue<T>['value']
 }
 const ComponentAttributeContext = createContext<ComponentAttributeContextProps>(
   {
@@ -73,7 +77,10 @@ export const ComponentAttributeProvider: React.FunctionComponent<
   const selectedElement = selectedComponent?.element
 
   const getAttribute = useCallback(
-    (attribute: CommonTools, isComputed = false): string => {
+    <T extends CommonTools>(
+      attribute: T,
+      isComputed = false,
+    ): ToolAttributeValue<T>['value'] => {
       if (isComputed && selectedElement) {
         return getComputedValue(selectedElement, camelToKebab(attribute))
       }
@@ -103,10 +110,21 @@ export const ComponentAttributeProvider: React.FunctionComponent<
   )
 }
 
+type ToolAttributeValue<T extends CommonTools> = T extends ColorTools
+  ? {
+      value: HexColor
+      name: ColorTools
+      element: HTMLElement
+    }
+  : {
+      value: string
+      name: Exclude<CommonTools, ColorTools>
+      element: HTMLElement
+    }
 export const getTextToolsFromAttributes = (
   element: ComponentElement,
   fonts: Font[] | undefined,
-) => {
+): ToolAttributeValue<CommonTools>[] => {
   const allStyles: [HTMLElement, Record<string, string>][] = []
 
   const getComputed = (name: keyof CSSStyleDeclaration) => {
@@ -170,7 +188,9 @@ export const getTextToolsFromAttributes = (
     return computed
   }
 
-  const getColor = (name: 'color' | 'backgroundColor' | 'borderColor') => {
+  const getColor = (
+    name: ColorTools,
+  ): { value: HexColor; element: HTMLElement } => {
     const color = getAttr(name)
 
     return {

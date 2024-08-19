@@ -26,6 +26,7 @@
     "@react-types/datepicker": "^3.6.0",
     "react": "^18",
     "react-aria": "^3.27.0",
+    "react-colorful": "^5.6.1",
     "react-dom": "^18",
     "react-stately": "^3.23.0",
     "react-syntax-highlighter": "^15.5.0",

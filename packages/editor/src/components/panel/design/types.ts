@@ -20,6 +20,7 @@ export const attributeTools = [
   'gridTemplateRows',
   'gridColumn',
   'gridRow',
+  'opacity',
   'position',
   'top',
   'left',

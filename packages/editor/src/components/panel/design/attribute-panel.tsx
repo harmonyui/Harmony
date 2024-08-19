@@ -24,7 +24,7 @@ export const ComponentAttributePanel: React.FunctionComponent<
   )
 
   return (
-    <div className='hw-flex hw-flex-col hw-divide-y-2 hw-max-w-[300px]'>
+    <div className='hw-flex hw-flex-col hw-max-w-[300px] hw-min-w-[258px]'>
       {currPanels.map((Panel, index) => (
         <Panel key={index} />
       ))}
