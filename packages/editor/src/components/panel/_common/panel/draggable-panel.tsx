@@ -1,5 +1,4 @@
 import { useEffect, useMemo, useState } from 'react'
-import { Header } from '@harmony/ui/src/components/core/header'
 import { Dots6Icon } from '@harmony/ui/src/components/core/icons'
 import { useDraggable } from '../../../snapping/snapping'
 import { useRegisterHarmonyPanel } from './panel'
@@ -22,11 +21,11 @@ export const DraggablePanel: React.FunctionComponent<DraggablePanelProps> = ({
 
   return show ? (
     <div
-      className='hw-absolute hw-top-0 hw-left-0 hw-bg-white hw-rounded-lg hw-p-2 hw-shadow-md hw-z-[1000]'
+      className='hw-absolute hw-top-0 hw-left-0 hw-bg-white hw-rounded-lg hw-p-2 hw-shadow-md hw-z-[1000] hw-max-h-[600px] hw-overflow-auto'
       ref={(ref) => setParentRef(ref)}
     >
       <div className='hw-flex hw-justify-between hw-items-center'>
-        <Header level={3}>{title}</Header>
+        <div className='hw-text-base hw-font-bold'>{title}</div>
         <div {...dragHandleProps}>
           <Dots6Icon className='hw-h-5 hw-w-5' />
         </div>
