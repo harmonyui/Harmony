@@ -1,11 +1,7 @@
 import { Button } from '@harmony/ui/src/components/core/button'
 import { Header } from '@harmony/ui/src/components/core/header'
 import type { IconComponent } from '@harmony/ui/src/components/core/icons'
-import {
-  GitBranchIcon,
-  PreviewIcon,
-  SendIcon,
-} from '@harmony/ui/src/components/core/icons'
+import { PreviewIcon } from '@harmony/ui/src/components/core/icons'
 import { Input } from '@harmony/ui/src/components/core/input'
 import { Label } from '@harmony/ui/src/components/core/label'
 import { HarmonyModal } from '@harmony/ui/src/components/core/modal'
@@ -19,6 +15,8 @@ import {
   useMemo,
   useState,
 } from 'react'
+import { CopyText } from '@harmony/ui/src/components/core/copy-text'
+import { WEB_URL } from '@harmony/util/src/constants'
 import { useHarmonyContext } from '../../harmony-context'
 import { useHarmonyStore } from '../../hooks/state'
 
@@ -70,15 +68,20 @@ export const PublishProvider: React.FunctionComponent<{
         branchId,
         pullRequest,
       }
-      const published = await publish(request)
-      setLoading(false)
-      setShow(false)
-      if (!published) {
-        setError('There was an error when publishing')
-        return
-      }
+      try {
+        const published = await publish(request)
+        if (!published) {
+          setError('There was an error when publishing')
+          return
+        }
+        setShow(false)
 
-      window.open(published.pullRequest.url, '_blank')?.focus()
+        window.open(published.pullRequest.url, '_blank')?.focus()
+      } catch {
+        setError('There was an error when publishing')
+      } finally {
+        setLoading(false)
+      }
     },
     [setLoading, setError, setShow, publish, branchId],
   )
@@ -168,42 +171,82 @@ export const PublishButton: React.FunctionComponent = () => {
   )
 }
 
-const PublishModal: React.FunctionComponent<{ preview?: boolean }> = ({
-  preview = false,
-}) => {
-  const { changeMode } = useHarmonyContext()
-  const publishState = useHarmonyStore((state) => state.publishState)
-  const updatePublishState = useHarmonyStore(
-    (state) => state.updatePublishState,
-  )
-  const pullRequest: PullRequest = useMemo(
-    () =>
-      publishState || {
-        id: '',
-        title: '',
-        body: '',
-        url: '',
-      },
-    [publishState],
+const PublishModal: React.FunctionComponent<{ preview?: boolean }> = () => {
+  const isRepositoryConnected = useHarmonyStore(
+    (state) => state.isRepositoryConnected,
   )
 
   const publishContext = useContext(PublishContext)
   if (!publishContext)
     throw new Error('Must wrap the publish button in a PublishProvider')
-  const { show, setShow, error, setError, loading, sendPullRequest } =
-    publishContext
-
-  const changeProperty = useChangeProperty<PullRequest>(updatePublishState)
-
-  const onPreview = () => {
-    if (!validate()) return
-    changeMode('preview')
-  }
+  const { show, setShow, setError } = publishContext
 
   const onClose = () => {
     setShow(false)
     setError('')
   }
+
+  return (
+    <>
+      <HarmonyModal
+        show={show}
+        onClose={onClose}
+        maxWidthClassName='hw-max-w-lg'
+        editor
+      >
+        <div className='hw-flex hw-flex-col hw-justify-between hw-items-center hw-mb-4 hw-gap-6 hw-text-base'>
+          <Header level={3}>Publish Project</Header>
+          {isRepositoryConnected ? <Connected /> : <NotConnected />}
+        </div>
+      </HarmonyModal>
+    </>
+  )
+}
+
+const NotConnected: React.FunctionComponent = () => {
+  const branch = useHarmonyStore((state) => state.currentBranch)
+
+  const text = useMemo(() => {
+    const url = new URL(window.location.href)
+    url.searchParams.set('branch-id', branch.id)
+
+    return url.href
+  }, [branch])
+
+  return (
+    <div className='hw-flex hw-flex-col hw-gap-2 hw-items-center'>
+      <Button as='a' href={`${WEB_URL}/setup`} target='_blank'>
+        Connect Github
+      </Button>
+      <span>or</span>
+      <CopyText widthClass='hw-w-80' text={text} />
+    </div>
+  )
+}
+
+const Connected: React.FunctionComponent = () => {
+  const updatePublishState = useHarmonyStore(
+    (state) => state.updatePublishState,
+  )
+  const publishState = useHarmonyStore((state) => state.publishState)
+  const branch = useHarmonyStore((state) => state.currentBranch)
+
+  const changeProperty = useChangeProperty<PullRequest>(updatePublishState)
+  const publishContext = useContext(PublishContext)
+  if (!publishContext)
+    throw new Error('Must wrap the publish button in a PublishProvider')
+  const { loading, sendPullRequest, setError, error } = publishContext
+
+  const pullRequest: PullRequest = useMemo(
+    () =>
+      publishState || {
+        id: '',
+        title: branch.name,
+        body: '',
+        url: '',
+      },
+    [publishState],
+  )
 
   const validate = (): boolean => {
     if (!pullRequest.body || !pullRequest.title) {
@@ -221,47 +264,28 @@ const PublishModal: React.FunctionComponent<{ preview?: boolean }> = ({
   }, [pullRequest, sendPullRequest])
 
   return (
-    <>
-      <HarmonyModal show={show} onClose={onClose} editor>
-        <div className='hw-flex hw-gap-2 hw-items-center'>
-          <GitBranchIcon className='hw-w-6 hw-h-6' />
-          <Header level={3}>Create a Publish Request</Header>
-        </div>
-        <div className='hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500'>
-          <p>
-            Fill out the following fields to create a new request to publish
-            your changes
-          </p>
-        </div>
-        <div className='hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2'>
-          <Label className='sm:hw-col-span-full' label='Title:'>
-            <Input
-              className='hw-w-full'
-              value={pullRequest.title}
-              onChange={changeProperty.formFunc('title', pullRequest)}
-            />
-          </Label>
-          <Label className='sm:hw-col-span-full' label='Publish Details:'>
-            <Input
-              className='hw-w-full'
-              type='textarea'
-              value={pullRequest.body}
-              onChange={changeProperty.formFunc('body', pullRequest)}
-            />
-          </Label>
-        </div>
-        {error ? <p className='hw-text-red-400 hw-text-sm'>{error}</p> : null}
-        <div className='hw-flex hw-justify-between'>
-          {preview ? (
-            <Button onClick={onPreview}>
-              Preview Changes <PreviewIcon className='hw-ml-1 hw-h-4 hw-w-4' />
-            </Button>
-          ) : null}
-          <Button onClick={onNewPullRequest} loading={loading}>
-            Send Request <SendIcon className='hw-ml-1 hw-h-5 hw-w-5' />
-          </Button>
-        </div>
-      </HarmonyModal>
-    </>
+    <div className='hw-w-full hw-flex hw-flex-col hw-gap-4'>
+      <Label label='Description'>
+        <Input
+          className='hw-w-full hw-min-h-[100px]'
+          type='textarea'
+          value={publishState?.body}
+          onChange={changeProperty.formFunc('body', pullRequest)}
+          placeholder='Description'
+        />
+      </Label>
+      <div>
+        {error ? (
+          <div className='hw-text-sm hw-text-red-400 hw-mb-2'>{error}</div>
+        ) : null}
+        <Button
+          className='hw-w-full'
+          onClick={onNewPullRequest}
+          loading={loading}
+        >
+          Publish to Github
+        </Button>
+      </div>
+    </div>
   )
 }
