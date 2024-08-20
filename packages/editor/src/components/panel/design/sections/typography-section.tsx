@@ -47,6 +47,9 @@ export const TypographySection: DesignPanelSectionComponent = () => {
                 onChange={(value) =>
                   onAttributeChange({ name: 'font', value: value.id })
                 }
+                container={
+                  document.getElementById('harmony-container') || undefined
+                }
               />
             ) : null}
 
