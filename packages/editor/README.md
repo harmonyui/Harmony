@@ -12,7 +12,11 @@ Panel structure:
 
 ### DraggablePanel
 
+All panels use the `DraggablePanel` component and put in `HarmonyPanel`.
+
 The `DraggablePanel` component registers a panel based on the id passed in using the `useRegisterHarmonyPanel` hook. This hook adds the panel to the `panels` context state in the `HarmonyPanelProvider`. This state holds information about if the panel is showing and its position on the screen.
+
+Showing and hiding the panel is set in the `show` and `setShow` methods of `useHarmonyPanel`.
 
 It also uses the `useDraggable` hook for the drag and drop experience. This hook is a dependency-less hook used in the drag and drop snapping experience for tracking the dragging, position, snap points, and restrictions of a draggable item.
 

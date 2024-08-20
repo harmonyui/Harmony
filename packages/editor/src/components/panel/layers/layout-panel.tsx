@@ -5,14 +5,14 @@ import type { ComponentElement } from '../../inspector/component-identifier'
 import { useHarmonyStore } from '../../hooks/state'
 import type { TreeViewItem } from '../tree-view'
 import { TreeView } from '../tree-view'
+import { DraggablePanel } from '../_common/panel/draggable-panel'
+import { Panels } from '../_common/panel/types'
 
-export const ComponentLayoutPanel: React.FunctionComponent<
-  ComponentTreeViewProps
-> = ({ selectedComponent }) => {
+export const LayoutPanel: React.FunctionComponent = () => {
   return (
-    <div className='hw-max-w-[500px] hw-p-2'>
-      <ComponentTreeView selectedComponent={selectedComponent} />
-    </div>
+    <DraggablePanel title='Layers' id={Panels.Layers}>
+      <ComponentTreeView />
+    </DraggablePanel>
   )
 }
 
@@ -42,7 +42,7 @@ export const useComponentTreeItems = (
   return treeItems
 }
 interface ComponentTreeViewProps {
-  selectedComponent: ComponentElement | undefined
+  //selectedComponent: ComponentElement | undefined
 }
 const ComponentTreeView: React.FunctionComponent<
   ComponentTreeViewProps
@@ -55,14 +55,14 @@ const ComponentTreeView: React.FunctionComponent<
 
   return (
     <TreeView
-      items={treeItems}
-      expand={true}
-      onClick={(item) => {
-        onComponentSelect(item)
-      }}
-      onHover={(item) => {
-        onComponentHover(item)
-      }}
+    // items={treeItems}
+    // expand={true}
+    // onClick={(item) => {
+    //   onComponentSelect(item)
+    // }}
+    // onHover={(item) => {
+    //   onComponentHover(item)
+    // }}
     />
   )
 }

@@ -13,6 +13,7 @@ import { PublishProvider } from './publish/publish-button'
 import { HarmonyToolbar } from './toolbar/harmony-toolbar'
 import { DesignOverlay } from './design/design-overlay'
 import { HarmonyPanelProvider } from './_common/panel/panel'
+import { LayoutPanel } from './layers/layout-panel'
 
 export interface HarmonyPanelProps {
   onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void
@@ -43,6 +44,7 @@ export const HarmonyPanel: React.FunctionComponent<
                 <FeedbackOverlay />
                 <HarmonyToolbar />
                 <DesignOverlay />
+                <LayoutPanel />
                 {inspector}
               </div>
             </div>
