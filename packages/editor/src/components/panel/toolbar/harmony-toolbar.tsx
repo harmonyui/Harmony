@@ -14,37 +14,33 @@ type HarmonyToolbar = object
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
   const { icon: PublishIcon, loading, disabled, onPublish } = usePublishButton()
   const { icon: PreviewIcon, onPreview } = usePreviewButton()
-  const { icon: LayersIcon, onLayers } = useLayersButton()
+  const { icon: LayersIcon } = useLayersButton()
 
   const items: ToolbarItem[] = [
     {
       icon: LayersIcon,
-      onClick: onLayers,
+      //onClick: onLayers,
       mode: 'none',
       label: 'Layers',
     },
     {
       icon: TextIcon,
-      onClick: () => undefined,
       mode: 'none',
       label: 'Text',
     },
     {
       icon: SquareIcon,
-      onClick: () => undefined,
       mode: 'none',
       label: 'Shapes',
     },
 
     {
       icon: LogsIcon,
-      onClick: () => undefined,
       mode: 'none',
       label: 'Logs',
     },
     {
       icon: ChatTeardropIcon,
-      onClick: () => undefined,
       mode: 'none',
       label: 'Comments',
     },
