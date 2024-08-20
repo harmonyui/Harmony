@@ -12,16 +12,24 @@ export type ListBoxPopoverProps<T> = {
   className?: string
   header?: React.ReactNode
   children: React.ReactNode
+  container?: HTMLElement
 } & AllOrNothing<{ isOpen: boolean; setIsOpen: (value: boolean) => void }>
 export const ListBoxPopover = <T,>({
   items,
   className = '',
   header,
   children,
+  container,
   ...isOpenStuff
 }: ListBoxPopoverProps<T>): JSX.Element => {
   return (
-    <Popover button={children} buttonClass={className} {...isOpenStuff}>
+    <Popover
+      className='hw-bg-white'
+      button={children}
+      buttonClass={className}
+      container={container}
+      {...isOpenStuff}
+    >
       {header ? <div className='hw-p-2'>{header}</div> : null}
       <div className='hw-min-w-[11rem]'>
         <ul
@@ -46,6 +54,7 @@ export const ListBox = <T,>({
   children,
   mode,
   header,
+  container,
   ...isOpenStuff
 }: ListBoxProps<T>): JSX.Element => {
   const button = (
@@ -58,6 +67,7 @@ export const ListBox = <T,>({
       className={className}
       header={header}
       items={items}
+      container={container}
       {...isOpenStuff}
     >
       {button}
@@ -80,6 +90,7 @@ interface DropdownProps<T> extends PropsWithChildren {
   beforeIcon?: IconComponent
   showValue?: boolean
   mode?: 'primary' | 'secondary' | 'none'
+  container?: HTMLElement
 }
 
 export const Dropdown = <T,>({
@@ -92,6 +103,7 @@ export const Dropdown = <T,>({
   beforeIcon,
   showValue = true,
   mode = 'secondary',
+  container,
 }: DropdownProps<T>): JSX.Element => {
   const [value, setValue] = useState<DropdownItem<T> | undefined>(
     items.find((x) => x.id === initialValue),
@@ -131,6 +143,7 @@ export const Dropdown = <T,>({
       items={dropdownItems}
       mode={mode}
       setIsOpen={setIsOpen}
+      container={container}
     >
       {BeforeIcon ? <BeforeIcon className='hw-w-4 hw-h-4 hw-mr-1' /> : null}
       <div className='hw-flex hw-w-full hw-justify-between hw-items-center'>

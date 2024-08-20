@@ -14,6 +14,7 @@ export const ColorAttribute: React.FunctionComponent<{
         className='hw-h-full'
         value={getAttribute(attribute)}
         onChange={(value) => onAttributeChange({ name: attribute, value })}
+        container={document.getElementById('harmony-container') || undefined}
       />
       <InputBlur
         className='hw-h-full hw-w-[100px]'

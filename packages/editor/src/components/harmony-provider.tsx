@@ -63,7 +63,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   setup,
   environment = 'production',
   source = 'document',
-  overlay = false,
+  overlay = true,
 }) => {
   const [isToggled, setIsToggled] = useState(true)
   const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>()
