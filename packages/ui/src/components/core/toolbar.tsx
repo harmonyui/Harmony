@@ -1,10 +1,12 @@
+import { useState } from 'react'
+import { Alert } from './alert'
 import type { ButtonType } from './button'
 import { Button } from './button'
 import type { IconComponent } from './icons'
 
 export interface ToolbarItem {
   icon: IconComponent
-  onClick: () => void
+  onClick?: () => void
   mode: Exclude<ButtonType, 'other'>
   label: string
   loading?: boolean
@@ -44,21 +46,28 @@ const ToolbarItem: React.FunctionComponent<ToolbarItem> = ({
   loading,
   disabled,
 }) => {
+  const [info, setInfo] = useState<string | undefined>(undefined)
+  const onClickDefault = (): void => {
+    setInfo(`The ${label} item is coming soon!`)
+  }
   return (
-    <Button
-      className='hw-group hw-flex hw-items-center hw-justify-center hw-w-12 hw-h-10 !hw-rounded-lg hover:hw-bg-[#E5E7EB]'
-      onClick={onClick}
-      mode={mode}
-      loading={loading}
-      disabled={disabled}
-    >
-      <div className='hw-block group-hover:hw-hidden hw-h-5 hw-w-5'>
-        <Icon className='hw-w-full hw-h-full' />
-      </div>
-      <div className='hw-hidden group-hover:hw-flex hw-flex-col hw-items-center hw-h-6 hw-w-6 hw-gap-1'>
-        <span className='hw-text-[8px] hw-leading-[7px]'>{label}</span>
-        <Icon className='hw-h-4 hw-w-4' />
-      </div>
-    </Button>
+    <>
+      <Button
+        className='hw-group hw-flex hw-items-center hw-justify-center hw-w-12 hw-h-10 !hw-rounded-lg hover:hw-bg-[#E5E7EB]'
+        onClick={onClick || onClickDefault}
+        mode={mode}
+        loading={loading}
+        disabled={disabled}
+      >
+        <div className='hw-block group-hover:hw-hidden hw-h-5 hw-w-5'>
+          <Icon className='hw-w-full hw-h-full' />
+        </div>
+        <div className='hw-hidden group-hover:hw-flex hw-flex-col hw-items-center hw-h-6 hw-w-6 hw-gap-1'>
+          <span className='hw-text-[8px] hw-leading-[7px]'>{label}</span>
+          <Icon className='hw-h-4 hw-w-4' />
+        </div>
+      </Button>
+      <Alert label={info} setLabel={setInfo} type='info' />
+    </>
   )
 }
