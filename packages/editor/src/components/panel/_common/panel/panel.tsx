@@ -49,7 +49,8 @@ export const HarmonyPanelProvider: React.FunctionComponent<{
     [setPanel],
   )
 
-  // Turn off all panels or turn on all the panels that were on before
+  // Turn off all panels or turn on all the panels returning to the previous state
+  // This means that it restores the position and active state of the panels before turning them all off
   const toggleAllActive = useEffectEvent(() => {
     setPanels((prev) => {
       const active = !Object.values(prev).some((panel) => panel.active)
