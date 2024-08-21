@@ -8,10 +8,13 @@ const AuthPage: NextPage = () => {
   const router = useRouter()
 
   useEffect(() => {
-    window.postMessage({
-      isSignedIn: true,
-    })
-    router.push('/')
+    //Wait for the content script to load
+    setTimeout(() => {
+      window.postMessage({
+        isSignedIn: true,
+      })
+      router.push('/')
+    }, 1000)
   }, [])
 
   return null
