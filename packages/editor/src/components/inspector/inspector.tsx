@@ -224,7 +224,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   }, [overlayRef, parentElement, containerRef])
 
   const { isDragging } = useSnapping({
-    enabled: isDemo,
+    enabled: false,
     element: selectedComponent
       ? selectDesignerElement(selectedComponent)
       : undefined,
