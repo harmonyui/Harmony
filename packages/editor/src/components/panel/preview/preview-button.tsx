@@ -2,23 +2,25 @@ import type { IconComponent } from '@harmony/ui/src/components/core/icons'
 import { MonitorPlayIcon } from '@harmony/ui/src/components/core/icons'
 import { useCallback } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
+import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { useSetHarmonyPanels } from '../_common/panel/panel'
 import { useHarmonyContext } from '../../harmony-context'
 
 interface PreviewButtonState {
   onPreview: () => void
   icon: IconComponent
+  active: boolean
 }
 export const usePreviewButton = (): PreviewButtonState => {
-  const toggleAllActive = useSetHarmonyPanels()
+  const { isAllActive, setIsAllActive } = useSetHarmonyPanels()
   const { onToggleInspector } = useHarmonyContext()
 
-  const onPreview = useCallback(() => {
-    toggleAllActive()
+  const onPreview = useEffectEvent(() => {
+    setIsAllActive(!isAllActive)
     onToggleInspector()
-  }, [])
+  })
 
-  return { onPreview, icon: MonitorPlayIcon }
+  return { onPreview, icon: MonitorPlayIcon, active: !isAllActive }
 }
 
 export const PreviewButton: React.FunctionComponent = () => {

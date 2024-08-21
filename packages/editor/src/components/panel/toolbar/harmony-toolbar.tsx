@@ -13,8 +13,12 @@ import { useLayersButton } from '../layers/layers-button'
 type HarmonyToolbar = object
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
   const { icon: PublishIcon, loading, disabled, onPublish } = usePublishButton()
-  const { icon: PreviewIcon, onPreview } = usePreviewButton()
-  const { icon: LayersIcon, onLayers } = useLayersButton()
+  const {
+    icon: PreviewIcon,
+    onPreview,
+    active: previewActive,
+  } = usePreviewButton()
+  const { icon: LayersIcon, onLayers, active: layerActive } = useLayersButton()
 
   const items: ToolbarItem[] = [
     {
@@ -22,6 +26,7 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
       onClick: onLayers,
       mode: 'none',
       label: 'Layers',
+      active: layerActive,
     },
     {
       icon: TextIcon,
@@ -49,6 +54,7 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
       onClick: onPreview,
       mode: 'none',
       label: 'Preview',
+      active: previewActive,
     },
     {
       icon: PublishIcon,

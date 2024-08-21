@@ -7,6 +7,7 @@ import { Panels } from '../_common/panel/types'
 interface LayersButtonState {
   onLayers: () => void
   icon: IconComponent
+  active: boolean
 }
 export const useLayersButton = (): LayersButtonState => {
   const { setShow, show } = useHarmonyPanel(Panels.Layers)
@@ -15,5 +16,5 @@ export const useLayersButton = (): LayersButtonState => {
     setShow(!show)
   })
 
-  return { onLayers: onLayoutClick, icon: StackIcon }
+  return { onLayers: onLayoutClick, icon: StackIcon, active: show }
 }
