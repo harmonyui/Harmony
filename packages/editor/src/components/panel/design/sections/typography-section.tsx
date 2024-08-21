@@ -1,5 +1,4 @@
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
-import { InputBlur } from '@harmony/ui/src/components/core/input'
 import type { CSSProperties } from 'react'
 import React, { useMemo } from 'react'
 import {
@@ -43,14 +42,14 @@ export const TypographySection: DesignPanelSectionComponent = () => {
         <TextAlignSection />
         <TextTypeSection />
         <Label label='Line Height'>
-          <InputBlur
+          <DesignInput
             className='hw-w-full hw-col-span-2'
             value={getAttribute('lineHeight')}
             onChange={onChange('lineHeight')}
           />
         </Label>
         <Label label='Letter Spacing'>
-          <InputBlur
+          <DesignInput
             className='hw-w-full hw-col-span-2'
             value={spacing === 'normal' ? '0px' : spacing}
             onChange={onChange('letterSpacing')}

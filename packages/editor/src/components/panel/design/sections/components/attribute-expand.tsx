@@ -47,7 +47,7 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
   return (
     <>
       <Label label={label}>
-        <div className='hw-col-span-2 hw-flex hw-gap-2'>
+        <div className='hw-col-span-2 hw-flex hw-gap-2 hw-items-center'>
           <DesignInput
             className='hw-w-full'
             value={attrValue}

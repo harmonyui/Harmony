@@ -12,23 +12,23 @@ export const useDesignPanels = () => {
   const panels: Record<ComponentType, DesignPanelSectionComponent[]> = useMemo(
     () => ({
       [ComponentType.Frame]: [
-        SizeSection,
         LayoutSection,
-        SpacingSection,
+        SizeSection,
         BorderSection,
+        SpacingSection,
         StyleSection,
       ],
       [ComponentType.Text]: [
         SizeSection,
         SpacingSection,
-        TypographySection,
         StyleSection,
+        TypographySection,
       ],
       [ComponentType.Shape]: [
-        SizeSection,
         LayoutSection,
-        SpacingSection,
+        SizeSection,
         BorderSection,
+        SpacingSection,
         StyleSection,
       ],
     }),
