@@ -57,6 +57,7 @@ export const Tree = <T,>({
   return (
     <ReactTreePrimitive.Tree
       data={data}
+      indent={18}
       selection={selectedId}
       onSelect={onSelect}
       onMove={onMove}

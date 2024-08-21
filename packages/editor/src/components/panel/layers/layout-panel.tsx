@@ -4,9 +4,9 @@ import { useHarmonyContext } from '../../harmony-context'
 import { isSelectable } from '../../inspector/inspector'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { useHarmonyStore } from '../../hooks/state'
-import { TreeView } from '../tree-view'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
+import { TreeView } from './tree-view'
 
 export const LayoutPanel: React.FunctionComponent = () => {
   return (

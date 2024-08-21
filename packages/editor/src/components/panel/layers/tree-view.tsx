@@ -10,16 +10,16 @@ import {
   TIcon,
 } from '@harmony/ui/src/components/core/icons'
 import { ContextMenuItem } from '@harmony/ui/src/components/core/context-menu'
-import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
-import { useHarmonyContext } from '../harmony-context'
+import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
+import { useHarmonyContext } from '../../harmony-context'
 import {
   getComponentId,
   getComponentIdAndChildIndex,
-} from '../../utils/element-utils'
-import type { ImageType } from './add-image-panel'
-import { AddImagePanel } from './add-image-panel'
-import { ComponentType } from './design/types'
-import { getComponentType } from './design/utils'
+} from '../../../utils/element-utils'
+import type { ImageType } from '../add-image-panel'
+import { AddImagePanel } from '../add-image-panel'
+import { ComponentType } from '../design/types'
+import { getComponentType } from '../design/utils'
 
 export interface TransformNode extends Record<string, NonNullable<unknown>> {
   id: string
