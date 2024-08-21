@@ -55,6 +55,7 @@ export const attributeTools = [
   'borderTopRightRadius',
   'borderBottomLeftRadius',
   'borderBottomRightRadius',
+  'overflow',
 ] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {

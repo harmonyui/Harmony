@@ -18,7 +18,12 @@ export const ButtonGroup = ({ items, value, onChange }: ButtonGroupProps) => {
           className={getClass('hw-flex-1 !hw-border-0 hover:hw-bg-[#E5E7EB]')}
           key={item.value}
           mode='other'
-          backgroundColor={item.value === value ? '#E5E7EB' : ''}
+          backgroundColor={
+            item.value === value ||
+            (item.value === 'inherit' && !items.find((i) => i.value === value))
+              ? '#E5E7EB'
+              : ''
+          }
           onClick={() => onChange(item.value)}
         >
           {item.children}

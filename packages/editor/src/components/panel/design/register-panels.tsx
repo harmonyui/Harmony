@@ -4,7 +4,7 @@ import { SizeSection } from './sections/size-section'
 import { ComponentType } from './types'
 import { LayoutSection } from './sections/layout-section'
 import { BorderSection } from './sections/border-section'
-import { BackgroundSection } from './sections/background-section'
+import { StyleSection } from './sections/style-section'
 import { SpacingSection } from './sections/spacing-section'
 import { TypographySection } from './sections/typography-section'
 
@@ -16,20 +16,20 @@ export const useDesignPanels = () => {
         LayoutSection,
         SpacingSection,
         BorderSection,
-        BackgroundSection,
+        StyleSection,
       ],
       [ComponentType.Text]: [
         SizeSection,
         SpacingSection,
         TypographySection,
-        BackgroundSection,
+        StyleSection,
       ],
       [ComponentType.Shape]: [
         SizeSection,
         LayoutSection,
         SpacingSection,
         BorderSection,
-        BackgroundSection,
+        StyleSection,
       ],
     }),
     [],
