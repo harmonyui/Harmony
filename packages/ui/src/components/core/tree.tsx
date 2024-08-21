@@ -1,7 +1,12 @@
 import * as ReactTreePrimitive from 'react-arborist'
 import { getClass } from '@harmony/util/src/utils/common'
-import { useMemo } from 'react'
+import React from 'react'
 import { PolygonDownIcon, PolygonRightIcon } from './icons'
+import {
+  ContextMenu,
+  ContextMenuContent,
+  ContextMenuTrigger,
+} from './context-menu'
 
 export interface TreeData<T> {
   id: string
@@ -22,6 +27,7 @@ export interface TreeProps<T> {
     index: number
     parentData: TreeData<T> | undefined
   }) => void
+  contextMenu?: React.FunctionComponent<{ data: TreeData<T> }>
 }
 export const Tree = <T,>({
   selectedId,
@@ -30,6 +36,7 @@ export const Tree = <T,>({
   onSelect: onSelectProps,
   onHover,
   onDrag,
+  contextMenu,
 }: TreeProps<T>) => {
   const onSelect = (nodes: ReactTreePrimitive.NodeApi<TreeData<T>>[]) => {
     onSelectProps(nodes.map((node) => node.data))
@@ -55,11 +62,21 @@ export const Tree = <T,>({
       onMove={onMove}
       //childrenAccessor='items'
     >
-      {(props) => (
-        <Node {...props} onHover={() => onHover(props.node.data)}>
-          {children({ data: props.node.data })}
-        </Node>
-      )}
+      {(props) => {
+        const nodeProps = {
+          ...props,
+          onHover: () => onHover(props.node.data),
+          children: children({ data: props.node.data }),
+        }
+
+        if (contextMenu) {
+          return (
+            <NodeWithContextMenu {...nodeProps} contextMenu={contextMenu} />
+          )
+        }
+
+        return <Node {...nodeProps} />
+      }}
     </ReactTreePrimitive.Tree>
   )
 }
@@ -89,6 +106,24 @@ const Node = <T,>({
       <NodeArrow node={node} />
       {children}
     </div>
+  )
+}
+
+const NodeWithContextMenu = <T,>({
+  contextMenu: ContextMenuContentChildren,
+  ...props
+}: NodeProps<T> & { contextMenu: React.FunctionComponent<{ data: T }> }) => {
+  return (
+    <ContextMenu>
+      <ContextMenuTrigger>
+        <Node {...props} />
+      </ContextMenuTrigger>
+      <ContextMenuContent
+        container={document.getElementById('harmony-container') || undefined}
+      >
+        <ContextMenuContentChildren data={props.node.data} />
+      </ContextMenuContent>
+    </ContextMenu>
   )
 }
 

@@ -56,28 +56,12 @@ export const useComponentTreeItems = (
 
   return treeItems
 }
-interface ComponentTreeViewProps {
-  //selectedComponent: ComponentElement | undefined
-}
-const ComponentTreeView: React.FunctionComponent<
-  ComponentTreeViewProps
-> = () => {
-  const { onComponentHover, onComponentSelect, selectedComponent } =
-    useHarmonyContext()
+
+const ComponentTreeView: React.FunctionComponent = () => {
+  const { selectedComponent } = useHarmonyContext()
   const rootComponent = useHarmonyStore((state) => state.rootComponent)
 
   const treeItems = useComponentTreeItems(rootComponent, selectedComponent)
 
-  return (
-    <TreeView
-      items={treeItems}
-      // expand={true}
-      // onClick={(item) => {
-      //   onComponentSelect(item)
-      // }}
-      // onHover={(item) => {
-      //   onComponentHover(item)
-      // }}
-    />
-  )
+  return <TreeView items={treeItems} />
 }

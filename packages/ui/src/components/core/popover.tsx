@@ -51,9 +51,10 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
   className,
   children,
   container,
+  ...isOpenStuff
 }) => {
   return (
-    <PopoverBase>
+    <PopoverBase open={isOpenStuff.isOpen} onOpenChange={isOpenStuff.setIsOpen}>
       <PopoverTrigger asChild>
         <div className={buttonClass}>{button}</div>
       </PopoverTrigger>
