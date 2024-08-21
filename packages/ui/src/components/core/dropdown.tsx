@@ -24,7 +24,7 @@ export const ListBoxPopover = <T,>({
 }: ListBoxPopoverProps<T>): JSX.Element => {
   return (
     <Popover
-      className='hw-bg-white'
+      className='hw-bg-white hw-border hw-rounded-lg'
       button={children}
       buttonClass={className}
       container={container}
