@@ -4,7 +4,9 @@ import type { CSSProperties } from 'react'
 export const attributeTools = [
   'font',
   'fontSize',
+  'fontWeight',
   'textAlign',
+  'textDecorationLine',
   'display',
   'justifyContent',
   'alignItems',

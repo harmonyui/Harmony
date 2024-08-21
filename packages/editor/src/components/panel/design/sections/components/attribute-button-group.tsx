@@ -11,10 +11,12 @@ export interface ButtonItem<P extends CommonTools> {
 interface AttributeButtonGroupProps<P extends CommonTools> {
   items: ButtonItem<P>[]
   attribute: P
+  className?: string
 }
 export const AttributeButtonGroup = <P extends CommonTools>({
   items,
   attribute,
+  className,
 }: AttributeButtonGroupProps<P>) => {
   const { getAttribute, onAttributeChange } = useComponentAttribute()
   const currentValue = useMemo(
@@ -26,6 +28,7 @@ export const AttributeButtonGroup = <P extends CommonTools>({
 
   return (
     <ButtonGroup
+      className={className}
       items={items}
       value={currentValue}
       onChange={(value) =>

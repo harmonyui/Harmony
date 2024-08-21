@@ -9,26 +9,52 @@ interface ButtonGroupProps {
   items: ButtonItem[]
   value: string | number
   onChange: (value: string | number) => void
+  className?: string
 }
-export const ButtonGroup = ({ items, value, onChange }: ButtonGroupProps) => {
+export const ButtonGroup = ({
+  items,
+  value,
+  onChange,
+  className,
+}: ButtonGroupProps) => {
   return (
-    <div className='hw-flex hw-gap-2 hw-rounded-lg hw-col-span-2'>
+    <div
+      className={getClass(
+        'hw-flex hw-gap-1 hw-rounded-lg',
+        className ? className : 'hw-col-span-2',
+      )}
+    >
       {items.map((item) => (
-        <Button
-          className={getClass('hw-flex-1 !hw-border-0 hover:hw-bg-[#E5E7EB]')}
+        <ButtonGroupButton
           key={item.value}
-          mode='other'
-          backgroundColor={
+          show={
             item.value === value ||
             (item.value === 'inherit' && !items.find((i) => i.value === value))
-              ? '#E5E7EB'
-              : ''
           }
           onClick={() => onChange(item.value)}
         >
           {item.children}
-        </Button>
+        </ButtonGroupButton>
       ))}
     </div>
+  )
+}
+
+export const ButtonGroupButton: React.FunctionComponent<{
+  show: boolean
+  onClick: () => void
+  children: React.ReactNode
+}> = ({ show, onClick, children }) => {
+  return (
+    <Button
+      className={getClass(
+        'hw-flex hw-items-center hw-justify-center hw-p-1 hw-flex-1 !hw-border-0 hover:hw-bg-[#E5E7EB] hw-rounded-lg',
+        show ? 'hw-bg-[#E5E7EB]' : '',
+      )}
+      mode='none'
+      onClick={onClick}
+    >
+      {children}
+    </Button>
   )
 }
