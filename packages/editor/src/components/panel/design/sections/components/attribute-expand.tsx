@@ -61,7 +61,10 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
           {values.map((value, index) => {
             const Icon = icons ? icons[index] : null
             return (
-              <div key={index} className='hw-col-span-1'>
+              <div
+                key={index}
+                className='hw-col-span-1 hw-flex hw-gap-2 hw-items-center'
+              >
                 {Icon ? <Icon className='hw-h-4 hw-w-4' /> : null}
                 <DesignInput
                   className='hw-w-full'

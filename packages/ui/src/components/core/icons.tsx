@@ -247,6 +247,138 @@ export const CancelIcon: IconComponent = (props) => {
   return <FontAwesomeIcon icon={faBorderNone} className={props.className} />
 }
 
+export const PaddingAllIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 14 14'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M1.99984 1.19991C1.99984 1.01582 2.14908 0.866577 2.33317 0.866577H11.6665C11.8506 0.866577 11.9998 1.01582 11.9998 1.19991C11.9998 1.38401 11.8506 1.53324 11.6665 1.53324H2.33317C2.14908 1.53324 1.99984 1.38401 1.99984 1.19991Z'
+        fill='#111827'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M1.99984 13.1999C1.99984 13.0158 2.14908 12.8666 2.33317 12.8666H11.6665C11.8506 12.8666 11.9998 13.0158 11.9998 13.1999C11.9998 13.384 11.8506 13.5332 11.6665 13.5332H2.33317C2.14908 13.5332 1.99984 13.384 1.99984 13.1999Z'
+        fill='#111827'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M12.9998 2.19991C13.1839 2.19991 13.3332 2.34915 13.3332 2.53324V11.8666C13.3332 12.0507 13.1839 12.1999 12.9998 12.1999C12.8157 12.1999 12.6665 12.0507 12.6665 11.8666V2.53324C12.6665 2.34915 12.8157 2.19991 12.9998 2.19991Z'
+        fill='#111827'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M0.999838 2.19991C1.18393 2.19991 1.33317 2.34915 1.33317 2.53324L1.33317 11.8666C1.33317 12.0507 1.18393 12.1999 0.999837 12.1999C0.815742 12.1999 0.666504 12.0507 0.666504 11.8666L0.666504 2.53324C0.666504 2.34915 0.815743 2.19991 0.999838 2.19991Z'
+        fill='#111827'
+      />
+    </svg>
+  )
+}
+
+export const PaddingLeftIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 10 10'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M2.3335 1.53332L2.3335 8.86666L9.66683 8.86666L9.66683 1.53332L2.3335 1.53332ZM3.00016 2.19999L9.00016 2.19999L9.00016 8.19999L3.00016 8.19999L3.00016 2.19999Z'
+        fill='black'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M1.00016 9.86666L1.00016 0.533325L0.333496 0.533325L0.333497 9.86666L1.00016 9.86666Z'
+        fill='black'
+      />
+    </svg>
+  )
+}
+
+export const PaddingTopIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 10 10'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M1.3335 2.53333H8.66683V9.86666H1.3335V2.53333ZM2.00016 3.19999V9.19999H8.00016V3.19999H2.00016Z'
+        fill='black'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M9.66683 1.19999H0.333496V0.533325H9.66683V1.19999Z'
+        fill='black'
+      />
+    </svg>
+  )
+}
+
+export const PaddingRightIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 10 10'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M7.6665 1.53333L7.6665 8.86666L0.333171 8.86666L0.333171 1.53333L7.6665 1.53333ZM6.99984 2.19999L0.999838 2.19999L0.999838 8.19999L6.99984 8.19999L6.99984 2.19999Z'
+        fill='black'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M8.99984 9.86666L8.99984 0.533325L9.6665 0.533325L9.6665 9.86666L8.99984 9.86666Z'
+        fill='black'
+      />
+    </svg>
+  )
+}
+
+export const PaddingBottomIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 10 10'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M8.6665 7.86658H1.33317V0.533244H8.6665V7.86658ZM7.99984 7.19991V1.19991H1.99984V7.19991H7.99984Z'
+        fill='black'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M0.333171 9.19991H9.6665V9.86658H0.333171V9.19991Z'
+        fill='black'
+      />
+    </svg>
+  )
+}
+
 export const BorderAllIcon: IconComponent = (props) => {
   return (
     <svg
