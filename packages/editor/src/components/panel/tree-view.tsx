@@ -1,9 +1,9 @@
 import { enableRipple } from '@syncfusion/ej2-base'
+import { TreeViewComponent } from '@syncfusion/ej2-react-navigations'
 import type {
   DragAndDropEventArgs,
   NodeSelectEventArgs,
   DrawNodeEventArgs,
-  TreeViewComponent,
 } from '@syncfusion/ej2-react-navigations'
 import { useEffect, useMemo, useState } from 'react'
 import { v4 as uuidv4 } from 'uuid'
@@ -13,22 +13,24 @@ import {
   ListBoxPopover,
 } from '@harmony/ui/src/components/core/dropdown'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
+import type { TreeData, TreeProps } from '@harmony/ui/src/components/core/tree'
 import { Tree } from '@harmony/ui/src/components/core/tree'
+import {
+  FrameIcon,
+  ImageIcon,
+  TIcon,
+} from '@harmony/ui/src/components/core/icons'
 import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
 import type { ComponentElement } from '../inspector/component-identifier'
-import { getComponentIdAndChildIndex } from '../../utils/element-utils'
+import {
+  getComponentId,
+  getComponentIdAndChildIndex,
+} from '../../utils/element-utils'
 import type { ImageType } from './add-image-panel'
 import { AddImagePanel } from './add-image-panel'
-
-enableRipple(true)
-
-export interface TreeViewItem<T = string> {
-  id: T
-  content: React.ReactNode
-  items: TreeViewItem<T>[]
-  selected: boolean
-}
+import { ComponentType } from './design/types'
+import { getComponentType } from './design/utils'
 
 export interface TransformNode extends Record<string, NonNullable<unknown>> {
   id: string
@@ -40,13 +42,86 @@ export interface TransformNode extends Record<string, NonNullable<unknown>> {
   component: string
 }
 
-let treeObj: TreeViewComponent | null
+interface TreeViewProps {
+  items: TreeData<HTMLElement>[]
+}
+export const TreeView = ({ items }: TreeViewProps) => {
+  const {
+    onAttributesChange,
+    onComponentHover,
+    onComponentSelect,
+    setError,
+    selectedComponent,
+  } = useHarmonyContext()
 
-export const TreeView = () => {
-  return <Tree />
+  const onDrag: TreeProps<HTMLElement>['onDrag'] = ({
+    index,
+    dragData,
+    parentData,
+  }) => {
+    const { componentId, childIndex } = getComponentIdAndChildIndex(
+      dragData[0].data,
+    )
+    const oldParentId = dragData[0].data.parentElement?.dataset.harmonyId
+
+    const { componentId: newParentId } = parentData?.data
+      ? getComponentIdAndChildIndex(parentData.data)
+      : { componentId: undefined }
+    const newIndex = index
+
+    const update: ComponentUpdateWithoutGlobal = {
+      type: 'component',
+      name: 'reorder',
+      componentId,
+      childIndex,
+      oldValue: JSON.stringify({
+        parentId: oldParentId,
+        childIndex,
+      }),
+      value: JSON.stringify({ parentId: newParentId, childIndex: newIndex }),
+    }
+    onAttributesChange([update])
+  }
+
+  const onSelect: TreeProps<HTMLElement>['onSelect'] = (nodes) => {
+    nodes.length && onComponentSelect(nodes[0].data)
+  }
+
+  const onHover: TreeProps<HTMLElement>['onHover'] = ({ data }) => {
+    onComponentHover(data)
+  }
+
+  return (
+    <Tree
+      selectedId={getComponentId(selectedComponent)}
+      data={items}
+      onDrag={onDrag}
+      onHover={onHover}
+      onSelect={onSelect}
+    >
+      {({ data }) => (
+        <>
+          <ComponentIcon type={getComponentType(data.data)} />
+          {data.name}
+        </>
+      )}
+    </Tree>
+  )
 }
 
-// export const TreeView = ({
+const ComponentIcon: React.FunctionComponent<{ type: ComponentType }> = ({
+  type,
+}) => {
+  if (type === ComponentType.Frame) {
+    return <FrameIcon className='hw-w-3 hw-h-3' />
+  } else if (type === ComponentType.Text) {
+    return <TIcon className='hw-w-3 hw-h-3' />
+  }
+
+  return <ImageIcon className='hw-w-3 hw-h-3' />
+}
+
+// export const TreeViewOld = ({
 //   items,
 // }: {
 //   items: TreeViewItem<ComponentElement>[]
@@ -273,7 +348,7 @@ export const TreeView = () => {
 //   function nodeSelected(e: NodeSelectEventArgs) {
 //     if (!treeObj) return
 
-//     const start = treeObj['startNode'] as HTMLElement
+//     const start = treeObj.startNode as HTMLElement
 //     const startId = start.children[1].innerHTML
 //       .split('data-node=')[1]
 //       .split('"')[1]

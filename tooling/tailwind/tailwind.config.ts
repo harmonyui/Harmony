@@ -24,6 +24,9 @@ const config: Config = {
           DEFAULT: '#3A6EF2', //"#318BD0",
           dark: '#101636',
         },
+        slate: {
+          '20': '#E5E7EB',
+        },
       },
       keyframes: {
         'accordion-down': {

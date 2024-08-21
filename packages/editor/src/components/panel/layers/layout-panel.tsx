@@ -1,9 +1,9 @@
 import { useCallback, useMemo } from 'react'
+import type { TreeData } from '@harmony/ui/src/components/core/tree'
 import { useHarmonyContext } from '../../harmony-context'
 import { isSelectable } from '../../inspector/inspector'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { useHarmonyStore } from '../../hooks/state'
-import type { TreeViewItem } from '../tree-view'
 import { TreeView } from '../tree-view'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
@@ -19,23 +19,38 @@ export const LayoutPanel: React.FunctionComponent = () => {
 export const useComponentTreeItems = (
   root: ComponentElement | undefined,
   selectedComponent: HTMLElement | undefined,
-): TreeViewItem<ComponentElement>[] => {
+): TreeData<HTMLElement>[] => {
   const { scale } = useHarmonyContext()
+  const ids: string[] = []
   const getTreeItems = useCallback(
-    (children: ComponentElement[]): TreeViewItem<ComponentElement>[] => {
-      return children
-        .filter((child) => isSelectable(child.element, scale))
-        .map<TreeViewItem<ComponentElement>>((child) => ({
-          id: child,
-          content: child.name,
-          items: getTreeItems(child.children),
+    (children: ComponentElement[]): TreeData<HTMLElement>[] | undefined => {
+      const filtered = children.filter(
+        (child) =>
+          isSelectable(child.element, scale) &&
+          child.element.dataset.harmonyText !== 'true',
+      )
+      if (filtered.length === 0) return undefined
+
+      return filtered.map<TreeData<HTMLElement>>((child) => {
+        if (!child.id) {
+          throw new Error('Element does not have an id')
+        }
+        const sameIds = ids.filter((id) => id === child.id)
+        const id = `${child.id}-${sameIds.length}`
+        ids.push(child.id)
+        return {
+          id,
+          data: child.element,
+          name: child.name,
+          children: getTreeItems(child.children),
           selected: selectedComponent === child.element,
-        }))
+        }
+      })
     },
     [scale],
   )
-  const treeItems: TreeViewItem<ComponentElement>[] = useMemo(
-    () => (root ? getTreeItems([root]) : []),
+  const treeItems: TreeData<HTMLElement>[] = useMemo(
+    () => (root ? getTreeItems([root]) ?? [] : []),
     [root, getTreeItems],
   )
 
@@ -55,14 +70,14 @@ const ComponentTreeView: React.FunctionComponent<
 
   return (
     <TreeView
-    // items={treeItems}
-    // expand={true}
-    // onClick={(item) => {
-    //   onComponentSelect(item)
-    // }}
-    // onHover={(item) => {
-    //   onComponentHover(item)
-    // }}
+      items={treeItems}
+      // expand={true}
+      // onClick={(item) => {
+      //   onComponentSelect(item)
+      // }}
+      // onHover={(item) => {
+      //   onComponentHover(item)
+      // }}
     />
   )
 }

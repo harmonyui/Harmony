@@ -94,8 +94,6 @@ export const createComponentUpdateSlice =
               )
             }
 
-            oldElement.remove()
-
             // Add element to new parent
             const newElement = document.querySelector(
               `[data-harmony-id="${newParent}"]`,

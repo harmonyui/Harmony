@@ -90,6 +90,14 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
   return { childIndex, componentId, index }
 }
 
+export function getComponentId(
+  component: HTMLElement | undefined,
+): string | undefined {
+  if (!component) return undefined
+
+  return getComponentIdAndChildIndex(component).componentId
+}
+
 export const createComponentId = (element: HTMLElement): string => {
   const actualElement =
     element.dataset.harmonyText === 'true' ? element.parentElement! : element
