@@ -6,8 +6,6 @@ import {
   faAlignJustify,
   faAlignLeft,
   faAlignRight,
-  faArrowUpRightFromSquare,
-  faBorderAll,
   faBorderNone,
   faCirclePlay,
   faCircleQuestion,
@@ -1994,6 +1992,114 @@ export const AlignCenterVerticalIcon: IconComponent = (props) => {
       xmlns='http://www.w3.org/2000/svg'
     >
       <path d='M8.46154 5.38462H5V4.61538H7.30769C7.51171 4.61538 7.70736 4.53434 7.85162 4.39008C7.99588 4.24582 8.07692 4.05017 8.07692 3.84615V1.92308C8.07692 1.71906 7.99588 1.52341 7.85162 1.37915C7.70736 1.23489 7.51171 1.15385 7.30769 1.15385H5V0.384615C5 0.282609 4.95948 0.184781 4.88735 0.112651C4.81522 0.0405218 4.71739 0 4.61538 0C4.51338 0 4.41555 0.0405218 4.34342 0.112651C4.27129 0.184781 4.23077 0.282609 4.23077 0.384615V1.15385H1.92308C1.71906 1.15385 1.52341 1.23489 1.37915 1.37915C1.23489 1.52341 1.15385 1.71906 1.15385 1.92308V3.84615C1.15385 4.05017 1.23489 4.24582 1.37915 4.39008C1.52341 4.53434 1.71906 4.61538 1.92308 4.61538H4.23077V5.38462H0.769231C0.565218 5.38462 0.369561 5.46566 0.225302 5.60992C0.0810437 5.75418 0 5.94983 0 6.15385V8.07692C0 8.28094 0.0810437 8.47659 0.225302 8.62085C0.369561 8.76511 0.565218 8.84615 0.769231 8.84615H4.23077V9.61539C4.23077 9.71739 4.27129 9.81522 4.34342 9.88735C4.41555 9.95948 4.51338 10 4.61538 10C4.71739 10 4.81522 9.95948 4.88735 9.88735C4.95948 9.81522 5 9.71739 5 9.61539V8.84615H8.46154C8.66555 8.84615 8.86121 8.76511 9.00547 8.62085C9.14972 8.47659 9.23077 8.28094 9.23077 8.07692V6.15385C9.23077 5.94983 9.14972 5.75418 9.00547 5.60992C8.86121 5.46566 8.66555 5.38462 8.46154 5.38462ZM1.92308 1.92308H7.30769V3.84615H1.92308V1.92308ZM8.46154 8.07692H0.769231V6.15385H8.46154V8.07692Z' />
+    </svg>
+  )
+}
+
+export const PolygonRightIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 6 6'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path d='M5.59813 3L0.401978 6L0.401978 0L5.59813 3Z' fill='#999999' />
+    </svg>
+  )
+}
+
+export const PolygonDownIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 6 6'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path d='M3 5.59801L0 0.401855H6L3 5.59801Z' fill='#999999' />
+    </svg>
+  )
+}
+
+export const FrameIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 11 12'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M7.52209 11.5V0.5H8.52209V11.5H7.52209Z'
+        fill='#999999'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M2.52209 11.5V0.5H3.52209V11.5H2.52209Z'
+        fill='#999999'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M4.37115e-08 2.98666L11 2.98666V3.98666L0 3.98666L4.37115e-08 2.98666Z'
+        fill='#999999'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M4.37115e-08 7.98666L11 7.98666V8.98666L0 8.98666L4.37115e-08 7.98666Z'
+        fill='#999999'
+      />
+    </svg>
+  )
+}
+
+export const TIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 11 12'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path
+        d='M1.37788 3.15778V1.63647H9.622V3.15778H6.46079V10.3637H4.63692V3.15778H1.37788Z'
+        fill='#999999'
+      />
+    </svg>
+  )
+}
+
+export const ImageIcon: IconComponent = (props) => {
+  return (
+    <svg
+      {...props}
+      viewBox='0 0 11 12'
+      fill='none'
+      xmlns='http://www.w3.org/2000/svg'
+    >
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M0.5 1V11H10.5V1H0.5ZM0.25 0.5C0.111929 0.5 0 0.611929 0 0.75V11.25C0 11.3881 0.111929 11.5 0.25 11.5H10.75C10.8881 11.5 11 11.3881 11 11.25V0.75C11 0.611929 10.8881 0.5 10.75 0.5H0.25Z'
+        fill='#999999'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M3.80261 2.99332L4.25148 2.98077L8.51943 11.1125L8.07671 11.3449L4.046 3.66516L0.660215 11.0979L0.2052 10.8906L3.80261 2.99332Z'
+        fill='#999999'
+      />
+      <path
+        fill-rule='evenodd'
+        clip-rule='evenodd'
+        d='M8.37805 5.3997L6.91639 8.22903L6.47217 7.99954L8.164 4.72467L8.61143 4.73111L10.9931 9.68576L10.5424 9.90238L8.37805 5.3997Z'
+        fill='#999999'
+      />
     </svg>
   )
 }

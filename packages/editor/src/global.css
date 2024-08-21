@@ -5,13 +5,14 @@
 @import "../node_modules/@syncfusion/ej2-inputs/styles/material.css";
 @import "../node_modules/@syncfusion/ej2-buttons/styles/material.css";
 
-
-[contenteditable]:focus,[contenteditable]:focus-visible {
-    outline: 0px solid transparent;
+[contenteditable]:focus,
+[contenteditable]:focus-visible {
+  outline: 0px solid transparent;
 }
 
-#harmony-section button, #harmony-section a {
-    cursor: default;
+#harmony-section button,
+#harmony-section a {
+  cursor: default;
 }
 
 /* #harmony-section button {
@@ -29,12 +30,12 @@
   box-sizing: border-box; /* 1 */
   border-width: 0; /* 2 */
   border-style: solid; /* 2 */
-  border-color: theme('borderColor.DEFAULT', currentColor); /* 2 */
+  border-color: theme("borderColor.DEFAULT", currentColor); /* 2 */
 }
 
 ::before,
 ::after {
-  --tw-content: '';
+  --tw-content: "";
 }
 
 /*
@@ -176,12 +177,12 @@ select {
 */
 
 #harmony-panel button:not([data-primary="true"]),
-#harmony-panel [type='button']:not([data-primary="true"]),
-#harmony-panel [type='reset']:not([data-primary="true"]),
-#harmony-panel [type='submit']:not([data-primary="true"]) {
-    -webkit-appearance: button; /* 1 */
-    background-color: transparent; /* 2 */
-    background-image: none; /* 2 */
+#harmony-panel [type="button"]:not([data-primary="true"]),
+#harmony-panel [type="reset"]:not([data-primary="true"]),
+#harmony-panel [type="submit"]:not([data-primary="true"]) {
+  -webkit-appearance: button; /* 1 */
+  background-color: transparent; /* 2 */
+  background-image: none; /* 2 */
 }
 
 /*
@@ -222,7 +223,7 @@ Correct the cursor style of increment and decrement buttons in Safari.
 2. Correct the outline style in Safari.
 */
 
-[type='search'] {
+[type="search"] {
   -webkit-appearance: textfield; /* 1 */
   outline-offset: -2px; /* 2 */
 }
@@ -313,7 +314,7 @@ textarea {
 input::placeholder,
 textarea::placeholder {
   opacity: 1; /* 1 */
-  color: theme('colors.gray.400', #9ca3af); /* 2 */
+  color: theme("colors.gray.400", #9ca3af); /* 2 */
 }
 
 /*
@@ -368,3 +369,14 @@ video {
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --background: 0 0% 100%;
+  --foreground: 222.2 47.4% 11.2%;
+  --muted: 210 40% 96.1%;
+  --muted-foreground: 215.4 16.3% 46.9%;
+  --popover: 0 0% 100%;
+  --popover-foreground: 222.2 47.4% 11.2%;
+  --accent: 210 40% 96.1%;
+  --accent-foreground: 222.2 47.4% 11.2%;
+}

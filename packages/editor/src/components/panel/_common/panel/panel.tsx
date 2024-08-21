@@ -18,7 +18,8 @@ interface HarmonyPanelState {
   panels: Record<string, PanelState>
   registerPanel: (id: string, defaultActive?: boolean) => void
   setPanel: (id: string, state: Partial<PanelState>) => void
-  toggleAllActive: () => void
+  setIsAllActive: (value: boolean) => void
+  isAllActive: boolean
 }
 const HarmonyPanelContext = createContext<HarmonyPanelState | undefined>(
   undefined,
@@ -31,15 +32,18 @@ export const HarmonyPanelProvider: React.FunctionComponent<{
   const [previousPanels, setPreviousPanels] = useState<typeof panels | null>(
     null,
   )
+  const [isAllActive, setIsAllActive] = useState(true)
 
   const setPanel = useCallback(
     (id: string, state: Partial<PanelState>) => {
+      if (!isAllActive) return
+
       setPanels((prev) => ({
         ...prev,
         [id]: { ...prev[id], ...state },
       }))
     },
-    [setPanels],
+    [setPanels, isAllActive],
   )
 
   const registerPanel = useCallback(
@@ -51,10 +55,8 @@ export const HarmonyPanelProvider: React.FunctionComponent<{
 
   // Turn off all panels or turn on all the panels returning to the previous state
   // This means that it restores the position and active state of the panels before turning them all off
-  const toggleAllActive = useEffectEvent(() => {
+  const setIsAllActiveHandler = useEffectEvent((active: boolean) => {
     setPanels((prev) => {
-      const active = !Object.values(prev).some((panel) => panel.active)
-
       if (active) {
         return previousPanels ?? prev
       }
@@ -65,11 +67,18 @@ export const HarmonyPanelProvider: React.FunctionComponent<{
         return acc
       }, {})
     })
+    setIsAllActive(active)
   })
 
   return (
     <HarmonyPanelContext.Provider
-      value={{ panels, registerPanel, setPanel, toggleAllActive }}
+      value={{
+        panels,
+        registerPanel,
+        setPanel,
+        setIsAllActive: setIsAllActiveHandler,
+        isAllActive,
+      }}
     >
       {children}
     </HarmonyPanelContext.Provider>
@@ -154,5 +163,8 @@ export const useSetHarmonyPanels = () => {
     throw new Error('useSetHarmonyPanels must be used within a PanelProvider')
   }
 
-  return context.toggleAllActive
+  return {
+    isAllActive: context.isAllActive,
+    setIsAllActive: context.setIsAllActive,
+  }
 }

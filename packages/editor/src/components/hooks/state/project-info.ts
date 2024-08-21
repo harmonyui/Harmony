@@ -9,7 +9,7 @@ export interface ProjectInfoState {
   repositoryId: string | undefined
   branches: { name: string; id: string }[]
   showWelcomeScreen: boolean
-  isDemo: boolean
+  isDemo: boolean | undefined
   isInitialized: boolean
   isRepositoryConnected: boolean
   isOverlay: boolean
@@ -28,7 +28,7 @@ export const createProjectInfoSlice = createHarmonySlice<
 >((set, get) => ({
   branches: [],
   showWelcomeScreen: false,
-  isDemo: false,
+  isDemo: undefined,
   currentBranch: { name: '', id: '' },
   repositoryId: undefined,
   isInitialized: false,

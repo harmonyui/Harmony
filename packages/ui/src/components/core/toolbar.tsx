@@ -1,4 +1,5 @@
 import { useState } from 'react'
+import { getClass } from '@harmony/util/src/utils/common'
 import { Alert } from './alert'
 import type { ButtonType } from './button'
 import { Button } from './button'
@@ -11,6 +12,7 @@ export interface ToolbarItem {
   label: string
   loading?: boolean
   disabled?: boolean
+  active?: boolean
 }
 export interface ToolbarProps {
   items: ToolbarItem[]
@@ -45,6 +47,7 @@ const ToolbarItem: React.FunctionComponent<ToolbarItem> = ({
   label,
   loading,
   disabled,
+  active,
 }) => {
   const [info, setInfo] = useState<string | undefined>(undefined)
   const onClickDefault = (): void => {
@@ -53,7 +56,10 @@ const ToolbarItem: React.FunctionComponent<ToolbarItem> = ({
   return (
     <>
       <Button
-        className='hw-group hw-flex hw-items-center hw-justify-center hw-w-12 hw-h-10 !hw-rounded-lg hover:hw-bg-[#E5E7EB]'
+        className={getClass(
+          'hw-group hw-flex hw-items-center hw-justify-center hw-w-12 hw-h-10 !hw-rounded-lg hover:hw-bg-[#E5E7EB]',
+          active ? 'hw-bg-[#E5E7EB]' : '',
+        )}
         onClick={onClick || onClickDefault}
         mode={mode}
         loading={loading}

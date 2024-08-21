@@ -1,24 +1,26 @@
 import type { IconComponent } from '@harmony/ui/src/components/core/icons'
 import { StackIcon } from '@harmony/ui/src/components/core/icons'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
+import { useHarmonyPanel } from '../_common/panel/panel'
+import { Panels } from '../_common/panel/types'
 import { useHarmonyStore } from '../../hooks/state'
-import { useSidePanel } from '../side-panel'
-import { ComponentLayoutPanel } from './layout-panel'
 
 interface LayersButtonState {
-  onLayers: () => void
+  onLayers?: () => void
   icon: IconComponent
+  active: boolean
 }
 export const useLayersButton = (): LayersButtonState => {
-  const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
-  const { setPanel } = useSidePanel()
+  const isDemo = useHarmonyStore((state) => state.isDemo)
+  const { setShow, show } = useHarmonyPanel(Panels.Layers)
 
   const onLayoutClick = useEffectEvent(() => {
-    setPanel({
-      id: 'layout',
-      content: <ComponentLayoutPanel selectedComponent={selectedComponent} />,
-    })
+    setShow(!show)
   })
 
-  return { onLayers: onLayoutClick, icon: StackIcon }
+  return {
+    onLayers: isDemo ? undefined : onLayoutClick,
+    icon: StackIcon,
+    active: show,
+  }
 }
