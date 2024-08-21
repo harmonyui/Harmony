@@ -1,6 +1,5 @@
 import type { IconComponent } from '@harmony/ui/src/components/core/icons'
 import { MonitorPlayIcon } from '@harmony/ui/src/components/core/icons'
-import { useCallback } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { useSetHarmonyPanels } from '../_common/panel/panel'
