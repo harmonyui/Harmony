@@ -7,6 +7,7 @@ import { isValidPath } from '@harmony/util/src/utils/common'
 export interface PluginOptions {
   opts: {
     rootDir: string
+    repositoryId?: string
     keepTranspiledCode?: boolean
   }
   filename: string
@@ -164,6 +165,21 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
                 ) {
                   return
                 }
+                const attributes = path.get('openingElement')
+
+                if (
+                  t.isJSXIdentifier(path.node.openingElement.name) &&
+                  state.opts.repositoryId
+                ) {
+                  const name = path.node.openingElement.name.name
+                  if (name === 'body') {
+                    const dataRepositoryId = t.jsxAttribute(
+                      t.jsxIdentifier('data-harmony-repository-id'),
+                      t.stringLiteral(btoa(state.opts.repositoryId)),
+                    )
+                    attributes.pushContainer('attributes', dataRepositoryId)
+                  }
+                }
 
                 const relativePath = constructPath(
                   state.filename,
@@ -172,7 +188,6 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
                 const harmonyId = `${relativePath}:${path.node.loc.start.line}:${path.node.loc.start.column}:${path.node.loc.end.line}:${path.node.loc.end.column}`
                 const encodedHarmonyId = btoa(harmonyId)
 
-                //harmonyArguments[0]?.['data-harmony-id']
                 const parentExpression = t.optionalMemberExpression(
                   t.memberExpression(
                     t.identifier('harmonyArguments'),
@@ -184,7 +199,6 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
                   true,
                 )
 
-                //typeof harmonyArguments !== 'undefined' && harmonyArguments[0]?.['data-harmony-id'] ? harmonyArguments[0]?.['data-harmony-id'] + '#' + 'id' : 'id'
                 const dataHarmonyId = t.conditionalExpression(
                   t.logicalExpression(
                     '&&',
@@ -213,7 +227,7 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
                   t.jsxIdentifier('data-harmony-id'),
                   t.jsxExpressionContainer(dataHarmonyId),
                 )
-                const attributes = path.get('openingElement')
+
                 attributes.pushContainer('attributes', dataHarmonyIdAttribute)
               },
             },

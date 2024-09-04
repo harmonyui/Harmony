@@ -11,7 +11,7 @@ use serde_json::Value;
 use swc_common::{Mark,SourceMapper, plugin::metadata::TransformPluginMetadataContextKind, DUMMY_SP};
 use swc_core::{
     atoms::js_word, ecma::{
-        ast::{op, BinExpr, BinaryOp, BindingIdent, BlockStmt, BlockStmtOrExpr, ComputedPropName, CondExpr, Decl, Expr, Function, Ident, JSXAttr, JSXAttrName, JSXAttrValue, JSXElement, JSXExpr, JSXExprContainer, Lit, MemberExpr, MemberProp, Number, OptChainBase, OptChainExpr, Param, Pat, Program, RestPat, ReturnStmt, Stmt, Str, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator}, 
+        ast::{op, BinExpr, BinaryOp, BindingIdent, BlockStmt, BlockStmtOrExpr, ComputedPropName, CondExpr, Decl, Expr, Function, Ident, JSXAttr, JSXAttrName, JSXAttrValue, JSXElement, JSXElementName, JSXExpr, JSXExprContainer, Lit, MemberExpr, MemberProp, Number, OptChainBase, OptChainExpr, Param, Pat, Program, RestPat, ReturnStmt, Stmt, Str, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator}, 
         visit::{as_folder, FoldWith, VisitMut, VisitMutWith}
     }, plugin::{plugin_transform, proxies::{PluginSourceMapProxy, TransformPluginProgramMetadata}}
 };
@@ -23,12 +23,13 @@ pub struct TransformVisitor {
     data: Option<Arc<PluginSourceMapProxy>>,
     path: String,
     filename: String,
+    repository_id: Option<String>,
     fun_stack: Vec<String>
 }
 
 impl TransformVisitor {
-    pub fn new(data: Option<Arc<PluginSourceMapProxy>>, path: String, filename: String) -> Self {
-        Self { data, path, filename, fun_stack: Vec::new() }
+    pub fn new(data: Option<Arc<PluginSourceMapProxy>>, path: String, filename: String, repository_id: Option<String>) -> Self {
+        Self { data, path, filename, fun_stack: Vec::new(), repository_id }
     }
 }
 
@@ -114,14 +115,13 @@ fn has_default_params_pat(params: &[Pat]) -> bool {
 }
 
 fn valid_path(path: &str) -> bool {
-    let regex = Regex::new(r"^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]?node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx|js)$").unwrap();
+    let regex = Regex::new(r"^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]?node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx)$").unwrap();
     regex.is_match(path).unwrap()
 }
 
 impl VisitMut for TransformVisitor {
     fn visit_mut_arrow_expr(&mut self,node: &mut swc_core::ecma::ast::ArrowExpr) {
         if valid_path(&self.filename[1..]) && node.params.len() < 3 && is_react_comp_arrow(node) && !has_spread_operator_pat(&node.params) && !has_default_params_pat(&node.params) && self.fun_stack.len() == 0 {
-            println!("{}", &self.filename);
             let params = node.params.clone();
 
             // Create a new parameter with the identifier '...harmonyArguments'
@@ -213,7 +213,6 @@ impl VisitMut for TransformVisitor {
 
     fn visit_mut_function(&mut self, node: &mut Function) {
         if valid_path(&self.filename[1..]) && node.params.len() < 3 && is_react_comp_func(node) && !has_spread_operator(&node.params) && !has_default_params(&node.params) && self.fun_stack.len() == 0 {
-            println!("{}", &self.filename);
             let params = node.params.clone();
 
             // Create a new parameter with the identifier '...harmonyArguments'
@@ -296,6 +295,24 @@ impl VisitMut for TransformVisitor {
     }
 
     fn visit_mut_jsx_element(&mut self, node: &mut JSXElement) {
+        if let Some(repository_id) = &self.repository_id {
+            if let JSXElementName::Ident(ref ident) = node.opening.name {
+                if ident.sym == "body" {
+                    let data_harmony_id_attribute = JSXAttr {
+                        span: swc_common::DUMMY_SP,
+                        name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-repository-id"), swc_common::DUMMY_SP)),
+                        value: Some(JSXAttrValue::Lit(Lit::Str(Str {
+                            span: swc_common::DUMMY_SP,
+                            value: BASE64_STANDARD.encode(repository_id.clone()).into(),
+                            raw: None
+                        })))
+                    };
+                    node.opening.span = node.opening.span.apply_mark(Mark::fresh(Mark::root()));
+                    node.opening.attrs.push(swc_core::ecma::ast::JSXAttrOrSpread::JSXAttr(data_harmony_id_attribute));
+                }
+            }
+        }
+
         if let Some(last_func) = self.fun_stack.last() {
             if last_func == "react" {
                 if let Some(ref source_map) = self.data {
@@ -435,6 +452,9 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
             .as_str()
             .expect("rootDir is expected")
     );
+
+    let repository_id = plugin_config["repositoryId"]
+        .as_str();
 		
     let start = Path::to_slash(Path::new(filename.as_str())).unwrap();
 
@@ -455,5 +475,5 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
     
     console_error_panic_hook::set_once();
     let source_map = std::sync::Arc::new(data.source_map);
-    program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), cleaned_path, filename)))
+    program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), cleaned_path, filename, repository_id.map(|s| s.to_string()))))
 }

@@ -1,7 +1,6 @@
 /* eslint-disable no-bitwise -- Allow bitwise for some functions here*/
 import clsx from 'clsx'
 import dayjs from 'dayjs'
-import { z } from 'zod'
 import type { HexColor } from '../types/colors'
 
 export const displayDate = (date: Date) => {
@@ -239,11 +238,6 @@ export const constArray =
   <T>() =>
   <U extends T[]>(array: U) =>
     array
-
-export const stringUnionSchema = <T extends readonly string[]>(array: T) =>
-  z.custom<T[number]>(
-    (data) => typeof data === 'string' && array.includes(data),
-  )
 
 export function convertRgbToHex(rgb: string): HexColor {
   let match = /^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/.exec(rgb)
