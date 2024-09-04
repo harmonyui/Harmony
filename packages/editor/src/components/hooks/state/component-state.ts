@@ -3,8 +3,6 @@ import type {
   HarmonyComponentInfo,
 } from '@harmony/util/src/types/component'
 import type { ComponentElement } from '../../inspector/component-identifier'
-import { getComponentElementFiber } from '../../inspector/component-identifier'
-import { getFiberName } from '../../inspector/fiber'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { createComponentId } from '../../../utils/element-utils'
 import type { HarmonyComponentsState } from './harmony-components'
@@ -81,19 +79,19 @@ export const createComponentStateSlice = createHarmonySlice<
         }
       }
 
-      const fiber = getComponentElementFiber(element)
+      //const fiber = getComponentElementFiber(element)
 
-      const name = getFiberName(fiber) || ''
-      const isComponent = !fiber?.stateNode
+      //const name = getFiberName(fiber) || ''
+      //const isComponent = !fiber?.stateNode
       const props: ComponentProp[] = []
 
       return {
         id: id || '',
         element,
-        name,
+        name: element.tagName.toLowerCase(),
         children: getComponentChildren(element),
         props,
-        isComponent,
+        isComponent: false,
       }
     }
 
