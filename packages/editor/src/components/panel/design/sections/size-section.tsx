@@ -10,14 +10,14 @@ export const SizeSection: React.FunctionComponent = () => {
     onAttributeChange({ name, value })
   return (
     <Section label='Size'>
-      <div className='hw-grid hw-grid-cols-4 hw-gap-y-4 hw-gap-x-2 hw-items-center'>
+      <div className='hw-grid hw-grid-cols-4 hw-gap-y-2 hw-gap-x-2 hw-items-center hw-pt-1 hw-pr-1'>
         <InputLabel
-          label='Width'
+          label='W'
           value={getAttribute('width')}
           onChange={onChange('width')}
         />
         <InputLabel
-          label='Height'
+          label='H'
           value={getAttribute('height')}
           onChange={onChange('height')}
         />

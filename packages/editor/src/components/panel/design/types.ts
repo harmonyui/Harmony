@@ -4,7 +4,9 @@ import type { CSSProperties } from 'react'
 export const attributeTools = [
   'font',
   'fontSize',
+  'fontWeight',
   'textAlign',
+  'textDecorationLine',
   'display',
   'justifyContent',
   'alignItems',
@@ -28,9 +30,11 @@ export const attributeTools = [
   'bottom',
   'letterSpacing',
   'lineHeight',
+  'margin',
   'marginRight',
   'marginLeft',
   'marginTop',
+  'padding',
   'marginBottom',
   'paddingRight',
   'paddingLeft',
@@ -53,6 +57,7 @@ export const attributeTools = [
   'borderTopRightRadius',
   'borderBottomLeftRadius',
   'borderBottomRightRadius',
+  'overflow',
 ] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {
