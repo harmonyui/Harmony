@@ -1,66 +1,85 @@
-import { transformSync } from "@babel/core";
-import { describe, expect, it } from "vitest";
-import babelPlugin from "./babel-plugin";
-import path from 'path';
+import path from 'node:path'
+import { transformSync } from '@babel/core'
+import { describe, expect, it } from 'vitest'
+import babelPlugin from './babel-plugin'
 
-function runPlugin(code: string, keepTranspiledCode: boolean) {
-    const res = transformSync(code, {
-        babelrc: false,
-        filename: 'test.tsx',
-        sourceType: 'module',
-        parserOpts: {
-            plugins: ['jsx', 'typescript']
+function runPlugin(
+  code: string,
+  keepTranspiledCode: boolean,
+  repositoryId?: string,
+) {
+  const res = transformSync(code, {
+    babelrc: false,
+    filename: 'test.tsx',
+    sourceType: 'module',
+    parserOpts: {
+      plugins: ['jsx', 'typescript'],
+    },
+    plugins: [
+      [
+        babelPlugin,
+        {
+          rootDir: path.join(__dirname, '../../../..'),
+          keepTranspiledCode,
+          repositoryId,
         },
-        plugins: [[babelPlugin, {rootDir: path.join(__dirname, '../../../..'), keepTranspiledCode}]]
-    });
+      ],
+    ],
+  })
 
-    if (!res) {
-        throw new Error("plugin failed");
-    }
+  if (!res) {
+    throw new Error('plugin failed')
+  }
 
-    return res;
+  return res
 }
 
-describe("babel-plugin", () => {
-    describe("transform", () => {
-        it("Should add harmony data tags to arrow and function components", () => {
-            const code = testCases["test.ts"];
-            const res = runPlugin(code, false);
-            expect(res.code).toMatchSnapshot();
-        })
+describe('babel-plugin', () => {
+  describe('transform', () => {
+    it('Should add harmony data tags to arrow and function components', () => {
+      const code = testCases['test.ts']
+      const res = runPlugin(code, false)
+      expect(res.code).toMatchSnapshot()
+    })
 
-        it("Should not visit multiple jsx when nested function calls", () => {
-            const code = testCases["nested.ts"];
-            const res = runPlugin(code, false);
-            expect(res.code).toMatchSnapshot();
-        })
+    it('Should not visit multiple jsx when nested function calls', () => {
+      const code = testCases['nested.ts']
+      const res = runPlugin(code, false)
+      expect(res.code).toMatchSnapshot()
+    })
 
-        it("Should not visit higher order components yet", () => {
-            const code = testCases["generater.ts"];
-            const res = runPlugin(code, false);
-            expect(res.code).toMatchSnapshot();
-        })
+    it('Should not visit higher order components yet', () => {
+      const code = testCases['generater.ts']
+      const res = runPlugin(code, false)
+      expect(res.code).toMatchSnapshot()
+    })
 
-        it("Should handle jsx fragment and variants", () => {
-            const code = testCases["fragment.ts"];
-            const res = runPlugin(code, false);
-            expect(res.code).toMatchSnapshot();
-        })
+    it('Should handle jsx fragment and variants', () => {
+      const code = testCases['fragment.ts']
+      const res = runPlugin(code, false)
+      expect(res.code).toMatchSnapshot()
+    })
 
-        it("Should refector function with multiple arguments", () => {
-            const code = `function Home({className, label}, ref) {
+    it('Should refector function with multiple arguments', () => {
+      const code = `function Home({className, label}, ref) {
                 return <div>
                     <h1>Hello there</h1>
                 </div>
-            }`;
-            const res = runPlugin(code, false);
-            expect(res.code).toMatchSnapshot();
-        })
-    });
-});
+            }`
+      const res = runPlugin(code, false)
+      expect(res.code).toMatchSnapshot()
+    })
+
+    it('Should add repositoryId to the body tag', () => {
+      const code = testCases['repository.ts']
+      const res = runPlugin(code, false, '1234')
+      expect(res.code).toMatchSnapshot()
+    })
+  })
+})
 
 const testCases = {
-    'test.ts': `import React from "react";
+  'test.ts': `import React from "react";
 
 import { cn } from "@formbricks/lib/cn";
 import { TSurveySummary } from "@formbricks/types/responses";
@@ -116,13 +135,13 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
     );
 }
     `,
-    'nested.ts': `const App = ({map}: {map: string[]}) => {
+  'nested.ts': `const App = ({map}: {map: string[]}) => {
         return <div>
             <h1>Hello world</h1>
             {map.map(str => <div key={str}>{str}</div>)}
         </div>
     }`,
-    'generater.ts': `const generatorWithReturn = (args, Component) => {
+  'generater.ts': `const generatorWithReturn = (args, Component) => {
         const id = args.id;
         return ({map}: {map: string[]}) => {
             return <div>
@@ -156,7 +175,7 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
         </div>)
     })
     `,
-    'fragment.ts': `
+  'fragment.ts': `
     import { AuthForm } from './components/auth-form'
     import { BrandMessage } from './components/brand-message'
     import { LogoHintible } from '@/components/logos/logo-hintible'
@@ -191,7 +210,7 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
         </Toaster.Thing>)
     }
     `,
-    'bindings.ts': `
+  'bindings.ts': `
         import { GitBranchIcon, GitPullRequestIcon, UserGroupIcon } from "@harmony/ui/src/components/core/icons"
         export interface SidePanelItems {
             label: string;
@@ -249,5 +268,14 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
                 </li>
             ) 
         }
-    `
+    `,
+  'repository.ts': `
+        export const App = () => {
+            return <html>
+                <body>
+                    <h1>Hello world</h1>
+                </body>
+            </html>
+        }
+    `,
 }

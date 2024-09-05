@@ -1,5 +1,5 @@
-import { InputBlur } from '@harmony/ui/src/components/core/input'
 import { Label } from './label'
+import { DesignInput } from './design-input'
 
 interface InputLabelProps {
   label: string
@@ -13,7 +13,7 @@ export const InputLabel: React.FunctionComponent<InputLabelProps> = ({
 }) => {
   return (
     <Label label={label}>
-      <InputBlur value={value} onChange={onChange} />
+      <DesignInput value={value} onChange={onChange} />
     </Label>
   )
 }

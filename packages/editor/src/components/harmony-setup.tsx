@@ -81,9 +81,18 @@ export const useHarmonySetup = (
 
     if (resultRef.current) {
       const { harmonyContainer } = resultRef.current
+      let repositoryId = options.repositoryId
+      //If the repository id is set in the plugin, then it will show up in the body tag
+      if (
+        repositoryId === undefined &&
+        document.body.dataset.harmonyRepositoryId &&
+        typeof document.body.dataset.harmonyRepositoryId === 'string'
+      ) {
+        repositoryId = atob(document.body.dataset.harmonyRepositoryId)
+      }
       if (!local) {
         createProductionScript(
-          options,
+          { ...options, repositoryId },
           branchId || '',
           harmonyContainer,
           resultRef.current.setup,
@@ -92,6 +101,7 @@ export const useHarmonySetup = (
         window.HarmonyProvider(
           {
             ...options,
+            repositoryId,
             branchId: branchId || '',
             setup: resultRef.current.setup,
           },

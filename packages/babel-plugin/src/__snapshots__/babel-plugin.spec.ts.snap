@@ -45,6 +45,16 @@ export default function SummaryMetadata(...harmonyArguments) {
 }"
 `;
 
+exports[`babel-plugin > transform > Should add repositoryId to the body tag 1`] = `
+"export const App = (...harmonyArguments) => {
+  return <html data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoxOTo3OjE5") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoxOTo3OjE5"}>
+                <body data-harmony-repository-id="MTIzNA==" data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDoxNjo2OjIz") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDoxNjo2OjIz"}>
+                    <h1 data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NToyMDo1OjQw") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NToyMDo1OjQw"}>Hello world</h1>
+                </body>
+            </html>;
+};"
+`;
+
 exports[`babel-plugin > transform > Should handle jsx fragment and variants 1`] = `
 "import { AuthForm } from './components/auth-form';
 import { BrandMessage } from './components/brand-message';

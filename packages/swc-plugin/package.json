@@ -1,19 +1,19 @@
 {
-    "name": "harmony-ai-plugin",
-    "version": "0.2.5",
-    "description": "",
-    "author": "",
-    "license": "ISC",
-    "keywords": [
-        "swc-plugin"
-    ],
-    "main": "harmony_plugin.wasm",
-    "scripts": {
-        "prepack": "cp target/wasm32-wasi/release/harmony_plugin.wasm .",
-        "build": "cargo build-wasi --release && npm run prepack"
-    },
-    "files": [
-        "harmony-plugin.wasm"
-    ],
-    "preferUnplugged": true
+  "name": "harmony-ai-plugin",
+  "version": "0.2.6",
+  "description": "",
+  "author": "",
+  "license": "ISC",
+  "keywords": [
+    "swc-plugin"
+  ],
+  "main": "harmony_plugin.wasm",
+  "scripts": {
+    "prepack": "cp target/wasm32-wasi/release/harmony_plugin.wasm .",
+    "build": "cargo build-wasi --release && npm run prepack"
+  },
+  "files": [
+    "harmony-plugin.wasm"
+  ],
+  "preferUnplugged": true
 }

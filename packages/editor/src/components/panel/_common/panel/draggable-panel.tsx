@@ -21,7 +21,7 @@ export const DraggablePanel: React.FunctionComponent<DraggablePanelProps> = ({
 
   return show ? (
     <div
-      className='hw-absolute hw-top-0 hw-left-0 hw-bg-white hw-rounded-lg hw-p-2 hw-shadow-md hw-z-[1000] hw-max-h-[600px] hw-overflow-auto'
+      className='hw-absolute hw-top-0 hw-left-0 hw-bg-white hw-rounded-lg hw-p-4 hw-shadow-md hw-z-[1000] hw-max-h-[600px] hw-overflow-auto'
       ref={(ref) => setParentRef(ref)}
     >
       <div className='hw-flex hw-justify-between hw-items-center'>
