@@ -39,7 +39,7 @@ export const GradientButton: React.FunctionComponent<{
       >
         {children}
       </span>
-      <ChevronRightIcon className='hw-ml-1 hw-size-3 hw-transition-transform hw-duration-300 hw-ease-in-out group-hover:hw-translate-x-0.5' />
+      <ChevronRightIcon className='hw-ml-1 hw-size-3 hw-transition-transform hw-duration-300 hw-ease-in-out group-hover:hw-translate-x-0.5 dark:hw-fill-white' />
     </AnimatedGradientText>
   )
 }

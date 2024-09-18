@@ -12,6 +12,7 @@ export const files = [
 const config: Config = {
   prefix: 'hw-',
   content: files,
+  darkMode: 'class',
   theme: {
     extend: {
       backgroundImage: {
@@ -28,6 +29,10 @@ const config: Config = {
         },
         slate: {
           '20': '#E5E7EB',
+        },
+        secondary: {
+          DEFAULT: 'hsl(var(--secondary))',
+          foreground: 'hsl(var(--secondary-foreground))',
         },
         background: 'hsl(var(--background))',
         foreground: 'hsl(var(--foreground))',
