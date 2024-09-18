@@ -4,6 +4,7 @@ import forms from '@tailwindcss/forms'
 export const files = [
   '../../packages/ui/src/**/*.{ts,tsx}',
   '../../apps/dashboard/app/**/*.{ts,tsx}',
+  '../../apps/landing-page/app/**/*.{ts,tsx}',
   '../../apps/dashboard/utils/**/*.{ts,tsx}',
   '../../packages/editor/src/**/*.{ts,tsx}',
 ]
@@ -45,10 +46,20 @@ const config: Config = {
           from: { height: 'var(--radix-accordion-content-height)' },
           to: { height: '0' },
         },
+        'fade-in': {
+          from: { opacity: '0', transform: 'translateY(-10px)' },
+          to: { opacity: '1', transform: 'none' },
+        },
+        'fade-up': {
+          from: { opacity: '0', transform: 'translateY(20px)' },
+          to: { opacity: '1', transform: 'none' },
+        },
       },
       animation: {
         'accordion-down': 'accordion-down 0.2s ease-out',
         'accordion-up': 'accordion-up 0.2s ease-out',
+        'fade-in': 'fade-in 1s var(--animation-delay,0ms) ease forwards',
+        'fade-up': 'fade-up 1s var(--animation-delay,0ms) ease forwards',
       },
     },
   },
