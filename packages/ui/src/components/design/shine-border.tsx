@@ -13,7 +13,7 @@ interface ShineBorderProps {
   children: React.ReactNode
 }
 
-export default function ShineBorder({
+export function ShineBorder({
   borderRadius = 8,
   borderWidth = 1,
   duration = 14,

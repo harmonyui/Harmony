@@ -2,6 +2,7 @@ import { GradientButton } from '@harmony/ui/src/components/design/gradient-butto
 import { Particles } from '@harmony/ui/src/components/design/particles'
 import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog'
 import { PricingCard } from './components/pricing-card'
+import { ShineBorder } from '@harmony/ui/src/components/design/shine-border'
 
 export default function Home() {
   return (
@@ -29,10 +30,12 @@ export default function Home() {
             Get started for free
           </button>
           <div className='hw-mt-[8rem] hw-animate-fade-up hw-opacity-0 [--animation-delay:400ms] [perspective:2000px]'>
-            <HeroVideoDialog
-              videoSrc='https://www.youtube.com/embed/RARzoY59tCo?iv_load_policy=3&rel=0&modestbranding=1&playsinline=1&autoplay=1&color=white'
-              thumbnailSrc='https://startup-template-sage.vercel.app/hero-light.png'
-            />
+            <ShineBorder color={['#A07CFE', '#FE8FB5', '#FFBE7B']}>
+              <HeroVideoDialog
+                videoSrc='https://www.youtube.com/embed/RARzoY59tCo?iv_load_policy=3&rel=0&modestbranding=1&playsinline=1&autoplay=1&color=white'
+                thumbnailSrc='https://startup-template-sage.vercel.app/hero-light.png'
+              />
+            </ShineBorder>
           </div>
         </section>
         <section
