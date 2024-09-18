@@ -26,6 +26,7 @@
     "@react-stately/color": "^3.5.3",
     "@react-types/color": "3.0.0-beta.23",
     "@react-types/datepicker": "^3.6.0",
+    "framer-motion": "^11.5.4",
     "react": "^18",
     "react-arborist": "^3.4.0",
     "react-aria": "^3.27.0",
