@@ -24,6 +24,7 @@ const config: Config = {
           light: '#6F91E8',
           DEFAULT: '#3A6EF2', //"#318BD0",
           dark: '#101636',
+          foreground: '#FFFFFF',
         },
         slate: {
           '20': '#E5E7EB',

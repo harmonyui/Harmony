@@ -1,3 +1,9 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+:root {
+  --color-one: #ffbd7a;
+  --color-two: #fe8bbb;
+  --color-three: #9e7aff;
+}
