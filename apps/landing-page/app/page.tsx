@@ -127,7 +127,14 @@ export default function Home() {
           </div>
         </section>
       </main>
-      <Particles className='hw-absolute hw-inset-0 -hw-z-10' />
+      <Particles
+        className='hw-absolute hw-inset-0 -hw-z-10 dark:hidden'
+        color='#000'
+      />
+      <Particles
+        className='hw-absolute hw-inset-0 -hw-z-10 hidden dark:block'
+        color='#A07CFE'
+      />
     </>
   )
 }
