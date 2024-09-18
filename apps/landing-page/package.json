@@ -1,0 +1,52 @@
+{
+  "name": "landing-page",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "withenv": "dotenv -e ../../.env --",
+    "dev": "pnpm withenv next dev",
+    "build": "pnpm withenv next build",
+    "start": "pnpm withenv next start",
+    "lint": "pnpm withenv next lint",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix .",
+    "typecheck": "tsc --noEmit"
+  },
+  "dependencies": {
+    "@harmony/ui": "workspace:*",
+    "@harmony/util": "workspace:*",
+    "@tailwindcss/forms": "^0.5.7",
+    "dotenv-cli": "^7.3.0",
+    "harmony-ai-editor": "workspace:*",
+    "next": "14.2.1",
+    "react": "^18",
+    "react-dom": "^18"
+  },
+  "devDependencies": {
+    "@harmony/eslint-config-custom": "workspace:*",
+    "@harmony/prettier-config": "workspace:^",
+    "@harmony/tailwind-config": "workspace:^",
+    "@harmony/tsconfig": "workspace:*",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "autoprefixer": "^10.0.1",
+    "cross-env": "^7.0.3",
+    "eslint": "^8",
+    "eslint-config-next": "14.0.3",
+    "harmony-ai-plugin": "workspace:*",
+    "jsdom": "^24.0.0",
+    "postcss": "^8",
+    "postcss-obfuscator": "^1.6.0",
+    "prettier": "^3.0.3",
+    "tailwindcss": "^3.4.1",
+    "typescript": "5.6.0-dev.20240819",
+    "vitest": "^1.5.0"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@harmony/eslint-config-custom/library"
+    ]
+  },
+  "prettier": "@harmony/prettier-config"
+}
