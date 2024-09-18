@@ -12,7 +12,7 @@ export const Navbar: React.FunctionComponent = () => {
           />
           <img
             src='/icon-dark-128.png'
-            className='hw-h-6 hw-w-6 hw-text-primary hw-mr-2 hidden dark:hw-inline-block'
+            className='hw-h-6 hw-w-6 hw-text-primary hw-mr-2 hw-hidden dark:hw-inline-block'
           />
           Harmony UI
         </a>
