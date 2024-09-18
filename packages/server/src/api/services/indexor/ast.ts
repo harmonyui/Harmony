@@ -8,8 +8,10 @@ import {
 } from '@harmony/util/src/utils/component'
 import type {
   Attribute,
+  ElementNode,
   HarmonyComponent,
   HarmonyContainingComponent,
+  PropertyNode,
 } from './types'
 
 export function getAttributeName(attribute: Attribute): string {
@@ -47,6 +49,20 @@ export function getAttributeValue(attribute: Attribute): string {
   return attribute.value
 }
 
+export function getPropertyValue(property: PropertyNode): string[] {
+  if (isLiteralNode(property.node)) {
+    return getLiteralValue(property.node).split('')
+  }
+
+  return property.next.map((property) => {
+    if (property) getPropertyValues(property.next)
+  })
+}
+
+export function getPropertyValues(properties: PropertyNode[]): string[][] {
+  return properties.map((property) => getPropertyValue(property))
+}
+
 export type LiteralNode = t.JSXText | t.StringLiteral | t.TemplateElement
 export const isLiteralNode = (
   node: t.Node | undefined,
@@ -56,11 +72,19 @@ export const isLiteralNode = (
   )
 }
 
+export const getLiteralValue = (node: LiteralNode): string => {
+  if (typeof node.value === 'string') {
+    return node.value
+  }
+
+  return node.value.raw
+}
+
 export function getCodeInfoFromFile(
   file: string,
   originalCode: string,
   componentDefinitions: Record<string, HarmonyContainingComponent>,
-  elementInstances: HarmonyComponent[],
+  elementInstances: ElementNode[],
   importDeclarations: Record<string, { name: string; path: string }>,
 ): boolean {
   const ast = parse(originalCode, {
