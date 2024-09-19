@@ -157,7 +157,7 @@ export const Footer: React.FunctionComponent = () => {
           <span className='hw-text-sm hw-text-gray-500 sm:hw-text-center dark:hw-text-gray-400'>
             Copyright © 2024{' '}
             <a className='hw-cursor-pointer' href='/'>
-              Magic UI
+              Harmony UI
             </a>
             . All Rights Reserved.
           </span>

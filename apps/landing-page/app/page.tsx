@@ -22,13 +22,24 @@ export default function Home() {
             </span>
           </h1>
           <p className='hw-mb-12 hw-text-lg hw-tracking-tight hw-text-gray-400 md:hw-text-xl hw-text-balance hw-translate-y-[-1rem] hw-animate-fade-in hw-opacity-0 [--animation-delay:400ms]'>
-            Beautifully designed, animated components and templates built with
+            Harmony transforms your SaaS app into an interactive design canvas.
             <br />
-            Tailwind CSS, React, and Framer Motion.
+            Changes shipped directly to your codebase. Made for designers.
           </p>
-          <button className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-text-sm hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-bg-primary hw-shadow hover:hw-bg-primary/90 hw-h-9 hw-px-4 hw-py-2 hw-translate-y-[-1rem] hw-animate-fade-in hw-gap-1 hw-rounded-lg hw-text-white hw-opacity-0 hw-ease-in-out [--animation-delay:600ms]'>
-            Get started for free
-          </button>
+          <div className='hw-flex hw-gap-2 hw-justify-center hw-opacity-0 hw-ease-in-out [--animation-delay:600ms] hw-animate-fade-in hw-translate-y-[-1rem] '>
+            <a
+              href='https://dashboard.harmonyui.app'
+              className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-text-sm hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-bg-primary hw-shadow hover:hw-bg-primary/90 hw-h-9 hw-px-4 hw-py-2 hw-gap-1 hw-rounded-lg hw-text-white'
+            >
+              Get started
+            </a>
+            <a
+              href='https://dashboard.harmonyui.app/setup/quick?teamId=clua06nan0001dvpho5cb10sr'
+              className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-rounded-md hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-bg-secondary hw-text-secondary-foreground hw-shadow-sm hover:hw-bg-secondary/80 hw-h-9 hw-px-4 hw-py-2 hw-mr-6 hw-text-sm'
+            >
+              Try Demo
+            </a>
+          </div>
           <div className='hw-mt-[8rem] hw-animate-fade-up hw-opacity-0 [--animation-delay:400ms] [perspective:2000px]'>
             <ShineBorder color={['#A07CFE', '#FE8FB5', '#FFBE7B']}>
               <HeroVideoDialog
@@ -50,34 +61,13 @@ export default function Home() {
               <div className='hw-mt-6'>
                 <ul className='hw-flex hw-flex-wrap hw-items-center hw-justify-center hw-gap-x-10 hw-gap-y-6 md:hw-gap-x-16 [&amp;_path]:hw-fill-white'>
                   <li>
-                    <img
-                      src='https://cdn.magicui.design/companies/Google.svg'
-                      className='hw-h-8 hw-w-28 hw-px-2 dark:hw-brightness-0 dark:hw-invert'
-                    />
+                    <img src='/hintible.png' className='hw-h-8 hw-px-2' />
                   </li>
                   <li>
-                    <img
-                      src='https://cdn.magicui.design/companies/Microsoft.svg'
-                      className='hw-h-8 hw-w-28 hw-px-2 dark:hw-brightness-0 dark:hw-invert'
-                    />
+                    <img src='/sandbox.png' className='hw-h-8 hw-px-2' />
                   </li>
                   <li>
-                    <img
-                      src='https://cdn.magicui.design/companies/GitHub.svg'
-                      className='hw-h-8 hw-w-28 hw-px-2 dark:hw-brightness-0 dark:hw-invert'
-                    />
-                  </li>
-                  <li>
-                    <img
-                      src='https://cdn.magicui.design/companies/Uber.svg'
-                      className='hw-h-8 hw-w-28 hw-px-2 dark:hw-brightness-0 dark:hw-invert'
-                    />
-                  </li>
-                  <li>
-                    <img
-                      src='https://cdn.magicui.design/companies/Notion.svg'
-                      className='hw-h-8 hw-w-28 hw-px-2 dark:hw-brightness-0 dark:hw-invert'
-                    />
+                    <img src='/yc.png' className='hw-h-8 hw-px-2' />
                   </li>
                 </ul>
               </div>
@@ -110,6 +100,7 @@ export default function Home() {
                   'Edit existing pages',
                   'Commented UI code',
                 ]}
+                link='https://dashboard.harmonyui.app'
               />
               <PricingCard
                 title='Growth'
@@ -121,8 +112,14 @@ export default function Home() {
                   'Request new features and integrations',
                 ]}
                 popular
+                link='https://dashboard.harmonyui.app'
               />
-              <PricingCard title='Enterprise' description='For teams' custom />
+              <PricingCard
+                title='Enterprise'
+                description='For teams'
+                custom
+                link='https://j48inpgngmc.typeform.com/to/Ch60XpCt'
+              />
             </div>
           </div>
         </section>
