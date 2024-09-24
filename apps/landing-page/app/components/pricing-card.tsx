@@ -3,6 +3,7 @@ import { formatDollarAmount, getClass } from '@harmony/util/src/utils/common'
 interface PricingItem {
   title: string
   description: string
+  link: string
   price?: number
   features?: string[]
   custom?: boolean
@@ -15,6 +16,7 @@ export const PricingCard: React.FunctionComponent<PricingItem> = ({
   features = [],
   custom = false,
   popular = false,
+  link,
 }) => {
   return (
     <div
@@ -50,10 +52,14 @@ export const PricingCard: React.FunctionComponent<PricingItem> = ({
           )}
         </span>
       </div>
-      <button className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-rounded-md focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-bg-primary hw-text-primary-foreground hw-shadow hover:hw-bg-primary/90 hw-h-9 hw-px-4 hw-py-2 hw-group hw-relative hw-w-full hw-gap-2 hw-overflow-hidden hw-text-lg hw-font-semibold hw-tracking-tighter hw-transform-gpu hw-ring-offset-current hw-transition-all hw-duration-300 hw-ease-out hover:hw-ring-2 hover:hw-ring-primary hover:hw-ring-offset-2'>
+      <a
+        href={link}
+        target='_blank'
+        className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-rounded-md focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-bg-primary hw-text-primary-foreground hw-shadow hover:hw-bg-primary/90 hw-h-9 hw-px-4 hw-py-2 hw-group hw-relative hw-w-full hw-gap-2 hw-overflow-hidden hw-text-lg hw-font-semibold hw-tracking-tighter hw-transform-gpu hw-ring-offset-current hw-transition-all hw-duration-300 hw-ease-out hover:hw-ring-2 hover:hw-ring-primary hover:hw-ring-offset-2'
+      >
         <span className='hw-absolute hw-right-0 -hw-mt-12 hw-h-32 hw-w-8 hw-translate-x-12 hw-rotate-12 hw-transform-gpu hw-bg-white hw-opacity-10 hw-transition-all hw-duration-1000 hw-ease-out group-hover:-hw-translate-x-96 dark:hw-bg-black'></span>
         <p>{custom ? 'Contact Sales' : 'Subscribe'}</p>
-      </button>
+      </a>
       {!custom ? (
         <>
           <hr className='hw-m-0 hw-h-px hw-w-full hw-border-none hw-bg-gradient-to-r hw-from-neutral-200/0 hw-via-neutral-500/30 hw-to-neutral-200/0' />
