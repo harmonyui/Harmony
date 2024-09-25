@@ -9,6 +9,7 @@ import { Toolbar } from '@harmony/ui/src/components/core/toolbar'
 import { usePublishButton } from '../publish/publish-button'
 import { usePreviewButton } from '../preview/preview-button'
 import { useLayersButton } from '../layers/layers-button'
+import { useAIButton } from '../ai/ai-button'
 
 type HarmonyToolbar = object
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
@@ -19,6 +20,7 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
     active: previewActive,
   } = usePreviewButton()
   const { icon: LayersIcon, onLayers, active: layerActive } = useLayersButton()
+  const { icon: AIIcon, onAI, active: aiActive } = useAIButton()
 
   const items: ToolbarItem[] = [
     {
@@ -27,6 +29,13 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
       mode: 'none',
       label: 'Layers',
       active: layerActive,
+    },
+    {
+      icon: AIIcon,
+      onClick: onAI,
+      mode: 'none',
+      label: 'AI',
+      active: aiActive,
     },
     {
       icon: TextIcon,

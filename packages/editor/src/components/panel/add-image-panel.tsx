@@ -66,6 +66,7 @@ export const AddImagePanel: React.FunctionComponent<AddImagePanelProps> = ({
         <div className='hw-grid hw-grid-cols-3 hw-gap-x-2 hw-gap-y-4'>
           {imageTags.map((image) => (
             <ImageCard
+              key={image}
               selected={selectedImage === image}
               image={image}
               onClick={() => onImageClick(image)}
@@ -73,6 +74,7 @@ export const AddImagePanel: React.FunctionComponent<AddImagePanelProps> = ({
           ))}
           {svgTags.map((svg) => (
             <SVGCard
+              key={svg}
               selected={selectedImage === svg}
               svg={svg}
               onClick={() => onImageClick(svg)}

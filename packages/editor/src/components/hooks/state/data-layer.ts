@@ -8,12 +8,15 @@ import type {
   PublishResponse,
   IndexComponentsRequest,
   IndexComponentsResponse,
+  CreateUpdateFromTextRequest,
+  CreateUpdateFromTextResponse,
 } from '@harmony/util/src/types/network'
 import {
   loadResponseSchema,
   updateResponseSchema,
   publishResponseSchema,
   indexComponentsResponseSchema,
+  createUpdateFromTextResponseSchema,
 } from '@harmony/util/src/types/network'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { createClient } from '../../../trpc'
@@ -39,6 +42,9 @@ export interface DataLayerState {
   indexComponents: (
     args: IndexComponentsRequest,
   ) => Promise<IndexComponentsResponse>
+  createUpdateFromText: (
+    args: CreateUpdateFromTextRequest,
+  ) => Promise<CreateUpdateFromTextResponse>
   client: ReturnType<typeof createClient> | undefined
 }
 export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
@@ -53,6 +59,9 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
       throw new Error('Data layer not initialized')
     },
     indexComponents() {
+      throw new Error('Data layer not initialized')
+    },
+    createUpdateFromText() {
       throw new Error('Data layer not initialized')
     },
     client: undefined,
@@ -79,6 +88,13 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
           IndexComponentsRequest,
           IndexComponentsResponse
         >(client.editor.indexComponents.mutate, indexComponentsResponseSchema),
+        createUpdateFromText: dataFetch<
+          CreateUpdateFromTextRequest,
+          CreateUpdateFromTextResponse
+        >(
+          client.editor.createUpdatesFromText.mutate,
+          createUpdateFromTextResponseSchema,
+        ),
       })
     },
     config: {

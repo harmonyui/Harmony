@@ -7,15 +7,17 @@ interface DraggablePanelProps {
   id: string
   title: string
   children: React.ReactNode
+  defaultActive?: boolean
 }
 export const DraggablePanel: React.FunctionComponent<DraggablePanelProps> = ({
   id,
   title,
   children,
+  defaultActive = true,
 }) => {
   const { show, pos, setPos } = useRegisterHarmonyPanel({
     id,
-    defaultActive: true,
+    defaultActive,
   })
   const { setParentRef, dragHandleProps } = useDraggablePanel({ pos, setPos })
 

@@ -1,6 +1,8 @@
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import {
+  createUpdateFromTextRequestSchema,
+  createUpdateFromTextResponseSchema,
   indexComponentsRequestSchema,
   indexComponentsResponseSchema,
   loadRequestSchema,
@@ -21,6 +23,7 @@ import {
 import { createTRPCRouter, publicProcedure } from '../trpc'
 import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
+import { generateUpdatesFromText } from '../repository/openai'
 import { getBranch, getRepository } from './branch'
 
 export const editorRouter = createTRPCRouter({
@@ -333,5 +336,41 @@ export const editorRouter = createTRPCRouter({
         content: change.newContent,
         path: change.filePath,
       }))
+    }),
+
+  createUpdatesFromText: publicProcedure
+    .input(createUpdateFromTextRequestSchema)
+    .output(createUpdateFromTextResponseSchema)
+    .mutation(async ({ input }) => {
+      // const componentUpdates: ComponentUpdate[] = [
+      //   {
+      //     name: 'borderWidth',
+      //     type: 'className',
+      //     componentId:
+      //       'YXBwcy9kYXNoYm9hcmQvYXBwL3Byb2plY3RzL3BhZ2UudHN4OjIzOjY6MzM6MTY=#YXBwcy9kYXNoYm9hcmQvdXRpbHMvc2lkZS1uYXYudHN4OjYyOjQ6NjQ6MTY=#cGFja2FnZXMvdWkvc3JjL2NvbXBvbmVudHMvY29yZS9zaWRlLXBhbmVsLnRzeDoxNzg6MjI6MTc4OjY4#cGFja2FnZXMvdWkvc3JjL2NvbXBvbmVudHMvY29yZS9zaWRlLXBhbmVsLnRzeDozMjc6NjozNDg6MTA=',
+      //     value: '1px',
+      //     oldValue: '0px',
+      //     isGlobal: false,
+      //     childIndex: 0,
+      //   },
+      // ]
+
+      const newAttributes = await generateUpdatesFromText(
+        input.text,
+        input.currentAttributes,
+      )
+      const updates: ComponentUpdate[] = newAttributes.map((attr) => ({
+        name: attr.name,
+        type: 'className',
+        componentId: input.componentId,
+        value: attr.value,
+        oldValue:
+          input.currentAttributes.find((curr) => curr.name === attr.name)
+            ?.value ?? '',
+        isGlobal: false,
+        childIndex: input.childIndex,
+      }))
+
+      return updates
     }),
 })

@@ -13,7 +13,7 @@ export const LayoutPanel: React.FunctionComponent = () => {
   if (isDemo || isDemo === undefined) return null
 
   return (
-    <DraggablePanel title='Layers' id={Panels.Layers}>
+    <DraggablePanel title='Layers' id={Panels.Layers} defaultActive={false}>
       <ComponentTreeView />
     </DraggablePanel>
   )
