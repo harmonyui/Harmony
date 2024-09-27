@@ -24,7 +24,7 @@ import { createTRPCRouter, publicProcedure } from '../trpc'
 import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
 import { generateUpdatesFromText } from '../repository/openai'
-import { getBranch, getRepository } from './branch'
+import { getRepository, getBranch } from '../repository/database/branch'
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
