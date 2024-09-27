@@ -1,3 +1,5 @@
+import { GithubStars } from '@/app/components/github-stars'
+
 export const Navbar: React.FunctionComponent = () => {
   return (
     <header className='hw-fixed hw-left-0 hw-top-0 hw-z-50 hw-w-full hw-translate-y-[-1rem] hw-animate-fade-in hw-border-b hw-opacity-0 hw-backdrop-blur-[12px] [--animation-delay:600ms]'>
@@ -17,6 +19,7 @@ export const Navbar: React.FunctionComponent = () => {
           Harmony UI
         </a>
         <div className='hw-ml-auto hw-flex hw-h-full hw-items-center'>
+          <GithubStars />
           <a
             className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-rounded-md hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-text-secondary-foreground hw-shadow-sm hover:hw-bg-secondary/80 hw-h-9 hw-px-4 hw-py-2 hw-mr-6 hw-text-sm'
             href='/blog'

@@ -12,10 +12,12 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@harmony/server": "workspace:*",
     "@harmony/ui": "workspace:*",
     "@harmony/util": "workspace:*",
     "@headlessui/react": "^2.1.8",
     "@heroicons/react": "^2.1.5",
+    "@prisma/nextjs-monorepo-workaround-plugin": "^5.13.0",
     "@sanity/client": "^6.22.0",
     "@sanity/icons": "^3.4.0",
     "@sanity/image-url": "^1.0.2",
