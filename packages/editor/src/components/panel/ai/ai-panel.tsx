@@ -46,7 +46,7 @@ export const AIPanel: React.FunctionComponent = () => {
   if (isDemo || isDemo === undefined) return null
 
   return (
-    <DraggablePanel title='AI' id={Panels.AI}>
+    <DraggablePanel title='AI' id={Panels.AI} defaultActive={false}>
       <div className='hw-max-w-xs hw-flex hw-flex-col hw-gap-2'>
         <p>Select an element and use natural language to make changes to it.</p>
         <Input
