@@ -1,8 +1,9 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { inter } from '@harmony/util/src/fonts'
-import { Footer } from './components/footer'
+import { Footer } from '../components/footer'
 import { Navbar } from './components/navbar'
+import { DarkmodeHTML } from './components/dark-mode-toggle'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -15,7 +16,19 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en' className='hw-dark'>
+    <DarkmodeHTML>
+      <head>
+        <link
+          rel='stylesheet'
+          href='https://api.fontshare.com/css?f%5B%5D=switzer@400,500,600,700&amp;display=swap'
+        />
+        <link
+          rel='alternate'
+          type='application/rss+xml'
+          title='The Radiant Blog'
+          href='/blog/feed.xml'
+        />
+      </head>
       <body
         className={`hw-min-h-screen hw-bg-background hw-font-sans hw-antialiased ${inter.className}`}
       >
@@ -23,6 +36,6 @@ export default function RootLayout({
         {children}
         <Footer />
       </body>
-    </html>
+    </DarkmodeHTML>
   )
 }

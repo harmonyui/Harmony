@@ -14,6 +14,7 @@ import { HarmonyToolbar } from './toolbar/harmony-toolbar'
 import { DesignOverlay } from './design/design-overlay'
 import { HarmonyPanelProvider } from './_common/panel/panel'
 import { LayoutPanel } from './layers/layout-panel'
+import { AIPanel } from './ai/ai-panel'
 
 export interface HarmonyPanelProps {
   onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void
@@ -45,6 +46,7 @@ export const HarmonyPanel: React.FunctionComponent<
                 <HarmonyToolbar />
                 <DesignOverlay />
                 <LayoutPanel />
+                <AIPanel />
                 {inspector}
               </div>
             </div>

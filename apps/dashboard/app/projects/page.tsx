@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok */
 import { ModalProvider } from '@harmony/ui/src/components/core/modal'
 import React from 'react'
-import { getBranches } from '@harmony/server/src/api/routers/branch'
+import { getBranches } from '@harmony/server/src/api/repository/database/branch'
 import { withAuth } from '../../utils/protected-routes-hoc'
 import { SideNav } from '../../utils/side-nav'
 import { ProjectSetUp } from './components/setup'

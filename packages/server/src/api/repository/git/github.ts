@@ -71,6 +71,26 @@ export class GithubRepository implements GitRepository {
     private gitCache: GithubCache,
   ) {}
 
+  public async getStarCount() {
+    const octokit = await this.getOctokit()
+    const { data } = await octokit.rest.repos.get({
+      owner: this.repository.owner,
+      repo: this.repository.name,
+    })
+
+    return data.stargazers_count
+  }
+
+  public async getProjectUrl() {
+    const octokit = await this.getOctokit()
+    const { data } = await octokit.rest.repos.get({
+      owner: this.repository.owner,
+      repo: this.repository.name,
+    })
+
+    return data.html_url
+  }
+
   public async getContentOrDirectory(filePath: string, branchName?: string) {
     const octokit = await this.getOctokit()
     const refKey = branchName
@@ -421,6 +441,14 @@ export class LocalGitRepository implements GitRepository {
     gitCache: GithubCache,
   ) {
     this.githubRepo = new GithubRepository(repository, gitCache)
+  }
+
+  public async getStarCount(): Promise<number> {
+    return this.githubRepo.getStarCount()
+  }
+
+  public async getProjectUrl(): Promise<string> {
+    return this.githubRepo.getProjectUrl()
   }
 
   public async getContentOrDirectory(

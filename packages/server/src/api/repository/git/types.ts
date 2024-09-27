@@ -47,4 +47,6 @@ export interface GitRepository {
   ) => Promise<string>
   getUpdatedFiles: (branch: string, oldRef: string) => Promise<UpdateFile[]>
   repository: Repository
+  getStarCount: () => Promise<number>
+  getProjectUrl: () => Promise<string>
 }
