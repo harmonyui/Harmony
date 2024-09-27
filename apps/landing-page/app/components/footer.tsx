@@ -130,7 +130,7 @@ export const Footer: React.FunctionComponent = () => {
                   fill='currentColor'
                 ></path>
               </svg>
-              <span className='sr-only'>Discord</span>
+              <span className='hw-sr-only'>Discord</span>
             </a>
             <a
               className='hw-text-gray-500 hover:hw-text-gray-900 dark:hw-hover:text-gray-600 hw-fill-gray-500 hover:hw-fill-gray-900 dark:hw-hover:fill-gray-600'
@@ -151,7 +151,7 @@ export const Footer: React.FunctionComponent = () => {
                   clipRule='evenodd'
                 ></path>
               </svg>
-              <span className='sr-only'>Twitter</span>
+              <span className='hw-sr-only'>Twitter</span>
             </a>
           </div>
           <span className='hw-text-sm hw-text-gray-500 sm:hw-text-center dark:hw-text-gray-400'>

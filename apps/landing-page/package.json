@@ -14,12 +14,25 @@
   "dependencies": {
     "@harmony/ui": "workspace:*",
     "@harmony/util": "workspace:*",
+    "@headlessui/react": "^2.1.8",
+    "@heroicons/react": "^2.1.5",
+    "@sanity/client": "^6.22.0",
+    "@sanity/icons": "^3.4.0",
+    "@sanity/image-url": "^1.0.2",
+    "@sanity/vision": "^3.58.0",
     "@tailwindcss/forms": "^0.5.7",
+    "clsx": "^2.1.0",
+    "dayjs": "^1.11.10",
     "dotenv-cli": "^7.3.0",
+    "feed": "^4.2.2",
+    "framer-motion": "^11.5.4",
     "harmony-ai-editor": "workspace:*",
     "next": "14.2.1",
+    "next-sanity": "^9.5.0",
     "react": "^18",
-    "react-dom": "^18"
+    "react-dom": "^18",
+    "react-use-measure": "^2.1.1",
+    "sanity": "^3.55.0"
   },
   "devDependencies": {
     "@harmony/eslint-config-custom": "workspace:*",
@@ -39,7 +52,7 @@
     "postcss-obfuscator": "^1.6.0",
     "prettier": "^3.0.3",
     "tailwindcss": "^3.4.1",
-    "typescript": "5.6.0-dev.20240819",
+    "typescript": "^5",
     "vitest": "^1.5.0"
   },
   "eslintConfig": {

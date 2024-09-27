@@ -5,6 +5,7 @@ export const files = [
   '../../packages/ui/src/**/*.{ts,tsx}',
   '../../apps/dashboard/app/**/*.{ts,tsx}',
   '../../apps/landing-page/app/**/*.{ts,tsx}',
+  '../../apps/landing-page/components/**/*.{ts,tsx}',
   '../../apps/dashboard/utils/**/*.{ts,tsx}',
   '../../packages/editor/src/**/*.{ts,tsx}',
 ]
