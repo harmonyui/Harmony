@@ -3,11 +3,13 @@ import { Particles } from '@harmony/ui/src/components/design/particles'
 import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog'
 import { ShineBorder } from '@harmony/ui/src/components/design/shine-border'
 import { PricingCard } from './components/pricing-card'
+import { GradientBackground } from '@/components/gradient'
 
 export default function Home() {
   return (
     <>
       <main className='hw-mx-auto hw-flex-1 hw-overflow-hidden'>
+        <GradientBackground />
         <section
           id='hero'
           className='hw-relative hw-mx-auto hw-mt-32 hw-max-w-[80rem] hw-px-6 hw-text-center md:hw-px-8'
@@ -130,7 +132,7 @@ export default function Home() {
       />
       <Particles
         className='hw-absolute hw-inset-0 -hw-z-10 hidden dark:block'
-        color='#A07CFE'
+        color='#fff1be'
       />
     </>
   )

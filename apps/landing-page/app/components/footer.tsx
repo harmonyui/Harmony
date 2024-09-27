@@ -154,7 +154,7 @@ export const Footer: React.FunctionComponent = () => {
               <span className='hw-sr-only'>Twitter</span>
             </a>
           </div>
-          <span className='hw-text-sm hw-text-gray-500 sm:hw-text-center dark:hw-text-gray-400'>
+          <span className='hw-text-sm hw-text-gray-500 sm:hw-text-center dark:hw-text-gray-300'>
             Copyright © 2024{' '}
             <a className='hw-cursor-pointer' href='/'>
               Harmony UI

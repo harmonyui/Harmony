@@ -2,7 +2,6 @@ import { Button } from './button'
 import { Container } from './container'
 import { Gradient } from './gradient'
 import { Link } from './link'
-import { Logo } from './logo'
 import { Subheading } from './text'
 import { PlusGrid, PlusGridItem, PlusGridRow } from '@/components/plus-grid'
 
@@ -17,9 +16,8 @@ function CallToAction() {
           Start your free trial today.
         </p>
       </hgroup>
-      <p className='hw-mx-auto hw-mt-6 hw-max-w-xs hw-text-sm/6 hw-text-gray-500 dark:hw-text-gray-400'>
-        Get the cheat codes for selling and unlock your team&apos;s revenue
-        potential.
+      <p className='hw-mx-auto hw-mt-6 hw-max-w-xs hw-text-sm/6 hw-text-gray-500 dark:hw-text-gray-300'>
+        Get the tools you need to build better websites and applications faster.
       </p>
       <div className='hw-mt-6'>
         <Button className='hw-w-full sm:hw-w-auto' href='#'>
@@ -152,7 +150,7 @@ function SocialLinks() {
 function Copyright() {
   return (
     <div className='hw-text-sm/6 hw-text-gray-950 dark:hw-text-white'>
-      &copy; {new Date().getFullYear()} Radiant Inc.
+      &copy; {new Date().getFullYear()} Harmony UI
     </div>
   )
 }
@@ -169,7 +167,24 @@ export function Footer() {
               <div className='hw-grid hw-grid-cols-2 hw-gap-y-10 hw-pb-6 lg:hw-grid-cols-6 lg:hw-gap-8'>
                 <div className='hw-col-span-2 hw-flex'>
                   <PlusGridItem className='hw-pt-6 lg:hw-pb-6'>
-                    <Logo className='hw-h-9' />
+                    <div className='hw-flex-col hw-flex hw-gap-4'>
+                      <a className='hw-flex hw-items-center hw-gap-2' href='/'>
+                        <img
+                          src='/icon-128.png'
+                          className='hw-h-8 hw-w-8 hw-text-primary dark:hw-hidden'
+                        />
+                        <img
+                          src='/icon-dark-128.png'
+                          className='hw-h-8 hw-w-8 hw-text-primary hw-hidden dark:hw-inline-block'
+                        />
+                        <span className='hw-self-center hw-text-2xl hw-font-semibold hw-whitespace-nowrap dark:hw-text-white'>
+                          Harmony UI
+                        </span>
+                      </a>
+                      <p className='hw-max-w-xs hw-text-secondary-foreground'>
+                        Become a visual developer
+                      </p>
+                    </div>
                   </PlusGridItem>
                 </div>
                 <div className='hw-col-span-2 hw-grid hw-grid-cols-2 hw-gap-x-8 hw-gap-y-12 lg:hw-col-span-4 lg:hw-grid-cols-subgrid lg:hw-pt-6'>

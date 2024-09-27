@@ -20,7 +20,6 @@ import {
 } from '../../sanity/queries'
 import { Button } from '@/components/button'
 import { Container } from '@/components/container'
-import { Footer } from '@/components/footer'
 import { GradientBackground } from '@/components/gradient'
 import { Link } from '@/components/link'
 import { Heading, Lead, Subheading } from '@/components/text'
@@ -41,7 +40,7 @@ async function FeaturedPosts() {
   }
 
   return (
-    <div className='hw-mt-32 hw-bg-gradient-to-t hw-from-gray-100 dark:hw-from-gray-800 hw-pb-14'>
+    <div className='hw-mt-16 hw-bg-gradient-to-t hw-from-gray-100 dark:hw-from-gray-800 hw-pb-14 hw-animate-fade-in hw-opacity-0 [--animation-delay:600ms]'>
       <Container>
         <h2 className='hw-text-2xl hw-font-medium hw-tracking-tight'>
           Featured
@@ -69,7 +68,7 @@ async function FeaturedPosts() {
                     {post.title}
                   </Link>
                 </div>
-                <div className='hw-mt-2 hw-flex-1 hw-text-sm/6 hw-text-gray-500'>
+                <div className='hw-mt-2 hw-flex-1 hw-text-sm/6 hw-text-gray-500 dark:hw-text-gray-300'>
                   {post.excerpt}
                 </div>
                 {post.author && (
@@ -189,7 +188,7 @@ async function Posts({ page, category }: { page: number; category?: string }) {
           </div>
           <div className='sm:hw-col-span-2 sm:hw-max-w-2xl'>
             <h2 className='hw-text-sm/5 hw-font-medium'>{post.title}</h2>
-            <p className='hw-mt-3 hw-text-sm/6 hw-text-gray-500 dark:hw-text-gray-400'>
+            <p className='hw-mt-3 hw-text-sm/6 hw-text-gray-500 dark:hw-text-gray-300'>
               {post.excerpt}
             </p>
             <div className='hw-mt-4'>
@@ -253,9 +252,9 @@ async function Pagination({
             href={url(i + 1)}
             data-active={i + 1 === page ? true : undefined}
             className={clsx(
-              'hw-size-7 hw-rounded-lg hw-text-center hw-text-sm/7 hw-font-medium',
-              'data-[hover]:hw-bg-gray-100',
-              'data-[active]:hw-shadow data-[active]:hw-ring-1 data-[active]:hw-ring-black/10',
+              'hw-size-7 hw-rounded-lg hw-text-center hw-text-sm/7 hw-font-medium dark:hw-text-white',
+              'data-[hover]:hw-bg-gray-100 dark:data-[hover]:hw-bg-gray-900',
+              'data-[active]:hw-shadow data-[active]:hw-ring-1 data-[active]:hw-ring-black/10 dark:data-[active]:hw-ring-white/80',
               'data-[active]:data-[hover]:hw-bg-gray-50',
             )}
           >
@@ -292,22 +291,26 @@ export default async function Blog({
     <main className='hw-overflow-hidden'>
       <GradientBackground />
       <Container>
-        <Subheading className='hw-mt-16'>Blog</Subheading>
-        <Heading as='h1' className='hw-mt-2'>
-          What’s happening at Radiant.
+        <Subheading className='hw-mt-32 hw-animate-fade-in hw-opacity-0'>
+          Blog
+        </Subheading>
+        <Heading
+          as='h1'
+          className='hw-mt-2 hw-animate-fade-in hw-opacity-0 [--animation-delay:200ms]'
+        >
+          What’s happening at Harmony.
         </Heading>
-        <Lead className='hw-mt-6 hw-max-w-3xl'>
+        <Lead className='hw-mt-6 hw-max-w-3xl hw-animate-fade-in hw-opacity-0 [--animation-delay:400ms]'>
           Stay informed with product updates, company news, and insights on how
           to sell smarter at your company.
         </Lead>
       </Container>
       {page === 1 && !category && <FeaturedPosts />}
-      <Container className='hw-mt-16 hw-pb-24'>
+      <Container className='hw-mt-16 hw-pb-24 hw-animate-fade-in hw-opacity-0 [--animation-delay:600ms]'>
         <Categories selected={category} />
         <Posts page={page} category={category} />
         <Pagination page={page} category={category} />
       </Container>
-      <Footer />
     </main>
   )
 }

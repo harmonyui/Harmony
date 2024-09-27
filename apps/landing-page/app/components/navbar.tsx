@@ -18,6 +18,12 @@ export const Navbar: React.FunctionComponent = () => {
         </a>
         <div className='hw-ml-auto hw-flex hw-h-full hw-items-center'>
           <a
+            className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-rounded-md hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-text-secondary-foreground hw-shadow-sm hover:hw-bg-secondary/80 hw-h-9 hw-px-4 hw-py-2 hw-mr-6 hw-text-sm'
+            href='/blog'
+          >
+            Blog
+          </a>
+          <a
             className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-rounded-md hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-bg-secondary hw-text-secondary-foreground hw-shadow-sm hover:hw-bg-secondary/80 hw-h-9 hw-px-4 hw-py-2 hw-mr-6 hw-text-sm'
             href='https://dashboard.harmonyui.app'
           >
