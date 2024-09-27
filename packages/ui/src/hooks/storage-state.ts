@@ -19,7 +19,7 @@ export function useStorageState<T>({
   defaultValue?: T
   storage?: 'local' | 'session'
 }): [T | undefined, (value: T | undefined) => void] {
-  const [value, setValue] = useState(defaultValue)
+  const [counter, setCounter] = useState(0)
 
   const getStorage = () => {
     if (storage === 'local') {
@@ -28,43 +28,50 @@ export function useStorageState<T>({
     return sessionStorage
   }
 
-  const putValueIntoStorage = useCallback((_value: T | undefined) => {
-    if (_value === undefined) {
-      getStorage().removeItem(key)
-    } else {
-      getStorage().setItem(key, encodeState(_value))
-    }
-  }, [])
+  const putValueIntoStorage = useCallback(
+    (_value: T | undefined) => {
+      if (_value === undefined) {
+        getStorage().removeItem(key)
+      } else {
+        getStorage().setItem(key, encodeState(_value))
+      }
+      setCounter((prev) => prev + 1)
+    },
+    [setCounter],
+  )
 
   const setStorageValue = useCallback(
     (storageValue: T | undefined): void => {
       putValueIntoStorage(storageValue)
 
-      setValue(storageValue)
+      //setValue(storageValue)
     },
-    [setValue, putValueIntoStorage],
+    [putValueIntoStorage],
   )
 
   useEffect(() => {
-    if (defaultValue && !getStorage().getItem(key)) {
+    if (
+      typeof window !== 'undefined' &&
+      defaultValue &&
+      !getStorage().getItem(key)
+    ) {
       setStorageValue(defaultValue)
     }
   }, [])
 
   //Prioritize the url, then the storage
   const storageValue = useMemo(() => {
-    if (value) {
-      putValueIntoStorage(value)
-      return value
+    if (typeof window === 'undefined') {
+      return defaultValue
     }
 
     const storageValueString = getStorage().getItem(key)
     const retValue = storageValueString
       ? decodeState<T>(storageValueString)
       : defaultValue
-    setValue(retValue)
+    //setValue(retValue)
     return retValue
-  }, [value, defaultValue, setValue])
+  }, [counter, defaultValue])
 
   return [storageValue, setStorageValue]
 }

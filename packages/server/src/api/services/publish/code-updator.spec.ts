@@ -70,6 +70,12 @@ describe('code-updator', () => {
       async diffFiles() {
         return []
       },
+      async getStarCount() {
+        return 0
+      },
+      async getProjectUrl() {
+        return ''
+      },
       repository,
     }
 

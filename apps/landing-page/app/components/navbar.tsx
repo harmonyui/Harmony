@@ -1,8 +1,12 @@
+import Link from 'next/link'
+import { DarkModeToggle } from './dark-mode-toggle'
+import { GithubStars } from '@/app/components/github-stars'
+
 export const Navbar: React.FunctionComponent = () => {
   return (
     <header className='hw-fixed hw-left-0 hw-top-0 hw-z-50 hw-w-full hw-translate-y-[-1rem] hw-animate-fade-in hw-border-b hw-opacity-0 hw-backdrop-blur-[12px] [--animation-delay:600ms]'>
       <div className='hw-w-full hw-mx-auto hw-px-8 hw-flex hw-h-[3.5rem] hw-items-center hw-justify-between'>
-        <a
+        <Link
           className='hw-text-md hw-flex hw-items-center hw-text-secondary-foreground'
           href='/'
         >
@@ -15,14 +19,22 @@ export const Navbar: React.FunctionComponent = () => {
             className='hw-h-6 hw-w-6 hw-text-primary hw-mr-2 hw-hidden dark:hw-inline-block'
           />
           Harmony UI
-        </a>
+        </Link>
         <div className='hw-ml-auto hw-flex hw-h-full hw-items-center'>
-          <a
+          <GithubStars />
+          <DarkModeToggle />
+          <Link
+            className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-rounded-md hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-text-secondary-foreground hw-shadow-sm hover:hw-bg-secondary/80 hw-h-9 hw-px-4 hw-py-2 hw-mr-6 hw-text-sm'
+            href='/blog'
+          >
+            Blog
+          </Link>
+          <Link
             className='hw-inline-flex hw-items-center hw-justify-center hw-whitespace-nowrap hw-rounded-md hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-bg-secondary hw-text-secondary-foreground hw-shadow-sm hover:hw-bg-secondary/80 hw-h-9 hw-px-4 hw-py-2 hw-mr-6 hw-text-sm'
             href='https://dashboard.harmonyui.app'
           >
             Join Beta
-          </a>
+          </Link>
         </div>
         <button className='hw-ml-6 md:hw-hidden'>
           <span className='hw-sr-only'>Toggle menu</span>

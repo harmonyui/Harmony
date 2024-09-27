@@ -1,4 +1,3 @@
- 
 import { describe, expect, it } from 'vitest'
 import type { GitRepositoryFactory } from '../../repository/git/types'
 import type { GithubCache } from '../../repository/cache/types'
@@ -92,6 +91,12 @@ describe('update-cache', () => {
           },
           async diffFiles() {
             return []
+          },
+          async getStarCount() {
+            return 1000
+          },
+          async getProjectUrl() {
+            return ''
           },
           repository,
         }
