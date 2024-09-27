@@ -3,6 +3,7 @@ import './globals.css'
 import { inter } from '@harmony/util/src/fonts'
 import { Footer } from '../components/footer'
 import { Navbar } from './components/navbar'
+import { DarkmodeHTML } from './components/dark-mode-toggle'
 
 export const metadata: Metadata = {
   title: 'Create Next App',
@@ -15,7 +16,7 @@ export default function RootLayout({
   children: React.ReactNode
 }>) {
   return (
-    <html lang='en' className='hw-dark'>
+    <DarkmodeHTML>
       <head>
         <link
           rel='stylesheet'
@@ -35,6 +36,6 @@ export default function RootLayout({
         {children}
         <Footer />
       </body>
-    </html>
+    </DarkmodeHTML>
   )
 }
