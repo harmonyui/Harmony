@@ -1,5 +1,41 @@
 # Editor
 
+The editor is where all of the meat of the app lies. It is in charge of putting an app into an editor with the appropriate
+editing tools, saving, loading, and publishing those changes to Github.
+
+Here we have two parts: `HarmonySetup` and `HarmonyProvider`.
+
+Harmony setup is the npm package that users install in their app. It gets things ready for the app to be put inside of `HarmonyProvider`, which is where all the editor code lives.
+
+`HarmonyProvider` is contained in an external bundle script deployed on fly.io. The editor code lives in this external script so that we can setup CI/CD without having to make our users update npm everytime something changes to the editor.
+
+This means that all api calls in the editor are made to this fly.io deployment.
+
+## Component Updating
+
+**Steps for making new update functionality (everything but CSS updates (see below))**
+
+1. Create the UX experience that will be getting the needed user input to update the component
+2. Create a `ComponentUpdateWithoutGlobal` object with the componentId of the element being updated, type of update (text, component, etc.), the name (additional identifying information about this update), the oldValue (the component's current value) and the value (the new value)
+3. Pass this object into the `onAttributeChanges` function from `useHarmonyContext`
+4. Add in logic in `makeUpdates` in `harmony-provider.tsx` that takes in the update object and actually makes a change to the DOM given the update type and value.
+
+**Steps to update CSS (type className)**
+
+Toolbar Item
+
+1. Add a name describing the property/properties you are changing to the arrays correlating to which element type this toolbar item will show up for in `toolbar-panel.tsx`. For example, if you are adding a border popup toolbar item that allows the user to edit various border properties, and this toolbar item should show up when selecting a button element, add `borderAttrs` to the `buttonTools` array.
+2. Add the necessary component that changes this attribute to the `commonTools` in `useToolbarTools`.
+3. Do step 1. for adding a new Attribute Item
+
+Attribute Item
+
+1. Add the names of the all the styles affected by this new attribute in the `attributeTools` array in `attribute-panel.tsx`. Put any color related attributes in the `colorTools` array. For adding a border attribute, you would put `borderWidth`, `borderRadius` in the `attributeTools` array and `borderColor` in the `colorTools` array.
+2. Add the attribute field in the `ComponentAttributePanel` component. You can use any of the helper components.
+3. Make sure and use the `onAttributeChange` and `getAttribute` functions from `useComponentAttribute`. This will allow you to get the correct value and update it properly.
+
+Under the hood, `onAttributeChange` takes the name and value of the attribute being changed and creates a `ComponentUpdate` object to send to the component updater, like in the above steps for making new update functionality.
+
 ## Panels
 
 The harmony panels live in the `panel` folder. Each panel has its own folder with a common folder for common components.
