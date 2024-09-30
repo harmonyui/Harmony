@@ -1,6 +1,6 @@
 'use server'
 import { redirect } from 'next/navigation'
-import { withAuth } from '../../utils/protected-routes-hoc'
+import { withAuth } from '../../../utils/protected-routes-hoc'
 import { TeamMirrorDisplay } from '../team/components/team'
 
 const MirrorPage = withAuth(async ({ ctx }) => {

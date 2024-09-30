@@ -4,7 +4,7 @@ import { ProjectDisplay as ProjectDisplayPrimitive } from '@harmony/ui/src/compo
 import type { BranchItem } from '@harmony/util/src/types/branch'
 import { useRouter } from 'next/navigation'
 import { createUrlFromProject } from '@harmony/util/src/utils/component'
-import { api } from '../../../utils/api'
+import { api } from '../../../../utils/api'
 
 export const ProjectDisplay: React.FunctionComponent<
   Pick<ProjectDisplayProps, 'projects' | 'defaultUrl'>

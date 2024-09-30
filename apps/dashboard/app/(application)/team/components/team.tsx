@@ -11,7 +11,7 @@ import { useChangeProperty } from '@harmony/ui/src/hooks/change-property'
 import { emailSchema } from '@harmony/util/src/types/utils'
 import type { TeamMember as TeamMemberServer } from '@harmony/util/src/types/branch'
 import { PlusIcon } from '@harmony/ui/src/components/core/icons'
-import { api } from '../../../utils/api'
+import { api } from '../../../../utils/api'
 
 type TeamMember = Omit<TeamMemberServer, 'contact'> & { contact: string }
 
