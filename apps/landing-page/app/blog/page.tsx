@@ -62,7 +62,7 @@ async function FeaturedPosts() {
                 <div className='hw-text-sm/5 hw-text-gray-700 dark:hw-text-white'>
                   {dayjs(post.publishedAt).format('dddd, MMMM D, YYYY')}
                 </div>
-                <div className='hw-mt-2 hw-text-base/7 hw-font-medium'>
+                <div className='hw-mt-2 hw-text-base/7 hw-font-medium dark:hw-text-white'>
                   <Link href={`/blog/${post.slug}`}>
                     <span className='hw-absolute hw-inset-0' />
                     {post.title}
