@@ -21,8 +21,10 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <TrpcProvider>
-        <html className='hw-h-full hw-bg-white' lang='en'>
-          <body className={`${mulish.className} hw-h-full hw-bg-white`}>
+        <html className='hw-h-full hw-bg-white hw-dark' lang='en'>
+          <body
+            className={`${mulish.className} hw-h-full hw-bg-white dark:hw-bg-gray-900`}
+          >
             {children}
             {process.env.ENV === 'staging' ? (
               <HarmonySetup

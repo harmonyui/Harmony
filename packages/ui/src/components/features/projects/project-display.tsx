@@ -139,10 +139,10 @@ const CreateNewProjectModal: React.FunctionComponent<
   return (
     <HarmonyModal show={show} onClose={onClose}>
       <div className='hw-flex hw-gap-2 hw-items-center'>
-        <GitBranchIcon className='hw-w-6 hw-h-6' />
+        <GitBranchIcon className='hw-w-6 hw-h-6 dark:hw-text-white' />
         <Header level={3}>Create a Project</Header>
       </div>
-      <div className='hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500'>
+      <div className='hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500 dark:hw-text-gray-300'>
         <p>
           Fill out the following fields to create a new Project through Harmony
         </p>
@@ -219,7 +219,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 
   return (
     <>
-      <div className='hw-w-[250px] hw-border hw-p-2 hw-rounded-md'>
+      <div className='hw-w-[250px] hw-border dark:hw-border-gray-700 hw-p-2 hw-rounded-md'>
         {/* <h4 className="hw-mt-10">Hello there</h4>
 			<p className="hw-mt-5">Thank you please</p> */}
         <button className='hw-rounded-md hw-overflow-auto hw-block'>
@@ -231,7 +231,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
         </button>
         <div className='hw-mt-2'>
           <div className='hw-flex hw-justify-between hw-items-center'>
-            <span>{item.label}</span>
+            <span className='dark:hw-text-white'>{item.label}</span>
             <DropdownIcon
               className='hover:hw-bg-gray-200 hw-rounded-full hw-h-5'
               icon={EllipsisHorizontalIcon}

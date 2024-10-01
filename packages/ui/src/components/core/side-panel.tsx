@@ -1,29 +1,16 @@
-/* eslint-disable no-nested-ternary */
+/* eslint-disable no-nested-ternary -- ok*/
 'use client'
 
-import { Fragment, useState } from 'react'
+import { useState } from 'react'
 import {
   Dialog,
   DialogBackdrop,
   DialogPanel,
-  Menu,
-  MenuButton,
-  MenuItem,
-  MenuItems,
-  Transition,
   TransitionChild,
 } from '@headlessui/react'
-import {
-  Bars3Icon,
-  CalendarIcon,
-  ChartPieIcon,
-  DocumentDuplicateIcon,
-  FolderIcon,
-  HomeIcon,
-  UsersIcon,
-  XMarkIcon,
-} from '@heroicons/react/24/outline'
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { getClass } from '@harmony/util/src/utils/common'
+import { Particles } from '../design/particles'
 import { ToggleIcon, type IconComponent } from './icons'
 
 export interface SidePanelItems {
@@ -52,11 +39,8 @@ export type SidePanelProps = {
 } & React.PropsWithChildren
 
 export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
-  //className,
   items,
   children,
-  onBodyClick,
-  title,
   profileItem,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
@@ -95,10 +79,10 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                 </div>
               </TransitionChild>
               {/* Sidebar component, swap this element with another sidebar if you like */}
-              <div className='hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-bg-white hw-px-6 hw-pb-2'>
+              <div className='hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-bg-white dark:bg-gray-900 hw-px-6 hw-pb-2'>
                 <div className='hw-flex hw-h-16 hw-shrink-0 hw-items-center'>
                   <a
-                    className='hw-text-md hw-flex hw-items-center hw-text-secondary-foreground'
+                    className='hw-text-md hw-flex hw-items-center hw-text-gray-950 dark:hw-text-white'
                     href='/'
                   >
                     <img
@@ -125,8 +109,8 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                               href={item.href}
                               className={getClass(
                                 item.current
-                                  ? 'hw-bg-gray-50 hw-text-indigo-600'
-                                  : 'hw-text-gray-700 hover:hw-bg-gray-50 hover:hw-text-indigo-600',
+                                  ? 'hw-bg-gray-50 hw-text-primary dark:hw-gray-800 dark:hw-text-white'
+                                  : 'hw-text-gray-700 hover:hw-bg-gray-50 hover:hw-text-primary dark:hw-text-gray-400 dark:hover:hw-bg-gray-800 dark:hover:hw-text-white',
                                 'hw-group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-font-semibold hw-leading-6',
                               )}
                             >
@@ -158,16 +142,16 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                               href={team.href}
                               className={getClass(
                                 team.current
-                                  ? 'bg-gray-50 text-indigo-600'
-                                  : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600',
+                                  ? 'bg-gray-50 text-primary dark:hw-bg-gray-800 dark:hw-text-white'
+                                  : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:hw-text-gray-400 dark:hover:hw-bg-gray-800 dark:hover:hw-text-white',
                                 'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
                               )}
                             >
                               <span
                                 className={getClass(
                                   team.current
-                                    ? 'border-indigo-600 text-indigo-600'
-                                    : 'border-gray-200 text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600',
+                                    ? 'border-primary text-primary'
+                                    : 'border-gray-200 text-gray-400 group-hover:border-primary group-hover:text-primary dark:group-hover:text-white dark:hw-border-gray-700 dark:hw-bg-gray-800',
                                   'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
                                 )}
                               >
@@ -189,10 +173,10 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         {/* Static sidebar for desktop */}
         <div className='hw-hidden lg:hw-fixed lg:hw-inset-y-0 lg:hw-z-50 lg:hw-flex lg:hw-w-72 lg:hw-flex-col'>
           {/* Sidebar component, swap this element with another sidebar if you like */}
-          <div className='hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-border-r hw-border-gray-200 hw-bg-white hw-px-6'>
+          <div className='hw-flex hw-grow hw-flex-col hw-gap-y-5 hw-overflow-y-auto hw-border-r hw-border-gray-200 dark:hw-border-gray-700 hw-bg-white dark:hw-bg-gray-900 hw-px-6'>
             <div className='hw-flex hw-h-16 hw-shrink-0 hw-items-center'>
               <a
-                className='hw-text-md hw-flex hw-items-center hw-text-secondary-foreground'
+                className='hw-text-md hw-flex hw-items-center hw-text-gray-950 dark:hw-text-white'
                 href='/'
               >
                 <img
@@ -219,8 +203,8 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                           href={item.href}
                           className={getClass(
                             item.current
-                              ? 'hw-bg-gray-50 hw-text-indigo-600'
-                              : 'hw-text-gray-700 hover:hw-bg-gray-50 hover:hw-text-indigo-600',
+                              ? 'hw-bg-gray-50 hw-text-primary dark:hw-bg-gray-800 dark:hw-text-white'
+                              : 'hw-text-gray-700 hover:hw-bg-gray-50 hover:hw-text-primary dark:hw-text-gray-400 dark:hover:hw-bg-gray-800 dark:hover:hw-text-white',
                             'hw-group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-sm hw-font-semibold hw-leading-6',
                           )}
                         >
@@ -242,7 +226,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                   </ul>
                 </li>
                 {/* <li>
-                  <div className='text-xs font-semibold leading-6 text-gray-400'>
+                  <div className='text-xs font-semibold leading-6 hw-text-gray-400'>
                     Your teams
                   </div>
                   <ul role='list' className='-mx-2 mt-2 space-y-1'>
@@ -251,18 +235,18 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                         <a
                           href={team.href}
                           className={getClass(
-                            team.current
-                              ? 'bg-gray-50 text-indigo-600'
-                              : 'text-gray-700 hover:bg-gray-50 hover:text-indigo-600',
-                            'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+                           team.current
+                                  ? 'bg-gray-50 text-primary dark:hw-bg-gray-800 dark:hw-text-white'
+                                  : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:hw-text-gray-400 dark:hover:hw-bg-gray-800 dark:hover:hw-text-white',
+                                'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
                           )}
                         >
                           <span
                             className={getClass(
                               team.current
-                                ? 'border-indigo-600 text-indigo-600'
-                                : 'border-gray-200 text-gray-400 group-hover:border-indigo-600 group-hover:text-indigo-600',
-                              'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
+                                ? 'border-primary text-primary'
+                                    : 'border-gray-200 text-gray-400 group-hover:border-primary group-hover:text-primary dark:group-hover:text-white dark:hw-border-gray-700 dark:hw-bg-gray-800',
+                                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
                             )}
                           >
                             {team.initial}

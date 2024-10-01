@@ -1,19 +1,13 @@
 'use client'
-import { useClerk, UserButton, UserProfile } from '@clerk/nextjs'
+import { useClerk, UserButton } from '@clerk/nextjs'
 import {
   DocumentDuplicateIcon,
   FolderIcon,
-  GitBranchIcon,
-  GitPullRequestIcon,
-  UserGroupIcon,
   UsersIcon,
 } from '@harmony/ui/src/components/core/icons'
-import type {
-  SidePanelItems,
-  ProfileItem,
-} from '@harmony/ui/src/components/core/side-panel'
+import type { SidePanelItems } from '@harmony/ui/src/components/core/side-panel'
 import { SidePanel } from '@harmony/ui/src/components/core/side-panel'
-import { useRouter, usePathname } from 'next/navigation'
+import { usePathname } from 'next/navigation'
 
 interface SideNavProps {
   children: React.ReactNode
@@ -21,8 +15,7 @@ interface SideNavProps {
 export const SideNav: React.FunctionComponent<SideNavProps> = ({
   children,
 }) => {
-  const { user, signOut } = useClerk()
-  const router = useRouter()
+  const { user } = useClerk()
   const pathname = usePathname()
 
   if (!user?.fullName) return
@@ -47,20 +40,7 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({
       icon: UsersIcon,
     },
   ]
-  const profileItem: ProfileItem = {
-    name: user.firstName || user.fullName,
-    img: user.imageUrl,
-    navigation: [
-      {
-        name: 'Sign Out',
-        onClick() {
-          void signOut(() => {
-            router.push('/')
-          })
-        },
-      },
-    ],
-  }
+
   return (
     <SidePanel
       items={items}
@@ -68,7 +48,6 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({
       profileItem={
         <div className='hw-flex hw-gap-2 hw-items-center'>
           <UserButton showName />
-          {/* {user.fullName} */}
         </div>
       }
     >
