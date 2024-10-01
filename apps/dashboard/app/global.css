@@ -1,0 +1,7 @@
+@import "@harmony/ui/styles.css";
+
+.cl-userButtonBox {
+  display: flex;
+  align-items: center;
+  flex-direction: row-reverse;
+}

@@ -5,7 +5,7 @@ import {
   displayElapsedTime,
   wordToKebabCase,
 } from '@harmony/util/src/utils/common'
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { WEB_URL } from '@harmony/util/src/constants'
 import { useChangeProperty } from '../../../hooks/change-property'
 import { ConfirmModal } from '../../core/confirm'
@@ -33,6 +33,7 @@ export interface ProjectDisplayProps {
     },
   ) => void
   onOpenProject: (item: BranchItem) => void
+  getThumbnail: (url: string) => Promise<string>
 }
 export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
   projects,
@@ -40,22 +41,26 @@ export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
   onDelete,
   onCreate,
   onOpenProject,
+  getThumbnail,
 }) => {
   const [showNewProject, setShowNewProject] = useState(false)
 
   return (
     <ModalProvider>
       <div className='hw-flex hw-flex-col hw-gap-4 hw-h-full'>
-        <Button
-          className='hw-w-fit hw-ml-auto'
-          onClick={() => {
-            setShowNewProject(true)
-          }}
-        >
-          Create Project <PlusIcon className='hw-ml-1 hw-h-5 hw-w-5' />
-        </Button>
+        <div className='hw-flex hw-items-center'>
+          <Header>My Projects</Header>
+          <Button
+            className='hw-w-fit hw-ml-auto'
+            onClick={() => {
+              setShowNewProject(true)
+            }}
+          >
+            <PlusIcon className='hw-ml-1 hw-h-5 hw-w-5 hw-mr-1' /> Add Project
+          </Button>
+        </div>
         {projects.length ? (
-          <div className='hw-flex hw-gap-16 hw-flex-wrap hw-overflow-auto'>
+          <div className='hw-flex hw-gap-16 hw-flex-wrap hw-overflow-auto hw-mt-4'>
             {projects.map((item) => (
               <ProjectLineItem
                 key={item.name}
@@ -66,6 +71,7 @@ export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
                 onDelete={() => {
                   onDelete(item)
                 }}
+                getThumbnail={getThumbnail}
               />
             ))}
           </div>
@@ -171,16 +177,31 @@ export interface ProjectLineItemProps {
   item: BranchItem
   onOpenHarmony: () => void
   onDelete: () => void
+  getThumbnail: (url: string) => Promise<string>
 }
 export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
   item,
   onOpenHarmony,
   onDelete: onDeleteProps,
+  getThumbnail,
 }) => {
-  const [thumbnail] = useState<string>(
+  const [thumbnail, setThumbnail] = useState<string>(
     `${WEB_URL}/harmony-project-placeholder.svg`,
   )
   const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+
+  useEffect(() => {
+    const initalize = async () => {
+      try {
+        const thumbnailUrl = await getThumbnail(item.url)
+        setThumbnail(thumbnailUrl)
+      } catch (err) {
+        console.error(err)
+      }
+    }
+
+    void initalize()
+  }, [])
 
   const onDeleteDesire = () => {
     setShowDeleteConfirm(true)
@@ -198,21 +219,21 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 
   return (
     <>
-      <div className='hw-w-[250px]'>
+      <div className='hw-w-[250px] hw-border hw-p-2 hw-rounded-md'>
         {/* <h4 className="hw-mt-10">Hello there</h4>
 			<p className="hw-mt-5">Thank you please</p> */}
         <button className='hw-rounded-md hw-overflow-auto hw-block'>
           <img
-            className='hw-w-[250px]'
+            className='hw-w-[250px] hw-h-[250px] hw-object-cover'
             src={thumbnail}
             onClick={onOpenHarmony}
           />
         </button>
         <div className='hw-mt-2'>
-          <div className='hw-flex hw-justify-between'>
+          <div className='hw-flex hw-justify-between hw-items-center'>
             <span>{item.label}</span>
             <DropdownIcon
-              className='hover:hw-bg-gray-200 hw-rounded-full '
+              className='hover:hw-bg-gray-200 hw-rounded-full hw-h-5'
               icon={EllipsisHorizontalIcon}
               items={moreItems}
               mode='none'

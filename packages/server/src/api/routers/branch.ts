@@ -55,15 +55,11 @@ export const branchRoute = createTRPCRouter({
 })
 
 async function createWebpageThumbnail(html: string): Promise<string> {
-  //return 'https://assets-global.website-files.com/61c1c0b4e368108c5ab02f30/62385d67c46d9a32873c39aa_canopy_dark.png'
-
-  //const $ = load(html)
-
-  // Extract title
-  //const title = doc.querySelector('title')?.textContent;
-
-  // Extract thumbnail image (you may need to adjust this based on webpage structure)
-  const thumbnailImage: string | undefined = '' //$('meta[property="og:image"]').attr('content')
+  const response = await fetch(
+    `https://api.microlink.io/?url=${encodeURIComponent(html)}&screenshot=true`,
+  )
+  const json = await response.json()
+  const thumbnailImage = json.data.screenshot.url
 
   if (!thumbnailImage) {
     // const dataUrl = await domtoimage.toSvg($('body')[0]);

@@ -7,8 +7,8 @@ import { createUrlFromProject } from '@harmony/util/src/utils/component'
 import { api } from '../../../../utils/api'
 
 export const ProjectDisplay: React.FunctionComponent<
-  Pick<ProjectDisplayProps, 'projects' | 'defaultUrl'>
-> = ({ projects, defaultUrl }) => {
+  Pick<ProjectDisplayProps, 'projects' | 'defaultUrl' | 'getThumbnail'>
+> = ({ projects, defaultUrl, getThumbnail }) => {
   const { mutate: deleteItem } = api.branch.deleteBranch.useMutation()
   const { mutate } = api.branch.createBranch.useMutation()
 
@@ -55,6 +55,7 @@ export const ProjectDisplay: React.FunctionComponent<
       onCreate={onCreate}
       onDelete={onDelete}
       onOpenProject={onOpenProject}
+      getThumbnail={getThumbnail}
     />
   )
 }

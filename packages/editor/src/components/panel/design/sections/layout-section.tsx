@@ -17,8 +17,6 @@ import { DesignDropdown } from './components/design-dropdown'
 import { AttributeExpand } from './components/attribute-expand'
 import { ButtonGroup } from './components/button-group'
 
-CSSPropertyRule
-
 export const LayoutSection: DesignPanelSectionComponent = () => {
   return (
     <Section label='Layout'>

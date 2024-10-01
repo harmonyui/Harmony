@@ -1,9 +1,12 @@
 'use client'
-import { useClerk } from '@clerk/nextjs'
+import { useClerk, UserButton, UserProfile } from '@clerk/nextjs'
 import {
+  DocumentDuplicateIcon,
+  FolderIcon,
   GitBranchIcon,
   GitPullRequestIcon,
   UserGroupIcon,
+  UsersIcon,
 } from '@harmony/ui/src/components/core/icons'
 import type {
   SidePanelItems,
@@ -29,19 +32,19 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({
       label: 'Projects',
       href: '/projects',
       current: pathname.includes('projects'),
-      icon: GitBranchIcon,
+      icon: FolderIcon,
     },
     {
       label: 'Publish Requests',
       href: '/pull-requests',
       current: pathname.includes('pull-requests'),
-      icon: GitPullRequestIcon,
+      icon: DocumentDuplicateIcon,
     },
     {
       label: 'My Team',
       href: '/team',
       current: pathname.includes('team'),
-      icon: UserGroupIcon,
+      icon: UsersIcon,
     },
   ]
   const profileItem: ProfileItem = {
@@ -59,7 +62,16 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({
     ],
   }
   return (
-    <SidePanel items={items} title='Harmony' profileItem={profileItem}>
+    <SidePanel
+      items={items}
+      title='Harmony'
+      profileItem={
+        <div className='hw-flex hw-gap-2 hw-items-center'>
+          <UserButton showName />
+          {/* {user.fullName} */}
+        </div>
+      }
+    >
       {children}
     </SidePanel>
   )
