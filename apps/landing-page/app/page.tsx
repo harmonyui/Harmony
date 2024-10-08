@@ -46,7 +46,7 @@ export default function Home() {
             <ShineBorder color={['#A07CFE', '#FE8FB5', '#FFBE7B']}>
               <HeroVideoDialog
                 videoSrc='https://www.youtube.com/embed/RARzoY59tCo?iv_load_policy=3&rel=0&modestbranding=1&playsinline=1&autoplay=1&color=white'
-                thumbnailSrc='https://startup-template-sage.vercel.app/hero-light.png'
+                thumbnailSrc='/video-picture.png'
               />
             </ShineBorder>
           </div>
