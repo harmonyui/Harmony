@@ -54,27 +54,30 @@ export const branchRoute = createTRPCRouter({
     }),
 })
 
-async function createWebpageThumbnail(html: string): Promise<string> {
-  //return 'https://assets-global.website-files.com/61c1c0b4e368108c5ab02f30/62385d67c46d9a32873c39aa_canopy_dark.png'
+const microLinkResponseSchema = z.object({
+  data: z.object({
+    screenshot: z.object({
+      url: z.string().optional(),
+    }),
+  }),
+})
+const placeholder = '/harmony-project-placeholder.svg'
+async function createWebpageThumbnail(url: string): Promise<string> {
+  try {
+    const response = await fetch(
+      `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true`,
+    )
+    const responseData = microLinkResponseSchema.parse(await response.json())
 
-  //const $ = load(html)
+    const thumbnailImage = responseData.data.screenshot.url
 
-  // Extract title
-  //const title = doc.querySelector('title')?.textContent;
+    if (!thumbnailImage) {
+      return placeholder
+    }
 
-  // Extract thumbnail image (you may need to adjust this based on webpage structure)
-  const thumbnailImage: string | undefined = '' //$('meta[property="og:image"]').attr('content')
-
-  if (!thumbnailImage) {
-    // const dataUrl = await domtoimage.toSvg($('body')[0]);
-    // thumbnailImage = dataUrl;
-    // const base64Encoded = btoa(harmonySVG);
-
-    // // Create a data URL with the Base64-encoded SVG content
-    // const dataUrl = `data:image/svg+xml;base64,${base64Encoded}`;
-    //const dataUrl = `data:image/svg+xml;utf8, ${harmonySVG}`;
-    return '/harmony-project-placeholder.svg'
+    return thumbnailImage || ''
+  } catch (error) {
+    console.error('Error creating thumbnail', error)
+    return placeholder
   }
-
-  return thumbnailImage || ''
 }

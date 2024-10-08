@@ -1,8 +1,7 @@
 import { ChangeLogList } from '@harmony/ui/src/components/features/change-log'
 import { prisma } from '@harmony/db/lib/prisma'
 import type { ChangeLog } from '@harmony/util/src/types/change-log'
-import { withAuth } from '../../utils/protected-routes-hoc'
-import { SideNav } from '../../utils/side-nav'
+import { withAuth } from '../../../utils/protected-routes-hoc'
 
 const ReleasePage = withAuth(async () => {
   const changeLog = await prisma.changeLog.findMany({
@@ -18,11 +17,7 @@ const ReleasePage = withAuth(async () => {
     version: log.version,
   }))
 
-  return (
-    <SideNav>
-      <ChangeLogList items={items} />
-    </SideNav>
-  )
+  return <ChangeLogList items={items} />
 })
 
 export default ReleasePage

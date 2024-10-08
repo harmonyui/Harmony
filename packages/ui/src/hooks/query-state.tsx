@@ -79,7 +79,7 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
     typeof window !== 'undefined' ? window.location.href : '',
   )
   const [forceRerender, setForceRerender] = useState(0)
-  const router = window.location
+  const router = typeof window !== 'undefined' ? window.location : undefined
 
   const searchParams = useMemo(
     () => new URL(urlRef.current).searchParams,
