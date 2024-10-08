@@ -10,7 +10,6 @@ import {
 } from '@headlessui/react'
 import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
 import { getClass } from '@harmony/util/src/utils/common'
-import { Particles } from '../design/particles'
 import { ToggleIcon, type IconComponent } from './icons'
 
 export interface SidePanelItems {
@@ -47,7 +46,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
 
   return (
     <>
-      <div>
+      <div className='dark:hw-bg-gray-900'>
         <Dialog
           open={sidebarOpen}
           onClose={setSidebarOpen}
