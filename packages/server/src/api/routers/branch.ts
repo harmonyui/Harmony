@@ -54,23 +54,30 @@ export const branchRoute = createTRPCRouter({
     }),
 })
 
-async function createWebpageThumbnail(html: string): Promise<string> {
-  const response = await fetch(
-    `https://api.microlink.io/?url=${encodeURIComponent(html)}&screenshot=true`,
-  )
-  const json = await response.json()
-  const thumbnailImage = json.data.screenshot.url
+const microLinkResponseSchema = z.object({
+  data: z.object({
+    screenshot: z.object({
+      url: z.string().optional(),
+    }),
+  }),
+})
+const placeholder = '/harmony-project-placeholder.svg'
+async function createWebpageThumbnail(url: string): Promise<string> {
+  try {
+    const response = await fetch(
+      `https://api.microlink.io/?url=${encodeURIComponent(url)}&screenshot=true`,
+    )
+    const responseData = microLinkResponseSchema.parse(await response.json())
 
-  if (!thumbnailImage) {
-    // const dataUrl = await domtoimage.toSvg($('body')[0]);
-    // thumbnailImage = dataUrl;
-    // const base64Encoded = btoa(harmonySVG);
+    const thumbnailImage = responseData.data.screenshot.url
 
-    // // Create a data URL with the Base64-encoded SVG content
-    // const dataUrl = `data:image/svg+xml;base64,${base64Encoded}`;
-    //const dataUrl = `data:image/svg+xml;utf8, ${harmonySVG}`;
-    return '/harmony-project-placeholder.svg'
+    if (!thumbnailImage) {
+      return placeholder
+    }
+
+    return thumbnailImage || ''
+  } catch (error) {
+    console.error('Error creating thumbnail', error)
+    return placeholder
   }
-
-  return thumbnailImage || ''
 }
