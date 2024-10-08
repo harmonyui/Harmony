@@ -1,7 +1,5 @@
 import { prisma } from '@harmony/db/lib/prisma'
-import { ModalProvider } from '@harmony/ui/src/components/core/modal'
-import { SideNav } from '../../utils/side-nav'
-import { withAuth } from '../../utils/protected-routes-hoc'
+import { withAuth } from '../../../utils/protected-routes-hoc'
 import { PullRequestDisplay } from './components/pull-request'
 
 const PullRequestPage = withAuth(async ({ ctx }) => {
@@ -11,13 +9,7 @@ const PullRequestPage = withAuth(async ({ ctx }) => {
     },
   })
 
-  return (
-    <ModalProvider>
-      <SideNav>
-        <PullRequestDisplay items={pullRequests} />
-      </SideNav>
-    </ModalProvider>
-  )
+  return <PullRequestDisplay items={pullRequests} />
 })
 
 export default PullRequestPage

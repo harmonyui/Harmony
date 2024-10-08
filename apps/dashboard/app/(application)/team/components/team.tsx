@@ -11,7 +11,7 @@ import { useChangeProperty } from '@harmony/ui/src/hooks/change-property'
 import { emailSchema } from '@harmony/util/src/types/utils'
 import type { TeamMember as TeamMemberServer } from '@harmony/util/src/types/branch'
 import { PlusIcon } from '@harmony/ui/src/components/core/icons'
-import { api } from '../../../utils/api'
+import { api } from '../../../../utils/api'
 
 type TeamMember = Omit<TeamMemberServer, 'contact'> & { contact: string }
 
@@ -24,9 +24,12 @@ export const TeamDisplay: React.FunctionComponent<TeamDisplayProps> = ({
   const [show, setShow] = useState(false)
   return (
     <div className='hw-flex hw-flex-col hw-gap-4'>
-      <Button className='hw-w-fit hw-ml-auto' onClick={() => setShow(true)}>
-        Invite Team Member <PlusIcon className='hw-h-4 hw-w-4 hw-ml-1' />
-      </Button>
+      <div className='hw-flex hw-items-center hw-mb-4'>
+        <Header>My Team</Header>
+        <Button className='hw-w-fit hw-ml-auto' onClick={() => setShow(true)}>
+          <PlusIcon className='hw-h-4 hw-w-4 hw-mr-1' /> Invite Team Member
+        </Button>
+      </div>
       <TeamGrid members={members} />
       <CreateNewProjectModal show={show} onClose={() => setShow(false)} />
     </div>

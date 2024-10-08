@@ -17,7 +17,7 @@ import { Label } from '@harmony/ui/src/components/core/label'
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
 import { Dropdown } from '@harmony/ui/src/components/core/dropdown'
 import { HarmonyModal } from '@harmony/ui/src/components/core/modal'
-import { api } from '../../../utils/api'
+import { api } from '../../../../utils/api'
 
 export const PullRequestDisplay: React.FunctionComponent<{
   items: PullRequest[]
@@ -91,7 +91,7 @@ export const CreateNewPullRequestModal: React.FunctionComponent<
         <GitBranchIcon className='hw-w-6 hw-h-6' />
         <Header level={3}>Create a Pull Request</Header>
       </div>
-      <div className='hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500'>
+      <div className='hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500 dark:hw-text-gray-200'>
         <p>
           Fill out the following fields to create a new pull request through
           Harmony

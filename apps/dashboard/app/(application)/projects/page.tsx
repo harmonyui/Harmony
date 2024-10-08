@@ -1,9 +1,8 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok */
-import { ModalProvider } from '@harmony/ui/src/components/core/modal'
 import React from 'react'
 import { getBranches } from '@harmony/server/src/api/repository/database/branch'
-import { withAuth } from '../../utils/protected-routes-hoc'
-import { SideNav } from '../../utils/side-nav'
+import { withAuth } from '../../../utils/protected-routes-hoc'
+import { getThumbnail } from '../actions'
 import { ProjectSetUp } from './components/setup'
 import { ProjectDisplay } from './components/project'
 
@@ -19,19 +18,17 @@ const ProjectsPage = withAuth(async ({ ctx }) => {
   // }
 
   return (
-    <ModalProvider>
-      <SideNav>
-        {branches ? (
-          <ProjectDisplay
-            projects={branches}
-            defaultUrl={ctx.session.account.repository!.defaultUrl}
-          />
-        ) : (
-          <ProjectSetUp />
-        )}
-        {/* <SnappingDemo/> */}
-      </SideNav>
-    </ModalProvider>
+    <>
+      {branches ? (
+        <ProjectDisplay
+          projects={branches}
+          defaultUrl={ctx.session.account.repository!.defaultUrl}
+          getThumbnail={getThumbnail}
+        />
+      ) : (
+        <ProjectSetUp />
+      )}
+    </>
   )
 })
 

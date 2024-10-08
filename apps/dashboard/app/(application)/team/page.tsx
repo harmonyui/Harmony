@@ -1,7 +1,6 @@
 import { emailSchema } from '@harmony/util/src/types/utils'
 import type { TeamMember } from '@harmony/util/src/types/branch'
-import { SideNav } from '../../utils/side-nav'
-import { withAuth } from '../../utils/protected-routes-hoc'
+import { withAuth } from '../../../utils/protected-routes-hoc'
 import { TeamDisplay } from './components/team'
 
 const TeamPage = withAuth(async ({ ctx }) => {
@@ -23,11 +22,7 @@ const TeamPage = withAuth(async ({ ctx }) => {
     contact: emailSchema.parse(account.contact),
   }))
 
-  return (
-    <SideNav>
-      <TeamDisplay members={members} />
-    </SideNav>
-  )
+  return <TeamDisplay members={members} />
 })
 
 export default TeamPage
