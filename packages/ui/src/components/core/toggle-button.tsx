@@ -1,12 +1,12 @@
-import { Button } from "./button";
+import { Button } from './button'
 
 export interface ToggleButtonType<T> {
   buttons: {
-    id: T;
-    label: string;
-  }[];
-  selected: T;
-  setSelected: (selected: T) => void;
+    id: T
+    label: string
+  }[]
+  selected: T
+  setSelected: (selected: T) => void
 }
 export const ToggleButton = <T,>({
   buttons,
@@ -15,13 +15,13 @@ export const ToggleButton = <T,>({
 }: ToggleButtonType<T>) => {
   return (
     <>
-      <div className="flex gap-2">
+      <div className='flex gap-2'>
         {buttons.map((button, i) => (
           <Button
             key={i}
-            mode={selected === button.id ? "primary" : "secondary"}
+            mode={selected === button.id ? 'primary' : 'secondary'}
             onClick={() => {
-              setSelected(button.id);
+              setSelected(button.id)
             }}
           >
             {button.label}
@@ -29,5 +29,5 @@ export const ToggleButton = <T,>({
         ))}
       </div>
     </>
-  );
-};
+  )
+}

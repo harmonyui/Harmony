@@ -1,7 +1,7 @@
 import { Input } from '@harmony/ui/src/components/core/input'
 import { useState } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
-import { useHarmonyStore } from '../../hooks/state'
+import { useHarmonyStore } from '../../../hooks/state'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
 import { useHarmonyContext } from '../../harmony-context'

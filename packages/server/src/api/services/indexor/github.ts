@@ -1,5 +1,3 @@
- 
-
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentLocation } from '@harmony/util/src/types/component'
 import { isValidPath } from '@harmony/util/src/utils/common'

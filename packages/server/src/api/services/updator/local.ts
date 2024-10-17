@@ -20,7 +20,6 @@ export const changesSchema = z.object({
 
 export type Changes = z.infer<typeof changesSchema>
 
- 
 export async function makeChanges(
   referencedComponent: HarmonyComponent,
   newSnippet: string,

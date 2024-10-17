@@ -10,7 +10,8 @@
     "build:popup": "NODE_ENV=production pnpm withenv webpack --config webpack.config.popup.js",
     "dev": "rm -rf extension/dist && NODE_ENV=production pnpm withenv webpack --watch",
     "test": "vitest run",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix ."
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix .",
+    "lint": "pnpm withenv eslint ."
   },
   "files": [
     "dist"

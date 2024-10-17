@@ -2,9 +2,9 @@ import type {
   ComponentProp,
   HarmonyComponentInfo,
 } from '@harmony/util/src/types/component'
-import type { ComponentElement } from '../../inspector/component-identifier'
-import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
-import { createComponentId } from '../../../utils/element-utils'
+import type { ComponentUpdateWithoutGlobal } from '../../components/harmony-context'
+import type { ComponentElement } from '../../components/inspector/component-identifier'
+import { createComponentId } from '../../utils/element-utils'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
 import type { ComponentUpdateState } from './component-update'

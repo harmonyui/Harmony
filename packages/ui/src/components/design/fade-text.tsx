@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 'use client'
 
 import { useMemo } from 'react'

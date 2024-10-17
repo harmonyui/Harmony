@@ -1,6 +1,6 @@
 import type { PersistStorage } from 'zustand/middleware'
 import { persist } from 'zustand/middleware'
-import type { DisplayMode } from '../../harmony-context'
+import type { DisplayMode } from '../../components/harmony-context'
 import { createHarmonySlice } from './factory'
 
 type SymbolState<T> = Pick<

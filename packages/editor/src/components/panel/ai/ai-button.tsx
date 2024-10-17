@@ -3,7 +3,7 @@ import { SparklesIcon } from '@harmony/ui/src/components/core/icons'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { useHarmonyPanel } from '../_common/panel/panel'
 import { Panels } from '../_common/panel/types'
-import { useHarmonyStore } from '../../hooks/state'
+import { useHarmonyStore } from '../../../hooks/state'
 
 interface AIButtonState {
   onAI?: () => void

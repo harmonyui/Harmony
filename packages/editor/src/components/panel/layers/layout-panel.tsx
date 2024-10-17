@@ -3,7 +3,7 @@ import type { TreeData } from '@harmony/ui/src/components/core/tree'
 import { useHarmonyContext } from '../../harmony-context'
 import { isSelectable } from '../../inspector/inspector'
 import type { ComponentElement } from '../../inspector/component-identifier'
-import { useHarmonyStore } from '../../hooks/state'
+import { useHarmonyStore } from '../../../hooks/state'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
 import { TreeView } from './tree-view'
@@ -53,7 +53,7 @@ export const useComponentTreeItems = (
     [scale],
   )
   const treeItems: TreeData<HTMLElement>[] = useMemo(
-    () => (root ? getTreeItems([root]) ?? [] : []),
+    () => (root ? (getTreeItems([root]) ?? []) : []),
     [root, getTreeItems],
   )
 

@@ -2,7 +2,7 @@ import { Button } from '@harmony/ui/src/components/core/button'
 import { Popup } from '@harmony/ui/src/components/core/popup'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { useEffect, useMemo } from 'react'
-import { useHarmonyStore } from '../hooks/state'
+import { useHarmonyStore } from '../../hooks/state'
 import { findSameElementsFromId } from '../../utils/element-utils'
 
 interface GlobalUpdatePopupProps {

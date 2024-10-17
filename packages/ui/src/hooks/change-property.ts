@@ -1,9 +1,7 @@
-import { useEffectEvent } from "./effect-event";
-
 interface ChangePropertyType<T> {
-  <K extends keyof T>(item: T, key: K, value: T[K]): T;
-  function: (item: T) => void;
-  formFunc: <K extends keyof T>(key: K, item: T) => (value: T[K]) => void;
+  <K extends keyof T>(item: T, key: K, value: T[K]): T
+  function: (item: T) => void
+  formFunc: <K extends keyof T>(key: K, item: T) => (value: T[K]) => void
 }
 export const useChangeProperty = <T>(
   func: (item: T) => void,
@@ -13,24 +11,24 @@ export const useChangeProperty = <T>(
     key: K,
     value: T[K],
   ): T => {
-    const copy = { ...item };
-    copy[key] = value;
+    const copy = { ...item }
+    copy[key] = value
 
-    func(copy);
+    func(copy)
 
-    return copy;
-  };
-  ret.function = func;
+    return copy
+  }
+  ret.function = func
   ret.formFunc = (key, item) => (value) => {
-    ret(item, key, value);
-  };
+    ret(item, key, value)
+  }
 
-  return ret;
-};
+  return ret
+}
 
 interface ChangeArrayType<T> {
-  <K extends keyof T>(items: T[], index: number, key: K, value: T[K]): T[];
-  function: (items: T[]) => void;
+  <K extends keyof T>(items: T[], index: number, key: K, value: T[K]): T[]
+  function: (items: T[]) => void
 }
 export const useChangeArray = <T>(
   func: (items: T[]) => void,
@@ -41,20 +39,20 @@ export const useChangeArray = <T>(
     key: K,
     value: T[K],
   ): T[] => {
-    const copy = items.slice();
-    const item = copy[index];
+    const copy = items.slice()
+    const item = copy[index]
     //if (item === undefined) throw new Error("Invalid index");
 
-    const copyItem = { ...item };
+    const copyItem = { ...item }
 
-    copyItem[key] = value;
-    copy[index] = copyItem;
+    copyItem[key] = value
+    copy[index] = copyItem
 
-    func(copy);
+    func(copy)
 
-    return copy;
-  };
-  ret.function = func;
+    return copy
+  }
+  ret.function = func
 
-  return ret;
-};
+  return ret
+}

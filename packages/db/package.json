@@ -4,7 +4,8 @@
   "version": "0.0.0",
   "main": "index.ts",
   "scripts": {
-    "format": "prettier --write \"**/*.{prisma,ts,md,json}\" && eslint --fix",
+    "format": "prettier --write \"**/*.{prisma,ts,tsx,md,json}\" && eslint --fix",
+    "lint": "pnpm withenv eslint .",
     "withenv": "dotenv -e ../../.env --",
     "db:generate": "pnpm withenv prisma generate",
     "db:push": "pnpm withenv prisma db push --skip-generate",

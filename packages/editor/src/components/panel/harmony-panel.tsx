@@ -5,7 +5,7 @@ import type {
   SelectMode,
 } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
-import { useHarmonyStore } from '../hooks/state'
+import { useHarmonyStore } from '../../hooks/state'
 import { ComponentAttributeProvider } from './design/attribute-provider'
 import { GiveFeedbackModal, HelpGuide } from './welcome/help-guide'
 import { SidePanel, SidePanelProvider } from './side-panel'

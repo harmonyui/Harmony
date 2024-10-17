@@ -1,7 +1,6 @@
 import ReactDOM from 'react-dom'
 import { useEffect, useState } from 'react'
 import { getClass } from '@harmony/util/src/utils/common'
-import { usePrevious } from '../../hooks/previous'
 import { ClosableContent } from './closable-content'
 
 interface AlertProps {
@@ -19,12 +18,12 @@ export const Alert: React.FunctionComponent<AlertProps> = ({
 
   useEffect(() => {
     if (label) {
-      const decresaseTransparency = (transparency: number) => {
-        if (transparency <= 0) {
+      const decresaseTransparency = (_transparency: number) => {
+        if (_transparency <= 0) {
           setLabelProps(undefined)
           return
         }
-        const newTrans = transparency - 0.05
+        const newTrans = _transparency - 0.05
         setTransparency(Math.max(0, newTrans))
         setTimeout(() => decresaseTransparency(newTrans), 50)
       }

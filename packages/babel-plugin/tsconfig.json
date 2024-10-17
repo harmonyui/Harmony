@@ -4,7 +4,5 @@
     "outDir": "./dist/esm/"
   },
   "include": ["."],
-  "exclude": [
-    "webpack.config.js","dist", "*.spec.ts", "__snapshots__"
-  ]
+  "exclude": ["webpack.config.js", "dist", "*.spec.ts", "__snapshots__"]
 }

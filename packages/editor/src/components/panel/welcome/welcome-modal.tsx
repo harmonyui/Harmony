@@ -8,7 +8,7 @@ import { Button } from '@harmony/ui/src/components/core/button'
 import { InfoBox } from '@harmony/ui/src/components/core/alert'
 import type { IconComponent } from '@harmony/ui/src/components/core/icons'
 import { useHarmonyContext } from '../../harmony-context'
-import { useHarmonyStore } from '../../hooks/state'
+import { useHarmonyStore } from '../../../hooks/state'
 
 export const WelcomeModal: React.FunctionComponent = () => {
   const showWelcomeScreen = useHarmonyStore((state) => state.showWelcomeScreen)

@@ -1,4 +1,3 @@
- 
 import {
   getLocationFromContent,
   testCases,

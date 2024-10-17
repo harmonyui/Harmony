@@ -3,7 +3,7 @@ import type { ComponentProp } from '@harmony/util/src/types/component'
 import { Input } from '@harmony/ui/src/components/core/input'
 import { Label } from '@harmony/ui/src/components/core/label'
 import { useMemo } from 'react'
-import { useHarmonyStore } from '../hooks/state'
+import { useHarmonyStore } from '../../hooks/state'
 
 interface ComponentPropsPanelProps {
   isOpen: boolean

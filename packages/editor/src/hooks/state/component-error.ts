@@ -1,6 +1,6 @@
 import type { ComponentError } from '@harmony/util/src/types/component'
 import { mergeArraysOnId } from '@harmony/util/src/utils/common'
-import { recurseElements } from '../../../utils/element-utils'
+import { recurseElements } from '../../utils/element-utils'
 import { createHarmonySlice } from './factory'
 
 export interface ComponentErrorState {

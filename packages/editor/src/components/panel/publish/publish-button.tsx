@@ -18,7 +18,7 @@ import {
 import { CopyText } from '@harmony/ui/src/components/core/copy-text'
 import { WEB_URL } from '@harmony/util/src/constants'
 import { useHarmonyContext } from '../../harmony-context'
-import { useHarmonyStore } from '../../hooks/state'
+import { useHarmonyStore } from '../../../hooks/state'
 
 interface PublishState {
   show: boolean
