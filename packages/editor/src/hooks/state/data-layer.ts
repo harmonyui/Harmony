@@ -19,7 +19,7 @@ import {
   createUpdateFromTextResponseSchema,
 } from '@harmony/util/src/types/network'
 import type { Environment } from '@harmony/util/src/utils/component'
-import { createClient } from '../../../trpc'
+import { createClient } from '../../trpc'
 import { createHarmonySlice } from './factory'
 
 const dataFetch =

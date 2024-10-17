@@ -57,11 +57,15 @@ A VSCode debugger is setup with this project if you would rather use that than `
 
 If you would like to debug the editor on a project using its deployed URL instead of a local instance, tack on the query parameter `harmony-environment=development` to the URL. This will have the project target your locally running editor instead of the typical production editor. You will have free reign to debug how the editor behaves on this application.
 
+## How it Works
+
+Go to [HowItWorks.md](/HowItWorks.md) to see how Harmony works.
+
 ## Structure
 
 Harmony's structure is a monorepo with apps, packages, and tooling. Anything that is deployed will be an app in the apps folder. Any group of code that is shared among different apps lives in the packages folders. The tailwind, eslint, typescript, and prettier tooling lives in the tooling folder.
 
-## Technologies Used
+### Technologies Used
 
 - NextJS
 - Typescript

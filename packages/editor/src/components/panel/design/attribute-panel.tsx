@@ -1,7 +1,7 @@
 /* eslint-disable @typescript-eslint/no-empty-interface -- ok*/
 
 import { useMemo } from 'react'
-import { useHarmonyStore } from '../../hooks/state'
+import { useHarmonyStore } from '../../../hooks/state'
 import { useDesignPanels } from './register-panels'
 import { getComponentType } from './utils'
 

@@ -5,7 +5,7 @@ import {
   findElementFromId,
   findElementsFromId,
   findSameElementsFromId,
-} from '../../../utils/element-utils'
+} from '../../utils/element-utils'
 import { createHarmonySlice } from './factory'
 
 export interface CachedElement {

@@ -21,7 +21,7 @@ import type {
 import { getProperty } from '../snapping/calculations'
 import { useSidePanel } from '../panel/side-panel'
 import { useHarmonyContext } from '../harmony-context'
-import { useHarmonyStore } from '../hooks/state'
+import { useHarmonyStore } from '../../hooks/state'
 import { useHighlighter } from './highlighter'
 
 interface RectSize {
@@ -374,7 +374,9 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     const onEscape = () => {
       const parent = selectedComponent?.parentElement
       onSelect(
-        rootElement?.contains(parent ?? null) ? parent ?? undefined : undefined,
+        rootElement?.contains(parent ?? null)
+          ? (parent ?? undefined)
+          : undefined,
       )
     }
 

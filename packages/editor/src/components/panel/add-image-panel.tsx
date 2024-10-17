@@ -3,7 +3,7 @@ import { Button } from '@harmony/ui/src/components/core/button'
 import { getClass } from '@harmony/util/src/utils/common'
 import { SideDrawer } from '@harmony/ui/src/components/core/side-drawer'
 import { recurseElements } from '../../utils/element-utils'
-import { useHarmonyStore } from '../hooks/state'
+import { useHarmonyStore } from '../../hooks/state'
 
 export type ImageType = 'image' | 'svg'
 
