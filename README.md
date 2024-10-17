@@ -6,6 +6,8 @@
   <a href="https://github.com/harmonyui/harmony/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/harmonyui/harmony"></a>
 </div>
 
+![image](/apps/landing-page/public/video-picture.png)
+
 ## Authors
 
 <a href="https://github.com/harmonyui/harmony/graphs/contributors">
