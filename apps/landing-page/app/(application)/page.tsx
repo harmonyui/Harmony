@@ -2,7 +2,7 @@ import { GradientButton } from '@harmony/ui/src/components/design/gradient-butto
 import { Particles } from '@harmony/ui/src/components/design/particles'
 import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog'
 import { ShineBorder } from '@harmony/ui/src/components/design/shine-border'
-import { PricingCard } from './components/pricing-card'
+import { PricingCard } from '../components/pricing-card'
 import { GradientBackground } from '@/components/gradient'
 
 export default function Home() {

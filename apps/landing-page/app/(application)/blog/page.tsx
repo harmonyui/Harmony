@@ -11,13 +11,13 @@ import { clsx } from 'clsx'
 import dayjs from 'dayjs'
 import type { Metadata } from 'next'
 import { notFound } from 'next/navigation'
-import { image } from '../../sanity/image'
+import { image } from '../../../sanity/image'
 import {
   getCategories,
   getFeaturedPosts,
   getPosts,
   getPostsCount,
-} from '../../sanity/queries'
+} from '../../../sanity/queries'
 import { Button } from '@/components/button'
 import { Container } from '@/components/container'
 import { GradientBackground } from '@/components/gradient'

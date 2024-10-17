@@ -1,8 +1,6 @@
 import type { Metadata } from 'next'
 import './globals.css'
 import { inter } from '@harmony/util/src/fonts'
-import { Footer } from '../components/footer'
-import { Navbar } from './components/navbar'
 import { DarkmodeHTML } from './components/dark-mode-toggle'
 
 export const metadata: Metadata = {
@@ -32,9 +30,7 @@ export default function RootLayout({
       <body
         className={`hw-min-h-screen hw-bg-background hw-font-sans hw-antialiased ${inter.className}`}
       >
-        <Navbar />
         {children}
-        <Footer />
       </body>
     </DarkmodeHTML>
   )
