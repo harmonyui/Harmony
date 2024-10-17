@@ -1,25 +1,25 @@
-import { useColorVariant } from "@harmony/util/src/types/colors";
+import { useColorVariant } from '@harmony/util/src/types/colors'
 
-type ColorVariant = "primary" | "blue";
+type ColorVariant = 'primary' | 'blue'
 
 export interface NotifyLabelProps {
-  label: string;
-  variant: ColorVariant;
-  className?: string;
+  label: string
+  variant: ColorVariant
+  className?: string
 }
 export const NotifyLabel = ({
   label,
   className,
   variant,
 }: NotifyLabelProps) => {
-  const variantClass = useColorVariant(variant);
+  const variantClass = useColorVariant(variant)
   return (
     <span
       className={`inline-flex items-center justify-center px-2 text-sm font-medium rounded-full ${variantClass} ${
-        className || ""
+        className || ''
       }`}
     >
       {label}
     </span>
-  );
-};
+  )
+}

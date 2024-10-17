@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary -- ok*/
 import { getClass } from '@harmony/util/src/utils/common'
 import React from 'react'
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome'

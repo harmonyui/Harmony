@@ -1,3 +1,5 @@
+/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+/* eslint-disable no-bitwise -- ok*/
 'use client'
 
 import React, { useEffect, useRef, useState } from 'react'

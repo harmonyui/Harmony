@@ -1,4 +1,4 @@
-import { useState, type Dispatch } from "react";
+import { useState, type Dispatch } from 'react'
 import {
   closestCenter,
   DndContext,
@@ -10,30 +10,30 @@ import {
   type DragOverEvent,
   type DragStartEvent,
   type UniqueIdentifier,
-} from "@dnd-kit/core";
+} from '@dnd-kit/core'
 import {
   arrayMove,
   SortableContext,
   sortableKeyboardCoordinates,
   useSortable,
   verticalListSortingStrategy,
-} from "@dnd-kit/sortable";
-import { CSS } from "@dnd-kit/utilities";
+} from '@dnd-kit/sortable'
+import { CSS } from '@dnd-kit/utilities'
 
 export interface SortableContainerItem {
-  id: UniqueIdentifier;
-  columnId: UniqueIdentifier;
+  id: UniqueIdentifier
+  columnId: UniqueIdentifier
 }
 export interface SortableContextProps<T extends SortableContainerItem> {
-  items: T[];
-  setItems: Dispatch<(prevState: T[]) => T[]>;
+  items: T[]
+  setItems: Dispatch<(prevState: T[]) => T[]>
   children: ({
     activeItem,
     items,
   }: {
-    activeItem: T | undefined;
-    items: T[];
-  }) => React.ReactNode;
+    activeItem: T | undefined
+    items: T[]
+  }) => React.ReactNode
 }
 export const SortableContainerContext = <T extends SortableContainerItem>({
   items,
@@ -42,71 +42,71 @@ export const SortableContainerContext = <T extends SortableContainerItem>({
 }: SortableContextProps<T>): JSX.Element => {
   const [activeId, setActiveId] = useState<UniqueIdentifier | undefined>(
     undefined,
-  );
+  )
   const sensors = useSensors(
     useSensor(PointerSensor),
     useSensor(KeyboardSensor, {
       coordinateGetter: sortableKeyboardCoordinates,
     }),
-  );
+  )
 
   const onDragStart = (event: DragStartEvent): void => {
-    setActiveId(event.active.id);
-  };
+    setActiveId(event.active.id)
+  }
   const onDragEnd = (): void => {
-    setActiveId(undefined);
-  };
+    setActiveId(undefined)
+  }
 
   const onDragOver = (event: DragOverEvent): void => {
-    const { active, over } = event;
+    const { active, over } = event
 
-    if (!over) return;
+    if (!over) return
 
-    const _activeId = active.id;
-    const overId = over.id;
+    const _activeId = active.id
+    const overId = over.id
 
-    if (_activeId === overId) return;
+    if (_activeId === overId) return
 
-    const isActiveATask = active.data.current?.type === "Item";
-    const isOverATask = over.data.current?.type === "Item";
+    const isActiveATask = active.data.current?.type === 'Item'
+    const isOverATask = over.data.current?.type === 'Item'
 
-    if (!isActiveATask) return;
+    if (!isActiveATask) return
 
     if (isOverATask) {
       setItems((_items) => {
-        const activeIndex = _items.findIndex((item) => item.id === _activeId);
-        const overIndex = _items.findIndex((item) => item.id === overId);
+        const activeIndex = _items.findIndex((item) => item.id === _activeId)
+        const overIndex = _items.findIndex((item) => item.id === overId)
 
         if (_items[activeIndex]?.columnId !== _items[overIndex]?.columnId) {
-          const activeItem = _items[activeIndex];
-          const overItem = _items[overIndex];
+          const activeItem = _items[activeIndex] as T | undefined
+          const overItem = _items[overIndex] as T | undefined
           if (!activeItem || !overItem) {
             throw new Error(
               `Could not find active item with item ${_activeId} or over item with id ${overId}`,
-            );
+            )
           }
-          activeItem.columnId = overItem.columnId;
-          return arrayMove(_items, activeIndex, overIndex - 1);
+          activeItem.columnId = overItem.columnId
+          return arrayMove(_items, activeIndex, overIndex - 1)
         }
 
-        return arrayMove(_items, activeIndex, overIndex);
-      });
+        return arrayMove(_items, activeIndex, overIndex)
+      })
     } else {
       setItems((_items) => {
-        const activeIndex = _items.findIndex((t) => t.id === _activeId);
+        const activeIndex = _items.findIndex((t) => t.id === _activeId)
 
-        const item = _items[activeIndex];
+        const item = _items[activeIndex] as T | undefined
         if (!item) {
-          throw new Error(`Could not find item with id ${_activeId}`);
+          throw new Error(`Could not find item with id ${_activeId}`)
         }
-        item.columnId = overId;
+        item.columnId = overId
 
-        return arrayMove(_items, activeIndex, activeIndex);
-      });
+        return arrayMove(_items, activeIndex, activeIndex)
+      })
     }
-  };
+  }
 
-  const activeItem = items.find((item) => item.id === activeId);
+  const activeItem = items.find((item) => item.id === activeId)
 
   return (
     <DndContext
@@ -118,26 +118,26 @@ export const SortableContainerContext = <T extends SortableContainerItem>({
     >
       {children({ activeItem, items })}
     </DndContext>
-  );
-};
+  )
+}
 
 export interface SortableContainerProps<T extends SortableContainerItem> {
-  id: UniqueIdentifier;
-  items: T[];
-  children: (item: T) => (isDragging: boolean) => React.ReactNode;
+  id: UniqueIdentifier
+  items: T[]
+  children: (item: T) => (isDragging: boolean) => React.ReactNode
 }
 export const SortableContainer = <T extends SortableContainerItem>({
   id,
   items,
   children,
 }: SortableContainerProps<T>): JSX.Element => {
-  const { setNodeRef } = useDroppable({ id, data: { type: "Column" } });
+  const { setNodeRef } = useDroppable({ id, data: { type: 'Column' } })
   return (
     <SortableContext
       items={items.map((item) => item.id)}
       strategy={verticalListSortingStrategy}
     >
-      <div className="flex flex-col gap-2 w-96" ref={setNodeRef}>
+      <div className='flex flex-col gap-2 w-96' ref={setNodeRef}>
         {items.map((item) => (
           <SortableItem id={item.id} key={item.id}>
             {children(item)}
@@ -145,12 +145,12 @@ export const SortableContainer = <T extends SortableContainerItem>({
         ))}
       </div>
     </SortableContext>
-  );
-};
+  )
+}
 
 export interface SortableItemType {
-  id: UniqueIdentifier;
-  children: (isDragging: boolean) => React.ReactNode;
+  id: UniqueIdentifier
+  children: (isDragging: boolean) => React.ReactNode
 }
 export const SortableItem = ({
   id,
@@ -163,16 +163,16 @@ export const SortableItem = ({
     transform,
     transition,
     isDragging,
-  } = useSortable({ id, data: { type: "Item" } });
+  } = useSortable({ id, data: { type: 'Item' } })
 
   const style = {
     transform: CSS.Transform.toString(transform),
     transition,
-  };
+  }
 
   return (
     <div ref={setNodeRef} style={style} {...attributes} {...listeners}>
       {children(isDragging)}
     </div>
-  );
-};
+  )
+}

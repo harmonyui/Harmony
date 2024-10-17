@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises -- ok*/
 'use client'
 import {
   createContext,

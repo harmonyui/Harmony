@@ -5,7 +5,7 @@ export const useBackgroundLoop = (
   intervalInSeconds: number,
 ) => {
   const callbackRef = useRef(callback)
-  const intervalRef = useRef<NodeJS.Timeout>()
+  const intervalRef = useRef<ReturnType<typeof setTimeout>>()
 
   // Update the callback function if it changes
   useEffect(() => {

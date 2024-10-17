@@ -1,4 +1,4 @@
-import type { NextFont } from "next/dist/compiled/@next/font";
+import type { NextFont } from 'next/dist/compiled/@next/font'
 import {
   Inter,
   Roboto,
@@ -10,107 +10,107 @@ import {
   Mulish,
   Corben,
   Nobile,
-} from "next/font/google";
-import local from "next/font/local";
+} from 'next/font/google'
+import local from 'next/font/local'
 
 export interface Font {
-  id: string;
-  name: string;
-  font: NextFont;
+  id: string
+  name: string
+  font: NextFont
 }
 
 export const inter = Inter({
-  subsets: ["latin"],
-});
+  subsets: ['latin'],
+})
 export const roboto = Roboto({
-  subsets: ["latin"],
-  weight: ["100", "300", "400", "500", "700", "900"],
-});
+  subsets: ['latin'],
+  weight: ['100', '300', '400', '500', '700', '900'],
+})
 
 export const openSans = OpenSans({
-  subsets: ["latin"],
-});
+  subsets: ['latin'],
+})
 
 export const alegreya = Alegreya({
-  subsets: ["latin"],
-});
+  subsets: ['latin'],
+})
 
 export const montserrat = Montserrat({
-  subsets: ["latin"],
-});
+  subsets: ['latin'],
+})
 
 export const lato = Lato({
-  subsets: ["latin"],
-  weight: ["100", "300", "400", "700", "900"],
-});
+  subsets: ['latin'],
+  weight: ['100', '300', '400', '700', '900'],
+})
 
 export const poppins = Poppins({
-  subsets: ["latin"],
-  weight: ["100", "200", "300", "400", "500", "600", "700", "800", "900"],
-});
+  subsets: ['latin'],
+  weight: ['100', '200', '300', '400', '500', '600', '700', '800', '900'],
+})
 
 export const mulish = Mulish({
-  subsets: ["latin"],
-});
+  subsets: ['latin'],
+})
 
 export const corben = Corben({
-  subsets: ["latin"],
-  weight: ["400", "700"],
-});
+  subsets: ['latin'],
+  weight: ['400', '700'],
+})
 
 export const nobile = Nobile({
-  subsets: ["latin"],
-  weight: ["400", "500", "700"],
-});
+  subsets: ['latin'],
+  weight: ['400', '500', '700'],
+})
 
 export const cooper = local({
-  src: "./fonts/CooperLightBT.ttf",
-});
+  src: './fonts/CooperLightBT.ttf',
+})
 
 export const fonts: Font[] = [
   {
     id: inter.className,
-    name: "Inter",
+    name: 'Inter',
     font: inter,
   },
   {
     id: roboto.className,
-    name: "Roboto",
+    name: 'Roboto',
     font: roboto,
   },
   {
     id: openSans.className,
-    name: "Open Sans",
+    name: 'Open Sans',
     font: openSans,
   },
   {
     id: alegreya.className,
-    name: "Alegreya",
+    name: 'Alegreya',
     font: alegreya,
   },
   {
     id: montserrat.className,
-    name: "Montserrat",
+    name: 'Montserrat',
     font: montserrat,
   },
   {
     id: lato.className,
-    name: "Lato",
+    name: 'Lato',
     font: lato,
   },
   {
     id: poppins.className,
-    name: "Poppins",
+    name: 'Poppins',
     font: poppins,
   },
   {
     id: mulish.className,
-    name: "Mulish",
+    name: 'Mulish',
     font: mulish,
   },
   {
     id: cooper.className,
-    name: "Cooper",
+    name: 'Cooper',
     font: cooper,
   },
-];
+]

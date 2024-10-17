@@ -12,7 +12,8 @@
   "scripts": {
     "build": "NODE_ENV=production webpack --mode=production",
     "test": "vitest run",
-    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix ."
+    "format": "prettier --write \"**/*.{prisma,ts,tsx,md,json}\" && eslint --fix",
+    "lint": "eslint ."
   },
   "files": [
     "dist"

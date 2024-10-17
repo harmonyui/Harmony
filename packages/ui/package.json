@@ -51,7 +51,8 @@
     "typescript": "^5.2.2"
   },
   "scripts": {
-    "format": "prettier --write \"**/*.{prisma,ts,tsx,md,json}\" && eslint --fix"
+    "format": "prettier --write \"**/*.{prisma,ts,tsx,md,json}\" && eslint --fix",
+    "lint": "eslint ."
   },
   "eslintConfig": {
     "root": true,
