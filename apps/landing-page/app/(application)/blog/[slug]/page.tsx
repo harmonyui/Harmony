@@ -7,7 +7,6 @@ import { image } from '../../../../sanity/image'
 import { getPost } from '../../../../sanity/queries'
 import { Button } from '@/components/button'
 import { Container } from '@/components/container'
-import { Footer } from '@/components/footer'
 import { GradientBackground } from '@/components/gradient'
 import { Link } from '@/components/link'
 import { Heading, Subheading } from '@/components/text'
@@ -198,7 +197,6 @@ export default async function BlogPost({
           </div>
         </div>
       </Container>
-      <Footer />
     </main>
   )
 }
