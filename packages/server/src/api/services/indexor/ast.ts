@@ -1,4 +1,5 @@
 import { parse } from '@babel/parser'
+import type { NodePath } from '@babel/traverse'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import type { ComponentLocation } from '@harmony/util/src/types/component'
@@ -6,13 +7,35 @@ import {
   getLineAndColumn,
   hashComponentId,
 } from '@harmony/util/src/utils/component'
+import { getSnippetFromNode } from '../publish/code-updator'
 import type {
   Attribute,
+  AttributeNode,
+  ComponentNode,
   ElementNode,
   HarmonyComponent,
   HarmonyContainingComponent,
   PropertyNode,
 } from './types'
+
+const getHashFromLocation = (
+  location: ComponentLocation,
+  codeSnippet: string,
+): string => {
+  const { file: _file, start, end } = location
+  const { line: startLine, column: startColumn } = getLineAndColumn(
+    codeSnippet,
+    start,
+  )
+  const { line: endLine, column: endColumn } = getLineAndColumn(
+    codeSnippet,
+    end,
+  )
+
+  return hashComponentId([
+    { file: _file, startColumn, startLine, endColumn, endLine },
+  ])
+}
 
 export function getAttributeName(attribute: Attribute): string {
   if (attribute.type === 'className') {
@@ -104,25 +127,6 @@ export function getCodeInfoFromFile(
     }
 
     return `${getNameFromNode(name.namespace)}.${getNameFromNode(name.name)}`
-  }
-
-  const getHashFromLocation = (
-    location: ComponentLocation,
-    codeSnippet: string,
-  ): string => {
-    const { file: _file, start, end } = location
-    const { line: startLine, column: startColumn } = getLineAndColumn(
-      codeSnippet,
-      start,
-    )
-    const { line: endLine, column: endColumn } = getLineAndColumn(
-      codeSnippet,
-      end,
-    )
-
-    return hashComponentId([
-      { file: _file, startColumn, startLine, endColumn, endLine },
-    ])
   }
 
   function getLocation(node: t.Node, _file: string) {
@@ -1057,42 +1061,373 @@ export function getCodeInfoFromFile(
         },
       })
 
-      // Only consider functions with JSX elements as potential React components
-      if (containingComponent.children.length > 0) {
-        let componentName = 'AnonymousComponent'
-
-        // Check if the function is assigned to a variable or exported
-        if (
-          t.isVariableDeclarator(path.parent) &&
-          t.isIdentifier(path.parent.id)
-        ) {
-          componentName = path.parent.id.name
-        } else if (
-          t.isExportDeclaration(path.parent) &&
-          path.parent.type !== 'ExportAllDeclaration' &&
-          path.parent.declaration &&
-          'id' in path.parent.declaration &&
-          t.isIdentifier(path.parent.declaration.id)
-        ) {
-          componentName = path.parent.declaration.id.name
-        } else if (
-          t.isFunctionDeclaration(path.node) &&
-          t.isIdentifier(path.node.id)
-        ) {
-          componentName = path.node.id.name
-        } else if (
-          t.isCallExpression(path.parent) &&
-          t.isVariableDeclarator(path.parentPath?.parent) &&
-          t.isIdentifier(path.parentPath.parent.id)
-        ) {
-          componentName = path.parentPath.parent.id.name
-        }
-
-        containingComponent.name = componentName
-        componentDefinitions[containingComponent.name] = containingComponent
-      }
+      containingComponent.name = getComponentName(
+        containingComponent,
+        path,
+        'children',
+      )
+      componentDefinitions[containingComponent.name] = containingComponent
     },
   })
 
   return true
+}
+
+const getComponentName = <Key extends string>(
+  component: { [key in Key]: unknown[] },
+  path: NodePath,
+  key: Key,
+): string => {
+  // Only consider functions with JSX elements as potential React components
+  if (component[key].length > 0) {
+    // Check if the function is assigned to a variable or exported
+    if (t.isVariableDeclarator(path.parent) && t.isIdentifier(path.parent.id)) {
+      return path.parent.id.name
+    } else if (
+      t.isExportDeclaration(path.parent) &&
+      path.parent.type !== 'ExportAllDeclaration' &&
+      path.parent.declaration &&
+      'id' in path.parent.declaration &&
+      t.isIdentifier(path.parent.declaration.id)
+    ) {
+      return path.parent.declaration.id.name
+    } else if (
+      t.isFunctionDeclaration(path.node) &&
+      t.isIdentifier(path.node.id)
+    ) {
+      return path.node.id.name
+    } else if (
+      t.isCallExpression(path.parent) &&
+      t.isVariableDeclarator(path.parentPath?.parent) &&
+      t.isIdentifier(path.parentPath.parent.id)
+    ) {
+      return path.parentPath.parent.id.name
+    }
+  }
+  return 'AnonymousComponent'
+}
+
+export const createGraph = (file: string, code: string) => {
+  const ast = parse(code, {
+    sourceType: 'module',
+    plugins: ['jsx', 'typescript'],
+  })
+
+  function getLocation(node: t.Node, _file: string) {
+    if (!node.loc) {
+      return undefined
+    }
+
+    return {
+      file: _file,
+      start: node.loc.start.index,
+      end: node.loc.end.index,
+    }
+  }
+
+  const graph = new ASTGraph(ast.program)
+  traverse(ast, {
+    'ArrowFunctionExpression|FunctionDeclaration'(path) {
+      if (
+        !t.isArrowFunctionExpression(path.node) &&
+        !t.isFunctionDeclaration(path.node)
+      ) {
+        return
+      }
+      const location = getLocation(path.node, file)
+      if (!location) return
+
+      const elements: ElementNode[] = []
+      const componentNode: ComponentNode = {
+        change: 'none',
+        children: [],
+        elements,
+        location,
+        name: '',
+        path,
+        node: path.node,
+        parents: [],
+        props: [],
+      }
+
+      const getNameFromExpression = (
+        node: t.JSXExpressionContainer | t.JSXText,
+      ): string | undefined => {
+        if (
+          t.isJSXExpressionContainer(node) &&
+          t.isIdentifier(node.expression)
+        ) {
+          return node.expression.name
+        }
+
+        return undefined
+      }
+
+      path.traverse({
+        JSXElement(elementPath) {
+          const elementLocation = getLocation(elementPath.node, file)
+          if (!elementLocation) return
+          const attributes: AttributeNode[] = []
+          const elementNode: ElementNode = {
+            id: getHashFromLocation(elementLocation, code),
+            attributes,
+            location: elementLocation,
+            next: [],
+            prev: [],
+            path: elementPath,
+            node: elementPath.node,
+            parent: componentNode,
+            change: 'none',
+            name: t.isJSXIdentifier(elementPath.node.openingElement.name)
+              ? elementPath.node.openingElement.name.name
+              : '',
+          }
+
+          elementPath.traverse({
+            JSXAttribute(attrPath) {
+              const attributeLocation = getLocation(attrPath.node, file)
+              if (!attributeLocation) return
+
+              const attribute: AttributeNode = {
+                change: 'none',
+                index: attributes.length,
+                location: attributeLocation,
+                name: t.isJSXExpressionContainer(attrPath.node.value)
+                  ? (getNameFromExpression(attrPath.node.value) ?? '')
+                  : '',
+                parent: elementNode,
+                next: [],
+                prev: [],
+                properties: [],
+                path: attrPath,
+                node: attrPath.node,
+              }
+              attributes.push(attribute)
+            },
+          })
+
+          elementPath.node.children.forEach((child, i) => {
+            if (t.isJSXExpressionContainer(child) || t.isJSXText(child)) {
+              const textLocation = getLocation(child, file)
+              if (!textLocation) return
+
+              const childNode = elementPath.get(`children.${i}`) as NodePath
+              const textNode: AttributeNode = {
+                index: attributes.length,
+                properties: [],
+                location: textLocation,
+                next: [],
+                prev: [],
+                path: childNode,
+                node: childNode.node,
+                parent: elementNode,
+                change: 'none',
+                name: getNameFromExpression(child) ?? 'children',
+              }
+
+              attributes.push(textNode)
+            }
+          })
+
+          elements.push(elementNode)
+        },
+      })
+
+      componentNode.name = getComponentName(componentNode, path, 'elements')
+      graph.addComponent(componentNode)
+    },
+  })
+
+  return graph
+}
+
+export class ASTGraph {
+  private components = new Map<string, ComponentNode>()
+  private nodeCreator = new NodeCreator()
+
+  constructor(private program: t.Program) {}
+
+  // Add a new component to the graph
+  public addComponent(component: ComponentNode) {
+    this.components.set(component.name, component)
+  }
+
+  // Get a component by name
+  public getComponent(name: string): ComponentNode | undefined {
+    return this.components.get(name)
+  }
+
+  public getElement(id: string): ElementNode | undefined {
+    for (const component of Array.from(this.components.values())) {
+      const element = component.elements.find((el) => el.id === id)
+      if (element) return element
+    }
+
+    return undefined
+  }
+
+  // Add a JSX element to a component
+  public addJSXElement(componentName: string, jsxElement: ElementNode) {
+    const component = this.getComponent(componentName)
+    if (component) {
+      component.elements.push(jsxElement)
+      jsxElement.parent = component
+    }
+  }
+
+  // Connect parent-child components
+  public connectComponents(parentName: string, childName: string) {
+    const parentComponent = this.getComponent(parentName)
+    const childComponent = this.getComponent(childName)
+    if (parentComponent && childComponent) {
+      parentComponent.children.push(childComponent)
+      childComponent.parents.push(parentComponent)
+      childComponent.elements.forEach((element) => {
+        element.next.push(
+          ...parentComponent.elements.filter((el) => el.name === childName),
+        )
+      })
+      parentComponent.elements.forEach((element) => {
+        element.prev.push(...childComponent.elements)
+      })
+    }
+  }
+
+  public getCode() {
+    return getSnippetFromNode(this.program)
+  }
+
+  private addProperty(componentName: string, property: PropertyNode) {
+    const component = this.getComponent(componentName)
+    if (component) {
+      component.node.params.push(property.node)
+      component.props.push(property)
+    }
+  }
+
+  private connectAttributeToComponentProperty(
+    attribute: AttributeNode,
+    componentProperty: PropertyNode,
+  ) {
+    attribute.location = { file: '', start: 0, end: 0 }
+    attribute.change = 'update'
+    attribute.properties = [componentProperty]
+    attribute.name = componentProperty.name
+    attribute.path?.replaceWith(
+      t.jSXExpressionContainer(t.identifier(componentProperty.name)),
+    )
+  }
+
+  private addAttribute(
+    elementId: string,
+    attributeName: string,
+    attributeValue: string,
+  ) {
+    const element = this.getElement(elementId)
+    if (element) {
+      const attribute = this.nodeCreator.createAttributeNode(
+        attributeName,
+        attributeValue,
+        element,
+      )
+      element.attributes.push(attribute)
+      if (attributeName === 'children') {
+        const node = t.jsxText(attributeValue)
+        attribute.node = node
+        // element.path?.replaceWith(
+        //   t.jsxElement(
+        //     element.node.openingElement,
+        //     t.jsxClosingElement(
+        //       t.jsxIdentifier(element.node.openingElement.name.name),
+        //     ),
+        //     [node],
+        //     false,
+        //   ),
+        // )
+        element.path?.replaceWith(
+          t.jsxElement(
+            t.jsxOpeningElement(
+              element.node.openingElement.name,
+              element.node.openingElement.attributes,
+            ),
+            t.jsxClosingElement(
+              t.jsxIdentifier(element.node.openingElement.name.name),
+            ),
+            [node],
+            false,
+          ),
+        )
+      } else {
+        element.path?.node.openingElement.attributes.push(
+          t.jSXAttribute(t.jsxIdentifier(attribute.name), attribute.node),
+        )
+      }
+    }
+  }
+
+  // Transform the properties of a component
+  public unlinkAttribute(elementId: string, attributeName: string) {
+    const element = this.getElement(elementId)
+
+    if (element) {
+      const attribute = this.findAttribute(element, attributeName)
+      if (attribute && isLiteralNode(attribute.node)) {
+        const oldNode = attribute.node
+        const newPropertyName = attribute.name
+        const componentProperty =
+          this.nodeCreator.createPropertyNode(newPropertyName)
+        this.connectAttributeToComponentProperty(attribute, componentProperty)
+        this.addProperty(element.parent.name, componentProperty)
+        element.next.forEach((nextElement) => {
+          this.addAttribute(
+            nextElement.id,
+            newPropertyName,
+            getLiteralValue(oldNode),
+          )
+        })
+      }
+    }
+  }
+
+  private findAttribute(
+    element: ElementNode,
+    attributeName: string,
+  ): AttributeNode | undefined {
+    return element.attributes.find((attr) => attr.name === attributeName)
+  }
+}
+
+class NodeCreator {
+  public createPropertyNode(name: string): PropertyNode {
+    return {
+      name,
+      location: { file: '', start: 0, end: 0 },
+      change: 'none',
+      node: t.identifier(name),
+      path: null,
+      next: [],
+    }
+  }
+
+  public createAttributeNode(
+    name: string,
+    value: string,
+    parent: ElementNode,
+  ): AttributeNode {
+    return {
+      name,
+      location: { file: '', start: 0, end: 0 },
+      change: 'none',
+      node:
+        name === 'children'
+          ? t.jSXExpressionContainer(t.stringLiteral(value))
+          : t.jsxAttribute(t.jsxIdentifier(name), t.stringLiteral(value)),
+      path: null,
+      properties: [],
+      next: [],
+      prev: [],
+      index: parent.attributes.length,
+      parent,
+    }
+  }
 }

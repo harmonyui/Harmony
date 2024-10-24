@@ -1,12 +1,20 @@
 import { describe, it, expect } from 'vitest'
 import * as t from '@babel/types'
 import type {
+  AttributeNode,
+  ComponentNode,
   ElementNode,
   HarmonyComponent,
   HarmonyContainingComponent,
 } from './types'
 import { getCodeInfoAndNormalizeFromFiles } from './indexor'
-import { getCodeInfoFromFile, getPropertyValue, getPropertyValues } from './ast'
+import {
+  ASTGraph,
+  createGraph,
+  getCodeInfoFromFile,
+  getPropertyValue,
+  getPropertyValues,
+} from './ast'
 
 describe('indexor', () => {
   const expectLocationOfString = (
@@ -19,6 +27,41 @@ describe('indexor', () => {
     expect(substr).toBe(expectedString)
   }
   describe('getCodeInfoFromFile', () => {
+    it('Should work', () => {
+      const graph = createGraph(
+        'this is a file',
+        `
+          const Component0 = ({ className, children }) => {
+            return <div className={className}>{children}</div>
+          }
+          const Component1 = ({ className }) => {
+            return <Component0 className={className}>Hello There</Component0>
+          }
+          const UnlinkComponent1 = () => {
+            return <div><Component1/><Component1/></div>
+          }
+        `,
+      )
+      graph.connectComponents('Component1', 'Component0')
+      graph.connectComponents('UnlinkComponent1', 'Component1')
+      graph.unlinkAttribute(
+        graph.getComponent('Component1')?.elements[0].id,
+        'children',
+      )
+      const code = graph.getCode()
+      const result = `
+          const Component0 = ({ className, children }) => {
+            return <div className={className}>{children}</div>
+          }
+          const Component1 = ({ className, children }) => {
+            return <Component0 className={className}>{children}</Component0>
+          }
+          const UnlinkComponent1 = () => {
+            return <div><Component1>Hello there</Component1><Component1>Hello there</Component1></div>
+          }
+        `
+      expect(code).toBe(result)
+    })
     it('Should index dynamic text with multiple children properly', () => {
       const componentElements: ElementNode[] = []
       const componentDefinitions: Record<string, HarmonyContainingComponent> =

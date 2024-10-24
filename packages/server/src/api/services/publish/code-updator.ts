@@ -620,7 +620,7 @@ export class CodeUpdator {
   }
 }
 
-const getSnippetFromNode = (node: t.Node): string => {
+export const getSnippetFromNode = (node: t.Node): string => {
   const result = generator(node)
 
   return result.code
