@@ -14,7 +14,7 @@ import type { HarmonyComponent, Attribute } from '../indexor/types'
 import type { GitRepository } from '../../repository/git/types'
 import { indexForComponents } from '../indexor/indexor'
 import type { LiteralNode } from '../indexor/ast'
-import { isLiteralNode } from '../indexor/ast'
+import { getAttributeName, isLiteralNode } from '../indexor/ast'
 import { addPrefixToClassName, converter } from './css-conveter'
 
 export type FileUpdateInfo = Record<
@@ -558,6 +558,33 @@ export class CodeUpdator {
         }
         break
       case 'component':
+        {
+          const value = JSON.parse(update.value) as {
+            type: string
+            value: string
+          }
+          if (update.name === 'replace-element' && value.type === 'image') {
+            const srcAttribute = attributes.find(
+              (attribute) =>
+                attribute.type === 'property' &&
+                getAttributeName(attribute) === 'src',
+            )
+            if (srcAttribute && isLiteralNode(srcAttribute.node)) {
+              const location = srcAttribute.location
+              updateLiteralNode(srcAttribute.node, value.value)
+
+              results.push({
+                location: {
+                  file: location.file,
+                  start: location.start,
+                  end: location.end,
+                },
+                dbLocation: location,
+                node: srcAttribute.node,
+              })
+            }
+          }
+        }
         break
       default:
         throw new Error('Invalid use case')

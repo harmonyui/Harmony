@@ -30,7 +30,8 @@ type Account = AccountServer
 export const WelcomeDisplay: React.FunctionComponent<{
   teamId: string | undefined
   account: Account | undefined
-}> = ({ teamId, account: _account }) => {
+  isNewMockAccount: boolean
+}> = ({ teamId, account: _account, isNewMockAccount }) => {
   //const queryAccount = api.setup.getAccount.useQuery();
   const { mutate: createAccount } = api.setup.createAccount.useMutation()
   const [account, setAccount] = useState<Account | undefined>(_account)
@@ -42,7 +43,13 @@ export const WelcomeDisplay: React.FunctionComponent<{
   const onWelcomeContinue = async (data: Account) => {
     return new Promise<boolean>((resolve) =>
       createAccount(
-        { account: data, teamId },
+        {
+          account: data,
+          teamId,
+          userId: isNewMockAccount
+            ? `user_${data.role.toLowerCase()}`
+            : undefined,
+        },
         {
           onSuccess(account) {
             setAccount(account)

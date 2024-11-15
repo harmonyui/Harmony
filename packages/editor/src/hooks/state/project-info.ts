@@ -3,6 +3,7 @@ import type { PullRequestState } from './pull-request'
 import type { ComponentUpdateState } from './component-update'
 import { createHarmonySlice } from './factory'
 import type { DataLayerState } from './data-layer'
+import type { ImageCdnState } from './image-cdn'
 
 export interface ProjectInfoState {
   currentBranch: { name: string; id: string }
@@ -19,12 +20,14 @@ export interface ProjectInfoState {
     branchId: string
     repositoryId: string | undefined
     environment: Environment
+    cdnImages?: string[]
+    uploadImage?: (form: FormData) => Promise<string>
   }) => Promise<void>
 }
 
 export const createProjectInfoSlice = createHarmonySlice<
   ProjectInfoState,
-  PullRequestState & ComponentUpdateState & DataLayerState
+  PullRequestState & ComponentUpdateState & DataLayerState & ImageCdnState
 >((set, get) => ({
   branches: [],
   showWelcomeScreen: false,
@@ -40,10 +43,19 @@ export const createProjectInfoSlice = createHarmonySlice<
   updateWelcomeScreen(value: boolean) {
     set({ showWelcomeScreen: value })
   },
-  async initializeProject({ branchId, repositoryId, environment }) {
+  async initializeProject({
+    branchId,
+    repositoryId,
+    environment,
+    cdnImages,
+    uploadImage,
+  }) {
     if (get().client === undefined) {
       get().initializeDataLayer(environment, async () => '')
     }
+
+    set({ cdnImages })
+    uploadImage && get().setUploadImage(uploadImage)
 
     if (!branchId && !repositoryId) {
       set({

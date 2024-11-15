@@ -436,6 +436,13 @@ export function getCodeInfoFromFile(
               originalCode,
             )
 
+            //We we are mapping over elements, then the same jsxelement gets called twice
+            if (
+              elementInstances.find((el) => el.id === jsxElementDefinition?.id)
+            ) {
+              return
+            }
+
             const parentComponent = containingComponent
 
             type AttributeType = 'text' | 'className' | 'property'

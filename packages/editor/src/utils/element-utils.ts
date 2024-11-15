@@ -124,3 +124,12 @@ export const createComponentId = (element: HTMLElement): string => {
   }
   return btoa(path.join(' > '))
 }
+
+export const getImageSrc = (image: HTMLImageElement): string => {
+  const result = /<img[^>]*\s+src=['"]([^'"]+)['"]/.exec(image.outerHTML)
+  if (result) {
+    return result[1]
+  }
+
+  return ''
+}

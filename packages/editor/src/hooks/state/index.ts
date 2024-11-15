@@ -7,6 +7,7 @@ import { createHarmonyStore } from './factory'
 import { createComponentUpdateSlice } from './component-update'
 import { createDataLayerSlice } from './data-layer'
 import { createQueryStateSlice } from './query-state'
+import { createImageCDNSlice } from './image-cdn'
 
 export const useHarmonyStore = createHarmonyStore(
   createComponentStateSlice,
@@ -17,4 +18,5 @@ export const useHarmonyStore = createHarmonyStore(
   createComponentUpdateSlice,
   createDataLayerSlice,
   createQueryStateSlice,
+  createImageCDNSlice,
 )

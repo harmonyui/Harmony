@@ -26,6 +26,7 @@ type AccountCreate = z.infer<typeof accountCreateSchema>
 const createSetupSchema = z.object({
   account: accountCreateSchema,
   teamId: z.optional(z.string()),
+  userId: z.optional(z.string()),
 })
 
 export const setupRoute = createTRPCRouter({
@@ -49,7 +50,7 @@ export const setupRoute = createTRPCRouter({
   createAccount: registerdProcedure
     .input(createSetupSchema)
     .mutation(async ({ ctx, input }) => {
-      const userId = ctx.session.auth.userId
+      const userId = input.userId ?? ctx.session.auth.userId
 
       const cookie = cookies()
       cookie.set('harmony-user-id', userId)

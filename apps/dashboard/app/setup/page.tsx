@@ -31,10 +31,14 @@ export default async function SetupPage({
 
   const cookie = cookies()
   const { userId } = auth()
-  const authSession = await getServerAuthSession(
-    userId,
-    cookie.get('harmony-user-id')?.value,
-  )
+  const mockUserId = cookie.get('harmony-user-id')?.value
+  const authSession = await getServerAuthSession(userId, mockUserId)
 
-  return <WelcomeDisplay teamId={teamId} account={authSession?.account} />
+  return (
+    <WelcomeDisplay
+      teamId={teamId}
+      account={authSession?.account}
+      isNewMockAccount={mockUserId === 'none'}
+    />
+  )
 }

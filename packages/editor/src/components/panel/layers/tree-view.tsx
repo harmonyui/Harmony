@@ -16,10 +16,11 @@ import {
   getComponentId,
   getComponentIdAndChildIndex,
 } from '../../../utils/element-utils'
-import type { ImageType } from '../add-image-panel'
-import { AddImagePanel } from '../add-image-panel'
 import { ComponentType } from '../design/types'
 import { getComponentType } from '../design/utils'
+import { useHarmonyStore } from '../../../hooks/state'
+import { useImageButton } from '../image/image-button'
+import { isImageElement } from '../../inspector/inspector'
 
 export interface TransformNode extends Record<string, NonNullable<unknown>> {
   id: string
@@ -35,13 +36,14 @@ interface TreeViewProps {
   items: TreeData<HTMLElement>[]
 }
 export const TreeView = ({ items }: TreeViewProps) => {
-  const {
-    onAttributesChange,
-    onComponentHover,
-    onComponentSelect,
-    selectedComponent,
-  } = useHarmonyContext()
-  const [isImageOpen, setIsImageOpen] = useState(false)
+  const { onAttributesChange } = useHarmonyContext()
+  const onComponentSelect = useHarmonyStore((store) => store.selectElement)
+  const onComponentHover = useHarmonyStore((store) => store.hoverComponent)
+  const selectedComponent = useHarmonyStore(
+    (store) => store.selectedComponent,
+  )?.element
+  const { onImage: onImageOpen } = useImageButton()
+
   const [multiSelect, setMultiSelect] = useState<{
     start: HTMLElement
     end: HTMLElement
@@ -193,59 +195,36 @@ export const TreeView = ({ items }: TreeViewProps) => {
     onAttributesChange([update])
   })
 
-  const handleAddImage = useEffectEvent((value: string, type: ImageType) => {
-    if (!selectedComponent) return
-    setIsImageOpen(false)
-    const { childIndex, componentId } =
-      getComponentIdAndChildIndex(selectedComponent)
-    const update: ComponentUpdateWithoutGlobal = {
-      type: 'component',
-      name: 'replace-element',
-      componentId,
-      childIndex,
-      oldValue: JSON.stringify({ type, value: '' }),
-      value: JSON.stringify({ type, value }),
-    }
-    onAttributesChange([update])
-  })
-
   return (
-    <>
-      <Tree
-        selectedId={getComponentId(selectedComponent)}
-        data={items}
-        onDrag={onDrag}
-        onHover={onHover}
-        onSelect={onSelect}
-        contextMenu={({ data }) => (
-          <TreeViewItem
-            onAddImage={() => setIsImageOpen(true)}
-            onAddAbove={() =>
-              handleAddDeleteElement(data.data, 'create', 'above')
-            }
-            onAddBelow={() =>
-              handleAddDeleteElement(data.data, 'create', 'below')
-            }
-            onDelete={() => handleAddDeleteElement(data.data, 'delete')}
-            onAddText={() => handleAddText(data.data)}
-            onWrap={() => handleWrapElement('wrap')}
-            onUnWrap={() => handleWrapElement('unwrap')}
-          />
-        )}
-      >
-        {({ data }) => (
-          <>
-            <ComponentIcon type={getComponentType(data.data)} />
-            {data.name}
-          </>
-        )}
-      </Tree>
-      <AddImagePanel
-        isOpen={isImageOpen}
-        onClose={() => setIsImageOpen(false)}
-        onSave={handleAddImage}
-      />
-    </>
+    <Tree
+      selectedId={getComponentId(selectedComponent)}
+      data={items}
+      onDrag={onDrag}
+      onHover={onHover}
+      onSelect={onSelect}
+      contextMenu={({ data }) => (
+        <TreeViewItem
+          onAddImage={() => onImageOpen && onImageOpen(true)}
+          onAddAbove={() =>
+            handleAddDeleteElement(data.data, 'create', 'above')
+          }
+          onAddBelow={() =>
+            handleAddDeleteElement(data.data, 'create', 'below')
+          }
+          onDelete={() => handleAddDeleteElement(data.data, 'delete')}
+          onAddText={() => handleAddText(data.data)}
+          onWrap={() => handleWrapElement('wrap')}
+          onUnWrap={() => handleWrapElement('unwrap')}
+        />
+      )}
+    >
+      {({ data }) => (
+        <>
+          <ComponentIcon type={getComponentType(data.data)} />
+          {data.name}
+        </>
+      )}
+    </Tree>
   )
 }
 
@@ -279,26 +258,31 @@ const TreeViewItem = ({
   onAddImage,
   onAddText,
 }: TreeViewItemProps) => {
-  const { selectedComponent } = useHarmonyContext()
+  const hoveredComponent = useHarmonyStore((store) => store.hoveredComponent)
   const isGroup = useMemo(() => {
-    if (selectedComponent) {
-      if (selectedComponent.children.length > 0) {
+    if (hoveredComponent) {
+      if (hoveredComponent.children.length > 0) {
         return true
       }
     }
     return false
-  }, [selectedComponent])
+  }, [hoveredComponent])
 
   const isEmptyDiv = useMemo(() => {
-    if (selectedComponent) {
+    if (hoveredComponent) {
       if (
-        selectedComponent.children.length === 0 &&
-        selectedComponent.tagName === 'DIV'
+        hoveredComponent.children.length === 0 &&
+        hoveredComponent.tagName === 'DIV'
       ) {
         return true
       }
     }
-  }, [selectedComponent])
+  }, [hoveredComponent])
+
+  const isImage = useMemo(
+    () => hoveredComponent && isImageElement(hoveredComponent),
+    [hoveredComponent],
+  )
 
   const items: DropdownItem<string>[] = [
     {
@@ -354,6 +338,17 @@ const TreeViewItem = ({
       name: (
         <TreeViewPopupLineItem onClick={onAddImage}>
           Add Image/SVG
+        </TreeViewPopupLineItem>
+      ),
+    })
+  }
+
+  if (isImage) {
+    items.push({
+      id: 'add-image',
+      name: (
+        <TreeViewPopupLineItem onClick={onAddImage}>
+          Replace Image/SVG
         </TreeViewPopupLineItem>
       ),
     })

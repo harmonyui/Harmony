@@ -18,7 +18,13 @@ import { getElementFiber } from './inspector/fiber'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
-  'repositoryId' | 'fonts' | 'environment' | 'source' | 'overlay'
+  | 'repositoryId'
+  | 'fonts'
+  | 'environment'
+  | 'source'
+  | 'overlay'
+  | 'cdnImages'
+  | 'uploadImage'
 > & {
   local?: boolean
 }

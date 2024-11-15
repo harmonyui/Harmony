@@ -323,13 +323,17 @@ export const createComponentUpdateSlice =
               textNode.dataset.harmonyText = 'true'
               element.appendChild(textNode)
             } else if (type === 'image') {
-              const img = document.createElement('img')
-              img.src = actionValue
-              img.dataset.harmonyId = update.componentId
-              img.className = ''
-              img.style.width = '100px'
-              img.style.height = '100px'
-              element.replaceWith(img)
+              if (element instanceof HTMLImageElement) {
+                element.src = actionValue
+              } else {
+                const img = document.createElement('img')
+                img.src = actionValue
+                img.dataset.harmonyId = update.componentId
+                img.className = ''
+                img.style.width = '100px'
+                img.style.height = '100px'
+                element.replaceWith(img)
+              }
             } else {
               element.outerHTML = actionValue
               element.dataset.harmonyId = update.componentId
