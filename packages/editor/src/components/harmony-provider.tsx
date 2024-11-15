@@ -40,6 +40,8 @@ export interface HarmonyProviderProps {
   environment?: Environment
   source?: Source
   overlay?: boolean
+  cdnImages?: string[]
+  uploadImage?: (data: FormData) => Promise<string>
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   repositoryId,
@@ -47,6 +49,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   branchId,
   fonts,
   setup,
+  cdnImages,
+  uploadImage,
   environment = 'production',
   source = 'document',
   overlay = true,
@@ -108,6 +112,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         branchId,
         repositoryId,
         environment,
+        cdnImages,
+        uploadImage,
       })
     }
 

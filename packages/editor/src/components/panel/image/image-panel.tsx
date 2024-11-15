@@ -13,6 +13,7 @@ import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
 import { Panels } from '../_common/panel/types'
 import { isImageElement } from '../../inspector/inspector'
+import { UploadImageModal } from './upload-image-modal'
 
 export type ImageType = 'image' | 'svg'
 
@@ -29,6 +30,10 @@ export const ImagePanel: React.FunctionComponent = () => {
 
 export const AddImagePanel: React.FunctionComponent = () => {
   const rootComponent = useHarmonyStore((state) => state.rootComponent)
+  const cdnImages = useHarmonyStore((state) => state.cdnImages)
+  const uploadImage = useHarmonyStore((state) => state.uploadImage)
+  const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
+
   const selectedComponent = useHarmonyStore((state) => {
     const selected = state.selectedComponent?.element
     if (selected && isImageElement(selected)) {
@@ -39,7 +44,7 @@ export const AddImagePanel: React.FunctionComponent = () => {
   const { onAttributesChange } = useHarmonyContext()
 
   const { imageTags, svgTags } = useMemo(() => {
-    const images: string[] = []
+    const images: string[] = cdnImages || []
     const svgs: string[] = []
     rootComponent &&
       recurseElements(rootComponent.element, [
@@ -64,7 +69,7 @@ export const AddImagePanel: React.FunctionComponent = () => {
       ])
 
     return { imageTags: images, svgTags: svgs }
-  }, [rootComponent])
+  }, [rootComponent, cdnImages])
 
   const [selectedImage, setSelectedImage] = useState<string>()
 
@@ -99,38 +104,49 @@ export const AddImagePanel: React.FunctionComponent = () => {
     handleAddImage(selectedImage, type)
   }
 
+  const onUpload = (): void => {
+    setIsUploadModalOpen(true)
+  }
+
   return (
-    <div className='hw-flex hw-flex-col hw-justify-between hw-max-w-[300px] hw-h-full'>
-      {selectedComponent ? (
-        <>
-          <div className='hw-grid hw-grid-cols-3 hw-gap-x-2 hw-gap-y-4 hw-overflow-auto hw-max-h-[480px]'>
-            {imageTags.map((image) => (
-              <ImageCard
-                key={image}
-                selected={selectedImage === image}
-                image={image}
-                onClick={() => onImageClick(image)}
-              />
-            ))}
-            {svgTags.map((svg) => (
-              <SVGCard
-                key={svg}
-                selected={selectedImage === svg}
-                svg={svg}
-                onClick={() => onImageClick(svg)}
-              />
-            ))}
-          </div>
-          <div className='hw-flex hw-justify-end hw-mt-4'>
-            <Button className='hw-ml-2' onClick={onSave}>
-              Select
-            </Button>
-          </div>
-        </>
-      ) : (
-        <div>Select an image to update</div>
-      )}
-    </div>
+    <>
+      <div className='hw-flex hw-flex-col hw-justify-between hw-max-w-[300px] hw-h-full'>
+        {selectedComponent ? (
+          <>
+            <div className='hw-grid hw-grid-cols-3 hw-gap-x-2 hw-gap-y-4 hw-overflow-auto hw-max-h-[480px]'>
+              {imageTags.map((image) => (
+                <ImageCard
+                  key={image}
+                  selected={selectedImage === image}
+                  image={image}
+                  onClick={() => onImageClick(image)}
+                />
+              ))}
+              {svgTags.map((svg) => (
+                <SVGCard
+                  key={svg}
+                  selected={selectedImage === svg}
+                  svg={svg}
+                  onClick={() => onImageClick(svg)}
+                />
+              ))}
+            </div>
+            <div className='hw-flex hw-justify-end hw-mt-4'>
+              {uploadImage ? <Button onClick={onUpload}>Upload</Button> : null}
+              <Button className='hw-ml-2' onClick={onSave}>
+                Select
+              </Button>
+            </div>
+          </>
+        ) : (
+          <div>Select an image to update</div>
+        )}
+      </div>
+      <UploadImageModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+      />
+    </>
   )
 }
 
