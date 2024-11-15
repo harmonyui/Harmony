@@ -58,8 +58,8 @@ const useDraggablePanel = ({
       if (!parent) throw new Error('Parent not found')
 
       return {
-        top: element.offsetTop - parent.offsetTop,
-        bottom: window.innerHeight - element.offsetHeight,
+        top: element.offsetTop - parent.offsetTop + window.scrollX,
+        bottom: window.innerHeight - element.offsetHeight + window.scrollY,
         left: element.offsetLeft - parent.offsetLeft,
         right: window.innerWidth - element.offsetWidth,
       }

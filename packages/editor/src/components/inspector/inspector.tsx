@@ -194,10 +194,9 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   scale,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const overlayRef = useRef<Overlay>()
   const { onFlexToggle: onFlexClick, error, setError } = useHarmonyContext()
   const isDemo = useHarmonyStore((state) => state.isDemo)
-  const updateOverlay = useHarmonyStore((state) => state.updateCounter)
+
   const source = useHarmonyStore((state) => state.source)
   const isOverlay = useHarmonyStore((state) => state.isOverlay)
 
@@ -213,15 +212,13 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     [panel],
   )
 
-  useEffect(() => {
-    if (containerRef.current && overlayRef.current?.parent !== parentElement) {
-      overlayRef.current = new Overlay(
-        containerRef.current,
-        parentElement!,
-        offsetElement,
-      )
-    }
-  }, [overlayRef, parentElement, containerRef])
+  const overlayRef = useOverlayRef({
+    parentElement,
+    containerElement: containerRef.current,
+    offsetElement,
+    scale,
+    inspectorState,
+  })
 
   const { isDragging } = useSnapping({
     enabled: false,
@@ -347,28 +344,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     },
     scale,
   })
-
-  useEffect(() => {
-    const container = containerRef.current
-    if (container === null || parentElement === undefined) return
-
-    if (overlayRef.current === undefined) {
-      overlayRef.current = new Overlay(container, parentElement, offsetElement)
-    }
-
-    if (selectedComponent) {
-      overlayRef.current.select(
-        selectedComponent,
-        scale,
-        false,
-        inspectorState,
-        { onFlexClick },
-      )
-    } else {
-      overlayRef.current.remove('select')
-    }
-    overlayRef.current.remove('hover')
-  }, [updateOverlay, scale, inspectorState])
 
   useEffect(() => {
     const onEscape = () => {
@@ -641,6 +616,75 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       <Alert label={error} setLabel={setError} />
     </>
   )
+}
+
+const useOverlayRef = ({
+  parentElement,
+  containerElement,
+  offsetElement,
+  scale,
+  inspectorState,
+}: {
+  parentElement: HTMLElement | undefined
+  containerElement: HTMLElement | null
+  offsetElement: HTMLIFrameElement | undefined
+  scale: number
+  inspectorState: InspectorState
+}): React.MutableRefObject<Overlay | undefined> => {
+  const overlayRef = useRef<Overlay>()
+  const update = useHarmonyStore((state) => state.updateTheCounter)
+  const updateOverlay = useHarmonyStore((state) => state.updateCounter)
+  const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
+  const { onFlexToggle: onFlexClick } = useHarmonyContext()
+
+  //Create the overlay
+  useEffect(() => {
+    if (containerElement && overlayRef.current?.parent !== parentElement) {
+      overlayRef.current = new Overlay(
+        containerElement,
+        parentElement!,
+        offsetElement,
+      )
+    }
+  }, [overlayRef, parentElement, containerElement, offsetElement])
+
+  //Update the overlay when the counter has changed
+  useEffect(() => {
+    const container = containerElement
+    if (container === null || parentElement === undefined) return
+
+    if (overlayRef.current === undefined) {
+      overlayRef.current = new Overlay(container, parentElement, offsetElement)
+    }
+
+    if (selectedComponent) {
+      overlayRef.current.select(
+        selectedComponent.element,
+        scale,
+        false,
+        inspectorState,
+        { onFlexClick },
+      )
+    } else {
+      overlayRef.current.remove('select')
+    }
+    overlayRef.current.remove('hover')
+  }, [updateOverlay, scale, inspectorState])
+
+  //Change the counter when we scroll to keep the overlay rect up to date
+  useEffect(() => {
+    const onScroll = () => {
+      update()
+    }
+
+    document.addEventListener('scroll', onScroll)
+
+    return () => {
+      document.removeEventListener('scroll', onScroll)
+    }
+  }, [update])
+
+  return overlayRef
 }
 
 // interface Box {
@@ -1283,6 +1327,9 @@ export function getNestedBoundingClientRect({
     // Extract the scaling factors from the transform matrix
     const scaleX = transformMatrix.a
     const scaleY = transformMatrix.d
+
+    //There is a bug where the boundaryWindow is messed up on scrolling in a non-zoomable container, so just return
+    if (scaleX === 1 && scaleY === 1) return targetRect
 
     if (offsetElement) {
       targetRect.top *= scaleY
