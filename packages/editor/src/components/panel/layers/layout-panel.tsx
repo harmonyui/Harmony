@@ -1,7 +1,8 @@
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import type { TreeData } from '@harmony/ui/src/components/core/tree'
+import { Input } from '@harmony/ui/src/components/core/input'
 import { useHarmonyContext } from '../../harmony-context'
-import { isSelectable } from '../../inspector/inspector'
+import { isSelectable, isSizeThreshold } from '../../inspector/inspector'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { useHarmonyStore } from '../../../hooks/state'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
@@ -19,6 +20,15 @@ export const LayoutPanel: React.FunctionComponent = () => {
   )
 }
 
+const isLayerSelectable = (element: HTMLElement, scale: number): boolean => {
+  const style = getComputedStyle(element)
+  //Layers that have absolute can be selectable
+  return (
+    isSelectable(element, scale) ||
+    (style.position === 'absolute' && isSizeThreshold(element, scale))
+  )
+}
+
 export const useComponentTreeItems = (
   root: ComponentElement | undefined,
   selectedComponent: HTMLElement | undefined,
@@ -29,7 +39,7 @@ export const useComponentTreeItems = (
     (children: ComponentElement[]): TreeData<HTMLElement>[] | undefined => {
       const filtered = children.filter(
         (child) =>
-          isSelectable(child.element, scale) &&
+          isLayerSelectable(child.element, scale) &&
           child.element.dataset.harmonyText !== 'true',
       )
       if (filtered.length === 0) return undefined
@@ -61,10 +71,55 @@ export const useComponentTreeItems = (
 }
 
 const ComponentTreeView: React.FunctionComponent = () => {
-  const { selectedComponent } = useHarmonyContext()
+  const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
   const rootComponent = useHarmonyStore((state) => state.rootComponent)
+  const [search, setSearch] = useState('')
 
-  const treeItems = useComponentTreeItems(rootComponent, selectedComponent)
+  const treeItems = useComponentTreeItems(
+    rootComponent,
+    selectedComponent?.element,
+  )
+  const filteredTreeItems = useFilterTreeItems(treeItems, search)
 
-  return <TreeView items={treeItems} />
+  return (
+    <div className='flex flex-col gap-2'>
+      <Input
+        className='w-full'
+        placeholder='Search'
+        value={search}
+        onChange={setSearch}
+      />
+      <TreeView items={filteredTreeItems} />
+    </div>
+  )
+}
+
+const useFilterTreeItems = (
+  treeItems: TreeData<HTMLElement>[],
+  search: string,
+) => {
+  const filteredTreeItems = useMemo(() => {
+    if (!search) return treeItems
+
+    const filterItems = (
+      items: TreeData<HTMLElement>[],
+    ): TreeData<HTMLElement>[] => {
+      return items.reduce<TreeData<HTMLElement>[]>((acc, item) => {
+        const children = item.children ? filterItems(item.children) : undefined
+        if (children && children.length > 0) {
+          //acc.push({...item, children})
+          acc.push(...children)
+        } else if (
+          (item.name as string).toLowerCase().includes(search.toLowerCase())
+        ) {
+          acc.push(item)
+        }
+        return acc
+      }, [])
+    }
+
+    return filterItems(treeItems)
+  }, [treeItems, search])
+
+  return filteredTreeItems
 }

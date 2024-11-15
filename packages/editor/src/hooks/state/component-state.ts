@@ -15,6 +15,8 @@ export interface ComponentState {
   selectedComponent: ComponentElement | undefined
   rootComponent: ComponentElement | undefined
   selectElement: (element: HTMLElement | undefined) => void
+  hoveredComponent: HTMLElement | undefined
+  hoverComponent: (element: HTMLElement | undefined) => void
   globalUpdate: ComponentUpdateWithoutGlobal[] | undefined
   onApplyGlobal: (updates: ComponentUpdateWithoutGlobal[] | undefined) => void
   //This is temporary until we move execute command into zustand
@@ -133,10 +135,14 @@ export const createComponentStateSlice = createHarmonySlice<
   return {
     state: {
       selectedComponent: undefined,
+      hoveredComponent: undefined,
       rootComponent: undefined,
       source: 'document',
       setSource(value: Source) {
         set({ source: value })
+      },
+      hoverComponent(element: HTMLElement | undefined) {
+        set({ hoveredComponent: element })
       },
       selectElement(element: HTMLElement | undefined) {
         const rootComponent = get().rootComponent

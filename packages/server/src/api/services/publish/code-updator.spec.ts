@@ -425,6 +425,45 @@ describe('code-updator', () => {
         true,
       )
     })
+
+    it('Should update image src', async () => {
+      const file: TestFile = 'imageSrc'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'bootstrap',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: JSON.stringify({
+            type: 'image',
+            value: 'https://another-image.com/image.jpg',
+          }),
+          oldValue: 'https://google.com/image.jpg',
+          type: 'component',
+          name: 'replace-element',
+          componentId: elementInstances[2].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(codeUpdates.locations.length).toBe(1)
+      expect(removeLines(codeUpdates.locations[0].snippet)).toBe(
+        '"https://another-image.com/image.jpg"',
+      )
+      expectLocationOfString(
+        file,
+        codeUpdates.locations[0],
+        '"https://google.com/image.jpg"',
+        true,
+      )
+    })
   })
 })
 
@@ -505,6 +544,16 @@ const testFiles = {
                 </div>
             )
         }
+    `,
+  imageSrc: `
+      const ImageSrc = ({image}) => {
+        return <img src={image} />
+      }
+
+      const Home = () => {
+        const image = "https://google.com/image.jpg"
+        return <ImageSrc image={image} />
+      }
     `,
 }
 

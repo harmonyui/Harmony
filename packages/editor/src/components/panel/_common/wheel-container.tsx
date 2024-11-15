@@ -14,11 +14,11 @@ export const WheelContainer: React.FunctionComponent<WheelContainerProps> = ({
   toolbarPanel,
   overlay,
 }) => {
-  const { scale, onScaleChange } = useHarmonyContext()
+  const { scale } = useHarmonyContext()
   const { onTouch } = usePinchGesture({
     scale,
-    onTouching(newScale, cursorPos) {
-      onScaleChange(newScale, cursorPos)
+    onTouching() {
+      //onScaleChange(newScale, cursorPos)
     },
   })
   const { onTouch: onTouchHeader } = usePinchGesture({ scale, onTouching() {} })

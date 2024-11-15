@@ -13,11 +13,8 @@ import type { BehaviorType } from '@harmony/util/src/types/component'
 import type { Environment } from '@harmony/util/src/utils/component'
 import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
-import React, { useCallback, useEffect, useRef, useState } from 'react'
-import {
-  getComponentIdAndChildIndex,
-  recurseElements,
-} from '../utils/element-utils'
+import React, { useEffect, useRef, useState } from 'react'
+import { getImageSrc, recurseElements } from '../utils/element-utils'
 import { useHarmonyStore } from '../hooks/state'
 import type { Source } from '../hooks/state/component-state'
 import { dispatchToggleEvent } from '../hooks/toggle-event'
@@ -29,15 +26,9 @@ import type {
 } from './harmony-context'
 import { HarmonyContext, viewModes } from './harmony-context'
 import type { Setup } from './harmony-setup'
-import {
-  Inspector,
-  isSelectable,
-  replaceTextContentWithSpans,
-  selectDesignerElement,
-} from './inspector/inspector'
+import { Inspector, replaceTextContentWithSpans } from './inspector/inspector'
 import { HarmonyPanel } from './panel/harmony-panel'
 import { WelcomeModal } from './panel/welcome/welcome-modal'
-import { getBoundingRect } from './snapping/calculations'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 
 export interface HarmonyProviderProps {
@@ -61,15 +52,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   overlay = true,
 }) => {
   const [isToggled, setIsToggled] = useState(true)
-  const [hoveredComponent, setHoveredComponent] = useState<HTMLElement>()
   const harmonyContainerRef = useRef<HTMLDivElement | null>(null)
   const [mode, setMode] = useState<SelectMode>('tweezer')
   const [scale, _setScale] = useState(0.8)
   const [isDirty, setIsDirty] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
-  const [cursorX, setCursorX] = useState(0)
-  const [cursorY, setCursorY] = useState(0)
-  const [oldScale, setOldSclae] = useState(scale)
+  const setSelectedComponent = useHarmonyStore((state) => state.selectElement)
   const [error, setError] = useState<string | undefined>()
   const [showGiveFeedback, setShowGiveFeedback] = useState(false)
   const [behaviors, setBehaviors] = useState<BehaviorType[]>([])
@@ -82,10 +70,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const updateComponentsFromIds = useHarmonyStore(
     (state) => state.updateComponentsFromIds,
   )
-  const selectedComponent = useHarmonyStore(
-    (state) => state.selectedComponent?.element,
-  )
-  const setSelectedComponent = useHarmonyStore((state) => state.selectElement)
   const updateTheCounter = useHarmonyStore((state) => state.updateTheCounter)
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
   const rootComponent = useHarmonyStore((state) => state.rootComponent)?.element
@@ -139,7 +123,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   useEffect(() => {
     if (displayMode.includes('preview')) {
       setIsToggled(false)
-      setScale(0.5, { x: 0, y: 0 })
+      //setScale(0.5, { x: 0, y: 0 })
     }
 
     if (displayMode === 'designer') {
@@ -151,35 +135,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     setIsToggled(!isToggled)
   })
 
-  const onScaleIn = useEffectEvent((e: KeyboardEvent) => {
-    e.preventDefault()
-    setScale(Math.min(scale + 0.25, 5), { x: cursorX, y: cursorY })
-  })
-
-  const onScaleOut = useEffectEvent((e: KeyboardEvent) => {
-    e.preventDefault()
-    setScale(Math.min(scale - 0.25, 5), { x: cursorX, y: cursorY })
-  })
-
-  const onMouseMove = useEffectEvent((e: MouseEvent) => {
-    const scrollContainer = document.getElementById('harmony-scroll-container')
-    if (!scrollContainer) return
-
-    const currScrollLeft = scrollContainer.scrollLeft
-    const currScrollTop = scrollContainer.scrollTop
-
-    const newValX = e.clientX + currScrollLeft
-    const newValY = e.clientY + currScrollTop
-    setCursorX(newValX)
-    setCursorY(newValY)
-    setOldSclae(scale)
-  })
-
   useEffect(() => {
     hotkeys('T', onToggle)
-    hotkeys('ctrl+=,command+=', onScaleIn)
-    hotkeys('ctrl+-,command+-', onScaleOut)
-    document.addEventListener('mousemove', onMouseMove)
 
     return () => {
       hotkeys.unbind('esc', onToggle)
@@ -200,20 +157,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     }
   }, [rootComponent])
 
-  const onFlexClick = useCallback(() => {
-    if (!selectedComponent) return
-
-    const parent = selectDesignerElement(selectedComponent).parentElement!
-    const flexEnabled = parent.dataset.harmonyFlex
-    if (flexEnabled) {
-      const $text = $('[name="harmony-flex-text"]')
-      //TODO: This is kind of hacky to use jquery to trigger the flex change, but we can't use react because the
-      //overlay where the flex toggle lives is outside of react. We might be able to reverse dependencies
-      //to make this logic live here instead of in this jquery pointer down function
-      $text.trigger('pointerdown')
-    }
-  }, [selectedComponent])
-
   useEffect(() => {
     if (rootComponent && isInitialized) {
       const recurseAndUpdateElements = () => {
@@ -228,8 +171,17 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
           )
         }
       }
-      initMutationObserverRef.current = new MutationObserver(() => {
-        recurseAndUpdateElements()
+      initMutationObserverRef.current = new MutationObserver((mutations) => {
+        //Only update if this is a harmony element
+        if (
+          mutations.some((m) =>
+            Array.from(m.addedNodes).some((n) =>
+              n instanceof HTMLElement ? n.dataset.harmonyId : false,
+            ),
+          )
+        ) {
+          recurseAndUpdateElements()
+        }
       })
       const body = rootComponent.querySelector('body')
       initMutationObserverRef.current.observe(body || rootComponent, {
@@ -277,6 +229,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         element.style.position = 'relative'
       }
 
+      //Save the original image source so we can choose from it even if the image is replaced in
+      //our image panel
+      if (element instanceof HTMLImageElement) {
+        element.dataset.harmonySrc = getImageSrc(element)
+      }
+
       //TODO: Do this better so there is no dependency on this action in this function
       //If there are text nodes and non-text nodes inside of an element, wrap the text nodes in
       //span tags so we can select and edit them
@@ -290,61 +248,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         replaceTextContentWithSpans(element)
       }
     }
-
-  const setScale = useCallback(
-    (newScale: number, _: { x: number; y: number }) => {
-      const scrollContainer = document.getElementById(
-        'harmony-scroll-container',
-      )
-
-      //Adjust the scroll so that it zooms with the pointer
-      if (rootComponent && scrollContainer) {
-        const currScrollLeft = scrollContainer.scrollLeft
-        const currScrollTop = scrollContainer.scrollTop
-        const rootRect = getBoundingRect(rootComponent)
-
-        const offsetX = cursorX - rootRect.left
-        const offsetY = cursorY - rootRect.top
-        const scaleDelta = newScale - scale
-        // const scrollLeft = (offsetX / scale);
-        // const scrollTop = (offsetY / scale);
-
-        const ratio = scaleDelta / oldScale
-
-        const newX = currScrollLeft + (offsetX - currScrollLeft) * ratio
-        const newY = currScrollTop + (offsetY - currScrollTop) * ratio
-
-        scrollContainer.scrollLeft = newX
-        scrollContainer.scrollTop = newY
-      }
-
-      if (selectedComponent) {
-        if (!isSelectable(selectedComponent, newScale)) {
-          setSelectedComponent(undefined)
-        }
-      }
-
-      _setScale(newScale)
-    },
-    [rootComponent, oldScale, scale, cursorX, cursorY, selectedComponent],
-  )
-
-  const onTextChange = useEffectEvent((value: string, oldValue: string) => {
-    if (!selectedComponent) return
-
-    const { componentId, childIndex, index } =
-      getComponentIdAndChildIndex(selectedComponent)
-
-    const update: ComponentUpdateWithoutGlobal = {
-      componentId,
-      type: 'text',
-      name: String(index),
-      value,
-      oldValue,
-      childIndex,
-    }
-    onAttributesChange([update], false)
-  })
 
   const onReorder = useEffectEvent(
     ({
@@ -422,11 +325,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     <Inspector
       rootElement={rootComponent}
       parentElement={harmonyContainerRef.current || rootComponent}
-      selectedComponent={selectedComponent}
-      hoveredComponent={hoveredComponent}
-      onHover={setHoveredComponent}
-      onSelect={setSelectedComponent}
-      onElementTextChange={onTextChange}
+      onAttributesChange={onAttributesChange}
       onReorder={onReorder}
       mode={mode}
       scale={scale}
@@ -444,9 +343,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             displayMode,
             changeMode,
             fonts,
-            onFlexToggle: onFlexClick,
             scale,
-            onScaleChange: setScale,
             onClose,
             error,
             setError,
@@ -457,9 +354,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             setBehaviors,
             isGlobal,
             setIsGlobal,
-            onComponentHover: setHoveredComponent,
-            onComponentSelect: setSelectedComponent,
-            selectedComponent,
             onAttributesChange,
             onToggleInspector: onToggle,
           }}

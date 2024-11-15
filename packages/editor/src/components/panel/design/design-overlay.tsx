@@ -4,7 +4,11 @@ import { ComponentAttributePanel } from './attribute-panel'
 
 export const DesignOverlay: React.FunctionComponent = () => {
   return (
-    <DraggablePanel title='Design Panel' id={Panels.Design}>
+    <DraggablePanel
+      title='Design Panel'
+      id={Panels.Design}
+      defaultActive={false}
+    >
       <ComponentAttributePanel />
     </DraggablePanel>
   )

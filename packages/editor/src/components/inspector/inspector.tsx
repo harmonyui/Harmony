@@ -22,6 +22,7 @@ import { getProperty } from '../snapping/calculations'
 import { useSidePanel } from '../panel/side-panel'
 import { useHarmonyContext } from '../harmony-context'
 import { useHarmonyStore } from '../../hooks/state'
+import { getComponentIdAndChildIndex } from '../../utils/element-utils'
 import { useHighlighter } from './highlighter'
 
 interface RectSize {
@@ -102,6 +103,15 @@ export function isImageElement(element: Element): boolean {
   return ['img', 'svg'].includes(element.tagName.toLowerCase())
 }
 
+export function isSizeThreshold(element: HTMLElement, scale: number): boolean {
+  const sizeThreshold = 10
+  const rect = element.getBoundingClientRect()
+  if (rect.height * scale < sizeThreshold || rect.width < sizeThreshold) {
+    return false
+  }
+
+  return true
+}
 export function isSelectable(element: HTMLElement, scale: number): boolean {
   const style = getComputedStyle(element)
   if (style.position === 'absolute') {
@@ -116,13 +126,7 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
   )
     return false
 
-  const sizeThreshold = 10
-  const rect = element.getBoundingClientRect()
-  if (rect.height * scale < sizeThreshold || rect.width < sizeThreshold) {
-    return false
-  }
-
-  return true
+  return isSizeThreshold(element, scale)
 }
 
 export function replaceTextContentWithSpans(element: HTMLElement) {
@@ -165,13 +169,8 @@ export function removeTextContentSpans(element: HTMLElement) {
 }
 
 export interface InspectorProps {
-  hoveredComponent: HTMLElement | undefined
-  selectedComponent: HTMLElement | undefined
-  onHover: (component: HTMLElement | undefined) => void
-  onSelect: (component: HTMLElement | undefined) => void
   rootElement: HTMLElement | undefined
   parentElement: HTMLElement | undefined
-  onElementTextChange: (value: string, oldValue: string) => void
   mode: SelectMode
   onReorder: (props: { from: number; to: number; element: HTMLElement }) => void
   onChange: (
@@ -180,25 +179,31 @@ export interface InspectorProps {
     execute?: boolean,
   ) => void
   scale: number
+  onAttributesChange: (
+    updates: ComponentUpdateWithoutGlobal[],
+    execute: boolean,
+  ) => void
 }
 export const Inspector: React.FunctionComponent<InspectorProps> = ({
-  hoveredComponent,
-  selectedComponent,
-  onHover: onHoverProps,
-  onSelect,
-  onElementTextChange,
   onChange,
   rootElement,
   parentElement,
   mode,
   scale,
+  onAttributesChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { onFlexToggle: onFlexClick, error, setError } = useHarmonyContext()
+  const { error, setError } = useHarmonyContext()
   const isDemo = useHarmonyStore((state) => state.isDemo)
 
   const source = useHarmonyStore((state) => state.source)
   const isOverlay = useHarmonyStore((state) => state.isOverlay)
+  const selectedComponent = useHarmonyStore(
+    (state) => state.selectedComponent?.element,
+  )
+  const onSelect = useHarmonyStore((state) => state.selectElement)
+  const hoveredComponent = useHarmonyStore((state) => state.hoveredComponent)
+  const onHoverProps = useHarmonyStore((state) => state.hoverComponent)
 
   const previousError = usePrevious(error)
   const { panel } = useSidePanel()
@@ -212,12 +217,44 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     [panel],
   )
 
+  const onFlexClick = useCallback(() => {
+    if (!selectedComponent) return
+
+    const parent = selectDesignerElement(selectedComponent).parentElement!
+    const flexEnabled = parent.dataset.harmonyFlex
+    if (flexEnabled) {
+      const $text = $('[name="harmony-flex-text"]')
+      //TODO: This is kind of hacky to use jquery to trigger the flex change, but we can't use react because the
+      //overlay where the flex toggle lives is outside of react. We might be able to reverse dependencies
+      //to make this logic live here instead of in this jquery pointer down function
+      $text.trigger('pointerdown')
+    }
+  }, [selectedComponent])
+
   const overlayRef = useOverlayRef({
     parentElement,
     containerElement: containerRef.current,
     offsetElement,
     scale,
     inspectorState,
+    onFlexClick,
+  })
+
+  const onTextChange = useEffectEvent((value: string, oldValue: string) => {
+    if (!selectedComponent) return
+
+    const { componentId, childIndex, index } =
+      getComponentIdAndChildIndex(selectedComponent)
+
+    const update: ComponentUpdateWithoutGlobal = {
+      componentId,
+      type: 'text',
+      name: String(index),
+      value,
+      oldValue,
+      childIndex,
+    }
+    onAttributesChange([update], false)
   })
 
   const { isDragging } = useSnapping({
@@ -439,7 +476,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
         scale,
         false,
         inspectorState,
-        { onTextChange: onElementTextChange, onFlexClick },
+        { onTextChange, onFlexClick },
       )
     } else {
       overlayRef.current.remove('select')
@@ -624,18 +661,19 @@ const useOverlayRef = ({
   offsetElement,
   scale,
   inspectorState,
+  onFlexClick,
 }: {
   parentElement: HTMLElement | undefined
   containerElement: HTMLElement | null
   offsetElement: HTMLIFrameElement | undefined
   scale: number
   inspectorState: InspectorState
+  onFlexClick: () => void
 }): React.MutableRefObject<Overlay | undefined> => {
   const overlayRef = useRef<Overlay>()
   const update = useHarmonyStore((state) => state.updateTheCounter)
   const updateOverlay = useHarmonyStore((state) => state.updateCounter)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
-  const { onFlexToggle: onFlexClick } = useHarmonyContext()
 
   //Create the overlay
   useEffect(() => {
