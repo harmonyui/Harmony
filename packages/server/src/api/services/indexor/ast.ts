@@ -15,6 +15,7 @@ import type {
   ElementNode,
   HarmonyComponent,
   HarmonyContainingComponent,
+  Node,
   PropertyNode,
 } from './types'
 
@@ -1107,23 +1108,23 @@ const getComponentName = <Key extends string>(
   return 'AnonymousComponent'
 }
 
+function getLocation(node: t.Node, _file: string) {
+  if (!node.loc) {
+    return undefined
+  }
+
+  return {
+    file: _file,
+    start: node.loc.start.index,
+    end: node.loc.end.index,
+  }
+}
+
 export const createGraph = (file: string, code: string) => {
   const ast = parse(code, {
     sourceType: 'module',
     plugins: ['jsx', 'typescript'],
   })
-
-  function getLocation(node: t.Node, _file: string) {
-    if (!node.loc) {
-      return undefined
-    }
-
-    return {
-      file: _file,
-      start: node.loc.start.index,
-      end: node.loc.end.index,
-    }
-  }
 
   const graph = new ASTGraph(ast.program)
   traverse(ast, {
@@ -1394,6 +1395,151 @@ export class ASTGraph {
     attributeName: string,
   ): AttributeNode | undefined {
     return element.attributes.find((attr) => attr.name === attributeName)
+  }
+}
+
+class JSXElement implements Node<t.JSXElement> {
+  constructor(private node: t.JSXElement) {}
+
+  public setText(text: string): void {
+    this.node.children = [t.jsxText(text)]
+  }
+}
+
+interface DependencyNode<T extends Node = Node> {
+  node: T
+  dependencies: DependencyNode<T>[]
+  antecedents: DependencyNode<T>[]
+}
+
+class Project {
+  private fileContents = new Map<string, string>()
+  private nodes = new Map<string, DependencyNode>()
+  public addFile(file: string, code: string) {
+    this.fileContents.set(file, code)
+  }
+
+  public findNode(id: string): Node | undefined {
+    return this.nodes.get(id)
+  }
+
+  private parseCode(file: string, code: string) {
+    const ast = parse(code, {
+      sourceType: 'module',
+      plugins: ['jsx', 'typescript'],
+    })
+
+    traverse(ast, {
+      'ArrowFunctionExpression|FunctionDeclaration'(path) {
+        if (
+          !t.isArrowFunctionExpression(path.node) &&
+          !t.isFunctionDeclaration(path.node)
+        ) {
+          return
+        }
+        const location = getLocation(path.node, file)
+        if (!location) return
+
+        const elements: ElementNode[] = []
+        const componentNode: ComponentNode = {
+          change: 'none',
+          children: [],
+          elements,
+          location,
+          name: '',
+          path,
+          node: path.node,
+          parents: [],
+          props: [],
+        }
+
+        const getNameFromExpression = (
+          node: t.JSXExpressionContainer | t.JSXText,
+        ): string | undefined => {
+          if (
+            t.isJSXExpressionContainer(node) &&
+            t.isIdentifier(node.expression)
+          ) {
+            return node.expression.name
+          }
+
+          return undefined
+        }
+
+        path.traverse({
+          JSXElement(elementPath) {
+            const elementLocation = getLocation(elementPath.node, file)
+            if (!elementLocation) return
+            const attributes: AttributeNode[] = []
+            const elementNode: ElementNode = {
+              id: getHashFromLocation(elementLocation, code),
+              attributes,
+              location: elementLocation,
+              next: [],
+              prev: [],
+              path: elementPath,
+              node: elementPath.node,
+              parent: componentNode,
+              change: 'none',
+              name: t.isJSXIdentifier(elementPath.node.openingElement.name)
+                ? elementPath.node.openingElement.name.name
+                : '',
+            }
+
+            elementPath.traverse({
+              JSXAttribute(attrPath) {
+                const attributeLocation = getLocation(attrPath.node, file)
+                if (!attributeLocation) return
+
+                const attribute: AttributeNode = {
+                  change: 'none',
+                  index: attributes.length,
+                  location: attributeLocation,
+                  name: t.isJSXExpressionContainer(attrPath.node.value)
+                    ? (getNameFromExpression(attrPath.node.value) ?? '')
+                    : '',
+                  parent: elementNode,
+                  next: [],
+                  prev: [],
+                  properties: [],
+                  path: attrPath,
+                  node: attrPath.node,
+                }
+                attributes.push(attribute)
+              },
+            })
+
+            elementPath.node.children.forEach((child, i) => {
+              if (t.isJSXExpressionContainer(child) || t.isJSXText(child)) {
+                const textLocation = getLocation(child, file)
+                if (!textLocation) return
+
+                const childNode = elementPath.get(`children.${i}`) as NodePath
+                const textNode: AttributeNode = {
+                  index: attributes.length,
+                  properties: [],
+                  location: textLocation,
+                  next: [],
+                  prev: [],
+                  path: childNode,
+                  node: childNode.node,
+                  parent: elementNode,
+                  change: 'none',
+                  name: getNameFromExpression(child) ?? 'children',
+                }
+
+                attributes.push(textNode)
+              }
+            })
+
+            elements.push(elementNode)
+          },
+        })
+
+        componentNode.name = getComponentName(componentNode, path, 'elements')
+        graph.addComponent(componentNode)
+      },
+    })
   }
 }
 

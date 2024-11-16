@@ -1,5 +1,6 @@
 import { describe, it, expect } from 'vitest'
 import * as t from '@babel/types'
+import { getSnippetFromNode } from '../publish/code-updator'
 import type {
   AttributeNode,
   ComponentNode,
@@ -14,7 +15,16 @@ import {
   getCodeInfoFromFile,
   getPropertyValue,
   getPropertyValues,
+  isLiteralNode,
 } from './ast'
+import type { Node } from './test'
+import {
+  FlowGraph,
+  getGraph,
+  JSXAttributeNode,
+  JSXElementNode,
+  traceDataFlow,
+} from './test'
 
 describe('indexor', () => {
   const expectLocationOfString = (
@@ -27,6 +37,62 @@ describe('indexor', () => {
     expect(substr).toBe(expectedString)
   }
   describe('getCodeInfoFromFile', () => {
+    it('should xw', () => {
+      const code = `
+function Component3({children}) {
+  return <div children={children}/>
+}
+function Component2({label}) {
+  return <Component3 children={label} />;
+}
+function Component1({name}) {
+  return <div>
+    <Component2 label={name} />
+    <Component2 label="bye" />
+  </div>
+}
+
+function Component0() {
+  return <Component1 name="hello" />;
+}
+`
+
+      const expectedCode = `
+function Component3({children}) {
+  return <div children={children}/>
+}
+function Component2({label}) {
+  return <Component3 children={label} />;
+}
+function Component1({name}) {
+  return <div>
+    <Component2 label={name} />
+    <Component2 label="bye" />
+  </div>
+}
+
+function Component0() {
+  return <Component1 name="changed" />;
+}
+`
+      const graph = getGraph(code)
+
+      const attributeFlow = graph.getNodeById('3:14-3:33')
+      expect(attributeFlow).toBeTruthy()
+      expect(attributeFlow instanceof JSXAttributeNode).toBeTruthy()
+      if (!attributeFlow || !(attributeFlow instanceof JSXAttributeNode)) return
+      const data = attributeFlow.getDataFlow()
+      const literalNode = data[0]
+      if (!isLiteralNode(literalNode.node)) expect(true).toBeFalsy()
+      graph.changeNodeValue(literalNode as Node<t.StringLiteral>, 'changed')
+      graph.saveChanges()
+      expect(graph.getCode()).toBe(expectedCode)
+
+      const flow = data.map((node) => getSnippetFromNode(node.node))
+      expect(flow.length).toBe(2)
+      expect(flow[0]).toBe('"changed"')
+      expect(flow[1]).toBe('"bye"')
+    })
     it('Should work', () => {
       const graph = createGraph(
         'this is a file',
@@ -63,26 +129,19 @@ describe('indexor', () => {
       expect(code).toBe(result)
     })
     it('Should index dynamic text with multiple children properly', () => {
-      const componentElements: ElementNode[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getCodeInfoFromFile(
-        file,
-        content,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result).toBeTruthy()
+      const result = getGraph(content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
       expect(componentElements.length).toBe(10)
       expect(componentElements[1].name).toBe('p')
 
-      const textAttributes = componentElements[1].attributes.filter(
-        (a) => a.name === 'children',
-      )
+      const textAttributes = componentElements[1]
+        .getAttributes()
+        .filter((a) => a.name === 'children')
       expect(textAttributes.length).toBe(2)
       expect(textAttributes[0].properties.length).toBe(1)
       expect(textAttributes[0].properties[0].name).toBe('label')
