@@ -3,7 +3,6 @@ import { PaintBrushIcon } from '@harmony/ui/src/components/core/icons'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { useHarmonyPanel } from '../_common/panel/panel'
 import { Panels } from '../_common/panel/types'
-import { useHarmonyStore } from '../../../hooks/state'
 
 interface DesignButtonState {
   onDesign?: () => void
@@ -11,7 +10,6 @@ interface DesignButtonState {
   active: boolean
 }
 export const useDesignButton = (): DesignButtonState => {
-  const isDemo = useHarmonyStore((state) => state.isDemo)
   const { setShow, show } = useHarmonyPanel(Panels.Design)
 
   const onDesignClick = useEffectEvent(() => {
@@ -19,7 +17,7 @@ export const useDesignButton = (): DesignButtonState => {
   })
 
   return {
-    onDesign: isDemo ? undefined : onDesignClick,
+    onDesign: onDesignClick,
     icon: PaintBrushIcon,
     active: show,
   }
