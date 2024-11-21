@@ -2,7 +2,13 @@ import * as t from '@babel/types'
 import { getSnippetFromNode } from '../publish/code-updator'
 import type { NodeBase } from './types'
 import { Node } from './types'
-import { createNode, traceDataFlow } from './utils'
+import {
+  createNode,
+  isJSXElement,
+  isObjectPattern,
+  traceDataFlow,
+} from './utils'
+import { isLiteralNode } from './ast'
 
 export class JSXAttributeNode extends Node<
   t.JSXAttribute | t.JSXText | t.JSXExpressionContainer
@@ -10,6 +16,7 @@ export class JSXAttributeNode extends Node<
   private value: Node
   constructor(
     private parentElement: JSXElementNode,
+    private childIndex: number,
     base: NodeBase<t.JSXAttribute | t.JSXText | t.JSXExpressionContainer>,
   ) {
     super(base)
@@ -24,8 +31,17 @@ export class JSXAttributeNode extends Node<
     return this.value
   }
 
+  public getValues() {
+    return this.value.getValues()
+  }
+
   public getDataFlow(): Node[] {
-    return traceDataFlow(this.value)
+    const values = this.value.getValues()
+    return values.filter((value) => isLiteralNode(value.node))
+  }
+
+  public getChildIndex() {
+    return this.childIndex
   }
 
   private createValue() {
@@ -90,7 +106,7 @@ export class ComponentNode extends Node<
   t.FunctionDeclaration | t.ArrowFunctionExpression
 > {
   constructor(
-    private props: Map<string, Node>,
+    //private props: Map<string, Node>,
     private _arguments: Node[],
     private elements: JSXElementNode[],
     {
@@ -113,9 +129,9 @@ export class ComponentNode extends Node<
     })
   }
 
-  public getProperties() {
-    return this.props
-  }
+  // public getProperties() {
+  //   return this.props
+  // }
 
   public getArguments() {
     return this._arguments
@@ -126,6 +142,42 @@ export class ComponentNode extends Node<
   }
 }
 
-export class ObjectPropertyNode extends Node {}
+export class ObjectPropertyNode extends Node {
+  public getValues() {
+    const values: Node[] = []
+    const superValues = super.getValues()
+
+    superValues.forEach((node) => {
+      if (isJSXElement(node)) {
+        const attribute = node
+          .getAttributes()
+          .find((_attribute) => _attribute.name === this.name)
+        if (!attribute) return
+        values.push(...attribute.getValues())
+      }
+      //values.push(node)
+    })
+
+    return values
+  }
+}
 
 export class UndefinedNode extends Node {}
+
+export class ComponentArgumentPlaceholderNode extends Node {
+  private jsxAttributes: JSXAttributeNode[]
+  constructor(elementNode: JSXElementNode) {
+    super(
+      createNode(
+        `${elementNode.name}Placeholder`,
+        elementNode.path,
+        elementNode.location.file,
+      ),
+    )
+    this.jsxAttributes = elementNode.getAttributes()
+  }
+
+  public getJSXAttributes() {
+    return this.jsxAttributes
+  }
+}

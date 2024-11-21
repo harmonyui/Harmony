@@ -7,7 +7,12 @@ import { getSnippetFromNode } from '../publish/code-updator'
 import { isLiteralNode } from './ast'
 import type { Node } from './types'
 import { createNode, getComponentName, getLocationId } from './utils'
-import { ComponentNode, JSXAttributeNode, JSXElementNode } from './node'
+import {
+  ComponentArgumentPlaceholderNode,
+  ComponentNode,
+  JSXAttributeNode,
+  JSXElementNode,
+} from './node'
 import { addDataEdge } from './data-flow'
 
 export class FlowGraph {
@@ -31,12 +36,18 @@ export class FlowGraph {
     const id = getLocationId(path.node)
     if (!this.nodes.has(id)) {
       const newNode = this.createNode(name, path)
-      this.nodes.set(id, newNode)
+      this.setNode(newNode)
     }
     const node = this.nodes.get(id)
     if (!node) throw new Error(`Node with ID ${id} not found`)
 
     return node
+  }
+
+  public setNode(node: Node) {
+    if (!this.nodes.has(node.id)) {
+      this.nodes.set(node.id, node)
+    }
   }
 
   public createNode<T extends t.Node>(
@@ -62,14 +73,14 @@ export class FlowGraph {
   ): ComponentNode {
     const props = new Map<string, Node>()
     const _arguments: Node[] = []
-    const addPropNode = (param: t.Identifier, pathKey: string) => {
-      const paramName = param.name
-      const paramPath = path.get(pathKey)
-      if (Array.isArray(paramPath)) throw new Error('Should not be array')
+    // const addPropNode = (param: t.Identifier, pathKey: string) => {
+    //   const paramName = param.name
+    //   const paramPath = path.get(pathKey)
+    //   if (Array.isArray(paramPath)) throw new Error('Should not be array')
 
-      const paramNode = this.addNode(paramName, paramPath)
-      props.set(paramName, paramNode)
-    }
+    //   const paramNode = this.addNode(paramName, paramPath)
+    //   props.set(paramName, paramNode)
+    // }
     const addArgumentNode = (param: t.Node, pathKey: string) => {
       const paramPath = path.get(pathKey)
       if (Array.isArray(paramPath)) throw new Error('Should not be array')
@@ -80,26 +91,24 @@ export class FlowGraph {
 
     path.node.params.forEach((param, index) => {
       addArgumentNode(param, `params.${index}`)
-      if (t.isObjectPattern(param)) {
-        param.properties.forEach((prop, propIndex) => {
-          if (t.isObjectProperty(prop) && t.isIdentifier(prop.key)) {
-            addPropNode(prop.key, `params.${index}.properties.${propIndex}`)
-          }
-        })
-      }
+      // if (t.isObjectPattern(param)) {
+      //   param.properties.forEach((prop, propIndex) => {
+      //     if (t.isObjectProperty(prop) && t.isIdentifier(prop.key)) {
+      //       addPropNode(prop.key, `params.${index}.properties.${propIndex}`)
+      //     }
+      //   })
+      // }
     })
     const node = this.createNode(name, path)
     const componentNode: ComponentNode = new ComponentNode(
-      props,
+      // props,
       _arguments,
       [],
       node,
     )
     props.forEach((prop) => this.addDependency(componentNode.id, prop.id))
 
-    if (!this.nodes.has(componentNode.id)) {
-      this.nodes.set(componentNode.id, componentNode)
-    }
+    this.setNode(componentNode)
     return componentNode
   }
 
@@ -107,42 +116,61 @@ export class FlowGraph {
     jsxElementNode: JSXElementNode,
     component: ComponentNode,
   ) {
-    this.nodes.set(jsxElementNode.id, jsxElementNode)
+    this.setNode(jsxElementNode)
     component.addJSXElement(jsxElementNode)
-    this.addDependency(jsxElementNode.id, component.id)
+    //this.addDependency(jsxElementNode.id, component.id)
   }
 
   public addJSXAttribute(
     jsxAttributeNode: JSXAttributeNode,
     jsxElementNode: JSXElementNode,
   ) {
-    this.nodes.set(jsxAttributeNode.id, jsxAttributeNode)
+    this.setNode(jsxAttributeNode)
     jsxElementNode.addAttribute(jsxAttributeNode)
-    const definitionComponent = jsxElementNode.getDefinitionComponent()
+    //const definitionComponent = jsxElementNode.getDefinitionComponent()
 
     const valueNode = jsxAttributeNode.getValueNode()
     this.addDataFlowEdge(valueNode)
-    if (definitionComponent) {
-      this.addComponentDataEdge(
-        definitionComponent,
-        jsxAttributeNode.name,
-        valueNode,
-      )
-    }
+    // if (definitionComponent) {
+    //   this.addComponentPropertyDataEdge(
+    //     definitionComponent,
+    //     jsxAttributeNode.name,
+    //     valueNode,
+    //   )
+    // }
 
     this.addDependency(jsxAttributeNode.id, jsxElementNode.id)
   }
 
-  public addComponentDataEdge(
-    component: ComponentNode,
-    name: string,
-    valueNode: Node,
+  //Variable -> PropertyValue in component
+  // public addComponentPropertyDataEdge(
+  //   component: ComponentNode,
+  //   name: string,
+  //   valueNode: Node,
+  // ) {
+  //   const prop = component.getProperties().get(name)
+  //   if (prop) {
+  //     this.addDependency(prop.id, valueNode.id)
+  //   }
+  // }
+
+  public addFunctionArgumentDataEdge(
+    definition: ComponentNode,
+    argumentNodes: Node[],
   ) {
-    const prop = component.getProperties().get(name)
-    if (prop) {
-      //JSXElement Component prop -> AttributeValue
-      this.addDependency(prop.id, valueNode.id)
-    }
+    if (argumentNodes.length > definition.getArguments().length)
+      throw new Error('Too many arguments')
+    argumentNodes.forEach((arg, index) => {
+      const param = definition.getArguments()[index]
+      this.addDependency(param.id, arg.id)
+    })
+  }
+
+  public addJSXInstanceComponentEdge(
+    elementDefinition: ComponentNode,
+    elementNode: JSXElementNode,
+  ) {
+    this.addFunctionArgumentDataEdge(elementDefinition, [elementNode])
   }
 
   public addDataFlowEdge(node: Node) {
@@ -157,6 +185,16 @@ export class FlowGraph {
       }
     })
     return definitionNode
+  }
+
+  public getElementInstances(name: string): JSXElementNode[] {
+    const instances: JSXElementNode[] = []
+    this.nodes.forEach((node) => {
+      if (node instanceof JSXElementNode && node.name === name) {
+        instances.push(node)
+      }
+    })
+    return instances
   }
 
   public getNodeById(id: string): Node | undefined {
@@ -222,6 +260,10 @@ export function getGraph(code: string) {
         functionName,
         path as NodePath<t.FunctionDeclaration | t.ArrowFunctionExpression>,
       )
+      const instances = graph.getElementInstances(functionName)
+      instances.forEach((instance) => {
+        graph.addJSXInstanceComponentEdge(containingComponent, instance)
+      })
 
       path.traverse({
         JSXElement(jsxPath) {
@@ -256,6 +298,7 @@ export function getGraph(code: string) {
                   : getSnippetFromNode(attributePath.node)
               const attributeNode = new JSXAttributeNode(
                 elementNode,
+                -1,
                 graph.createNode(
                   attributeName,
                   attributePath as NodePath<t.JSXAttribute>,
@@ -265,6 +308,7 @@ export function getGraph(code: string) {
               graph.addJSXAttribute(attributeNode, elementNode)
             }
 
+            let childIndex = 0
             for (let i = 0; i < jsxPath.node.children.length; i++) {
               const node = jsxPath.node.children[i]
               if (t.isJSXText(node) && node.value.trim().length === 0) continue
@@ -279,6 +323,7 @@ export function getGraph(code: string) {
               ) {
                 const attributeNode = new JSXAttributeNode(
                   elementNode,
+                  childIndex,
                   graph.createNode(
                     'children',
                     childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
@@ -287,7 +332,16 @@ export function getGraph(code: string) {
 
                 graph.addJSXAttribute(attributeNode, elementNode)
               }
+              childIndex++
             }
+
+            //Connect the element to the definition component
+            const elementDefinition = elementNode.getDefinitionComponent()
+            if (elementDefinition) {
+              graph.addJSXInstanceComponentEdge(elementDefinition, elementNode)
+            }
+          } else {
+            throw new Error("I dunno what's going on")
           }
         },
       })
@@ -313,9 +367,13 @@ export function getGraph(code: string) {
               argPath,
             )
             graph.addDataFlowEdge(argumentNode)
-            if (definitionNode) {
-              graph.addComponentDataEdge(definitionNode, '', argumentNode) // Data flow from argument to parameter
-            }
+            // if (definitionNode) {
+            //   graph.addComponentPropertyDataEdge(
+            //     definitionNode,
+            //     '',
+            //     argumentNode,
+            //   ) // Data flow from argument to parameter
+            // }
           }
         })
       }

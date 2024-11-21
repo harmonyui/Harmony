@@ -1,7 +1,16 @@
 import type { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import { getSnippetFromNode } from '../publish/code-updator'
-import { createNode, getLocationId } from './utils'
+import {
+  createNode,
+  getLocationId,
+  isCallExpression,
+  isFunction,
+  isIdentifier,
+  isObjectPattern,
+  isTemplateLiteral,
+  isVariableDeclarator,
+} from './utils'
 import type { FlowGraph } from './graph'
 import type { Node } from './types'
 import {
@@ -16,28 +25,8 @@ export type AddEdge<T extends t.Node> = (
   graph: FlowGraph,
 ) => string[]
 
-const isIdentifier = (node: Node): node is Node<t.Identifier> =>
-  t.isIdentifier(node.node)
-const isCallExpression = (node: Node): node is Node<t.CallExpression> =>
-  t.isCallExpression(node.node)
-const isObjectPattern = (node: Node): node is Node<t.ObjectPattern> =>
-  t.isObjectPattern(node.node)
-const isFunctionDeclaration = (
-  node: Node,
-): node is Node<t.FunctionDeclaration> => t.isFunctionDeclaration(node.node)
-const isArrowFunctionExpression = (
-  node: Node,
-): node is Node<t.ArrowFunctionExpression> =>
-  t.isArrowFunctionExpression(node.node)
-const isFunction = (node: Node): node is ComponentNode =>
-  node instanceof ComponentNode
-const isVariableDeclarator = (node: Node): node is Node<t.VariableDeclarator> =>
-  t.isVariableDeclarator(node.node)
-const isTemplateLiteral = (node: Node): node is Node<t.TemplateLiteral> =>
-  t.isTemplateLiteral(node.node)
-
 export const addDataEdge = (node: Node, graph: FlowGraph) => {
-  graph.nodes.set(node.id, node)
+  graph.setNode(node)
   const edges = addEdge(node, graph)
   edges.forEach((edge) => graph.addDependency(node.id, edge))
 }
@@ -70,7 +59,7 @@ const addEdgeToAssignment = (
   contextNode: Node<t.Identifier>,
   graph: FlowGraph,
 ) => {
-  graph.nodes.set(node.id, node)
+  graph.setNode(node)
   if (isIdentifier(node)) {
     return node.id
   } else if (isObjectPattern(node)) {
@@ -86,7 +75,7 @@ const addEdgeToAssignment = (
     const newPropertyNode = new ObjectPropertyNode(
       createNode(contextNode.name, propertyPath, ''),
     )
-    graph.nodes.set(newPropertyNode.id, newPropertyNode)
+    graph.setNode(newPropertyNode)
     graph.addDependency(newPropertyNode.id, node.id)
     return newPropertyNode.id
   }

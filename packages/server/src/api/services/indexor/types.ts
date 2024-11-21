@@ -1,6 +1,7 @@
 import type { ComponentLocation } from '@harmony/util/src/types/component'
 import type * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
+import { isLiteralNode } from './ast'
 
 export interface Attribute {
   id: string
@@ -69,5 +70,17 @@ export class Node<T extends t.Node = t.Node> {
     this.dependencies = dependencies
     this.dependents = dependents
     this.path = path
+  }
+
+  public getValues() {
+    if (this.dependencies.size === 0) {
+      return [this]
+    }
+    const values: Node[] = []
+    this.dependencies.forEach((node) => {
+      values.push(...node.getValues())
+    })
+
+    return values
   }
 }
