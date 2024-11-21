@@ -9,20 +9,20 @@ const nextConfig = {
     }
     return config
   },
-  experimental: {
-    swcPlugins:
-      process.env.ENV !== 'production'
-        ? [
-            [
-              require.resolve('harmony-ai-plugin'),
-              {
-                rootDir: path.join(__dirname, '../..'),
-                repositoryId: 'fbefdac4-8370-4d6d-b440-0307882f0102',
-              },
-            ],
-          ]
-        : undefined,
-  },
+  // experimental: {
+  //   swcPlugins:
+  //     process.env.ENV !== 'production'
+  //       ? [
+  //           [
+  //             require.resolve('harmony-ai-plugin'),
+  //             {
+  //               rootDir: path.join(__dirname, '../..'),
+  //               repositoryId: 'fbefdac4-8370-4d6d-b440-0307882f0102',
+  //             },
+  //           ],
+  //         ]
+  //       : undefined,
+  // },
 }
 
 module.exports = nextConfig

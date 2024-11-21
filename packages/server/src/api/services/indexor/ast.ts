@@ -1074,7 +1074,7 @@ export function getCodeInfoFromFile(
   return true
 }
 
-const getComponentName = <Key extends string>(
+export const getComponentName = <Key extends string>(
   component: { [key in Key]: unknown[] },
   path: NodePath,
   key: Key,

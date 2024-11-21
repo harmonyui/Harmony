@@ -30,39 +30,44 @@ export type HarmonyContainingComponent = Omit<HarmonyComponent, 'node'> & {
   node: t.FunctionDeclaration | t.ArrowFunctionExpression
 }
 
-export interface Node<T extends t.Node = t.Node> {
-  location: ComponentLocation
-  change: 'add' | 'remove' | 'update' | 'none'
-  node: T
-  path: NodePath<T> | null
-  name: string
-}
+type NodeType = NodePath['type']
 
-export interface ComponentNode
-  extends Node<t.ArrowFunctionExpression | t.FunctionDeclaration> {
-  elements: ElementNode[]
-  children: ComponentNode[]
-  parents: ComponentNode[]
-  props: PropertyNode[]
-}
-
-export interface ElementNode extends Node<t.JSXElement> {
+export interface NodeBase<T extends t.Node> {
   id: string
-  parent: ComponentNode
-  attributes: AttributeNode[]
-  next: ElementNode[]
-  prev: ElementNode[]
+  location: ComponentLocation
+  type: NodeType
+  name: string
+  dependencies: Set<Node>
+  dependents: Set<Node>
+  path: NodePath<T>
 }
+export class Node<T extends t.Node = t.Node> {
+  public id: string
+  public location: ComponentLocation
+  public type: NodeType
+  public name: string
+  public dependencies: Set<Node>
+  public dependents: Set<Node>
+  public get node(): T {
+    return this.path.node
+  }
+  public path: NodePath<T>
 
-export interface AttributeNode
-  extends Node<t.JSXAttribute | t.JSXText | t.JSXExpressionContainer> {
-  parent: ElementNode
-  properties: PropertyNode[]
-  next: AttributeNode[]
-  prev: AttributeNode[]
-  index: number | null
-}
-
-export interface PropertyNode extends Node {
-  next: PropertyNode[]
+  constructor({
+    id,
+    location,
+    type,
+    name,
+    dependencies,
+    dependents,
+    path,
+  }: NodeBase<T>) {
+    this.id = id
+    this.location = location
+    this.type = type
+    this.name = name
+    this.dependencies = dependencies
+    this.dependents = dependents
+    this.path = path
+  }
 }
