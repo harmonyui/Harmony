@@ -2,6 +2,10 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import type { Font } from '@harmony/util/src/fonts'
 import {
+  jsonSchema,
+  updateAttributeValue,
+} from '@harmony/util/src/updates/component'
+import {
   findElementFromId,
   findElementsFromId,
   findSameElementsFromId,
@@ -337,6 +341,31 @@ export const createComponentUpdateSlice =
             } else {
               element.outerHTML = actionValue
               element.dataset.harmonyId = update.componentId
+            }
+          }
+
+          if (update.name === 'update-attribute') {
+            const { value } = update
+            const {
+              action,
+              name,
+              value: newValue,
+            } = jsonSchema.pipe(updateAttributeValue).parse(value)
+            const element = findElementFromId(
+              update.componentId,
+              update.childIndex,
+              rootElement,
+            )
+            if (!element)
+              throw new Error(
+                `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
+              )
+            if (action === 'delete') {
+              element.removeAttribute(name)
+            } else if (action === 'create') {
+              element.setAttribute(name, newValue)
+            } else {
+              element.setAttribute(name, newValue)
             }
           }
         }

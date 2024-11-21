@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Repository } from '@harmony/util/src/types/branch'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
+import type { UpdateAttributeValue } from '@harmony/util/src/updates/component'
 import type { GitRepository } from '../../repository/git/types'
 import { indexFiles } from '../indexor/indexor'
 import { CodeUpdator } from './code-updator'
@@ -434,12 +435,17 @@ describe('code-updator', () => {
       const updates: ComponentUpdate[] = [
         {
           value: JSON.stringify({
-            type: 'image',
+            action: 'update',
             value: 'https://another-image.com/image.jpg',
-          }),
-          oldValue: 'https://google.com/image.jpg',
+            name: 'src',
+          } satisfies UpdateAttributeValue),
+          oldValue: JSON.stringify({
+            action: 'update',
+            value: 'https://google.com/image.jpg',
+            name: 'src',
+          } satisfies UpdateAttributeValue),
           type: 'component',
-          name: 'replace-element',
+          name: 'update-attribute',
           componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,

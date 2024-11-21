@@ -9,6 +9,10 @@ import { mergeClassesWithScreenSize } from '@harmony/util/src/utils/tailwind-mer
 import { DEFAULT_WIDTH } from '@harmony/util/src/constants'
 import * as t from '@babel/types'
 import generator from '@babel/generator'
+import {
+  jsonSchema,
+  updateAttributeValue,
+} from '@harmony/util/src/updates/component'
 import { getCodeSnippet } from '../indexor/github'
 import type { HarmonyComponent, Attribute } from '../indexor/types'
 import type { GitRepository } from '../../repository/git/types'
@@ -558,20 +562,19 @@ export class CodeUpdator {
         }
         break
       case 'component':
-        {
-          const value = JSON.parse(update.value) as {
-            type: string
-            value: string
-          }
-          if (update.name === 'replace-element' && value.type === 'image') {
+        if (update.name === 'update-attribute') {
+          const { value, action, name } = jsonSchema
+            .pipe(updateAttributeValue)
+            .parse(update.value)
+          if (action === 'update') {
             const srcAttribute = attributes.find(
               (attribute) =>
                 attribute.type === 'property' &&
-                getAttributeName(attribute) === 'src',
+                getAttributeName(attribute) === name,
             )
             if (srcAttribute && isLiteralNode(srcAttribute.node)) {
               const location = srcAttribute.location
-              updateLiteralNode(srcAttribute.node, value.value)
+              updateLiteralNode(srcAttribute.node, value)
 
               results.push({
                 location: {
