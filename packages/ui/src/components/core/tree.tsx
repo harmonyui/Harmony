@@ -1,7 +1,7 @@
 import * as ReactTreePrimitive from 'react-arborist'
 import { getClass } from '@harmony/util/src/utils/common'
 import React from 'react'
-import { PolygonDownIcon, PolygonRightIcon } from './icons'
+import { ChevronDownIcon, ChevronRightIcon } from './icons'
 import {
   ContextMenu,
   ContextMenuContent,
@@ -39,6 +39,7 @@ export const Tree = <T,>({
   contextMenu,
 }: TreeProps<T>) => {
   const onSelect = (nodes: ReactTreePrimitive.NodeApi<TreeData<T>>[]) => {
+    console.log(`selecting: ${nodes[0]?.data.id}`)
     onSelectProps(nodes.map((node) => node.data))
   }
 
@@ -57,17 +58,21 @@ export const Tree = <T,>({
   return (
     <ReactTreePrimitive.Tree
       data={data}
-      indent={18}
+      indent={12}
       selection={selectedId}
-      onSelect={onSelect}
+      //onSelect={onSelect}
       onMove={onMove}
       //childrenAccessor='items'
+      rowHeight={26}
     >
       {(props) => {
+        const parentSelected = isParentSelected(props.node.parent)
         const nodeProps = {
           ...props,
           onHover: () => onHover(props.node.data),
+          onClick: () => onSelect([props.node]),
           children: children({ data: props.node.data }),
+          isParentSelected: parentSelected,
         }
 
         if (contextMenu) {
@@ -82,9 +87,18 @@ export const Tree = <T,>({
   )
 }
 
+const isParentSelected = (node: ReactTreePrimitive.NodeApi | null): boolean => {
+  if (node === null) return false
+  if (node.isSelected) return true
+
+  return isParentSelected(node.parent)
+}
+
 type NodeProps<T = string> = ReactTreePrimitive.NodeRendererProps<T> & {
   children: React.ReactNode
   onHover: () => void
+  onClick: () => void
+  isParentSelected: boolean
 }
 const Node = <T,>({
   style,
@@ -92,19 +106,29 @@ const Node = <T,>({
   node,
   children,
   onHover,
+  onClick,
+  isParentSelected: parentSelected,
 }: NodeProps<T>): JSX.Element => {
+  const onExpand: React.MouseEventHandler = (e) => {
+    e.stopPropagation()
+    node.isInternal && node.toggle()
+  }
   return (
     <div
       className={getClass(
-        'hw-flex hw-gap-2 hw-items-center hover:hw-bg-slate-100 hw-rounded-lg hw-px-2',
-        node.isSelected ? 'hw-text-[#9F6CFF]' : '',
+        'hw-flex hw-gap-2 hw-text-xs hw-items-center hover:hw-border-[#9F6CFF] hw-border hw-border-transparent hw-px-2 hw-py-1 hw-overflow-hidden hw-whitespace-nowrap',
+        node.isSelected ? 'hw-bg-[#e0e7ff] hw-rounded-t-md' : '',
+        parentSelected ? 'hw-bg-[#eef2ff]' : '',
+        !parentSelected && (!node.isSelected || !node.isOpen)
+          ? 'hw-rounded-md'
+          : '',
       )}
       style={style}
       ref={dragHandle}
-      onClick={() => node.isInternal && node.toggle()}
+      onClick={onClick}
       onMouseOver={onHover}
     >
-      <NodeArrow node={node} />
+      <NodeArrow node={node} onClick={onExpand} />
       {children}
     </div>
   )
@@ -128,15 +152,22 @@ const NodeWithContextMenu = <T,>({
   )
 }
 
-const NodeArrow = <T,>({ node }: { node: ReactTreePrimitive.NodeApi<T> }) => {
+interface NodeArrowProps<T> {
+  node: ReactTreePrimitive.NodeApi<T>
+  onClick: React.MouseEventHandler
+}
+const NodeArrow = <T,>({ node, onClick }: NodeArrowProps<T>) => {
   if (node.isLeaf) return <span></span>
 
   return (
-    <span>
+    <span
+      className='hw-cursor-pointer hover:hw-text-gray-600 hw-text-gray-400'
+      onClick={onClick}
+    >
       {node.isOpen ? (
-        <PolygonDownIcon className='hw-h-2 hw-w-2' />
+        <ChevronDownIcon className='hw-h-3 hw-w-3' />
       ) : (
-        <PolygonRightIcon className='hw-h-2 hw-w-2' />
+        <ChevronRightIcon className='hw-h-3 hw-w-3' />
       )}
     </span>
   )

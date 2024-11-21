@@ -42,6 +42,11 @@ interface HarmonyContextProps {
     updates: ComponentUpdateWithoutGlobal[],
     execute?: boolean,
   ) => void
+  onTextChange: (
+    value: string,
+    oldValue: string,
+    element: HTMLElement | undefined,
+  ) => void
   onToggleInspector: () => void
 }
 export const HarmonyContext = createContext<HarmonyContextProps>({
@@ -62,6 +67,7 @@ export const HarmonyContext = createContext<HarmonyContextProps>({
   isGlobal: false,
   setIsGlobal: noop,
   onAttributesChange: noop,
+  onTextChange: noop,
   onToggleInspector: noop,
 })
 

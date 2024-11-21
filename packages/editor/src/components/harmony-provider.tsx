@@ -14,7 +14,11 @@ import type { Environment } from '@harmony/util/src/utils/component'
 import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
 import React, { useEffect, useRef, useState } from 'react'
-import { getImageSrc, recurseElements } from '../utils/element-utils'
+import {
+  getComponentIdAndChildIndex,
+  getImageSrc,
+  recurseElements,
+} from '../utils/element-utils'
 import { useHarmonyStore } from '../hooks/state'
 import type { Source } from '../hooks/state/component-state'
 import { dispatchToggleEvent } from '../hooks/toggle-event'
@@ -302,6 +306,29 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     onApplyGlobal(updates)
   }
 
+  const onTextChange = useEffectEvent(
+    (
+      value: string,
+      oldValue: string,
+      selectedComponent: HTMLElement | undefined,
+    ) => {
+      if (!selectedComponent) return
+
+      const { componentId, childIndex, index } =
+        getComponentIdAndChildIndex(selectedComponent)
+
+      const update: ComponentUpdateWithoutGlobal = {
+        componentId,
+        type: 'text',
+        name: String(index),
+        value,
+        oldValue,
+        childIndex,
+      }
+      onAttributesChange([update], false)
+    },
+  )
+
   const onElementChange = (
     element: HTMLElement,
     update: ComponentUpdateWithoutGlobal[],
@@ -331,7 +358,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     <Inspector
       rootElement={rootComponent}
       parentElement={harmonyContainerRef.current || rootComponent}
-      onAttributesChange={onAttributesChange}
       onReorder={onReorder}
       mode={mode}
       scale={scale}
@@ -361,6 +387,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             isGlobal,
             setIsGlobal,
             onAttributesChange,
+            onTextChange,
             onToggleInspector: onToggle,
           }}
         >

@@ -7,6 +7,7 @@ import type { ComponentElement } from '../../inspector/component-identifier'
 import { useHarmonyStore } from '../../../hooks/state'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
+import { getComponentName } from '../design/utils'
 import { TreeView } from './tree-view'
 
 export const LayoutPanel: React.FunctionComponent = () => {
@@ -37,24 +38,29 @@ export const useComponentTreeItems = (
   const ids: string[] = []
   const getTreeItems = useCallback(
     (children: ComponentElement[]): TreeData<HTMLElement>[] | undefined => {
-      const filtered = children.filter(
-        (child) =>
-          isLayerSelectable(child.element, scale) &&
-          child.element.dataset.harmonyText !== 'true',
+      const filtered = children.filter((child) =>
+        isLayerSelectable(child.element, scale),
       )
       if (filtered.length === 0) return undefined
 
       return filtered.map<TreeData<HTMLElement>>((child) => {
-        if (!child.id) {
+        let id = child.id
+        if (
+          child.element.dataset.harmonyText === 'true' &&
+          child.element.parentElement
+        ) {
+          id = `${child.element.parentElement.dataset.harmonyId}-text`
+        }
+        if (!id) {
           throw new Error('Element does not have an id')
         }
-        const sameIds = ids.filter((id) => id === child.id)
-        const id = `${child.id}-${sameIds.length}`
-        ids.push(child.id)
+        const sameIds = ids.filter((_id) => _id === id)
+        const finalId = `${id}-${sameIds.length}`
+        ids.push(id)
         return {
-          id,
+          id: finalId,
           data: child.element,
-          name: child.name,
+          name: getComponentName(child),
           children: getTreeItems(child.children),
           selected: selectedComponent === child.element,
         }

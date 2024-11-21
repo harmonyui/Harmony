@@ -22,7 +22,6 @@ import { getProperty } from '../snapping/calculations'
 import { useSidePanel } from '../panel/side-panel'
 import { useHarmonyContext } from '../harmony-context'
 import { useHarmonyStore } from '../../hooks/state'
-import { getComponentIdAndChildIndex } from '../../utils/element-utils'
 import { useHighlighter } from './highlighter'
 
 interface RectSize {
@@ -179,10 +178,6 @@ export interface InspectorProps {
     execute?: boolean,
   ) => void
   scale: number
-  onAttributesChange: (
-    updates: ComponentUpdateWithoutGlobal[],
-    execute: boolean,
-  ) => void
 }
 export const Inspector: React.FunctionComponent<InspectorProps> = ({
   onChange,
@@ -190,10 +185,9 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   parentElement,
   mode,
   scale,
-  onAttributesChange,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { error, setError } = useHarmonyContext()
+  const { error, setError, onTextChange } = useHarmonyContext()
   const isDemo = useHarmonyStore((state) => state.isDemo)
 
   const source = useHarmonyStore((state) => state.source)
@@ -238,23 +232,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     scale,
     inspectorState,
     onFlexClick,
-  })
-
-  const onTextChange = useEffectEvent((value: string, oldValue: string) => {
-    if (!selectedComponent) return
-
-    const { componentId, childIndex, index } =
-      getComponentIdAndChildIndex(selectedComponent)
-
-    const update: ComponentUpdateWithoutGlobal = {
-      componentId,
-      type: 'text',
-      name: String(index),
-      value,
-      oldValue,
-      childIndex,
-    }
-    onAttributesChange([update], false)
   })
 
   const { isDragging } = useSnapping({
@@ -864,7 +841,11 @@ class Overlay {
     error: boolean,
     inspectorState: InspectorState,
     listeners: {
-      onTextChange?: (value: string, oldValue: string) => void
+      onTextChange?: (
+        value: string,
+        oldValue: string,
+        selectedElement: HTMLElement | undefined,
+      ) => void
       onFlexClick: () => void
     },
   ) {
@@ -885,7 +866,8 @@ class Overlay {
         (e) => {
           const target = e.target as HTMLElement
           const value = target.textContent || ''
-          listeners.onTextChange && listeners.onTextChange(value, lastTextValue)
+          listeners.onTextChange &&
+            listeners.onTextChange(value, lastTextValue, target)
           lastTextValue = value
         },
         { signal: stuff.aborter.signal },
