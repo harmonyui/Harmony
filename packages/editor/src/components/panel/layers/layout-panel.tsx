@@ -66,7 +66,7 @@ export const useComponentTreeItems = (
         }
       })
     },
-    [scale],
+    [scale, selectedComponent],
   )
   const treeItems: TreeData<HTMLElement>[] = useMemo(
     () => (root ? (getTreeItems([root]) ?? []) : []),
