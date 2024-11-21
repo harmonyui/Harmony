@@ -2,6 +2,7 @@ import React, { useRef, useMemo, useState, useEffect, forwardRef } from 'react'
 import { Button } from '@harmony/ui/src/components/core/button'
 import { getClass } from '@harmony/util/src/utils/common'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
+import type { UpdateAttributeValue } from '@harmony/util/src/updates/component'
 import {
   getComponentIdAndChildIndex,
   getImageSrc,
@@ -59,12 +60,12 @@ export const AddImagePanel: React.FunctionComponent = () => {
               images.push(harmonySrc)
             }
           }
-          if (element.tagName.toLowerCase() === 'svg') {
-            const data = element.outerHTML
-            if (!svgs.includes(data)) {
-              svgs.push(data)
-            }
-          }
+          // if (element.tagName.toLowerCase() === 'svg') {
+          //   const data = element.outerHTML
+          //   if (!svgs.includes(data)) {
+          //     svgs.push(data)
+          //   }
+          // }
         },
       ])
 
@@ -81,17 +82,27 @@ export const AddImagePanel: React.FunctionComponent = () => {
     setSelectedImage(image)
   }
 
-  const handleAddImage = useEffectEvent((value: string, type: ImageType) => {
+  const handleAddImage = useEffectEvent((value: string, _type: ImageType) => {
     if (!selectedComponent) return
     const { childIndex, componentId } =
       getComponentIdAndChildIndex(selectedComponent)
+    const _value: UpdateAttributeValue = {
+      action: 'update',
+      name: 'src',
+      value,
+    }
+    const _oldValue: UpdateAttributeValue = {
+      action: 'update',
+      name: 'src',
+      value: selectedComponent.getAttribute('src') || '',
+    }
     const update: ComponentUpdateWithoutGlobal = {
       type: 'component',
-      name: 'replace-element',
+      name: 'update-attribute',
       componentId,
       childIndex,
-      oldValue: JSON.stringify({ type, value: '' }),
-      value: JSON.stringify({ type, value }),
+      oldValue: JSON.stringify(_oldValue),
+      value: JSON.stringify(_value),
     }
     onAttributesChange([update])
   })
