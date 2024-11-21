@@ -133,3 +133,11 @@ export const getImageSrc = (image: HTMLImageElement): string => {
 
   return ''
 }
+
+export const getElementText = (element: HTMLElement): string => {
+  if (element.dataset.harmonyText === 'true') {
+    return element.textContent || ''
+  }
+
+  return element.innerText
+}

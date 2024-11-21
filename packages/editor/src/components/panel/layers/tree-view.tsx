@@ -12,10 +12,7 @@ import {
 import { ContextMenuItem } from '@harmony/ui/src/components/core/context-menu'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
-import {
-  getComponentId,
-  getComponentIdAndChildIndex,
-} from '../../../utils/element-utils'
+import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
 import { ComponentType } from '../design/types'
 import { getComponentType } from '../design/utils'
 import { useHarmonyStore } from '../../../hooks/state'
@@ -39,15 +36,34 @@ export const TreeView = ({ items }: TreeViewProps) => {
   const { onAttributesChange } = useHarmonyContext()
   const onComponentSelect = useHarmonyStore((store) => store.selectElement)
   const onComponentHover = useHarmonyStore((store) => store.hoverComponent)
-  const selectedComponent = useHarmonyStore(
-    (store) => store.selectedComponent,
-  )?.element
   const { onImage: onImageOpen } = useImageButton()
 
   const [multiSelect, setMultiSelect] = useState<{
     start: HTMLElement
     end: HTMLElement
   }>()
+
+  const selectedId = useMemo(() => {
+    const findSelected = (
+      _items: TreeData<HTMLElement>[],
+    ): string | undefined => {
+      for (const item of _items) {
+        if (item.selected) {
+          return item.id
+        }
+        if (item.children) {
+          const found = findSelected(item.children)
+          if (found) {
+            return found
+          }
+        }
+      }
+
+      return undefined
+    }
+
+    return findSelected(items)
+  }, [items])
 
   const onDrag: TreeProps<HTMLElement>['onDrag'] = ({
     index,
@@ -197,14 +213,16 @@ export const TreeView = ({ items }: TreeViewProps) => {
 
   return (
     <Tree
-      selectedId={getComponentId(selectedComponent)}
+      selectedId={selectedId}
       data={items}
       onDrag={onDrag}
       onHover={onHover}
       onSelect={onSelect}
       contextMenu={({ data }) => (
         <TreeViewItem
-          onAddImage={() => onImageOpen && onImageOpen(true)}
+          onAddImage={() => {
+            onImageOpen?.(true)
+          }}
           onAddAbove={() =>
             handleAddDeleteElement(data.data, 'create', 'above')
           }
@@ -219,10 +237,10 @@ export const TreeView = ({ items }: TreeViewProps) => {
       )}
     >
       {({ data }) => (
-        <>
+        <div className='hw-flex hw-gap-2 hw-items-center'>
           <ComponentIcon type={getComponentType(data.data)} />
           {data.name}
-        </>
+        </div>
       )}
     </Tree>
   )
