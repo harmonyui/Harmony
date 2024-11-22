@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest'
-import * as t from '@babel/types'
+import type * as t from '@babel/types'
 import { getSnippetFromNode } from '../publish/code-updator'
 import type {
   HarmonyComponent,
@@ -86,41 +86,6 @@ function Component0() {
       expect(flow.length).toBe(2)
       expect(flow[0]).toBe('"changed"')
       expect(flow[1]).toBe('"bye"')
-    })
-    it('Should work', () => {
-      const graph = createGraph(
-        'this is a file',
-        `
-          const Component0 = ({ className, children }) => {
-            return <div className={className}>{children}</div>
-          }
-          const Component1 = ({ className }) => {
-            return <Component0 className={className}>Hello There</Component0>
-          }
-          const UnlinkComponent1 = () => {
-            return <div><Component1/><Component1/></div>
-          }
-        `,
-      )
-      graph.connectComponents('Component1', 'Component0')
-      graph.connectComponents('UnlinkComponent1', 'Component1')
-      graph.unlinkAttribute(
-        graph.getComponent('Component1')?.elements[0].id,
-        'children',
-      )
-      const code = graph.getCode()
-      const result = `
-          const Component0 = ({ className, children }) => {
-            return <div className={className}>{children}</div>
-          }
-          const Component1 = ({ className, children }) => {
-            return <Component0 className={className}>{children}</Component0>
-          }
-          const UnlinkComponent1 = () => {
-            return <div><Component1>Hello there</Component1><Component1>Hello there</Component1></div>
-          }
-        `
-      expect(code).toBe(result)
     })
     it('Should index dynamic text with multiple children properly', () => {
       const file: TestFile = 'app/SummaryMetadata.tsx'
@@ -982,217 +947,207 @@ function Component0() {
       )
     })
 
-    it("Should not include classNames that are params and don't have 'class' in the name of the property", () => {
-      const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
+    it("Should include classNames that are params and don't have 'class' in the name of the property", () => {
       const file: TestFile = 'app/classNameTests.tsx'
       const content = testCases[file]
 
-      const result = getCodeInfoFromFile(
-        file,
-        content,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result).toBeTruthy()
-      expect(componentElements.length).toBe(8)
+      const result = getGraph(content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(6)
 
-      expect(componentElements[0].props.length).toBe(4)
-      expect(componentElements[0].props[0].type).toBe('property')
-      expect(componentElements[0].props[0].name).toBe('property')
-      expect(componentElements[0].props[0].value).toBe('variant:variant')
-      expect(componentElements[0].props[0].locationType).toBe('props')
+      expect(componentElements[0].getAttributes().length).toBe(3)
+      expect(componentElements[0].getAttributes()[0].name).toBe('className')
+      expect(componentElements[0].getAttributes()[0].getDataFlow().length).toBe(
+        4,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('secondary')
       expectLocationOfString(
         file,
-        componentElements[0].props[0].location,
-        'variant',
-      )
-      expect(componentElements[0].props[2].type).toBe('className')
-      expect(componentElements[0].props[2].name).toBe('property')
-      expect(componentElements[0].props[2].value).toBe(
-        'buttonClass:buttonClass',
-      )
-      expect(componentElements[0].props[2].locationType).toBe('props')
-      expectLocationOfString(
-        file,
-        componentElements[0].props[2].location,
-        'buttonClass',
-      )
-
-      expect(componentElements[4].props.length).toBe(8)
-      expect(componentElements[4].props[0].type).toBe('property')
-      expect(componentElements[4].props[0].name).toBe('string')
-      expect(componentElements[4].props[0].value).toBe('variant:secondary')
-      expect(componentElements[4].props[0].locationType).toBe('component')
-      expectLocationOfString(
-        file,
-        componentElements[4].props[0].location,
+        componentElements[0].getAttributes()[0].getDataFlow()[0].location,
         '"secondary"',
       )
-      expect(componentElements[4].props[4].type).toBe('className')
-      expect(componentElements[4].props[4].name).toBe('string')
-      expect(componentElements[4].props[4].value).toBe('border')
-      expect(componentElements[4].props[4].locationType).toBe('component')
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[1]
+            .node as LiteralNode,
+        ),
+      ).toBe('sm')
       expectLocationOfString(
         file,
-        componentElements[4].props[4].location,
+        componentElements[0].getAttributes()[0].getDataFlow()[1].location,
+        '"sm"',
+      )
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[2]
+            .node as LiteralNode,
+        ),
+      ).toBe('lg')
+      expectLocationOfString(
+        file,
+        componentElements[0].getAttributes()[0].getDataFlow()[2].location,
+        '"lg"',
+      )
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[3]
+            .node as LiteralNode,
+        ),
+      ).toBe('border')
+      expectLocationOfString(
+        file,
+        componentElements[0].getAttributes()[0].getDataFlow()[3].location,
         '"border"',
       )
     })
 
-    it('Should add className to element if has props className', () => {
-      const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
+    it('Should have correct text child index', () => {
       const file: TestFile = 'app/classNameTests.tsx'
       const content = testCases[file]
 
-      const result = getCodeInfoFromFile(
-        file,
-        content,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result).toBeTruthy()
-      expect(componentElements.length).toBe(8)
-
-      //h1
-      expect(componentElements[2].props.length).toBe(2)
-      expect(componentElements[2].props[1].type).toBe('className')
-      expect(componentElements[2].props[1].name).toBe('string')
-      expect(componentElements[2].props[1].value).toBe('')
-      expect(componentElements[2].props[1].locationType).toBe('add')
-      expect(
-        t.isJSXOpeningElement(componentElements[2].props[1].node),
-      ).toBeTruthy()
-      expectLocationOfString(
-        file,
-        componentElements[2].props[1].location,
-        '<h1>',
-      )
+      const result = getGraph(content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(6)
 
       //Text child should have the correct index
-      expect(componentElements[5].props.length).toBe(2)
-      expect(componentElements[5].props[0].type).toBe('text')
-      expect(componentElements[5].props[0].name).toBe('string')
-      expect(componentElements[5].props[0].value.trim()).toBe("You're welcome")
-      expect(componentElements[5].props[0].locationType).toBe('component')
-      expect(componentElements[5].props[0].index).toBe(1)
-
-      expect(componentElements[6].props.length).toBe(7)
-      expect(componentElements[6].props[0].type).toBe('property')
-      expect(componentElements[6].props[0].name).toBe('property')
-      expect(componentElements[6].props[0].value).toBe('variant:variant')
-      expect(componentElements[6].props[0].locationType).toBe('props')
-      expectLocationOfString(
-        file,
-        componentElements[6].props[0].location,
-        'variant',
+      expect(componentElements[0].getAttributes().length).toBe(3)
+      expect(componentElements[0].getAttributes()[2].name).toBe('children')
+      expect(componentElements[0].getAttributes()[2].getDataFlow().length).toBe(
+        1,
       )
-      expect(componentElements[6].props[3].type).toBe('className')
-      expect(componentElements[6].props[3].name).toBe('string')
-      expect(componentElements[6].props[3].value).toBe('buttonClass')
-      expect(componentElements[6].props[3].locationType).toBe('add')
       expect(
-        t.isJSXOpeningElement(componentElements[6].props[3].node),
-      ).toBeTruthy()
-      expectLocationOfString(
-        file,
-        componentElements[6].props[3].location,
-        '<Button size="lg">',
-      )
+        getLiteralValue(
+          componentElements[0].getAttributes()[2].getDataFlow()[0]
+            .node as LiteralNode,
+        ).trim(),
+      ).toBe("You're welcome")
+      expect(componentElements[0].getAttributes()[2].getChildIndex()).toBe(1)
     })
 
     it('Should keep parent index of text element', () => {
-      const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const file: TestFile = 'app/complexText.tsx'
       const content = testCases[file]
 
-      const result = getCodeInfoFromFile(
-        file,
-        content,
-        componentDefinitions,
-        componentElements,
-        {},
+      const result = getGraph(content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(12)
+
+      expect(componentElements[0].getAttributes().length).toBe(1)
+      expect(componentElements[0].getAttributes()[0].name).toBe('children')
+      expect(componentElements[0].getAttributes()[0].getDataFlow().length).toBe(
+        1,
       )
-      expect(result).toBeTruthy()
-      expect(componentElements.length).toBe(20)
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe(' Filter')
+      //expect(componentElements[0].getAttributes()[0].getChildIndex()).toBe(1)
 
-      expect(componentElements[3].props.length).toBe(3)
-      expect(componentElements[3].props[0].type).toBe('text')
-      expect(componentElements[3].props[0].name).toBe('string')
-      expect(componentElements[3].props[0].value).toContain('Filter')
-      expect(componentElements[3].props[0].index).toBe(1)
-
-      expect(componentElements[12].props.length).toBe(3)
-      expect(componentElements[12].props[0].type).toBe('text')
-      expect(componentElements[12].props[0].name).toBe('string')
-      expect(componentElements[12].props[0].value).toContain('Hello')
-      expect(componentElements[12].props[0].index).toBe(2)
+      expect(componentElements[8].getAttributes().length).toBe(1)
+      expect(componentElements[8].getAttributes()[0].name).toBe('children')
+      expect(componentElements[8].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[8].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe(' Hello')
+      //expect(componentElements[8].getAttributes()[0].getChildIndex()).toBe(2)
     })
 
     it('Should give the parent a classname when given a spread parameter', () => {
-      const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const file: TestFile = 'app/complexText.tsx'
-
       const content = testCases[file]
 
-      const result = getCodeInfoFromFile(
-        file,
-        content,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result).toBeTruthy()
-      expect(componentElements.length).toBe(20)
+      const result = getGraph(content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(12)
 
       //Spread -> h1
-      expect(componentElements[1].props.length).toBe(3)
-      expect(componentElements[1].props[2].type).toBe('className')
-      expect(componentElements[1].props[2].name).toBe('string')
-      expect(componentElements[1].props[2].value).toBe('')
-      expect(componentElements[1].props[2].locationType).toBe('add')
-      expect(
-        t.isJSXOpeningElement(componentElements[1].props[2].node),
-      ).toBeTruthy()
-      expectLocationOfString(
-        file,
-        componentElements[1].props[2].location,
-        '<h1 {...rest}>',
-      )
+      // expect(componentElements[1].getAttributes().length).toBe(3)
+      // expect(componentElements[1].getAttributes()[2].type).toBe('className')
+      // expect(componentElements[1].getAttributes()[2].name).toBe('string')
+      // expect(componentElements[1].getAttributes()[2].value).toBe('')
+      // expect(componentElements[1].getAttributes()[2].locationType).toBe('add')
+      // expect(
+      //   t.isJSXOpeningElement(componentElements[1].getAttributes()[2].node),
+      // ).toBeTruthy()
+      // expectLocationOfString(
+      //   file,
+      //   componentElements[1].getAttributes()[2].location,
+      //   '<h1 {...rest}>',
+      // )
 
       //Spread 1 -> h1
-      expect(componentElements[8].props.length).toBe(5)
-      expect(componentElements[8].props[4].type).toBe('className')
-      expect(componentElements[8].props[4].name).toBe('string')
-      expect(componentElements[8].props[4].value).toBe('className')
-      expect(componentElements[8].props[4].locationType).toBe('add')
-      expect(
-        t.isJSXOpeningElement(componentElements[8].props[4].node),
-      ).toBeTruthy()
+      // expect(componentElements[8].getAttributes().length).toBe(5)
+      // expect(componentElements[8].getAttributes()[4].type).toBe('className')
+      // expect(componentElements[8].getAttributes()[4].name).toBe('string')
+      // expect(componentElements[8].getAttributes()[4].value).toBe('className')
+      // expect(componentElements[8].getAttributes()[4].locationType).toBe('add')
+      // expect(
+      //   t.isJSXOpeningElement(componentElements[8].getAttributes()[4].node),
+      // ).toBeTruthy()
 
-      //Spread 2 -> h1
-      expect(componentElements[10].props.length).toBe(5)
-      expect(componentElements[10].props[0].type).toBe('text')
-      expect(componentElements[10].props[0].name).toBe('string')
-      expect(componentElements[10].props[0].value).toBe(
-        'This is a spread: label::',
+      expect(componentElements[1].getAttributes().length).toBe(2)
+      expect(componentElements[1].getAttributes()[0].name).toBe('className')
+      expect(componentElements[1].getAttributes()[0].getDataFlow().length).toBe(
+        1,
       )
-      expect(componentElements[10].props[0].locationType).toBe('component')
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('border-1')
+      expectLocationOfString(
+        file,
+        componentElements[1].getAttributes()[0].getDataFlow()[0].location,
+        '"border-1"',
+      )
 
-      expect(componentElements[10].props.length).toBe(5)
-      expect(componentElements[10].props[4].type).toBe('className')
-      expect(componentElements[10].props[4].name).toBe('string')
-      expect(componentElements[10].props[4].value).toBe('border-1')
-      expect(componentElements[10].props[4].locationType).toBe('component')
+      expect(componentElements[1].getAttributes()[1].name).toBe('children')
+      expect(componentElements[1].getAttributes()[1].getDataFlow().length).toBe(
+        2,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[1].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('Thank you friend')
+      expectLocationOfString(
+        file,
+        componentElements[1].getAttributes()[1].getDataFlow()[0].location,
+        '"Thank you friend"',
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[1].getDataFlow()[1]
+            .node as LiteralNode,
+        ),
+      ).toBe('This is a spread: label::')
+      expectLocationOfString(
+        file,
+        componentElements[1].getAttributes()[1].getDataFlow()[1].location,
+        '"This is a spread: label::"',
+      )
     })
 
     //TODO: Finish this

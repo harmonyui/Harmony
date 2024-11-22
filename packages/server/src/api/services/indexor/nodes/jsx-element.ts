@@ -23,7 +23,9 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
           const newAttribute = new JSXAttribute(
             this,
             _attribute.getValueNode(),
-            -1,
+            _attribute instanceof JSXAttribute
+              ? _attribute.getChildIndex()
+              : -1,
             _attribute,
           )
           attributes.push(newAttribute)

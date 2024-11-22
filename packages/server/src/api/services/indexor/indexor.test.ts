@@ -1,3 +1,11 @@
+import { describe, expect, it } from 'vitest'
+
+describe('test file', () => {
+  it('should work', () => {
+    expect(1).toBe(1)
+  })
+})
+
 export const testCases = {
   'app/SummaryMetadata.tsx': `import React from "react";
 
@@ -364,6 +372,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
 
    const App = () => {
         const spreadLabel = "This is a spread: label::";
+
         return (<>
             <Component><Icon/> Filter</Component>
             <ComponentComplex><Icon/> Hello</ComponentComplex>
