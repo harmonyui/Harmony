@@ -1,6 +1,7 @@
 import * as t from '@babel/types'
 import type { Node, ObjectNode } from './types'
-import { ComponentNode, JSXElementNode } from './node'
+import { ComponentNode } from './node'
+import { JSXElementNode } from './nodes/jsx-element'
 
 export const isIdentifier = (node: Node): node is Node<t.Identifier> =>
   t.isIdentifier(node.node)
@@ -34,3 +35,5 @@ export const isObjectExpression = (
 export const isObject = (node: Node): node is ObjectNode => {
   return 'getAttributes' in node
 }
+export const isExpression = (node: Node): node is Node<t.Expression> =>
+  t.isExpression(node.node)

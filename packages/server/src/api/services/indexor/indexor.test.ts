@@ -286,6 +286,10 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         )
     }
 
+    const App = () => {
+        return <ScrollViewInstance params={{id: "object id"}}/>
+    }
+
     `,
   'app/classNameTests.tsx': `
     import {cva} from 'class-variant-authority';

@@ -5,10 +5,13 @@ import * as t from '@babel/types'
 import { replaceByIndex } from '@harmony/util/src/utils/common'
 import { getSnippetFromNode } from '../publish/code-updator'
 import { isLiteralNode } from './ast'
-import type { Node } from './types'
+import type { JSXAttribute, Node } from './types'
 import { createNode, getComponentName, getLocationId } from './utils'
-import { ComponentNode, JSXAttributeNode, JSXElementNode } from './node'
+import { ComponentNode } from './node'
 import { addDataEdge } from './data-flow'
+import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
+import { JSXElementNode } from './nodes/jsx-element'
+import { JSXAttributeNode } from './nodes/jsx-attribute'
 
 export class FlowGraph {
   public nodes: Map<string, Node>
@@ -117,7 +120,7 @@ export class FlowGraph {
   }
 
   public addJSXAttribute(
-    jsxAttributeNode: JSXAttributeNode,
+    jsxAttributeNode: JSXAttribute,
     jsxElementNode: JSXElementNode,
   ) {
     this.setNode(jsxAttributeNode)
@@ -125,9 +128,15 @@ export class FlowGraph {
 
     const valueNode = jsxAttributeNode.getValueNode()
     this.addDataFlowEdge(valueNode)
-    jsxAttributeNode.setValueNode(this.nodes.get(valueNode.id) ?? valueNode)
-
-    this.addDependency(jsxAttributeNode.id, jsxElementNode.id)
+    //For JSXText, the valueNode is the same as the attributeNode
+    if (valueNode.id !== jsxAttributeNode.id) {
+      jsxAttributeNode.setValueNode(this.nodes.get(valueNode.id) ?? valueNode)
+    }
+    if (jsxAttributeNode instanceof JSXSpreadAttributeNode) {
+      this.addDependency(jsxAttributeNode.id, valueNode.id)
+    } else {
+      this.addDependency(jsxAttributeNode.id, jsxElementNode.id)
+    }
   }
 
   //Variable -> PropertyValue in component
@@ -268,6 +277,7 @@ export function getGraph(code: string) {
 
             graph.addJSXElement(elementNode, containingComponent)
 
+            const currAttributes: JSXAttributeNode[] = []
             for (
               let i = 0;
               i < jsxPath.node.openingElement.attributes.length;
@@ -275,25 +285,35 @@ export function getGraph(code: string) {
             ) {
               const attributePath = jsxPath.get(
                 `openingElement.attributes.${i}`,
-              )
-              if (Array.isArray(attributePath))
-                throw new Error('Should not be array')
+              ) as NodePath<t.JSXAttribute | t.JSXSpreadAttribute>
 
-              const attributeName =
-                t.isJSXAttribute(attributePath.node) &&
-                t.isJSXIdentifier(attributePath.node.name)
+              if (t.isJSXAttribute(attributePath.node)) {
+                const attributeName = t.isJSXIdentifier(attributePath.node.name)
                   ? attributePath.node.name.name
                   : getSnippetFromNode(attributePath.node)
-              const attributeNode = new JSXAttributeNode(
-                elementNode,
-                -1,
-                graph.createNode(
-                  attributeName,
-                  attributePath as NodePath<t.JSXAttribute>,
-                ),
-              )
+                const attributeNode = new JSXAttributeNode(
+                  elementNode,
+                  -1,
+                  graph.createNode(
+                    attributeName,
+                    attributePath as NodePath<t.JSXAttribute>,
+                  ),
+                )
 
-              graph.addJSXAttribute(attributeNode, elementNode)
+                graph.addJSXAttribute(attributeNode, elementNode)
+                currAttributes.push(attributeNode)
+              } else {
+                const spreadAttributeNode = new JSXSpreadAttributeNode(
+                  elementNode,
+                  currAttributes,
+                  graph.createNode(
+                    getSnippetFromNode(attributePath.node),
+                    attributePath as NodePath<t.JSXSpreadAttribute>,
+                  ),
+                )
+
+                graph.addJSXAttribute(spreadAttributeNode, elementNode)
+              }
             }
 
             let childIndex = 0

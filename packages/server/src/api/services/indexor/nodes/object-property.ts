@@ -1,20 +1,22 @@
 import * as t from '@babel/types'
 import { isObject } from '../node-predicates'
-import type { NodeBase, ObjectNode } from '../types'
+import type { NodeBase, ObjectNode, ObjectProperty } from '../types'
 import { Node } from '../types'
 import { getLiteralValue, isLiteralNode } from '../ast'
 
-export abstract class AbstractObjectProperty<
-  T extends t.Node = t.Node,
-> extends Node<T> {
+export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
+  extends Node<T>
+  implements ObjectProperty
+{
   constructor(
     private key: Node,
+    private value: Node,
     base: NodeBase<T>,
   ) {
     super(base)
   }
 
-  public override getValues() {
+  public override getValues(predicate?: (node: Node) => boolean): Node[] {
     const values: Node[] = []
     const superValues = super.getValues((node) =>
       isObject(node),
@@ -23,15 +25,15 @@ export abstract class AbstractObjectProperty<
     superValues.forEach((node) => {
       const attribute = node
         .getAttributes()
-        .find((_attribute) => _attribute.name === this.getName())
+        .find((_attribute) => _attribute.getName() === this.getName())
       if (!attribute) return
-      values.push(...attribute.getValues())
+      values.push(...attribute.getValueNode().getValues(predicate))
     })
 
     return values
   }
 
-  private getName() {
+  public getName() {
     const values = this.key.getValues()
     if (values.length !== 1) {
       return ''
@@ -45,6 +47,10 @@ export abstract class AbstractObjectProperty<
     }
 
     return ''
+  }
+
+  public getValueNode() {
+    return this.value
   }
 }
 

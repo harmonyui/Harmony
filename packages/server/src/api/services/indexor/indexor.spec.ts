@@ -17,7 +17,8 @@ import {
 import { getGraph } from './graph'
 import type { TestFile } from './indexor.test'
 import { testCases } from './indexor.test'
-import { JSXAttributeNode, JSXElementNode } from './node'
+import { JSXAttributeNode } from './nodes/jsx-attribute'
+import { JSXElementNode } from './nodes/jsx-element'
 
 describe('indexor', () => {
   const expectLocationOfString = (
@@ -804,99 +805,180 @@ function Component0() {
     })
 
     it('Should be able to handle complex dynamic instances', () => {
-      const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const file: TestFile = 'app/complexDynamicCases.tsx'
       const content = testCases[file]
 
-      const result = getCodeInfoFromFile(
-        file,
-        content,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result).toBeTruthy()
+      const result = getGraph(content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(6)
 
       //Comp
-      expect(componentElements[2].props.length).toBe(8)
-      expect(componentElements[2].props[0].type).toBe('property')
-      expect(componentElements[2].props[0].name).toBe('string')
-      expect(componentElements[2].props[0].value).toBe('variant:outline')
+
+      expect(componentElements[0].getAttributes().length).toBe(3)
+      expect(componentElements[0].getAttributes()[0].name).toBe('className')
+      expect(componentElements[0].getAttributes()[0].getDataFlow().length).toBe(
+        2,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('outline')
       expectLocationOfString(
         file,
-        componentElements[2].props[0].location,
+        componentElements[0].getAttributes()[0].getDataFlow()[0].location,
         '"outline"',
       )
-
-      expect(componentElements[2].props[3].type).toBe('className')
-      expect(componentElements[2].props[3].name).toBe('string')
-      expect(componentElements[2].props[3].value).toBe('bg-sky-50')
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[1]
+            .node as LiteralNode,
+        ),
+      ).toBe('bg-sky-50')
       expectLocationOfString(
         file,
-        componentElements[2].props[3].location,
+        componentElements[0].getAttributes()[0].getDataFlow()[1].location,
         '"bg-sky-50"',
       )
 
-      expect(componentElements[2].props[7].type).toBe('text')
-      expect(componentElements[2].props[7].name).toBe('string')
-      expect(componentElements[2].props[7].value).toBe('This is a child')
-      expect(componentElements[2].props[7].index).toBe(0)
+      //ref
+      expect(componentElements[0].getAttributes()[1].name).toBe('ref')
+      expect(componentElements[0].getAttributes()[1].getDataFlow().length).toBe(
+        0,
+      )
+
+      //children
+      expect(componentElements[0].getAttributes()[2].name).toBe('children')
+      expect(componentElements[0].getAttributes()[2].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[2].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('This is a child')
       expectLocationOfString(
         file,
-        componentElements[2].props[7].location,
+        componentElements[0].getAttributes()[2].getDataFlow()[0].location,
         'This is a child',
       )
 
-      //ScrollView
-      expect(componentElements[5].props.length).toBe(4)
-      expect(componentElements[5].props[3].type).toBe('property')
-      expect(componentElements[5].props[3].name).toBe('property')
-      expect(componentElements[5].props[3].value).toBe('id:params')
-      expect(componentElements[5].props[3].locationType).toBe('props')
-      expectLocationOfString(
-        file,
-        componentElements[5].props[3].location,
-        '_params',
+      //ScrollView -> div
+      expect(componentElements[2].getAttributes().length).toBe(1)
+      expect(componentElements[2].getAttributes()[0].name).toBe('className')
+      expect(componentElements[2].getAttributes()[0].getDataFlow().length).toBe(
+        3,
       )
-
-      //div -> ScrollView
-      expect(componentElements[6].props.length).toBe(5)
-      expect(componentElements[6].props[2].type).toBe('className')
-      expect(componentElements[6].props[2].name).toBe('string')
-      expect(componentElements[6].props[2].value).toBe('flex')
+      expect(
+        getLiteralValue(
+          componentElements[2].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe(' ')
       expectLocationOfString(
         file,
-        componentElements[6].props[2].location,
+        componentElements[2].getAttributes()[0].getDataFlow()[0].location,
+        ' ',
+      )
+      expect(
+        getLiteralValue(
+          componentElements[2].getAttributes()[0].getDataFlow()[1]
+            .node as LiteralNode,
+        ),
+      ).toBe('flex')
+      expectLocationOfString(
+        file,
+        componentElements[2].getAttributes()[0].getDataFlow()[1].location,
         '"flex"',
       )
-      expect(componentElements[6].props[4].type).toBe('className')
-      expect(componentElements[6].props[4].name).toBe('string')
-      expect(componentElements[6].props[4].value).toBe('dark:hover:text-sm')
+      expect(
+        getLiteralValue(
+          componentElements[2].getAttributes()[0].getDataFlow()[2]
+            .node as LiteralNode,
+        ),
+      ).toBe('dark:hover:text-sm')
       expectLocationOfString(
         file,
-        componentElements[6].props[4].location,
+        componentElements[2].getAttributes()[0].getDataFlow()[2].location,
         '"dark:hover:text-sm"',
       )
 
-      expect(componentElements[7].props.length).toBe(7)
-      expect(componentElements[7].props[4].type).toBe('className')
-      expect(componentElements[7].props[4].name).toBe('string')
-      expect(componentElements[7].props[4].value).toBe('styles')
+      //div2
+      expect(componentElements[3].getAttributes().length).toBe(2)
+      expect(componentElements[3].getAttributes()[0].name).toBe('className')
+      expect(componentElements[3].getAttributes()[0].getDataFlow().length).toBe(
+        3,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[3].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe(' ')
       expectLocationOfString(
         file,
-        componentElements[7].props[4].location,
+        componentElements[3].getAttributes()[0].getDataFlow()[0].location,
+        ' ',
+      )
+      expect(
+        getLiteralValue(
+          componentElements[3].getAttributes()[0].getDataFlow()[1]
+            .node as LiteralNode,
+        ),
+      ).toBe('styles')
+      expectLocationOfString(
+        file,
+        componentElements[3].getAttributes()[0].getDataFlow()[1].location,
         '"styles"',
       )
-
-      expect(componentElements[7].props[0].type).toBe('text')
-      expect(componentElements[7].props[0].name).toBe('string')
-      expect(componentElements[7].props[0].value).toBe('Hello')
+      expect(
+        getLiteralValue(
+          componentElements[3].getAttributes()[0].getDataFlow()[2]
+            .node as LiteralNode,
+        ),
+      ).toBe('')
       expectLocationOfString(
         file,
-        componentElements[7].props[0].location,
+        componentElements[3].getAttributes()[0].getDataFlow()[2].location,
+        "''",
+      )
+
+      expect(componentElements[3].getAttributes()[1].name).toBe('children')
+      expect(componentElements[3].getAttributes()[1].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[3].getAttributes()[1].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('Hello')
+      expectLocationOfString(
+        file,
+        componentElements[3].getAttributes()[1].getDataFlow()[0].location,
         '"Hello"',
+      )
+
+      //div -> ScrollView
+      expect(componentElements[4].getAttributes().length).toBe(4)
+      expect(componentElements[4].getAttributes()[2].name).toBe('id')
+      expect(componentElements[4].getAttributes()[2].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[4].getAttributes()[2].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('object id')
+      expectLocationOfString(
+        file,
+        componentElements[4].getAttributes()[2].getDataFlow()[0].location,
+        '"object id"',
       )
     })
 

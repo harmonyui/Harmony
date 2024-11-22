@@ -1,6 +1,8 @@
 import type { ComponentLocation } from '@harmony/util/src/types/component'
 import type * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
+import type { JSXElementNode } from './nodes/jsx-element'
+import { isLiteralNode } from './ast'
 
 export interface Attribute {
   id: string
@@ -41,6 +43,8 @@ export interface NodeBase<T extends t.Node> {
   dependents: Set<Node>
   path: NodePath<T>
 }
+
+const simplePredicate = (node: Node): boolean => node.dependencies.size === 0
 export class Node<T extends t.Node = t.Node> {
   public id: string
   public location: ComponentLocation
@@ -72,8 +76,7 @@ export class Node<T extends t.Node = t.Node> {
   }
 
   public getValues(
-    predicate: (node: Node) => boolean = (node: Node) =>
-      node.dependencies.size === 0,
+    predicate: (node: Node) => boolean = simplePredicate,
   ): Node[] {
     if (predicate(this)) {
       return [this]
@@ -88,5 +91,48 @@ export class Node<T extends t.Node = t.Node> {
 }
 
 export interface ObjectNode extends Node {
-  getAttributes: () => Node[]
+  getAttributes: () => ObjectProperty[]
+}
+
+export class JSXAttribute<T extends t.Node = t.Node>
+  extends Node<T>
+  implements ObjectProperty
+{
+  constructor(
+    private parentElement: JSXElementNode,
+    private value: Node,
+    private childIndex: number,
+    base: NodeBase<T>,
+  ) {
+    super(base)
+  }
+
+  public getValueNode() {
+    return this.value
+  }
+  public setValueNode(value: Node) {
+    this.value = value
+  }
+
+  public getParentElement() {
+    return this.parentElement
+  }
+
+  public getDataFlow(): Node[] {
+    const values = this.value.getValues()
+    return values.filter((value) => isLiteralNode(value.node))
+  }
+
+  public getChildIndex(): number {
+    return this.childIndex
+  }
+
+  public getName(): string {
+    return this.name
+  }
+}
+
+export interface ObjectProperty extends Node {
+  getName: () => string
+  getValueNode: () => Node
 }
