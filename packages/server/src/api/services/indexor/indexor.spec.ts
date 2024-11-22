@@ -673,149 +673,133 @@ function Component0() {
     })
 
     it('Should handle inner classNames', () => {
-      const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const file: TestFile = 'app/innerClassName.tsx'
       const content = testCases[file]
 
-      const result = getCodeInfoFromFile(
-        file,
-        content,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result).toBeTruthy()
-      expect(componentElements.length).toBe(9)
+      const result = getGraph(content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(4)
 
-      expect(componentElements[4].props.length).toBe(3)
-      expect(componentElements[4].props[1].type).toBe('className')
-      expect(componentElements[4].props[1].name).toBe('property')
-      expect(componentElements[4].props[1].value).toBe('className:innerClass')
+      expect(componentElements[1].getAttributes().length).toBe(2)
+      expect(componentElements[1].getAttributes()[0].name).toBe('className')
+      expect(componentElements[1].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('bg-primary')
       expectLocationOfString(
         file,
-        componentElements[4].props[1].location,
-        'innerClass',
-      )
-
-      expect(componentElements[8].props.length).toBe(4)
-      expect(componentElements[8].props[1].type).toBe('className')
-      expect(componentElements[8].props[1].name).toBe('string')
-      expect(componentElements[8].props[1].value).toBe('bg-primary')
-      expectLocationOfString(
-        file,
-        componentElements[8].props[1].location,
+        componentElements[1].getAttributes()[0].getDataFlow()[0].location,
         '"bg-primary"',
       )
     })
 
     it('Should handle object properties', () => {
-      const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const file: TestFile = 'app/objectProperties.tsx'
       const content = testCases[file]
 
-      const result = getCodeInfoFromFile(
-        file,
-        content,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result).toBeTruthy()
-      expect(componentElements.length).toBe(7)
+      const result = getGraph(content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(4)
 
       //div -> layer 1
-      expect(componentElements[0].props.length).toBe(3)
-      expect(componentElements[0].props[1].type).toBe('className')
-      expect(componentElements[0].props[1].name).toBe('string')
-      expect(componentElements[0].props[1].value).toBe('bg-white')
+      expect(componentElements[0].getAttributes().length).toBe(1)
+      expect(componentElements[0].getAttributes()[0].name).toBe('className')
+      expect(componentElements[0].getAttributes()[0].getDataFlow().length).toBe(
+        3,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[1]
+            .node as LiteralNode,
+        ),
+      ).toBe('bg-white')
       expectLocationOfString(
         file,
-        componentElements[0].props[1].location,
+        componentElements[0].getAttributes()[0].getDataFlow()[1].location,
         '"bg-white"',
       )
-      expect(componentElements[0].props[2].type).toBe('className')
-      expect(componentElements[0].props[2].name).toBe('property')
-      expect(componentElements[0].props[2].value).toBe('className:className')
-      expect(componentElements[0].props[2].locationType).toBe('props')
-      expectLocationOfString(
-        file,
-        componentElements[0].props[2].location,
-        'className',
-      )
 
-      //h1 -> layer 1
-      expect(componentElements[1].props.length).toBe(2)
-      expect(componentElements[1].props[1].type).toBe('className')
-      expect(componentElements[1].props[1].name).toBe('string')
-      expect(componentElements[1].props[1].value).toBe('text-lg')
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[2]
+            .node as LiteralNode,
+        ),
+      ).toBe('bg-blue-50')
       expectLocationOfString(
         file,
-        componentElements[1].props[1].location,
-        '"text-lg"',
-      )
-
-      expect(componentElements[1].props[0].type).toBe('text')
-      expect(componentElements[1].props[0].name).toBe('property')
-      expect(componentElements[1].props[0].value).toBe('label')
-      expectLocationOfString(
-        file,
-        componentElements[1].props[0].location,
-        'props.label',
-      )
-
-      //h2
-      expect(componentElements[2].props.length).toBe(2)
-      expect(componentElements[2].props[0].type).toBe('text')
-      expect(componentElements[2].props[0].name).toBe('string')
-      expect(componentElements[2].props[0].value).toBe('Yes')
-      expectLocationOfString(
-        file,
-        componentElements[2].props[0].location,
-        '"Yes"',
-      )
-
-      expect(componentElements[2].props.length).toBe(2)
-      expect(componentElements[2].props[1].type).toBe('className')
-      expect(componentElements[2].props[1].name).toBe('string')
-      expect(componentElements[2].props[1].value).toBe('flex')
-      expectLocationOfString(
-        file,
-        componentElements[2].props[1].location,
-        '"flex"',
-      )
-
-      //div -> layer 2
-      expect(componentElements[4].props.length).toBe(4)
-      expect(componentElements[4].props[1].type).toBe('className')
-      expect(componentElements[4].props[1].name).toBe('string')
-      expect(componentElements[4].props[1].value).toBe('bg-white')
-      expectLocationOfString(
-        file,
-        componentElements[4].props[1].location,
-        '"bg-white"',
-      )
-      expect(componentElements[4].props[2].type).toBe('className')
-      expect(componentElements[4].props[2].name).toBe('string')
-      expect(componentElements[4].props[2].value).toBe('bg-blue-50')
-      expectLocationOfString(
-        file,
-        componentElements[4].props[2].location,
+        componentElements[0].getAttributes()[0].getDataFlow()[2].location,
         '"bg-blue-50"',
       )
 
-      //h1
-      expect(componentElements[5].props.length).toBe(3)
-      expect(componentElements[5].props[0].type).toBe('text')
-      expect(componentElements[5].props[0].name).toBe('string')
-      expect(componentElements[5].props[0].value).toBe('Hello there')
+      //h1 -> layer 1
+      expect(componentElements[1].getAttributes().length).toBe(2)
+      expect(componentElements[1].getAttributes()[0].name).toBe('className')
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('text-lg')
       expectLocationOfString(
         file,
-        componentElements[5].props[0].location,
+        componentElements[1].getAttributes()[0].getDataFlow()[0].location,
+        '"text-lg"',
+      )
+
+      expect(componentElements[1].getAttributes()[1].name).toBe('children')
+      expect(componentElements[1].getAttributes()[1].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[1].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('Hello there')
+      expectLocationOfString(
+        file,
+        componentElements[1].getAttributes()[1].getDataFlow()[0].location,
         '"Hello there"',
+      )
+
+      //h2
+      expect(componentElements[2].getAttributes().length).toBe(2)
+      expect(componentElements[2].getAttributes()[0].name).toBe('className')
+      expect(
+        getLiteralValue(
+          componentElements[2].getAttributes()[0].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('flex')
+      expectLocationOfString(
+        file,
+        componentElements[2].getAttributes()[0].getDataFlow()[0].location,
+        '"flex"',
+      )
+
+      expect(componentElements[2].getAttributes()[1].name).toBe('children')
+      expect(componentElements[2].getAttributes()[1].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[2].getAttributes()[1].getDataFlow()[0]
+            .node as LiteralNode,
+        ),
+      ).toBe('Yes')
+      expectLocationOfString(
+        file,
+        componentElements[2].getAttributes()[1].getDataFlow()[0].location,
+        '"Yes"',
       )
     })
 

@@ -7,12 +7,7 @@ import { getSnippetFromNode } from '../publish/code-updator'
 import { isLiteralNode } from './ast'
 import type { Node } from './types'
 import { createNode, getComponentName, getLocationId } from './utils'
-import {
-  ComponentArgumentPlaceholderNode,
-  ComponentNode,
-  JSXAttributeNode,
-  JSXElementNode,
-} from './node'
+import { ComponentNode, JSXAttributeNode, JSXElementNode } from './node'
 import { addDataEdge } from './data-flow'
 
 export class FlowGraph {
@@ -127,17 +122,10 @@ export class FlowGraph {
   ) {
     this.setNode(jsxAttributeNode)
     jsxElementNode.addAttribute(jsxAttributeNode)
-    //const definitionComponent = jsxElementNode.getDefinitionComponent()
 
     const valueNode = jsxAttributeNode.getValueNode()
     this.addDataFlowEdge(valueNode)
-    // if (definitionComponent) {
-    //   this.addComponentPropertyDataEdge(
-    //     definitionComponent,
-    //     jsxAttributeNode.name,
-    //     valueNode,
-    //   )
-    // }
+    jsxAttributeNode.setValueNode(this.nodes.get(valueNode.id) ?? valueNode)
 
     this.addDependency(jsxAttributeNode.id, jsxElementNode.id)
   }

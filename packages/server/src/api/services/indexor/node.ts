@@ -1,13 +1,8 @@
 import * as t from '@babel/types'
 import { getSnippetFromNode } from '../publish/code-updator'
-import type { NodeBase } from './types'
+import type { NodeBase, ObjectNode } from './types'
 import { Node } from './types'
-import {
-  createNode,
-  isJSXElement,
-  isObjectPattern,
-  traceDataFlow,
-} from './utils'
+import { createNode } from './utils'
 import { isLiteralNode } from './ast'
 
 export class JSXAttributeNode extends Node<
@@ -29,6 +24,10 @@ export class JSXAttributeNode extends Node<
 
   public getValueNode() {
     return this.value
+  }
+
+  public setValueNode(value: Node) {
+    this.value = value
   }
 
   public getValues() {
@@ -75,7 +74,7 @@ export class JSXAttributeNode extends Node<
   }
 }
 
-export class JSXElementNode extends Node<t.JSXElement> {
+export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   constructor(
     private attributes: JSXAttributeNode[],
     private parentComponent: ComponentNode,
@@ -139,26 +138,6 @@ export class ComponentNode extends Node<
 
   public addJSXElement(element: JSXElementNode) {
     this.elements.push(element)
-  }
-}
-
-export class ObjectPropertyNode extends Node {
-  public getValues() {
-    const values: Node[] = []
-    const superValues = super.getValues()
-
-    superValues.forEach((node) => {
-      if (isJSXElement(node)) {
-        const attribute = node
-          .getAttributes()
-          .find((_attribute) => _attribute.name === this.name)
-        if (!attribute) return
-        values.push(...attribute.getValues())
-      }
-      //values.push(node)
-    })
-
-    return values
   }
 }
 

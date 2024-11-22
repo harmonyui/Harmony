@@ -1,24 +1,21 @@
-import type { NodePath } from '@babel/traverse'
+import type { Binding, NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import { getSnippetFromNode } from '../publish/code-updator'
 import {
-  createNode,
-  getLocationId,
   isCallExpression,
-  isFunction,
   isIdentifier,
+  isMemberExpression,
+  isObjectExpression,
   isObjectPattern,
   isTemplateLiteral,
   isVariableDeclarator,
-} from './utils'
+} from './node-predicates'
 import type { FlowGraph } from './graph'
 import type { Node } from './types'
-import {
-  ComponentNode,
-  ObjectPropertyNode,
-  PropertyNode,
-  UndefinedNode,
-} from './node'
+import { createNode, getLocationId } from './utils'
+import { MemberExpressionNode } from './nodes/member-expression'
+import { ObjectExpressionNode } from './nodes/object-expression'
+import { ObjectPatternNode } from './nodes/object-pattern'
 
 export type AddEdge<T extends t.Node> = (
   node: Node<T>,
@@ -26,7 +23,6 @@ export type AddEdge<T extends t.Node> = (
 ) => string[]
 
 export const addDataEdge = (node: Node, graph: FlowGraph) => {
-  graph.setNode(node)
   const edges = addEdge(node, graph)
   edges.forEach((edge) => graph.addDependency(node.id, edge))
 }
@@ -39,11 +35,19 @@ const addEdge: AddEdge<t.Node> = (node, graph) => {
     return addObjectPatternEdge(node, graph)
   } else if (isTemplateLiteral(node)) {
     return addTemplateLiteralEdge(node, graph)
+  } else if (isMemberExpression(node)) {
+    return addMemberExpressionEdge(node, graph)
+  } else if (isObjectExpression(node)) {
+    return addObjectExpressionEdge(node, graph)
+  } else if (isVariableDeclarator(node)) {
+    return addVariableDeclaratorEdge(node, graph)
   }
 
+  graph.setNode(node)
   return []
 }
 const addCallExpressionEdge: AddEdge<t.CallExpression> = (node, graph) => {
+  graph.setNode(node)
   return node.node.arguments.map((argument, i) => {
     const argPath = node.path.get(`arguments.${i}`) as NodePath
     const newNode = createNode(getSnippetFromNode(argument), argPath, '')
@@ -54,85 +58,95 @@ const addCallExpressionEdge: AddEdge<t.CallExpression> = (node, graph) => {
   })
 }
 
-const addEdgeToAssignment = (
-  node: Node,
-  contextNode: Node<t.Identifier>,
-  graph: FlowGraph,
-) => {
+const addIdentifierEdge: AddEdge<t.Identifier> = (node, graph) => {
   graph.setNode(node)
-  if (isIdentifier(node)) {
-    return node.id
-  } else if (isObjectPattern(node)) {
-    const propertyIndex = node.node.properties.findIndex(
-      (property) =>
-        t.isObjectProperty(property) &&
-        t.isIdentifier(property.value) &&
-        property.value.name === contextNode.node.name,
-    )
-    const propertyPath = node.path.get(
-      `properties.${propertyIndex}.key`,
-    ) as NodePath
-    const newPropertyNode = new ObjectPropertyNode(
-      createNode(contextNode.name, propertyPath, ''),
-    )
-    graph.setNode(newPropertyNode)
-    graph.addDependency(newPropertyNode.id, node.id)
-    return newPropertyNode.id
+  let scope = node.path.scope.bindings[node.node.name] as Binding | undefined
+  scope =
+    scope ??
+    (node.path.scope.parent.bindings[node.node.name] as Binding | undefined)
+  if (!scope) {
+    throw new Error('Invalid scope')
   }
 
-  throw new Error('Cannot deconstruct assignment')
-}
-const addIdentifierEdge: AddEdge<t.Identifier> = (node, graph) => {
-  const referencePath = node.path.scope.bindings[node.node.name].path
+  const identifier = scope.identifier
+  const identifierId = getLocationId(identifier)
+
+  //If we are currently already visiting this node, just return
+  if (node.id === identifierId) return []
+
+  const referencePath = scope.path
   const newNode = createNode(
     getSnippetFromNode(referencePath.node),
     referencePath,
     '',
   )
-  if (isObjectPattern(newNode)) {
-    return [addEdgeToAssignment(newNode, node, graph)]
-  } else if (isVariableDeclarator(newNode)) {
-    const initPath = newNode.path.get('init') as NodePath
-    const id = newNode.path.get('id') as NodePath
-    const idNode = createNode(getSnippetFromNode(newNode.node.id), id, '')
-    const assignment = addEdgeToAssignment(idNode, node, graph)
+  addDataEdge(newNode, graph)
 
-    const initNode = createNode(
-      newNode.node.init ? getSnippetFromNode(newNode.node.init) : 'undefined',
-      initPath,
-      '',
-    )
-    addDataEdge(initNode, graph)
-    graph.addDependency(idNode.id, initNode.id)
-    return [assignment]
+  const identifierNode = graph.nodes.get(getLocationId(identifier))
+  if (!identifierNode) {
+    throw new Error('Identifier node not found')
   }
 
-  return [newNode.id]
+  return [identifierNode.id]
+}
+
+const addVariableDeclaratorEdge: AddEdge<t.VariableDeclarator> = (
+  node,
+  graph,
+) => {
+  graph.setNode(node)
+  const initPath = node.path.get('init') as NodePath
+  const id = node.path.get('id') as NodePath
+  const idNode = createNode(getSnippetFromNode(node.node.id), id, '')
+  addDataEdge(idNode, graph)
+
+  const initNode = createNode(
+    node.node.init ? getSnippetFromNode(node.node.init) : 'undefined',
+    initPath,
+    '',
+  )
+  addDataEdge(initNode, graph)
+  graph.addDependency(idNode.id, initNode.id)
+  return [idNode.id]
 }
 
 const addObjectPatternEdge: AddEdge<t.ObjectPattern> = (node, graph) => {
+  graph.setNode(node)
   for (let i = 0; i < node.node.properties.length; i++) {
     const property = node.node.properties[i]
-    if (
-      t.isObjectProperty(property) &&
-      t.isIdentifier(property.key) &&
-      t.isIdentifier(property.value)
-    ) {
-      const propertyPath = node.path.get(`properties.${i}.value`) as NodePath
-      const newNode = createNode(
+    if (t.isObjectProperty(property)) {
+      const keyPath = node.path.get(`properties.${i}.key`) as NodePath
+      const newKey = createNode(getSnippetFromNode(property.key), keyPath, '')
+
+      const valuePath = node.path.get(`properties.${i}.value`) as NodePath
+      const newValue = createNode(
         getSnippetFromNode(property.value),
-        propertyPath,
+        valuePath,
         '',
       )
 
-      addDataEdge(newNode, graph)
+      const propertypath = node.path.get(
+        `properties.${i}`,
+      ) as NodePath<t.ObjectPattern>
+      const newNode = new ObjectPatternNode(
+        newKey,
+        createNode(getSnippetFromNode(propertypath.node), propertypath, ''),
+      )
+      graph.setNode(newNode)
+      addDataEdge(newKey, graph)
+      addDataEdge(newValue, graph)
+
+      graph.addDependency(newNode.id, node.id)
+      if (newValue.id !== newNode.id) {
+        graph.addDependency(newValue.id, newNode.id)
+      }
     }
   }
-  connectToParent(node, graph)
   return []
 }
 
 const addTemplateLiteralEdge: AddEdge<t.TemplateLiteral> = (node, graph) => {
+  graph.setNode(node)
   return [
     ...node.node.expressions.map(
       (_, i) => node.path.get(`expressions.${i}`) as NodePath<t.Expression>,
@@ -163,17 +177,63 @@ const addTemplateLiteralEdge: AddEdge<t.TemplateLiteral> = (node, graph) => {
     })
 }
 
-const connectToParent = (node: Node, graph: FlowGraph) => {
-  const parent = node.path.parent
-  const parentNode = graph.nodes.get(getLocationId(parent))
-  //If node is an argument
-  if (parentNode && isFunction(parentNode)) {
-    const argumentNode = parentNode
-      .getArguments()
-      .find((arg) => arg.id === node.id)
-    if (!argumentNode) throw new Error(`Cannot find argument node ${node.name}`)
-    graph.addDependency(node.id, argumentNode.id)
+const addMemberExpressionEdge: AddEdge<t.MemberExpression> = (node, graph) => {
+  const objectPath = node.path.get('object') as NodePath
+  const objectNode = createNode(
+    getSnippetFromNode(node.node.object),
+    objectPath,
+    '',
+  )
+  addDataEdge(objectNode, graph)
+
+  const propertyPath = node.path.get('property') as NodePath
+  const propertyNode = createNode(
+    getSnippetFromNode(node.node.property),
+    propertyPath,
+    '',
+  )
+  //Only trace the data flow of computed properties
+  if (node.node.computed) {
+    addDataEdge(propertyNode, graph)
   } else {
-    throw new Error('Parent not found')
+    graph.setNode(propertyNode)
   }
+  const memberExpressionNode = new MemberExpressionNode(propertyNode, node)
+  graph.setNode(memberExpressionNode)
+
+  return [objectNode.id]
+}
+
+const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
+  const properties = node.node.properties.map((property, i) => {
+    if (t.isObjectProperty(property)) {
+      const keyPath = node.path.get(`properties.${i}.key`) as NodePath
+      const keyNode = createNode(getSnippetFromNode(keyPath.node), keyPath, '')
+      graph.setNode(keyNode)
+      const valuePath = node.path.get(`properties.${i}.value`) as NodePath
+      const valueNode = createNode(
+        getSnippetFromNode(valuePath.node),
+        valuePath,
+        '',
+      )
+      if (valueNode.id !== keyNode.id) {
+        addDataEdge(valueNode, graph)
+        graph.addDependency(keyNode.id, valueNode.id)
+      } else {
+        addDataEdge(keyNode, graph)
+      }
+
+      return keyNode
+    }
+
+    const path = node.path.get(`properties.${i}`) as NodePath
+    const newNode = createNode(getSnippetFromNode(path.node), path, '')
+    addDataEdge(newNode, graph)
+
+    return newNode
+  })
+  const objectExpression = new ObjectExpressionNode(properties, node)
+  graph.setNode(objectExpression)
+
+  return properties.map((property) => property.id)
 }
