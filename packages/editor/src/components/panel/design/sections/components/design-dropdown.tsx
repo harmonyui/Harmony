@@ -5,7 +5,10 @@ export const DesignDropdown: typeof Dropdown = (props) => {
   return (
     <Dropdown
       {...props}
-      className={getClass('!hw-border-0', props.className)}
+      className={getClass(
+        '!hw-border-0 !hw-bg-gray-100 hover:!hw-bg-gray-200 hw-rounded-lg',
+        props.className,
+      )}
     />
   )
 }

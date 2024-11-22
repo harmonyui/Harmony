@@ -30,10 +30,10 @@ export const ColorAttribute: React.FunctionComponent<{
 
   return (
     <div
-      className={getClass('hw-flex hw-gap-1 hw-items-center hw-h-5', className)}
+      className={getClass('hw-flex hw-gap-1 hw-items-center hw-h-6', className)}
     >
       <ColorPicker
-        className='hw-h-full'
+        className='hw-h-6'
         value={colorValue}
         onChange={(value) =>
           onAttributeChange({ name: attribute, value: value.slice(0, 7) })

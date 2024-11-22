@@ -141,3 +141,14 @@ export const getElementText = (element: HTMLElement): string => {
 
   return element.innerText
 }
+
+export const translatePropertyName = (name: string): string => {
+  switch (name) {
+    case 'src':
+      return 'Source'
+    case 'href':
+      return 'URL'
+    default:
+      return name
+  }
+}
