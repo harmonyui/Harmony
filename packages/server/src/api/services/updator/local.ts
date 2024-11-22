@@ -90,10 +90,7 @@ export class GithubFileRetriver implements FileContentRetriever {
   }
 
   public async getNewFileContent(file: string) {
-    const content = await this.gitRepository.getContent(
-      file,
-      this.gitRepository.repository.branch,
-    )
+    const content = await this.gitRepository.getContent(file)
 
     return content
   }

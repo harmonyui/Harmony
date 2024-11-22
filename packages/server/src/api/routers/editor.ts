@@ -342,19 +342,6 @@ export const editorRouter = createTRPCRouter({
     .input(createUpdateFromTextRequestSchema)
     .output(createUpdateFromTextResponseSchema)
     .mutation(async ({ input }) => {
-      // const componentUpdates: ComponentUpdate[] = [
-      //   {
-      //     name: 'borderWidth',
-      //     type: 'className',
-      //     componentId:
-      //       'YXBwcy9kYXNoYm9hcmQvYXBwL3Byb2plY3RzL3BhZ2UudHN4OjIzOjY6MzM6MTY=#YXBwcy9kYXNoYm9hcmQvdXRpbHMvc2lkZS1uYXYudHN4OjYyOjQ6NjQ6MTY=#cGFja2FnZXMvdWkvc3JjL2NvbXBvbmVudHMvY29yZS9zaWRlLXBhbmVsLnRzeDoxNzg6MjI6MTc4OjY4#cGFja2FnZXMvdWkvc3JjL2NvbXBvbmVudHMvY29yZS9zaWRlLXBhbmVsLnRzeDozMjc6NjozNDg6MTA=',
-      //     value: '1px',
-      //     oldValue: '0px',
-      //     isGlobal: false,
-      //     childIndex: 0,
-      //   },
-      // ]
-
       const newAttributes = await generateUpdatesFromText(
         input.text,
         input.currentAttributes,

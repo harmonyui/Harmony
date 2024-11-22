@@ -109,10 +109,7 @@ export async function indexForComponents(
 ): Promise<HarmonyComponent[]> {
   const readFile = async (filepath: string) => {
     //TOOD: Need to deal with actual branch probably at some point
-    const content = await gitRepository.getContent(
-      filepath,
-      gitRepository.repository.branch,
-    )
+    const content = await gitRepository.getContent(filepath)
 
     return content
   }

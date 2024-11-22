@@ -65,12 +65,9 @@ export class CodeUpdator {
 
     const updateInfo = await this.getUpdateInfo(updates, elementInstances)
 
-    const repository = this.gitRepository.repository
     const codeUpdates: CodeUpdateInfo[] = (
       await Promise.all(
-        updateInfo.map((info) =>
-          this.getChangeAndLocation(info, repository.branch),
-        ),
+        updateInfo.map((info) => this.getChangeAndLocation(info)),
       )
     ).flat()
     codeUpdates.sort((a, b) => a.location.start - b.location.start)
@@ -225,7 +222,6 @@ export class CodeUpdator {
 
   private async getChangeAndLocation(
     update: UpdateInfo,
-    branchName: string,
   ): Promise<CodeUpdateInfo[]> {
     const { component, type, oldValue: _oldValue, attributes } = update
     const gitRepository = this.gitRepository
@@ -404,10 +400,8 @@ export class CodeUpdator {
                 '',
               )
               const { location, value, isDefinedAndDynamic } = locationAndValue
-              const elementSnippet = await getCodeSnippet(gitRepository)(
-                location,
-                branchName,
-              )
+              const elementSnippet =
+                await getCodeSnippet(gitRepository)(location)
 
               //TODO: Make the tailwind prefix part dynamic
               const oldClasses = value
