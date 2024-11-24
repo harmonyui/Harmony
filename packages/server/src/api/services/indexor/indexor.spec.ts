@@ -1,24 +1,15 @@
 import { describe, it, expect } from 'vitest'
 import type * as t from '@babel/types'
 import { getSnippetFromNode } from '../publish/code-updator'
-import type {
-  HarmonyComponent,
-  HarmonyContainingComponent,
-  Node,
-} from './types'
+import type { HarmonyComponent, Node } from './types'
 import { getCodeInfoAndNormalizeFromFiles } from './indexor'
-import type { LiteralNode } from './ast'
-import {
-  createGraph,
-  getCodeInfoFromFile,
-  getLiteralValue,
-  isLiteralNode,
-} from './ast'
 import { getGraph } from './graph'
 import type { TestFile } from './indexor.test'
 import { testCases } from './indexor.test'
 import { JSXAttributeNode } from './nodes/jsx-attribute'
 import { JSXElementNode } from './nodes/jsx-element'
+import type { LiteralNode } from './utils'
+import { getLiteralValue, isLiteralNode } from './utils'
 
 describe('indexor', () => {
   const expectLocationOfString = (
@@ -152,8 +143,7 @@ function Component0() {
       ).toBe('StringLiteral')
       expect(
         getLiteralValue(
-          componentElements[7].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[7].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('text-sm')
       expectLocationOfString(
@@ -167,8 +157,7 @@ function Component0() {
       ).toBe('StringLiteral')
       expect(
         getLiteralValue(
-          componentElements[7].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[7].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('bg-blue-50')
       expectLocationOfString(
@@ -182,8 +171,7 @@ function Component0() {
       ).toBe('StringLiteral')
       expect(
         getLiteralValue(
-          componentElements[7].getAttributes()[0].getDataFlow()[2]
-            .node as LiteralNode,
+          componentElements[7].getAttributes()[0].getDataFlow()[2].node,
         ),
       ).toBe('flex')
       expectLocationOfString(
@@ -237,8 +225,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[9].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[9].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('Responses')
       expectLocationOfString(
@@ -272,8 +259,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('flex')
       expectLocationOfString(
@@ -284,8 +270,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('bg-blue-40')
       expectLocationOfString(
@@ -304,8 +289,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('bg-gray-900 ')
       expectLocationOfString(
@@ -316,8 +300,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('text-sm')
       expectLocationOfString(
@@ -384,8 +367,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe(
         'flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm',
@@ -398,8 +380,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('bg-gray-50')
       expectLocationOfString(
@@ -410,8 +391,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[2]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[2].node,
         ),
       ).toBe('text-sm')
       expectLocationOfString(
@@ -422,8 +402,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[3]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[3].node,
         ),
       ).toBe('bg-blue-50')
       expectLocationOfString(
@@ -434,8 +413,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[4]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[4].node,
         ),
       ).toBe('flex')
       expectLocationOfString(
@@ -458,8 +436,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[1].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[1].getDataFlow()[0].node,
         ),
       ).toBe('Displays')
       expectLocationOfString(
@@ -471,8 +448,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[1].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[1].getDataFlow()[1].node,
         ),
       ).toBe('Starts')
       expectLocationOfString(
@@ -483,8 +459,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[1].getDataFlow()[2]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[1].getDataFlow()[2].node,
         ),
       ).toBe('Responses')
       expectLocationOfString(
@@ -514,8 +489,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('m-2')
       expectLocationOfString(
@@ -526,8 +500,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('p-3')
       expectLocationOfString(
@@ -538,8 +511,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[0].getDataFlow()[2]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[0].getDataFlow()[2].node,
         ),
       ).toBe('m-3')
       expectLocationOfString(
@@ -550,8 +522,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[0].getDataFlow()[3]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[0].getDataFlow()[3].node,
         ),
       ).toBe('bg-blue-50 flex flex-col')
       expectLocationOfString(
@@ -568,8 +539,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[3].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[3].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('Hello there')
       expectLocationOfString(
@@ -580,8 +550,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[3].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[3].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('bob')
       expectLocationOfString(
@@ -598,8 +567,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('m-2')
       expectLocationOfString(
@@ -610,8 +578,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('p-3')
       expectLocationOfString(
@@ -627,8 +594,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[1].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[1].getDataFlow()[0].node,
         ),
       ).toBe('Hello there')
       expectLocationOfString(
@@ -655,8 +621,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('bg-primary')
       expectLocationOfString(
@@ -684,8 +649,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('bg-white')
       expectLocationOfString(
@@ -696,8 +660,7 @@ function Component0() {
 
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[2]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[2].node,
         ),
       ).toBe('bg-blue-50')
       expectLocationOfString(
@@ -711,8 +674,7 @@ function Component0() {
       expect(componentElements[1].getAttributes()[0].name).toBe('className')
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('text-lg')
       expectLocationOfString(
@@ -727,8 +689,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[1].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[1].getDataFlow()[0].node,
         ),
       ).toBe('Hello there')
       expectLocationOfString(
@@ -742,8 +703,7 @@ function Component0() {
       expect(componentElements[2].getAttributes()[0].name).toBe('className')
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('flex')
       expectLocationOfString(
@@ -758,8 +718,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[1].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[1].getDataFlow()[0].node,
         ),
       ).toBe('Yes')
       expectLocationOfString(
@@ -788,8 +747,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('outline')
       expectLocationOfString(
@@ -799,8 +757,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('bg-sky-50')
       expectLocationOfString(
@@ -822,8 +779,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[2].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[2].getDataFlow()[0].node,
         ),
       ).toBe('This is a child')
       expectLocationOfString(
@@ -840,8 +796,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe(' ')
       expectLocationOfString(
@@ -851,8 +806,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('flex')
       expectLocationOfString(
@@ -862,8 +816,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[2].getAttributes()[0].getDataFlow()[2]
-            .node as LiteralNode,
+          componentElements[2].getAttributes()[0].getDataFlow()[2].node,
         ),
       ).toBe('dark:hover:text-sm')
       expectLocationOfString(
@@ -880,8 +833,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[3].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[3].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe(' ')
       expectLocationOfString(
@@ -891,8 +843,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[3].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[3].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('styles')
       expectLocationOfString(
@@ -902,8 +853,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[3].getAttributes()[0].getDataFlow()[2]
-            .node as LiteralNode,
+          componentElements[3].getAttributes()[0].getDataFlow()[2].node,
         ),
       ).toBe('')
       expectLocationOfString(
@@ -918,8 +868,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[3].getAttributes()[1].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[3].getAttributes()[1].getDataFlow()[0].node,
         ),
       ).toBe('Hello')
       expectLocationOfString(
@@ -936,8 +885,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[4].getAttributes()[2].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[4].getAttributes()[2].getDataFlow()[0].node,
         ),
       ).toBe('object id')
       expectLocationOfString(
@@ -964,8 +912,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('secondary')
       expectLocationOfString(
@@ -975,8 +922,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[1].node,
         ),
       ).toBe('sm')
       expectLocationOfString(
@@ -986,8 +932,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[2]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[2].node,
         ),
       ).toBe('lg')
       expectLocationOfString(
@@ -997,8 +942,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[3]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[3].node,
         ),
       ).toBe('border')
       expectLocationOfString(
@@ -1026,8 +970,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[2].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[2].getDataFlow()[0].node,
         ).trim(),
       ).toBe("You're welcome")
       expect(componentElements[0].getAttributes()[2].getChildIndex()).toBe(1)
@@ -1050,8 +993,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[0].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[0].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe(' Filter')
       //expect(componentElements[0].getAttributes()[0].getChildIndex()).toBe(1)
@@ -1063,8 +1005,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[8].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[8].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe(' Hello')
       //expect(componentElements[8].getAttributes()[0].getChildIndex()).toBe(2)
@@ -1112,8 +1053,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[0].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('border-1')
       expectLocationOfString(
@@ -1128,8 +1068,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[1].getDataFlow()[0]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[1].getDataFlow()[0].node,
         ),
       ).toBe('Thank you friend')
       expectLocationOfString(
@@ -1139,8 +1078,7 @@ function Component0() {
       )
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[1].getDataFlow()[1]
-            .node as LiteralNode,
+          componentElements[1].getAttributes()[1].getDataFlow()[1].node,
         ),
       ).toBe('This is a spread: label::')
       expectLocationOfString(
@@ -1151,49 +1089,45 @@ function Component0() {
     })
 
     //TODO: Finish this
-    it('Should handle imports from various files', () => {
-      const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
-      const file1: TestFile = 'app/multipleLayers1.tsx'
-      const content1 = testCases[file1]
+    // it('Should handle imports from various files', () => {
+    //   const componentElements: HarmonyComponent[] = []
+    //   const componentDefinitions: Record<string, HarmonyContainingComponent> =
+    //     {}
+    //   const file1: TestFile = 'app/multipleLayers1.tsx'
+    //   const content1 = testCases[file1]
 
-      const result1 = getCodeInfoFromFile(
-        file1,
-        content1,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result1).toBeTruthy()
+    //   const result1 = getCodeInfoFromFile(
+    //     file1,
+    //     content1,
+    //     componentDefinitions,
+    //     componentElements,
+    //     {},
+    //   )
+    //   expect(result1).toBeTruthy()
 
-      const file2: TestFile = 'app/multipleLayers2.tsx'
-      const content2 = testCases[file2]
+    //   const file2: TestFile = 'app/multipleLayers2.tsx'
+    //   const content2 = testCases[file2]
 
-      const result2 = getCodeInfoFromFile(
-        file2,
-        content2,
-        componentDefinitions,
-        componentElements,
-        {},
-      )
-      expect(result2).toBeTruthy()
-    })
+    //   const result2 = getCodeInfoFromFile(
+    //     file2,
+    //     content2,
+    //     componentDefinitions,
+    //     componentElements,
+    //     {},
+    //   )
+    //   expect(result2).toBeTruthy()
+    // })
   })
 
   describe('getCodeInfoAndNormalizeFromFiles', () => {
     it('Should index dynamic text with multiple children properly', () => {
       const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
       const result = getCodeInfoAndNormalizeFromFiles(
         [{ file, content }],
-        componentDefinitions,
         componentElements,
-        {},
       )
       expect(result).toBeTruthy()
       if (!result) return
@@ -1233,8 +1167,6 @@ function Component0() {
 
     it('Should index and normalize across files', () => {
       const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const contents: { file: TestFile; content: string }[] = [
         {
           file: 'app/multipleLayers1.tsx',
@@ -1248,9 +1180,7 @@ function Component0() {
 
       const result = getCodeInfoAndNormalizeFromFiles(
         contents,
-        componentDefinitions,
         componentElements,
-        {},
       )
       expect(result).toBeTruthy()
       if (!result) return
@@ -1296,8 +1226,6 @@ function Component0() {
 
     it('Should index and normalize across files reverse', () => {
       const componentElements: HarmonyComponent[] = []
-      const componentDefinitions: Record<string, HarmonyContainingComponent> =
-        {}
       const contents: { file: TestFile; content: string }[] = [
         {
           file: 'app/multipleLayers2.tsx',
@@ -1311,9 +1239,7 @@ function Component0() {
 
       const result = getCodeInfoAndNormalizeFromFiles(
         contents,
-        componentDefinitions,
         componentElements,
-        {},
       )
       expect(result).toBeTruthy()
       if (!result) return

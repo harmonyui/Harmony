@@ -13,7 +13,7 @@ import {
 } from './node-predicates'
 import type { FlowGraph } from './graph'
 import type { Node, ObjectProperty } from './types'
-import { createNode, getLocationId } from './utils'
+import { getLocationId } from './utils'
 import { MemberExpressionNode } from './nodes/member-expression'
 import { ObjectExpressionNode } from './nodes/object-expression'
 import { RestElementNode } from './nodes/rest-element'
@@ -64,7 +64,7 @@ const createVisitor = (graph: FlowGraph, edges: string[]) => {
     if (isNode(path)) {
       return path
     }
-    return createNode(getSnippetFromNode(path.node), path, '')
+    return graph.createNode(getSnippetFromNode(path.node), path)
   }
   return {
     CallExpression(path: NodePath<t.CallExpression> | Node<t.CallExpression>) {
@@ -114,7 +114,7 @@ const addCallExpressionEdge: AddEdge<t.CallExpression> = (node, graph) => {
   graph.setNode(node)
   return node.node.arguments.map((argument, i) => {
     const argPath = node.path.get(`arguments.${i}`) as NodePath
-    const newNode = createNode(getSnippetFromNode(argument), argPath, '')
+    const newNode = graph.createNode(getSnippetFromNode(argument), argPath)
 
     addDataEdge(newNode, graph)
 
@@ -133,20 +133,19 @@ const addIdentifierEdge: AddEdge<t.Identifier> = (node, graph) => {
   }
 
   const identifier = scope.identifier
-  const identifierId = getLocationId(identifier)
+  const identifierId = getLocationId(identifier, graph.file, graph.code)
 
   //If we are currently already visiting this node, just return
   if (node.id === identifierId) return []
 
   const referencePath = scope.path
-  const newNode = createNode(
+  const newNode = graph.createNode(
     getSnippetFromNode(referencePath.node),
     referencePath,
-    '',
   )
   addDataEdge(newNode, graph)
 
-  const identifierNode = graph.nodes.get(getLocationId(identifier))
+  const identifierNode = graph.nodes.get(identifierId)
   if (!identifierNode) {
     throw new Error('Identifier node not found')
   }
@@ -161,13 +160,12 @@ const addVariableDeclaratorEdge: AddEdge<t.VariableDeclarator> = (
   graph.setNode(node)
   const initPath = node.path.get('init') as NodePath
   const id = node.path.get('id') as NodePath
-  const idNode = createNode(getSnippetFromNode(node.node.id), id, '')
+  const idNode = graph.createNode(getSnippetFromNode(node.node.id), id)
   addDataEdge(idNode, graph)
 
-  const initNode = createNode(
+  const initNode = graph.createNode(
     node.node.init ? getSnippetFromNode(node.node.init) : 'undefined',
     initPath,
-    '',
   )
   addDataEdge(initNode, graph)
   graph.addDependency(idNode.id, initNode.id)
@@ -181,13 +179,12 @@ const addObjectPatternEdge: AddEdge<t.ObjectPattern> = (node, graph) => {
     const property = node.node.properties[i]
     if (t.isObjectProperty(property)) {
       const keyPath = node.path.get(`properties.${i}.key`) as NodePath
-      let newKey = createNode(getSnippetFromNode(property.key), keyPath, '')
+      let newKey = graph.createNode(getSnippetFromNode(property.key), keyPath)
 
       const valuePath = node.path.get(`properties.${i}.value`) as NodePath
-      let newValue = createNode(
+      let newValue = graph.createNode(
         getSnippetFromNode(property.value),
         valuePath,
-        '',
       )
 
       const propertypath = node.path.get(
@@ -206,14 +203,14 @@ const addObjectPatternEdge: AddEdge<t.ObjectPattern> = (node, graph) => {
         newNode = new ObjectPropertyNode(
           newKey,
           newValue,
-          createNode(getSnippetFromNode(propertypath.node), propertypath, ''),
+          graph.createNode(getSnippetFromNode(propertypath.node), propertypath),
         )
         graph.setNode(newNode)
       } else {
         newNode = new ObjectPropertyNode(
           newKey,
           newValue,
-          createNode(getSnippetFromNode(propertypath.node), propertypath, ''),
+          graph.createNode(getSnippetFromNode(propertypath.node), propertypath),
         )
         addDataEdge(newNode, graph)
       }
@@ -230,7 +227,8 @@ const addObjectPatternEdge: AddEdge<t.ObjectPattern> = (node, graph) => {
       ) as NodePath<t.RestElement>
       const restNode = new RestElementNode(
         currProperties,
-        createNode(getSnippetFromNode(property.argument), restPath, ''),
+        graph.code,
+        graph.createNode(getSnippetFromNode(property.argument), restPath),
       )
       graph.setNode(restNode)
       const argument = restNode.getArgument()
@@ -269,10 +267,9 @@ const addTemplateLiteralEdge: AddEdge<t.TemplateLiteral> = (node, graph) => {
         path.type === 'TemplateElement'
           ? path.node.value.raw
           : getSnippetFromNode(path.node)
-      const newNode = createNode<t.Expression | t.TemplateElement>(
+      const newNode = graph.createNode<t.Expression | t.TemplateElement>(
         name,
         path,
-        '',
       )
       addDataEdge(newNode, graph)
 
@@ -282,18 +279,16 @@ const addTemplateLiteralEdge: AddEdge<t.TemplateLiteral> = (node, graph) => {
 
 const addMemberExpressionEdge: AddEdge<t.MemberExpression> = (node, graph) => {
   const objectPath = node.path.get('object') as NodePath
-  const objectNode = createNode(
+  const objectNode = graph.createNode(
     getSnippetFromNode(node.node.object),
     objectPath,
-    '',
   )
   addDataEdge(objectNode, graph)
 
   const propertyPath = node.path.get('property') as NodePath
-  const propertyNode = createNode(
+  const propertyNode = graph.createNode(
     getSnippetFromNode(node.node.property),
     propertyPath,
-    '',
   )
   //Only trace the data flow of computed properties
   if (node.node.computed) {
@@ -317,13 +312,12 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
     .map((property, i) => {
       if (t.isObjectProperty(property)) {
         const keyPath = node.path.get(`properties.${i}.key`) as NodePath
-        let newKey = createNode(getSnippetFromNode(property.key), keyPath, '')
+        let newKey = graph.createNode(getSnippetFromNode(property.key), keyPath)
 
         const valuePath = node.path.get(`properties.${i}.value`) as NodePath
-        let newValue = createNode(
+        let newValue = graph.createNode(
           getSnippetFromNode(property.value),
           valuePath,
-          '',
         )
 
         const propertypath = node.path.get(
@@ -342,14 +336,20 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
           newNode = new ObjectPropertyNode(
             newKey,
             newValue,
-            createNode(getSnippetFromNode(propertypath.node), propertypath, ''),
+            graph.createNode(
+              getSnippetFromNode(propertypath.node),
+              propertypath,
+            ),
           )
           graph.setNode(newNode)
         } else {
           newNode = new ObjectPropertyNode(
             newKey,
             newValue,
-            createNode(getSnippetFromNode(propertypath.node), propertypath, ''),
+            graph.createNode(
+              getSnippetFromNode(propertypath.node),
+              propertypath,
+            ),
           )
           // Add data edge for the value, which will add depencies for ObjectPropertyNode
           // Since they are the same id
@@ -368,7 +368,8 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
         ) as NodePath<t.RestElement>
         const restNode = new RestElementNode(
           currProperties,
-          createNode(getSnippetFromNode(property.argument), restPath, ''),
+          graph.code,
+          graph.createNode(getSnippetFromNode(property.argument), restPath),
         )
         graph.setNode(restNode)
         const argument = restNode.getArgument()

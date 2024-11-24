@@ -1,15 +1,20 @@
 import type { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
+import type { ComponentLocation } from '@harmony/util/src/types/component'
+import {
+  getLineAndColumn,
+  hashComponentId,
+} from '@harmony/util/src/utils/component'
 import { Node } from './types'
-import { isLiteralNode } from './ast'
 
 export function createNode<T extends t.Node>(
   name: string,
   path: NodePath<T>,
   file: string,
+  content: string,
 ): Node<T> {
   const _node = path.node
-  const id = getLocationId(_node)
+  const id = getLocationId(_node, file, content)
   const location = {
     file,
     start: _node.loc?.start.index ?? 0,
@@ -77,10 +82,67 @@ export function getComponentName(path: NodePath): string | undefined {
   return undefined
 }
 
+function getLocation(node: t.Node, _file: string) {
+  if (!node.loc) {
+    return undefined
+  }
+
+  return {
+    file: _file,
+    start: node.loc.start.index,
+    end: node.loc.end.index,
+  }
+}
+
 // Utility function to generate unique IDs based on code location
-export function getLocationId(node: t.Node): string {
-  const loc = node.loc
-  return loc
-    ? `${loc.start.line}:${loc.start.column}-${loc.end.line}:${loc.end.column}`
-    : 'unknown-location'
+export function getLocationId(
+  node: t.Node,
+  file: string,
+  content: string,
+): string {
+  const location = getLocation(node, file)
+  if (!location) throw new Error('Node does not have location information')
+  return getHashFromLocation(location, content)
+}
+
+export type LiteralNode = t.JSXText | t.StringLiteral | t.TemplateElement
+export const isLiteralNode = (
+  node: t.Node | undefined,
+): node is LiteralNode => {
+  return (
+    t.isJSXText(node) || t.isStringLiteral(node) || t.isTemplateElement(node)
+  )
+}
+export const getLiteralValue = (node: LiteralNode): string => {
+  if (typeof node.value === 'string') {
+    return node.value
+  }
+
+  return node.value.raw
+}
+export const getHashFromLocation = (
+  location: ComponentLocation,
+  codeSnippet: string,
+): string => {
+  const { file: _file, start, end } = location
+  const { line: startLine, column: startColumn } = getLineAndColumn(
+    codeSnippet,
+    start,
+  )
+  const { line: endLine, column: endColumn } = getLineAndColumn(
+    codeSnippet,
+    end,
+  )
+
+  return hashComponentId([
+    { file: _file, startColumn, startLine, endColumn, endLine },
+  ])
+}
+
+export const isChildNode = (node: Node, parent: Node): boolean => {
+  return (
+    node.location.file === parent.location.file &&
+    node.location.start >= parent.location.start &&
+    node.location.end <= parent.location.end
+  )
 }

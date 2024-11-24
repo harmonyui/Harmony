@@ -2,7 +2,7 @@ import * as t from '@babel/types'
 import { isObject } from '../node-predicates'
 import type { NodeBase, ObjectNode, ObjectProperty } from '../types'
 import { Node } from '../types'
-import { getLiteralValue, isLiteralNode } from '../ast'
+import { getLiteralValue, isLiteralNode } from '../utils'
 
 export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
   extends Node<T>
@@ -18,6 +18,10 @@ export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
 
   public override getValues(predicate?: (node: Node) => boolean): Node[] {
     const values: Node[] = []
+    if (predicate && predicate(this)) {
+      return [this]
+    }
+
     const superValues = super.getValues((node) =>
       isObject(node),
     ) as ObjectNode[]

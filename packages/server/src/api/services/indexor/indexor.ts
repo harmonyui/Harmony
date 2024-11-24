@@ -1,3 +1,4 @@
+/* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
 /* eslint-disable no-await-in-loop -- ok*/
@@ -10,9 +11,15 @@ import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
 import { PrismaHarmonyComponentRepository } from '../../repository/database/component-element'
 import type { GithubCache } from '../../repository/cache/types'
 import type { GitRepository } from '../../repository/git/types'
-import type { HarmonyComponent, HarmonyContainingComponent } from './types'
+import type {
+  Attribute,
+  HarmonyComponent,
+  HarmonyContainingComponent,
+} from './types'
 import { IndexingFiles } from './github'
-import { getAttributeName, getAttributeValue, getCodeInfoFromFile } from './ast'
+import { getGraph, type FlowGraph } from './graph'
+import { JSXElementNode } from './nodes/jsx-element'
+import { getLiteralValue, isChildNode } from './utils'
 
 export type ReadFiles = (
   dirname: string,
@@ -50,7 +57,6 @@ export const indexFiles = async (
 > => {
   const componentDefinitions: Record<string, HarmonyContainingComponent> = {}
   const instances: HarmonyComponent[] = []
-  const importDeclarations: Record<string, { name: string; path: string }> = {}
   const visitedFiles: Set<string> = new Set<string>()
   const fileContents: FileAndContent[] = []
 
@@ -73,9 +79,7 @@ export const indexFiles = async (
 
   const elementInstance = getCodeInfoAndNormalizeFromFiles(
     fileContents,
-    componentDefinitions,
     instances,
-    importDeclarations,
   )
 
   if (!elementInstance) return false
@@ -88,7 +92,6 @@ export const indexCodebase = async (
   gitRepository: GitRepository,
   gitCache: GithubCache,
 ) => {
-  const componentDefinitions: Record<string, HarmonyContainingComponent> = {}
   const instances: HarmonyComponent[] = []
 
   const indexingFiles = new IndexingFiles(gitRepository, gitCache)
@@ -96,9 +99,7 @@ export const indexCodebase = async (
 
   const elementInstances = getCodeInfoAndNormalizeFromFiles(
     fileContents,
-    componentDefinitions,
     instances,
-    {},
   )
   return elementInstances
 }
@@ -164,8 +165,8 @@ export function convertToHarmonyInfo(
           : instance.name,
         props: instance.props.map<ComponentProp>((prop) => ({
           isStatic: prop.name === 'string',
-          propName: getAttributeName(prop),
-          propValue: getAttributeValue(prop),
+          propName: prop.name,
+          propValue: prop.value,
           type: prop.type,
           componentId: instance.id,
         })),
@@ -198,21 +199,11 @@ interface FileAndContent {
 }
 export function getCodeInfoAndNormalizeFromFiles(
   files: FileAndContent[],
-  componentDefinitions: Record<string, HarmonyContainingComponent>,
   elementInstances: HarmonyComponent[],
-  importDeclarations: Record<string, { name: string; path: string }>,
 ): HarmonyComponent[] | false {
   for (const { file, content } of files) {
     try {
-      if (
-        !getCodeInfoFromFile(
-          file,
-          content,
-          componentDefinitions,
-          elementInstances,
-          importDeclarations,
-        )
-      ) {
+      if (!getCodeInfoFromFile(file, content, elementInstances)) {
         return false
       }
     } catch (err) {
@@ -221,7 +212,19 @@ export function getCodeInfoAndNormalizeFromFiles(
     }
   }
 
-  return normalizeCodeInfo(componentDefinitions, elementInstances)
+  return elementInstances
+}
+
+function getCodeInfoFromFile(
+  file: string,
+  originalCode: string,
+  elementInstances: HarmonyComponent[],
+) {
+  const graph = getGraph(file, originalCode)
+
+  elementInstances.push(...convertGraphToHarmonyComponents(graph))
+
+  return true
 }
 
 function normalizeCodeInfo(
@@ -433,4 +436,108 @@ async function updateDatabase(
     //await createElement(instance);
     onProgress && onProgress(i / elementInstances.length)
   }
+}
+
+export const convertGraphToHarmonyComponents = (
+  graph: FlowGraph,
+): HarmonyComponent[] => {
+  const components: HarmonyComponent[] = []
+
+  const getIdFromParents = (instances: JSXElementNode[]): string => {
+    const ids = instances.reduce(
+      (prev, curr) => (prev ? `${curr.id}#${prev}` : curr.id),
+      '',
+    )
+
+    return ids
+  }
+
+  const elementInstances = graph
+    .getNodes()
+    .filter((node) => node instanceof JSXElementNode)
+  for (const node of elementInstances) {
+    const rootInstances = node.getRootInstances()
+    for (const instances of rootInstances) {
+      const containingComponent = node.getParentComponent()
+      const id = getIdFromParents(instances)
+
+      const component: HarmonyComponent = {
+        id,
+        name: node.name,
+        containingComponent: {
+          id: containingComponent.id,
+          name: containingComponent.name,
+          location: containingComponent.location,
+          isComponent: true,
+          node: containingComponent.node,
+          props: [],
+          children: [],
+          getParent: () => undefined,
+        },
+        isComponent: node.name[0].toUpperCase() === node.name[0],
+        location: node.location,
+        node: node.node,
+        props: [],
+        children: [],
+        getParent: () => undefined,
+      }
+      component.props = node.getAttributes().flatMap<Attribute>((attr) => {
+        const name = attr.getName()
+        const type =
+          name === 'className'
+            ? 'className'
+            : name === 'children'
+              ? 'text'
+              : 'property'
+        const attrs: Attribute[] = []
+        const { argument, identifiers } = attr.getArgumentReferences()
+        if (type !== 'text') {
+          attrs.push(
+            ...identifiers
+              .filter(
+                (ident) =>
+                  ident.getValues((_node) => isChildNode(_node, instances[1]))
+                    .length === 0,
+              )
+              .map<Attribute>((reference) => ({
+                id: attr.id,
+                index: attr.getChildIndex(),
+                location: instances[1].getOpeningElement().location,
+                locationType: 'add',
+                name: 'string',
+                value: reference.name,
+                type,
+                reference: component,
+                node: instances[1].getOpeningElement().node,
+              })),
+          )
+        }
+        attrs.push(
+          ...attr
+            .getDataFlow()
+            .filter((_node) =>
+              instances.slice(1).find((parent) => isChildNode(_node, parent)),
+            )
+            .map<Attribute>((flow) => ({
+              id: attr.id,
+              index: attr.getChildIndex(),
+              location: flow.location,
+              locationType: 'component',
+              name: 'string',
+              value:
+                type === 'property'
+                  ? `${name}:${getLiteralValue(flow.node)}`
+                  : getLiteralValue(flow.node),
+              type,
+              reference: component,
+              node: flow.node,
+            })),
+        )
+
+        return attrs
+      })
+      components.push(component)
+    }
+  }
+  return components
 }

@@ -187,7 +187,7 @@ describe('code-updator', () => {
           oldValue: 'Thank you',
           type: 'text',
           name: '0',
-          componentId: elementInstances[6].id,
+          componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -196,7 +196,7 @@ describe('code-updator', () => {
           oldValue: 'This is old text',
           type: 'text',
           name: '0',
-          componentId: elementInstances[2].id,
+          componentId: elementInstances[3].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -217,13 +217,9 @@ describe('code-updator', () => {
       expectLocationOfString(file, codeUpdates.locations[2], '"Thank you"')
 
       expect(codeUpdates.locations[1].snippet).toBe(
-        '/*Change inner text for h2 tag from This is old text to This is new text*/<h2 className={innerClassName}>',
+        '/*Change inner text for h3 tag from This is old text to This is new text*/<h3>',
       )
-      expectLocationOfString(
-        file,
-        codeUpdates.locations[1],
-        '<h2 className={innerClassName}>',
-      )
+      expectLocationOfString(file, codeUpdates.locations[1], '<h3>')
     })
 
     it('Should apply className literals and comments for dynamic classes', async () => {
@@ -246,7 +242,7 @@ describe('code-updator', () => {
           oldValue: '4px',
           type: 'className',
           name: 'padding-left',
-          componentId: elementInstances[6].id,
+          componentId: elementInstances[3].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -261,12 +257,12 @@ describe('code-updator', () => {
 
       expect(codeUpdates.locations.length).toBe(2)
       expect(codeUpdates.locations[0].snippet).toBe(
-        '/*hw-pl-2.5*/<h2 className={innerClassName}>',
+        '/*hw-pl-2.5*/<h3 className={noWhere}>',
       )
       expectLocationOfString(
         file,
         codeUpdates.locations[0],
-        '<h2 className={innerClassName}>',
+        '<h3 className={noWhere}>',
       )
 
       expect(codeUpdates.locations[1].snippet).toBe('"hw-p-2 hw-pl-2.5"')
@@ -282,7 +278,7 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: 'background-color',
-          componentId: elementInstances[3].id,
+          componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -291,7 +287,7 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: 'padding-left',
-          componentId: elementInstances[4].id,
+          componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -305,7 +301,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('classNameParent')
       expect(codeUpdates.locations.length).toBe(1)
       expect(codeUpdates.locations[0].snippet).toBe(
-        '<Child innerClass="pl-1" className="bg-black" />',
+        '<Child className="bg-black" innerClass="pl-1" />',
       )
       expectLocationOfString(file, codeUpdates.locations[0], '<Child />')
     })
@@ -319,7 +315,7 @@ describe('code-updator', () => {
           oldValue: 'Bob',
           type: 'text',
           name: '0',
-          componentId: elementInstances[11].id,
+          componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -328,7 +324,7 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: '',
-          componentId: elementInstances[13].id,
+          componentId: elementInstances[3].id,
           childIndex: 1,
           isGlobal: false,
         },
@@ -337,7 +333,7 @@ describe('code-updator', () => {
           oldValue: 'Some Children',
           type: 'text',
           name: '0',
-          componentId: elementInstances[18].id,
+          componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -346,7 +342,7 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: '',
-          componentId: elementInstances[20].id,
+          componentId: elementInstances[0].id,
           childIndex: 1,
           isGlobal: false,
         },
@@ -355,7 +351,7 @@ describe('code-updator', () => {
           oldValue: 'Label me',
           type: 'text',
           name: '0',
-          componentId: elementInstances[21].id,
+          componentId: elementInstances[4].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -395,7 +391,7 @@ describe('code-updator', () => {
           oldValue: '4px',
           type: 'className',
           name: 'padding-left',
-          componentId: elementInstances[6].id,
+          componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -425,11 +421,12 @@ describe('code-updator', () => {
 type TestFile = keyof typeof testFiles
 const testFiles = {
   tailwindPrefix: `
-        const TailwindComponent = ({label, innerClassName}) => {
+        const TailwindComponent = ({label, innerClassName, noOp, noWhere}) => {
             return (
                 <div className="hw-group hw-flex hw-py-2">
                     <h1 className="hw-flex hw-flex-col">Hello there</h1>
                     <h2 className={innerClassName}>{label}</h2>
+                    <h3 className={noWhere}>{noOp}</h3>
                 </div>
             )
         }

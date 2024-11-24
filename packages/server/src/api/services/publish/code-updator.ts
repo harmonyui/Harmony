@@ -13,9 +13,8 @@ import { getCodeSnippet } from '../indexor/github'
 import type { HarmonyComponent, Attribute } from '../indexor/types'
 import type { GitRepository } from '../../repository/git/types'
 import { indexForComponents } from '../indexor/indexor'
-import type { LiteralNode } from '../indexor/ast'
-import { isLiteralNode } from '../indexor/ast'
 import { addPrefixToClassName, converter } from './css-conveter'
+import { isLiteralNode, LiteralNode } from '../indexor/utils'
 
 export type FileUpdateInfo = Record<
   string,

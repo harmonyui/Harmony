@@ -13,6 +13,7 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
   private argument: Node
   constructor(
     private notProperties: ObjectProperty[],
+    content: string,
     base: NodeBase<T>,
   ) {
     super(base)
@@ -20,6 +21,7 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
       getSnippetFromNode(this.node.argument),
       this.path.get('argument') as NodePath,
       this.location.file,
+      content,
     )
   }
 

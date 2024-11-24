@@ -4,22 +4,27 @@ import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import { replaceByIndex } from '@harmony/util/src/utils/common'
 import { getSnippetFromNode } from '../publish/code-updator'
-import { isLiteralNode } from './ast'
-import type { JSXAttribute, Node } from './types'
-import { createNode, getComponentName, getLocationId } from './utils'
-import { ComponentNode } from './node'
+import type { Node } from './types'
+import {
+  createNode,
+  getComponentName,
+  getLocationId,
+  isLiteralNode,
+} from './utils'
 import { addDataEdge } from './data-flow'
 import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
 import { JSXElementNode } from './nodes/jsx-element'
+import type { JSXAttribute } from './nodes/jsx-attribute'
 import { JSXAttributeNode } from './nodes/jsx-attribute'
+import { ComponentNode } from './nodes/component'
 
 export class FlowGraph {
   public nodes: Map<string, Node>
   private dirtyNodes: Set<Node> = new Set<Node>()
 
   constructor(
-    private file: string,
-    private code: string,
+    public file: string,
+    public code: string,
   ) {
     this.nodes = new Map()
   }
@@ -31,7 +36,7 @@ export class FlowGraph {
   }
 
   public addNode<T extends t.Node>(name: string, path: NodePath<T>): Node {
-    const id = getLocationId(path.node)
+    const id = getLocationId(path.node, this.file, this.code)
     if (!this.nodes.has(id)) {
       const newNode = this.createNode(name, path)
       this.setNode(newNode)
@@ -52,7 +57,7 @@ export class FlowGraph {
     name: string,
     path: NodePath<T>,
   ): Node<T> {
-    return createNode(name, path, this.file)
+    return createNode(name, path, this.file, this.code)
   }
 
   public addDependency(fromId: string, toId: string) {
@@ -69,16 +74,8 @@ export class FlowGraph {
     name: string,
     path: NodePath<t.FunctionDeclaration | t.ArrowFunctionExpression>,
   ): ComponentNode {
-    const props = new Map<string, Node>()
     const _arguments: Node[] = []
-    // const addPropNode = (param: t.Identifier, pathKey: string) => {
-    //   const paramName = param.name
-    //   const paramPath = path.get(pathKey)
-    //   if (Array.isArray(paramPath)) throw new Error('Should not be array')
 
-    //   const paramNode = this.addNode(paramName, paramPath)
-    //   props.set(paramName, paramNode)
-    // }
     const addArgumentNode = (param: t.Node, pathKey: string) => {
       const paramPath = path.get(pathKey)
       if (Array.isArray(paramPath)) throw new Error('Should not be array')
@@ -89,22 +86,9 @@ export class FlowGraph {
 
     path.node.params.forEach((param, index) => {
       addArgumentNode(param, `params.${index}`)
-      // if (t.isObjectPattern(param)) {
-      //   param.properties.forEach((prop, propIndex) => {
-      //     if (t.isObjectProperty(prop) && t.isIdentifier(prop.key)) {
-      //       addPropNode(prop.key, `params.${index}.properties.${propIndex}`)
-      //     }
-      //   })
-      // }
     })
     const node = this.createNode(name, path)
-    const componentNode: ComponentNode = new ComponentNode(
-      // props,
-      _arguments,
-      [],
-      node,
-    )
-    props.forEach((prop) => this.addDependency(componentNode.id, prop.id))
+    const componentNode: ComponentNode = new ComponentNode(_arguments, [], node)
 
     this.setNode(componentNode)
     return componentNode
@@ -116,7 +100,6 @@ export class FlowGraph {
   ) {
     this.setNode(jsxElementNode)
     component.addJSXElement(jsxElementNode)
-    //this.addDependency(jsxElementNode.id, component.id)
   }
 
   public addJSXAttribute(
@@ -139,18 +122,6 @@ export class FlowGraph {
     }
   }
 
-  //Variable -> PropertyValue in component
-  // public addComponentPropertyDataEdge(
-  //   component: ComponentNode,
-  //   name: string,
-  //   valueNode: Node,
-  // ) {
-  //   const prop = component.getProperties().get(name)
-  //   if (prop) {
-  //     this.addDependency(prop.id, valueNode.id)
-  //   }
-  // }
-
   public addFunctionArgumentDataEdge(
     definition: ComponentNode,
     argumentNodes: Node[],
@@ -168,6 +139,8 @@ export class FlowGraph {
     elementNode: JSXElementNode,
   ) {
     this.addFunctionArgumentDataEdge(elementDefinition, [elementNode])
+    elementDefinition.addInstance(elementNode)
+    elementNode.setDefinitionComponent(elementDefinition)
   }
 
   public addDataFlowEdge(node: Node) {
@@ -233,9 +206,9 @@ export class FlowGraph {
   }
 }
 
-export function getGraph(code: string) {
+export function getGraph(file: string, code: string) {
   // Initialize the flow graph
-  const graph = new FlowGraph('test.ts', code)
+  const graph = new FlowGraph(file, code)
 
   const ast = parser.parse(code, {
     sourceType: 'module',
@@ -268,10 +241,16 @@ export function getGraph(code: string) {
             const name = jsxPath.node.openingElement.name.name
             const definitionComponent = graph.getDefinition(name)
 
+            const openingElement = graph.createNode(
+              getSnippetFromNode(jsxPath.node.openingElement),
+              jsxPath.get('openingElement'),
+            )
+
             const elementNode = new JSXElementNode(
               [],
               containingComponent,
               definitionComponent,
+              openingElement,
               graph.createNode(name, jsxPath),
             )
 
@@ -294,6 +273,7 @@ export function getGraph(code: string) {
                 const attributeNode = new JSXAttributeNode(
                   elementNode,
                   -1,
+                  graph.code,
                   graph.createNode(
                     attributeName,
                     attributePath as NodePath<t.JSXAttribute>,
@@ -306,6 +286,7 @@ export function getGraph(code: string) {
                 const spreadAttributeNode = new JSXSpreadAttributeNode(
                   elementNode,
                   currAttributes,
+                  graph.code,
                   graph.createNode(
                     getSnippetFromNode(attributePath.node),
                     attributePath as NodePath<t.JSXSpreadAttribute>,
@@ -332,6 +313,7 @@ export function getGraph(code: string) {
                 const attributeNode = new JSXAttributeNode(
                   elementNode,
                   childIndex,
+                  graph.code,
                   graph.createNode(
                     'children',
                     childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
@@ -375,13 +357,6 @@ export function getGraph(code: string) {
               argPath,
             )
             graph.addDataFlowEdge(argumentNode)
-            // if (definitionNode) {
-            //   graph.addComponentPropertyDataEdge(
-            //     definitionNode,
-            //     '',
-            //     argumentNode,
-            //   ) // Data flow from argument to parameter
-            // }
           }
         })
       }
