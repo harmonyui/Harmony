@@ -17,7 +17,7 @@ type ColorSwatchProps<T extends Color | HexColor> = {
 } & React.ComponentPropsWithoutRef<'div'>
 function ColorSwatch<T extends Color | HexColor>(props: ColorSwatchProps<T>) {
   const { value, ...otherProps } = props
-  const color = getHslaColor(value)
+  const color = getHslaColor((value as HexColor | undefined) || '#000')
 
   const valueString = color.toString('css')
   return (
@@ -57,7 +57,7 @@ const ColorPicker = ({
       <Popover
         button={
           <ColorSwatch
-            value={value}
+            value={(value as HexColor | undefined) || '#000'}
             //aria-label={`current color swatch: ${value.toString('rgb')}`}
           />
         }
@@ -65,7 +65,7 @@ const ColorPicker = ({
         container={container}
       >
         <HexColorPicker
-          color={value}
+          color={(value as HexColor | undefined) || '#000'}
           onChange={(_value) => {
             console.log(_value)
             onChange(_value as HexColor)
