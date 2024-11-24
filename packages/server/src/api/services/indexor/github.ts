@@ -89,10 +89,7 @@ export class IndexingFiles {
 
 export const getCodeSnippet =
   (gitRepository: GitRepository) =>
-  async (
-    { file, start, end }: ComponentLocation,
-    branch: string,
-  ): Promise<string> => {
-    const fileContent = await gitRepository.getContent(file, branch)
+  async ({ file, start, end }: ComponentLocation): Promise<string> => {
+    const fileContent = await gitRepository.getContent(file)
     return fileContent.substring(start, end)
   }

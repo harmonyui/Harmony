@@ -1,7 +1,7 @@
 import { Header } from '@harmony/ui/src/components/core/header'
 import { HarmonyModal } from '@harmony/ui/src/components/core/modal'
 import { UploadFile } from '@harmony/ui/src/components/core/upload-file'
-import { useHarmonyStore } from '../../../hooks/state'
+import { useHarmonyStore } from '../../hooks/state'
 
 interface UploadImageModalProps {
   isOpen: boolean

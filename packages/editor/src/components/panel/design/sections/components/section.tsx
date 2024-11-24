@@ -1,4 +1,4 @@
-import { Accordion } from '@harmony/ui/src/components/core/accordion'
+import { Card } from '../../../_common/panel/card'
 
 export type DesignPanelSectionComponent = React.FunctionComponent
 
@@ -10,10 +10,5 @@ export const Section: React.FunctionComponent<SectionProps> = ({
   children,
   label,
 }) => {
-  return (
-    <Accordion
-      className='hw-w-full'
-      items={[{ id: label, label, content: children }]}
-    />
-  )
+  return <Card label={label}>{children}</Card>
 }

@@ -8,6 +8,7 @@ import { useHarmonyStore } from '../../../hooks/state'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
 import { getComponentName } from '../design/utils'
+import { Card } from '../_common/panel/card'
 import { TreeView } from './tree-view'
 
 export const LayoutPanel: React.FunctionComponent = () => {
@@ -16,7 +17,9 @@ export const LayoutPanel: React.FunctionComponent = () => {
 
   return (
     <DraggablePanel title='Layers' id={Panels.Layers} defaultActive={false}>
-      <ComponentTreeView />
+      <Card>
+        <ComponentTreeView />
+      </Card>
     </DraggablePanel>
   )
 }
@@ -90,7 +93,7 @@ const ComponentTreeView: React.FunctionComponent = () => {
   return (
     <div className='flex flex-col gap-2'>
       <Input
-        className='w-full'
+        className='hw-w-full'
         placeholder='Search'
         value={search}
         onChange={setSearch}

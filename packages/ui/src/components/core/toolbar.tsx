@@ -24,7 +24,7 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = ({
   ...props
 }) => {
   return (
-    <div className='hw-absolute hw-bottom-2 hw-left-1/2 -hw-translate-x-1/2'>
+    <div className='hw-absolute hw-bottom-2 hw-left-1/2 -hw-translate-x-1/2 hw-z-[999]'>
       <ToolbarContent {...props} />
     </div>
   )
