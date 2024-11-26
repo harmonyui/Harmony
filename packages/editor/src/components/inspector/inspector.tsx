@@ -21,7 +21,7 @@ import type {
 import { getProperty } from '../snapping/calculations'
 import { useSidePanel } from '../panel/side-panel'
 import { useHarmonyContext } from '../harmony-context'
-import { useHarmonyStore } from '../hooks/state'
+import { useHarmonyStore } from '../../hooks/state'
 import { useHighlighter } from './highlighter'
 
 interface RectSize {
@@ -102,6 +102,15 @@ export function isImageElement(element: Element): boolean {
   return ['img', 'svg'].includes(element.tagName.toLowerCase())
 }
 
+export function isSizeThreshold(element: HTMLElement, scale: number): boolean {
+  const sizeThreshold = 10
+  const rect = element.getBoundingClientRect()
+  if (rect.height * scale < sizeThreshold || rect.width < sizeThreshold) {
+    return false
+  }
+
+  return true
+}
 export function isSelectable(element: HTMLElement, scale: number): boolean {
   const style = getComputedStyle(element)
   if (style.position === 'absolute') {
@@ -116,13 +125,7 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
   )
     return false
 
-  const sizeThreshold = 10
-  const rect = element.getBoundingClientRect()
-  if (rect.height * scale < sizeThreshold || rect.width < sizeThreshold) {
-    return false
-  }
-
-  return true
+  return isSizeThreshold(element, scale)
 }
 
 export function replaceTextContentWithSpans(element: HTMLElement) {
@@ -165,13 +168,8 @@ export function removeTextContentSpans(element: HTMLElement) {
 }
 
 export interface InspectorProps {
-  hoveredComponent: HTMLElement | undefined
-  selectedComponent: HTMLElement | undefined
-  onHover: (component: HTMLElement | undefined) => void
-  onSelect: (component: HTMLElement | undefined) => void
   rootElement: HTMLElement | undefined
   parentElement: HTMLElement | undefined
-  onElementTextChange: (value: string, oldValue: string) => void
   mode: SelectMode
   onReorder: (props: { from: number; to: number; element: HTMLElement }) => void
   onChange: (
@@ -182,11 +180,6 @@ export interface InspectorProps {
   scale: number
 }
 export const Inspector: React.FunctionComponent<InspectorProps> = ({
-  hoveredComponent,
-  selectedComponent,
-  onHover: onHoverProps,
-  onSelect,
-  onElementTextChange,
   onChange,
   rootElement,
   parentElement,
@@ -194,12 +187,17 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   scale,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const overlayRef = useRef<Overlay>()
-  const { onFlexToggle: onFlexClick, error, setError } = useHarmonyContext()
+  const { error, setError, onTextChange } = useHarmonyContext()
   const isDemo = useHarmonyStore((state) => state.isDemo)
-  const updateOverlay = useHarmonyStore((state) => state.updateCounter)
+
   const source = useHarmonyStore((state) => state.source)
   const isOverlay = useHarmonyStore((state) => state.isOverlay)
+  const selectedComponent = useHarmonyStore(
+    (state) => state.selectedComponent?.element,
+  )
+  const onSelect = useHarmonyStore((state) => state.selectElement)
+  const hoveredComponent = useHarmonyStore((state) => state.hoveredComponent)
+  const onHoverProps = useHarmonyStore((state) => state.hoverComponent)
 
   const previousError = usePrevious(error)
   const { panel } = useSidePanel()
@@ -213,15 +211,28 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     [panel],
   )
 
-  useEffect(() => {
-    if (containerRef.current && overlayRef.current?.parent !== parentElement) {
-      overlayRef.current = new Overlay(
-        containerRef.current,
-        parentElement!,
-        offsetElement,
-      )
+  const onFlexClick = useCallback(() => {
+    if (!selectedComponent) return
+
+    const parent = selectDesignerElement(selectedComponent).parentElement!
+    const flexEnabled = parent.dataset.harmonyFlex
+    if (flexEnabled) {
+      const $text = $('[name="harmony-flex-text"]')
+      //TODO: This is kind of hacky to use jquery to trigger the flex change, but we can't use react because the
+      //overlay where the flex toggle lives is outside of react. We might be able to reverse dependencies
+      //to make this logic live here instead of in this jquery pointer down function
+      $text.trigger('pointerdown')
     }
-  }, [overlayRef, parentElement, containerRef])
+  }, [selectedComponent])
+
+  const overlayRef = useOverlayRef({
+    parentElement,
+    containerElement: containerRef.current,
+    offsetElement,
+    scale,
+    inspectorState,
+    onFlexClick,
+  })
 
   const { isDragging } = useSnapping({
     enabled: false,
@@ -349,32 +360,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   })
 
   useEffect(() => {
-    const container = containerRef.current
-    if (container === null || parentElement === undefined) return
-
-    if (overlayRef.current === undefined) {
-      overlayRef.current = new Overlay(container, parentElement, offsetElement)
-    }
-
-    if (selectedComponent) {
-      overlayRef.current.select(
-        selectedComponent,
-        scale,
-        false,
-        inspectorState,
-        { onFlexClick },
-      )
-    } else {
-      overlayRef.current.remove('select')
-    }
-    overlayRef.current.remove('hover')
-  }, [updateOverlay, scale, inspectorState])
-
-  useEffect(() => {
     const onEscape = () => {
       const parent = selectedComponent?.parentElement
       onSelect(
-        rootElement?.contains(parent ?? null) ? parent ?? undefined : undefined,
+        rootElement?.contains(parent ?? null)
+          ? (parent ?? undefined)
+          : undefined,
       )
     }
 
@@ -462,7 +453,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
         scale,
         false,
         inspectorState,
-        { onTextChange: onElementTextChange, onFlexClick },
+        { onTextChange, onFlexClick },
       )
     } else {
       overlayRef.current.remove('select')
@@ -641,6 +632,76 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   )
 }
 
+const useOverlayRef = ({
+  parentElement,
+  containerElement,
+  offsetElement,
+  scale,
+  inspectorState,
+  onFlexClick,
+}: {
+  parentElement: HTMLElement | undefined
+  containerElement: HTMLElement | null
+  offsetElement: HTMLIFrameElement | undefined
+  scale: number
+  inspectorState: InspectorState
+  onFlexClick: () => void
+}): React.MutableRefObject<Overlay | undefined> => {
+  const overlayRef = useRef<Overlay>()
+  const update = useHarmonyStore((state) => state.updateTheCounter)
+  const updateOverlay = useHarmonyStore((state) => state.updateCounter)
+  const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
+
+  //Create the overlay
+  useEffect(() => {
+    if (containerElement && overlayRef.current?.parent !== parentElement) {
+      overlayRef.current = new Overlay(
+        containerElement,
+        parentElement!,
+        offsetElement,
+      )
+    }
+  }, [overlayRef, parentElement, containerElement, offsetElement])
+
+  //Update the overlay when the counter has changed
+  useEffect(() => {
+    const container = containerElement
+    if (container === null || parentElement === undefined) return
+
+    if (overlayRef.current === undefined) {
+      overlayRef.current = new Overlay(container, parentElement, offsetElement)
+    }
+
+    if (selectedComponent) {
+      overlayRef.current.select(
+        selectedComponent.element,
+        scale,
+        false,
+        inspectorState,
+        { onFlexClick },
+      )
+    } else {
+      overlayRef.current.remove('select')
+    }
+    overlayRef.current.remove('hover')
+  }, [updateOverlay, scale, inspectorState])
+
+  //Change the counter when we scroll to keep the overlay rect up to date
+  useEffect(() => {
+    const onScroll = () => {
+      update()
+    }
+
+    document.addEventListener('scroll', onScroll)
+
+    return () => {
+      document.removeEventListener('scroll', onScroll)
+    }
+  }, [update])
+
+  return overlayRef
+}
+
 // interface Box {
 // 	x: number;
 // 	y: number;
@@ -780,7 +841,11 @@ class Overlay {
     error: boolean,
     inspectorState: InspectorState,
     listeners: {
-      onTextChange?: (value: string, oldValue: string) => void
+      onTextChange?: (
+        value: string,
+        oldValue: string,
+        selectedElement: HTMLElement | undefined,
+      ) => void
       onFlexClick: () => void
     },
   ) {
@@ -801,7 +866,8 @@ class Overlay {
         (e) => {
           const target = e.target as HTMLElement
           const value = target.textContent || ''
-          listeners.onTextChange && listeners.onTextChange(value, lastTextValue)
+          listeners.onTextChange &&
+            listeners.onTextChange(value, lastTextValue, target)
           lastTextValue = value
         },
         { signal: stuff.aborter.signal },
@@ -1281,6 +1347,9 @@ export function getNestedBoundingClientRect({
     // Extract the scaling factors from the transform matrix
     const scaleX = transformMatrix.a
     const scaleY = transformMatrix.d
+
+    //There is a bug where the boundaryWindow is messed up on scrolling in a non-zoomable container, so just return
+    if (scaleX === 1 && scaleY === 1) return targetRect
 
     if (offsetElement) {
       targetRect.top *= scaleY

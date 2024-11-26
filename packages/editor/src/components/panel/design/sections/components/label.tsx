@@ -4,7 +4,7 @@ export const Label: React.FunctionComponent<{
 }> = ({ label, children }) => {
   return (
     <>
-      <label>{label}</label>
+      <label className='hw-text-sm'>{label}</label>
       {children}
     </>
   )

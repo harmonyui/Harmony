@@ -6,32 +6,21 @@
       "type": "node-terminal",
       "request": "launch",
       "command": "pnpm run dev",
-      "cwd": "${workspaceFolder}/apps/dashboard",
+      "cwd": "${workspaceFolder}/apps/dashboard"
     },
     {
       "name": "Editor",
       "type": "node-terminal",
       "request": "launch",
       "command": "pnpm run dev",
-      "cwd": "${workspaceFolder}/packages/editor",
+      "cwd": "${workspaceFolder}/packages/editor"
     },
     {
-      "name": "Next.js: debug client-side",
-      "type": "chrome",
-      "request": "launch",
-      "url": "http://localhost:3000"
-    },
-    {
-      "name": "Next.js: debug full stack",
+      "name": "Landing Page",
       "type": "node-terminal",
       "request": "launch",
       "command": "pnpm run dev",
-      "cwd": "${workspaceFolder}/apps/dashboard",
-      "serverReadyAction": {
-        "pattern": "- Local:.+(https?://.+)",
-        "uriFormat": "%s",
-        "action": "debugWithChrome"
-      }
+      "cwd": "${workspaceFolder}/apps/landing-page"
     }
   ]
 }

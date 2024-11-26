@@ -1,6 +1,8 @@
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import {
+  createUpdateFromTextRequestSchema,
+  createUpdateFromTextResponseSchema,
   indexComponentsRequestSchema,
   indexComponentsResponseSchema,
   loadRequestSchema,
@@ -21,7 +23,8 @@ import {
 import { createTRPCRouter, publicProcedure } from '../trpc'
 import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
-import { getBranch, getRepository } from './branch'
+import { generateUpdatesFromText } from '../repository/openai'
+import { getRepository, getBranch } from '../repository/database/branch'
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
@@ -333,5 +336,28 @@ export const editorRouter = createTRPCRouter({
         content: change.newContent,
         path: change.filePath,
       }))
+    }),
+
+  createUpdatesFromText: publicProcedure
+    .input(createUpdateFromTextRequestSchema)
+    .output(createUpdateFromTextResponseSchema)
+    .mutation(async ({ input }) => {
+      const newAttributes = await generateUpdatesFromText(
+        input.text,
+        input.currentAttributes,
+      )
+      const updates: ComponentUpdate[] = newAttributes.map((attr) => ({
+        name: attr.name,
+        type: 'className',
+        componentId: input.componentId,
+        value: attr.value,
+        oldValue:
+          input.currentAttributes.find((curr) => curr.name === attr.name)
+            ?.value ?? '',
+        isGlobal: false,
+        childIndex: input.childIndex,
+      }))
+
+      return updates
     }),
 })

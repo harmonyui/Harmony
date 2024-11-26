@@ -5,7 +5,7 @@ import type {
   SelectMode,
 } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
-import { useHarmonyStore } from '../hooks/state'
+import { useHarmonyStore } from '../../hooks/state'
 import { ComponentAttributeProvider } from './design/attribute-provider'
 import { GiveFeedbackModal, HelpGuide } from './welcome/help-guide'
 import { SidePanel, SidePanelProvider } from './side-panel'
@@ -14,6 +14,8 @@ import { HarmonyToolbar } from './toolbar/harmony-toolbar'
 import { DesignOverlay } from './design/design-overlay'
 import { HarmonyPanelProvider } from './_common/panel/panel'
 import { LayoutPanel } from './layers/layout-panel'
+import { AIPanel } from './ai/ai-panel'
+import { ImagePanel } from './image/image-panel'
 
 export interface HarmonyPanelProps {
   onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void
@@ -45,6 +47,8 @@ export const HarmonyPanel: React.FunctionComponent<
                 <HarmonyToolbar />
                 <DesignOverlay />
                 <LayoutPanel />
+                <AIPanel />
+                <ImagePanel />
                 {inspector}
               </div>
             </div>

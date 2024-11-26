@@ -26,9 +26,8 @@ interface HarmonyContextProps {
   displayMode: DisplayMode
   changeMode: (mode: DisplayMode) => void
   fonts?: Font[]
-  onFlexToggle: () => void
   scale: number
-  onScaleChange: (scale: number, cursorPos: { x: number; y: number }) => void
+  //onScaleChange: (scale: number, cursorPos: { x: number; y: number }) => void
   onClose: () => void
   error: string | undefined
   setError: (value: string | undefined) => void
@@ -39,12 +38,19 @@ interface HarmonyContextProps {
   setBehaviors: (value: BehaviorType[]) => void
   isGlobal: boolean
   setIsGlobal: (value: boolean) => void
-  onComponentSelect: (component: HTMLElement) => void
-  onComponentHover: (component: HTMLElement) => void
-  selectedComponent: HTMLElement | undefined
   onAttributesChange: (
     updates: ComponentUpdateWithoutGlobal[],
     execute?: boolean,
+  ) => void
+  onTextChange: (
+    value: string,
+    oldValue: string,
+    element: HTMLElement | undefined,
+  ) => void
+  onPropertyChange: (
+    name: string,
+    value: string,
+    element: HTMLElement | undefined,
   ) => void
   onToggleInspector: () => void
 }
@@ -53,9 +59,8 @@ export const HarmonyContext = createContext<HarmonyContextProps>({
   setIsSaving: noop,
   displayMode: 'designer',
   changeMode: noop,
-  onFlexToggle: noop,
   scale: 1,
-  onScaleChange: noop,
+  //onScaleChange: noop,
   onClose: noop,
   error: undefined,
   setError: noop,
@@ -66,10 +71,9 @@ export const HarmonyContext = createContext<HarmonyContextProps>({
   setBehaviors: noop,
   isGlobal: false,
   setIsGlobal: noop,
-  onComponentHover: noop,
-  onComponentSelect: noop,
-  selectedComponent: undefined,
   onAttributesChange: noop,
+  onTextChange: noop,
+  onPropertyChange: noop,
   onToggleInspector: noop,
 })
 

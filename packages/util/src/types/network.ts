@@ -85,3 +85,18 @@ export const emailMeetingRequestSchema = z.object({
   comments: z.string(),
 })
 export type EmailMeetingRequest = z.infer<typeof emailMeetingRequestSchema>
+
+export const createUpdateFromTextRequestSchema = z.object({
+  text: z.string(),
+  componentId: z.string(),
+  childIndex: z.number(),
+  currentAttributes: z.array(z.object({ name: z.string(), value: z.string() })),
+})
+export type CreateUpdateFromTextRequest = z.infer<
+  typeof createUpdateFromTextRequestSchema
+>
+export const createUpdateFromTextResponseSchema = z.array(updateSchema)
+
+export type CreateUpdateFromTextResponse = z.infer<
+  typeof createUpdateFromTextResponseSchema
+>

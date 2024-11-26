@@ -1,60 +1,37 @@
-# Harmony
+<h3 align="center">Harmony UI</h3>
+<p align="center">
+    Make no-code edits directly to your deployed React application.
+</p>
+<div align="center">
+  <a href="https://github.com/harmonyui/harmony/stargazers"><img alt="GitHub Repo stars" src="https://img.shields.io/github/stars/harmonyui/harmony"></a>
+</div>
 
-## Editor
+![image](/apps/landing-page/public/video-picture.png)
 
-The editor is where all of the meat of the app lies. It is in charge of putting an app into an editor with the appropriate
-editing tools, saving, loading, and publishing those changes to Github.
+## Authors
 
-### Front-end
+<a href="https://github.com/harmonyui/harmony/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=harmonyui/harmony" />
+</a>
 
-The front end part of the editor is in the editor package. There you have two parts: `HarmonySetup` and `HarmonyProvider`.
-Harmony setup is the npm package that users install in their app. It gets things ready for the app to be put inside of `HarmonyProvider`, which is where all the editor code lives.
+## Summary
 
-`HarmonyProvider` is contained in an external bundle script deployed on fly.io. The editor code lives in this external script so that we can setup CI/CD without having to make our users update npm everytime something changes to the editor.
+Harmony is a design suite that allows designers to change the UI of their custom React app using no-code tools with the resulting changes contributing directly to the codebase.
 
-This means that all api calls in the editor are made to this fly.io deployment.
+## Contributing
 
-#### Component Updating
-
-__Steps for making new update functionality (everything but CSS updates (see below))__
-
-1. Create the UX experience that will be getting the needed user input to update the component
-2. Create a `ComponentUpdateWithoutGlobal` object with the componentId of the element being updated, type of update (text, component, etc.), the name (additional identifying information about this update), the oldValue (the component's current value) and the value (the new value)
-3. Pass this object into the `onAttributeChanges` function from `useHarmonyContext`
-4. Add in logic in `makeUpdates` in `harmony-provider.tsx` that takes in the update object and actually makes a change to the DOM given the update type and value.
-
-__Steps to update CSS (type className)__
-
-Toolbar Item
-
-1. Add a name describing the property/properties you are changing to the arrays correlating to which element type this toolbar item will show up for in `toolbar-panel.tsx`. For example, if you are adding a border popup toolbar item that allows the user to edit various border properties, and this toolbar item should show up when selecting a button element, add `borderAttrs` to the `buttonTools` array.
-2. Add the necessary component that changes this attribute to the `commonTools` in `useToolbarTools`.
-3. Do step 1. for adding a new Attribute Item
-
-Attribute Item
-
-1. Add the names of the all the styles affected by this new attribute in the `attributeTools` array in `attribute-panel.tsx`. Put any color related attributes in the `colorTools` array. For adding a border attribute, you would put `borderWidth`, `borderRadius` in the `attributeTools` array and `borderColor` in the `colorTools` array.
-2. Add the attribute field in the `ComponentAttributePanel` component. You can use any of the helper components.
-3. Make sure and use the `onAttributeChange` and `getAttribute` functions from `useComponentAttribute`. This will allow you to get the correct value and update it properly.
-
-Under the hood, `onAttributeChange` takes the name and value of the attribute being changed and creates a `ComponentUpdate` object to send to the component updater, like in the above steps for making new update functionality.
-
-### Backend
-
-Api calls are done through a TRPC client. This allows typesaftey from the frontend to backend. The only route that is currently hit from the editor is the "editor" route inside `packages/server/src/api/routers/editor.ts`. That means all saving, loading, and publishing actions are inside this route.
-
-## Dev Setup
+To contribute, make sure to fork the repository and clone the repo locally. Then follow the following steps to get things setup locally:
 
 ### Environment Variables
 
 First run
 `cp .env.example .env`
 
-Then talk to Braydon to get the necessary variables.
+Then email Braydon at [braydon.jones28@gmail.com](mailto:braydon.jones28@gmail.com) to get the necessary variables.
 
 ### Postgres Database
 
-Run `pnpm run compose` to setup a local docker Postgres server.
+Run `pnpm run compose` to setup a local docker Postgres and Redis server.
 
 ### Run
 
@@ -81,3 +58,125 @@ A VSCode debugger is setup with this project if you would rather use that than `
 #### Debugging Harmony on Deployed Projects
 
 If you would like to debug the editor on a project using its deployed URL instead of a local instance, tack on the query parameter `harmony-environment=development` to the URL. This will have the project target your locally running editor instead of the typical production editor. You will have free reign to debug how the editor behaves on this application.
+
+## How it Works
+
+Go to [HowItWorks.md](/HowItWorks.md) to see how Harmony works.
+
+## Structure
+
+Harmony's structure is a monorepo with apps, packages, and tooling. Anything that is deployed will be an app in the apps folder. Any group of code that is shared among different apps lives in the packages folders. The tailwind, eslint, typescript, and prettier tooling lives in the tooling folder.
+
+### Technologies Used
+
+- NextJS
+- Typescript
+- Prisma w/ postgres
+- TRPC
+- TailwindCSS
+- Zod
+
+### Apps
+
+Apps are anything that is deployed and accessible through the internet. Any NextJS app will be in the apps folder. Apps use a variety of different packages from the packages folder.
+
+#### Chrome
+
+The chrome extension allows users to use Harmony to edit any website. In order to publish the changes, users still need to install the harmony plugin.
+
+- React
+- Typescript
+
+#### Dashboard
+
+The dashboard is how users can sign up for a Harmony account and connect their codebase to Github. They can also manage active projects, teams, and settings.
+
+- NextJS
+- Typescript
+- Prisma w/ postgres
+- TRPC
+
+#### Docs
+
+The docs app is an in depth onboarding guide on how to install Harmony into your codebase based on different frontend frameworks. This includes various React frameworks like NextJS, Vite, and vanilla React.
+
+- NextJS
+- Typescript
+
+#### Landing Page
+
+This application is the Harmony landing page with marketing content, pricing, and blog information.
+
+- NextJS
+- Typescript
+- Sanity (for the blogs)
+
+### Packages
+
+Packages have stand alone groups of code that is reused throughout different apps
+
+#### Babel Plugin
+
+This is the base Harmony plugin using the babel transpiler. Any React framework that is based in babel will use this plugin in some way. For example, the vite-plugin package is just a wrapper over this babel plugin.
+
+- Typescript
+- Babel compiler
+
+#### Db
+
+This package is in charge of the database schema, connections, and types. The database is Postgres with a Prisma connector.
+
+- Prisma
+- postgres
+
+#### Editor
+
+The [editor](/packages/editor/README.md) is part of the meat of Harmony (the other part is the server package). All the code for the Harmony Editor is in this package. This is the code used in both the chrome extension and npm package.
+
+- React
+- Typescript
+- TRPC
+
+#### Server
+
+This is the other meat of Harmony. This package handles everything server side (right now the server is made up of just one package, but that could change).
+
+The things the server includes:
+
+- Database CRUD operations
+- Editor operations like loading, saving, and publishing projects
+- Indexing the codebase
+- Publishing code changes and pushing to Github
+
+Api calls are done through a TRPC client. This allows type saftey from the frontend to backend. The only route that is currently hit from the editor is the "editor" route inside `packages/server/src/api/routers/editor.ts`. That means all saving, loading, and publishing actions are inside this route.
+
+Technologies:
+
+- Typescript
+- Prisma w/ postgres
+- Babel compiler
+
+#### SWC Plugin
+
+This plugin is the Rust based Speedy Web Compiler plugin that is necessary for NextJS applications. It is essentially the same thing as the Babel plugin, just in Rust.
+
+- Rust
+- SWC compiler
+
+#### UI
+
+This package has all of the core React components that are used throughout different apps.
+
+- React
+- Typescript
+- TailwindCSS
+
+#### Util
+
+This package has generic utility functions that are common among apps. It also contains the common types shared across apps.
+
+- Typescript
+
+#### Vite Plugin
+
+This package is just a wrapper over the Babel plugin package making things compatible with Vite.

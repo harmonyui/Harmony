@@ -8,12 +8,20 @@ import { camelToKebab, round } from '@harmony/util/src/utils/common'
 import { mergeClassesWithScreenSize } from '@harmony/util/src/utils/tailwind-merge'
 import { DEFAULT_WIDTH } from '@harmony/util/src/constants'
 import * as t from '@babel/types'
+import {
+  jsonSchema,
+  updateAttributeValue,
+} from '@harmony/util/src/updates/component'
 import { getCodeSnippet } from '../indexor/github'
 import type { HarmonyComponent, Attribute } from '../indexor/types'
 import type { GitRepository } from '../../repository/git/types'
 import { indexForComponents } from '../indexor/indexor'
 import type { LiteralNode } from '../indexor/utils'
-import { getSnippetFromNode, isLiteralNode } from '../indexor/utils'
+import {
+  getAttributeName,
+  getSnippetFromNode,
+  isLiteralNode,
+} from '../indexor/utils'
 import { addPrefixToClassName, converter } from './css-conveter'
 
 export type FileUpdateInfo = Record<
@@ -60,12 +68,9 @@ export class CodeUpdator {
 
     const updateInfo = await this.getUpdateInfo(updates, elementInstances)
 
-    const repository = this.gitRepository.repository
     const codeUpdates: CodeUpdateInfo[] = (
       await Promise.all(
-        updateInfo.map((info) =>
-          this.getChangeAndLocation(info, repository.branch),
-        ),
+        updateInfo.map((info) => this.getChangeAndLocation(info)),
       )
     ).flat()
     codeUpdates.sort((a, b) => a.location.start - b.location.start)
@@ -220,7 +225,6 @@ export class CodeUpdator {
 
   private async getChangeAndLocation(
     update: UpdateInfo,
-    branchName: string,
   ): Promise<CodeUpdateInfo[]> {
     const { component, type, oldValue: _oldValue, attributes } = update
     const gitRepository = this.gitRepository
@@ -399,10 +403,8 @@ export class CodeUpdator {
                 '',
               )
               const { location, value, isDefinedAndDynamic } = locationAndValue
-              const elementSnippet = await getCodeSnippet(gitRepository)(
-                location,
-                branchName,
-              )
+              const elementSnippet =
+                await getCodeSnippet(gitRepository)(location)
 
               //TODO: Make the tailwind prefix part dynamic
               const oldClasses = value
@@ -557,6 +559,32 @@ export class CodeUpdator {
         }
         break
       case 'component':
+        if (update.name === 'update-attribute') {
+          const { value, action, name } = jsonSchema
+            .pipe(updateAttributeValue)
+            .parse(update.value)
+          if (action === 'update') {
+            const srcAttribute = attributes.find(
+              (attribute) =>
+                attribute.type === 'property' &&
+                getAttributeName(attribute) === name,
+            )
+            if (srcAttribute && isLiteralNode(srcAttribute.node)) {
+              const location = srcAttribute.location
+              updateLiteralNode(srcAttribute.node, value)
+
+              results.push({
+                location: {
+                  file: location.file,
+                  start: location.start,
+                  end: location.end,
+                },
+                dbLocation: location,
+                node: srcAttribute.node,
+              })
+            }
+          }
+        }
         break
       default:
         throw new Error('Invalid use case')

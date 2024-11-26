@@ -6,7 +6,7 @@ import {
   QueryStateProvider,
   useQueryState,
 } from '@harmony/ui/src/hooks/query-state'
-import { useToggleEvent } from 'harmony-ai-editor/src/components/hooks/toggle-event'
+import { useToggleEvent } from 'harmony-ai-editor/src/hooks/toggle-event'
 import { DataLayerProvider } from '../../hooks/data-layer'
 import type { ActionsPayload } from '../../utils/helpers'
 import { Actions, AuthUrl } from '../../utils/helpers'

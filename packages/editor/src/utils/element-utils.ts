@@ -124,3 +124,31 @@ export const createComponentId = (element: HTMLElement): string => {
   }
   return btoa(path.join(' > '))
 }
+
+export const getImageSrc = (image: HTMLImageElement): string => {
+  const result = /<img[^>]*\s+src=['"]([^'"]+)['"]/.exec(image.outerHTML)
+  if (result) {
+    return result[1]
+  }
+
+  return ''
+}
+
+export const getElementText = (element: HTMLElement): string => {
+  if (element.dataset.harmonyText === 'true') {
+    return element.textContent || ''
+  }
+
+  return element.innerText
+}
+
+export const translatePropertyName = (name: string): string => {
+  switch (name) {
+    case 'src':
+      return 'Source'
+    case 'href':
+      return 'URL'
+    default:
+      return name
+  }
+}

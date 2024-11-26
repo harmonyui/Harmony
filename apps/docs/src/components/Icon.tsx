@@ -1,6 +1,5 @@
 import { useId } from 'react'
 import clsx from 'clsx'
-
 import { InstallationIcon } from '@/components/icons/InstallationIcon'
 import { LightbulbIcon } from '@/components/icons/LightbulbIcon'
 import { PluginsIcon } from '@/components/icons/PluginsIcon'
@@ -32,14 +31,14 @@ export function Icon({
   color?: keyof typeof iconStyles
   icon: keyof typeof icons
 } & Omit<React.ComponentPropsWithoutRef<'svg'>, 'color'>) {
-  let id = useId()
-  let IconComponent = icons[icon]
+  const id = useId()
+  const IconComponent = icons[icon]
 
   return (
     <svg
-      aria-hidden="true"
-      viewBox="0 0 32 32"
-      fill="none"
+      aria-hidden='true'
+      viewBox='0 0 32 32'
+      fill='none'
       className={clsx(className, iconStyles[color])}
       {...props}
     >
@@ -71,7 +70,7 @@ export function Gradient({
       cx={0}
       cy={0}
       r={1}
-      gradientUnits="userSpaceOnUse"
+      gradientUnits='userSpaceOnUse'
       {...props}
     >
       {gradients[color].map((stop, stopIndex) => (

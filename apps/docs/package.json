@@ -6,6 +6,7 @@
     "withenv": "dotenv -e ../../.env --",
     "dev": "pnpm withenv next dev",
     "build": "pnpm withenv next build",
+    "typecheck": "tsc --noEmit",
     "start": "pnpm withenv next start",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix ."
   },

@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import type { Repository } from '@harmony/util/src/types/branch'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
+import type { UpdateAttributeValue } from '@harmony/util/src/updates/component'
 import type { GitRepository } from '../../repository/git/types'
 import { indexFiles } from '../indexor/indexor'
 import { CodeUpdator } from './code-updator'
@@ -69,6 +70,12 @@ describe('code-updator', () => {
       },
       async diffFiles() {
         return []
+      },
+      async getStarCount() {
+        return 0
+      },
+      async getProjectUrl() {
+        return ''
       },
       repository,
     }
@@ -419,6 +426,50 @@ describe('code-updator', () => {
         true,
       )
     })
+
+    it('Should update image src', async () => {
+      const file: TestFile = 'imageSrc'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'bootstrap',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: JSON.stringify({
+            action: 'update',
+            value: 'https://another-image.com/image.jpg',
+            name: 'src',
+          } satisfies UpdateAttributeValue),
+          oldValue: JSON.stringify({
+            action: 'update',
+            value: 'https://google.com/image.jpg',
+            name: 'src',
+          } satisfies UpdateAttributeValue),
+          type: 'component',
+          name: 'update-attribute',
+          componentId: elementInstances[2].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(codeUpdates.locations.length).toBe(1)
+      expect(removeLines(codeUpdates.locations[0].snippet)).toBe(
+        '"https://another-image.com/image.jpg"',
+      )
+      expectLocationOfString(
+        file,
+        codeUpdates.locations[0],
+        '"https://google.com/image.jpg"',
+        true,
+      )
+    })
   })
 })
 
@@ -500,6 +551,16 @@ const testFiles = {
                 </div>
             )
         }
+    `,
+  imageSrc: `
+      const ImageSrc = ({image}) => {
+        return <img src={image} />
+      }
+
+      const Home = () => {
+        const image = "https://google.com/image.jpg"
+        return <ImageSrc image={image} />
+      }
     `,
 }
 

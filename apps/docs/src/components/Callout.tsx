@@ -1,5 +1,4 @@
 import clsx from 'clsx'
-
 import { Icon } from '@/components/Icon'
 
 const styles = {
@@ -18,9 +17,9 @@ const styles = {
 }
 
 const icons = {
-  note: (props: { className?: string }) => <Icon icon="lightbulb" {...props} />,
+  note: (props: { className?: string }) => <Icon icon='lightbulb' {...props} />,
   warning: (props: { className?: string }) => (
-    <Icon icon="warning" color="amber" {...props} />
+    <Icon icon='warning' color='amber' {...props} />
   ),
 }
 
@@ -33,12 +32,12 @@ export function Callout({
   children: React.ReactNode
   type?: keyof typeof styles
 }) {
-  let IconComponent = icons[type]
+  const IconComponent = icons[type]
 
   return (
     <div className={clsx('my-8 flex rounded-3xl p-6', styles[type].container)}>
-      <IconComponent className="h-8 w-8 flex-none" />
-      <div className="ml-4 flex-auto">
+      <IconComponent className='h-8 w-8 flex-none' />
+      <div className='ml-4 flex-auto'>
         <p className={clsx('m-0 font-display text-xl', styles[type].title)}>
           {title}
         </p>

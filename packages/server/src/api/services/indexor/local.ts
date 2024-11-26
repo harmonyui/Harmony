@@ -1,4 +1,3 @@
- 
 /* eslint-disable @typescript-eslint/prefer-promise-reject-errors -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
 /* eslint-disable @typescript-eslint/no-floating-promises -- ok*/

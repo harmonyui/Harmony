@@ -172,9 +172,11 @@ export const DropdownLineItem = <C extends React.ElementType>({
     <Component
       {...restProps}
       className={getClass(
-        selected ? 'hw-bg-primary-light' : 'hw-text-gray-900',
+        selected
+          ? 'hw-bg-primary-light hw-text-white hover:hw-bg-primary-light/80'
+          : 'hw-text-gray-900 hover:hw-bg-gray-100 ',
         className,
-        'group hw-flex hw-w-full hw-items-center hw-rounded-md hw-p-2 hw-text-sm hw-cursor-pointer hover:hw-bg-gray-100 [&>*]:hw-flex-1',
+        'group hw-flex hw-w-full hw-items-center hw-rounded-md hw-p-2 hw-text-sm hw-cursor-pointer [&>*]:hw-flex-1',
       )}
     >
       {children}

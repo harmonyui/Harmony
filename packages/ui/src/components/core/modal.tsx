@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-floating-promises -- ok*/
 'use client'
 import {
   createContext,
@@ -145,7 +146,7 @@ export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({
           )}
           onClose={onClose}
         >
-          <div className='hw-bg-white hw-shadow sm:hw-rounded-lg'>
+          <div className='hw-bg-white dark:hw-bg-gray-900 hw-shadow sm:hw-rounded-lg'>
             <div className='hw-px-4 hw-py-5 sm:hw-p-6'>{children}</div>
           </div>
         </ClosableContent>

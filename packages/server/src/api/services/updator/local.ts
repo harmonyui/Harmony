@@ -20,7 +20,6 @@ export const changesSchema = z.object({
 
 export type Changes = z.infer<typeof changesSchema>
 
- 
 export async function makeChanges(
   referencedComponent: HarmonyComponent,
   newSnippet: string,
@@ -91,10 +90,7 @@ export class GithubFileRetriver implements FileContentRetriever {
   }
 
   public async getNewFileContent(file: string) {
-    const content = await this.gitRepository.getContent(
-      file,
-      this.gitRepository.repository.branch,
-    )
+    const content = await this.gitRepository.getContent(file)
 
     return content
   }

@@ -7,30 +7,32 @@ interface DraggablePanelProps {
   id: string
   title: string
   children: React.ReactNode
+  defaultActive?: boolean
 }
 export const DraggablePanel: React.FunctionComponent<DraggablePanelProps> = ({
   id,
   title,
   children,
+  defaultActive = true,
 }) => {
   const { show, pos, setPos } = useRegisterHarmonyPanel({
     id,
-    defaultActive: true,
+    defaultActive,
   })
   const { setParentRef, dragHandleProps } = useDraggablePanel({ pos, setPos })
 
   return show ? (
     <div
-      className='hw-absolute hw-top-0 hw-left-0 hw-bg-white hw-rounded-lg hw-p-4 hw-shadow-md hw-z-[1000] hw-max-h-[600px] hw-overflow-auto'
+      className='hw-absolute hw-top-0 hw-left-0 hw-bg-gray-100 hw-rounded-lg hw-p-4 hw-shadow-md hw-z-[1000]'
       ref={(ref) => setParentRef(ref)}
     >
-      <div className='hw-flex hw-justify-between hw-items-center'>
+      <div className='hw-flex hw-justify-between hw-items-center hw-mb-2'>
         <div className='hw-text-base hw-font-bold'>{title}</div>
         <div {...dragHandleProps}>
           <Dots6Icon className='hw-h-5 hw-w-5' />
         </div>
       </div>
-      {children}
+      <div className='hw-overflow-auto hw-max-h-[600px]'>{children}</div>
     </div>
   ) : null
 }
@@ -56,8 +58,8 @@ const useDraggablePanel = ({
       if (!parent) throw new Error('Parent not found')
 
       return {
-        top: element.offsetTop - parent.offsetTop,
-        bottom: window.innerHeight - element.offsetHeight,
+        top: element.offsetTop - parent.offsetTop + window.scrollX,
+        bottom: window.innerHeight - element.offsetHeight + window.scrollY,
         left: element.offsetLeft - parent.offsetLeft,
         right: window.innerWidth - element.offsetWidth,
       }

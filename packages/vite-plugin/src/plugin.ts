@@ -15,7 +15,7 @@ const harmony = (options: HarmonyOptions): Plugin => {
 
     let baseIndex = -1
     let targetIndex = -1
-    let targetPlugin: Plugin
+    let targetPlugin: Plugin | undefined
     for (let i = 0, len = plugins.length; i < len; i += 1) {
       const current = plugins[i]
       if (namesSet.has(current.name) && baseIndex === -1) {
@@ -26,9 +26,14 @@ const harmony = (options: HarmonyOptions): Plugin => {
         targetPlugin = current
       }
     }
-    if (baseIndex !== -1 && targetIndex !== -1 && baseIndex < targetIndex) {
+    if (
+      baseIndex !== -1 &&
+      targetIndex !== -1 &&
+      baseIndex < targetIndex &&
+      targetPlugin
+    ) {
       plugins.splice(targetIndex, 1)
-      plugins.splice(baseIndex, 0, targetPlugin!)
+      plugins.splice(baseIndex, 0, targetPlugin)
     }
   }
   return {

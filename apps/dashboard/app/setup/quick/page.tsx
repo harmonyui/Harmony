@@ -4,13 +4,13 @@ import { notFound, redirect } from 'next/navigation'
 import { getServerAuthSession } from '@harmony/server/src/auth'
 import { prisma } from '@harmony/db/lib/prisma'
 import { createNewAccount } from '@harmony/server/src/api/routers/setup'
-import {
-  createBranch,
-  getBranches,
-} from '@harmony/server/src/api/routers/branch'
 import { wordToKebabCase } from '@harmony/util/src/utils/common'
 import { auth } from '@clerk/nextjs'
 import { createUrlFromProject } from '@harmony/util/src/utils/component'
+import {
+  createBranch,
+  getBranches,
+} from '@harmony/server/src/api/repository/database/branch'
 import { DesignerSetup } from '../components/setup'
 
 async function QuickPage({

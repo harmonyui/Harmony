@@ -6,6 +6,7 @@ import {
   hashComponentId,
 } from '@harmony/util/src/utils/component'
 import generator from '@babel/generator'
+import type { Attribute } from './types'
 import { Node } from './types'
 
 export function createNode<T extends t.Node>(
@@ -152,4 +153,15 @@ export const getSnippetFromNode = (node: t.Node): string => {
   const result = generator(node)
 
   return result.code
+}
+
+export function getAttributeName(attribute: Attribute): string {
+  if (attribute.type === 'className') {
+    return 'className'
+  } else if (attribute.type === 'text') {
+    return 'children'
+  }
+
+  const [name] = attribute.value.split(':')
+  return name
 }

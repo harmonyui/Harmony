@@ -10,15 +10,21 @@ import {
 } from '@harmony/ui/src/hooks/query-state'
 import { WEB_URL } from '@harmony/util/src/constants'
 import { useQueryStorageState } from '@harmony/ui/src/hooks/query-storage-state'
+import { useToggleEvent } from '../hooks/toggle-event'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
-import { useToggleEvent } from './hooks/toggle-event'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
-  'repositoryId' | 'fonts' | 'environment' | 'source' | 'overlay'
+  | 'repositoryId'
+  | 'fonts'
+  | 'environment'
+  | 'source'
+  | 'overlay'
+  | 'cdnImages'
+  | 'uploadImage'
 > & {
   local?: boolean
 }

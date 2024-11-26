@@ -1,6 +1,6 @@
-import { getClass } from "@harmony/util/src/utils/common";
+import { getClass } from '@harmony/util/src/utils/common'
 
-type HyperlinkComponentProps = React.ComponentPropsWithoutRef<"a">;
+type HyperlinkComponentProps = React.ComponentPropsWithoutRef<'a'>
 export const Hyperlink = ({
   className,
   children,
@@ -11,10 +11,10 @@ export const Hyperlink = ({
       {...rest}
       className={getClass(
         className,
-        "font-semibold leading-6 text-primary hover:text-opacity-80 cursor-pointer",
+        'font-semibold leading-6 text-primary hover:text-opacity-80 cursor-pointer',
       )}
     >
       {children}
     </a>
-  );
-};
+  )
+}

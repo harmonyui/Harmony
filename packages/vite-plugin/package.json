@@ -11,7 +11,9 @@
   "main": "dist/bundle.js",
   "types": "dist/esm/vite-plugin/src/plugin.d.ts",
   "scripts": {
-    "build": "NODE_ENV=production webpack --mode=production"
+    "build": "NODE_ENV=production webpack --mode=production",
+    "format": "prettier --write \"**/*.{prisma,ts,tsx,md,json}\" && eslint --fix",
+    "lint": "eslint ."
   },
   "files": [
     "dist"
