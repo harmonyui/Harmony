@@ -81,7 +81,7 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
 
         return Array.from({ length: elements.length }, (_, index) => index)
       },
-      [],
+      [this],
       true,
     )
     const actualRet: {

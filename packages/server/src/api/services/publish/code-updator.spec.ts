@@ -549,6 +549,24 @@ describe('code-updator', () => {
           childIndex: 1,
           isGlobal: false,
         },
+        {
+          value: 'name1-changed',
+          oldValue: 'name1',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[8].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'name2-changed',
+          oldValue: 'name2',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[8].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
       ]
 
       const fileUpdates = await codeUpdator.updateFiles(updates)
@@ -558,7 +576,7 @@ describe('code-updator', () => {
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
 
-      expect(codeUpdates.locations.length).toBe(8)
+      expect(codeUpdates.locations.length).toBe(10)
 
       expect(codeUpdates.locations[0].snippet).toBe('"Goodbye sir"')
       expectLocationOfString(file, codeUpdates.locations[0], '"Hello sir"')
@@ -573,10 +591,14 @@ describe('code-updator', () => {
       expectLocationOfString(file, codeUpdates.locations[4], '"bg-blue-50"')
       expect(codeUpdates.locations[5].snippet).toBe('"text-black"')
       expectLocationOfString(file, codeUpdates.locations[5], '"text-white"')
-      expect(codeUpdates.locations[6].snippet).toBe('"Hello good sir"')
-      expectLocationOfString(file, codeUpdates.locations[6], '"Hello"')
-      expect(codeUpdates.locations[7].snippet).toBe('"There good sir"')
-      expectLocationOfString(file, codeUpdates.locations[7], '"There"')
+      expect(codeUpdates.locations[6].snippet).toBe('"name1-changed"')
+      expectLocationOfString(file, codeUpdates.locations[6], '"name1"')
+      expect(codeUpdates.locations[7].snippet).toBe('"name2-changed"')
+      expectLocationOfString(file, codeUpdates.locations[7], '"name2"')
+      expect(codeUpdates.locations[8].snippet).toBe('"Hello good sir"')
+      expectLocationOfString(file, codeUpdates.locations[8], '"Hello"')
+      expect(codeUpdates.locations[9].snippet).toBe('"There good sir"')
+      expectLocationOfString(file, codeUpdates.locations[9], '"There"')
     })
   })
 })
@@ -689,9 +711,11 @@ const testFiles = {
         const App = () => {
             const categories = [{name: "Hello sir", style: "flex"}, {name: "There sir", style: "gap-2"}];
             const classes = [{start: "bg-blue-50"}, {end: "text-white"}];
+            const inHouseMapping = [{name: "name1"}, {name: "name2"}];
             return <>
                 <ComponentArrays array1={["Hello", "There"]} array2={classes}/>
                 <ComponentMapping categories={categories}/>
+                {inHouseMapping.map((category) => <div key={category.name}>{category.name}</div>)}
             </>
         }
   `,
