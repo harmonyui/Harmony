@@ -16,6 +16,8 @@ import {
   isTemplateLiteral,
   isVariableDeclarator,
   isExpression,
+  isFunctionExpression,
+  isArrowFunctionExpression,
 } from './predicates/simple-predicates'
 
 export type AddEdge<T extends t.Node> = (
@@ -44,7 +46,11 @@ const addEdge: AddEdge<t.Node> = (node, graph) => {
     visitor.ObjectExpression(node)
   } else if (isVariableDeclarator(node)) {
     visitor.VariableDeclarator(node)
-  } else if (isExpression(node)) {
+  } else if (
+    isExpression(node) &&
+    !isFunctionExpression(node) &&
+    !isArrowFunctionExpression(node)
+  ) {
     graph.setNode(node)
     node.path.traverse(visitor)
   } else {
@@ -123,12 +129,10 @@ const addCallExpressionEdge: AddEdge<t.CallExpression> = (node, graph) => {
 
 const addIdentifierEdge: AddEdge<t.Identifier> = (node, graph) => {
   graph.setNode(node)
-  let scope = node.path.scope.bindings[node.node.name] as Binding | undefined
-  scope =
-    scope ??
-    (node.path.scope.parent.bindings[node.node.name] as Binding | undefined)
+  const scope = node.path.scope.bindings[node.node.name] as Binding | undefined
+
   if (!scope) {
-    throw new Error('Invalid scope')
+    return []
   }
 
   const identifier = scope.identifier
@@ -146,7 +150,8 @@ const addIdentifierEdge: AddEdge<t.Identifier> = (node, graph) => {
 
   const identifierNode = graph.nodes.get(identifierId)
   if (!identifierNode) {
-    throw new Error('Identifier node not found')
+    //console.error(`Identifier ${identifierId} not found`)
+    return []
   }
 
   return [identifierNode.id]
@@ -355,7 +360,6 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
           addDataEdge(newValue, graph)
         }
 
-        graph.addDataDependency(newNode.id, node.id)
         if (newValue.id !== newNode.id) {
           graph.addDataDependency(newNode.id, newValue.id)
         }

@@ -5,6 +5,7 @@ import type { LiteralNode } from '../utils'
 import { createNode, getSnippetFromNode, isChildNode } from '../utils'
 import { isIdentifier, isLiteral } from '../predicates/simple-predicates'
 import { isJSXElement, type JSXElementNode } from './jsx-element'
+import { UndefinedNode } from './undefined'
 
 export class JSXAttribute<T extends t.Node = t.Node>
   extends Node<T>
@@ -43,23 +44,42 @@ export class JSXAttribute<T extends t.Node = t.Node>
 
   public getDataFlowWithParents(): {
     parent: JSXElementNode
-    values: Node<LiteralNode>[]
+    values: Node[]
   }[] {
-    const literalValues = this.getDataFlow()
-    const ret: { parent: JSXElementNode; values: Node<LiteralNode>[] }[] = []
-    literalValues.forEach((value) => {
-      const parent = value.traceParent((node) =>
-        node ? isJSXElement(node) : false,
-      ) as JSXElementNode | undefined
-      if (!parent) throw new Error('Element does not have a parent')
-      const data = ret.find((item) => item.parent === parent)
+    const parents: JSXElementNode[] = []
+    const ret: { parent: JSXElementNode; values: Node[] }[] = []
+    const values = this.value.getValues((node) => {
+      const parent = node.getParent()
+      if (parent && isJSXElement(parent) && parents[0] !== parent) {
+        parents.unshift(parent)
+      }
+      const currParent = parents[0]
+
+      if (node.dependencies.size !== 0) return false
+
+      const data = ret.find((item) => item.parent === currParent)
 
       if (data) {
-        data.values.push(value)
+        data.values.push(node)
       } else {
-        ret.push({ parent, values: [value] })
+        ret.push({ parent: currParent, values: [node] })
       }
+
+      return true
     })
+    // values.forEach((value) => {
+    //   const parent = value.traceParent((node) =>
+    //     node ? isJSXElement(node) : false,
+    //   ) as JSXElementNode | undefined
+    //   if (!parent) throw new Error('Element does not have a parent')
+    //   const data = ret.find((item) => item.parent === parent)
+
+    //   if (data) {
+    //     data.values.push(value)
+    //   } else {
+    //     ret.push({ parent, values: [value] })
+    //   }
+    // })
 
     return ret
   }
@@ -138,6 +158,11 @@ function createValue(
 
   const value = key ? attributePath.get(key) : attributePath
   if (Array.isArray(value)) throw new Error('Should not be array')
+  if (!(value.node as Node | null)) {
+    return new UndefinedNode(
+      createNode('', attributePath, fileLocation, fileContent),
+    )
+  }
   const valueNode = createNode(
     getSnippetFromNode(value.node),
     value,

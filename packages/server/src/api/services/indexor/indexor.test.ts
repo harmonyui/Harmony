@@ -372,10 +372,13 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
 
    const App = () => {
         const spreadLabel = "This is a spread: label::";
+        const messMeUp = React.useCallback(() => {
+            return api?.messMeUp()
+        }, [api])
 
         return (<>
-            <Component><Icon/> Filter</Component>
-            <ComponentComplex><Icon/> Hello</ComponentComplex>
+            <Component objectStuff={{messMeUp}}><Icon/> Filter</Component>
+            <ComponentComplex noValue><Icon/> Hello</ComponentComplex>
             <SpreadComponent label="Thank you friend" />
             <SpreadComponent label={spreadLabel} className="border-1"/>
         </>)
@@ -393,6 +396,40 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
             <div>
                 <RecursiveComponent label={newLabel}/>
             </div>
+        )
+    }
+    `,
+  'app/arrayStuff.tsx': `
+        const ComponentArrays = ({array1, array2}) => {
+        const [first, second] = array2;
+            return <div>
+                <h1 className={first}>{array1[0]}</h1>
+                <h2 className={second}>{array1[1]}</h2>
+            </div>
+        }
+        const ComponentMapping = ({categories}) => {
+            return <div>
+                {categories.map((category) => {
+                    return <h1>{category.name}</h1>
+                })}
+            </div>
+        }
+
+        const App = () => {
+            const categories = [{name: "Hello sir"}, {name: "There sir"}];
+            const classes = ["bg-blue-50", "text-white"];
+            return <>
+                <ComponentArrays array1={["Hello", "There"]} array2={classes}/>
+                <ComponentMapping categories={categories}/>
+            </>
+        }
+    `,
+  'app/errorComponents.tsx': `
+    const Component = ({children, navigation}) => {
+        return (<>
+            <div className={inter.className}>{children}</div>
+            <div>{navigation.pages.map(page => <a>{page}</a>)}</div>
+        </>
         )
     }
     `,

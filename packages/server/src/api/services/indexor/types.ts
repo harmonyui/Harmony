@@ -22,7 +22,7 @@ export interface HarmonyComponent {
   getParent: () => HarmonyComponent | undefined
   containingComponent?: HarmonyContainingComponent
   location: ComponentLocation
-  children: HarmonyComponent[]
+  children: string[]
   node: t.JSXElement
 }
 

@@ -35,3 +35,6 @@ export const isExpression = (node: Node): node is Node<t.Expression> =>
   t.isExpression(node.node)
 export const isLiteral = (node: Node): node is Node<LiteralNode> =>
   isLiteralNode(node.node)
+export const isFunctionExpression = (
+  node: Node,
+): node is Node<t.FunctionExpression> => t.isFunctionExpression(node.node)

@@ -446,7 +446,7 @@ describe('code-updator', () => {
           } satisfies UpdateAttributeValue),
           type: 'component',
           name: 'update-attribute',
-          componentId: elementInstances[2].id,
+          componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
         },

@@ -141,6 +141,8 @@ export class FlowGraph {
     if (valueNode.id !== jsxAttributeNode.id) {
       jsxAttributeNode.setValueNode(this.nodes.get(valueNode.id) ?? valueNode)
     }
+    ;(this.nodes.get(valueNode.id) ?? valueNode).setParent(jsxElementNode)
+
     if (jsxAttributeNode instanceof JSXSpreadAttributeNode) {
       this.addDataDependency(jsxAttributeNode.id, valueNode.id)
     } else {
@@ -263,101 +265,98 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
 
       path.traverse({
         JSXElement(jsxPath) {
-          if (t.isJSXIdentifier(jsxPath.node.openingElement.name)) {
-            const name = jsxPath.node.openingElement.name.name
-            const definitionComponent = graph.getDefinition(name)
+          const name = t.isJSXIdentifier(jsxPath.node.openingElement.name)
+            ? jsxPath.node.openingElement.name.name
+            : getSnippetFromNode(jsxPath.node.openingElement.name)
+          const definitionComponent = graph.getDefinition(name)
 
-            const openingElement = graph.createNode(
-              getSnippetFromNode(jsxPath.node.openingElement),
-              jsxPath.get('openingElement'),
-            )
+          const openingElement = graph.createNode(
+            getSnippetFromNode(jsxPath.node.openingElement),
+            jsxPath.get('openingElement'),
+          )
 
-            const elementNode = new JSXElementNode(
-              [],
-              containingComponent,
-              definitionComponent,
-              openingElement,
-              graph.createNode(name, jsxPath),
-            )
+          const elementNode = new JSXElementNode(
+            [],
+            containingComponent,
+            definitionComponent,
+            openingElement,
+            graph.createNode(name, jsxPath),
+          )
 
-            graph.addJSXElement(elementNode, containingComponent)
+          graph.addJSXElement(elementNode, containingComponent)
 
-            const currAttributes: JSXAttributeNode[] = []
-            for (
-              let i = 0;
-              i < jsxPath.node.openingElement.attributes.length;
-              i++
+          const currAttributes: JSXAttributeNode[] = []
+          for (
+            let i = 0;
+            i < jsxPath.node.openingElement.attributes.length;
+            i++
+          ) {
+            const attributePath = jsxPath.get(
+              `openingElement.attributes.${i}`,
+            ) as NodePath<t.JSXAttribute | t.JSXSpreadAttribute>
+
+            if (t.isJSXAttribute(attributePath.node)) {
+              const attributeName = t.isJSXIdentifier(attributePath.node.name)
+                ? attributePath.node.name.name
+                : getSnippetFromNode(attributePath.node)
+              const attributeNode = new JSXAttributeNode(
+                elementNode,
+                -1,
+                graph.code,
+                graph.createNode(
+                  attributeName,
+                  attributePath as NodePath<t.JSXAttribute>,
+                ),
+              )
+
+              graph.addJSXAttribute(attributeNode, elementNode)
+              currAttributes.push(attributeNode)
+            } else {
+              const spreadAttributeNode = new JSXSpreadAttributeNode(
+                elementNode,
+                currAttributes,
+                graph.code,
+                graph.createNode(
+                  getSnippetFromNode(attributePath.node),
+                  attributePath as NodePath<t.JSXSpreadAttribute>,
+                ),
+              )
+
+              graph.addJSXAttribute(spreadAttributeNode, elementNode)
+            }
+          }
+
+          let childIndex = 0
+          for (let i = 0; i < jsxPath.node.children.length; i++) {
+            const node = jsxPath.node.children[i]
+            if (t.isJSXText(node) && node.value.trim().length === 0) continue
+
+            const childPath = jsxPath.get(`children.${i}`)
+            if (Array.isArray(childPath)) throw new Error('Should not be array')
+
+            if (
+              t.isJSXExpressionContainer(childPath.node) ||
+              t.isJSXText(childPath.node)
             ) {
-              const attributePath = jsxPath.get(
-                `openingElement.attributes.${i}`,
-              ) as NodePath<t.JSXAttribute | t.JSXSpreadAttribute>
+              const attributeNode = new JSXAttributeNode(
+                elementNode,
+                childIndex,
+                graph.code,
+                graph.createNode(
+                  'children',
+                  childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
+                ),
+              )
 
-              if (t.isJSXAttribute(attributePath.node)) {
-                const attributeName = t.isJSXIdentifier(attributePath.node.name)
-                  ? attributePath.node.name.name
-                  : getSnippetFromNode(attributePath.node)
-                const attributeNode = new JSXAttributeNode(
-                  elementNode,
-                  -1,
-                  graph.code,
-                  graph.createNode(
-                    attributeName,
-                    attributePath as NodePath<t.JSXAttribute>,
-                  ),
-                )
-
-                graph.addJSXAttribute(attributeNode, elementNode)
-                currAttributes.push(attributeNode)
-              } else {
-                const spreadAttributeNode = new JSXSpreadAttributeNode(
-                  elementNode,
-                  currAttributes,
-                  graph.code,
-                  graph.createNode(
-                    getSnippetFromNode(attributePath.node),
-                    attributePath as NodePath<t.JSXSpreadAttribute>,
-                  ),
-                )
-
-                graph.addJSXAttribute(spreadAttributeNode, elementNode)
-              }
+              graph.addJSXAttribute(attributeNode, elementNode)
             }
+            childIndex++
+          }
 
-            let childIndex = 0
-            for (let i = 0; i < jsxPath.node.children.length; i++) {
-              const node = jsxPath.node.children[i]
-              if (t.isJSXText(node) && node.value.trim().length === 0) continue
-
-              const childPath = jsxPath.get(`children.${i}`)
-              if (Array.isArray(childPath))
-                throw new Error('Should not be array')
-
-              if (
-                t.isJSXExpressionContainer(childPath.node) ||
-                t.isJSXText(childPath.node)
-              ) {
-                const attributeNode = new JSXAttributeNode(
-                  elementNode,
-                  childIndex,
-                  graph.code,
-                  graph.createNode(
-                    'children',
-                    childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
-                  ),
-                )
-
-                graph.addJSXAttribute(attributeNode, elementNode)
-              }
-              childIndex++
-            }
-
-            //Connect the element to the definition component
-            const elementDefinition = elementNode.getDefinitionComponent()
-            if (elementDefinition) {
-              graph.addJSXInstanceComponentEdge(elementDefinition, elementNode)
-            }
-          } else {
-            throw new Error("I dunno what's going on")
+          //Connect the element to the definition component
+          const elementDefinition = elementNode.getDefinitionComponent()
+          if (elementDefinition) {
+            graph.addJSXInstanceComponentEdge(elementDefinition, elementNode)
           }
         },
       })

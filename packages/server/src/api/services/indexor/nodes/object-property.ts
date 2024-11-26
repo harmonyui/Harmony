@@ -26,6 +26,10 @@ export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
       isObject(node),
     ) as ObjectNode[]
 
+    if (superValues.length === 0) {
+      return super.getValues(predicate)
+    }
+
     superValues.forEach((node) => {
       const attribute = node
         .getAttributes()

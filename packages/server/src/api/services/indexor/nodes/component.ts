@@ -45,6 +45,10 @@ export class ComponentNode extends Node<
   public addJSXElement(element: JSXElementNode) {
     this.elements.push(element)
   }
+
+  public getJSXElements() {
+    return this.elements
+  }
 }
 export const isFunction = (node: Node): node is ComponentNode =>
   node instanceof ComponentNode
