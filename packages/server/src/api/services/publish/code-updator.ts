@@ -105,7 +105,10 @@ export class CodeUpdator {
         curr.type === 'className'
           ? prev.find(
               (up) =>
-                up.componentId === curr.componentId && up.type === 'className',
+                up.componentId === curr.componentId &&
+                (up.component.childIndex === undefined ||
+                  up.component.childIndex === curr.childIndex) &&
+                up.type === 'className',
             )
           : undefined
       if (classNameUpdate) {
@@ -119,9 +122,12 @@ export class CodeUpdator {
         const getComponent = (
           currId: string,
         ): Promise<HarmonyComponent | undefined> => {
-          const currElement = indexedElements.find(
-            (instance) => instance.id === currId,
-          )
+          const currElement =
+            indexedElements.find(
+              (instance) =>
+                instance.id === currId &&
+                instance.childIndex === curr.childIndex,
+            ) ?? indexedElements.find((instance) => instance.id === currId)
 
           return Promise.resolve(currElement)
         }
@@ -196,7 +202,9 @@ export class CodeUpdator {
                 ({ component: other, type }) =>
                   type === 'className' &&
                   other.id === component.id &&
-                  other.getParent()?.id === component.getParent()?.id,
+                  other.getParent()?.id === component.getParent()?.id &&
+                  (other.childIndex === undefined ||
+                    other.childIndex === curr.childIndex),
               )
             : undefined
         if (sameComponent) {

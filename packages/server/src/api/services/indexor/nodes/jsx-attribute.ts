@@ -1,9 +1,15 @@
 import * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
-import { Node, type NodeBase, type ObjectProperty } from '../types'
+import { Node } from '../types'
+import type { ArrayProperty, NodeBase, ObjectProperty } from '../types'
 import type { LiteralNode } from '../utils'
 import { createNode, getSnippetFromNode, isChildNode } from '../utils'
-import { isIdentifier, isLiteral } from '../predicates/simple-predicates'
+import {
+  isArray,
+  isArrayProperty,
+  isIdentifier,
+  isLiteral,
+} from '../predicates/simple-predicates'
 import { isJSXElement, type JSXElementNode } from './jsx-element'
 import { UndefinedNode } from './undefined'
 
@@ -11,6 +17,8 @@ export class JSXAttribute<T extends t.Node = t.Node>
   extends Node<T>
   implements ObjectProperty
 {
+  public isMappedExpression = false
+
   constructor(
     private parentElement: JSXElementNode,
     private value: Node,
@@ -46,41 +54,12 @@ export class JSXAttribute<T extends t.Node = t.Node>
     parent: JSXElementNode
     values: Node[]
   }[] {
-    const parents: JSXElementNode[] = []
-    const ret: { parent: JSXElementNode; values: Node[] }[] = []
-    const values = this.value.getValues((node) => {
-      const parent = node.getParent()
-      if (parent && isJSXElement(parent) && parents[0] !== parent) {
-        parents.unshift(parent)
-      }
-      const currParent = parents[0]
-
-      if (node.dependencies.size !== 0) return false
-
-      const data = ret.find((item) => item.parent === currParent)
-
-      if (data) {
-        data.values.push(node)
-      } else {
-        ret.push({ parent: currParent, values: [node] })
-      }
-
-      return true
-    })
-    // values.forEach((value) => {
-    //   const parent = value.traceParent((node) =>
-    //     node ? isJSXElement(node) : false,
-    //   ) as JSXElementNode | undefined
-    //   if (!parent) throw new Error('Element does not have a parent')
-    //   const data = ret.find((item) => item.parent === parent)
-
-    //   if (data) {
-    //     data.values.push(value)
-    //   } else {
-    //     ret.push({ parent, values: [value] })
-    //   }
-    // })
-
+    const ret = this.value.getValuesWithParents(
+      (node): node is Node => node.dependencies.size === 0,
+      isJSXElement,
+      (node) => node,
+      [],
+    )
     return ret
   }
 
@@ -112,6 +91,73 @@ export class JSXAttribute<T extends t.Node = t.Node>
       ),
       argument,
     }
+  }
+
+  public getMappedIndexes(): {
+    parent: JSXElementNode
+    values: { index: number; values: Node[] }[]
+  }[] {
+    const values = this.value.getValues(
+      (node) => isArrayProperty(node) && node.getIndex() === undefined,
+    ) as ArrayProperty[]
+    if (values.length > 1)
+      throw new Error('Should not have more than one array property')
+
+    const value = values[0]
+    const ret = value.getValuesWithParents(
+      isArray,
+      isJSXElement,
+      (node, parents) => {
+        const elements = node.getArrayElements()
+
+        const elementValues = elements.map((element) =>
+          element.getValuesWithParents(
+            (_node): _node is Node => node.dependencies.size === 0,
+            isJSXElement,
+            (_node) => _node,
+            parents,
+          ),
+        )
+
+        return elementValues.map((elementValue, index) => ({
+          index,
+          values: elementValue,
+        }))
+      },
+      [],
+    )
+    const actualRet: {
+      parent: JSXElementNode
+      values: { index: number; values: Node[] }[]
+    }[] = []
+    ret.forEach((ret1) => {
+      ret1.values.forEach((ret2) => {
+        ret2.forEach((ret3) => {
+          ret3.values.forEach((ret4) => {
+            const found = actualRet.find(
+              (actual) => actual.parent === ret1.parent,
+            )
+            if (found) {
+              const foundIndex = found.values.find(
+                (v) => v.index === ret3.index,
+              )
+              if (foundIndex) {
+                foundIndex.values.push(...ret4.values)
+              } else {
+                found.values.push({ index: ret3.index, values: ret4.values })
+              }
+            } else {
+              actualRet.push({
+                parent: ret1.parent,
+                values: [{ index: ret3.index, values: ret4.values }],
+              })
+            }
+          })
+        })
+      })
+    })
+
+    return actualRet
   }
 }
 

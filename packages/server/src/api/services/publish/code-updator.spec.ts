@@ -470,6 +470,114 @@ describe('code-updator', () => {
         true,
       )
     })
+
+    it('Should update array data', async () => {
+      const file: TestFile = 'arrayStuff'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: 'Hello good sir',
+          oldValue: 'Hello',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'There good sir',
+          oldValue: 'There',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[2].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: '#000',
+          oldValue: '',
+          type: 'className',
+          name: 'background-color',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: '#000',
+          oldValue: '',
+          type: 'className',
+          name: 'color',
+          componentId: elementInstances[2].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: 'Goodbye sir',
+          oldValue: 'Hello sir',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[4].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'Thank you sir',
+          oldValue: 'There sir',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[4].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: 'block',
+          oldValue: 'flex',
+          type: 'className',
+          name: 'display',
+          componentId: elementInstances[4].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: '10px',
+          oldValue: '8px',
+          type: 'className',
+          name: 'gap',
+          componentId: elementInstances[4].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(codeUpdates.locations.length).toBe(8)
+
+      expect(codeUpdates.locations[0].snippet).toBe('"Goodbye sir"')
+      expectLocationOfString(file, codeUpdates.locations[0], '"Hello sir"')
+      expect(codeUpdates.locations[1].snippet).toBe('"block"')
+      expectLocationOfString(file, codeUpdates.locations[1], '"flex"')
+      expect(codeUpdates.locations[2].snippet).toBe('"Thank you sir"')
+      expectLocationOfString(file, codeUpdates.locations[2], '"There sir"')
+      expect(codeUpdates.locations[3].snippet).toBe('"gap-2.5"')
+      expectLocationOfString(file, codeUpdates.locations[3], '"gap-2"')
+
+      expect(codeUpdates.locations[4].snippet).toBe('"bg-black"')
+      expectLocationOfString(file, codeUpdates.locations[4], '"bg-blue-50"')
+      expect(codeUpdates.locations[5].snippet).toBe('"text-black"')
+      expectLocationOfString(file, codeUpdates.locations[5], '"text-white"')
+      expect(codeUpdates.locations[6].snippet).toBe('"Hello good sir"')
+      expectLocationOfString(file, codeUpdates.locations[6], '"Hello"')
+      expect(codeUpdates.locations[7].snippet).toBe('"There good sir"')
+      expectLocationOfString(file, codeUpdates.locations[7], '"There"')
+    })
   })
 })
 
@@ -562,6 +670,31 @@ const testFiles = {
         return <ImageSrc image={image} />
       }
     `,
+  arrayStuff: `
+      const ComponentArrays = ({array1, array2}) => {
+        const [first, second] = array2;
+            return <div>
+                <h1 className={first.start}>{array1[0]}</h1>
+                <h2 className={second.end}>{array1[1]}</h2>
+            </div>
+        }
+        const ComponentMapping = ({categories}) => {
+            return <div>
+                {categories.map((category) => {
+                    return <h1 className={category.style}>{category.name}</h1>
+                })}
+            </div>
+        }
+
+        const App = () => {
+            const categories = [{name: "Hello sir", style: "flex"}, {name: "There sir", style: "gap-2"}];
+            const classes = [{start: "bg-blue-50"}, {end: "text-white"}];
+            return <>
+                <ComponentArrays array1={["Hello", "There"]} array2={classes}/>
+                <ComponentMapping categories={categories}/>
+            </>
+        }
+  `,
 }
 
 const removeLines = (str: string): string => {

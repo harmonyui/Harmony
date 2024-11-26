@@ -403,8 +403,8 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         const ComponentArrays = ({array1, array2}) => {
         const [first, second] = array2;
             return <div>
-                <h1 className={first}>{array1[0]}</h1>
-                <h2 className={second}>{array1[1]}</h2>
+                <h1 className={first.start}>{array1[0]}</h1>
+                <h2 className={second.end}>{array1[1]}</h2>
             </div>
         }
         const ComponentMapping = ({categories}) => {
@@ -417,7 +417,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
 
         const App = () => {
             const categories = [{name: "Hello sir"}, {name: "There sir"}];
-            const classes = ["bg-blue-50", "text-white"];
+            const classes = [{start: "bg-blue-50"}, {end: "text-white"}];
             return <>
                 <ComponentArrays array1={["Hello", "There"]} array2={classes}/>
                 <ComponentMapping categories={categories}/>
@@ -425,10 +425,11 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         }
     `,
   'app/errorComponents.tsx': `
-    const Component = ({children, navigation}) => {
+    const Component = ({children, navigation, opts}) => {
+        const [carouselRef, api] = useEmblaCarousel({...opts})
         return (<>
             <div className={inter.className}>{children}</div>
-            <div>{navigation.pages.map(page => <a>{page}</a>)}</div>
+            <div value={{carouselRef, api: api}}>{navigation.pages.map(page => <a>{page}</a>)}</div>
         </>
         )
     }

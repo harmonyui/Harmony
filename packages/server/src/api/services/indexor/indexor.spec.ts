@@ -1049,114 +1049,114 @@ describe('indexor', () => {
       ).not.toBe(undefined)
     })
 
-    // it('Should handle array properties', () => {
-    //   const file: TestFile = 'app/arrayStuff.tsx'
-    //   const content = testCases[file]
+    it('Should handle array properties', () => {
+      const file: TestFile = 'app/arrayStuff.tsx'
+      const content = testCases[file]
 
-    //   const result = getGraph(file, content)
-    //   const componentElements = result
-    //     .getNodes()
-    //     .filter((node) => node instanceof JSXElementNode)
-    //   expect(componentElements.length).toBe(7)
+      const result = getGraph(file, content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(7)
 
-    //   expect(componentElements[1].getAttributes().length).toBe(2)
-    //   expect(componentElements[1].getAttributes()[0].name).toBe('className')
-    //   expect(componentElements[1].getAttributes()[0].getDataFlow().length).toBe(
-    //     1,
-    //   )
-    //   expect(
-    //     getLiteralValue(
-    //       componentElements[1].getAttributes()[0].getDataFlow()[0].node,
-    //     ),
-    //   ).toBe('bg-blue-50')
-    //   expectLocationOfString(
-    //     file,
-    //     componentElements[1].getAttributes()[0].getDataFlow()[0].location,
-    //     '"bg-blue-50"',
-    //   )
-    //   expect(componentElements[1].getAttributes()[1].name).toBe('children')
-    //   expect(componentElements[1].getAttributes()[1].getDataFlow().length).toBe(
-    //     1,
-    //   )
-    //   expect(
-    //     getLiteralValue(
-    //       componentElements[1].getAttributes()[1].getDataFlow()[0].node,
-    //     ),
-    //   ).toBe('Hello')
-    //   expectLocationOfString(
-    //     file,
-    //     componentElements[1].getAttributes()[1].getDataFlow()[0].location,
-    //     '"Hello"',
-    //   )
+      expect(componentElements[1].getAttributes().length).toBe(2)
+      expect(componentElements[1].getAttributes()[0].name).toBe('className')
+      expect(componentElements[1].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe('bg-blue-50')
+      expectLocationOfString(
+        file,
+        componentElements[1].getAttributes()[0].getDataFlow()[0].location,
+        '"bg-blue-50"',
+      )
+      expect(componentElements[1].getAttributes()[1].name).toBe('children')
+      expect(componentElements[1].getAttributes()[1].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[1].getDataFlow()[0].node,
+        ),
+      ).toBe('Hello')
+      expectLocationOfString(
+        file,
+        componentElements[1].getAttributes()[1].getDataFlow()[0].location,
+        '"Hello"',
+      )
 
-    //   expect(componentElements[2].getAttributes().length).toBe(2)
-    //   expect(componentElements[2].getAttributes()[0].name).toBe('className')
-    //   expect(componentElements[2].getAttributes()[0].getDataFlow().length).toBe(
-    //     1,
-    //   )
-    //   expect(
-    //     getLiteralValue(
-    //       componentElements[2].getAttributes()[0].getDataFlow()[0].node,
-    //     ),
-    //   ).toBe('text-white')
-    //   expectLocationOfString(
-    //     file,
-    //     componentElements[2].getAttributes()[0].getDataFlow()[0].location,
-    //     '"text-white"',
-    //   )
-    //   expect(componentElements[2].getAttributes()[1].name).toBe('children')
-    //   expect(componentElements[2].getAttributes()[1].getDataFlow().length).toBe(
-    //     1,
-    //   )
-    //   expect(
-    //     getLiteralValue(
-    //       componentElements[2].getAttributes()[1].getDataFlow()[0].node,
-    //     ),
-    //   ).toBe('There')
-    //   expectLocationOfString(
-    //     file,
-    //     componentElements[2].getAttributes()[1].getDataFlow()[0].location,
-    //     '"There"',
-    //   )
-    // })
+      expect(componentElements[2].getAttributes().length).toBe(2)
+      expect(componentElements[2].getAttributes()[0].name).toBe('className')
+      expect(componentElements[2].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[2].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe('text-white')
+      expectLocationOfString(
+        file,
+        componentElements[2].getAttributes()[0].getDataFlow()[0].location,
+        '"text-white"',
+      )
+      expect(componentElements[2].getAttributes()[1].name).toBe('children')
+      expect(componentElements[2].getAttributes()[1].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[2].getAttributes()[1].getDataFlow()[0].node,
+        ),
+      ).toBe('There')
+      expectLocationOfString(
+        file,
+        componentElements[2].getAttributes()[1].getDataFlow()[0].location,
+        '"There"',
+      )
+    })
 
-    // it('Should handle component mapping over an array', () => {
-    //   const file: TestFile = 'app/arrayStuff.tsx'
-    //   const content = testCases[file]
+    it('Should handle component mapping over an array', () => {
+      const file: TestFile = 'app/arrayStuff.tsx'
+      const content = testCases[file]
 
-    //   const result = getGraph(file, content)
-    //   const componentElements = result
-    //     .getNodes()
-    //     .filter((node) => node instanceof JSXElementNode)
-    //   expect(componentElements.length).toBe(7)
+      const result = getGraph(file, content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(7)
 
-    //   expect(componentElements[4].getAttributes().length).toBe(1)
-    //   expect(componentElements[4].getAttributes()[0].name).toBe('children')
-    //   expect(componentElements[4].getAttributes()[0].getDataFlow().length).toBe(
-    //     2,
-    //   )
-    //   expect(
-    //     getLiteralValue(
-    //       componentElements[4].getAttributes()[0].getDataFlow()[0].node,
-    //     ),
-    //   ).toBe('Hello sir')
-    //   expectLocationOfString(
-    //     file,
-    //     componentElements[4].getAttributes()[0].getDataFlow()[0].location,
-    //     '"Hello sir"',
-    //   )
+      expect(componentElements[4].getAttributes().length).toBe(1)
+      expect(componentElements[4].getAttributes()[0].name).toBe('children')
+      expect(componentElements[4].getAttributes()[0].getDataFlow().length).toBe(
+        2,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[4].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe('Hello sir')
+      expectLocationOfString(
+        file,
+        componentElements[4].getAttributes()[0].getDataFlow()[0].location,
+        '"Hello sir"',
+      )
 
-    //   expect(
-    //     getLiteralValue(
-    //       componentElements[4].getAttributes()[0].getDataFlow()[1].node,
-    //     ),
-    //   ).toBe('There sir')
-    //   expectLocationOfString(
-    //     file,
-    //     componentElements[4].getAttributes()[0].getDataFlow()[1].location,
-    //     '"There sir"',
-    //   )
-    // })
+      expect(
+        getLiteralValue(
+          componentElements[4].getAttributes()[0].getDataFlow()[1].node,
+        ),
+      ).toBe('There sir')
+      expectLocationOfString(
+        file,
+        componentElements[4].getAttributes()[0].getDataFlow()[1].location,
+        '"There sir"',
+      )
+    })
 
     //TODO: Finish this
     // it('Should handle imports from various files', () => {

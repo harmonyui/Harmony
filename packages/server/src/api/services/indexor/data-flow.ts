@@ -6,7 +6,10 @@ import { getLocationId, getSnippetFromNode } from './utils'
 import { MemberExpressionNode } from './nodes/member-expression'
 import { ObjectExpressionNode } from './nodes/object-expression'
 import { RestElementNode } from './nodes/rest-element'
-import { ObjectPropertyNode } from './nodes/object-property'
+import {
+  ObjectPropertyExpressionNode,
+  ObjectPropertyNode,
+} from './nodes/object-property'
 import {
   isCallExpression,
   isIdentifier,
@@ -18,7 +21,12 @@ import {
   isExpression,
   isFunctionExpression,
   isArrowFunctionExpression,
+  isArrayPattern,
+  isArrayExpression,
+  isNumericLiteral,
 } from './predicates/simple-predicates'
+import { ArrayPropertyNode } from './nodes/array-property'
+import { ArrayExpression } from './nodes/array-expression'
 
 export type AddEdge<T extends t.Node> = (
   node: Node<T>,
@@ -32,7 +40,9 @@ export const addDataEdge = (node: Node, graph: FlowGraph) => {
 const addEdge: AddEdge<t.Node> = (node, graph) => {
   const edges: string[] = []
   const visitor = createVisitor(graph, edges)
-  if (isIdentifier(node)) {
+  if (isMappedExpression(node)) {
+    edges.push(...addMappedExpressionEdge(node, graph))
+  } else if (isIdentifier(node)) {
     visitor.Identifier(node)
   } else if (isCallExpression(node)) {
     visitor.CallExpression(node)
@@ -46,6 +56,10 @@ const addEdge: AddEdge<t.Node> = (node, graph) => {
     visitor.ObjectExpression(node)
   } else if (isVariableDeclarator(node)) {
     visitor.VariableDeclarator(node)
+  } else if (isArrayPattern(node)) {
+    visitor.ArrayPattern(node)
+  } else if (isArrayExpression(node)) {
+    visitor.ArrayExpression(node)
   } else if (
     isExpression(node) &&
     !isFunctionExpression(node) &&
@@ -112,6 +126,16 @@ const createVisitor = (graph: FlowGraph, edges: string[]) => {
       const newNode = nodeOrCreate(path)
       graph.setNode(newNode)
       edges.push(newNode.id)
+    },
+    ArrayPattern(path: NodePath<t.ArrayPattern> | Node<t.ArrayPattern>) {
+      const newNode = nodeOrCreate(path)
+      edges.push(...addArrayPatternEdge(newNode, graph))
+    },
+    ArrayExpression(
+      path: NodePath<t.ArrayExpression> | Node<t.ArrayExpression>,
+    ) {
+      const newNode = nodeOrCreate(path)
+      edges.push(...addArrayExpressionEdge(newNode, graph))
     },
   }
 }
@@ -294,18 +318,26 @@ const addMemberExpressionEdge: AddEdge<t.MemberExpression> = (node, graph) => {
     getSnippetFromNode(node.node.property),
     propertyPath,
   )
-  //Only trace the data flow of computed properties
-  if (node.node.computed) {
-    addDataEdge(propertyNode, graph)
+  if (isNumericLiteral(propertyNode)) {
+    const arrayProperty = new ArrayPropertyNode(
+      propertyNode.node.value,
+      graph.createNode(getSnippetFromNode(node.node), node.path),
+    )
+    graph.setNode(arrayProperty)
   } else {
-    graph.setNode(propertyNode)
+    //Only trace the data flow of computed properties
+    if (node.node.computed) {
+      addDataEdge(propertyNode, graph)
+    } else {
+      graph.setNode(propertyNode)
+    }
+    const memberExpressionNode = new MemberExpressionNode(
+      propertyNode,
+      propertyNode,
+      node,
+    )
+    graph.setNode(memberExpressionNode)
   }
-  const memberExpressionNode = new MemberExpressionNode(
-    propertyNode,
-    propertyNode,
-    node,
-  )
-  graph.setNode(memberExpressionNode)
 
   return [objectNode.id]
 }
@@ -327,7 +359,7 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
         const propertypath = node.path.get(
           `properties.${i}`,
         ) as NodePath<t.ObjectProperty>
-        let newNode: ObjectPropertyNode
+        let newNode: ObjectPropertyExpressionNode
         //If the key and the value are different, we want to trace those data edges first, then
         //create the node to ensure that the key and values are the correct types
         if (newKey.id !== newValue.id) {
@@ -337,7 +369,7 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
           addDataEdge(newValue, graph)
           newKey = graph.nodes.get(newKey.id) ?? newKey
           newValue = graph.nodes.get(newValue.id) ?? newValue
-          newNode = new ObjectPropertyNode(
+          newNode = new ObjectPropertyExpressionNode(
             newKey,
             newValue,
             graph.createNode(
@@ -347,7 +379,7 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
           )
           graph.setNode(newNode)
         } else {
-          newNode = new ObjectPropertyNode(
+          newNode = new ObjectPropertyExpressionNode(
             newKey,
             newValue,
             graph.createNode(
@@ -377,8 +409,7 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
         graph.setNode(restNode)
         const argument = restNode.getArgument()
         addDataEdge(argument, graph)
-        graph.addDataDependency(restNode.id, node.id)
-        graph.addDataDependency(argument.id, restNode.id)
+        graph.addDataDependency(restNode.id, argument.id)
         if (!graph.nodes.has(argument.id)) {
           throw new Error('Argument node not found')
         }
@@ -401,3 +432,105 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
 
   return properties.map((property) => property.id)
 }
+
+const addArrayPatternEdge: AddEdge<t.ArrayPattern> = (node, graph) => {
+  const currElements: ArrayPropertyNode[] = []
+  graph.setNode(node)
+  for (let i = 0; i < node.node.elements.length; i++) {
+    const element = node.node.elements[i]
+    if (t.isRestElement(element)) {
+      // const restPath = node.path.get(`elements.${i}`) as NodePath<t.RestElement>
+      // const restNode = new RestElementNode(
+      //   currElements,
+      //   graph.code,
+      //   graph.createNode(getSnippetFromNode(element.argument), restPath),
+      // )
+      // graph.setNode(restNode)
+      // const argument = restNode.getArgument()
+      // addDataEdge(argument, graph)
+      // graph.addDataDependency(restNode.id, node.id)
+      // graph.addDataDependency(argument.id, restNode.id)
+      // if (!graph.nodes.has(argument.id)) {
+      //   throw new Error('Argument node not found')
+      // }
+      // restNode.setArgument(graph.nodes.get(argument.id) ?? argument)
+    } else {
+      const elementPath = node.path.get(`elements.${i}`) as NodePath
+      const newElement = new ArrayPropertyNode(
+        i,
+        graph.createNode(getSnippetFromNode(elementPath.node), elementPath),
+      )
+      addDataEdge(newElement, graph)
+      graph.addDependency(newElement.id, node.id)
+
+      currElements.push(newElement)
+    }
+  }
+
+  return []
+}
+
+const addArrayExpressionEdge: AddEdge<t.ArrayExpression> = (node, graph) => {
+  const elements: Node[] = []
+  node.node.elements.forEach((element, i) => {
+    if (t.isExpression(element)) {
+      const elementPath = node.path.get(`elements.${i}`) as NodePath
+      const newElement = graph.createNode(
+        getSnippetFromNode(element),
+        elementPath,
+      )
+      addDataEdge(newElement, graph)
+      elements.push(graph.nodes.get(newElement.id) ?? newElement)
+    }
+  })
+  const arrayExpression = new ArrayExpression(elements, node)
+  graph.setNode(arrayExpression)
+
+  return []
+}
+
+const addMappedExpressionEdge: AddEdge<t.Node> = (node, graph) => {
+  if (!isMappedExpression(node)) throw new Error('Must be a mapped expression')
+
+  const memberExpressionPath = (
+    node.path.parentPath?.parentPath as NodePath<t.CallExpression>
+  ).get('callee') as NodePath<t.MemberExpression>
+
+  const arrayPropertyNode = new ArrayPropertyNode(
+    undefined,
+    graph.createNode(getSnippetFromNode(node.node), node.path),
+  )
+  graph.setNode(arrayPropertyNode)
+  graph.pushMappedDependency(
+    graph.nodes.get(arrayPropertyNode.id) as ArrayPropertyNode,
+  )
+
+  const objectPath = memberExpressionPath.get('object') as NodePath
+  const objectNode = graph.createNode(
+    getSnippetFromNode(objectPath.node),
+    objectPath,
+  )
+  addDataEdge(objectNode, graph)
+
+  return [objectNode.id]
+}
+
+const isMappedExpression = (node: Node) =>
+  (t.isFunctionExpression(node.path.parent) ||
+    t.isArrowFunctionExpression(node.path.parent)) &&
+  t.isCallExpression(node.path.parentPath?.parent) &&
+  t.isMemberExpression(
+    (node.path.parentPath.parentPath as NodePath<t.CallExpression>).node.callee,
+  ) &&
+  t.isIdentifier(
+    (
+      (node.path.parentPath.parentPath as NodePath<t.CallExpression>).node
+        .callee as t.MemberExpression
+    ).property,
+  ) &&
+  (
+    (
+      (node.path.parentPath.parentPath as NodePath<t.CallExpression>).node
+        .callee as t.MemberExpression
+    ).property as t.Identifier
+  ).name === 'map'

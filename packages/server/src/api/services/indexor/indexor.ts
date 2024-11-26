@@ -444,92 +444,129 @@ export const convertGraphToHarmonyComponents = (
           getIdFromParents([instance, ...instances.slice(i + 1)]),
         )
         const id = getIdFromParents(instances)
-
-        const component: HarmonyComponentTemp = {
-          id,
-          name: node.name,
-          containingComponent: {
-            id: containingComponent.id,
-            name: containingComponent.name,
-            location: containingComponent.location,
-            isComponent: true,
-            node: containingComponent.node,
-            props: [],
-            children: containingComponent.getJSXElements().map((el) => el.id),
-            getParent: () => undefined,
-          },
-          isComponent: node.name[0].toUpperCase() === node.name[0],
-          location: node.location,
-          node: node.node,
-          props: [],
-          children: [],
-          getParent: () => undefined,
+        const mappingIndexes = node
+          .getMappingExpression()
+          .filter((parent) =>
+            instances.find((_parent) => parent.parent === _parent),
+          )
+        if (mappingIndexes.length > 1) {
+          throw new Error('Should not have more than one array property')
         }
-        component.props = node
-          .getAttributes()
-          .flatMap<AttributeTemp>((attr) => {
-            const name = attr.getName()
-            const type =
-              name === 'className'
-                ? 'className'
-                : name === 'children'
-                  ? 'text'
-                  : 'property'
-            const attrs: AttributeTemp[] = []
-            const { identifiers } = attr.getArgumentReferences()
-            if (type !== 'text') {
-              attrs.push(
-                ...identifiers
-                  .filter(
-                    (ident) =>
-                      instances.length > 1 &&
-                      ident.getValues((_node) =>
-                        isChildNode(_node, instances[1]),
-                      ).length === 0,
-                  )
-                  .map<AttributeTemp>((reference) => ({
-                    id: attr.id,
-                    index: attr.getChildIndex(),
-                    location: instances[1].getOpeningElement().location,
-                    locationType: 'add',
-                    name: 'string',
-                    value: reference.name,
-                    type,
-                    reference: ids[1],
-                    node: instances[1].getOpeningElement().node,
-                  })),
-              )
-            }
-            attrs.push(
-              ...attr
-                .getDataFlowWithParents()
-                .filter(({ parent }) =>
-                  instances.find((parentInstance) => parent === parentInstance),
-                )
-                .flatMap<AttributeTemp>(({ values, parent }) =>
-                  values.map<AttributeTemp>((flow) => ({
-                    id: attr.id,
-                    index: attr.getChildIndex(),
-                    location: flow.location,
-                    locationType: 'component',
-                    name: isLiteralNode(flow.node) ? 'string' : 'property',
-                    value:
-                      type === 'property'
-                        ? `${name}:${isLiteralNode(flow.node) ? getLiteralValue(flow.node) : ''}`
-                        : isLiteralNode(flow.node)
-                          ? getLiteralValue(flow.node)
-                          : '',
-                    type,
-                    reference:
-                      ids[instances.findIndex((_parent) => parent === _parent)],
-                    node: flow.node,
-                  })),
-                ),
-            )
-
-            return attrs
+        if (mappingIndexes.length === 0) {
+          mappingIndexes.push({
+            parent: instances[0],
+            values: [-1],
           })
-        components.push(component)
+        }
+        for (const index of mappingIndexes[0].values) {
+          node.setMappingIndex(index)
+          const component: HarmonyComponentTemp = {
+            id,
+            childIndex: index > -1 ? index : undefined,
+            name: node.name,
+            containingComponent: {
+              id: containingComponent.id,
+              name: containingComponent.name,
+              location: containingComponent.location,
+              isComponent: true,
+              node: containingComponent.node,
+              props: [],
+              children: containingComponent.getJSXElements().map((el) => el.id),
+              getParent: () => undefined,
+            },
+            isComponent: node.name[0].toUpperCase() === node.name[0],
+            location: node.location,
+            node: node.node,
+            props: [],
+            children: [],
+            getParent: () => undefined,
+          }
+          component.props = node
+            .getAttributes()
+            .flatMap<AttributeTemp>((attr) => {
+              const name = attr.getName()
+              const type =
+                name === 'className'
+                  ? 'className'
+                  : name === 'children'
+                    ? 'text'
+                    : 'property'
+              const attrs: AttributeTemp[] = []
+              const { identifiers } = attr.getArgumentReferences()
+              if (type !== 'text') {
+                attrs.push(
+                  ...identifiers
+                    .filter(
+                      (ident) =>
+                        instances.length > 1 &&
+                        ident.getValues((_node) =>
+                          isChildNode(_node, instances[1]),
+                        ).length === 0,
+                    )
+                    .map<AttributeTemp>((reference) => ({
+                      id: attr.id,
+                      index: attr.getChildIndex(),
+                      location: instances[1].getOpeningElement().location,
+                      locationType: 'add',
+                      name: 'string',
+                      value: reference.name,
+                      type,
+                      reference: ids[1],
+                      node: instances[1].getOpeningElement().node,
+                    })),
+                )
+              }
+              attrs.push(
+                ...attr
+                  .getDataFlowWithParents()
+                  .filter(({ parent }) =>
+                    instances.find(
+                      (parentInstance) => parent === parentInstance,
+                    ),
+                  )
+                  .flatMap<AttributeTemp>(({ values, parent }) =>
+                    values.map<AttributeTemp>((flow) => ({
+                      id: attr.id,
+                      index: attr.getChildIndex(),
+                      location: flow.location,
+                      locationType: 'component',
+                      name: isLiteralNode(flow.node) ? 'string' : 'property',
+                      value:
+                        type === 'property'
+                          ? `${name}:${isLiteralNode(flow.node) ? getLiteralValue(flow.node) : ''}`
+                          : isLiteralNode(flow.node)
+                            ? getLiteralValue(flow.node)
+                            : '',
+                      type,
+                      reference:
+                        ids[
+                          instances.findIndex((_parent) => parent === _parent)
+                        ],
+                      node: flow.node,
+                    })),
+                  ),
+              )
+
+              //If no data flow, then it is a dynamic value
+              if (attrs.length === 0) {
+                attrs.push({
+                  id: attr.id,
+                  index: attr.getChildIndex(),
+                  location: attr.getValueNode().location,
+                  locationType: 'component',
+                  name: 'property',
+                  value: `${name}:`,
+                  type,
+                  reference: ids[0],
+                  node: attr.getValueNode().node,
+                })
+              }
+
+              return attrs
+            })
+
+          components.push(component)
+        }
       }
     }
   } catch (err) {

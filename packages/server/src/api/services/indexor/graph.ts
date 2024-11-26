@@ -3,7 +3,7 @@ import type { NodePath } from '@babel/traverse'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import { replaceByIndex } from '@harmony/util/src/utils/common'
-import type { Node } from './types'
+import type { ArrayProperty, Node } from './types'
 import {
   createNode,
   getComponentName,
@@ -23,6 +23,7 @@ export class FlowGraph {
   public file = ''
   public code = ''
   private dirtyNodes: Set<Node> = new Set<Node>()
+  private mappedDependencyStack: ArrayProperty[] = []
 
   constructor() {
     this.nodes = new Map()
@@ -137,6 +138,11 @@ export class FlowGraph {
     const valueNode = jsxAttributeNode.getValueNode()
     valueNode.setParent(jsxElementNode)
     this.addDataFlowEdge(valueNode)
+    const mappingExpression = this.popMappedDependency()
+    if (mappingExpression) {
+      jsxAttributeNode.isMappedExpression = true
+      jsxElementNode.setMappingExpression(mappingExpression)
+    }
     //For JSXText, the valueNode is the same as the attributeNode
     if (valueNode.id !== jsxAttributeNode.id) {
       jsxAttributeNode.setValueNode(this.nodes.get(valueNode.id) ?? valueNode)
@@ -231,6 +237,14 @@ export class FlowGraph {
   public getCode() {
     return this.code
   }
+
+  public pushMappedDependency(id: ArrayProperty) {
+    this.mappedDependencyStack.push(id)
+  }
+
+  public popMappedDependency() {
+    return this.mappedDependencyStack.pop()
+  }
 }
 
 export function getGraph(file: string, code: string, _graph?: FlowGraph) {
@@ -274,6 +288,7 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
             getSnippetFromNode(jsxPath.node.openingElement),
             jsxPath.get('openingElement'),
           )
+          if (graph.nodes.get(openingElement.id)) return
 
           const elementNode = new JSXElementNode(
             [],

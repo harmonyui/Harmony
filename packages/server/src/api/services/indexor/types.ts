@@ -16,6 +16,7 @@ export interface Attribute {
 
 export interface HarmonyComponent {
   id: string
+  childIndex?: number
   name: string
   props: Attribute[]
   isComponent: boolean
@@ -77,6 +78,12 @@ export class Node<T extends t.Node = t.Node> {
   public getValues(
     predicate: (node: Node) => boolean = simplePredicate,
   ): Node[] {
+    return this.getValuesBase(predicate)
+  }
+
+  protected getValuesBase(
+    predicate: (node: Node) => boolean = simplePredicate,
+  ): Node[] {
     if (predicate(this)) {
       return [this]
     }
@@ -107,6 +114,43 @@ export class Node<T extends t.Node = t.Node> {
     return parent
   }
 
+  public getValuesWithParents<N extends Node, P extends Node, Return>(
+    predicate: (node: Node) => node is N,
+    parentPredicate: (node: Node) => node is P,
+    extractValue: (node: N, currParents: P[]) => Return,
+    parents: P[],
+    useBase = false,
+  ): { parent: P; values: Return[] }[] {
+    const ret: { parent: P; values: Return[] }[] = []
+    const innerPredicate = (node: Node) => {
+      const parent = node.getParent()
+      if (parent && parentPredicate(parent) && parents[0] !== parent) {
+        parents.unshift(parent)
+      }
+      const currParent = parents[0]
+
+      if (!predicate(node)) return false
+
+      const data = ret.find((item) => item.parent === currParent)
+      const value = extractValue(node, parents)
+
+      if (data) {
+        data.values.push(value)
+      } else {
+        ret.push({ parent: currParent, values: [value] })
+      }
+
+      return true
+    }
+    if (useBase) {
+      this.getValuesBase(innerPredicate)
+    } else {
+      this.getValues(innerPredicate)
+    }
+
+    return ret
+  }
+
   public setParent(parent: Node) {
     this.parent = parent
   }
@@ -122,4 +166,13 @@ export interface ObjectNode extends Node {
 export interface ObjectProperty extends Node {
   getName: () => string
   getValueNode: () => Node
+}
+
+export interface ArrayNode extends Node {
+  getArrayElements: () => Node[]
+}
+export interface ArrayProperty extends Node {
+  getIndex: () => number | undefined
+  setIndex: (index: number | undefined) => void
+  getArrayExpression: () => ArrayNode[]
 }

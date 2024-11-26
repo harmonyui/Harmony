@@ -12,6 +12,7 @@ export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
     private key: Node,
     private value: Node,
     base: NodeBase<T>,
+    private useBaseGetValues = false,
   ) {
     super(base)
   }
@@ -63,3 +64,37 @@ export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
 }
 
 export class ObjectPropertyNode extends AbstractObjectProperty<t.ObjectProperty> {}
+
+//For object expressions, we do not want the getValues method in the AbstractObjectProperty
+//because the dependencies are going the opposite way
+export class ObjectPropertyExpressionNode
+  extends Node<t.ObjectProperty>
+  implements ObjectProperty
+{
+  constructor(
+    private key: Node,
+    private value: Node,
+    base: NodeBase<t.ObjectProperty>,
+  ) {
+    super(base)
+  }
+  public getName() {
+    const values = this.key.getValues()
+    if (values.length !== 1) {
+      return ''
+    }
+    if (isLiteralNode(values[0].node)) {
+      return getLiteralValue(values[0].node)
+    }
+
+    if (t.isIdentifier(values[0].node)) {
+      return values[0].node.name
+    }
+
+    return ''
+  }
+
+  public getValueNode() {
+    return this.value
+  }
+}

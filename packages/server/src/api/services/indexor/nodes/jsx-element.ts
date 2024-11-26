@@ -1,10 +1,13 @@
 import type * as t from '@babel/types'
-import type { NodeBase, ObjectNode } from '../types'
+import type { ArrayProperty, NodeBase, ObjectNode } from '../types'
 import { Node } from '../types'
+import { isArray } from '../predicates/simple-predicates'
 import type { JSXAttribute } from './jsx-attribute'
 import type { ComponentNode } from './component'
 
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
+  private mappingExpression: ArrayProperty | undefined
+
   constructor(
     private attributes: JSXAttribute[],
     private parentComponent: ComponentNode,
@@ -55,6 +58,53 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
 
   public getOpeningElement(): Node<t.JSXOpeningElement> {
     return this.openingElement
+  }
+
+  public setMappingExpression(node: ArrayProperty) {
+    this.mappingExpression = node
+  }
+
+  public setMappingIndex(index: number) {
+    if (index < 0 || !this.mappingExpression) return
+
+    this.mappingExpression.setIndex(index)
+  }
+
+  public getMappingExpression() {
+    if (!this.mappingExpression) return []
+
+    const ret = this.mappingExpression.getValuesWithParents(
+      isArray,
+      isJSXElement,
+      (node) => {
+        const elements = node.getArrayElements()
+
+        return Array.from({ length: elements.length }, (_, index) => index)
+      },
+      [],
+      true,
+    )
+    const actualRet: {
+      parent: JSXElementNode
+      values: number[]
+    }[] = []
+    ret.forEach((ret1) => {
+      if (ret1.values.length > 1) {
+        throw new Error('Should not have more than one array property')
+      }
+
+      const found = actualRet.find((actual) => actual.parent === ret1.parent)
+      if (found) {
+        found.values.push(...ret1.values[0])
+      } else {
+        actualRet.push({
+          parent: ret1.parent,
+          values: ret1.values[0],
+        })
+      }
+    })
+
+    return actualRet
   }
 }
 
