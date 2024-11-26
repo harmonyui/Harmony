@@ -1,8 +1,7 @@
 import type * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
 import type { NodeBase } from '../types'
-import { createNode } from '../utils'
-import { getSnippetFromNode } from '../../publish/code-updator'
+import { createNode, getSnippetFromNode } from '../utils'
 import type { JSXElementNode } from './jsx-element'
 import { RestElement } from './rest-element'
 import { JSXAttribute, type JSXAttributeNode } from './jsx-attribute'
@@ -30,8 +29,17 @@ export class JSXSpreadAttributeNode extends JSXAttribute<t.JSXSpreadAttribute> {
     this.internalRest.dependents = this.dependents
   }
 
-  public getNameAndValues() {
-    return this.internalRest.getNameAndValues()
+  public override getJSXAttributes() {
+    const values = this.internalRest.getNameAndValues()
+    return values.map(
+      (_attribute) =>
+        new JSXAttribute(
+          this.getParentElement(),
+          _attribute.getValueNode(),
+          _attribute instanceof JSXAttribute ? _attribute.getChildIndex() : -1,
+          _attribute,
+        ),
+    )
   }
 }
 

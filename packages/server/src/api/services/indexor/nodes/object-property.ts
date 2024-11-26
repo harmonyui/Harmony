@@ -1,8 +1,8 @@
 import * as t from '@babel/types'
-import { isObject } from '../node-predicates'
 import type { NodeBase, ObjectNode, ObjectProperty } from '../types'
 import { Node } from '../types'
 import { getLiteralValue, isLiteralNode } from '../utils'
+import { isObject } from '../predicates/simple-predicates'
 
 export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
   extends Node<T>

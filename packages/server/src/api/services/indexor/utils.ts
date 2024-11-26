@@ -5,6 +5,7 @@ import {
   getLineAndColumn,
   hashComponentId,
 } from '@harmony/util/src/utils/component'
+import generator from '@babel/generator'
 import { Node } from './types'
 
 export function createNode<T extends t.Node>(
@@ -145,4 +146,10 @@ export const isChildNode = (node: Node, parent: Node): boolean => {
     node.location.start >= parent.location.start &&
     node.location.end <= parent.location.end
   )
+}
+
+export const getSnippetFromNode = (node: t.Node): string => {
+  const result = generator(node)
+
+  return result.code
 }

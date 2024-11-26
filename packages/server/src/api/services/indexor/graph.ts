@@ -3,12 +3,12 @@ import type { NodePath } from '@babel/traverse'
 import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import { replaceByIndex } from '@harmony/util/src/utils/common'
-import { getSnippetFromNode } from '../publish/code-updator'
 import type { Node } from './types'
 import {
   createNode,
   getComponentName,
   getLocationId,
+  getSnippetFromNode,
   isLiteralNode,
 } from './utils'
 import { addDataEdge } from './data-flow'
@@ -20,13 +20,17 @@ import { ComponentNode } from './nodes/component'
 
 export class FlowGraph {
   public nodes: Map<string, Node>
+  public file = ''
+  public code = ''
   private dirtyNodes: Set<Node> = new Set<Node>()
 
-  constructor(
-    public file: string,
-    public code: string,
-  ) {
+  constructor() {
     this.nodes = new Map()
+  }
+
+  public addProject(file: string, code: string) {
+    this.file = file
+    this.code = code
   }
 
   public getNodes() {
@@ -60,6 +64,18 @@ export class FlowGraph {
     return createNode(name, path, this.file, this.code)
   }
 
+  public addDataDependency(fromId: string, toId: string) {
+    const fromNode = this.nodes.get(fromId)
+    const toNode = this.nodes.get(toId)
+
+    if (fromNode && toNode) {
+      fromNode.dependencies.add(toNode)
+      toNode.dependents.add(fromNode)
+      const parent = fromNode.getParent()
+      parent && this.addParent(toNode.id, parent.id)
+    }
+  }
+
   public addDependency(fromId: string, toId: string) {
     const fromNode = this.nodes.get(fromId)
     const toNode = this.nodes.get(toId)
@@ -67,6 +83,15 @@ export class FlowGraph {
     if (fromNode && toNode) {
       fromNode.dependencies.add(toNode)
       toNode.dependents.add(fromNode)
+    }
+  }
+
+  public addParent(fromId: string, parentId: string) {
+    const fromNode = this.nodes.get(fromId)
+    const toNode = this.nodes.get(parentId)
+
+    if (fromNode && toNode && !fromNode.getParent()) {
+      fromNode.setParent(toNode)
     }
   }
 
@@ -110,15 +135,16 @@ export class FlowGraph {
     jsxElementNode.addAttribute(jsxAttributeNode)
 
     const valueNode = jsxAttributeNode.getValueNode()
+    valueNode.setParent(jsxElementNode)
     this.addDataFlowEdge(valueNode)
     //For JSXText, the valueNode is the same as the attributeNode
     if (valueNode.id !== jsxAttributeNode.id) {
       jsxAttributeNode.setValueNode(this.nodes.get(valueNode.id) ?? valueNode)
     }
     if (jsxAttributeNode instanceof JSXSpreadAttributeNode) {
-      this.addDependency(jsxAttributeNode.id, valueNode.id)
+      this.addDataDependency(jsxAttributeNode.id, valueNode.id)
     } else {
-      this.addDependency(jsxAttributeNode.id, jsxElementNode.id)
+      this.addDataDependency(jsxAttributeNode.id, jsxElementNode.id)
     }
   }
 
@@ -126,11 +152,10 @@ export class FlowGraph {
     definition: ComponentNode,
     argumentNodes: Node[],
   ) {
-    if (argumentNodes.length > definition.getArguments().length)
-      throw new Error('Too many arguments')
+    if (argumentNodes.length > definition.getArguments().length) return
     argumentNodes.forEach((arg, index) => {
       const param = definition.getArguments()[index]
-      this.addDependency(param.id, arg.id)
+      this.addDataDependency(param.id, arg.id)
     })
   }
 
@@ -206,9 +231,10 @@ export class FlowGraph {
   }
 }
 
-export function getGraph(file: string, code: string) {
+export function getGraph(file: string, code: string, _graph?: FlowGraph) {
   // Initialize the flow graph
-  const graph = new FlowGraph(file, code)
+  const graph = _graph ?? new FlowGraph()
+  graph.addProject(file, code)
 
   const ast = parser.parse(code, {
     sourceType: 'module',
@@ -344,7 +370,7 @@ export function getGraph(file: string, code: string) {
         const definitionNode = graph.getDefinition(calleeName)
 
         if (definitionNode) {
-          graph.addDependency(callNode.id, definitionNode.id)
+          graph.addDataDependency(callNode.id, definitionNode.id)
         }
 
         // Map arguments to parameters and establish data flow edges

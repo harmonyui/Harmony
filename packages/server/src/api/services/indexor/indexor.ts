@@ -1,6 +1,6 @@
 /* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-/* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
+
 /* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from '@harmony/db/lib/prisma'
 import type {
@@ -8,6 +8,7 @@ import type {
   HarmonyComponentInfo,
 } from '@harmony/util/src/types/component'
 import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
+import type { Replace } from '@harmony/util/src/types/utils'
 import { PrismaHarmonyComponentRepository } from '../../repository/database/component-element'
 import type { GithubCache } from '../../repository/cache/types'
 import type { GitRepository } from '../../repository/git/types'
@@ -17,7 +18,7 @@ import type {
   HarmonyContainingComponent,
 } from './types'
 import { IndexingFiles } from './github'
-import { getGraph, type FlowGraph } from './graph'
+import { getGraph, FlowGraph } from './graph'
 import { JSXElementNode } from './nodes/jsx-element'
 import { getLiteralValue, isChildNode } from './utils'
 
@@ -201,9 +202,10 @@ export function getCodeInfoAndNormalizeFromFiles(
   files: FileAndContent[],
   elementInstances: HarmonyComponent[],
 ): HarmonyComponent[] | false {
+  const graph = new FlowGraph()
   for (const { file, content } of files) {
     try {
-      if (!getCodeInfoFromFile(file, content, elementInstances)) {
+      if (!getCodeInfoFromFile(file, content, graph)) {
         return false
       }
     } catch (err) {
@@ -212,72 +214,48 @@ export function getCodeInfoAndNormalizeFromFiles(
     }
   }
 
+  elementInstances.push(...convertGraphToHarmonyComponents(graph))
+
   return elementInstances
 }
 
 function getCodeInfoFromFile(
   file: string,
   originalCode: string,
-  elementInstances: HarmonyComponent[],
+  graph: FlowGraph,
 ) {
-  const graph = getGraph(file, originalCode)
-
-  elementInstances.push(...convertGraphToHarmonyComponents(graph))
+  getGraph(file, originalCode, graph)
 
   return true
 }
 
+type HarmonyComponentTemp = Replace<
+  HarmonyComponent,
+  'props',
+  Replace<Attribute, 'reference', string>[]
+>
+type AttributeTemp = HarmonyComponentTemp['props'][number]
 function normalizeCodeInfo(
-  componentDefinitions: Record<string, HarmonyContainingComponent>,
-  elementInstances: HarmonyComponent[],
-) {
-  function getIdFromParents(instance: HarmonyComponent): string {
-    const parent = instance.getParent()
-    if (!parent) {
-      return instance.id
-    }
-
-    if (parent.id.includes('#')) {
-      return `${parent.id}#${instance.id}`
-    }
-
-    const parentId = getIdFromParents(parent)
-
-    return `${parentId}#${instance.id}`
-  }
-
-  const findAttributeReference = (
-    element: HarmonyComponent | undefined,
-    attributeId: string,
-  ): HarmonyComponent | undefined => {
-    if (!element) return undefined
-
-    const id = element.id.split('#')[element.id.split('#').length - 1]
-    if (id === attributeId) {
-      return element
-    }
-
-    return findAttributeReference(element.getParent(), attributeId)
-  }
-
-  for (let i = 0; i < elementInstances.length; i++) {
-    const instance = elementInstances[i]
-    instance.id = getIdFromParents(instance)
-    for (const attribute of instance.props) {
-      if (attribute.reference.id.split('#').length > 1) continue
-      const newReference = findAttributeReference(
-        instance,
-        attribute.reference.id,
+  elementInstances: HarmonyComponentTemp[],
+): HarmonyComponent[] {
+  const harmonyComponents: HarmonyComponent[] = elementInstances.map(
+    (instance) => ({ ...instance, props: [] }),
+  )
+  for (let i = 0; i < harmonyComponents.length; i++) {
+    const instance = harmonyComponents[i]
+    for (const attribute of elementInstances[i].props) {
+      const newReference = harmonyComponents.find(
+        (comp) => comp.id === attribute.reference,
       )
       if (!newReference) {
         throw new Error('Reference should be pointer to an ancestor element')
       }
-      attribute.reference = newReference
+      instance.props.push({ ...attribute, reference: newReference })
     }
   }
 
   //Sort the instances parents first.
-  return elementInstances
+  return harmonyComponents
 }
 
 //For future when mapping path alias will be a need
@@ -441,7 +419,7 @@ async function updateDatabase(
 export const convertGraphToHarmonyComponents = (
   graph: FlowGraph,
 ): HarmonyComponent[] => {
-  const components: HarmonyComponent[] = []
+  const components: HarmonyComponentTemp[] = []
 
   const getIdFromParents = (instances: JSXElementNode[]): string => {
     const ids = instances.reduce(
@@ -459,9 +437,12 @@ export const convertGraphToHarmonyComponents = (
     const rootInstances = node.getRootInstances()
     for (const instances of rootInstances) {
       const containingComponent = node.getParentComponent()
+      const ids = instances.map((instance, i) =>
+        getIdFromParents([instance, ...instances.slice(i + 1)]),
+      )
       const id = getIdFromParents(instances)
 
-      const component: HarmonyComponent = {
+      const component: HarmonyComponentTemp = {
         id,
         name: node.name,
         containingComponent: {
@@ -481,7 +462,7 @@ export const convertGraphToHarmonyComponents = (
         children: [],
         getParent: () => undefined,
       }
-      component.props = node.getAttributes().flatMap<Attribute>((attr) => {
+      component.props = node.getAttributes().flatMap<AttributeTemp>((attr) => {
         const name = attr.getName()
         const type =
           name === 'className'
@@ -489,17 +470,18 @@ export const convertGraphToHarmonyComponents = (
             : name === 'children'
               ? 'text'
               : 'property'
-        const attrs: Attribute[] = []
-        const { argument, identifiers } = attr.getArgumentReferences()
+        const attrs: AttributeTemp[] = []
+        const { identifiers } = attr.getArgumentReferences()
         if (type !== 'text') {
           attrs.push(
             ...identifiers
               .filter(
                 (ident) =>
+                  instances.length > 1 &&
                   ident.getValues((_node) => isChildNode(_node, instances[1]))
                     .length === 0,
               )
-              .map<Attribute>((reference) => ({
+              .map<AttributeTemp>((reference) => ({
                 id: attr.id,
                 index: attr.getChildIndex(),
                 location: instances[1].getOpeningElement().location,
@@ -507,31 +489,34 @@ export const convertGraphToHarmonyComponents = (
                 name: 'string',
                 value: reference.name,
                 type,
-                reference: component,
+                reference: ids[1],
                 node: instances[1].getOpeningElement().node,
               })),
           )
         }
         attrs.push(
           ...attr
-            .getDataFlow()
-            .filter((_node) =>
-              instances.slice(1).find((parent) => isChildNode(_node, parent)),
+            .getDataFlowWithParents()
+            .filter(({ parent }) =>
+              instances.find((parentInstance) => parent === parentInstance),
             )
-            .map<Attribute>((flow) => ({
-              id: attr.id,
-              index: attr.getChildIndex(),
-              location: flow.location,
-              locationType: 'component',
-              name: 'string',
-              value:
-                type === 'property'
-                  ? `${name}:${getLiteralValue(flow.node)}`
-                  : getLiteralValue(flow.node),
-              type,
-              reference: component,
-              node: flow.node,
-            })),
+            .flatMap<AttributeTemp>(({ values, parent }) =>
+              values.map<AttributeTemp>((flow) => ({
+                id: attr.id,
+                index: attr.getChildIndex(),
+                location: flow.location,
+                locationType: 'component',
+                name: 'string',
+                value:
+                  type === 'property'
+                    ? `${name}:${getLiteralValue(flow.node)}`
+                    : getLiteralValue(flow.node),
+                type,
+                reference:
+                  ids[instances.findIndex((_parent) => parent === _parent)],
+                node: flow.node,
+              })),
+            ),
         )
 
         return attrs
@@ -539,5 +524,5 @@ export const convertGraphToHarmonyComponents = (
       components.push(component)
     }
   }
-  return components
+  return normalizeCodeInfo(components)
 }

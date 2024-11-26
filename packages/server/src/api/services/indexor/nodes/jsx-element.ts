@@ -1,8 +1,7 @@
 import type * as t from '@babel/types'
 import type { NodeBase, ObjectNode } from '../types'
 import { Node } from '../types'
-import { JSXSpreadAttributeNode } from './jsxspread-attribute'
-import { JSXAttribute } from './jsx-attribute'
+import type { JSXAttribute } from './jsx-attribute'
 import type { ComponentNode } from './component'
 
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
@@ -20,21 +19,7 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     const attributes: JSXAttribute[] = []
     const rawAttributes = Array.from(this.attributes)
     rawAttributes.forEach((attribute) => {
-      if (attribute instanceof JSXSpreadAttributeNode) {
-        attribute.getNameAndValues().forEach((_attribute) => {
-          const newAttribute = new JSXAttribute(
-            this,
-            _attribute.getValueNode(),
-            _attribute instanceof JSXAttribute
-              ? _attribute.getChildIndex()
-              : -1,
-            _attribute,
-          )
-          attributes.push(newAttribute)
-        })
-      } else {
-        attributes.push(attribute)
-      }
+      attributes.push(...attribute.getJSXAttributes())
     })
 
     return attributes
@@ -73,21 +58,28 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 }
 
+export const isJSXElement = (node: Node): node is JSXElementNode =>
+  node instanceof JSXElementNode
+
 const traverseInstances = (element: JSXElementNode): JSXElementNode[][] => {
   const parentInstances = element.getParentComponent().getInstances()
 
-  const instances: JSXElementNode[][] = parentInstances.map(
-    (parentInstance) => [parentInstance],
-  )
+  const instances: JSXElementNode[][] = []
 
-  instances.forEach((_instances) => {
-    const newParentInstances = traverseInstances(
-      _instances[_instances.length - 1],
-    )
-    newParentInstances.forEach((newParentInstance) => {
-      _instances.push(...[..._instances, ...newParentInstance])
+  parentInstances
+    .map((parentInstance) => [parentInstance])
+    .forEach((_instances) => {
+      const newParentInstances = traverseInstances(
+        _instances[_instances.length - 1],
+      )
+      if (newParentInstances.length === 0) {
+        instances.push(_instances)
+        return
+      }
+      newParentInstances.forEach((newParentInstance) => {
+        instances.push([..._instances, ...newParentInstance])
+      })
     })
-  })
 
   return instances
 }

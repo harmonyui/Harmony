@@ -50,6 +50,7 @@ export class Node<T extends t.Node = t.Node> {
   public name: string
   public dependencies: Set<Node>
   public dependents: Set<Node>
+  private parent: Node | undefined
   public get node(): T {
     return this.path.node
   }
@@ -85,6 +86,32 @@ export class Node<T extends t.Node = t.Node> {
     })
 
     return values
+  }
+
+  public traceParent(
+    predicate: (node: Node | undefined) => boolean = (node) =>
+      node ? simplePredicate(node) : false,
+  ): Node | undefined {
+    if (predicate(this.getParent())) {
+      return this.getParent()
+    }
+    let parent: Node | undefined
+    this.dependents.forEach((node) => {
+      if (parent) return
+      const nodeParent = node.traceParent(predicate)
+      if (nodeParent) {
+        parent = nodeParent
+      }
+    })
+
+    return parent
+  }
+
+  public setParent(parent: Node) {
+    this.parent = parent
+  }
+  public getParent(): Node | undefined {
+    return this.parent
   }
 }
 

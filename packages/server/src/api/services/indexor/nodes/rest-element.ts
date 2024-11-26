@@ -2,9 +2,8 @@ import type * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
 import type { NodeBase, ObjectNode, ObjectProperty } from '../types'
 import { Node } from '../types'
-import { createNode } from '../utils'
-import { getSnippetFromNode } from '../../publish/code-updator'
-import { isObject } from '../node-predicates'
+import { createNode, getSnippetFromNode } from '../utils'
+import { isObject } from '../predicates/simple-predicates'
 
 export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
   extends Node<T>

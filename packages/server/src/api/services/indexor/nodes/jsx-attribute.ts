@@ -2,10 +2,9 @@ import * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
 import { Node, type NodeBase, type ObjectProperty } from '../types'
 import type { LiteralNode } from '../utils'
-import { createNode, isChildNode } from '../utils'
-import { getSnippetFromNode } from '../../publish/code-updator'
-import { isIdentifier, isLiteral } from '../node-predicates'
-import type { JSXElementNode } from './jsx-element'
+import { createNode, getSnippetFromNode, isChildNode } from '../utils'
+import { isIdentifier, isLiteral } from '../predicates/simple-predicates'
+import { isJSXElement, type JSXElementNode } from './jsx-element'
 
 export class JSXAttribute<T extends t.Node = t.Node>
   extends Node<T>
@@ -33,7 +32,36 @@ export class JSXAttribute<T extends t.Node = t.Node>
 
   public getDataFlow(): Node<LiteralNode>[] {
     const values = this.value.getValues()
-    return values.filter((value) => isLiteral(value))
+    const literalValues = values.filter((value) => isLiteral(value))
+
+    return literalValues
+  }
+
+  public getJSXAttributes(): JSXAttribute[] {
+    return [this]
+  }
+
+  public getDataFlowWithParents(): {
+    parent: JSXElementNode
+    values: Node<LiteralNode>[]
+  }[] {
+    const literalValues = this.getDataFlow()
+    const ret: { parent: JSXElementNode; values: Node<LiteralNode>[] }[] = []
+    literalValues.forEach((value) => {
+      const parent = value.traceParent((node) =>
+        node ? isJSXElement(node) : false,
+      ) as JSXElementNode | undefined
+      if (!parent) throw new Error('Element does not have a parent')
+      const data = ret.find((item) => item.parent === parent)
+
+      if (data) {
+        data.values.push(value)
+      } else {
+        ret.push({ parent, values: [value] })
+      }
+    })
+
+    return ret
   }
 
   public getChildIndex(): number {

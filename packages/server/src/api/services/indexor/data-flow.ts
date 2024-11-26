@@ -1,23 +1,22 @@
 import type { Binding, NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
-import { getSnippetFromNode } from '../publish/code-updator'
+import type { FlowGraph } from './graph'
+import type { Node, ObjectProperty } from './types'
+import { getLocationId, getSnippetFromNode } from './utils'
+import { MemberExpressionNode } from './nodes/member-expression'
+import { ObjectExpressionNode } from './nodes/object-expression'
+import { RestElementNode } from './nodes/rest-element'
+import { ObjectPropertyNode } from './nodes/object-property'
 import {
   isCallExpression,
-  isExpression,
   isIdentifier,
   isMemberExpression,
   isObjectExpression,
   isObjectPattern,
   isTemplateLiteral,
   isVariableDeclarator,
-} from './node-predicates'
-import type { FlowGraph } from './graph'
-import type { Node, ObjectProperty } from './types'
-import { getLocationId } from './utils'
-import { MemberExpressionNode } from './nodes/member-expression'
-import { ObjectExpressionNode } from './nodes/object-expression'
-import { RestElementNode } from './nodes/rest-element'
-import { ObjectPropertyNode } from './nodes/object-property'
+  isExpression,
+} from './predicates/simple-predicates'
 
 export type AddEdge<T extends t.Node> = (
   node: Node<T>,
@@ -26,7 +25,7 @@ export type AddEdge<T extends t.Node> = (
 
 export const addDataEdge = (node: Node, graph: FlowGraph) => {
   const edges = addEdge(node, graph)
-  edges.forEach((edge) => graph.addDependency(node.id, edge))
+  edges.forEach((edge) => graph.addDataDependency(node.id, edge))
 }
 const addEdge: AddEdge<t.Node> = (node, graph) => {
   const edges: string[] = []
@@ -168,7 +167,7 @@ const addVariableDeclaratorEdge: AddEdge<t.VariableDeclarator> = (
     initPath,
   )
   addDataEdge(initNode, graph)
-  graph.addDependency(idNode.id, initNode.id)
+  graph.addDataDependency(idNode.id, initNode.id)
   return [idNode.id]
 }
 
@@ -215,9 +214,9 @@ const addObjectPatternEdge: AddEdge<t.ObjectPattern> = (node, graph) => {
         addDataEdge(newNode, graph)
       }
 
-      graph.addDependency(newNode.id, node.id)
+      graph.addDataDependency(newNode.id, node.id)
       if (newValue.id !== newNode.id) {
-        graph.addDependency(newValue.id, newNode.id)
+        graph.addDataDependency(newValue.id, newNode.id)
       }
       currProperties.push(newNode)
       //Rest element -- assume that it is last
@@ -233,8 +232,8 @@ const addObjectPatternEdge: AddEdge<t.ObjectPattern> = (node, graph) => {
       graph.setNode(restNode)
       const argument = restNode.getArgument()
       addDataEdge(argument, graph)
-      graph.addDependency(restNode.id, node.id)
-      graph.addDependency(argument.id, restNode.id)
+      graph.addDataDependency(restNode.id, node.id)
+      graph.addDataDependency(argument.id, restNode.id)
       if (!graph.nodes.has(argument.id)) {
         throw new Error('Argument node not found')
       }
@@ -356,9 +355,9 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
           addDataEdge(newValue, graph)
         }
 
-        graph.addDependency(newNode.id, node.id)
+        graph.addDataDependency(newNode.id, node.id)
         if (newValue.id !== newNode.id) {
-          graph.addDependency(newNode.id, newValue.id)
+          graph.addDataDependency(newNode.id, newValue.id)
         }
         currProperties.push(newNode)
         return newNode
@@ -374,8 +373,8 @@ const addObjectExpressionEdge: AddEdge<t.ObjectExpression> = (node, graph) => {
         graph.setNode(restNode)
         const argument = restNode.getArgument()
         addDataEdge(argument, graph)
-        graph.addDependency(restNode.id, node.id)
-        graph.addDependency(argument.id, restNode.id)
+        graph.addDataDependency(restNode.id, node.id)
+        graph.addDataDependency(argument.id, restNode.id)
         if (!graph.nodes.has(argument.id)) {
           throw new Error('Argument node not found')
         }

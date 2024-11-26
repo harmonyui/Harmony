@@ -46,3 +46,5 @@ export class ComponentNode extends Node<
     this.elements.push(element)
   }
 }
+export const isFunction = (node: Node): node is ComponentNode =>
+  node instanceof ComponentNode

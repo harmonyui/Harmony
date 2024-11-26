@@ -217,9 +217,13 @@ describe('code-updator', () => {
       expectLocationOfString(file, codeUpdates.locations[2], '"Thank you"')
 
       expect(codeUpdates.locations[1].snippet).toBe(
-        '/*Change inner text for h3 tag from This is old text to This is new text*/<h3>',
+        '/*Change inner text for h3 tag from This is old text to This is new text*/<h3 className={noWhere}>',
       )
-      expectLocationOfString(file, codeUpdates.locations[1], '<h3>')
+      expectLocationOfString(
+        file,
+        codeUpdates.locations[1],
+        '<h3 className={noWhere}>',
+      )
     })
 
     it('Should apply className literals and comments for dynamic classes', async () => {
@@ -301,7 +305,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('classNameParent')
       expect(codeUpdates.locations.length).toBe(1)
       expect(codeUpdates.locations[0].snippet).toBe(
-        '<Child className="bg-black" innerClass="pl-1" />',
+        '<Child innerClass="pl-1" className="bg-black" />',
       )
       expectLocationOfString(file, codeUpdates.locations[0], '<Child />')
     })
@@ -406,12 +410,12 @@ describe('code-updator', () => {
 
       expect(codeUpdates.locations.length).toBe(1)
       expect(removeLines(codeUpdates.locations[0].snippet)).toBe(
-        '/*padding-left:10px;*/<TailwindComponent label="Thank you" innerClassName="hw-p-2" />',
+        '/*padding-left:10px;*/<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere} />',
       )
       expectLocationOfString(
         file,
         codeUpdates.locations[0],
-        '<TailwindComponent label="Thank you" innerClassName="hw-p-2" />',
+        '<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>',
         true,
       )
     })
@@ -431,9 +435,9 @@ const testFiles = {
             )
         }
 
-        const UseTailwindComponent = () => {
+        const UseTailwindComponent = ({noWhere}) => {
           return (
-            <TailwindComponent label="Thank you" innerClassName="hw-p-2" />
+            <TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>
           )
         }
     `,

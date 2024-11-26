@@ -8,13 +8,13 @@ import { camelToKebab, round } from '@harmony/util/src/utils/common'
 import { mergeClassesWithScreenSize } from '@harmony/util/src/utils/tailwind-merge'
 import { DEFAULT_WIDTH } from '@harmony/util/src/constants'
 import * as t from '@babel/types'
-import generator from '@babel/generator'
 import { getCodeSnippet } from '../indexor/github'
 import type { HarmonyComponent, Attribute } from '../indexor/types'
 import type { GitRepository } from '../../repository/git/types'
 import { indexForComponents } from '../indexor/indexor'
+import type { LiteralNode } from '../indexor/utils'
+import { getSnippetFromNode, isLiteralNode } from '../indexor/utils'
 import { addPrefixToClassName, converter } from './css-conveter'
-import { isLiteralNode, LiteralNode } from '../indexor/utils'
 
 export type FileUpdateInfo = Record<
   string,
@@ -617,12 +617,6 @@ export class CodeUpdator {
 
     return commitChanges
   }
-}
-
-export const getSnippetFromNode = (node: t.Node): string => {
-  const result = generator(node)
-
-  return result.code
 }
 
 const updateLiteralNode = (node: LiteralNode, value: string) => {

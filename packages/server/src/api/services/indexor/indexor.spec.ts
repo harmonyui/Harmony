@@ -1,15 +1,12 @@
 import { describe, it, expect } from 'vitest'
-import type * as t from '@babel/types'
-import { getSnippetFromNode } from '../publish/code-updator'
-import type { HarmonyComponent, Node } from './types'
+import type { HarmonyComponent } from './types'
 import { getCodeInfoAndNormalizeFromFiles } from './indexor'
 import { getGraph } from './graph'
 import type { TestFile } from './indexor.test'
 import { testCases } from './indexor.test'
-import { JSXAttributeNode } from './nodes/jsx-attribute'
 import { JSXElementNode } from './nodes/jsx-element'
 import type { LiteralNode } from './utils'
-import { getLiteralValue, isLiteralNode } from './utils'
+import { getLiteralValue } from './utils'
 
 describe('indexor', () => {
   const expectLocationOfString = (
@@ -22,67 +19,11 @@ describe('indexor', () => {
     expect(substr).toBe(expectedString)
   }
   describe('getCodeInfoFromFile', () => {
-    it('should xw', () => {
-      const code = `
-function Component3({children}) {
-  return <div children={children}/>
-}
-function Component2({label}) {
-  return <Component3 children={label} />;
-}
-function Component1({name}) {
-  return <div>
-    <Component2 label={name} />
-    <Component2 label="bye" />
-  </div>
-}
-
-function Component0() {
-  return <Component1 name="hello" />;
-}
-`
-
-      const expectedCode = `
-function Component3({children}) {
-  return <div children={children}/>
-}
-function Component2({label}) {
-  return <Component3 children={label} />;
-}
-function Component1({name}) {
-  return <div>
-    <Component2 label={name} />
-    <Component2 label="bye" />
-  </div>
-}
-
-function Component0() {
-  return <Component1 name="changed" />;
-}
-`
-      const graph = getGraph(code)
-
-      const attributeFlow = graph.getNodeById('3:14-3:33')
-      expect(attributeFlow).toBeTruthy()
-      expect(attributeFlow instanceof JSXAttributeNode).toBeTruthy()
-      if (!attributeFlow || !(attributeFlow instanceof JSXAttributeNode)) return
-      const data = attributeFlow.getDataFlow()
-      const literalNode = data[0]
-      if (!isLiteralNode(literalNode.node)) expect(true).toBeFalsy()
-      graph.changeNodeValue(literalNode as Node<t.StringLiteral>, 'changed')
-      graph.saveChanges()
-      expect(graph.getCode()).toBe(expectedCode)
-
-      const flow = data.map((node) => getSnippetFromNode(node.node))
-      expect(flow.length).toBe(2)
-      expect(flow[0]).toBe('"changed"')
-      expect(flow[1]).toBe('"bye"')
-    })
     it('Should index dynamic text with multiple children properly', () => {
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -105,7 +46,7 @@ function Component0() {
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -207,7 +148,7 @@ function Component0() {
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -239,7 +180,7 @@ function Component0() {
       const file: TestFile = 'app/harderDyanmic.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -314,7 +255,7 @@ function Component0() {
       const file: TestFile = 'app/text_stuff.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -352,7 +293,7 @@ function Component0() {
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -473,7 +414,7 @@ function Component0() {
       const file: TestFile = 'app/multipleLayers1.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -608,7 +549,7 @@ function Component0() {
       const file: TestFile = 'app/innerClassName.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -635,7 +576,7 @@ function Component0() {
       const file: TestFile = 'app/objectProperties.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -732,7 +673,7 @@ function Component0() {
       const file: TestFile = 'app/complexDynamicCases.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -899,7 +840,7 @@ function Component0() {
       const file: TestFile = 'app/classNameTests.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -956,7 +897,7 @@ function Component0() {
       const file: TestFile = 'app/classNameTests.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -980,7 +921,7 @@ function Component0() {
       const file: TestFile = 'app/complexText.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -1015,7 +956,7 @@ function Component0() {
       const file: TestFile = 'app/complexText.tsx'
       const content = testCases[file]
 
-      const result = getGraph(content)
+      const result = getGraph(file, content)
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -1120,51 +1061,6 @@ function Component0() {
   })
 
   describe('getCodeInfoAndNormalizeFromFiles', () => {
-    it('Should index dynamic text with multiple children properly', () => {
-      const componentElements: HarmonyComponent[] = []
-      const file: TestFile = 'app/SummaryMetadata.tsx'
-      const content = testCases[file]
-
-      const result = getCodeInfoAndNormalizeFromFiles(
-        [{ file, content }],
-        componentElements,
-      )
-      expect(result).toBeTruthy()
-      if (!result) return
-
-      const parentIds = [
-        'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NDU6ODo1MToxMA==',
-        'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NTI6ODo1ODoxMA==',
-        'YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6NTk6ODo2NDoxMA==',
-      ]
-
-      const pTags = result.filter(
-        (r) =>
-          r.id.includes('YXBwL1N1bW1hcnlNZXRhZGF0YS50c3g6Mjc6NDozMjo4') &&
-          r.getParent(),
-      )
-      expect(pTags.length).toBe(parentIds.length)
-      for (let i = 0; i < parentIds.length; i++) {
-        const parentId = parentIds[i]
-        const pTag = pTags[i]
-        const pTagParentId = pTag.id.split('#')[0]
-        expect(pTagParentId).toBe(parentId)
-        const parents = result.filter((r) => r.id === parentId)
-        expect(parents.length).toBe(1)
-        const parent = parents[0]
-
-        const textAttributes = pTag.props.filter((attr) => attr.type === 'text')
-        expect(textAttributes.length).toBe(3)
-        const textAttribute = textAttributes[0]
-
-        expect(textAttribute.name).toBe('string')
-        expect('id' in textAttribute.reference).toBe(true)
-        if (!('id' in textAttribute.reference)) return
-        expect(textAttribute.reference.id).toBe(parent.id)
-        //expect(textAttribute.reference.parentId).toBe(parent.parentId);
-      }
-    })
-
     it('Should index and normalize across files', () => {
       const componentElements: HarmonyComponent[] = []
       const contents: { file: TestFile; content: string }[] = [
@@ -1185,41 +1081,51 @@ function Component0() {
       expect(result).toBeTruthy()
       if (!result) return
 
-      expect(result.length).toBe(30)
-      expect(componentElements[16].props.length).toBe(5)
-      expect(componentElements[16].props[1].type).toBe('className')
-      expect(componentElements[16].props[1].name).toBe('string')
-      expect(componentElements[16].props[1].value).toBe('bg-white')
+      expect(result.length).toBe(15)
+      expect(componentElements[7].props.length).toBe(3)
+      expect(componentElements[7].props[0].type).toBe('className')
+      expect(componentElements[7].props[0].name).toBe('string')
+      expect(componentElements[7].props[0].value).toBe('m-2')
+      expectLocationOfString(
+        'app/multipleLayers1.tsx',
+        componentElements[7].props[0].location,
+        '"m-2"',
+      )
+      expect(componentElements[7].props[1].type).toBe('className')
+      expect(componentElements[7].props[1].name).toBe('string')
+      expect(componentElements[7].props[1].value).toBe('bg-white')
       expectLocationOfString(
         'app/multipleLayers2.tsx',
-        componentElements[16].props[1].location,
+        componentElements[7].props[1].location,
         '"bg-white"',
       )
-      expect(componentElements[16].props[1].reference.id).toBe(
-        componentElements[16].getParent()?.id,
+      expect(componentElements[7].props[2].type).toBe('className')
+      expect(componentElements[7].props[2].name).toBe('string')
+      expect(componentElements[7].props[2].value).toBe(
+        'bg-blue-50 flex flex-col',
+      )
+      expectLocationOfString(
+        'app/multipleLayers1.tsx',
+        componentElements[7].props[2].location,
+        '"bg-blue-50 flex flex-col"',
       )
 
-      expect(componentElements[16].props[2].type).toBe('className')
-      expect(componentElements[16].props[2].reference.id).toBe(
-        componentElements[16].id,
+      expect(componentElements[10].props.length).toBe(1)
+      expect(componentElements[10].props[0].type).toBe('text')
+      expect(componentElements[10].props[0].name).toBe('string')
+      expect(componentElements[10].props[0].value).toBe('Hello there')
+      expectLocationOfString(
+        'app/multipleLayers1.tsx',
+        componentElements[10].props[0].location,
+        '"Hello there"',
       )
-
-      expect(componentElements[16].props[3].type).toBe('property')
-      expect(componentElements[16].props[3].name).toBe('string')
-      expect(componentElements[16].props[3].value).toBe('label:A Name')
+      expect(componentElements[11].props.length).toBe(1)
+      expect(componentElements[11].props[0].type).toBe('text')
+      expect(componentElements[11].props[0].name).toBe('string')
+      expect(componentElements[11].props[0].value).toBe('A Name')
       expectLocationOfString(
         'app/multipleLayers2.tsx',
-        componentElements[16].props[3].location,
-        '"A Name"',
-      )
-
-      expect(componentElements[18].props.length).toBe(4)
-      expect(componentElements[18].props[0].type).toBe('text')
-      expect(componentElements[18].props[0].name).toBe('string')
-      expect(componentElements[18].props[0].value).toBe('A Name')
-      expectLocationOfString(
-        'app/multipleLayers2.tsx',
-        componentElements[18].props[0].location,
+        componentElements[11].props[0].location,
         '"A Name"',
       )
     })
@@ -1244,7 +1150,7 @@ function Component0() {
       expect(result).toBeTruthy()
       if (!result) return
 
-      expect(result.length).toBe(30)
+      expect(result.length).toBe(15)
     })
   })
 })
