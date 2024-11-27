@@ -268,12 +268,12 @@ describe('code-updator', () => {
 
       expect(codeUpdates.locations.length).toBe(2)
       expect(codeUpdates.locations[0].snippet).toBe(
-        '/*hw-pl-2.5*/<h3 className={noWhere}>',
+        '/*Add class hw-pl-2.5 to h3 tag*/<TailwindComponent label="Thank you" innerClassName="hw-p-2 hw-pl-2.5" noWhere={noWhere} />',
       )
       expectLocationOfString(
         file,
         codeUpdates.locations[0],
-        '<h3 className={noWhere}>',
+        '<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>',
       )
 
       expect(codeUpdates.locations[1].snippet).toBe('"hw-p-2 hw-pl-2.5"')
@@ -312,7 +312,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('classNameParent')
       expect(codeUpdates.locations.length).toBe(1)
       expect(codeUpdates.locations[0].snippet).toBe(
-        '<Child innerClass="pl-1" className="bg-black" />',
+        '<Child className="bg-black" innerClass="pl-1" />',
       )
       expectLocationOfString(file, codeUpdates.locations[0], '<Child />')
     })

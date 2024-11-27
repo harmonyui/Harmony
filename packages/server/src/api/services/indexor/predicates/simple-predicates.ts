@@ -1,5 +1,11 @@
 import * as t from '@babel/types'
-import type { ArrayNode, ArrayProperty, Node, ObjectNode } from '../types'
+import type {
+  ArrayNode,
+  ArrayProperty,
+  Node,
+  ObjectNode,
+  ObjectProperty,
+} from '../types'
 import type { LiteralNode } from '../utils'
 import { isLiteralNode } from '../utils'
 
@@ -49,3 +55,12 @@ export const isNumericLiteral = (node: Node): node is Node<t.NumericLiteral> =>
   t.isNumericLiteral(node.node)
 export const isArrayProperty = (node: Node): node is ArrayProperty =>
   'getIndex' in node
+export const isJSXText = (node: Node): node is Node<t.JSXText> =>
+  t.isJSXText(node.node)
+export const isStringLiteral = (node: Node): node is Node<t.StringLiteral> =>
+  t.isStringLiteral(node.node)
+export const isTemplateElement = (
+  node: Node,
+): node is Node<t.TemplateElement> => t.isTemplateElement(node.node)
+export const isObjectProperty = (node: Node): node is ObjectProperty =>
+  'getName' in node && 'getValueNode' in node

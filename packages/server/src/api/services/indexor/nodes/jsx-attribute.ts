@@ -50,7 +50,7 @@ export class JSXAttribute<T extends t.Node = t.Node>
     return [this]
   }
 
-  public getDataFlowWithParents(): {
+  public getDataFlowWithParents(componentTreeId?: string): {
     parent: JSXElementNode
     values: Node[]
   }[] {
@@ -60,7 +60,9 @@ export class JSXAttribute<T extends t.Node = t.Node>
       (node) => node,
       [],
     )
-    return ret
+    return ret.filter((v) =>
+      componentTreeId ? componentTreeId.includes(v.parent.id) : true,
+    )
   }
 
   public getChildIndex(): number {
@@ -71,7 +73,7 @@ export class JSXAttribute<T extends t.Node = t.Node>
     return this.name
   }
 
-  public getArgumentReferences(): {
+  public getArgumentReferences(filterByInstance?: JSXElementNode): {
     identifiers: Node<t.Identifier>[]
     argument: Node | undefined
   } {
@@ -84,11 +86,18 @@ export class JSXAttribute<T extends t.Node = t.Node>
     ) as Node<t.Identifier>[]
 
     return {
-      identifiers: identifiers.filter(
-        (identifier) =>
-          identifier.getValues((node) => isChildNode(node, argument)).length >
-          0,
-      ),
+      identifiers: identifiers
+        .filter(
+          (identifier) =>
+            identifier.getValues((node) => isChildNode(node, argument)).length >
+            0,
+        )
+        .filter((ident) =>
+          filterByInstance
+            ? ident.getValues((_node) => isChildNode(_node, filterByInstance))
+                .length === 0
+            : true,
+        ),
       argument,
     }
   }

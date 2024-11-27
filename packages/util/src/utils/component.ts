@@ -317,3 +317,9 @@ export function updateIndexFromDiffs(
 
   return newIndex
 }
+
+export const getBaseId = (componentId: string): string => {
+  const split = componentId.split('#')
+
+  return split[split.length - 1]
+}

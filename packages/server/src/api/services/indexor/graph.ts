@@ -4,6 +4,7 @@ import traverse from '@babel/traverse'
 import * as t from '@babel/types'
 import { replaceByIndex } from '@harmony/util/src/utils/common'
 import type { ArrayProperty, Node } from './types'
+import type { LiteralNode } from './utils'
 import {
   createNode,
   getComponentName,
@@ -17,7 +18,25 @@ import { JSXElementNode } from './nodes/jsx-element'
 import type { JSXAttribute } from './nodes/jsx-attribute'
 import { JSXAttributeNode } from './nodes/jsx-attribute'
 import { ComponentNode } from './nodes/component'
+import {
+  isJSXText,
+  isStringLiteral,
+  isTemplateElement,
+} from './predicates/simple-predicates'
 
+export type FileUpdateInfo = Record<
+  string,
+  {
+    filePath: string
+    locations: {
+      snippet: string
+      start: number
+      end: number
+      updatedTo: number
+      diff: number
+    }[]
+  }
+>
 export class FlowGraph {
   public nodes: Map<string, Node>
   public file = ''
@@ -213,9 +232,41 @@ export class FlowGraph {
     })
   }
 
-  public changeNodeValue(node: Node<t.StringLiteral>, newValue: string) {
-    const newNode = t.stringLiteral(newValue)
+  public replaceNode(node: Node, newNode: t.Node) {
     node.path.replaceWith(newNode)
+    this.dirtyNodes.add(node)
+  }
+
+  public addLeadingComment(node: Node, comment: string) {
+    node.path.addComment('leading', comment)
+    this.dirtyNodes.add(node)
+  }
+
+  public changeLiteralNode(node: Node<LiteralNode>, newValue: string) {
+    if (isJSXText(node)) {
+      const newNode = t.jsxText(newValue)
+      this.replaceNode(node, newNode)
+    } else if (isStringLiteral(node)) {
+      const newNode = t.stringLiteral(newValue)
+      this.replaceNode(node, newNode)
+    } else if (isTemplateElement(node)) {
+      const newNode = t.templateElement({ raw: newValue }, node.node.tail)
+      this.replaceNode(node, newNode)
+    } else {
+      throw new Error('Given node is not a literal node')
+    }
+  }
+
+  public addAttributeToElement(
+    node: JSXElementNode,
+    propertyName: string,
+    newValue: string,
+  ) {
+    const newNode = t.jsxAttribute(
+      t.jsxIdentifier(propertyName),
+      t.stringLiteral(newValue),
+    )
+    node.path.node.openingElement.attributes.push(newNode)
     this.dirtyNodes.add(node)
   }
 
@@ -244,6 +295,52 @@ export class FlowGraph {
 
   public popMappedDependency() {
     return this.mappedDependencyStack.pop()
+  }
+
+  public getFileUpdates(): FileUpdateInfo {
+    const codeUpdates = Array.from(this.dirtyNodes.values())
+      .map((node) => ({ node, location: node.location }))
+      .sort((a, b) => a.location.start - b.location.start)
+    const commitChanges: FileUpdateInfo = {}
+    for (const update of codeUpdates) {
+      let change = commitChanges[update.location.file] as
+        | FileUpdateInfo[string]
+        | undefined
+      if (!change) {
+        change = { filePath: update.location.file, locations: [] }
+        commitChanges[update.location.file] = change
+      }
+      const snippet = getSnippetFromNode(update.node.node)
+      const updatedTo = update.location.start + snippet.length
+
+      const newLocation = {
+        snippet,
+        start: update.location.start,
+        end: update.location.end,
+        updatedTo,
+        diff: 0,
+      }
+      const last = change.locations[change.locations.length - 1] as
+        | FileUpdateInfo[string]['locations'][number]
+        | undefined
+      if (last) {
+        const diff = last.updatedTo - last.end + last.diff
+        if (last.updatedTo > newLocation.start + diff) {
+          if (last.snippet === newLocation.snippet) continue
+          //throw new Error("Conflict in changes")
+          console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`)
+        }
+
+        newLocation.start += diff
+        newLocation.end += diff
+        newLocation.updatedTo += diff
+        newLocation.diff = diff
+      }
+
+      change.locations.push(newLocation)
+    }
+
+    return commitChanges
   }
 }
 

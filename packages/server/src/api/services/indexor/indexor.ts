@@ -63,6 +63,22 @@ export const indexFiles = async (
 > => {
   const componentDefinitions: Record<string, HarmonyContainingComponent> = {}
   const instances: HarmonyComponent[] = []
+  const fileContents = await getFileContents(files, readFile)
+
+  const elementInstance = getCodeInfoAndNormalizeFromFiles(
+    fileContents,
+    instances,
+  )
+
+  if (!elementInstance) return false
+
+  return { elementInstance, componentDefinitions }
+}
+
+const getFileContents = async (
+  files: string[],
+  readFile: (filepath: string) => Promise<string>,
+) => {
   const visitedFiles: Set<string> = new Set<string>()
   const fileContents: FileAndContent[] = []
 
@@ -83,14 +99,7 @@ export const indexFiles = async (
     await visitPaths(filepath)
   }
 
-  const elementInstance = getCodeInfoAndNormalizeFromFiles(
-    fileContents,
-    instances,
-  )
-
-  if (!elementInstance) return false
-
-  return { elementInstance, componentDefinitions }
+  return fileContents
 }
 
 export const indexCodebase = async (
@@ -131,6 +140,25 @@ export async function indexForComponents(
   if (!result) return []
 
   return result.elementInstance
+}
+
+export async function buildGraphForComponents(
+  componentIds: string[],
+  gitRepository: GitRepository,
+): Promise<FlowGraph> {
+  const readFile = async (filepath: string) => {
+    const content = await gitRepository.getContent(filepath)
+
+    return content
+  }
+
+  const locations = componentIds.flatMap((componentId) =>
+    getLocationsFromComponentId(componentId),
+  )
+  const paths = locations.map((location) => location.file)
+  const fileContents = await getFileContents(paths, readFile)
+
+  return buildGraphFromFiles(fileContents)
 }
 
 export function formatComponentAndErrors(
@@ -204,13 +232,8 @@ export function getCodeInfoAndNormalizeFromFiles(
   files: FileAndContent[],
   elementInstances: HarmonyComponent[],
 ): HarmonyComponent[] | false {
-  const graph = new FlowGraph()
   try {
-    for (const { file, content } of files) {
-      if (!getCodeInfoFromFile(file, content, graph)) {
-        return false
-      }
-    }
+    const graph = buildGraphFromFiles(files)
 
     elementInstances.push(...convertGraphToHarmonyComponents(graph))
   } catch (err) {
@@ -219,6 +242,15 @@ export function getCodeInfoAndNormalizeFromFiles(
   }
 
   return elementInstances
+}
+
+export function buildGraphFromFiles(files: FileAndContent[]): FlowGraph {
+  const graph = new FlowGraph()
+  for (const { file, content } of files) {
+    getCodeInfoFromFile(file, content, graph)
+  }
+
+  return graph
 }
 
 function getCodeInfoFromFile(

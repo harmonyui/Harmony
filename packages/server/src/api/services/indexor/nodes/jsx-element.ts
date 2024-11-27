@@ -18,25 +18,46 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     super(base)
   }
 
-  public getAttributes() {
+  public getAttributes(componentIdTree?: string) {
     const attributes: JSXAttribute[] = []
     const rawAttributes = Array.from(this.attributes)
     rawAttributes.forEach((attribute) => {
       attributes.push(...attribute.getJSXAttributes())
     })
 
-    return attributes
+    return attributes.filter((attribute) =>
+      componentIdTree
+        ? componentIdTree.includes(attribute.getParentElement().id)
+        : true,
+    )
   }
 
   public getParentComponent() {
     return this.parentComponent
   }
 
-  public getRootInstances(): JSXElementNode[][] {
+  public getRootInstances(): JSXElementNode[][]
+  public getRootInstances(componentId: string): JSXElementNode[] | undefined
+  public getRootInstances(
+    componentId?: string,
+  ): (JSXElementNode[] | undefined) | JSXElementNode[][] {
     const parentElements = traverseInstances(this)
     if (parentElements.length === 0) return [[this]]
 
-    return parentElements.map((parentInstance) => [this, ...parentInstance])
+    const allInstances = parentElements.map((parentInstance) => [
+      this,
+      ...parentInstance,
+    ])
+    if (componentId) {
+      const ids = componentId.split('#').reverse()
+      const instanceSetWithComponentId = allInstances.find((instanceSet) =>
+        instanceSet.every((instance, i) => instance.id === ids[i]),
+      )
+
+      return instanceSetWithComponentId
+    }
+
+    return allInstances
   }
 
   public getDefinitionComponent() {
@@ -70,7 +91,7 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     this.mappingExpression.setIndex(index)
   }
 
-  public getMappingExpression() {
+  public getMappingExpression(componentIdTree?: string) {
     if (!this.mappingExpression) return []
 
     const ret = this.mappingExpression.getValuesWithParents(
@@ -103,6 +124,12 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
         })
       }
     })
+
+    if (componentIdTree) {
+      return actualRet.filter((_ret) =>
+        componentIdTree.includes(_ret.parent.id),
+      )
+    }
 
     return actualRet
   }

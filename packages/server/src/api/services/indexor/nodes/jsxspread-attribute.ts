@@ -34,7 +34,9 @@ export class JSXSpreadAttributeNode extends JSXAttribute<t.JSXSpreadAttribute> {
     return values.map(
       (_attribute) =>
         new JSXAttribute(
-          this.getParentElement(),
+          _attribute instanceof JSXAttribute
+            ? _attribute.getParentElement()
+            : this.getParentElement(),
           _attribute.getValueNode(),
           _attribute instanceof JSXAttribute ? _attribute.getChildIndex() : -1,
           _attribute,
