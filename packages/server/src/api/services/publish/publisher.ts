@@ -7,13 +7,11 @@ import type { GitRepository } from '../../repository/git/types'
 import { createPullRequest } from '../../repository/database/pull-request'
 import { CodeUpdator } from './code-updator'
 
-export type ComponentUpdateWithDate = ComponentUpdate & { dateModified: Date }
-
 export class Publisher {
   constructor(private gitRepository: GitRepository) {}
 
   public async publishChanges(
-    updatesRaw: ComponentUpdateWithDate[],
+    updatesRaw: ComponentUpdate[],
     branch: BranchItem,
     pullRequest: { title: string; body: string },
   ): Promise<PullRequest> {
@@ -37,7 +35,7 @@ export class Publisher {
     return newPullRequest
   }
 
-  public async updateChanges(updatesRaw: ComponentUpdateWithDate[]) {
+  public async updateChanges(updatesRaw: ComponentUpdate[]) {
     const _updates = prepareUpdatesForGenerator(updatesRaw)
 
     const codeUpdator = new CodeUpdator(this.gitRepository)
@@ -73,37 +71,10 @@ export class Publisher {
 }
 
 export function prepareUpdatesForGenerator(
-  updatesRaw: ComponentUpdateWithDate[],
+  updates: ComponentUpdate[],
 ): ComponentUpdate[] {
-  const updates = normalizeRecentUpdates(updatesRaw)
-
   //TODO: old value is not updated properly for size and spacing
   const updatesTranslated = translateUpdatesToCss(updates)
 
   return updatesTranslated
-}
-
-export function normalizeRecentUpdates(
-  updates: ComponentUpdateWithDate[],
-): ComponentUpdateWithDate[] {
-  const ascUpdates = updates
-    .slice()
-    .sort((a, b) => a.dateModified.getTime() - b.dateModified.getTime())
-  return ascUpdates.reduce<ComponentUpdateWithDate[]>((prev, curr) => {
-    const prevUpdateIndex = prev.findIndex(
-      (p) =>
-        p.type === curr.type &&
-        p.name === curr.name &&
-        p.componentId === curr.componentId,
-    )
-    //If there isn't a similar update, add this to the list
-    if (prevUpdateIndex < 0) {
-      prev.push(curr)
-    } else {
-      //Otherwise replace because we are doing ascending, so last one wins
-      prev[prevUpdateIndex] = curr
-    }
-
-    return prev
-  }, [])
 }

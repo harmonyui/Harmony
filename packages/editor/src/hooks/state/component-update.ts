@@ -384,10 +384,7 @@ export const createComponentUpdateSlice =
           if (isNaN(index)) {
             throw new Error(`Invalid update text element ${update.name}`)
           }
-          if (
-            textNodes[index]?.textContent !== update.value &&
-            textNodes[index]?.textContent === update.oldValue
-          ) {
+          if (textNodes[index]?.textContent !== update.value) {
             textNodes[index].textContent = update.value
           }
         }

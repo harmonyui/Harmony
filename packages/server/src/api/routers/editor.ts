@@ -25,6 +25,7 @@ import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
 import { generateUpdatesFromText } from '../repository/openai'
 import { getRepository, getBranch } from '../repository/database/branch'
+import { getComponentUpdates } from '../services/component-update'
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
@@ -54,7 +55,10 @@ export const editorRouter = createTRPCRouter({
         throw new Error(`Cannot find account tied to branch ${branchId}`)
       }
 
-      const updates = await ctx.componentUpdateRepository.getUpdates(branchId)
+      const updates = await getComponentUpdates(
+        branchId,
+        ctx.componentUpdateRepository,
+      )
 
       if (repositoryId !== undefined) {
         const repository = await getRepository({
@@ -239,9 +243,10 @@ export const editorRouter = createTRPCRouter({
         throw new Error('This project has already been published')
       }
 
-      const updates = await ctx.componentUpdateRepository.getUpdates(branchId, [
-        'dateModified',
-      ])
+      const updates = await getComponentUpdates(
+        branchId,
+        ctx.componentUpdateRepository,
+      )
 
       const gitRepository =
         ctx.gitRepositoryFactory.createGitRepository(repository)
@@ -323,9 +328,10 @@ export const editorRouter = createTRPCRouter({
         return undefined
       }
 
-      const updates = await ctx.componentUpdateRepository.getUpdates(branchId, [
-        'dateModified',
-      ])
+      const updates = await getComponentUpdates(
+        branchId,
+        ctx.componentUpdateRepository,
+      )
 
       const gitRepository =
         ctx.gitRepositoryFactory.createGitRepository(repository)

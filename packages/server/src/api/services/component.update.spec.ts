@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import type { ComponentUpdateWithDate } from './publisher'
-import { normalizeRecentUpdates } from './publisher'
+import type { ComponentUpdateWithDate } from './component-update'
+import { normalizeRecentUpdates } from './component-update'
 
-describe('publisher', () => {
+describe('component-update', () => {
   describe('normalizeRecentUpdates', () => {
     it('Should remove older of same updates', () => {
       const updates = testCases.mostRecent
