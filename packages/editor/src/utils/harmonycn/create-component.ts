@@ -1,11 +1,11 @@
 import { componentCreations } from './components'
-import type { CreateComponent } from './types'
+import type { CreateComponent, CreatedComponent } from './types'
 
 export const createComponentElement = (
   component: string,
   componentId: string,
   childIndex: number,
-): HTMLElement => {
+): CreatedComponent => {
   const componentCreationFunction = componentCreations[component] as
     | CreateComponent
     | undefined
@@ -13,9 +13,9 @@ export const createComponentElement = (
     throw new Error(`Component ${component} not found`)
   }
 
-  const element = componentCreationFunction()
-  element.dataset.harmonyId = componentId
-  element.dataset.harmonyChildIndex = String(childIndex)
+  const createdComponent = componentCreationFunction()
+  createdComponent.element.dataset.harmonyId = componentId
+  createdComponent.element.dataset.harmonyChildIndex = String(childIndex)
 
-  return element
+  return { ...createdComponent, componentId, childIndex }
 }

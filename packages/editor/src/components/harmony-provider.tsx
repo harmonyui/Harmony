@@ -36,7 +36,7 @@ import { HarmonyPanel } from './panel/harmony-panel'
 import { WelcomeModal } from './panel/welcome/welcome-modal'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'
-import { ComponentMenuProvider } from './harmonycn/component-menu-provider'
+import { ComponentProvider } from './harmonycn/component-provider'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -425,7 +425,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             onToggleInspector: onToggle,
           }}
         >
-          <ComponentMenuProvider>
+          <ComponentProvider>
             <UploadImageProvider>
               {displayMode !== 'preview-full' ? (
                 <>
@@ -481,7 +481,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                 executeCommand={executeCommand}
               />
             </UploadImageProvider>
-          </ComponentMenuProvider>
+          </ComponentProvider>
         </HarmonyContext.Provider>
       }
     </>

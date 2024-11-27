@@ -2,5 +2,12 @@ import type { CreateComponent } from '../types'
 
 export const createFrameElement: CreateComponent = () => {
   const div = document.createElement('div')
-  return div
+  div.style.padding = '4px'
+  return {
+    element: div,
+    type: 'Frame',
+    options: {
+      isEmpty: true,
+    },
+  }
 }

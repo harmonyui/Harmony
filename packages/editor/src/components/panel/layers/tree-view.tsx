@@ -16,7 +16,8 @@ import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
 import { ComponentType } from '../design/types'
 import { getComponentType } from '../design/utils'
 import { useHarmonyStore } from '../../../hooks/state'
-import { useComponentMenu } from '../../harmonycn/component-menu-provider'
+import { useComponentMenu } from '../../harmonycn/component-provider'
+import { useUpdateComponent } from '../../harmonycn/update-component'
 
 export interface TransformNode extends Record<string, NonNullable<unknown>> {
   id: string
@@ -33,9 +34,11 @@ interface TreeViewProps {
 }
 export const TreeView = ({ items }: TreeViewProps) => {
   const { onAttributesChange } = useHarmonyContext()
+  const selectedComponent = useHarmonyStore((store) => store.selectedComponent)
   const onComponentSelect = useHarmonyStore((store) => store.selectElement)
   const onComponentHover = useHarmonyStore((store) => store.hoverComponent)
   const { setIsOpen: setComponentMenuOpen } = useComponentMenu()
+  const { deleteComponent } = useUpdateComponent()
 
   const [multiSelect, setMultiSelect] = useState<{
     start: HTMLElement
@@ -163,6 +166,12 @@ export const TreeView = ({ items }: TreeViewProps) => {
     onAttributesChange([update])
   })
 
+  const onDelete = useEffectEvent(() => {
+    if (selectedComponent) {
+      deleteComponent(selectedComponent.element)
+    }
+  })
+
   return (
     <Tree
       selectedId={selectedId}
@@ -176,7 +185,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
           onAddBelow={() => () =>
             setComponentMenuOpen(true, { position: 'below' })
           }
-          onDelete={() => undefined}
+          onDelete={onDelete}
           onWrap={() => handleWrapElement('wrap')}
           onUnWrap={() => handleWrapElement('unwrap')}
         />

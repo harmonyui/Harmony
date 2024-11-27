@@ -94,7 +94,7 @@ export const useHighlighter = ({
       let target = event.target as HTMLElement | null
       if (
         noEvents.some((no) => document.querySelector(no)?.contains(target)) ||
-        target?.dataset.nonSelectable === 'true'
+        target?.closest('[data-non-selectable="true"]')
       )
         return
       if (!isHoldingRef.current) {
@@ -120,7 +120,10 @@ export const useHighlighter = ({
   const onMouseEvent = useEffectEvent(
     (event: MouseEvent): boolean | undefined => {
       const target = event.target as HTMLElement | null
-      if (noEvents.some((no) => document.querySelector(no)?.contains(target)))
+      if (
+        noEvents.some((no) => document.querySelector(no)?.contains(target)) ||
+        target?.closest('[data-non-selectable="true"]')
+      )
         return
       event.preventDefault()
       event.stopPropagation()

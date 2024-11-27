@@ -15,15 +15,13 @@ import {
   TIcon,
 } from '@harmony/ui/src/components/core/icons'
 import { useHarmonyStore } from '../../hooks/state'
+import type { UpdateComponentOptions } from './update-component'
 import { useUpdateComponent } from './update-component'
 
 interface AddComponentMenuProps {
   isOpen: boolean
   onClose: () => void
-  options: ComponentMenuOptions
-}
-export interface ComponentMenuOptions {
-  position: 'above' | 'below'
+  options: UpdateComponentOptions
 }
 export const AddComponentMenu: React.FunctionComponent<
   AddComponentMenuProps
@@ -33,7 +31,8 @@ export const AddComponentMenu: React.FunctionComponent<
 
   const onItemClick = (component: HarmonyCnNames) => () => {
     if (!selectedComponent) return
-    addComponent(selectedComponent.element, component, options.position)
+    addComponent(selectedComponent.element, component, options)
+    onClose()
   }
   return (
     <CommandDialog
@@ -47,7 +46,7 @@ export const AddComponentMenu: React.FunctionComponent<
           <CommandEmpty>No results found.</CommandEmpty>
           <CommandGroup heading='Suggestions'>
             {components.map(({ name, icon: Icon }) => (
-              <CommandItem key={name} onClick={onItemClick(name)}>
+              <CommandItem key={name} onSelect={onItemClick(name)}>
                 <Icon />
                 <span>{name}</span>
               </CommandItem>

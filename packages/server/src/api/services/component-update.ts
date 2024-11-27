@@ -23,6 +23,7 @@ export function normalizeRecentUpdates(
   return ascUpdates.reduce<ComponentUpdateWithDate[]>((prev, curr) => {
     const prevUpdateIndex = prev.findIndex(
       (p) =>
+        curr.type !== 'component' &&
         p.type === curr.type &&
         p.name === curr.name &&
         p.componentId === curr.componentId &&

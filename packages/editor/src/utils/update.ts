@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-unsafe-return -- ok */
 import { jsonSchema } from '@harmony/util/src/updates/component'
 import type { z } from 'zod'
 

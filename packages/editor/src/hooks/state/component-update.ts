@@ -1,27 +1,19 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import type { Font } from '@harmony/util/src/fonts'
 import {
-  addComponentSchema,
   addDeleteComponentSchema,
-  jsonSchema,
   updateAttributeValue,
 } from '@harmony/util/src/updates/component'
 import {
   findElementFromId,
   findElementsFromId,
   findSameElementsFromId,
+  getComponentIdAndChildIndex,
 } from '../../utils/element-utils'
 import { parseUpdate } from '../../utils/update'
 import { createComponentElement } from '../../utils/harmonycn/create-component'
+import type { CreatedComponent } from '../../utils/harmonycn/types'
 import { createHarmonySlice } from './factory'
-
-export interface CachedElement {
-  id: string
-  element: Element
-  parent: HTMLElement
-  children?: Element[]
-}
 
 export interface ComponentUpdateState {
   componentUpdates: ComponentUpdate[]
@@ -31,13 +23,15 @@ export interface ComponentUpdateState {
     fonts: Font[] | undefined,
     rootElement: HTMLElement | undefined,
   ) => void
-  cachedElements: CachedElement[]
+  cachedElements: CreatedComponent[]
+  createdElements: CreatedComponent[]
 }
 
 export const createComponentUpdateSlice =
   createHarmonySlice<ComponentUpdateState>((set, get) => ({
     cachedElements: [],
     componentUpdates: [],
+    createdElements: [],
     addComponentUpdates(value) {
       set((state) => {
         const copy = state.componentUpdates.slice()
@@ -108,40 +102,95 @@ export const createComponentUpdateSlice =
           if (update.name === 'delete-create') {
             const { value } = update
             const result = parseUpdate(addDeleteComponentSchema, value)
+            const updateCreatedElementOptions = (
+              createdElements: CreatedComponent[],
+              componentId: string,
+              childIndex: number,
+              options: Required<CreatedComponent['options']>,
+            ) => {
+              const createdElementIndex = createdElements.findIndex(
+                (el) =>
+                  el.componentId === componentId &&
+                  el.childIndex === childIndex,
+              )
+              if (createdElementIndex > -1) {
+                const createdElement = createdElements[createdElementIndex]
+                createdElements[createdElementIndex] = {
+                  ...createdElement,
+                  options: createdElement.options
+                    ? {
+                        ...createdElement.options,
+                        ...options,
+                      }
+                    : undefined,
+                }
+              }
+
+              return createdElements
+            }
             if (result.action === 'delete') {
-              // const component = findElementFromId(
-              //   update.componentId,
-              //   update.childIndex,
-              //   rootElement,
-              // )
-              // if (!component) {
-              //   const undoComponent = findElementFromId(id, index, rootElement)
-              //   if (undoComponent) {
-              //     undoComponent.remove()
-              //     return
-              //   }
-              //   throw new Error(
-              //     `makeUpdates: Cannot find the component with data-harmony-id: ${id}`,
-              //   )
-              // }
-              // set((state) => {
-              //   state.cachedElements.push({
-              //     id,
-              //     element: component.cloneNode(true) as Element,
-              //     parent: component.parentElement!,
-              //   })
-              //   return state
-              // })
-              // component.remove()
+              const component = findElementFromId(
+                update.componentId,
+                update.childIndex,
+                rootElement,
+              )
+              if (!component)
+                throw new Error(
+                  `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
+                )
+              const parent = component.parentElement
+              if (!parent) {
+                throw new Error('Parent not found')
+              }
+              const {
+                componentId: parentComponentId,
+                childIndex: parentChildIndex,
+              } = getComponentIdAndChildIndex(parent)
+
+              component.remove()
+              set((state) => {
+                const createdElement = get().createdElements.find(
+                  (el) =>
+                    el.componentId === update.componentId &&
+                    el.childIndex === update.childIndex,
+                )
+
+                //If deleting this element makes the parent empty, then update that option
+                if (!parent.hasChildNodes()) {
+                  state.createdElements = updateCreatedElementOptions(
+                    [...state.createdElements],
+                    parentComponentId,
+                    parentChildIndex,
+                    {
+                      isEmpty: true,
+                    },
+                  )
+                }
+                return {
+                  ...state,
+                  cachedElements: [
+                    ...state.cachedElements,
+                    createdElement ?? {
+                      componentId: update.componentId,
+                      childIndex: update.childIndex,
+                      type: 'component',
+                      element: component,
+                    },
+                  ],
+                }
+              })
             }
             if (result.action === 'create') {
               const { parentId, component, parentChildIndex, index } = result
-              const cachedElement = get().cachedElements.find(
-                (c) => c.id === update.componentId,
-              )
-              const getCreatedElement = () => {
+
+              const getCreatedElement = (): CreatedComponent => {
+                const cachedElement = get().cachedElements.find(
+                  (c) =>
+                    c.componentId === update.componentId &&
+                    c.childIndex === update.childIndex,
+                )
                 if (cachedElement) {
-                  return cachedElement.element
+                  return cachedElement
                 }
                 return createComponentElement(
                   component,
@@ -163,19 +212,39 @@ export const createComponentUpdateSlice =
               let inserted = false as boolean
               parent.childNodes.forEach((child, idx) => {
                 if (idx === index) {
-                  parent.insertBefore(createdElement, child)
+                  parent.insertBefore(createdElement.element, child)
                   inserted = true
                   set((state) => {
                     state.cachedElements = state.cachedElements.filter(
-                      (c) => c.id !== update.componentId,
+                      (c) =>
+                        c.componentId !== update.componentId &&
+                        c.childIndex !== update.childIndex,
                     )
                     return state
                   })
                 }
               })
               if (!inserted) {
-                parent.appendChild(createdElement)
+                parent.appendChild(createdElement.element)
               }
+              set((state) => {
+                state.createdElements = [
+                  ...state.createdElements,
+                  createdElement,
+                ]
+
+                // Update parent created element to remove isEmpty
+                state.createdElements = updateCreatedElementOptions(
+                  state.createdElements,
+                  parentId,
+                  parentChildIndex,
+                  {
+                    isEmpty: false,
+                  },
+                )
+
+                return state
+              })
             }
           }
 
@@ -204,80 +273,80 @@ export const createComponentUpdateSlice =
               start: { id: string; childIndex: number }
               end: { id: string; childIndex: number }
             }
-            if (action === 'wrap') {
-              const cachedElement = get().cachedElements.find(
-                (c) => c.id === id,
-              )
-              if (cachedElement) {
-                const parent = cachedElement.parent
-                parent.childNodes.forEach((child, index) => {
-                  if (index === start.childIndex) {
-                    parent.insertBefore(cachedElement.element, child)
-                    set((state) => {
-                      state.cachedElements = state.cachedElements.filter(
-                        (c) => c.id !== id,
-                      )
-                      return state
-                    })
-                    cachedElement.children!.forEach((c) => {
-                      c.remove()
-                    })
-                  }
-                })
-              } else {
-                const startElement = findElementFromId(
-                  start.id,
-                  start.childIndex,
-                  rootElement,
-                )
-                const parent = startElement?.parentElement
-                const endElement = findElementFromId(
-                  end.id,
-                  end.childIndex,
-                  rootElement,
-                )
-                if (!startElement || !endElement)
-                  throw new Error(
-                    `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-                  )
+            // if (action === 'wrap') {
+            //   const cachedElement = get().cachedElements.find(
+            //     (c) => c.id === id,
+            //   )
+            //   if (cachedElement) {
+            //     const parent = cachedElement.parent
+            //     parent.childNodes.forEach((child, index) => {
+            //       if (index === start.childIndex) {
+            //         parent.insertBefore(cachedElement.element, child)
+            //         set((state) => {
+            //           state.cachedElements = state.cachedElements.filter(
+            //             (c) => c.id !== id,
+            //           )
+            //           return state
+            //         })
+            //         cachedElement.children!.forEach((c) => {
+            //           c.remove()
+            //         })
+            //       }
+            //     })
+            //   } else {
+            //     const startElement = findElementFromId(
+            //       start.id,
+            //       start.childIndex,
+            //       rootElement,
+            //     )
+            //     const parent = startElement?.parentElement
+            //     const endElement = findElementFromId(
+            //       end.id,
+            //       end.childIndex,
+            //       rootElement,
+            //     )
+            //     if (!startElement || !endElement)
+            //       throw new Error(
+            //         `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
+            //       )
 
-                const newComponent = document.createElement('div')
-                newComponent.dataset.harmonyId = update.componentId
-                newComponent.classList.add('hw-bg-primary-light')
-                newComponent.classList.add('hw-p-[24px]')
-                parent?.appendChild(newComponent)
+            //     const newComponent = document.createElement('div')
+            //     newComponent.dataset.harmonyId = update.componentId
+            //     newComponent.classList.add('hw-bg-primary-light')
+            //     newComponent.classList.add('hw-p-[24px]')
+            //     parent?.appendChild(newComponent)
 
-                const elements = getElementsBetween(startElement, endElement)
-                elements.forEach((element) => {
-                  element.remove()
-                  newComponent.appendChild(element)
-                })
-              }
-            } else if (action === 'unwrap') {
-              const element = document.querySelector(
-                `[data-harmony-id="${update.componentId}"]`,
-              )
-              const parent = element?.parentElement
-              set((state) => {
-                state.cachedElements.push({
-                  id,
-                  element: element?.cloneNode(true) as HTMLElement,
-                  parent: parent!,
-                  children: Array.from(element?.children || []),
-                })
-                return state
-              })
+            //     const elements = getElementsBetween(startElement, endElement)
+            //     elements.forEach((element) => {
+            //       element.remove()
+            //       newComponent.appendChild(element)
+            //     })
+            //   }
+            // } else if (action === 'unwrap') {
+            //   const element = document.querySelector(
+            //     `[data-harmony-id="${update.componentId}"]`,
+            //   )
+            //   const parent = element?.parentElement
+            //   set((state) => {
+            //     state.cachedElements.push({
+            //       id,
+            //       element: element?.cloneNode(true) as HTMLElement,
+            //       parent: parent!,
+            //       children: Array.from(element?.children || []),
+            //     })
+            //     return state
+            //   })
 
-              if (!element)
-                throw new Error(
-                  `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-                )
-              const children = Array.from(element.children)
-              children.forEach((child) => {
-                parent?.appendChild(child)
-              })
-              element.remove()
-            }
+            //   if (!element)
+            //     throw new Error(
+            //       `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
+            //     )
+            //   const children = Array.from(element.children)
+            //   children.forEach((child) => {
+            //     parent?.appendChild(child)
+            //   })
+            //   element.remove()
+            // }
           }
           if (update.name === 'replace-element') {
             const { value } = update
@@ -373,18 +442,7 @@ export const createComponentUpdateSlice =
           ? findSameElementsFromId(componentId, rootElement)
           : findElementsFromId(id, rootElement)
         for (const element of Array.from(sameElements)) {
-          const childIndex = Array.from(
-            element.parentElement!.children,
-          ).indexOf(element)
           const htmlElement = element
-
-          //Setting childIndex to -1 means that we want to update all items in a list
-          if (
-            !update.isGlobal &&
-            update.childIndex > -1 &&
-            update.childIndex !== childIndex
-          )
-            continue
 
           if (update.type === 'className') {
             if (update.name === 'font') {
