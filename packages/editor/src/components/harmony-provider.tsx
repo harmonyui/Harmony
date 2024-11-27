@@ -36,6 +36,7 @@ import { HarmonyPanel } from './panel/harmony-panel'
 import { WelcomeModal } from './panel/welcome/welcome-modal'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'
+import { ComponentMenuProvider } from './harmonycn/component-menu-provider'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -424,61 +425,63 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             onToggleInspector: onToggle,
           }}
         >
-          <UploadImageProvider>
-            {displayMode !== 'preview-full' ? (
-              <>
-                <HarmonyPanel
-                  onAttributesChange={onAttributesChange}
-                  mode={mode}
-                  onModeChange={setMode}
-                  toggle={isToggled}
-                  onToggleChange={setIsToggled}
-                  isDirty={isDirty}
-                  setIsDirty={setIsDirty}
-                  inspector={inspector}
-                >
-                  <div
-                    style={{
-                      width: `${WIDTH * scale}px`,
-                      minHeight: `${HEIGHT * scale}px`,
-                    }}
+          <ComponentMenuProvider>
+            <UploadImageProvider>
+              {displayMode !== 'preview-full' ? (
+                <>
+                  <HarmonyPanel
+                    onAttributesChange={onAttributesChange}
+                    mode={mode}
+                    onModeChange={setMode}
+                    toggle={isToggled}
+                    onToggleChange={setIsToggled}
+                    isDirty={isDirty}
+                    setIsDirty={setIsDirty}
+                    inspector={inspector}
                   >
                     <div
-                      id='harmony-scaled'
-                      ref={(d) => {
-                        if (d && d !== harmonyContainerRef.current) {
-                          harmonyContainerRef.current = d
-                        }
-                      }}
                       style={{
-                        width: `${WIDTH}px`,
-                        minHeight: `${HEIGHT}px`,
-                        transformOrigin: '0 0',
-                        transform: `scale(${scale})`,
+                        width: `${WIDTH * scale}px`,
+                        minHeight: `${HEIGHT * scale}px`,
                       }}
                     >
-                      {inspector}
-                      {children}
+                      <div
+                        id='harmony-scaled'
+                        ref={(d) => {
+                          if (d && d !== harmonyContainerRef.current) {
+                            harmonyContainerRef.current = d
+                          }
+                        }}
+                        style={{
+                          width: `${WIDTH}px`,
+                          minHeight: `${HEIGHT}px`,
+                          transformOrigin: '0 0',
+                          transform: `scale(${scale})`,
+                        }}
+                      >
+                        {inspector}
+                        {children}
+                      </div>
                     </div>
-                  </div>
-                </HarmonyPanel>
-              </>
-            ) : (
-              <div className='hw-fixed hw-z-[100] hw-group hw-p-2 hw-bottom-0 hw-left-0'>
-                <button
-                  className='hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2'
-                  onClick={onMinimize}
-                >
-                  <MinimizeIcon className='hw-h-5 hw-w-5 hw-fill-white hw-stroke-none' />
-                </button>
-              </div>
-            )}
-            <WelcomeModal />
-            <GlobalUpdatePopup
-              onUndo={onUndo}
-              executeCommand={executeCommand}
-            />
-          </UploadImageProvider>
+                  </HarmonyPanel>
+                </>
+              ) : (
+                <div className='hw-fixed hw-z-[100] hw-group hw-p-2 hw-bottom-0 hw-left-0'>
+                  <button
+                    className='hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2'
+                    onClick={onMinimize}
+                  >
+                    <MinimizeIcon className='hw-h-5 hw-w-5 hw-fill-white hw-stroke-none' />
+                  </button>
+                </div>
+              )}
+              <WelcomeModal />
+              <GlobalUpdatePopup
+                onUndo={onUndo}
+                executeCommand={executeCommand}
+              />
+            </UploadImageProvider>
+          </ComponentMenuProvider>
         </HarmonyContext.Provider>
       }
     </>
