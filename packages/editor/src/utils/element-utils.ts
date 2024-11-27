@@ -18,16 +18,13 @@ export function findElementFromId(
   childIndex: number,
   rootElement: HTMLElement | undefined,
 ): HTMLElement | undefined {
-  const selector = `[data-harmony-id="${componentId}"]`
+  const selector = `[data-harmony-id="${componentId}"][data-harmony-child-index="${childIndex}"]`
   if (!rootElement) {
     throw new Error('Cannot find root element')
   }
   const elements = rootElement.querySelectorAll(selector)
-  for (const element of Array.from(elements)) {
-    const elementChildIndex = Array.from(
-      element.parentElement?.children || [],
-    ).indexOf(element)
-    if (elementChildIndex === childIndex) return element as HTMLElement
+  if (elements.length > 0) {
+    return elements[0] as HTMLElement
   }
 
   return undefined
@@ -66,9 +63,8 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
 } {
   let componentId = component.dataset.harmonyId
   let index = 0
-  let childIndex = Array.from(component.parentElement!.children).indexOf(
-    component,
-  )
+  let childIndex = Number(component.dataset.harmonyChildIndex)
+
   if (!componentId) {
     if (component.dataset.harmonyText === 'true') {
       const element = component.parentElement

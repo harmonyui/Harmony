@@ -51,19 +51,19 @@ export const createComponentUpdateSlice =
       //TODO: This is kind of a hacky way to deal with the layering issue when we have a map of components
       //When we want global in this scenario, we are going to assume it is the next layer up (which is what isGlobal false does)
       //This might not hold true in all scenarios, but we will assume for now
-      const translated = updates.map((orig) => {
-        const update = { ...orig }
-        const id = update.componentId
-        const sameElements = findElementsFromId(id, rootElement)
-        if (sameElements.length > 1) {
-          update.childIndex = -1
-        }
+      // const translated = updates.map((orig) => {
+      //   const update = { ...orig }
+      //   const id = update.componentId
+      //   const sameElements = findElementsFromId(id, rootElement)
+      //   if (sameElements.length > 1) {
+      //     update.childIndex = -1
+      //   }
 
-        return update
-      })
+      //   return update
+      // })
 
       //Updates that should happen just for the element (reordering)
-      for (const update of translated) {
+      for (const update of updates) {
         if (update.type === 'component') {
           if (update.name === 'reorder') {
             const { oldValue, value } = update
@@ -391,7 +391,7 @@ export const createComponentUpdateSlice =
       }
 
       //Updates that should happen for every element in a component
-      for (const update of translated) {
+      for (const update of updates) {
         const id = update.componentId
         const componentId = id.split('#')[id.split('#').length - 1]
         const sameElements = update.isGlobal

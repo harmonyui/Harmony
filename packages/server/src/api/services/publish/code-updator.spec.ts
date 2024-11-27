@@ -194,7 +194,7 @@ describe('code-updator', () => {
           oldValue: 'Thank you',
           type: 'text',
           name: '0',
-          componentId: elementInstances[6].id,
+          componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -203,7 +203,7 @@ describe('code-updator', () => {
           oldValue: 'This is old text',
           type: 'text',
           name: '0',
-          componentId: elementInstances[2].id,
+          componentId: elementInstances[3].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -224,12 +224,12 @@ describe('code-updator', () => {
       expectLocationOfString(file, codeUpdates.locations[2], '"Thank you"')
 
       expect(codeUpdates.locations[1].snippet).toBe(
-        '/*Change inner text for h2 tag from This is old text to This is new text*/<h2 className={innerClassName}>',
+        '/*Change inner text for h3 tag from This is old text to This is new text*/<h3 className={noWhere}>',
       )
       expectLocationOfString(
         file,
         codeUpdates.locations[1],
-        '<h2 className={innerClassName}>',
+        '<h3 className={noWhere}>',
       )
     })
 
@@ -253,7 +253,7 @@ describe('code-updator', () => {
           oldValue: '4px',
           type: 'className',
           name: 'padding-left',
-          componentId: elementInstances[6].id,
+          componentId: elementInstances[3].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -268,12 +268,12 @@ describe('code-updator', () => {
 
       expect(codeUpdates.locations.length).toBe(2)
       expect(codeUpdates.locations[0].snippet).toBe(
-        '/*hw-pl-2.5*/<h2 className={innerClassName}>',
+        '/*Add class hw-pl-2.5 to h3 tag*/<TailwindComponent label="Thank you" innerClassName="hw-p-2 hw-pl-2.5" noWhere={noWhere} />',
       )
       expectLocationOfString(
         file,
         codeUpdates.locations[0],
-        '<h2 className={innerClassName}>',
+        '<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>',
       )
 
       expect(codeUpdates.locations[1].snippet).toBe('"hw-p-2 hw-pl-2.5"')
@@ -289,7 +289,7 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: 'background-color',
-          componentId: elementInstances[3].id,
+          componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -298,7 +298,7 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: 'padding-left',
-          componentId: elementInstances[4].id,
+          componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -312,7 +312,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('classNameParent')
       expect(codeUpdates.locations.length).toBe(1)
       expect(codeUpdates.locations[0].snippet).toBe(
-        '<Child innerClass="pl-1" className="bg-black" />',
+        '<Child className="bg-black" innerClass="pl-1" />',
       )
       expectLocationOfString(file, codeUpdates.locations[0], '<Child />')
     })
@@ -326,7 +326,7 @@ describe('code-updator', () => {
           oldValue: 'Bob',
           type: 'text',
           name: '0',
-          componentId: elementInstances[11].id,
+          componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -335,7 +335,7 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: '',
-          componentId: elementInstances[13].id,
+          componentId: elementInstances[3].id,
           childIndex: 1,
           isGlobal: false,
         },
@@ -344,7 +344,7 @@ describe('code-updator', () => {
           oldValue: 'Some Children',
           type: 'text',
           name: '0',
-          componentId: elementInstances[18].id,
+          componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -353,7 +353,7 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: '',
-          componentId: elementInstances[20].id,
+          componentId: elementInstances[0].id,
           childIndex: 1,
           isGlobal: false,
         },
@@ -362,7 +362,7 @@ describe('code-updator', () => {
           oldValue: 'Label me',
           type: 'text',
           name: '0',
-          componentId: elementInstances[21].id,
+          componentId: elementInstances[4].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -402,7 +402,7 @@ describe('code-updator', () => {
           oldValue: '4px',
           type: 'className',
           name: 'padding-left',
-          componentId: elementInstances[6].id,
+          componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -417,12 +417,12 @@ describe('code-updator', () => {
 
       expect(codeUpdates.locations.length).toBe(1)
       expect(removeLines(codeUpdates.locations[0].snippet)).toBe(
-        '/*padding-left:10px;*/<TailwindComponent label="Thank you" innerClassName="hw-p-2" />',
+        '/*padding-left:10px;*/<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere} />',
       )
       expectLocationOfString(
         file,
         codeUpdates.locations[0],
-        '<TailwindComponent label="Thank you" innerClassName="hw-p-2" />',
+        '<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>',
         true,
       )
     })
@@ -446,7 +446,7 @@ describe('code-updator', () => {
           } satisfies UpdateAttributeValue),
           type: 'component',
           name: 'update-attribute',
-          componentId: elementInstances[2].id,
+          componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -470,24 +470,155 @@ describe('code-updator', () => {
         true,
       )
     })
+
+    it('Should update array data', async () => {
+      const file: TestFile = 'arrayStuff'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: 'Hello good sir',
+          oldValue: 'Hello',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'There good sir',
+          oldValue: 'There',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[2].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: '#000',
+          oldValue: '',
+          type: 'className',
+          name: 'background-color',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: '#000',
+          oldValue: '',
+          type: 'className',
+          name: 'color',
+          componentId: elementInstances[2].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: 'Goodbye sir',
+          oldValue: 'Hello sir',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[4].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'Thank you sir',
+          oldValue: 'There sir',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[4].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: 'block',
+          oldValue: 'flex',
+          type: 'className',
+          name: 'display',
+          componentId: elementInstances[4].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: '10px',
+          oldValue: '8px',
+          type: 'className',
+          name: 'gap',
+          componentId: elementInstances[4].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: 'name1-changed',
+          oldValue: 'name1',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[8].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'name2-changed',
+          oldValue: 'name2',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[8].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(codeUpdates.locations.length).toBe(10)
+
+      expect(codeUpdates.locations[0].snippet).toBe('"Goodbye sir"')
+      expectLocationOfString(file, codeUpdates.locations[0], '"Hello sir"')
+      expect(codeUpdates.locations[1].snippet).toBe('"block"')
+      expectLocationOfString(file, codeUpdates.locations[1], '"flex"')
+      expect(codeUpdates.locations[2].snippet).toBe('"Thank you sir"')
+      expectLocationOfString(file, codeUpdates.locations[2], '"There sir"')
+      expect(codeUpdates.locations[3].snippet).toBe('"gap-2.5"')
+      expectLocationOfString(file, codeUpdates.locations[3], '"gap-2"')
+
+      expect(codeUpdates.locations[4].snippet).toBe('"bg-black"')
+      expectLocationOfString(file, codeUpdates.locations[4], '"bg-blue-50"')
+      expect(codeUpdates.locations[5].snippet).toBe('"text-black"')
+      expectLocationOfString(file, codeUpdates.locations[5], '"text-white"')
+      expect(codeUpdates.locations[6].snippet).toBe('"name1-changed"')
+      expectLocationOfString(file, codeUpdates.locations[6], '"name1"')
+      expect(codeUpdates.locations[7].snippet).toBe('"name2-changed"')
+      expectLocationOfString(file, codeUpdates.locations[7], '"name2"')
+      expect(codeUpdates.locations[8].snippet).toBe('"Hello good sir"')
+      expectLocationOfString(file, codeUpdates.locations[8], '"Hello"')
+      expect(codeUpdates.locations[9].snippet).toBe('"There good sir"')
+      expectLocationOfString(file, codeUpdates.locations[9], '"There"')
+    })
   })
 })
 
 type TestFile = keyof typeof testFiles
 const testFiles = {
   tailwindPrefix: `
-        const TailwindComponent = ({label, innerClassName}) => {
+        const TailwindComponent = ({label, innerClassName, noOp, noWhere}) => {
             return (
                 <div className="hw-group hw-flex hw-py-2">
                     <h1 className="hw-flex hw-flex-col">Hello there</h1>
                     <h2 className={innerClassName}>{label}</h2>
+                    <h3 className={noWhere}>{noOp}</h3>
                 </div>
             )
         }
 
-        const UseTailwindComponent = () => {
+        const UseTailwindComponent = ({noWhere}) => {
           return (
-            <TailwindComponent label="Thank you" innerClassName="hw-p-2" />
+            <TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>
           )
         }
     `,
@@ -561,6 +692,33 @@ const testFiles = {
         return <ImageSrc image={image} />
       }
     `,
+  arrayStuff: `
+      const ComponentArrays = ({array1, array2}) => {
+        const [first, second] = array2;
+            return <div>
+                <h1 className={first.start}>{array1[0]}</h1>
+                <h2 className={second.end}>{array1[1]}</h2>
+            </div>
+        }
+        const ComponentMapping = ({categories}) => {
+            return <div>
+                {categories.map((category) => {
+                    return <h1 className={category.style}>{category.name}</h1>
+                })}
+            </div>
+        }
+
+        const App = () => {
+            const categories = [{name: "Hello sir", style: "flex"}, {name: "There sir", style: "gap-2"}];
+            const classes = [{start: "bg-blue-50"}, {end: "text-white"}];
+            const inHouseMapping = [{name: "name1"}, {name: "name2"}];
+            return <>
+                <ComponentArrays array1={["Hello", "There"]} array2={classes}/>
+                <ComponentMapping categories={categories}/>
+                {inHouseMapping.map((category) => <div key={category.name}>{category.name}</div>)}
+            </>
+        }
+  `,
 }
 
 const removeLines = (str: string): string => {

@@ -25,7 +25,8 @@ export function normalizeRecentUpdates(
       (p) =>
         p.type === curr.type &&
         p.name === curr.name &&
-        p.componentId === curr.componentId,
+        p.componentId === curr.componentId &&
+        p.childIndex === curr.childIndex,
     )
     //If there isn't a similar update, add this to the list
     if (prevUpdateIndex < 0) {
