@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-shadow -- ok */
+import crypto from 'node:crypto'
 import { z } from 'zod'
 import type { Repository } from '@harmony/util/src/types/branch'
 import { repositorySchema } from '@harmony/util/src/types/branch'
