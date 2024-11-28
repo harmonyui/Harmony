@@ -7,12 +7,14 @@ import type { ComponentNode } from './component'
 
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   private mappingExpression: ArrayProperty | undefined
+  private children: JSXElementNode[] = []
 
   constructor(
     private attributes: JSXAttribute[],
     private parentComponent: ComponentNode,
     private definitionComponent: ComponentNode | undefined,
     private openingElement: Node<t.JSXOpeningElement>,
+    private closingElement: Node<t.JSXClosingElement>,
     base: NodeBase<t.JSXElement>,
   ) {
     super(base)
@@ -36,13 +38,17 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     return this.parentComponent
   }
 
+  public getChildren() {
+    return this.children
+  }
+
   public getRootInstances(): JSXElementNode[][]
   public getRootInstances(componentId: string): JSXElementNode[] | undefined
   public getRootInstances(
     componentId?: string,
   ): (JSXElementNode[] | undefined) | JSXElementNode[][] {
     const parentElements = traverseInstances(this)
-    if (parentElements.length === 0) return [[this]]
+    if (parentElements.length === 0) return componentId ? [this] : [[this]]
 
     const allInstances = parentElements.map((parentInstance) => [
       this,
@@ -77,8 +83,16 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     this.attributes.push(attribute)
   }
 
+  public addChild(child: JSXElementNode) {
+    this.children.push(child)
+  }
+
   public getOpeningElement(): Node<t.JSXOpeningElement> {
     return this.openingElement
+  }
+
+  public getClosingElement(): Node<t.JSXClosingElement> {
+    return this.closingElement
   }
 
   public setMappingExpression(node: ArrayProperty) {

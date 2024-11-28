@@ -1,11 +1,21 @@
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { UpdateComponent } from './types'
-import { addCommentToElement, rotateThroughValuesAndMakeChanges } from './utils'
+import {
+  addCommentToElement,
+  getInstanceInfo,
+  rotateThroughValuesAndMakeChanges,
+} from './utils'
 
 export const updateText: UpdateComponent = (
-  { update: componentUpdate, attributes, oldValue, value, graphElements },
+  { update: componentUpdate, oldValue, value },
   graph,
 ) => {
+  const { attributes, instances: graphElements } = getInstanceInfo(
+    componentUpdate.componentId,
+    componentUpdate.childIndex,
+    graph,
+  )
+
   const index = parseInt(componentUpdate.name)
   const textAttribute = attributes.find(
     (attr) =>

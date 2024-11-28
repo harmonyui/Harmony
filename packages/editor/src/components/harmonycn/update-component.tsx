@@ -1,13 +1,16 @@
 import { useCallback } from 'react'
-import { v4 as uuidv4 } from 'uuid'
 import type {
   AddComponent,
   DeleteComponent,
 } from '@harmony/util/src/updates/component'
 import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
-import { getComponentIdAndChildIndex } from '../../utils/element-utils'
+import {
+  findElementsFromId,
+  getComponentIdAndChildIndex,
+} from '../../utils/element-utils'
 import { createUpdate } from '../../utils/update'
+import { useHarmonyStore } from '../../hooks/state'
 
 export interface UpdateComponentOptions {
   position?: 'above' | 'below'
@@ -15,6 +18,7 @@ export interface UpdateComponentOptions {
 }
 export const useUpdateComponent = () => {
   const { onAttributesChange } = useHarmonyContext()
+  const rootElement = useHarmonyStore((store) => store.rootComponent?.element)
 
   const addComponent = useCallback(
     (
@@ -26,9 +30,13 @@ export const useUpdateComponent = () => {
       if (!parent) {
         throw new Error('Parent not found')
       }
-      const { componentId, childIndex } = getComponentIdAndChildIndex(parent)
+      const { componentId: parentId, childIndex: parentChildIndex } =
+        getComponentIdAndChildIndex(parent)
 
-      const cacheId = uuidv4()
+      //New element is the same id as the parent, but different child index so that
+      //the backend does not get messed up by a weird, random id
+      const componentId = parentId
+      const childIndex = findElementsFromId(parentId, rootElement).length
 
       let index = options.position
         ? Array.from(parent.children).indexOf(element)
@@ -40,22 +48,22 @@ export const useUpdateComponent = () => {
       const update: ComponentUpdateWithoutGlobal = {
         type: 'component',
         name: 'delete-create',
-        componentId: cacheId,
-        childIndex: 0,
+        componentId,
+        childIndex,
         oldValue: createUpdate<DeleteComponent>({
           action: 'delete',
         }),
         value: createUpdate<AddComponent>({
-          parentId: componentId,
+          parentId,
           component,
-          parentChildIndex: childIndex,
+          parentChildIndex,
           index,
           action: 'create',
         }),
       }
       onAttributesChange([update])
     },
-    [],
+    [rootElement],
   )
 
   const deleteComponent = useCallback((element: HTMLElement) => {

@@ -4,13 +4,13 @@ import {
   addDeleteComponentSchema,
   updateAttributeValue,
 } from '@harmony/util/src/updates/component'
+import { parseUpdate } from '@harmony/util/src/updates/utils'
 import {
   findElementFromId,
   findElementsFromId,
   findSameElementsFromId,
   getComponentIdAndChildIndex,
 } from '../../utils/element-utils'
-import { parseUpdate } from '../../utils/update'
 import { createComponentElement } from '../../utils/harmonycn/create-component'
 import type { CreatedComponent } from '../../utils/harmonycn/types'
 import { createHarmonySlice } from './factory'
@@ -440,8 +440,10 @@ export const createComponentUpdateSlice =
         const componentId = id.split('#')[id.split('#').length - 1]
         const sameElements = update.isGlobal
           ? findSameElementsFromId(componentId, rootElement)
-          : findElementsFromId(id, rootElement)
-        for (const element of Array.from(sameElements)) {
+          : [findElementFromId(id, update.childIndex, rootElement)]
+        for (const element of Array.from(
+          sameElements.filter((e) => e !== undefined),
+        )) {
           const htmlElement = element
 
           if (update.type === 'className') {

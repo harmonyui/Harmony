@@ -26,6 +26,9 @@ export class JSXAttribute<T extends t.Node = t.Node>
     base: NodeBase<T>,
   ) {
     super(base)
+    if (value.id === this.id) {
+      this.value.id = `${this.id}-value`
+    }
   }
 
   public getValueNode() {

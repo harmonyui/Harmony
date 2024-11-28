@@ -7,16 +7,23 @@ import type { Node } from '../../indexor/types'
 import { addPrefixToClassName } from '../css-conveter'
 import {
   addCommentToElement,
+  getInstanceInfo,
   replaceAll,
   rotateThroughValuesAndMakeChanges,
 } from './utils'
 import type { UpdateComponent } from './types'
 
 export const updateClassName: UpdateComponent = (
-  { value, oldValue, attributes, graphElements, update: componentUpdate },
+  { value, oldValue, update: componentUpdate },
   graph,
   repository,
 ) => {
+  const { attributes, instances: graphElements } = getInstanceInfo(
+    componentUpdate.componentId,
+    componentUpdate.childIndex,
+    graph,
+  )
+
   const classNameAttribute = attributes.find(
     (attr) => attr.attribute.getName() === 'className',
   )

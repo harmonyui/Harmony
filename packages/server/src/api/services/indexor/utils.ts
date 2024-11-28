@@ -150,6 +150,9 @@ export const isChildNode = (node: Node, parent: Node): boolean => {
 }
 
 export const getSnippetFromNode = (node: t.Node): string => {
+  if (t.isTemplateElement(node)) {
+    return node.value.raw
+  }
   const result = generator(node)
 
   return result.code

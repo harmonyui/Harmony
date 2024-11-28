@@ -1,6 +1,5 @@
 import * as parser from '@babel/parser'
-import type { NodePath } from '@babel/traverse'
-import traverse from '@babel/traverse'
+import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import { replaceByIndex } from '@harmony/util/src/utils/common'
 import type { ArrayProperty, Node } from './types'
@@ -14,9 +13,9 @@ import {
 } from './utils'
 import { addDataEdge } from './data-flow'
 import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
-import { JSXElementNode } from './nodes/jsx-element'
-import type { JSXAttribute } from './nodes/jsx-attribute'
+import { isJSXElement, JSXElementNode } from './nodes/jsx-element'
 import { JSXAttributeNode } from './nodes/jsx-attribute'
+import type { JSXAttribute } from './nodes/jsx-attribute'
 import { ComponentNode } from './nodes/component'
 import {
   isJSXText,
@@ -42,7 +41,9 @@ export class FlowGraph {
   public file = ''
   public code = ''
   private dirtyNodes: Set<Node> = new Set<Node>()
+  private insertNodes: Set<Node> = new Set<Node>()
   private mappedDependencyStack: ArrayProperty[] = []
+  public idMapping: Record<string, string> = {}
 
   constructor() {
     this.nodes = new Map()
@@ -141,10 +142,15 @@ export class FlowGraph {
 
   public addJSXElement(
     jsxElementNode: JSXElementNode,
+    parentElement: JSXElementNode | undefined,
     component: ComponentNode,
   ) {
     this.setNode(jsxElementNode)
+    this.setNode(jsxElementNode.getOpeningElement())
+    const closingElement = jsxElementNode.getClosingElement()
+    closingElement && this.setNode(closingElement)
     component.addJSXElement(jsxElementNode)
+    parentElement?.addChild(jsxElementNode)
   }
 
   public addJSXAttribute(
@@ -212,7 +218,7 @@ export class FlowGraph {
   public getElementInstances(name: string): JSXElementNode[] {
     const instances: JSXElementNode[] = []
     this.nodes.forEach((node) => {
-      if (node instanceof JSXElementNode && node.name === name) {
+      if (isJSXElement(node) && node.name === name) {
         instances.push(node)
       }
     })
@@ -221,6 +227,20 @@ export class FlowGraph {
 
   public getNodeById(id: string): Node | undefined {
     return this.nodes.get(id)
+  }
+
+  public getJSXElementById(
+    id: string,
+    childIndex: number,
+  ): JSXElementNode | undefined {
+    const node =
+      this.nodes.get(this.idMapping[`${id}-${childIndex}`]) ??
+      this.nodes.get(id)
+    if (node && isJSXElement(node)) {
+      return node
+    }
+
+    return undefined
   }
 
   // Output graph dependencies for debugging
@@ -232,14 +252,49 @@ export class FlowGraph {
     })
   }
 
-  public replaceNode(node: Node, newNode: t.Node) {
-    node.path.replaceWith(newNode)
+  public dirtyNode(node: Node, oldValue: string) {
+    if (
+      Array.from(this.insertNodes).find(
+        (n) =>
+          n.location.start <= node.location.start &&
+          n.location.end >= node.location.end,
+      )
+    ) {
+      const afterNodes = this.getNodes().filter(
+        (_node) =>
+          _node.location.file === node.location.file &&
+          _node.location.start >= node.location.start,
+      )
+      const inBetweenNodes = this.getNodes().filter(
+        (_node) =>
+          _node.location.file === node.location.file &&
+          _node.location.start < node.location.start &&
+          _node.location.end > node.location.start,
+      )
+      const newNodeContent = getSnippetFromNode(node.node)
+      const newNodeLength = newNodeContent.length - oldValue.length
+      afterNodes.forEach((_node) => {
+        _node.location.start += newNodeLength
+        _node.location.end += newNodeLength
+      })
+      inBetweenNodes.forEach((_node) => {
+        _node.location.end += newNodeLength
+      })
+      return
+    }
     this.dirtyNodes.add(node)
   }
 
+  public replaceNode(node: Node, newNode: t.Node) {
+    const oldValue = getSnippetFromNode(node.node)
+    node.path.replaceWith(newNode)
+    this.dirtyNode(node, oldValue)
+  }
+
   public addLeadingComment(node: Node, comment: string) {
+    const oldValue = getSnippetFromNode(node.node)
     node.path.addComment('leading', comment)
-    this.dirtyNodes.add(node)
+    this.dirtyNode(node, oldValue)
   }
 
   public changeLiteralNode(node: Node<LiteralNode>, newValue: string) {
@@ -266,8 +321,9 @@ export class FlowGraph {
       t.jsxIdentifier(propertyName),
       t.stringLiteral(newValue),
     )
+    const oldValue = getSnippetFromNode(node.node)
     node.path.node.openingElement.attributes.push(newNode)
-    this.dirtyNodes.add(node)
+    this.dirtyNode(node, oldValue)
   }
 
   public saveChanges() {
@@ -285,6 +341,93 @@ export class FlowGraph {
     this.dirtyNodes.clear()
   }
 
+  public addChildElement(
+    {
+      element: childElement,
+      nodes,
+    }: { element: JSXElementNode; nodes: Node[] },
+    componentId: string,
+    childIndex: number,
+    index: number,
+    parentElement: JSXElementNode,
+  ) {
+    this.setNode(childElement)
+    nodes.forEach((node) => this.setNode(node))
+
+    const beforeElement = parentElement.getChildren()[index] as
+      | JSXElementNode
+      | undefined
+    if (!beforeElement) {
+      parentElement.path.pushContainer('children', childElement.node)
+      const parentClosingElement = parentElement.getClosingElement()
+      this.insertNewNode(childElement, parentClosingElement.location.start)
+    } else {
+      beforeElement.path.insertBefore(childElement.node)
+      this.insertNewNode(childElement, beforeElement.location.start)
+    }
+    const offset = childElement.location.start
+    nodes.forEach((node) => {
+      node.location.start += offset
+      node.location.end += offset
+    })
+    this.addJSXElement(
+      childElement,
+      parentElement,
+      parentElement.getParentComponent(),
+    )
+    this.idMapping[`${componentId}-${childIndex}`] = childElement.id
+
+    return childElement
+  }
+
+  public insertNewNode(node: Node, startIndex: number) {
+    const afterNodes = this.getNodes().filter(
+      (_node) =>
+        _node.location.file === node.location.file &&
+        _node.location.start >= startIndex,
+    )
+    const inBetweenNodes = this.getNodes().filter(
+      (_node) =>
+        _node.location.file === node.location.file &&
+        _node.location.start < startIndex &&
+        _node.location.end > startIndex,
+    )
+    const newNodeContent = getSnippetFromNode(node.node)
+    const newNodeLength = newNodeContent.length
+    afterNodes.forEach((_node) => {
+      _node.location.start += newNodeLength
+      _node.location.end += newNodeLength
+    })
+    inBetweenNodes.forEach((_node) => {
+      _node.location.end += newNodeLength
+    })
+    node.location.start = startIndex
+    node.location.end = startIndex + newNodeLength
+
+    //Only insert the node if it is not inside of an already inserted node
+    if (
+      Array.from(this.insertNodes).find(
+        (n) =>
+          n.location.start <= node.location.start &&
+          n.location.end >= node.location.end,
+      )
+    )
+      return
+    this.insertNodes.add(node)
+  }
+
+  public createNodeAndPath<T extends t.Node>(
+    name: string,
+    node: T,
+    parentPath: NodePath,
+  ): Node<T> {
+    const path = new NodePath<T>(parentPath.hub, parentPath.node)
+    path.node = node
+    path.node.loc = parentPath.node.loc
+
+    return this.createNode<T>(name, path)
+  }
+
   public getCode() {
     return this.code
   }
@@ -298,9 +441,18 @@ export class FlowGraph {
   }
 
   public getFileUpdates(): FileUpdateInfo {
-    const codeUpdates = Array.from(this.dirtyNodes.values())
-      .map((node) => ({ node, location: node.location }))
-      .sort((a, b) => a.location.start - b.location.start)
+    const codeUpdates = [
+      ...Array.from(this.dirtyNodes.values()).map((node) => ({
+        node,
+        location: node.location,
+        inserted: false,
+      })),
+      ...Array.from(this.insertNodes.values()).map((node) => ({
+        node,
+        location: node.location,
+        inserted: true,
+      })),
+    ].sort((a, b) => a.location.start - b.location.start)
     const commitChanges: FileUpdateInfo = {}
     for (const update of codeUpdates) {
       let change = commitChanges[update.location.file] as
@@ -319,12 +471,21 @@ export class FlowGraph {
         end: update.location.end,
         updatedTo,
         diff: 0,
+        insertedDiff: 0,
+        inserted: update.inserted,
+      }
+      if (update.inserted) {
+        newLocation.end = update.location.start
+        newLocation.updatedTo = update.location.start
       }
       const last = change.locations[change.locations.length - 1] as
-        | FileUpdateInfo[string]['locations'][number]
+        | typeof newLocation
         | undefined
       if (last) {
         const diff = last.updatedTo - last.end + last.diff
+        const insertedDiff = last.inserted
+          ? last.insertedDiff + last.snippet.length
+          : last.insertedDiff
         if (last.updatedTo > newLocation.start + diff) {
           if (last.snippet === newLocation.snippet) continue
           //throw new Error("Conflict in changes")
@@ -335,10 +496,18 @@ export class FlowGraph {
         newLocation.end += diff
         newLocation.updatedTo += diff
         newLocation.diff = diff
+        newLocation.insertedDiff = insertedDiff
       }
 
       change.locations.push(newLocation)
     }
+    Object.values(commitChanges).forEach((change) => {
+      change.locations.forEach((location) => {
+        location.diff += (
+          location as unknown as { insertedDiff: number }
+        ).insertedDiff
+      })
+    })
 
     return commitChanges
   }
@@ -374,102 +543,120 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
         graph.addJSXInstanceComponentEdge(containingComponent, instance)
       })
 
+      const currentElements: JSXElementNode[] = []
+
       path.traverse({
-        JSXElement(jsxPath) {
-          const name = t.isJSXIdentifier(jsxPath.node.openingElement.name)
-            ? jsxPath.node.openingElement.name.name
-            : getSnippetFromNode(jsxPath.node.openingElement.name)
-          const definitionComponent = graph.getDefinition(name)
+        JSXElement: {
+          enter(jsxPath) {
+            const name = t.isJSXIdentifier(jsxPath.node.openingElement.name)
+              ? jsxPath.node.openingElement.name.name
+              : getSnippetFromNode(jsxPath.node.openingElement.name)
+            const definitionComponent = graph.getDefinition(name)
 
-          const openingElement = graph.createNode(
-            getSnippetFromNode(jsxPath.node.openingElement),
-            jsxPath.get('openingElement'),
-          )
-          if (graph.nodes.get(openingElement.id)) return
+            const openingElement = graph.createNode(
+              getSnippetFromNode(jsxPath.node.openingElement),
+              jsxPath.get('openingElement'),
+            )
+            if (graph.nodes.get(openingElement.id)) return
 
-          const elementNode = new JSXElementNode(
-            [],
-            containingComponent,
-            definitionComponent,
-            openingElement,
-            graph.createNode(name, jsxPath),
-          )
+            const closingElement = jsxPath.node.closingElement
+              ? graph.createNode(
+                  getSnippetFromNode(jsxPath.node.closingElement),
+                  jsxPath.get('closingElement'),
+                )
+              : undefined
 
-          graph.addJSXElement(elementNode, containingComponent)
+            const elementNode = new JSXElementNode(
+              [],
+              containingComponent,
+              definitionComponent,
+              openingElement,
+              closingElement,
+              graph.createNode(name, jsxPath),
+            )
 
-          const currAttributes: JSXAttributeNode[] = []
-          for (
-            let i = 0;
-            i < jsxPath.node.openingElement.attributes.length;
-            i++
-          ) {
-            const attributePath = jsxPath.get(
-              `openingElement.attributes.${i}`,
-            ) as NodePath<t.JSXAttribute | t.JSXSpreadAttribute>
+            const parentElement = currentElements[currentElements.length - 1]
+            graph.addJSXElement(elementNode, parentElement, containingComponent)
+            currentElements.push(elementNode)
 
-            if (t.isJSXAttribute(attributePath.node)) {
-              const attributeName = t.isJSXIdentifier(attributePath.node.name)
-                ? attributePath.node.name.name
-                : getSnippetFromNode(attributePath.node)
-              const attributeNode = new JSXAttributeNode(
-                elementNode,
-                -1,
-                graph.code,
-                graph.createNode(
-                  attributeName,
-                  attributePath as NodePath<t.JSXAttribute>,
-                ),
-              )
-
-              graph.addJSXAttribute(attributeNode, elementNode)
-              currAttributes.push(attributeNode)
-            } else {
-              const spreadAttributeNode = new JSXSpreadAttributeNode(
-                elementNode,
-                currAttributes,
-                graph.code,
-                graph.createNode(
-                  getSnippetFromNode(attributePath.node),
-                  attributePath as NodePath<t.JSXSpreadAttribute>,
-                ),
-              )
-
-              graph.addJSXAttribute(spreadAttributeNode, elementNode)
-            }
-          }
-
-          let childIndex = 0
-          for (let i = 0; i < jsxPath.node.children.length; i++) {
-            const node = jsxPath.node.children[i]
-            if (t.isJSXText(node) && node.value.trim().length === 0) continue
-
-            const childPath = jsxPath.get(`children.${i}`)
-            if (Array.isArray(childPath)) throw new Error('Should not be array')
-
-            if (
-              t.isJSXExpressionContainer(childPath.node) ||
-              t.isJSXText(childPath.node)
+            const currAttributes: JSXAttributeNode[] = []
+            for (
+              let i = 0;
+              i < jsxPath.node.openingElement.attributes.length;
+              i++
             ) {
-              const attributeNode = new JSXAttributeNode(
-                elementNode,
-                childIndex,
-                graph.code,
-                graph.createNode(
-                  'children',
-                  childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
-                ),
-              )
+              const attributePath = jsxPath.get(
+                `openingElement.attributes.${i}`,
+              ) as NodePath<t.JSXAttribute | t.JSXSpreadAttribute>
 
-              graph.addJSXAttribute(attributeNode, elementNode)
+              if (t.isJSXAttribute(attributePath.node)) {
+                const attributeName = t.isJSXIdentifier(attributePath.node.name)
+                  ? attributePath.node.name.name
+                  : getSnippetFromNode(attributePath.node)
+                const attributeNode = new JSXAttributeNode(
+                  elementNode,
+                  -1,
+                  graph.code,
+                  graph.createNode(
+                    attributeName,
+                    attributePath as NodePath<t.JSXAttribute>,
+                  ),
+                )
+
+                graph.addJSXAttribute(attributeNode, elementNode)
+                currAttributes.push(attributeNode)
+              } else {
+                const spreadAttributeNode = new JSXSpreadAttributeNode(
+                  elementNode,
+                  currAttributes,
+                  graph.code,
+                  graph.createNode(
+                    getSnippetFromNode(attributePath.node),
+                    attributePath as NodePath<t.JSXSpreadAttribute>,
+                  ),
+                )
+
+                graph.addJSXAttribute(spreadAttributeNode, elementNode)
+              }
             }
-            childIndex++
-          }
 
-          //Connect the element to the definition component
-          const elementDefinition = elementNode.getDefinitionComponent()
-          if (elementDefinition) {
-            graph.addJSXInstanceComponentEdge(elementDefinition, elementNode)
-          }
+            let childIndex = 0
+            for (let i = 0; i < jsxPath.node.children.length; i++) {
+              const node = jsxPath.node.children[i]
+              if (t.isJSXText(node) && node.value.trim().length === 0) continue
+
+              const childPath = jsxPath.get(`children.${i}`)
+              if (Array.isArray(childPath))
+                throw new Error('Should not be array')
+
+              if (
+                t.isJSXExpressionContainer(childPath.node) ||
+                t.isJSXText(childPath.node)
+              ) {
+                const attributeNode = new JSXAttributeNode(
+                  elementNode,
+                  childIndex,
+                  graph.code,
+                  graph.createNode(
+                    'children',
+                    childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
+                  ),
+                )
+
+                graph.addJSXAttribute(attributeNode, elementNode)
+              }
+              childIndex++
+            }
+
+            //Connect the element to the definition component
+            const elementDefinition = elementNode.getDefinitionComponent()
+            if (elementDefinition) {
+              graph.addJSXInstanceComponentEdge(elementDefinition, elementNode)
+            }
+          },
+          exit() {
+            currentElements.pop()
+          },
         },
       })
     },
