@@ -125,20 +125,22 @@ export const getInstanceInfo = (
 export const getInstanceFromComponent = (
   component: HarmonyCn,
   repository: Repository,
-) => {
-  const instance = componentInstances[component] as InstanceProperty | undefined
+): InstanceProperty => {
+  let instance = componentInstances[component] as InstanceProperty | undefined
   if (!instance) {
     throw new Error(`Invalid component type ${component}`)
   }
+
+  instance = { ...instance }
   if (instance.classes) {
     const classesWithPrefix = repository.tailwindPrefix
       ? addPrefixToClassName(instance.classes, repository.tailwindPrefix)
       : instance.classes
-    return instance.code.replace(
+    instance.code = instance.code.replace(
       'className="%"',
       `className="${classesWithPrefix}"`,
     )
   }
 
-  return instance.code
+  return instance
 }

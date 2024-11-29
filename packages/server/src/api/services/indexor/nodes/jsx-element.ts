@@ -2,8 +2,10 @@ import type * as t from '@babel/types'
 import type { ArrayProperty, NodeBase, ObjectNode } from '../types'
 import { Node } from '../types'
 import { isArray } from '../predicates/simple-predicates'
+import { getNameValue } from '../utils'
 import type { JSXAttribute } from './jsx-attribute'
 import type { ComponentNode } from './component'
+import { ImportStatement } from './import-statement'
 
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   private mappingExpression: ArrayProperty | undefined
@@ -16,9 +18,18 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     private definitionComponent: ComponentNode | undefined,
     private openingElement: Node<t.JSXOpeningElement>,
     private closingElement: Node<t.JSXClosingElement> | undefined,
+    private nameNode: Node,
     base: NodeBase<t.JSXElement>,
   ) {
     super(base)
+  }
+
+  public getName() {
+    return getNameValue(this.nameNode) || this.name
+  }
+
+  public getNameNode() {
+    return this.nameNode
   }
 
   public getAttributes(componentIdTree?: string) {
@@ -33,6 +44,16 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
         ? componentIdTree.includes(attribute.getParentElement().id)
         : true,
     )
+  }
+
+  public getDependencies(): Node[] {
+    const dependencies: Node[] = []
+    const importStatements = this.nameNode.getValues(
+      (node) => node instanceof ImportStatement,
+    )
+    dependencies.push(...importStatements)
+
+    return dependencies
   }
 
   public getParentComponent() {

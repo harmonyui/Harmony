@@ -38,20 +38,21 @@ export interface NodeBase<T extends t.Node> {
   location: ComponentLocation
   type: NodeType
   name: string
-  dependencies: Set<Node>
-  dependents: Set<Node>
+  dataDependencies: Set<Node>
+  dataDependents: Set<Node>
   path: NodePath<T>
   content: string
 }
 
-const simplePredicate = (node: Node): boolean => node.dependencies.size === 0
+const simplePredicate = (node: Node): boolean =>
+  node.dataDependencies.size === 0
 export class Node<T extends t.Node = t.Node> {
   public id: string
   public location: ComponentLocation
   public type: NodeType
   public name: string
-  public dependencies: Set<Node>
-  public dependents: Set<Node>
+  public dataDependencies: Set<Node>
+  public dataDependents: Set<Node>
   public content: string
   private parent: Node | undefined
   public get node(): T {
@@ -64,8 +65,8 @@ export class Node<T extends t.Node = t.Node> {
     location,
     type,
     name,
-    dependencies,
-    dependents,
+    dataDependencies,
+    dataDependents,
     path,
     content,
   }: NodeBase<T>) {
@@ -73,8 +74,8 @@ export class Node<T extends t.Node = t.Node> {
     this.location = location
     this.type = type
     this.name = name
-    this.dependencies = dependencies
-    this.dependents = dependents
+    this.dataDependencies = dataDependencies
+    this.dataDependents = dataDependents
     this.path = path
     this.content = content
   }
@@ -92,7 +93,7 @@ export class Node<T extends t.Node = t.Node> {
       return [this]
     }
     const values: Node[] = []
-    this.dependencies.forEach((node) => {
+    this.dataDependencies.forEach((node) => {
       values.push(...node.getValues(predicate))
     })
 
@@ -107,7 +108,7 @@ export class Node<T extends t.Node = t.Node> {
       return this.getParent()
     }
     let parent: Node | undefined
-    this.dependents.forEach((node) => {
+    this.dataDependents.forEach((node) => {
       if (parent) return
       const nodeParent = node.traceParent(predicate)
       if (nodeParent) {

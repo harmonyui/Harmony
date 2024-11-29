@@ -4,12 +4,14 @@ import {
   convertToHarmonyInfo,
   getCodeInfoAndNormalizeFromFiles,
 } from './indexor'
-import { getGraph } from './graph'
+import { FlowGraph, getGraph } from './graph'
 import type { TestFile } from './indexor.test'
 import { testCases } from './indexor.test'
 import { JSXElementNode } from './nodes/jsx-element'
 import type { LiteralNode } from './utils'
 import { getLiteralValue } from './utils'
+import { ComponentNode } from './nodes/component'
+import { ImportStatement } from './nodes/import-statement'
 
 describe('indexor', () => {
   const expectLocationOfString = (
@@ -1158,6 +1160,40 @@ describe('indexor', () => {
       )
     })
 
+    it('Should trace imported component dependencies', () => {
+      const contents: { file: TestFile; content: string }[] = [
+        {
+          file: 'app/importedComponents1.tsx',
+          content: testCases['app/importedComponents1.tsx'],
+        },
+        {
+          file: 'app/importedComponents2.tsx',
+          content: testCases['app/importedComponents2.tsx'],
+        },
+      ]
+
+      const result = new FlowGraph()
+      for (const content of contents) {
+        getGraph(content.file, content.content, result)
+      }
+
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(5)
+
+      expect(componentElements[1].getName()).toBe('Button')
+      expect(componentElements[1].getNameNode().getValues().length).toBe(1)
+      expect(
+        componentElements[1].getNameNode().getValues()[0] instanceof
+          ComponentNode,
+      ).toBe(true)
+      expect(componentElements[1].getDependencies().length).toBe(1)
+      expect(
+        componentElements[1].getDependencies()[0] instanceof ImportStatement,
+      ).toBe(true)
+    })
+
     //TODO: Finish this
     // it('Should handle imports from various files', () => {
     //   const componentElements: HarmonyComponent[] = []
@@ -1211,50 +1247,50 @@ describe('indexor', () => {
       if (!result) return
 
       expect(result.length).toBe(15)
-      expect(componentElements[7].props.length).toBe(3)
-      expect(componentElements[7].props[0].type).toBe('className')
-      expect(componentElements[7].props[0].name).toBe('string')
-      expect(componentElements[7].props[0].value).toBe('m-2')
+      expect(componentElements[5].props.length).toBe(3)
+      expect(componentElements[5].props[0].type).toBe('className')
+      expect(componentElements[5].props[0].name).toBe('string')
+      expect(componentElements[5].props[0].value).toBe('m-2')
       expectLocationOfString(
         'app/multipleLayers1.tsx',
-        componentElements[7].props[0].location,
+        componentElements[5].props[0].location,
         '"m-2"',
       )
-      expect(componentElements[7].props[1].type).toBe('className')
-      expect(componentElements[7].props[1].name).toBe('string')
-      expect(componentElements[7].props[1].value).toBe('bg-white')
+      expect(componentElements[5].props[1].type).toBe('className')
+      expect(componentElements[5].props[1].name).toBe('string')
+      expect(componentElements[5].props[1].value).toBe('bg-white')
       expectLocationOfString(
         'app/multipleLayers2.tsx',
-        componentElements[7].props[1].location,
+        componentElements[5].props[1].location,
         '"bg-white"',
       )
-      expect(componentElements[7].props[2].type).toBe('className')
-      expect(componentElements[7].props[2].name).toBe('string')
-      expect(componentElements[7].props[2].value).toBe(
+      expect(componentElements[5].props[2].type).toBe('className')
+      expect(componentElements[5].props[2].name).toBe('string')
+      expect(componentElements[5].props[2].value).toBe(
         'bg-blue-50 flex flex-col',
       )
       expectLocationOfString(
         'app/multipleLayers1.tsx',
-        componentElements[7].props[2].location,
+        componentElements[5].props[2].location,
         '"bg-blue-50 flex flex-col"',
       )
 
-      expect(componentElements[10].props.length).toBe(1)
-      expect(componentElements[10].props[0].type).toBe('text')
-      expect(componentElements[10].props[0].name).toBe('string')
-      expect(componentElements[10].props[0].value).toBe('Hello there')
+      expect(componentElements[8].props.length).toBe(1)
+      expect(componentElements[8].props[0].type).toBe('text')
+      expect(componentElements[8].props[0].name).toBe('string')
+      expect(componentElements[8].props[0].value).toBe('Hello there')
       expectLocationOfString(
         'app/multipleLayers1.tsx',
-        componentElements[10].props[0].location,
+        componentElements[8].props[0].location,
         '"Hello there"',
       )
-      expect(componentElements[11].props.length).toBe(1)
-      expect(componentElements[11].props[0].type).toBe('text')
-      expect(componentElements[11].props[0].name).toBe('string')
-      expect(componentElements[11].props[0].value).toBe('A Name')
+      expect(componentElements[9].props.length).toBe(1)
+      expect(componentElements[9].props[0].type).toBe('text')
+      expect(componentElements[9].props[0].name).toBe('string')
+      expect(componentElements[9].props[0].value).toBe('A Name')
       expectLocationOfString(
         'app/multipleLayers2.tsx',
-        componentElements[11].props[0].location,
+        componentElements[9].props[0].location,
         '"A Name"',
       )
     })

@@ -25,8 +25,8 @@ export class JSXSpreadAttributeNode extends JSXAttribute<t.JSXSpreadAttribute> {
       content,
       createNode(this.name, base.path, base.location.file, content),
     )
-    this.internalRest.dependencies = this.dependencies
-    this.internalRest.dependents = this.dependents
+    this.internalRest.dataDependencies = this.dataDependencies
+    this.internalRest.dataDependents = this.dataDependents
   }
 
   public override getJSXAttributes() {

@@ -1000,6 +1000,53 @@ describe('code-updator', () => {
         `),
       )
     })
+
+    it('Should add component with dependencies', async () => {
+      const file: TestFile = 'addComponent'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: createUpdate<AddComponent>({
+            parentId: elementInstances[0].id,
+            parentChildIndex: 0,
+            index: 1,
+            action: 'create',
+            component: 'button',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[0].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          import { Button } from '@/components/button'
+        const AddComponent = () => {
+          return (
+            <div>
+              <h1>Hello</h1>
+              <Button>Click me</Button>
+              <h2>There</h2>
+              <div></div>
+            </div>
+          )
+        }
+        `),
+      )
+    })
   })
 })
 

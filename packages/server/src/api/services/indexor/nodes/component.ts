@@ -6,7 +6,7 @@ import type { JSXElementNode } from './jsx-element'
 export class ComponentNode extends Node<
   t.FunctionDeclaration | t.ArrowFunctionExpression
 > {
-  private instances: JSXElementNode[] = []
+  private instances = new Set<JSXElementNode>()
   constructor(
     private _arguments: Node[],
     private elements: JSXElementNode[],
@@ -14,8 +14,8 @@ export class ComponentNode extends Node<
       id,
       location,
       name,
-      dependencies,
-      dependents,
+      dataDependencies,
+      dataDependents,
       path,
       content,
     }: NodeBase<t.FunctionDeclaration | t.ArrowFunctionExpression>,
@@ -25,19 +25,19 @@ export class ComponentNode extends Node<
       location,
       type: 'FunctionDeclaration',
       name,
-      dependencies,
-      dependents,
+      dataDependencies,
+      dataDependents,
       path,
       content,
     })
   }
 
   public addInstance(instance: JSXElementNode) {
-    this.instances.push(instance)
+    this.instances.add(instance)
   }
 
-  public getInstances() {
-    return this.instances
+  public getInstances(): JSXElementNode[] {
+    return Array.from(this.instances)
   }
 
   public getArguments() {

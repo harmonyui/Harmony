@@ -8,5 +8,5 @@ export const reorderUpdate: UpdateComponent = (info, graph) => {
   const value = parseUpdate(reorderComponentSchema, info.value)
   const code = deleteComponent(info.update, graph)
 
-  createComponent(info.update, value, code, graph)
+  createComponent(info.update, value, { code, dependencies: [] }, graph)
 }

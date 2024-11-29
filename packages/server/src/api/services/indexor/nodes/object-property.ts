@@ -1,7 +1,7 @@
-import * as t from '@babel/types'
+import type * as t from '@babel/types'
 import type { NodeBase, ObjectNode, ObjectProperty } from '../types'
 import { Node } from '../types'
-import { getLiteralValue, isLiteralNode } from '../utils'
+import { getNameValue } from '../utils'
 import { isObject } from '../predicates/simple-predicates'
 
 export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
@@ -43,19 +43,7 @@ export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
   }
 
   public getName() {
-    const values = this.key.getValues()
-    if (values.length !== 1) {
-      return ''
-    }
-    if (isLiteralNode(values[0].node)) {
-      return getLiteralValue(values[0].node)
-    }
-
-    if (t.isIdentifier(values[0].node)) {
-      return values[0].node.name
-    }
-
-    return ''
+    return getNameValue(this.key)
   }
 
   public getValueNode() {
@@ -79,19 +67,7 @@ export class ObjectPropertyExpressionNode
     super(base)
   }
   public getName() {
-    const values = this.key.getValues()
-    if (values.length !== 1) {
-      return ''
-    }
-    if (isLiteralNode(values[0].node)) {
-      return getLiteralValue(values[0].node)
-    }
-
-    if (t.isIdentifier(values[0].node)) {
-      return values[0].node.name
-    }
-
-    return ''
+    return getNameValue(this.key)
   }
 
   public getValueNode() {

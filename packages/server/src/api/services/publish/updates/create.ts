@@ -1,6 +1,7 @@
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
+import type { InstanceProperty } from '@harmony/util/src/harmonycn/components'
 import type { FlowGraph } from '../../indexor/graph'
 import { getGraph } from '../../indexor/graph'
 import type { Node } from '../../indexor/types'
@@ -46,7 +47,7 @@ export const createComponent = (
     parentChildIndex,
     index,
   }: { parentId: string; parentChildIndex: number; index: number },
-  code: string,
+  code: InstanceProperty,
   graph: FlowGraph,
 ) => {
   const parentElement = graph.getJSXElementById(parentId, parentChildIndex)
@@ -70,20 +71,28 @@ export const createComponent = (
 
 const getElementInstanceNodes = (
   file: string,
-  instanceCode: string,
+  { instance, code, dependencies }: InstanceProperty,
 ): { element: JSXElementNode; nodes: Node[] } => {
+  const importStatements = dependencies
+    .map((dependency) => {
+      return dependency.isDefault
+        ? `import ${dependency.name} from '${dependency.path}'`
+        : `import { ${dependency.name} } from '${dependency.path}'`
+    })
+    .join('\n')
   const graph = getGraph(
     Math.random().toString(),
-    `
+    `${importStatements}
+
     const App = () => {
-      return ${instanceCode}
+      return ${instance ?? code}
     }
   `,
   )
 
   const nodes = graph.getNodes()
-  const elementInstance = nodes[1]
-  if (!isJSXElement(elementInstance)) {
+  const elementInstance = nodes.find(isJSXElement)
+  if (!elementInstance) {
     throw new Error('Element instance node is not a JSX element')
   }
 

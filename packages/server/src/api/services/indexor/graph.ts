@@ -2,18 +2,14 @@ import * as parser from '@babel/parser'
 import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import * as prettier from 'prettier'
+import { groupBy } from '@harmony/util/src/utils/common'
 import type { ArrayProperty, Node } from './types'
 import type { LiteralNode } from './utils'
-import {
-  createNode,
-  getComponentName,
-  getLocationId,
-  getSnippetFromNode,
-} from './utils'
+import { createNode, getLocationId, getSnippetFromNode } from './utils'
 import { addDataEdge } from './data-flow'
 import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
-import { isJSXElement, JSXElementNode } from './nodes/jsx-element'
-import { JSXAttributeNode } from './nodes/jsx-attribute'
+import type { JSXElementNode } from './nodes/jsx-element'
+import { isJSXElement } from './nodes/jsx-element'
 import type { JSXAttribute } from './nodes/jsx-attribute'
 import { ComponentNode } from './nodes/component'
 import {
@@ -21,6 +17,8 @@ import {
   isStringLiteral,
   isTemplateElement,
 } from './predicates/simple-predicates'
+import { ImportStatement } from './nodes/import-statement'
+import { ProgramNode } from './nodes/program'
 
 export type FileUpdateInfo = Record<
   string,
@@ -35,7 +33,7 @@ export class FlowGraph {
   public code = ''
   private mappedDependencyStack: ArrayProperty[] = []
   public idMapping: Record<string, string> = {}
-  public files: Record<string, { program: t.Program; content: string }> = {}
+  public files: Record<string, ProgramNode> = {}
   private dirtyFiles: Set<string> = new Set<string>()
 
   constructor() {
@@ -50,7 +48,12 @@ export class FlowGraph {
   public getNodes() {
     const values = Array.from(this.nodes.values())
 
-    return values.sort((a, b) => a.location.start - b.location.start)
+    return values.sort((a, b) => {
+      const nameCompare = a.location.file.localeCompare(b.location.file)
+      if (nameCompare !== 0) return nameCompare
+
+      return a.location.start - b.location.start
+    })
   }
 
   public addNode<T extends t.Node>(name: string, path: NodePath<T>): Node {
@@ -69,6 +72,8 @@ export class FlowGraph {
     if (!this.nodes.has(node.id)) {
       this.nodes.set(node.id, node)
     }
+    const program = this.files[this.file]
+    program.addNode(node)
   }
 
   public createNode<T extends t.Node>(
@@ -83,8 +88,8 @@ export class FlowGraph {
     const toNode = this.nodes.get(toId)
 
     if (fromNode && toNode) {
-      fromNode.dependencies.add(toNode)
-      toNode.dependents.add(fromNode)
+      fromNode.dataDependencies.add(toNode)
+      toNode.dataDependents.add(fromNode)
       const parent = fromNode.getParent()
       parent && this.addParent(toNode.id, parent.id)
     }
@@ -95,8 +100,8 @@ export class FlowGraph {
     const toNode = this.nodes.get(toId)
 
     if (fromNode && toNode) {
-      fromNode.dependencies.add(toNode)
-      toNode.dependents.add(fromNode)
+      fromNode.dataDependencies.add(toNode)
+      toNode.dataDependents.add(fromNode)
     }
   }
 
@@ -145,6 +150,8 @@ export class FlowGraph {
     component.addJSXElement(jsxElementNode)
     parentElement?.addChild(jsxElementNode)
     jsxElementNode.setParentElement(parentElement)
+    const nameNode = jsxElementNode.getNameNode()
+    this.addDataFlowEdge(nameNode)
   }
 
   public addJSXAttribute(
@@ -237,13 +244,39 @@ export class FlowGraph {
     return undefined
   }
 
-  // Output graph dependencies for debugging
-  public printDependencies() {
-    this.nodes.forEach((node) => {
-      console.log(`${node.type} ${node.name} (${node.id}):`)
-      console.log('  Dependencies:', Array.from(node.dependencies))
-      console.log('  Dependents:', Array.from(node.dependents))
-    })
+  public tryConnectImportStatementToDefinition(node: ImportStatement) {
+    const source = node.getSource()
+    const program = this.files[source] as ProgramNode | undefined
+    if (!program) {
+      return
+    }
+    const nodes = program.getExportStatements()
+
+    for (const exportNode of nodes) {
+      if (exportNode.name === node.getName()) {
+        this.addDataDependency(node.id, exportNode.id)
+        return
+      }
+    }
+  }
+
+  public connectExportStatementsToImports(
+    node: Node<t.ExportNamedDeclaration>,
+  ) {
+    for (const program of Object.values(this.files)) {
+      const nodes = program
+        .getNodes()
+        .filter((_node) => _node instanceof ImportStatement)
+      for (const importNode of nodes) {
+        if (this.resolvePaths(importNode.getSource(), node.location.file)) {
+          this.addDataDependency(importNode.id, node.id)
+        }
+      }
+    }
+  }
+
+  public resolvePaths(p1: string, p2: string): boolean {
+    return p1.replace('.tsx', '') === p2.replace('.tsx', '')
   }
 
   public dirtyNode(node: Node) {
@@ -291,10 +324,9 @@ export class FlowGraph {
   public async saveChanges(options: prettier.Options) {
     await Promise.all(
       Array.from(this.dirtyFiles).map(async (file) => {
-        const program = this.files[file].program
-        this.files[file].content = await this.formatCode(
-          getSnippetFromNode(program),
-          options,
+        const program = this.files[file]
+        program.setContent(
+          await this.formatCode(getSnippetFromNode(program.node), options),
         )
       }),
     )
@@ -312,6 +344,7 @@ export class FlowGraph {
   ) {
     this.setNode(childElement)
     nodes.forEach((node) => this.setNode(node))
+    const dependencies = childElement.getDependencies()
 
     const beforeElement = parentElement.getChildren()[index] as
       | JSXElementNode
@@ -340,14 +373,60 @@ export class FlowGraph {
         beforeElement.path.getPrevSibling() as NodePath<t.JSXElement>
       this.dirtyNode(childElement)
     }
+
     this.addJSXElement(
       childElement,
       parentElement,
       parentElement.getParentComponent(),
     )
+    childElement.getNameNode().dataDependencies = new Set()
+
     this.idMapping[`${componentId}-${childIndex}`] = childElement.id
 
+    this.addDependencyImports(
+      childElement,
+      dependencies.filter((node) => node instanceof ImportStatement),
+    )
+
     return childElement
+  }
+
+  public addDependencyImports(
+    jsxElement: JSXElementNode,
+    nodes: ImportStatement[],
+  ) {
+    const program = this.files[jsxElement.location.file]
+    const importStatements = groupBy(nodes, 'source')
+    for (const [file, statements] of Object.entries(importStatements)) {
+      const importSpecifiers = statements.map((node) => {
+        const identifier = t.identifier(node.getName())
+        const importSpecifier = node.isDefault()
+          ? t.importDefaultSpecifier(identifier)
+          : t.importSpecifier(identifier, identifier)
+        return importSpecifier
+      })
+      const importDeclaration = t.importDeclaration(
+        importSpecifiers,
+        t.stringLiteral(file),
+      )
+      program.path.unshiftContainer('body', importDeclaration)
+
+      importSpecifiers.forEach((specifier, i) => {
+        const path = program.path.get(`body.0.specifiers.${i}`) as NodePath<
+          t.ImportSpecifier | t.ImportDefaultSpecifier
+        >
+        path.node.loc = statements[i].node.loc
+        const importStatement = new ImportStatement(
+          file,
+          this.createNode(getSnippetFromNode(specifier), path),
+        )
+        importStatement.id = statements[i].id
+
+        this.setNode(importStatement)
+        this.tryConnectImportStatementToDefinition(importStatement)
+        this.addDataDependency(jsxElement.getNameNode().id, importStatement.id)
+      })
+    }
   }
 
   public deleteElement(jsxElement: JSXElementNode) {
@@ -402,8 +481,8 @@ export class FlowGraph {
     const changes = await Promise.all(
       Array.from(this.dirtyFiles).map<Promise<[string, string]>>(
         async (file) => {
-          const program = this.files[file].program
-          const newContent = getSnippetFromNode(program)
+          const program = this.files[file]
+          const newContent = getSnippetFromNode(program.node)
           const formatted = await this.formatCode(newContent, options)
 
           return [file, formatted]
@@ -435,146 +514,34 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
     plugins: ['typescript', 'jsx'],
   })
 
-  graph.files[file] = { program: ast.program, content: code }
+  let program: ProgramNode
 
   // Traverse the AST to populate the graph with explicit dependencies and data flow edges
   traverse(ast, {
+    Program(path) {
+      program = new ProgramNode(code, graph.createNode(file, path))
+      graph.files[file] = program
+    },
+    ExportNamedDeclaration(path) {
+      if (path.node.declaration) {
+        const newNode = graph.addNode(
+          'export',
+          path,
+        ) as Node<t.ExportNamedDeclaration>
+        program.addExportStatement(newNode)
+        const declarationPath = path.get('declaration') as NodePath
+        const declarationNode = graph.createNode(
+          getSnippetFromNode(declarationPath.node),
+          declarationPath,
+        )
+        graph.addDataFlowEdge(declarationNode)
+        graph.addDataDependency(newNode.id, declarationNode.id)
+        graph.connectExportStatementsToImports(newNode)
+      }
+    },
     'FunctionDeclaration|ArrowFunctionExpression'(path) {
-      if (
-        !t.isFunctionDeclaration(path.node) &&
-        !t.isArrowFunctionExpression(path.node)
-      )
-        return
-      const functionName = getComponentName(path)
-      if (!functionName) return
-
-      const containingComponent = graph.addComponentNode(
-        functionName,
-        path as NodePath<t.FunctionDeclaration | t.ArrowFunctionExpression>,
-      )
-      const instances = graph.getElementInstances(functionName)
-      instances.forEach((instance) => {
-        graph.addJSXInstanceComponentEdge(containingComponent, instance)
-      })
-
-      const currentElements: JSXElementNode[] = []
-
-      path.traverse({
-        JSXElement: {
-          enter(jsxPath) {
-            const name = t.isJSXIdentifier(jsxPath.node.openingElement.name)
-              ? jsxPath.node.openingElement.name.name
-              : getSnippetFromNode(jsxPath.node.openingElement.name)
-            const definitionComponent = graph.getDefinition(name)
-
-            const openingElement = graph.createNode(
-              getSnippetFromNode(jsxPath.node.openingElement),
-              jsxPath.get('openingElement'),
-            )
-            if (graph.nodes.get(openingElement.id)) return
-
-            const closingElement = jsxPath.node.closingElement
-              ? graph.createNode(
-                  getSnippetFromNode(jsxPath.node.closingElement),
-                  jsxPath.get(
-                    'closingElement',
-                  ) as NodePath<t.JSXClosingElement>,
-                )
-              : undefined
-
-            const elementNode = new JSXElementNode(
-              [],
-              containingComponent,
-              definitionComponent,
-              openingElement,
-              closingElement,
-              graph.createNode(name, jsxPath),
-            )
-
-            const parentElement = currentElements[currentElements.length - 1]
-            graph.addJSXElement(elementNode, parentElement, containingComponent)
-            currentElements.push(elementNode)
-
-            const currAttributes: JSXAttributeNode[] = []
-            for (
-              let i = 0;
-              i < jsxPath.node.openingElement.attributes.length;
-              i++
-            ) {
-              const attributePath = jsxPath.get(
-                `openingElement.attributes.${i}`,
-              ) as NodePath<t.JSXAttribute | t.JSXSpreadAttribute>
-
-              if (t.isJSXAttribute(attributePath.node)) {
-                const attributeName = t.isJSXIdentifier(attributePath.node.name)
-                  ? attributePath.node.name.name
-                  : getSnippetFromNode(attributePath.node)
-                const attributeNode = new JSXAttributeNode(
-                  elementNode,
-                  -1,
-                  graph.code,
-                  graph.createNode(
-                    attributeName,
-                    attributePath as NodePath<t.JSXAttribute>,
-                  ),
-                )
-
-                graph.addJSXAttribute(attributeNode, elementNode)
-                currAttributes.push(attributeNode)
-              } else {
-                const spreadAttributeNode = new JSXSpreadAttributeNode(
-                  elementNode,
-                  currAttributes,
-                  graph.code,
-                  graph.createNode(
-                    getSnippetFromNode(attributePath.node),
-                    attributePath as NodePath<t.JSXSpreadAttribute>,
-                  ),
-                )
-
-                graph.addJSXAttribute(spreadAttributeNode, elementNode)
-              }
-            }
-
-            let childIndex = 0
-            for (let i = 0; i < jsxPath.node.children.length; i++) {
-              const node = jsxPath.node.children[i]
-              if (t.isJSXText(node) && node.value.trim().length === 0) continue
-
-              const childPath = jsxPath.get(`children.${i}`)
-              if (Array.isArray(childPath))
-                throw new Error('Should not be array')
-
-              if (
-                t.isJSXExpressionContainer(childPath.node) ||
-                t.isJSXText(childPath.node)
-              ) {
-                const attributeNode = new JSXAttributeNode(
-                  elementNode,
-                  childIndex,
-                  graph.code,
-                  graph.createNode(
-                    'children',
-                    childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
-                  ),
-                )
-
-                graph.addJSXAttribute(attributeNode, elementNode)
-              }
-              childIndex++
-            }
-
-            //Connect the element to the definition component
-            const elementDefinition = elementNode.getDefinitionComponent()
-            if (elementDefinition) {
-              graph.addJSXInstanceComponentEdge(elementDefinition, elementNode)
-            }
-          },
-          exit() {
-            currentElements.pop()
-          },
-        },
-      })
+      const newNode = graph.createNode(getSnippetFromNode(path.node), path)
+      graph.addDataFlowEdge(newNode)
     },
     CallExpression(path) {
       if (t.isIdentifier(path.node.callee)) {
