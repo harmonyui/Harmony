@@ -78,4 +78,8 @@ const components: HarmonyCnListItem[] = [
     name: 'image',
     icon: ImageIcon,
   },
+  {
+    name: 'button',
+    icon: FrameIcon,
+  },
 ]

@@ -4,7 +4,10 @@ import type {
 } from '@harmony/util/src/types/component'
 import type { ComponentUpdateWithoutGlobal } from '../../components/harmony-context'
 import type { ComponentElement } from '../../components/inspector/component-identifier'
-import { createComponentId } from '../../utils/element-utils'
+import {
+  createComponentId,
+  findElementsFromId,
+} from '../../utils/element-utils'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
 import type { ComponentUpdateState } from './component-update'
@@ -24,6 +27,7 @@ export interface ComponentState {
   updateTheCounter: () => void
   source: Source
   setSource: (value: Source) => void
+  getNewChildIndex: (parentId: string) => number
 }
 
 export const createComponentStateSlice = createHarmonySlice<
@@ -140,6 +144,17 @@ export const createComponentStateSlice = createHarmonySlice<
       source: 'document',
       setSource(value: Source) {
         set({ source: value })
+      },
+      getNewChildIndex(parentId: string) {
+        let amountOfIndexes = findElementsFromId(
+          parentId,
+          get().rootComponent?.element,
+        ).length
+        amountOfIndexes += get().createdElements.filter(
+          (el) => el.componentId === parentId,
+        ).length
+
+        return amountOfIndexes
       },
       hoverComponent(element: HTMLElement | undefined) {
         set({ hoveredComponent: element })

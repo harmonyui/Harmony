@@ -6,10 +6,7 @@ import type {
 import type { HarmonyCn } from '@harmony/util/src/harmonycn/types'
 import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
-import {
-  findElementsFromId,
-  getComponentIdAndChildIndex,
-} from '../../utils/element-utils'
+import { getComponentIdAndChildIndex } from '../../utils/element-utils'
 import { createUpdate } from '../../utils/update'
 import { useHarmonyStore } from '../../hooks/state'
 
@@ -20,6 +17,7 @@ export interface UpdateComponentOptions {
 export const useUpdateComponent = () => {
   const { onAttributesChange } = useHarmonyContext()
   const rootElement = useHarmonyStore((store) => store.rootComponent?.element)
+  const getNewChildIndex = useHarmonyStore((store) => store.getNewChildIndex)
 
   const addComponent = useCallback(
     (
@@ -37,7 +35,7 @@ export const useUpdateComponent = () => {
       //New element is the same id as the parent, but different child index so that
       //the backend does not get messed up by a weird, random id
       const componentId = parentId
-      const childIndex = findElementsFromId(parentId, rootElement).length
+      const childIndex = getNewChildIndex(parentId)
 
       let index = options.position
         ? Array.from(parent.children).indexOf(element)
