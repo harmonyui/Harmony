@@ -36,7 +36,7 @@ export interface GitRepository {
     branch: string,
     changes: {
       filePath: string
-      locations: { snippet: string; start: number; end: number }[]
+      newContent: string
     }[],
   ) => Promise<void>
   getCommits: (branch: string) => Promise<CommitItem[]>

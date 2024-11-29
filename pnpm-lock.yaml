@@ -930,6 +930,9 @@ importers:
       openai:
         specifier: ^4.24.1
         version: 4.64.0(zod@3.23.8)
+      prettier:
+        specifier: ^3.4.1
+        version: 3.4.1
       superjson:
         specifier: ^2.2.1
         version: 2.2.1
@@ -976,9 +979,6 @@ importers:
       eslint:
         specifier: ^8.48.0
         version: 8.57.1
-      prettier:
-        specifier: ^3.0.3
-        version: 3.3.3
       typescript:
         specifier: ^5.2.2
         version: 5.6.2
@@ -1253,7 +1253,7 @@ importers:
     devDependencies:
       '@vercel/style-guide':
         specifier: ^5.0.0
-        version: 5.2.0(@next/eslint-plugin-next@14.2.13)(eslint@8.57.1)(prettier@3.3.3)(typescript@5.6.2)
+        version: 5.2.0(@next/eslint-plugin-next@14.2.13)(eslint@8.57.1)(prettier@3.4.1)(typescript@5.6.2)
       eslint-config-turbo:
         specifier: ^1.10.12
         version: 1.13.4(eslint@8.57.1)
@@ -8634,6 +8634,11 @@ packages:
     engines: {node: '>=14'}
     hasBin: true
 
+  prettier@3.4.1:
+    resolution: {integrity: sha512-G+YdqtITVZmOJje6QkXQWzl3fSfMxFwm1tjTyo9exhkmWSqC4Yhd1+lug++IlR2mvRVAxEDDWYkQdeSztajqgg==}
+    engines: {node: '>=14'}
+    hasBin: true
+
   pretty-format@27.5.1:
     resolution: {integrity: sha512-Qb1gy5OrP5+zDf2Bvnzdl3jsTf1qXVMazbvCoKhtKqVs4/YK4ozX4gKQJJVyNe+cajNPn0KoC0MC3FUmaHWEmQ==}
     engines: {node: ^10.13.0 || ^12.13.0 || ^14.15.0 || >=15.0.0}
@@ -15098,7 +15103,7 @@ snapshots:
 
   '@vercel/stega@0.1.2': {}
 
-  '@vercel/style-guide@5.2.0(@next/eslint-plugin-next@14.2.13)(eslint@8.57.1)(prettier@3.3.3)(typescript@5.6.2)':
+  '@vercel/style-guide@5.2.0(@next/eslint-plugin-next@14.2.13)(eslint@8.57.1)(prettier@3.4.1)(typescript@5.6.2)':
     dependencies:
       '@babel/core': 7.25.2
       '@babel/eslint-parser': 7.25.1(@babel/core@7.25.2)(eslint@8.57.1)
@@ -15118,11 +15123,11 @@ snapshots:
       eslint-plugin-testing-library: 6.3.0(eslint@8.57.1)(typescript@5.6.2)
       eslint-plugin-tsdoc: 0.2.17
       eslint-plugin-unicorn: 48.0.1(eslint@8.57.1)
-      prettier-plugin-packagejson: 2.5.2(prettier@3.3.3)
+      prettier-plugin-packagejson: 2.5.2(prettier@3.4.1)
     optionalDependencies:
       '@next/eslint-plugin-next': 14.2.13
       eslint: 8.57.1
-      prettier: 3.3.3
+      prettier: 3.4.1
       typescript: 5.6.2
     transitivePeerDependencies:
       - eslint-import-resolver-node
@@ -19061,12 +19066,12 @@ snapshots:
 
   prelude-ls@1.2.1: {}
 
-  prettier-plugin-packagejson@2.5.2(prettier@3.3.3):
+  prettier-plugin-packagejson@2.5.2(prettier@3.4.1):
     dependencies:
       sort-package-json: 2.10.1
       synckit: 0.9.1
     optionalDependencies:
-      prettier: 3.3.3
+      prettier: 3.4.1
 
   prettier-plugin-prisma@5.0.0(prettier@3.3.3):
     dependencies:
@@ -19078,6 +19083,8 @@ snapshots:
       prettier: 3.3.3
 
   prettier@3.3.3: {}
+
+  prettier@3.4.1: {}
 
   pretty-format@27.5.1:
     dependencies:

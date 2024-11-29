@@ -1,6 +1,7 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import type { Font } from '@harmony/util/src/fonts'
 import {
+  addComponentSchema,
   addDeleteComponentSchema,
   updateAttributeValue,
 } from '@harmony/util/src/updates/component'
@@ -8,10 +9,11 @@ import { parseUpdate } from '@harmony/util/src/updates/utils'
 import {
   findElementFromId,
   findSameElementsFromId,
-  getComponentIdAndChildIndex,
 } from '../../utils/element-utils'
-import { createComponentElement } from '../../utils/harmonycn/create-component'
 import type { CreatedComponent } from '../../utils/harmonycn/types'
+import { deleteComponentUpdate } from '../../utils/component-update/delete'
+import { createComponentUpdate } from '../../utils/component-update/create'
+import { reorderComponentUpdate } from '../../utils/component-update/reorder'
 import { createHarmonySlice } from './factory'
 
 export interface ComponentUpdateState {
@@ -49,209 +51,36 @@ export const createComponentUpdateSlice =
       for (const update of updates) {
         if (update.type === 'component') {
           if (update.name === 'reorder') {
-            const { oldValue, value } = update
-            const { parentId: oldParent, childIndex: oldChildIndex } =
-              JSON.parse(oldValue) as { parentId: string; childIndex: number }
-            const { parentId: newParent, childIndex: newChildIndex } =
-              JSON.parse(value) as { parentId: string; childIndex: number }
-            const error = `makeUpdates: Invalid reorder update componentId: ${update.componentId} oldParent: ${oldParent} newParent: ${newParent} oldChildIndex: ${oldChildIndex} newChildIndex: ${newChildIndex}`
-
-            const validateId = (id: string) => {
-              return id.trim().length > 0
-            }
-
-            if (
-              !validateId(update.componentId) ||
-              !validateId(oldParent) ||
-              !validateId(newParent)
-            ) {
-              throw new Error(error)
-            }
-
-            const oldElement = findElementFromId(
-              update.componentId,
-              oldChildIndex,
+            reorderComponentUpdate(
+              update,
+              get().cachedElements,
+              get().createdElements,
               rootElement,
             )
-
-            // Verify that we could find the old element to be deleted from the DOM
-            if (!oldElement) {
-              throw new Error(
-                `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${oldChildIndex}`,
-              )
-            }
-
-            // Add element to new parent
-            const newElement = document.querySelector(
-              `[data-harmony-id="${newParent}"]`,
-            )
-            if (newElement) {
-              const children = Array.from(newElement.children)
-              if (newChildIndex >= 0 && newChildIndex < children.length) {
-                newElement.insertBefore(oldElement, children[newChildIndex])
-              } else {
-                newElement.appendChild(oldElement)
-              }
-            } else {
-              throw new Error(
-                `makeUpdates: Cannot find the elements parent with data-harmony-id: ${newParent}`,
-              )
-            }
           }
           if (update.name === 'delete-create') {
-            const { value } = update
-            const result = parseUpdate(addDeleteComponentSchema, value)
-            const updateCreatedElementOptions = (
-              createdElements: CreatedComponent[],
-              componentId: string,
-              childIndex: number,
-              options: Required<CreatedComponent['options']>,
-            ) => {
-              const createdElementIndex = createdElements.findIndex(
-                (el) =>
-                  el.componentId === componentId &&
-                  el.childIndex === childIndex,
-              )
-              if (createdElementIndex > -1) {
-                const createdElement = createdElements[createdElementIndex]
-                createdElements[createdElementIndex] = {
-                  ...createdElement,
-                  options: createdElement.options
-                    ? {
-                        ...createdElement.options,
-                        ...options,
-                      }
-                    : undefined,
-                }
-              }
-
-              return createdElements
-            }
+            const result = parseUpdate(addDeleteComponentSchema, update.value)
             if (result.action === 'delete') {
-              const component = findElementFromId(
-                update.componentId,
-                update.childIndex,
-                rootElement,
+              set(
+                deleteComponentUpdate(
+                  update,
+                  get().createdElements,
+                  rootElement,
+                ),
               )
-              if (!component)
-                throw new Error(
-                  `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-                )
-              const parent = component.parentElement
-              if (!parent) {
-                throw new Error('Parent not found')
-              }
-              const {
-                componentId: parentComponentId,
-                childIndex: parentChildIndex,
-              } = getComponentIdAndChildIndex(parent)
-
-              component.remove()
-              set((state) => {
-                const createdElement = get().createdElements.find(
-                  (el) =>
-                    el.componentId === update.componentId &&
-                    el.childIndex === update.childIndex,
-                )
-
-                //If deleting this element makes the parent empty, then update that option
-                if (!parent.hasChildNodes()) {
-                  state.createdElements = updateCreatedElementOptions(
-                    [...state.createdElements],
-                    parentComponentId,
-                    parentChildIndex,
-                    {
-                      isEmpty: true,
-                    },
-                  )
-                }
-                return {
-                  ...state,
-                  cachedElements: [
-                    ...state.cachedElements,
-                    createdElement ?? {
-                      componentId: update.componentId,
-                      childIndex: update.childIndex,
-                      element: component,
-                    },
-                  ],
-                }
-              })
-            }
-            if (result.action === 'create') {
-              const { parentId, component, parentChildIndex, index } = result
-
-              const getCreatedElement = (): CreatedComponent => {
-                const cachedElement = get().cachedElements.find(
-                  (c) =>
-                    c.componentId === update.componentId &&
-                    c.childIndex === update.childIndex,
-                )
-                if (cachedElement) {
-                  return cachedElement
-                }
-                if (!component) {
-                  throw new Error(
-                    "Element is marked as cached but doesn't exist",
-                  )
-                }
-                return createComponentElement(
-                  component,
-                  update.componentId,
-                  update.childIndex,
-                )
-              }
-              const createdElement = getCreatedElement()
-              const parent = findElementFromId(
-                parentId,
-                parentChildIndex,
-                rootElement,
+            } else {
+              set(
+                createComponentUpdate(
+                  update,
+                  parseUpdate(addComponentSchema, update.value),
+                  get().cachedElements,
+                  rootElement,
+                ),
               )
-
-              if (!parent)
-                throw new Error(
-                  `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-                )
-              let inserted = false as boolean
-              parent.childNodes.forEach((child, idx) => {
-                if (idx === index) {
-                  parent.insertBefore(createdElement.element, child)
-                  inserted = true
-                  set((state) => {
-                    state.cachedElements = state.cachedElements.filter(
-                      (c) =>
-                        c.componentId !== update.componentId &&
-                        c.childIndex !== update.childIndex,
-                    )
-                    return state
-                  })
-                }
-              })
-              if (!inserted) {
-                parent.appendChild(createdElement.element)
-              }
-              set((state) => {
-                state.createdElements = [
-                  ...state.createdElements,
-                  createdElement,
-                ]
-
-                // Update parent created element to remove isEmpty
-                state.createdElements = updateCreatedElementOptions(
-                  state.createdElements,
-                  parentId,
-                  parentChildIndex,
-                  {
-                    isEmpty: false,
-                  },
-                )
-
-                return state
-              })
             }
           }
 
-          const getElementsBetween = (
+          const _getElementsBetween = (
             start: Element,
             end: Element,
           ): Element[] => {
@@ -269,13 +98,13 @@ export const createComponentUpdateSlice =
           }
 
           if (update.name === 'wrap-unwrap') {
-            const { value } = update
-            const { id, start, end, action } = JSON.parse(value) as {
-              id: string
-              action: string
-              start: { id: string; childIndex: number }
-              end: { id: string; childIndex: number }
-            }
+            //const { value } = update
+            // const { id, start, end, action } = JSON.parse(value) as {
+            //   id: string
+            //   action: string
+            //   start: { id: string; childIndex: number }
+            //   end: { id: string; childIndex: number }
+            // }
             // if (action === 'wrap') {
             //   const cachedElement = get().cachedElements.find(
             //     (c) => c.id === id,
@@ -312,13 +141,11 @@ export const createComponentUpdateSlice =
             //       throw new Error(
             //         `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
             //       )
-
             //     const newComponent = document.createElement('div')
             //     newComponent.dataset.harmonyId = update.componentId
             //     newComponent.classList.add('hw-bg-primary-light')
             //     newComponent.classList.add('hw-p-[24px]')
             //     parent?.appendChild(newComponent)
-
             //     const elements = getElementsBetween(startElement, endElement)
             //     elements.forEach((element) => {
             //       element.remove()
@@ -339,7 +166,6 @@ export const createComponentUpdateSlice =
             //     })
             //     return state
             //   })
-
             //   if (!element)
             //     throw new Error(
             //       `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,

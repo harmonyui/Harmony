@@ -1,7 +1,7 @@
 import * as parser from '@babel/parser'
 import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
-import { replaceByIndex } from '@harmony/util/src/utils/common'
+import * as prettier from 'prettier'
 import type { ArrayProperty, Node } from './types'
 import type { LiteralNode } from './utils'
 import {
@@ -9,7 +9,6 @@ import {
   getComponentName,
   getLocationId,
   getSnippetFromNode,
-  isLiteralNode,
 } from './utils'
 import { addDataEdge } from './data-flow'
 import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
@@ -27,24 +26,17 @@ export type FileUpdateInfo = Record<
   string,
   {
     filePath: string
-    locations: {
-      snippet: string
-      start: number
-      end: number
-      updatedTo: number
-      diff: number
-    }[]
+    newContent: string
   }
 >
 export class FlowGraph {
   public nodes: Map<string, Node>
   public file = ''
   public code = ''
-  private dirtyNodes: Set<Node> = new Set<Node>()
-  private insertNodes: Set<Node> = new Set<Node>()
-  private deleteNodes: Set<Node> = new Set<Node>()
   private mappedDependencyStack: ArrayProperty[] = []
   public idMapping: Record<string, string> = {}
+  public files: Record<string, { program: t.Program; content: string }> = {}
+  private dirtyFiles: Set<string> = new Set<string>()
 
   constructor() {
     this.nodes = new Map()
@@ -254,50 +246,18 @@ export class FlowGraph {
     })
   }
 
-  public dirtyNode(node: Node, oldValue: string) {
-    const afterNodes = this.getNodes().filter(
-      (_node) =>
-        _node.location.file === node.location.file &&
-        _node.location.start > node.location.start,
-    )
-    const inBetweenNodes = this.getNodes().filter(
-      (_node) =>
-        _node.location.file === node.location.file &&
-        _node.location.start < node.location.start &&
-        _node.location.end > node.location.start,
-    )
-    const newNodeContent = getSnippetFromNode(node.node)
-    const newNodeLength = newNodeContent.length - oldValue.length
-    afterNodes.forEach((_node) => {
-      _node.location.start += newNodeLength
-      _node.location.end += newNodeLength
-    })
-    inBetweenNodes.forEach((_node) => {
-      _node.location.end += newNodeLength
-    })
-    if (
-      Array.from(this.insertNodes).find(
-        (n) =>
-          n.location.start <= node.location.start &&
-          n.location.end >= node.location.end,
-      )
-    ) {
-      return
-    }
-    node.location.end = node.location.start + newNodeContent.length
-    this.dirtyNodes.add(node)
+  public dirtyNode(node: Node) {
+    this.dirtyFiles.add(node.location.file)
   }
 
   public replaceNode(node: Node, newNode: t.Node) {
-    const oldValue = getSnippetFromNode(node.node)
     node.path.replaceWith(newNode)
-    this.dirtyNode(node, oldValue)
+    this.dirtyNode(node)
   }
 
   public addLeadingComment(node: Node, comment: string) {
-    const oldValue = getSnippetFromNode(node.node)
     node.path.addComment('leading', comment)
-    this.dirtyNode(node, oldValue)
+    this.dirtyNode(node)
   }
 
   public changeLiteralNode(node: Node<LiteralNode>, newValue: string) {
@@ -324,24 +284,20 @@ export class FlowGraph {
       t.jsxIdentifier(propertyName),
       t.stringLiteral(newValue),
     )
-    const oldValue = getSnippetFromNode(node.node)
     node.path.node.openingElement.attributes.push(newNode)
-    this.dirtyNode(node, oldValue)
+    this.dirtyNode(node)
   }
 
-  public saveChanges() {
-    this.dirtyNodes.forEach((node) => {
-      if (!isLiteralNode(node.node)) return
-      const value = getSnippetFromNode(node.node)
-      if (!value) return
-      this.code = replaceByIndex(
-        this.code,
-        value,
-        node.location.start,
-        node.location.end,
-      )
-    })
-    this.dirtyNodes.clear()
+  public async saveChanges(options: prettier.Options) {
+    await Promise.all(
+      Array.from(this.dirtyFiles).map(async (file) => {
+        const program = this.files[file].program
+        this.files[file].content = await this.formatCode(
+          getSnippetFromNode(program),
+          options,
+        )
+      }),
+    )
   }
 
   public addChildElement(
@@ -362,9 +318,11 @@ export class FlowGraph {
       | undefined
     if (!beforeElement) {
       parentElement.path.pushContainer('children', childElement.node)
+      childElement.path = parentElement.path.get(
+        `children.${parentElement.node.children.length - 1}`,
+      ) as NodePath<t.JSXElement>
       let parentClosingElement = parentElement.getClosingElement()
       if (!parentClosingElement) {
-        const oldValue = getSnippetFromNode(parentElement.node)
         parentClosingElement = this.createNodeAndPath(
           parentElement.name,
           t.jSXClosingElement(t.jSXIdentifier(parentElement.name)),
@@ -373,18 +331,15 @@ export class FlowGraph {
         parentElement.setClosingElement(parentClosingElement)
         parentClosingElement.id = `${parentElement.id}-closing`
         this.setNode(parentClosingElement)
-        this.dirtyNode(parentElement, oldValue)
+        this.dirtyNode(parentElement)
       }
-      this.insertNewNode(childElement, parentClosingElement.location.start)
+      this.dirtyNode(childElement)
     } else {
       beforeElement.path.insertBefore(childElement.node)
-      this.insertNewNode(childElement, beforeElement.location.start)
+      childElement.path =
+        beforeElement.path.getPrevSibling() as NodePath<t.JSXElement>
+      this.dirtyNode(childElement)
     }
-    const offset = childElement.location.start
-    nodes.forEach((node) => {
-      node.location.start += offset
-      node.location.end += offset
-    })
     this.addJSXElement(
       childElement,
       parentElement,
@@ -395,50 +350,14 @@ export class FlowGraph {
     return childElement
   }
 
-  public insertNewNode(node: Node, startIndex: number) {
-    const afterNodes = this.getNodes().filter(
-      (_node) =>
-        _node.location.file === node.location.file &&
-        _node.location.start >= startIndex,
-    )
-    const inBetweenNodes = this.getNodes().filter(
-      (_node) =>
-        _node.location.file === node.location.file &&
-        _node.location.start < startIndex &&
-        _node.location.end > startIndex,
-    )
-    const newNodeContent = getSnippetFromNode(node.node)
-    const newNodeLength = newNodeContent.length
-    afterNodes.forEach((_node) => {
-      _node.location.start += newNodeLength
-      _node.location.end += newNodeLength
-    })
-    inBetweenNodes.forEach((_node) => {
-      _node.location.end += newNodeLength
-    })
-    node.location.start = startIndex
-    node.location.end = startIndex + newNodeLength
-
-    //Only insert the node if it is not inside of an already inserted node
-    if (
-      Array.from(this.insertNodes).find(
-        (n) =>
-          n.location.start <= node.location.start &&
-          n.location.end >= node.location.end,
-      )
-    )
-      return
-    this.insertNodes.add(node)
-  }
-
   public deleteElement(jsxElement: JSXElementNode) {
     const parentElement = jsxElement.getParentElement()
-    if (!parentElement) return
-
-    const parentChildren = parentElement.getChildren()
-    const index = parentChildren.indexOf(jsxElement)
-    if (index === -1) throw new Error('Cannot find child of element')
-    parentChildren.splice(index, 1)
+    if (parentElement) {
+      const parentChildren = parentElement.getChildren()
+      const index = parentChildren.indexOf(jsxElement)
+      if (index === -1) throw new Error('Cannot find child of element')
+      parentChildren.splice(index, 1)
+    }
 
     const parentComponent = jsxElement.getParentComponent()
     const parentComponentChildren = parentComponent.getJSXElements()
@@ -446,28 +365,11 @@ export class FlowGraph {
     if (componentIndex === -1) throw new Error('Cannot find child of element')
     parentComponentChildren.splice(componentIndex, 1)
 
-    const afterNodes = this.getNodes().filter(
-      (_node) =>
-        _node.location.file === jsxElement.location.file &&
-        _node.location.start > jsxElement.location.start,
-    )
-    const inBetweenNodes = this.getNodes().filter(
-      (_node) =>
-        _node.location.file === jsxElement.location.file &&
-        _node.location.start < jsxElement.location.start &&
-        _node.location.end > jsxElement.location.start,
-    )
-    const offset = jsxElement.location.end - jsxElement.location.start
-    afterNodes.forEach((_node) => {
-      _node.location.start -= offset
-      _node.location.end -= offset
-    })
-    inBetweenNodes.forEach((_node) => {
-      _node.location.end -= offset
-    })
-
+    const content = getSnippetFromNode(jsxElement.node)
     jsxElement.path.remove()
-    this.deleteNodes.add(jsxElement)
+    this.dirtyNode(jsxElement)
+
+    return content
   }
 
   public createNodeAndPath<T extends t.Node>(
@@ -494,91 +396,32 @@ export class FlowGraph {
     return this.mappedDependencyStack.pop()
   }
 
-  public getFileUpdates(): FileUpdateInfo {
-    const codeUpdates = [
-      ...Array.from(this.dirtyNodes.values()).map((node) => ({
-        node,
-        location: {
-          file: node.location.file,
-          start: node.location.start,
-          end: node.content.length + node.location.start,
+  public async getFileUpdates(
+    options: prettier.Options,
+  ): Promise<FileUpdateInfo> {
+    const changes = await Promise.all(
+      Array.from(this.dirtyFiles).map<Promise<[string, string]>>(
+        async (file) => {
+          const program = this.files[file].program
+          const newContent = getSnippetFromNode(program)
+          const formatted = await this.formatCode(newContent, options)
+
+          return [file, formatted]
         },
-        inserted: false,
-        deleted: false,
-      })),
-      ...Array.from(this.insertNodes.values()).map((node) => ({
-        node,
-        location: node.location,
-        inserted: true,
-        deleted: false,
-      })),
-      ...Array.from(this.deleteNodes.values()).map((node) => ({
-        node,
-        location: node.location,
-        inserted: false,
-        deleted: true,
-      })),
-    ].sort((a, b) => a.location.start - b.location.start)
-    const commitChanges: FileUpdateInfo = {}
-    for (const update of codeUpdates) {
-      let change = commitChanges[update.location.file] as
-        | FileUpdateInfo[string]
-        | undefined
-      if (!change) {
-        change = { filePath: update.location.file, locations: [] }
-        commitChanges[update.location.file] = change
-      }
-      const snippet = getSnippetFromNode(update.node.node)
-      const updatedTo = update.location.start + snippet.length
+      ),
+    )
 
-      const newLocation = {
-        snippet,
-        start: update.location.start,
-        end: update.location.end,
-        updatedTo,
-        diff: 0,
-        insertedDiff: 0,
-        inserted: update.inserted,
-      }
-      if (update.inserted) {
-        newLocation.end = update.location.start
-        newLocation.updatedTo = update.location.start
-      }
-      if (update.deleted) {
-        newLocation.snippet = ''
-      }
-      const last = change.locations[change.locations.length - 1] as
-        | typeof newLocation
-        | undefined
-      if (last) {
-        const diff = last.updatedTo - last.end + last.diff
-        const insertedDiff = last.inserted
-          ? last.insertedDiff + last.snippet.length
-          : last.insertedDiff
-        if (last.updatedTo > newLocation.start + diff) {
-          if (last.snippet === newLocation.snippet) continue
-          //throw new Error("Conflict in changes")
-          console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`)
-        }
+    return changes.reduce<FileUpdateInfo>((prev, [file, newContent]) => {
+      prev[file] = { filePath: file, newContent }
+      return prev
+    }, {})
+  }
 
-        // newLocation.start += diff
-        // newLocation.end += diff
-        // newLocation.updatedTo += diff
-        newLocation.diff = diff
-        newLocation.insertedDiff = insertedDiff
-      }
-
-      change.locations.push(newLocation)
-    }
-    Object.values(commitChanges).forEach((change) => {
-      change.locations.forEach((location) => {
-        location.diff += (
-          location as unknown as { insertedDiff: number }
-        ).insertedDiff
-      })
+  public async formatCode(code: string, options: prettier.Options = {}) {
+    return prettier.format(code, {
+      ...options,
+      parser: 'typescript',
     })
-
-    return commitChanges
   }
 }
 
@@ -591,6 +434,8 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
     sourceType: 'module',
     plugins: ['typescript', 'jsx'],
   })
+
+  graph.files[file] = { program: ast.program, content: code }
 
   // Traverse the AST to populate the graph with explicit dependencies and data flow edges
   traverse(ast, {

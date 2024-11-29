@@ -10,6 +10,8 @@ import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { v4 as uuidv4 } from 'uuid'
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
 import { ContextMenuItem } from '@harmony/ui/src/components/core/context-menu'
+import { createUpdate } from '@harmony/util/src/updates/utils'
+import type { ReorderComponent } from '@harmony/util/src/updates/component'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
 import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
@@ -75,11 +77,19 @@ export const TreeView = ({ items }: TreeViewProps) => {
     const { componentId, childIndex } = getComponentIdAndChildIndex(
       dragData[0].data,
     )
-    const oldParentId = dragData[0].data.parentElement?.dataset.harmonyId
+    const oldParent = dragData[0].data.parentElement
+    if (!oldParent) {
+      throw new Error('Old parent not found')
+    }
+    if (!parentData?.data) {
+      throw new Error('Parent not found')
+    }
+    const { componentId: oldParentId, childIndex: oldParentChildIndex } =
+      getComponentIdAndChildIndex(oldParent)
+    const oldIndex = Array.from(oldParent.children).indexOf(dragData[0].data)
 
-    const { componentId: newParentId } = parentData?.data
-      ? getComponentIdAndChildIndex(parentData.data)
-      : { componentId: undefined }
+    const { componentId: newParentId, childIndex: newParentChildIndex } =
+      getComponentIdAndChildIndex(parentData.data)
     const newIndex = index
 
     const update: ComponentUpdateWithoutGlobal = {
@@ -87,11 +97,16 @@ export const TreeView = ({ items }: TreeViewProps) => {
       name: 'reorder',
       componentId,
       childIndex,
-      oldValue: JSON.stringify({
+      oldValue: createUpdate<ReorderComponent>({
         parentId: oldParentId,
-        childIndex,
+        parentChildIndex: oldParentChildIndex,
+        index: oldIndex,
       }),
-      value: JSON.stringify({ parentId: newParentId, childIndex: newIndex }),
+      value: createUpdate<ReorderComponent>({
+        parentId: newParentId,
+        parentChildIndex: newParentChildIndex,
+        index: newIndex,
+      }),
     }
     onAttributesChange([update])
   }

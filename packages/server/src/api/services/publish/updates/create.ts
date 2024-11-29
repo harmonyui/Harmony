@@ -1,5 +1,7 @@
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
+import type { ComponentUpdate } from '@harmony/util/src/types/component'
+import type { FlowGraph } from '../../indexor/graph'
 import { getGraph } from '../../indexor/graph'
 import type { Node } from '../../indexor/types'
 import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
@@ -8,7 +10,7 @@ import type { UpdateComponent } from './types'
 import { getInstanceFromComponent } from './utils'
 
 export const createUpdate: UpdateComponent = (
-  { value, update: componentUpdate, componentId },
+  { value, update: componentUpdate },
   graph,
   repository,
 ) => {
@@ -28,15 +30,39 @@ export const createUpdate: UpdateComponent = (
   }
 
   const instanceCode = getInstanceFromComponent(component, repository)
+
+  createComponent(
+    componentUpdate,
+    { parentId, parentChildIndex, index },
+    instanceCode,
+    graph,
+  )
+}
+
+export const createComponent = (
+  update: ComponentUpdate,
+  {
+    parentId,
+    parentChildIndex,
+    index,
+  }: { parentId: string; parentChildIndex: number; index: number },
+  code: string,
+  graph: FlowGraph,
+) => {
+  const parentElement = graph.getJSXElementById(parentId, parentChildIndex)
+  if (!parentElement) {
+    throw new Error(`Parent element with id ${parentId} not found`)
+  }
+
   const instanceNodes = getElementInstanceNodes(
     parentElement.location.file,
-    instanceCode,
+    code,
   )
 
   graph.addChildElement(
     instanceNodes,
-    componentId,
-    componentUpdate.childIndex,
+    update.componentId,
+    update.childIndex,
     index,
     parentElement,
   )

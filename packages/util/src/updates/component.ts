@@ -24,13 +24,16 @@ export const updateAttributeValue = z.object({
 })
 export type UpdateAttributeValue = z.infer<typeof updateAttributeValue>
 
-export const addComponentSchema = z.object({
-  action: z.literal('create'),
-  component: z.optional(harmonyCnSchema),
-  cached: z.optional(z.boolean()),
+const componentSchemaBase = z.object({
   parentId: z.string(),
   parentChildIndex: z.number(),
   index: z.number(),
+})
+
+export const addComponentSchema = componentSchemaBase.extend({
+  action: z.literal('create'),
+  component: z.optional(harmonyCnSchema),
+  cached: z.optional(z.boolean()),
 })
 export type AddComponent = z.infer<typeof addComponentSchema>
 
@@ -43,3 +46,6 @@ export const addDeleteComponentSchema = z.union([
   addComponentSchema,
   deleteComponentSchema,
 ])
+
+export const reorderComponentSchema = componentSchemaBase
+export type ReorderComponent = z.infer<typeof reorderComponentSchema>
