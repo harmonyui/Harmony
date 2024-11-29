@@ -88,9 +88,6 @@ export class JSXAttribute<T extends t.Node = t.Node>
       isIdentifier(node),
     ) as Node<t.Identifier>[]
 
-    const isComponent =
-      this.parentElement.name[0].toUpperCase() === this.parentElement.name[0]
-
     return {
       identifiers: identifiers
         .filter(

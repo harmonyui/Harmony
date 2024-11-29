@@ -14,6 +14,8 @@ import {
   ImageIcon,
   TIcon,
 } from '@harmony/ui/src/components/core/icons'
+import type { HarmonyCn } from '@harmony/util/src/harmonycn/types'
+import { capitalizeFirstLetter } from '@harmony/util/src/utils/common'
 import { useHarmonyStore } from '../../hooks/state'
 import type { UpdateComponentOptions } from './update-component'
 import { useUpdateComponent } from './update-component'
@@ -29,7 +31,7 @@ export const AddComponentMenu: React.FunctionComponent<
   const selectedComponent = useHarmonyStore((store) => store.selectedComponent)
   const { addComponent } = useUpdateComponent()
 
-  const onItemClick = (component: HarmonyCnNames) => () => {
+  const onItemClick = (component: HarmonyCn) => () => {
     if (!selectedComponent) return
     addComponent(selectedComponent.element, component, options)
     onClose()
@@ -48,7 +50,7 @@ export const AddComponentMenu: React.FunctionComponent<
             {components.map(({ name, icon: Icon }) => (
               <CommandItem key={name} onSelect={onItemClick(name)}>
                 <Icon />
-                <span>{name}</span>
+                <span>{capitalizeFirstLetter(name)}</span>
               </CommandItem>
             ))}
           </CommandGroup>
@@ -59,22 +61,21 @@ export const AddComponentMenu: React.FunctionComponent<
   )
 }
 
-interface HarmonyCn {
-  name: string
+interface HarmonyCnListItem {
+  name: HarmonyCn
   icon: IconComponent
 }
-type HarmonyCnNames = (typeof components)[number]['name']
-const components = [
+const components: HarmonyCnListItem[] = [
   {
-    name: 'Text',
+    name: 'text',
     icon: TIcon,
   },
   {
-    name: 'Frame',
+    name: 'frame',
     icon: FrameIcon,
   },
   {
-    name: 'Image',
+    name: 'image',
     icon: ImageIcon,
   },
-] as const satisfies HarmonyCn[]
+]

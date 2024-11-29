@@ -125,6 +125,10 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
   )
     return false
 
+  if (element.dataset.nonSelectable === 'true') {
+    return false
+  }
+
   return isSizeThreshold(element, scale)
 }
 

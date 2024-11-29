@@ -1,12 +1,14 @@
+import type { HarmonyCn } from '@harmony/util/src/harmonycn/types'
+
 export type CreateComponent = () => Omit<
   CreatedComponent,
   'componentId' | 'childIndex'
 >
-export type HarmonyCn = string
+
 export interface CreatedComponent {
   componentId: string
   childIndex: number
   element: HTMLElement
-  type: HarmonyCn
+  type?: HarmonyCn
   options?: Record<string, unknown>
 }

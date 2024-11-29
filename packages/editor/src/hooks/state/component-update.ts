@@ -7,7 +7,6 @@ import {
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import {
   findElementFromId,
-  findElementsFromId,
   findSameElementsFromId,
   getComponentIdAndChildIndex,
 } from '../../utils/element-utils'
@@ -173,7 +172,6 @@ export const createComponentUpdateSlice =
                     createdElement ?? {
                       componentId: update.componentId,
                       childIndex: update.childIndex,
-                      type: 'component',
                       element: component,
                     },
                   ],
@@ -191,6 +189,11 @@ export const createComponentUpdateSlice =
                 )
                 if (cachedElement) {
                   return cachedElement
+                }
+                if (!component) {
+                  throw new Error(
+                    "Element is marked as cached but doesn't exist",
+                  )
                 }
                 return createComponentElement(
                   component,

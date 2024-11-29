@@ -660,7 +660,7 @@ describe('code-updator', () => {
         {
           value: createUpdate<AddComponent>({
             action: 'create',
-            component: 'Frame',
+            component: 'frame',
             parentId: elementInstances[0].id,
             parentChildIndex: 0,
             index: 1,
@@ -675,7 +675,7 @@ describe('code-updator', () => {
         {
           value: createUpdate<AddComponent>({
             action: 'create',
-            component: 'Text',
+            component: 'text',
             parentId: elementInstances[0].id,
             parentChildIndex: 1,
             index: 0,
@@ -690,7 +690,7 @@ describe('code-updator', () => {
         {
           value: createUpdate<AddComponent>({
             action: 'create',
-            component: 'Text',
+            component: 'text',
             parentId: elementInstances[3].id,
             parentChildIndex: 0,
             index: 0,
@@ -783,7 +783,7 @@ describe('code-updator', () => {
         {
           value: createUpdate<AddComponent>({
             action: 'create',
-            component: 'Text',
+            component: 'text',
             parentId: elementInstances[3].id,
             parentChildIndex: 0,
             index: 0,

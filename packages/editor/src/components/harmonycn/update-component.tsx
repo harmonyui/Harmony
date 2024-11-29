@@ -3,6 +3,7 @@ import type {
   AddComponent,
   DeleteComponent,
 } from '@harmony/util/src/updates/component'
+import type { HarmonyCn } from '@harmony/util/src/harmonycn/types'
 import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
 import {
@@ -23,7 +24,7 @@ export const useUpdateComponent = () => {
   const addComponent = useCallback(
     (
       element: HTMLElement,
-      component: string,
+      component: HarmonyCn,
       options: UpdateComponentOptions,
     ) => {
       const parent = options.parent ?? element.parentElement
@@ -85,7 +86,7 @@ export const useUpdateComponent = () => {
       }),
       oldValue: createUpdate<AddComponent>({
         parentId,
-        component: 'component',
+        cached: true,
         parentChildIndex,
         index,
         action: 'create',

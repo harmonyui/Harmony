@@ -1,8 +1,13 @@
 import { getBaseId } from '@harmony/util/src/utils/component'
+import type { HarmonyCn } from '@harmony/util/src/harmonycn/types'
+import type { Repository } from '@harmony/util/src/types/branch'
+import type { InstanceProperty } from '@harmony/util/src/harmonycn/components'
+import { componentInstances } from '@harmony/util/src/harmonycn/components'
 import type { FlowGraph } from '../../indexor/graph'
 import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
 import type { Node } from '../../indexor/types'
 import type { JSXAttribute } from '../../indexor/nodes/jsx-attribute'
+import { addPrefixToClassName } from '../css-conveter'
 
 interface AttributeInfo {
   attribute?: JSXAttribute
@@ -115,4 +120,25 @@ export const getInstanceInfo = (
   }
 
   return { instances, attributes }
+}
+
+export const getInstanceFromComponent = (
+  component: HarmonyCn,
+  repository: Repository,
+) => {
+  const instance = componentInstances[component] as InstanceProperty | undefined
+  if (!instance) {
+    throw new Error(`Invalid component type ${component}`)
+  }
+  if (instance.classes) {
+    const classesWithPrefix = repository.tailwindPrefix
+      ? addPrefixToClassName(instance.classes, repository.tailwindPrefix)
+      : instance.classes
+    return instance.code.replace(
+      'className="%"',
+      `className="${classesWithPrefix}"`,
+    )
+  }
+
+  return instance.code
 }

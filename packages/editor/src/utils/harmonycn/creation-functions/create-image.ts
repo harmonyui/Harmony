@@ -6,6 +6,6 @@ export const createImageElement: CreateComponent = () => {
     'https://res.cloudinary.com/subframe/image/upload/v1711417507/shared/y2rsnhq3mex4auk54aye.png'
   return {
     element: img,
-    type: 'Image',
+    type: 'image',
   }
 }

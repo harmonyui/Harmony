@@ -10,7 +10,7 @@ export const ComponentManager: React.FunctionComponent = () => {
   const createdElements = useHarmonyStore((store) => store.createdElements)
 
   return createdElements.map((data) => {
-    if (data.type === 'Frame') {
+    if (data.type === 'frame') {
       return <FrameComponent component={data} />
     }
 

@@ -5,7 +5,7 @@ export const createFrameElement: CreateComponent = () => {
   div.style.padding = '4px'
   return {
     element: div,
-    type: 'Frame',
+    type: 'frame',
     options: {
       isEmpty: true,
     },

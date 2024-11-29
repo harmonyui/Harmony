@@ -1,8 +1,9 @@
+import type { HarmonyCn } from '@harmony/util/src/harmonycn/types'
 import { componentCreations } from './components'
 import type { CreateComponent, CreatedComponent } from './types'
 
 export const createComponentElement = (
-  component: string,
+  component: HarmonyCn,
   componentId: string,
   childIndex: number,
 ): CreatedComponent => {

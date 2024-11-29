@@ -5,6 +5,6 @@ export const createTextElement: CreateComponent = () => {
   span.textContent = 'Text'
   return {
     element: span,
-    type: 'Text',
+    type: 'text',
   }
 }
