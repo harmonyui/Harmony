@@ -19,7 +19,7 @@ export const updateText: UpdateComponent = (
   const index = parseInt(componentUpdate.name)
   const textAttribute = attributes.find(
     (attr) =>
-      attr.attribute.getName() === 'children' &&
+      attr.attribute?.getName() === 'children' &&
       attr.attribute.getChildIndex() === index,
   )
   if (!textAttribute) {

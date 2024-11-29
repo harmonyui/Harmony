@@ -25,7 +25,7 @@ export const updateAttribute: UpdateComponent = (
   )
   if (action === 'update') {
     const srcAttribute = attributes.find(
-      (attribute) => attribute.attribute.getName() === name,
+      (attribute) => attribute.attribute?.getName() === name,
     )
     if (!srcAttribute) {
       const commentValue = `Change ${name} property for ${graphElements[0].name} tag from ${oldValue} to ${updateValue}`

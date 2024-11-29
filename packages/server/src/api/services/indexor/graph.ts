@@ -42,6 +42,7 @@ export class FlowGraph {
   public code = ''
   private dirtyNodes: Set<Node> = new Set<Node>()
   private insertNodes: Set<Node> = new Set<Node>()
+  private deleteNodes: Set<Node> = new Set<Node>()
   private mappedDependencyStack: ArrayProperty[] = []
   public idMapping: Record<string, string> = {}
 
@@ -151,6 +152,7 @@ export class FlowGraph {
     closingElement && this.setNode(closingElement)
     component.addJSXElement(jsxElementNode)
     parentElement?.addChild(jsxElementNode)
+    jsxElementNode.setParentElement(parentElement)
   }
 
   public addJSXAttribute(
@@ -253,6 +255,26 @@ export class FlowGraph {
   }
 
   public dirtyNode(node: Node, oldValue: string) {
+    const afterNodes = this.getNodes().filter(
+      (_node) =>
+        _node.location.file === node.location.file &&
+        _node.location.start > node.location.start,
+    )
+    const inBetweenNodes = this.getNodes().filter(
+      (_node) =>
+        _node.location.file === node.location.file &&
+        _node.location.start < node.location.start &&
+        _node.location.end > node.location.start,
+    )
+    const newNodeContent = getSnippetFromNode(node.node)
+    const newNodeLength = newNodeContent.length - oldValue.length
+    afterNodes.forEach((_node) => {
+      _node.location.start += newNodeLength
+      _node.location.end += newNodeLength
+    })
+    inBetweenNodes.forEach((_node) => {
+      _node.location.end += newNodeLength
+    })
     if (
       Array.from(this.insertNodes).find(
         (n) =>
@@ -260,28 +282,9 @@ export class FlowGraph {
           n.location.end >= node.location.end,
       )
     ) {
-      const afterNodes = this.getNodes().filter(
-        (_node) =>
-          _node.location.file === node.location.file &&
-          _node.location.start >= node.location.start,
-      )
-      const inBetweenNodes = this.getNodes().filter(
-        (_node) =>
-          _node.location.file === node.location.file &&
-          _node.location.start < node.location.start &&
-          _node.location.end > node.location.start,
-      )
-      const newNodeContent = getSnippetFromNode(node.node)
-      const newNodeLength = newNodeContent.length - oldValue.length
-      afterNodes.forEach((_node) => {
-        _node.location.start += newNodeLength
-        _node.location.end += newNodeLength
-      })
-      inBetweenNodes.forEach((_node) => {
-        _node.location.end += newNodeLength
-      })
       return
     }
+    node.location.end = node.location.start + newNodeContent.length
     this.dirtyNodes.add(node)
   }
 
@@ -359,7 +362,19 @@ export class FlowGraph {
       | undefined
     if (!beforeElement) {
       parentElement.path.pushContainer('children', childElement.node)
-      const parentClosingElement = parentElement.getClosingElement()
+      let parentClosingElement = parentElement.getClosingElement()
+      if (!parentClosingElement) {
+        const oldValue = getSnippetFromNode(parentElement.node)
+        parentClosingElement = this.createNodeAndPath(
+          parentElement.name,
+          t.jSXClosingElement(t.jSXIdentifier(parentElement.name)),
+          parentElement.path,
+        )
+        parentElement.setClosingElement(parentClosingElement)
+        parentClosingElement.id = `${parentElement.id}-closing`
+        this.setNode(parentClosingElement)
+        this.dirtyNode(parentElement, oldValue)
+      }
       this.insertNewNode(childElement, parentClosingElement.location.start)
     } else {
       beforeElement.path.insertBefore(childElement.node)
@@ -416,6 +431,45 @@ export class FlowGraph {
     this.insertNodes.add(node)
   }
 
+  public deleteElement(jsxElement: JSXElementNode) {
+    const parentElement = jsxElement.getParentElement()
+    if (!parentElement) return
+
+    const parentChildren = parentElement.getChildren()
+    const index = parentChildren.indexOf(jsxElement)
+    if (index === -1) throw new Error('Cannot find child of element')
+    parentChildren.splice(index, 1)
+
+    const parentComponent = jsxElement.getParentComponent()
+    const parentComponentChildren = parentComponent.getJSXElements()
+    const componentIndex = parentComponentChildren.indexOf(jsxElement)
+    if (componentIndex === -1) throw new Error('Cannot find child of element')
+    parentComponentChildren.splice(componentIndex, 1)
+
+    const afterNodes = this.getNodes().filter(
+      (_node) =>
+        _node.location.file === jsxElement.location.file &&
+        _node.location.start > jsxElement.location.start,
+    )
+    const inBetweenNodes = this.getNodes().filter(
+      (_node) =>
+        _node.location.file === jsxElement.location.file &&
+        _node.location.start < jsxElement.location.start &&
+        _node.location.end > jsxElement.location.start,
+    )
+    const offset = jsxElement.location.end - jsxElement.location.start
+    afterNodes.forEach((_node) => {
+      _node.location.start -= offset
+      _node.location.end -= offset
+    })
+    inBetweenNodes.forEach((_node) => {
+      _node.location.end -= offset
+    })
+
+    jsxElement.path.remove()
+    this.deleteNodes.add(jsxElement)
+  }
+
   public createNodeAndPath<T extends t.Node>(
     name: string,
     node: T,
@@ -444,13 +498,25 @@ export class FlowGraph {
     const codeUpdates = [
       ...Array.from(this.dirtyNodes.values()).map((node) => ({
         node,
-        location: node.location,
+        location: {
+          file: node.location.file,
+          start: node.location.start,
+          end: node.content.length + node.location.start,
+        },
         inserted: false,
+        deleted: false,
       })),
       ...Array.from(this.insertNodes.values()).map((node) => ({
         node,
         location: node.location,
         inserted: true,
+        deleted: false,
+      })),
+      ...Array.from(this.deleteNodes.values()).map((node) => ({
+        node,
+        location: node.location,
+        inserted: false,
+        deleted: true,
       })),
     ].sort((a, b) => a.location.start - b.location.start)
     const commitChanges: FileUpdateInfo = {}
@@ -478,6 +544,9 @@ export class FlowGraph {
         newLocation.end = update.location.start
         newLocation.updatedTo = update.location.start
       }
+      if (update.deleted) {
+        newLocation.snippet = ''
+      }
       const last = change.locations[change.locations.length - 1] as
         | typeof newLocation
         | undefined
@@ -492,9 +561,9 @@ export class FlowGraph {
           console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`)
         }
 
-        newLocation.start += diff
-        newLocation.end += diff
-        newLocation.updatedTo += diff
+        // newLocation.start += diff
+        // newLocation.end += diff
+        // newLocation.updatedTo += diff
         newLocation.diff = diff
         newLocation.insertedDiff = insertedDiff
       }
@@ -562,7 +631,9 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
             const closingElement = jsxPath.node.closingElement
               ? graph.createNode(
                   getSnippetFromNode(jsxPath.node.closingElement),
-                  jsxPath.get('closingElement'),
+                  jsxPath.get(
+                    'closingElement',
+                  ) as NodePath<t.JSXClosingElement>,
                 )
               : undefined
 

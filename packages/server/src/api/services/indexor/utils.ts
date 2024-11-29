@@ -31,6 +31,7 @@ export function createNode<T extends t.Node>(
     dependents: new Set(),
     path,
     location,
+    content: getSnippetFromNode(_node),
   })
   return newNode
 }

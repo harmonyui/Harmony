@@ -17,6 +17,7 @@ export class ComponentNode extends Node<
       dependencies,
       dependents,
       path,
+      content,
     }: NodeBase<t.FunctionDeclaration | t.ArrowFunctionExpression>,
   ) {
     super({
@@ -27,6 +28,7 @@ export class ComponentNode extends Node<
       dependencies,
       dependents,
       path,
+      content,
     })
   }
 

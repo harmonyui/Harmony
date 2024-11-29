@@ -1,14 +1,17 @@
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
+import type { Repository } from '@harmony/util/src/types/branch'
 import { getGraph } from '../../indexor/graph'
 import type { Node } from '../../indexor/types'
 import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
 import { isJSXElement } from '../../indexor/nodes/jsx-element'
+import { addPrefixToClassName } from '../css-conveter'
 import type { UpdateComponent } from './types'
 
 export const createUpdate: UpdateComponent = (
   { value, update: componentUpdate, componentId },
   graph,
+  repository,
 ) => {
   const { parentId, parentChildIndex, index, component } = parseUpdate(
     addComponentSchema,
@@ -20,7 +23,7 @@ export const createUpdate: UpdateComponent = (
     throw new Error(`Parent element with id ${parentId} not found`)
   }
 
-  const instanceCode = getInstanceFromComponent(component)
+  const instanceCode = getInstanceFromComponent(component, repository)
   const instanceNodes = getElementInstanceNodes(
     parentElement.location.file,
     instanceCode,
@@ -35,11 +38,20 @@ export const createUpdate: UpdateComponent = (
   )
 }
 
-const getInstanceFromComponent = (component: string) => {
+const getInstanceFromComponent = (
+  component: string,
+  repository: Repository,
+) => {
   if (component === 'Text') {
     return '<span>Label</span>'
   } else if (component === 'Frame') {
-    return '<div></div>'
+    const classes = 'p-2'
+    const classesWithPrefix = repository.tailwindPrefix
+      ? addPrefixToClassName(classes, repository.tailwindPrefix)
+      : classes
+    return `<div className="${classesWithPrefix}"></div>`
+  } else if (component === 'Image') {
+    return '<img src="https://res.cloudinary.com/subframe/image/upload/v1711417507/shared/y2rsnhq3mex4auk54aye.png" />'
   }
 
   throw new Error('Invalid component type')

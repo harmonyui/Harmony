@@ -8,13 +8,14 @@ import type { ComponentNode } from './component'
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   private mappingExpression: ArrayProperty | undefined
   private children: JSXElementNode[] = []
+  private parentElement: JSXElementNode | undefined
 
   constructor(
     private attributes: JSXAttribute[],
     private parentComponent: ComponentNode,
     private definitionComponent: ComponentNode | undefined,
     private openingElement: Node<t.JSXOpeningElement>,
-    private closingElement: Node<t.JSXClosingElement>,
+    private closingElement: Node<t.JSXClosingElement> | undefined,
     base: NodeBase<t.JSXElement>,
   ) {
     super(base)
@@ -40,6 +41,13 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
 
   public getChildren() {
     return this.children
+  }
+
+  public getParentElement() {
+    return this.parentElement
+  }
+  public setParentElement(parentElement: JSXElementNode | undefined) {
+    this.parentElement = parentElement
   }
 
   public getRootInstances(): JSXElementNode[][]
@@ -91,8 +99,11 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     return this.openingElement
   }
 
-  public getClosingElement(): Node<t.JSXClosingElement> {
+  public getClosingElement(): Node<t.JSXClosingElement> | undefined {
     return this.closingElement
+  }
+  public setClosingElement(closingElement: Node<t.JSXClosingElement>) {
+    this.closingElement = closingElement
   }
 
   public setMappingExpression(node: ArrayProperty) {

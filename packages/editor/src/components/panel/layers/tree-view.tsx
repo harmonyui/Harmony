@@ -182,9 +182,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
       contextMenu={({ data: _ }) => (
         <TreeViewItem
           onAddAbove={() => setComponentMenuOpen(true, { position: 'above' })}
-          onAddBelow={() => () =>
-            setComponentMenuOpen(true, { position: 'below' })
-          }
+          onAddBelow={() => setComponentMenuOpen(true, { position: 'below' })}
           onDelete={onDelete}
           onWrap={() => handleWrapElement('wrap')}
           onUnWrap={() => handleWrapElement('unwrap')}

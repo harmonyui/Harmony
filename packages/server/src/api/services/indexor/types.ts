@@ -41,6 +41,7 @@ export interface NodeBase<T extends t.Node> {
   dependencies: Set<Node>
   dependents: Set<Node>
   path: NodePath<T>
+  content: string
 }
 
 const simplePredicate = (node: Node): boolean => node.dependencies.size === 0
@@ -51,6 +52,7 @@ export class Node<T extends t.Node = t.Node> {
   public name: string
   public dependencies: Set<Node>
   public dependents: Set<Node>
+  public content: string
   private parent: Node | undefined
   public get node(): T {
     return this.path.node
@@ -65,6 +67,7 @@ export class Node<T extends t.Node = t.Node> {
     dependencies,
     dependents,
     path,
+    content,
   }: NodeBase<T>) {
     this.id = id
     this.location = location
@@ -73,6 +76,7 @@ export class Node<T extends t.Node = t.Node> {
     this.dependencies = dependencies
     this.dependents = dependents
     this.path = path
+    this.content = content
   }
 
   public getValues(

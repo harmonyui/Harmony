@@ -3,6 +3,7 @@ import type { Repository } from '@harmony/util/src/types/branch'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import type {
   AddComponent,
+  DeleteComponent,
   UpdateAttributeValue,
 } from '@harmony/util/src/updates/component'
 import { createUpdate } from '@harmony/util/src/updates/utils'
@@ -687,10 +688,43 @@ describe('code-updator', () => {
           isGlobal: false,
         },
         {
+          value: createUpdate<AddComponent>({
+            action: 'create',
+            component: 'Text',
+            parentId: elementInstances[3].id,
+            parentChildIndex: 0,
+            index: 0,
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[3].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
           value: 'Change this',
           oldValue: 'Label',
           type: 'text',
           name: '0',
+          componentId: elementInstances[0].id,
+          childIndex: 2,
+          isGlobal: false,
+        },
+        {
+          value: '20px',
+          oldValue: '10px',
+          type: 'className',
+          name: 'padding',
+          componentId: elementInstances[0].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: '8px',
+          oldValue: '',
+          type: 'className',
+          name: 'padding',
           componentId: elementInstances[0].id,
           childIndex: 2,
           isGlobal: false,
@@ -704,20 +738,90 @@ describe('code-updator', () => {
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
 
-      expect(codeUpdates.locations.length).toBe(3)
+      expect(codeUpdates.locations.length).toBe(4)
       expect(codeUpdates.locations[0].snippet).toBe('Change Hello')
       expectLocationOfString(file, codeUpdates.locations[0], 'Hello')
 
       expect(codeUpdates.locations[1].snippet).toBe(
-        '<div><span>Change this</span></div>',
+        '<div className="p-5"><span className="p-2">Change this</span></div>',
       )
       expectLocationOfChangedLine(
         file,
         codeUpdates.locations[1],
-        '<div><span>Change this</span></div><h2>There</h2>',
+        '<div className="p-5"><span className="p-2">Change this</span></div><h2>There</h2>',
       )
       expect(codeUpdates.locations[2].snippet).toBe('Change There')
       expectLocationOfString(file, codeUpdates.locations[2], 'There')
+    })
+
+    it('Should delete components', async () => {
+      const file: TestFile = 'addComponent'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: createUpdate<DeleteComponent>({
+            action: 'delete',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'Change There',
+          oldValue: 'There',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[2].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            action: 'create',
+            component: 'Text',
+            parentId: elementInstances[3].id,
+            parentChildIndex: 0,
+            index: 0,
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[3].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<DeleteComponent>({
+            action: 'delete',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[3].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(codeUpdates.locations.length).toBe(3)
+      expect(codeUpdates.locations[0].snippet).toBe('')
+      expectLocationOfString(file, codeUpdates.locations[0], '<h1>Hello</h1>')
+      expect(codeUpdates.locations[1].snippet).toBe('Change There')
+      expectLocationOfString(file, codeUpdates.locations[1], 'There')
+      expect(codeUpdates.locations[2].snippet).toBe('')
+      expectLocationOfChangedLine(file, codeUpdates.locations[2], '</div>')
     })
   })
 })
@@ -844,6 +948,7 @@ const testFiles = {
           <div>
             <h1>Hello</h1>
             <h2>There</h2>
+            <div></div>
           </div>
         )
       }

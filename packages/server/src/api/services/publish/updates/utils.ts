@@ -4,18 +4,19 @@ import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
 import type { Node } from '../../indexor/types'
 import type { JSXAttribute } from '../../indexor/nodes/jsx-attribute'
 
+interface AttributeInfo {
+  attribute?: JSXAttribute
+  elementValues: {
+    parent: JSXElementNode
+    values: Node[]
+  }[]
+  addArguments: {
+    parent: JSXElementNode
+    propertyName: string
+  }[]
+}
 export const rotateThroughValuesAndMakeChanges = (
-  attribute: {
-    attribute: JSXAttribute
-    elementValues: {
-      parent: JSXElementNode
-      values: Node[]
-    }[]
-    addArguments: {
-      parent: JSXElementNode
-      propertyName: string
-    }[]
-  },
+  attribute: AttributeInfo,
   makeChangeFunc: (node: Node, parent: JSXElementNode) => boolean,
 ) => {
   let updated = false
@@ -86,7 +87,7 @@ export const getInstanceInfo = (
   if (!instances) throw new Error('Instances not found')
 
   setMappingIndex(element, realComponentId, childIndex)
-  const attributes = element
+  const attributes: AttributeInfo[] = element
     .getAttributes(realComponentId)
     .map((attribute) => ({
       attribute,
@@ -101,6 +102,17 @@ export const getInstanceInfo = (
               }))
           : [],
     }))
+
+  const isComponent = element.name[0].toUpperCase() === element.name[0]
+  if (
+    !isComponent &&
+    !attributes.find((attr) => attr.attribute?.getName() === 'className')
+  ) {
+    attributes.push({
+      elementValues: [],
+      addArguments: [{ parent: element, propertyName: 'className' }],
+    })
+  }
 
   return { instances, attributes }
 }

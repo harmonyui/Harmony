@@ -11,6 +11,7 @@ import type { CodeUpdateInfo, UpdateInfo } from './updates/types'
 import { updateAttribute } from './updates/update-attribute'
 import { updateText } from './updates/text'
 import { createUpdate } from './updates/create'
+import { deleteUpdate } from './updates/delete'
 
 export class CodeUpdator {
   constructor(private gitRepository: GitRepository) {}
@@ -82,6 +83,8 @@ export class CodeUpdator {
           const { action } = parseUpdate(addDeleteComponentSchema, update.value)
           if (action === 'create') {
             createUpdate(update, graph, repository)
+          } else {
+            deleteUpdate(update, graph, repository)
           }
         }
         break

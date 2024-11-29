@@ -25,7 +25,8 @@ export const updateClassName: UpdateComponent = (
   )
 
   const classNameAttribute = attributes.find(
-    (attr) => attr.attribute.getName() === 'className',
+    (attr) =>
+      attr.attribute?.getName() === 'className' || attr.addArguments.length > 0,
   )
 
   if (!classNameAttribute) {
