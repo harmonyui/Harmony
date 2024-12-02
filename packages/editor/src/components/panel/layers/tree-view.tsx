@@ -5,6 +5,7 @@ import {
   FrameIcon,
   ImageIcon,
   TIcon,
+  ComponentIcon as ComponentIconRaw,
 } from '@harmony/ui/src/components/core/icons'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { v4 as uuidv4 } from 'uuid'
@@ -39,6 +40,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
   const selectedComponent = useHarmonyStore((store) => store.selectedComponent)
   const onComponentSelect = useHarmonyStore((store) => store.selectElement)
   const onComponentHover = useHarmonyStore((store) => store.hoverComponent)
+  const harmonyComponents = useHarmonyStore((store) => store.harmonyComponents)
   const { setIsOpen: setComponentMenuOpen } = useComponentMenu()
   const { deleteComponent } = useUpdateComponent()
 
@@ -206,7 +208,9 @@ export const TreeView = ({ items }: TreeViewProps) => {
     >
       {({ data }) => (
         <div className='hw-flex hw-gap-2 hw-items-center'>
-          <ComponentIcon type={getComponentType(data.data)} />
+          <ComponentIcon
+            type={getComponentType(data.data, harmonyComponents)}
+          />
           {data.name}
         </div>
       )}
@@ -218,12 +222,14 @@ const ComponentIcon: React.FunctionComponent<{ type: ComponentType }> = ({
   type,
 }) => {
   if (type === ComponentType.Frame) {
-    return <FrameIcon className='hw-w-3 hw-h-3' />
+    return <FrameIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
   } else if (type === ComponentType.Text) {
-    return <TIcon className='hw-w-3 hw-h-3' />
+    return <TIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
+  } else if (type === ComponentType.Component) {
+    return <ComponentIconRaw className='hw-text-[#737373] hw-w-3 hw-h-3' />
   }
 
-  return <ImageIcon className='hw-w-3 hw-h-3' />
+  return <ImageIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
 }
 
 interface TreeViewItemProps {

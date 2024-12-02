@@ -232,13 +232,13 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     }
   }, [rootComponent, isInitialized])
 
-  useEffect(() => {
-    if (activeComponents.length > 0) {
-      activeComponents.forEach((component) => {
-        recurseElements(component.placeholder, [initElements([])])
-      })
-    }
-  }, [activeComponents])
+  // useEffect(() => {
+  //   if (activeComponents.length > 0) {
+  //     activeComponents.forEach((component) => {
+  //       recurseElements(component.placeholder, [initElements([])])
+  //     })
+  //   }
+  // }, [activeComponents])
 
   const initElements =
     (componentIds: string[]) =>
@@ -257,7 +257,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         }
 
         const childIndex = componentIds.filter((c) => c === id).length
-        element.dataset.harmonyChildIndex = String(childIndex)
+        if (!element.dataset.harmonyChildIndex)
+          element.dataset.harmonyChildIndex = String(childIndex)
 
         id && componentIds.push(id)
       }

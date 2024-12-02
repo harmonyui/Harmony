@@ -64,6 +64,7 @@ export enum ComponentType {
   Frame = 'frame',
   Text = 'text',
   Shape = 'shape',
+  Component = 'component',
 }
 
 /** Types */

@@ -11,10 +11,11 @@ export const ComponentAttributePanel: React.FunctionComponent<
 > = () => {
   const panels = useDesignPanels()
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
+  const harmonyComponents = useHarmonyStore((store) => store.harmonyComponents)
   const componentType = useMemo(
     () =>
       selectedComponent
-        ? getComponentType(selectedComponent.element)
+        ? getComponentType(selectedComponent.element, harmonyComponents)
         : undefined,
     [selectedComponent],
   )
