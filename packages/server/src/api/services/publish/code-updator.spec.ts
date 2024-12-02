@@ -87,6 +87,7 @@ describe('code-updator', () => {
               path: '@/components/button',
             },
           ],
+          props: [],
         },
       },
     }

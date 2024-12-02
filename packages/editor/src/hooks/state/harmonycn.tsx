@@ -88,7 +88,7 @@ export const createHarmonyCnSlice = createHarmonySlice<
           id: (child as HTMLElement).dataset.harmonyId || '',
           name,
           isComponent: true,
-          props: [],
+          props: registryComponent.props,
         })
         //Get rid of the placeholder div
         if (index < children.length) {

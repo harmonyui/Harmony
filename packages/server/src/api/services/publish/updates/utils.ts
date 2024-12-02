@@ -10,6 +10,8 @@ import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
 import type { Node } from '../../indexor/types'
 import type { JSXAttribute } from '../../indexor/nodes/jsx-attribute'
 import { addPrefixToClassName } from '../css-conveter'
+import type { LiteralNode } from '../../indexor/utils'
+import { isLiteral } from '../../indexor/predicates/simple-predicates'
 
 interface AttributeInfo {
   attribute?: JSXAttribute
@@ -20,6 +22,7 @@ interface AttributeInfo {
   addArguments: {
     parent: JSXElementNode
     propertyName: string
+    values: Node<LiteralNode>[]
   }[]
 }
 export const rotateThroughValuesAndMakeChanges = (
@@ -102,12 +105,11 @@ export const getInstanceInfo = (
       elementValues: attribute.getDataFlowWithParents(realComponentId),
       addArguments:
         instances.length > 1
-          ? attribute
-              .getArgumentReferences(instances[1])
-              .identifiers.map((identifier) => ({
-                parent: instances[1],
-                propertyName: identifier.name,
-              }))
+          ? attribute.getArgumentReferences().identifiers.map((identifier) => ({
+              parent: instances[1],
+              propertyName: identifier.name,
+              values: identifier.getValues(isLiteral) as Node<LiteralNode>[],
+            }))
           : [],
     }))
 
@@ -118,7 +120,9 @@ export const getInstanceInfo = (
   ) {
     attributes.push({
       elementValues: [],
-      addArguments: [{ parent: element, propertyName: 'className' }],
+      addArguments: [
+        { parent: element, propertyName: 'className', values: [] },
+      ],
     })
   }
 

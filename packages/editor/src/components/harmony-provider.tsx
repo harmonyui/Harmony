@@ -18,6 +18,8 @@ import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
 import React, { useEffect, useRef, useState } from 'react'
 import type { UpdateAttributeValue } from '@harmony/util/src/updates/component'
+import type { UpdateProperty } from '@harmony/util/src/updates/property'
+import { createUpdate } from '@harmony/util/src/updates/utils'
 import {
   getComponentIdAndChildIndex,
   getImageSrc,
@@ -95,7 +97,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const setDisplayMode = useHarmonyStore((state) => state.setDisplayMode)
   const setIsOverlay = useHarmonyStore((state) => state.setIsOverlay)
   const initMutationObserverRef = useRef<MutationObserver | null>(null)
-  const activeComponents = useHarmonyStore((state) => state.activeComponents)
 
   const { executeCommand, onUndo, clearUpdates } = useComponentUpdator({
     isSaving,
@@ -232,14 +233,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     }
   }, [rootComponent, isInitialized])
 
-  // useEffect(() => {
-  //   if (activeComponents.length > 0) {
-  //     activeComponents.forEach((component) => {
-  //       recurseElements(component.placeholder, [initElements([])])
-  //     })
-  //   }
-  // }, [activeComponents])
-
   const initElements =
     (componentIds: string[]) =>
     (element: HTMLElement): void => {
@@ -363,7 +356,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     },
   )
 
-  const onPropertyChange = useEffectEvent(
+  const onElementPropertyChange = useEffectEvent(
     (name: string, value: string, element: HTMLElement | undefined) => {
       if (!element) return
 
@@ -384,6 +377,28 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
           name,
           value: oldValue,
         } satisfies UpdateAttributeValue),
+        childIndex,
+      }
+      onAttributesChange([update], true)
+    },
+  )
+
+  const onComponentPropertyChange = useEffectEvent(
+    (
+      value: UpdateProperty,
+      oldValue: UpdateProperty,
+      element: HTMLElement | undefined,
+    ) => {
+      if (!element) return
+
+      const { componentId, childIndex } = getComponentIdAndChildIndex(element)
+
+      const update: ComponentUpdateWithoutGlobal = {
+        componentId,
+        type: 'property',
+        name: value.name,
+        value: createUpdate<UpdateProperty>(value),
+        oldValue: createUpdate<UpdateProperty>(oldValue),
         childIndex,
       }
       onAttributesChange([update], true)
@@ -449,7 +464,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             setIsGlobal,
             onAttributesChange,
             onTextChange,
-            onPropertyChange,
+            onElementPropertyChange,
+            onComponentPropertyChange,
             onToggleInspector: onToggle,
           }}
         >

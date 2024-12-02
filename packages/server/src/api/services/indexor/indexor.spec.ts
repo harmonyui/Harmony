@@ -1353,7 +1353,7 @@ describe('indexor', () => {
       const harmonyInfo = convertToHarmonyInfo(result)
 
       expect(harmonyInfo[3].name).toBe('p')
-      expect(harmonyInfo[3].props[0].propName).toBe('className')
+      expect(harmonyInfo[3].props[0].name).toBe('className')
     })
 
     it('Should have error prop for missing property', () => {
@@ -1372,15 +1372,15 @@ describe('indexor', () => {
 
       expect(harmonyInfo[0].name).toBe('Component')
       expect(harmonyInfo[0].props.length).toBe(2)
-      expect(harmonyInfo[0].props[0].type).toBe('className')
-      expect(harmonyInfo[0].props[0].isStatic).toBe(false)
-      expect(harmonyInfo[0].props[1].type).toBe('text')
-      expect(harmonyInfo[0].props[1].isStatic).toBe(false)
+      expect(harmonyInfo[0].props[0].name).toBe('className')
+      expect(harmonyInfo[0].props[0].isEditable).toBe(false)
+      expect(harmonyInfo[0].props[1].name).toBe('children')
+      expect(harmonyInfo[0].props[1].isEditable).toBe(false)
 
       expect(harmonyInfo[2].name).toBe('a')
       expect(harmonyInfo[2].props.length).toBe(1)
-      expect(harmonyInfo[2].props[0].type).toBe('text')
-      expect(harmonyInfo[2].props[0].isStatic).toBe(false)
+      expect(harmonyInfo[2].props[0].name).toBe('children')
+      expect(harmonyInfo[2].props[0].isEditable).toBe(false)
     })
   })
 })

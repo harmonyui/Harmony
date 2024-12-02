@@ -41,7 +41,7 @@ export const useUploadImage = () => {
   const rootComponent = useHarmonyStore((state) => state.rootComponent)
   const cdnImages = useHarmonyStore((state) => state.cdnImages)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
-  const { onPropertyChange } = useHarmonyContext()
+  const { onElementPropertyChange: onPropertyChange } = useHarmonyContext()
   const contextProps = useContext(UploadImageContext)
 
   const { imageTags, svgTags } = useMemo(() => {

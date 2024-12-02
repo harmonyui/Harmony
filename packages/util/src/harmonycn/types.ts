@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { componentPropSchema } from '../types/component'
 
 export const harmonyCnSchema = z.union([
   z.literal('text'),
@@ -18,5 +19,6 @@ export const registryItemSchema = z.object({
       isDefault: z.boolean(),
     }),
   ),
+  props: z.array(componentPropSchema),
 })
 export type RegistryItem = z.infer<typeof registryItemSchema>

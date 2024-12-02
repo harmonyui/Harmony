@@ -195,11 +195,11 @@ export function convertToHarmonyInfo(
           ? instance.containingComponent!.name
           : instance.name,
         props: instance.props.map<ComponentProp>((prop) => ({
-          isStatic: prop.name === 'string',
-          propName: getAttributeName(prop),
-          propValue: prop.value,
-          type: prop.type,
-          componentId: instance.id,
+          isEditable: prop.name === 'string',
+          name: getAttributeName(prop),
+          defaultValue: prop.value,
+          values: {},
+          type: getAttributeName(prop) === 'src' ? 'image' : 'string',
         })),
       }
     })

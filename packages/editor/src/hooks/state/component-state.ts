@@ -212,9 +212,9 @@ export const createComponentStateSlice = createHarmonySlice<
             (update) => update.componentId === component?.id,
           )?.type
           const prop = component?.props.find(
-            (_prop) => _prop.propName === updateType,
+            (_prop) => _prop.name === updateType,
           )
-          return prop && !prop.isStatic
+          return prop && !prop.isEditable
         })
         if (globalChange) {
           set({ globalUpdate: updates })

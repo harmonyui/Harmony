@@ -16,6 +16,7 @@ import type { HarmonyCnState } from '../harmonycn'
 import { deleteComponentUpdate } from './delete'
 import { createComponentUpdate } from './create'
 import { reorderComponentUpdate } from './reorder'
+import { propertyUpdate } from './property'
 
 export interface ComponentUpdateState {
   componentUpdates: ComponentUpdate[]
@@ -233,16 +234,23 @@ export const createComponentUpdateSlice = createHarmonySlice<
             element.setAttribute(name, newValue)
           }
         }
-      }
-
-      //TODO: Need to figure out when a text component should update everywhere and where it should update just this element
-      if (update.type === 'text') {
+      } else if (update.type === 'property') {
         const el = findElementFromId(
           update.componentId,
           update.childIndex,
           rootElement,
         )
-        if (!el) continue //throw new Error(`Cannot find element with id ${update.componentId}`)
+        if (!el) continue
+
+        propertyUpdate(update, el)
+        //}
+      } else if (update.type === 'text') {
+        const el = findElementFromId(
+          update.componentId,
+          update.childIndex,
+          rootElement,
+        )
+        if (!el) continue
 
         const textNodes = Array.from(el.childNodes)
         const index = parseInt(update.name)

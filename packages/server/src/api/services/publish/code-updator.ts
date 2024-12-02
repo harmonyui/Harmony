@@ -14,6 +14,7 @@ import { updateText } from './updates/text'
 import { createUpdate } from './updates/create'
 import { deleteUpdate } from './updates/delete'
 import { reorderUpdate } from './updates/reorder'
+import { propertyUpdate } from './updates/property'
 
 export class CodeUpdator {
   constructor(
@@ -88,6 +89,9 @@ export class CodeUpdator {
         } else if (update.update.name === 'reorder') {
           reorderUpdate(update, graph, repository)
         }
+        break
+      case 'property':
+        propertyUpdate(update, graph, repository)
         break
       default:
         throw new Error('Invalid use case')
