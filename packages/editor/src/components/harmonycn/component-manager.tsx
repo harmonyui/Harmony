@@ -2,8 +2,9 @@
 import { createPortal } from 'react-dom'
 import { Button } from '@harmony/ui/src/components/core/button'
 import { PlusIcon } from '@harmony/ui/src/components/core/icons'
-import { useHarmonyStore } from '../../hooks/state'
+import React, { useMemo } from 'react'
 import type { CreatedComponent } from '../../utils/harmonycn/types'
+import { useHarmonyStore } from '../../hooks/state'
 import { useComponentMenu } from './component-provider'
 
 export const ComponentManager: React.FunctionComponent = () => {
@@ -13,7 +14,6 @@ export const ComponentManager: React.FunctionComponent = () => {
     if (data.type === 'frame') {
       return <FrameComponent component={data} />
     }
-
     return null
   })
 }
@@ -29,19 +29,21 @@ const FrameComponent: React.FunctionComponent<{
     selectElement(component.element)
   }
 
-  if (!component.options?.isEmpty) {
-    return null
+  const isEmpty = useMemo(() => {
+    if (component.element.querySelector('[data-harmony-id]')) return true
+  }, [component.element])
+
+  if (isEmpty) {
+    return true
   }
 
   return createPortal(
-    <div
-      className='hw-border hw-border-dashed hw-p-2 flex'
-      data-non-selectable='true'
-    >
+    <div className='hw-border hw-border-dashed hw-p-2 flex'>
       <Button
         mode='none'
         className='hw-rounded-full hw-bg-primary'
         onClick={onAddClick}
+        data-non-selectable='true'
       >
         <PlusIcon className='hw-h-4 hw-w-4 hw-text-white' />
       </Button>

@@ -1,4 +1,4 @@
-import type { CreatedComponent } from '../harmonycn/types'
+import type { CreatedComponent } from '../../../utils/harmonycn/types'
 
 export const updateCreatedElementOptions = (
   createdElements: CreatedComponent[],

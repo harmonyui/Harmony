@@ -11,11 +11,11 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   private mappingExpression: ArrayProperty | undefined
   private children: JSXElementNode[] = []
   private parentElement: JSXElementNode | undefined
+  private definitionComponent: ComponentNode | undefined
 
   constructor(
     private attributes: JSXAttribute[],
     private parentComponent: ComponentNode,
-    private definitionComponent: ComponentNode | undefined,
     private openingElement: Node<t.JSXOpeningElement>,
     private closingElement: Node<t.JSXClosingElement> | undefined,
     private nameNode: Node,

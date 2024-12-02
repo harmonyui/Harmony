@@ -9,7 +9,10 @@ import {
   DEFAULT_WIDTH as WIDTH,
 } from '@harmony/util/src/constants'
 import type { Font } from '@harmony/util/src/fonts'
-import type { BehaviorType } from '@harmony/util/src/types/component'
+import type {
+  BehaviorType,
+  ComponentUpdate,
+} from '@harmony/util/src/types/component'
 import type { Environment } from '@harmony/util/src/utils/component'
 import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
@@ -24,6 +27,7 @@ import { useHarmonyStore } from '../hooks/state'
 import type { Source } from '../hooks/state/component-state'
 import { dispatchToggleEvent } from '../hooks/toggle-event'
 import { useComponentUpdator } from '../hooks/component-updater'
+import type { RegistryComponent } from '../utils/harmonycn/types'
 import type {
   ComponentUpdateWithoutGlobal,
   DisplayMode,
@@ -49,6 +53,7 @@ export interface HarmonyProviderProps {
   overlay?: boolean
   cdnImages?: string[]
   uploadImage?: (data: FormData) => Promise<string>
+  components?: RegistryComponent[]
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   repositoryId,
@@ -58,6 +63,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   setup,
   cdnImages,
   uploadImage,
+  components = [],
   environment = 'production',
   source = 'document',
   overlay = true,
@@ -89,6 +95,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const setDisplayMode = useHarmonyStore((state) => state.setDisplayMode)
   const setIsOverlay = useHarmonyStore((state) => state.setIsOverlay)
   const initMutationObserverRef = useRef<MutationObserver | null>(null)
+  const activeComponents = useHarmonyStore((state) => state.activeComponents)
 
   const { executeCommand, onUndo, clearUpdates } = useComponentUpdator({
     isSaving,
@@ -121,6 +128,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         environment,
         cdnImages,
         uploadImage,
+        registryComponents: components,
       })
     }
 
@@ -172,10 +180,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
   useEffect(() => {
     if (rootComponent && isInitialized) {
-      const recurseAndUpdateElements = () => {
+      const recurseAndUpdateElements = (
+        updateFilter?: (update: ComponentUpdate) => boolean,
+      ) => {
         const componentIds: string[] = []
         recurseElements(rootComponent, [initElements(componentIds)])
-        makeUpdates(componentUpdates, fonts, rootComponent)
+        makeUpdates(
+          updateFilter
+            ? componentUpdates.filter(updateFilter)
+            : componentUpdates,
+          fonts,
+          rootComponent,
+        )
 
         if (repositoryId) {
           void updateComponentsFromIds(
@@ -193,12 +209,15 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             ),
           )
         ) {
-          recurseAndUpdateElements()
+          recurseAndUpdateElements((update) =>
+            ['className', 'text', 'property'].includes(update.type),
+          )
         }
       })
       const body = rootComponent.querySelector('body')
       initMutationObserverRef.current.observe(body || rootComponent, {
         childList: true,
+        subtree: true,
       })
       recurseAndUpdateElements()
 
@@ -212,6 +231,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
       }
     }
   }, [rootComponent, isInitialized])
+
+  useEffect(() => {
+    if (activeComponents.length > 0) {
+      activeComponents.forEach((component) => {
+        recurseElements(component.placeholder, [initElements([])])
+      })
+    }
+  }, [activeComponents])
 
   const initElements =
     (componentIds: string[]) =>

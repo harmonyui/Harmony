@@ -76,6 +76,19 @@ describe('code-updator', () => {
       cssFramework: cssFramework || 'tailwind',
       defaultUrl: '',
       tailwindPrefix,
+      registry: {
+        Button: {
+          name: 'Button',
+          implementation: '<Button>Click me</Button>',
+          dependencies: [
+            {
+              isDefault: false,
+              name: 'Button',
+              path: '@/components/button',
+            },
+          ],
+        },
+      },
     }
     const gitRepository: GitRepository = {
       async getBranchRef() {
@@ -1013,7 +1026,7 @@ describe('code-updator', () => {
             parentChildIndex: 0,
             index: 1,
             action: 'create',
-            component: 'button',
+            component: 'Button',
           }),
           oldValue: '',
           type: 'component',

@@ -10,8 +10,9 @@ import {
 } from '../../utils/element-utils'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
-import type { ComponentUpdateState } from './component-update'
+import type { ComponentUpdateState } from './component-update/slice'
 import type { ProjectInfoState } from './project-info'
+import type { HarmonyCnState } from './harmonycn'
 
 export type Source = 'document' | 'iframe'
 export interface ComponentState {
@@ -32,7 +33,10 @@ export interface ComponentState {
 
 export const createComponentStateSlice = createHarmonySlice<
   ComponentState,
-  HarmonyComponentsState & ComponentUpdateState & ProjectInfoState
+  HarmonyComponentsState &
+    ComponentUpdateState &
+    ProjectInfoState &
+    HarmonyCnState
 >((set, get) => {
   const getRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
     const source = get().source
@@ -223,6 +227,13 @@ export const createComponentStateSlice = createHarmonySlice<
       },
       componentUpdates() {
         updateRootElement(get().harmonyComponents)
+      },
+      createdElements() {
+        updateRootElement(get().harmonyComponents)
+      },
+      activeComponents() {
+        //For some reason the components are not mounted immediately
+        setTimeout(() => updateRootElement(get().harmonyComponents))
       },
       isInitialized(curr, prev) {
         if (curr && !prev) {

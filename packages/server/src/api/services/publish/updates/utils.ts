@@ -1,7 +1,9 @@
 import { getBaseId } from '@harmony/util/src/utils/component'
-import type { HarmonyCn } from '@harmony/util/src/harmonycn/types'
 import type { Repository } from '@harmony/util/src/types/branch'
-import type { InstanceProperty } from '@harmony/util/src/harmonycn/components'
+import {
+  harmonyCnSchema,
+  type RegistryItem,
+} from '@harmony/util/src/harmonycn/types'
 import { componentInstances } from '@harmony/util/src/harmonycn/components'
 import type { FlowGraph } from '../../indexor/graph'
 import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
@@ -79,8 +81,9 @@ export const getInstanceInfo = (
   }
 
   const baseId = getBaseId(componentId)
-  const realComponentId = graph.idMapping[`${baseId}-${childIndex}`]
-    ? componentId.replace(baseId, graph.idMapping[`${baseId}-${childIndex}`])
+  const rootId = componentId.split('#')[0]
+  const realComponentId = graph.idMapping[`${rootId}-${childIndex}`]
+    ? componentId.replace(rootId, graph.idMapping[`${rootId}-${childIndex}`])
     : componentId
 
   const element = graph.getJSXElementById(baseId, childIndex)
@@ -123,10 +126,13 @@ export const getInstanceInfo = (
 }
 
 export const getInstanceFromComponent = (
-  component: HarmonyCn,
+  component: string,
   repository: Repository,
-): InstanceProperty => {
-  let instance = componentInstances[component] as InstanceProperty | undefined
+): RegistryItem => {
+  const defaultComponent = harmonyCnSchema.safeParse(component)
+  let instance = defaultComponent.success
+    ? componentInstances[defaultComponent.data]
+    : (repository.registry[component] as RegistryItem | undefined)
   if (!instance) {
     throw new Error(`Invalid component type ${component}`)
   }
@@ -136,7 +142,7 @@ export const getInstanceFromComponent = (
     const classesWithPrefix = repository.tailwindPrefix
       ? addPrefixToClassName(instance.classes, repository.tailwindPrefix)
       : instance.classes
-    instance.code = instance.code.replace(
+    instance.implementation = instance.implementation.replace(
       'className="%"',
       `className="${classesWithPrefix}"`,
     )

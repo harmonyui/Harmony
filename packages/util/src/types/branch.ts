@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { registryItemSchema } from '../harmonycn/types'
 import { emailSchema } from './utils'
 
 export const commitSchema = z.object({
@@ -40,6 +41,7 @@ export const repositorySchema = z.object({
   cssFramework: z.string(),
   tailwindPrefix: z.optional(z.string()),
   defaultUrl: z.string(),
+  registry: z.record(z.string(), registryItemSchema),
 })
 
 export type Repository = z.infer<typeof repositorySchema>

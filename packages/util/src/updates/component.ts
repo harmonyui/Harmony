@@ -1,5 +1,4 @@
 import { z } from 'zod'
-import { harmonyCnSchema } from '../harmonycn/types'
 
 export const jsonSchema = z
   .string()
@@ -32,7 +31,7 @@ const componentSchemaBase = z.object({
 
 export const addComponentSchema = componentSchemaBase.extend({
   action: z.literal('create'),
-  component: z.optional(harmonyCnSchema),
+  component: z.optional(z.string()),
   cached: z.optional(z.boolean()),
 })
 export type AddComponent = z.infer<typeof addComponentSchema>

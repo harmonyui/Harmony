@@ -40,6 +40,19 @@ export const getRepository = async ({
     cssFramework: repository.css_framework,
     tailwindPrefix: repository.tailwind_prefix || undefined,
     defaultUrl: repository.default_url,
+    registry: {
+      Button: {
+        name: 'Button',
+        implementation: '<Button>Click me</Button>',
+        dependencies: [
+          {
+            isDefault: false,
+            name: 'Button',
+            path: '@/components/button',
+          },
+        ],
+      },
+    },
   }
 }
 

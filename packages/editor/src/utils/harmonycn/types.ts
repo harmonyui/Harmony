@@ -1,4 +1,4 @@
-import type { HarmonyCn } from '@harmony/util/src/harmonycn/types'
+import type { HarmonyCn, RegistryItem } from '@harmony/util/src/harmonycn/types'
 
 export type CreateComponent = () => Omit<
   CreatedComponent,
@@ -11,4 +11,9 @@ export interface CreatedComponent {
   element: HTMLElement
   type?: HarmonyCn
   options?: Record<string, unknown>
+}
+
+export type RegistryComponent = RegistryItem & {
+  component: React.FunctionComponent
+  defaultProps: Record<string, unknown>
 }

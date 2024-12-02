@@ -152,6 +152,14 @@ export class FlowGraph {
     jsxElementNode.setParentElement(parentElement)
     const nameNode = jsxElementNode.getNameNode()
     this.addDataFlowEdge(nameNode)
+
+    const elementDefinition = this.getDefinition(jsxElementNode.getName())
+
+    //Connect the element to the definition component
+    if (elementDefinition) {
+      jsxElementNode.setDefinitionComponent(elementDefinition)
+      this.addJSXInstanceComponentEdge(elementDefinition, jsxElementNode)
+    }
   }
 
   public addJSXAttribute(

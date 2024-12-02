@@ -29,13 +29,15 @@ export const AddComponentMenu: React.FunctionComponent<
   AddComponentMenuProps
 > = ({ isOpen, onClose, options }) => {
   const selectedComponent = useHarmonyStore((store) => store.selectedComponent)
+  const registry = useHarmonyStore((store) => store.registry)
   const { addComponent } = useUpdateComponent()
 
-  const onItemClick = (component: HarmonyCn) => () => {
+  const onItemClick = (component: string) => () => {
     if (!selectedComponent) return
     addComponent(selectedComponent.element, component, options)
     onClose()
   }
+
   return (
     <CommandDialog
       open={isOpen}
@@ -46,7 +48,7 @@ export const AddComponentMenu: React.FunctionComponent<
         <CommandInput placeholder='Search for a component...' />
         <CommandList>
           <CommandEmpty>No results found.</CommandEmpty>
-          <CommandGroup heading='Suggestions'>
+          <CommandGroup heading='Basic'>
             {components.map(({ name, icon: Icon }) => (
               <CommandItem key={name} onSelect={onItemClick(name)}>
                 <Icon />
@@ -55,6 +57,17 @@ export const AddComponentMenu: React.FunctionComponent<
             ))}
           </CommandGroup>
           <CommandSeparator />
+          <CommandGroup heading='Components'>
+            {registry.map((component) => (
+              <CommandItem
+                key={component.name}
+                onSelect={onItemClick(component.name)}
+              >
+                <TIcon />
+                <span>{component.name}</span>
+              </CommandItem>
+            ))}
+          </CommandGroup>
         </CommandList>
       </Command>
     </CommandDialog>
@@ -77,9 +90,5 @@ const components: HarmonyCnListItem[] = [
   {
     name: 'image',
     icon: ImageIcon,
-  },
-  {
-    name: 'button',
-    icon: FrameIcon,
   },
 ]

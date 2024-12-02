@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import type { Repository } from '@harmony/util/src/types/branch'
 import type { GitRepositoryFactory } from '../../repository/git/types'
 import type { GithubCache } from '../../repository/cache/types'
 import { updateFileCache } from './update-cache'
@@ -11,7 +12,7 @@ describe('update-cache', () => {
       content: string
     }[],
   ) => {
-    const repository = {
+    const repository: Repository = {
       id: '',
       name: 'Repo',
       branch: 'MyBranch',
@@ -20,6 +21,7 @@ describe('update-cache', () => {
       installationId: 123,
       cssFramework: 'tailwind',
       defaultUrl: '',
+      registry: {},
     }
     type Files = 'file1.tsx' | 'file2.tsx' | 'file3.tsx'
     const fileCache: Record<`${string}:indexing`, string[]> &

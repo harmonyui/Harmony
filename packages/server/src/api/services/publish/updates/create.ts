@@ -1,7 +1,7 @@
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
-import type { InstanceProperty } from '@harmony/util/src/harmonycn/components'
+import type { RegistryItem } from '@harmony/util/src/harmonycn/types'
 import type { FlowGraph } from '../../indexor/graph'
 import { getGraph } from '../../indexor/graph'
 import type { Node } from '../../indexor/types'
@@ -47,7 +47,7 @@ export const createComponent = (
     parentChildIndex,
     index,
   }: { parentId: string; parentChildIndex: number; index: number },
-  code: InstanceProperty,
+  code: RegistryItem,
   graph: FlowGraph,
 ) => {
   const parentElement = graph.getJSXElementById(parentId, parentChildIndex)
@@ -71,7 +71,7 @@ export const createComponent = (
 
 const getElementInstanceNodes = (
   file: string,
-  { instance, code, dependencies }: InstanceProperty,
+  { implementation, dependencies }: RegistryItem,
 ): { element: JSXElementNode; nodes: Node[] } => {
   const importStatements = dependencies
     .map((dependency) => {
@@ -85,7 +85,7 @@ const getElementInstanceNodes = (
     `${importStatements}
 
     const App = () => {
-      return ${instance ?? code}
+      return ${implementation}
     }
   `,
   )

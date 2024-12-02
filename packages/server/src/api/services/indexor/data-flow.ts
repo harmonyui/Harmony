@@ -208,7 +208,6 @@ const addFunctionEdge: AddEdge<t.Function> = (node, graph) => {
     JSXElement: {
       enter(jsxPath) {
         const name = getSnippetFromNode(jsxPath.node.openingElement.name)
-        const definitionComponent = graph.getDefinition(name)
 
         const openingElement = graph.createNode(
           getSnippetFromNode(jsxPath.node.openingElement),
@@ -231,7 +230,6 @@ const addFunctionEdge: AddEdge<t.Function> = (node, graph) => {
         const elementNode = new JSXElementNode(
           [],
           containingComponent,
-          definitionComponent,
           openingElement,
           closingElement,
           nameNode,
@@ -308,12 +306,6 @@ const addFunctionEdge: AddEdge<t.Function> = (node, graph) => {
             graph.addJSXAttribute(attributeNode, elementNode)
           }
           childIndex++
-        }
-
-        //Connect the element to the definition component
-        const elementDefinition = elementNode.getDefinitionComponent()
-        if (elementDefinition) {
-          graph.addJSXInstanceComponentEdge(elementDefinition, elementNode)
         }
       },
       exit() {
