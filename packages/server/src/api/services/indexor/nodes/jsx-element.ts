@@ -59,6 +59,9 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   public getParentComponent() {
     return this.parentComponent
   }
+  public setParentComponent(parentComponent: ComponentNode) {
+    this.parentComponent = parentComponent
+  }
 
   public getChildren() {
     return this.children

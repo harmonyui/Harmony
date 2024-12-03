@@ -24,12 +24,14 @@ export const createComponentUpdate = ([set, get]: Parameters<
       return cachedElement
     }
     if (!component) {
-      throw new Error("Element is marked as cached but doesn't exist")
+      throw new Error(
+        'New Component marked as cached but no cached element found',
+      )
     }
     return createComponentElement(component, componentId, childIndex)
   }
 
-  const mountComponent = ({
+  const mountComponent = async ({
     component,
     componentId,
     childIndex,
@@ -49,6 +51,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
         componentId,
         childIndex,
       )
+
       const children = parentElement.children
       if (index < children.length) {
         parentElement.insertBefore(element.element, children[index])
@@ -57,17 +60,20 @@ export const createComponentUpdate = ([set, get]: Parameters<
       }
       set((state) => ({ createdElements: [...state.createdElements, element] }))
     } else {
-      get().mountComponent({
+      const createdComponent = await get().mountComponent({
         componentId,
         childIndex,
         name: component,
         parentElement,
         index,
       })
+      set((state) => ({
+        createdElements: [...state.createdElements, createdComponent],
+      }))
     }
   }
 
-  return (
+  return async (
     update: ComponentUpdate,
     value: AddComponent,
     rootElement: HTMLElement | undefined,
@@ -80,7 +86,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
       throw new Error(
         `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
       )
-    mountComponent({
+    await mountComponent({
       component,
       componentId: update.componentId,
       childIndex: update.childIndex,

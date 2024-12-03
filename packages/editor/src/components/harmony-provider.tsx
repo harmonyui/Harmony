@@ -181,12 +181,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
   useEffect(() => {
     if (rootComponent && isInitialized) {
-      const recurseAndUpdateElements = (
+      const recurseAndUpdateElements = async (
         updateFilter?: (update: ComponentUpdate) => boolean,
       ) => {
         const componentIds: string[] = []
         recurseElements(rootComponent, [initElements(componentIds)])
-        makeUpdates(
+        await makeUpdates(
           updateFilter
             ? componentUpdates.filter(updateFilter)
             : componentUpdates,
@@ -210,9 +210,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             ),
           )
         ) {
-          recurseAndUpdateElements((update) =>
-            ['className', 'text', 'property'].includes(update.type),
-          )
+          recurseElements(rootComponent, [initElements([])])
         }
       })
       const body = rootComponent.querySelector('body')
@@ -220,7 +218,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         childList: true,
         subtree: true,
       })
-      recurseAndUpdateElements()
+      void recurseAndUpdateElements()
 
       //Hacky fix for the toolbar zooming weird and the user does not have the updated editor
       const harmonyContainer = document.getElementById('harmony-container')
@@ -425,7 +423,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   }
 
   const onClose = () => {
-    clearUpdates()
+    void clearUpdates()
     initMutationObserverRef.current?.disconnect()
     dispatchToggleEvent()
   }

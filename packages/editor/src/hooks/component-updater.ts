@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- ok*/
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import type { Font } from '@harmony/util/src/fonts'
 import type {
@@ -56,7 +57,7 @@ export const useComponentUpdator = ({
       saveCommand(saveStack, { branchId, repositoryId })
         .then((errorUpdates) => {
           if (errorUpdates.length > 0) {
-            change({ name: 'change', update: errorUpdates })
+            void change({ name: 'change', update: errorUpdates })
             errorUpdates.forEach((error) => {
               const elements = findElementsFromId(
                 error.componentId,
@@ -70,11 +71,14 @@ export const useComponentUpdator = ({
           }
           resolve()
         })
-        .catch(() => {
+        .catch(async () => {
           setIsSaving(false)
           for (let i = copy.length - 1; i >= 0; i--) {
             const update = copy[i]
-            change({ name: update.name, update: reverseUpdates(update.update) })
+            await change({
+              name: update.name,
+              update: reverseUpdates(update.update),
+            })
           }
           onError('There was an error saving the project')
           resolve()
@@ -113,7 +117,7 @@ export const useComponentUpdator = ({
       }
 
       //TODO: find a better way to do this
-      if (execute) change(newCommand)
+      if (execute) void change(newCommand)
 
       const newEdits = undoStack.slice()
       const newSaves = saveStack.slice()
@@ -163,14 +167,14 @@ export const useComponentUpdator = ({
     },
   )
 
-  const clearUpdates = (): void => {
-    change({ name: 'change', update: reverseUpdates(updates) })
+  const clearUpdates = async (): Promise<void> => {
+    return change({ name: 'change', update: reverseUpdates(updates) })
   }
 
-  const change = ({ update }: HarmonyCommandChange): void => {
+  const change = async ({ update }: HarmonyCommandChange): Promise<void> => {
     if (!rootComponent) return
     for (const up of update) {
-      makeUpdates([up], fonts, rootElement)
+      await makeUpdates([up], fonts, rootElement)
     }
 
     onChange && onChange()
@@ -199,7 +203,7 @@ export const useComponentUpdator = ({
       oldValue: up.value,
     }))
     const newEdit: HarmonyCommand = { name: 'change', update: newUpdates }
-    change(newEdit)
+    void change(newEdit)
     const newFrom = fromValue.slice()
     newFrom.splice(newFrom.length - 1)
 

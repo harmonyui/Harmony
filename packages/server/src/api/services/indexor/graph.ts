@@ -148,6 +148,7 @@ export class FlowGraph {
     const closingElement = jsxElementNode.getClosingElement()
     closingElement && this.setNode(closingElement)
     component.addJSXElement(jsxElementNode)
+    jsxElementNode.setParentComponent(component)
     parentElement?.addChild(jsxElementNode)
     jsxElementNode.setParentElement(parentElement)
     const nameNode = jsxElementNode.getNameNode()

@@ -9,14 +9,17 @@ import type { ComponentUpdateState } from './slice'
 
 export const reorderComponentUpdate =
   (props: Parameters<StateCreator<ComponentUpdateState & HarmonyCnState>>) =>
-  (update: ComponentUpdate, rootElement: HTMLElement | undefined): void => {
+  async (
+    update: ComponentUpdate,
+    rootElement: HTMLElement | undefined,
+  ): Promise<void> => {
     const { parentId, parentChildIndex, index } = parseUpdate(
       reorderComponentSchema,
       update.value,
     )
 
     deleteComponentUpdate(props)(update, rootElement)
-    createComponentUpdate(props)(
+    await createComponentUpdate(props)(
       update,
       {
         parentId,

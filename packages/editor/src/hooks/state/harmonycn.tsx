@@ -2,7 +2,10 @@ import type { Root } from 'react-dom/client'
 import { createRoot } from 'react-dom/client'
 import { mergeArraysOnId } from '@harmony/util/src/utils/common'
 import type { HarmonyComponentInfo } from '@harmony/util/src/types/component'
-import type { RegistryComponent } from '../../utils/harmonycn/types'
+import type {
+  CreatedComponent,
+  RegistryComponent,
+} from '../../utils/harmonycn/types'
 import { recurseElements } from '../../utils/element-utils'
 import { createHarmonySlice } from './factory'
 import type { HarmonyComponentsState } from './harmony-components'
@@ -19,7 +22,7 @@ export interface HarmonyCnState {
     name: string
     parentElement: HTMLElement
     index: number
-  }) => void
+  }) => Promise<CreatedComponent>
   removeComponent: (componentId: string, childIndex: number) => void
   registry: RegistryComponent[]
   initializeRegistry: (components: RegistryComponent[]) => void
@@ -67,48 +70,59 @@ export const createHarmonyCnSlice = createHarmonySlice<
     )
 
     //For some reason there is a delay when mounting the component
-    setTimeout(() => {
-      set((state) => {
-        return {
-          activeComponents: [
-            ...state.activeComponents,
-            { root, componentId, childIndex },
-          ],
-        }
-      })
-      const harmonyComponents: HarmonyComponentInfo[] = []
-      Array.from(placeholder.children).forEach((child, cIndx) => {
-        recurseElements(child as HTMLElement, [
-          (element) => {
-            element.dataset.harmonyChildIndex = String(childIndex)
-          },
-        ])
-
-        harmonyComponents.push({
-          id: (child as HTMLElement).dataset.harmonyId || '',
-          name,
-          isComponent: true,
-          props: registryComponent.props,
+    return new Promise<CreatedComponent>((resolve) => {
+      setTimeout(() => {
+        set((state) => {
+          return {
+            activeComponents: [
+              ...state.activeComponents,
+              { root, componentId, childIndex },
+            ],
+          }
         })
-        //Get rid of the placeholder div
-        if (index < children.length) {
-          parentElement.insertBefore(child, children[index + cIndx])
-        } else {
-          parentElement.appendChild(child)
+        const harmonyComponents: HarmonyComponentInfo[] = []
+        let createdComponent: CreatedComponent | undefined
+        Array.from(placeholder.children).forEach((child, cIndx) => {
+          recurseElements(child as HTMLElement, [
+            (element) => {
+              element.dataset.harmonyChildIndex = String(childIndex)
+            },
+          ])
+          const _componentId = (child as HTMLElement).dataset.harmonyId || ''
+          createdComponent = createdComponent ?? {
+            componentId: _componentId,
+            childIndex,
+            element: child as HTMLElement,
+          }
+          harmonyComponents.push({
+            id: _componentId,
+            name,
+            isComponent: true,
+            props: registryComponent.props,
+          })
+          //Get rid of the placeholder div
+          if (index < children.length) {
+            parentElement.insertBefore(child, children[index + cIndx])
+          } else {
+            parentElement.appendChild(child)
+          }
+        })
+
+        placeholder.remove()
+        if (!createdComponent) {
+          throw new Error('Component not created')
         }
+
+        set((state) => ({
+          harmonyComponents: mergeArraysOnId(
+            state.harmonyComponents,
+            harmonyComponents,
+            'id',
+          ),
+        }))
+        resolve(createdComponent)
       })
-
-      placeholder.remove()
-      set((state) => ({
-        harmonyComponents: mergeArraysOnId(
-          state.harmonyComponents,
-          harmonyComponents,
-          'id',
-        ),
-      }))
     })
-
-    return { root }
   },
   removeComponent(componentId, childIndex) {
     set((state) => {

@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop  -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import type { Font } from '@harmony/util/src/fonts'
 import {
@@ -25,7 +26,7 @@ export interface ComponentUpdateState {
     updates: ComponentUpdate[],
     fonts: Font[] | undefined,
     rootElement: HTMLElement | undefined,
-  ) => void
+  ) => Promise<void>
   deletedElements: CreatedComponent[]
   createdElements: CreatedComponent[]
 }
@@ -46,7 +47,7 @@ export const createComponentUpdateSlice = createHarmonySlice<
       }
     })
   },
-  makeUpdates(
+  async makeUpdates(
     updates: ComponentUpdate[],
     fonts: Font[] | undefined,
     rootElement: HTMLElement | undefined,
@@ -58,14 +59,14 @@ export const createComponentUpdateSlice = createHarmonySlice<
     for (const update of updates) {
       if (update.type === 'component') {
         if (update.name === 'reorder') {
-          reorderComponent(update, rootElement)
+          await reorderComponent(update, rootElement)
         }
         if (update.name === 'delete-create') {
           const result = parseUpdate(addDeleteComponentSchema, update.value)
           if (result.action === 'delete') {
             deleteComponent(update, rootElement)
           } else {
-            createComponent(
+            await createComponent(
               update,
               parseUpdate(addComponentSchema, update.value),
               rootElement,
