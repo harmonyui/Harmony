@@ -1,15 +1,24 @@
 import { describe, expect, it } from 'vitest'
 import type { Repository } from '@harmony/util/src/types/branch'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
-import type { UpdateAttributeValue } from '@harmony/util/src/updates/component'
+import type {
+  AddComponent,
+  DeleteComponent,
+  ReorderComponent,
+  UpdateAttributeValue,
+} from '@harmony/util/src/updates/component'
+import { createUpdate } from '@harmony/util/src/updates/utils'
+import { replaceByIndex } from '@harmony/util/src/utils/common'
+import * as prettier from 'prettier'
+import type { UpdateProperty } from '@harmony/util/src/updates/property'
 import type { GitRepository } from '../../repository/git/types'
 import { indexFiles } from '../indexor/indexor'
 import { CodeUpdator } from './code-updator'
 
 describe('code-updator', () => {
-  const expectLocationOfString = (
+  const _expectLocationOfString = (
     file: TestFile,
-    actualLocation: { start: number; end: number; diff?: number },
+    actualLocation: { start: number; end: number; diff: number },
     expectedString: string,
     _removeLines = false,
   ): void => {
@@ -20,6 +29,32 @@ describe('code-updator', () => {
     )
     const actual = _removeLines ? removeLines(substr) : substr
     expect(actual).toBe(expectedString)
+  }
+
+  const _expectLocationOfChangedLine = (
+    file: TestFile,
+    actualLocation: {
+      start: number
+      end: number
+      diff: number
+      snippet: string
+    },
+    expectedLine: string,
+  ) => {
+    const content = testFiles[file]
+    const changedContent = replaceByIndex(
+      content,
+      actualLocation.snippet,
+      actualLocation.start - actualLocation.diff,
+      actualLocation.end - actualLocation.diff,
+    )
+    let substr = changedContent.slice(
+      actualLocation.start - (actualLocation.diff || 0),
+    )
+    const indexOfNextLine = substr.indexOf('\n')
+    substr = substr.slice(0, indexOfNextLine)
+    const actual = substr
+    expect(actual).toBe(expectedLine)
   }
 
   const setupGitRepo = async (
@@ -42,6 +77,20 @@ describe('code-updator', () => {
       cssFramework: cssFramework || 'tailwind',
       defaultUrl: '',
       tailwindPrefix,
+      registry: {
+        Button: {
+          name: 'Button',
+          implementation: '<Button>Click me</Button>',
+          dependencies: [
+            {
+              isDefault: false,
+              name: 'Button',
+              path: '@/components/button',
+            },
+          ],
+          props: [],
+        },
+      },
     }
     const gitRepository: GitRepository = {
       async getBranchRef() {
@@ -87,8 +136,30 @@ describe('code-updator', () => {
     expect(result).toBeTruthy()
     if (!result) throw new Error()
 
-    const codeUpdator = new CodeUpdator(gitRepository)
+    const codeUpdator = new CodeUpdator(gitRepository, {
+      trailingComma: 'es5',
+      semi: false,
+      tabWidth: 2,
+      singleQuote: true,
+      jsxSingleQuote: true,
+      parser: 'typescript',
+    })
     return { codeUpdator, elementInstances: result.elementInstance }
+  }
+
+  const formatCode = (str: string): Promise<string> => {
+    return prettier.format(str, {
+      trailingComma: 'es5',
+      semi: false,
+      tabWidth: 2,
+      singleQuote: true,
+      jsxSingleQuote: true,
+      parser: 'typescript',
+    })
+  }
+
+  const removeLines = (str: string): string => {
+    return str.replace(/\n/g, '').replace(/\s+/g, ' ').trim()
   }
 
   describe('updateFiles', () => {
@@ -125,23 +196,23 @@ describe('code-updator', () => {
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
 
-      expect(codeUpdates.locations.length).toBe(2)
-      expect(codeUpdates.locations[0].snippet).toBe(
-        '"hw-group hw-py-2 hw-block hw-mx-2.5"',
-      )
-      expectLocationOfString(
-        file,
-        codeUpdates.locations[0],
-        '"hw-group hw-flex hw-py-2"',
-      )
-
-      expect(codeUpdates.locations[1].snippet).toBe(
-        '"hw-flex hw-flex-row hw-pl-2.5"',
-      )
-      expectLocationOfString(
-        file,
-        codeUpdates.locations[1],
-        '"hw-flex hw-flex-col"',
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const TailwindComponent = ({ label, innerClassName, noOp, noWhere }) => {
+            return (
+                <div className='hw-group hw-py-2 hw-block hw-mx-2.5'>
+                    <h1 className='hw-flex hw-flex-row hw-pl-2.5'>Hello there</h1>
+                    <h2 className={innerClassName}>{label}</h2>
+                    <h3 className={noWhere}>{noOp}</h3>
+                </div>
+            )
+        }
+        const UseTailwindComponent = ({ noWhere }) => {
+          return (
+            <TailwindComponent label='Thank you' innerClassName='hw-p-2' noWhere={noWhere} />
+          )
+        }
+        `),
       )
     })
 
@@ -165,14 +236,16 @@ describe('code-updator', () => {
       expect(fileUpdates[file]).toBeTruthy()
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
-      expect(codeUpdates.locations.length).toBe(1)
-      expect(codeUpdates.locations[0].snippet).toBe(
-        '"flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm ml-[3px]"',
-      )
-      expectLocationOfString(
-        file,
-        codeUpdates.locations[0],
-        '"flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm"',
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const NonTailwindClass = () => {
+            return (
+                <div className='flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm ml-[3px]'>
+                    Bob
+                </div>
+            )
+        }
+        `),
       )
     })
 
@@ -216,20 +289,23 @@ describe('code-updator', () => {
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
 
-      expect(codeUpdates.locations.length).toBe(3)
-      expect(codeUpdates.locations[0].snippet).toBe('Hello')
-      expectLocationOfString(file, codeUpdates.locations[0], 'Hello there')
-
-      expect(codeUpdates.locations[2].snippet).toBe('"Yes sir"')
-      expectLocationOfString(file, codeUpdates.locations[2], '"Thank you"')
-
-      expect(codeUpdates.locations[1].snippet).toBe(
-        '/*Change inner text for h3 tag from This is old text to This is new text*/<h3 className={noWhere}>',
-      )
-      expectLocationOfString(
-        file,
-        codeUpdates.locations[1],
-        '<h3 className={noWhere}>',
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const TailwindComponent = ({label, innerClassName, noOp, noWhere}) => {
+            return (
+                <div className='hw-group hw-flex hw-py-2'>
+                    <h1 className='hw-flex hw-flex-col'>Hello</h1>
+                    <h2 className={innerClassName}>{label}</h2>
+                    /*Change inner text for h3 tag from This is old text to This is new text*/<h3 className={noWhere}>{noOp}</h3>
+                </div>
+            )
+        }
+        const UseTailwindComponent = ({noWhere}) => {
+          return (
+            <TailwindComponent label='Yes sir' innerClassName='hw-p-2' noWhere={noWhere}/>
+          )
+        }
+        `),
       )
     })
 
@@ -266,18 +342,24 @@ describe('code-updator', () => {
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
 
-      expect(codeUpdates.locations.length).toBe(2)
-      expect(codeUpdates.locations[0].snippet).toBe(
-        '/*Add class hw-pl-2.5 to h3 tag*/<TailwindComponent label="Thank you" innerClassName="hw-p-2 hw-pl-2.5" noWhere={noWhere} />',
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const TailwindComponent = ({label, innerClassName, noOp, noWhere}) => {
+            return (
+                <div className='hw-group hw-flex hw-py-2'>
+                    <h1 className='hw-flex hw-flex-col'>Hello there</h1>
+                    <h2 className={innerClassName}>{label}</h2>
+                    <h3 className={noWhere}>{noOp}</h3>
+                </div>
+            )
+        }
+        const UseTailwindComponent = ({noWhere}) => {
+          return (
+            /*Add class hw-pl-2.5 to h3 tag*/<TailwindComponent label='Thank you' innerClassName='hw-p-2 hw-pl-2.5' noWhere={noWhere}/>
+          )
+        }
+        `),
       )
-      expectLocationOfString(
-        file,
-        codeUpdates.locations[0],
-        '<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>',
-      )
-
-      expect(codeUpdates.locations[1].snippet).toBe('"hw-p-2 hw-pl-2.5"')
-      expectLocationOfString(file, codeUpdates.locations[1], '"hw-p-2"')
     })
 
     it('Should apply className to parent when parent does not already have class name but can', async () => {
@@ -310,11 +392,24 @@ describe('code-updator', () => {
 
       const codeUpdates = fileUpdates.classNameParent
       expect(codeUpdates.filePath).toBe('classNameParent')
-      expect(codeUpdates.locations.length).toBe(1)
-      expect(codeUpdates.locations[0].snippet).toBe(
-        '<Child className="bg-black" innerClass="pl-1" />',
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const Child = ({className, innerClass}) => {
+            return (
+                <div className={cn('flex mx-2', className)}>
+                    <div className={innerClass}>
+                        Thank you
+                    </div>
+                </div>
+            )
+        }
+        const Parent = () => {
+            return (
+                <Child className='bg-black' innerClass='pl-1' />
+            )
+        }
+        `),
       )
-      expectLocationOfString(file, codeUpdates.locations[0], '<Child />')
     })
 
     it('Should apply className and children updates to spread prop', async () => {
@@ -374,21 +469,39 @@ describe('code-updator', () => {
 
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
-      expect(codeUpdates.locations.length).toBe(5)
-      expect(codeUpdates.locations[0].snippet).toBe('Bobby Boi')
-      expectLocationOfString(file, codeUpdates.locations[0], 'Bob')
-
-      expect(codeUpdates.locations[1].snippet).toBe('"text-[15px]"')
-      expectLocationOfString(file, codeUpdates.locations[1], '"text-sm"')
-
-      expect(codeUpdates.locations[2].snippet).toBe('"Label you"')
-      expectLocationOfString(file, codeUpdates.locations[2], '"Label me"')
-
-      expect(codeUpdates.locations[3].snippet).toBe('"bg-black"')
-      expectLocationOfString(file, codeUpdates.locations[3], '"bg-white"')
-
-      expect(codeUpdates.locations[4].snippet).toBe('More children')
-      expectLocationOfString(file, codeUpdates.locations[4], 'Some Children')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const ChildWithoutChildren = ({className, ...rest}) => {
+            return (
+                <h1 className={className} {...rest}/>
+            )
+        }
+        const ChildWithoutClass = ({label, ...rest}) => {
+            return (
+                <div {...rest}>
+                    <h1>{label}</h1>
+                </div>
+            )
+        }
+        const ParentWithSpread = ({temp, ...rest}) => {
+            return (
+                <div>
+                    <ChildWithoutChildren {...rest}/>
+                    <ChildWithoutClass {...rest}/>
+                </div>
+            )
+        }
+        const Parent = () => {
+            return (
+                <div>
+                    <ChildWithoutChildren className='mx-1'>Bobby Boi</ChildWithoutChildren>
+                    <ChildWithoutClass className='text-[15px]' label='Hello there'/>
+                    <ParentWithSpread label='Label you' className='bg-black'>More children</ParentWithSpread>
+                </div>
+            )
+        }
+        `),
+      )
     })
 
     it('Should add comment for non supported framework', async () => {
@@ -415,15 +528,23 @@ describe('code-updator', () => {
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
 
-      expect(codeUpdates.locations.length).toBe(1)
-      expect(removeLines(codeUpdates.locations[0].snippet)).toBe(
-        '/*padding-left:10px;*/<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere} />',
-      )
-      expectLocationOfString(
-        file,
-        codeUpdates.locations[0],
-        '<TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>',
-        true,
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const TailwindComponent = ({label, innerClassName, noOp, noWhere}) => {
+            return (
+                <div className='hw-group hw-flex hw-py-2'>
+                    <h1 className='hw-flex hw-flex-col'>Hello there</h1>
+                    <h2 className={innerClassName}>{label}</h2>
+                    <h3 className={noWhere}>{noOp}</h3>
+                </div>
+            )
+        }
+        const UseTailwindComponent = ({noWhere}) => {
+          return (
+            /*padding-left:10px;*/<TailwindComponent label='Thank you' innerClassName='hw-p-2' noWhere={noWhere}/>
+          )
+        }
+        `),
       )
     })
 
@@ -459,15 +580,16 @@ describe('code-updator', () => {
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
 
-      expect(codeUpdates.locations.length).toBe(1)
-      expect(removeLines(codeUpdates.locations[0].snippet)).toBe(
-        '"https://another-image.com/image.jpg"',
-      )
-      expectLocationOfString(
-        file,
-        codeUpdates.locations[0],
-        '"https://google.com/image.jpg"',
-        true,
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const ImageSrc = ({image}) => {
+          return <img src={image} />
+        }
+        const Home = () => {
+          const image = 'https://another-image.com/image.jpg'
+          return <ImageSrc image={image} />
+        }
+        `),
       )
     })
 
@@ -576,29 +698,462 @@ describe('code-updator', () => {
       const codeUpdates = fileUpdates[file]
       expect(codeUpdates.filePath).toBe(file)
 
-      expect(codeUpdates.locations.length).toBe(10)
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const ComponentArrays = ({array1, array2}) => {
+        const [first, second] = array2;
+            return <div>
+                <h1 className={first.start}>{array1[0]}</h1>
+                <h2 className={second.end}>{array1[1]}</h2>
+            </div>
+        }
+        const ComponentMapping = ({categories}) => {
+            return <div>
+                {categories.map((category) => {
+                    return <h1 className={category.style}>{category.name}</h1>
+                })}
+            </div>
+        }
+        const App = () => {
+            const categories = [
+              {
+                name: 'Goodbye sir',
+                style: 'block',
+              },
+              {
+                name: 'Thank you sir',
+                style: 'gap-2.5',
+              },
+            ]
+            const classes = [
+              {
+                start: 'bg-black',
+              },
+              {
+                end: 'text-black',
+              },
+            ]
+            const inHouseMapping = [
+              {
+                name: 'name1-changed',
+              },
+              {
+                name: 'name2-changed',
+              },
+            ]
+            return <>
+                <ComponentArrays array1={['Hello good sir', 'There good sir']} array2={classes}/>
+                <ComponentMapping categories={categories}/>
+                {inHouseMapping.map((category) => <div key={category.name}>{category.name}</div>)}
+            </>
+        }
+        `),
+      )
+    })
 
-      expect(codeUpdates.locations[0].snippet).toBe('"Goodbye sir"')
-      expectLocationOfString(file, codeUpdates.locations[0], '"Hello sir"')
-      expect(codeUpdates.locations[1].snippet).toBe('"block"')
-      expectLocationOfString(file, codeUpdates.locations[1], '"flex"')
-      expect(codeUpdates.locations[2].snippet).toBe('"Thank you sir"')
-      expectLocationOfString(file, codeUpdates.locations[2], '"There sir"')
-      expect(codeUpdates.locations[3].snippet).toBe('"gap-2.5"')
-      expectLocationOfString(file, codeUpdates.locations[3], '"gap-2"')
+    it('Should add component', async () => {
+      const file: TestFile = 'addComponent'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: 'Change Hello',
+          oldValue: 'Hello',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'Change There',
+          oldValue: 'There',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[2].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            action: 'create',
+            component: 'frame',
+            parentId: elementInstances[0].id,
+            parentChildIndex: 0,
+            index: 1,
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[0].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            action: 'create',
+            component: 'text',
+            parentId: elementInstances[0].id,
+            parentChildIndex: 1,
+            index: 0,
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[0].id,
+          childIndex: 2,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            action: 'create',
+            component: 'text',
+            parentId: elementInstances[3].id,
+            parentChildIndex: 0,
+            index: 0,
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[3].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: 'Change this',
+          oldValue: 'Label',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[0].id,
+          childIndex: 2,
+          isGlobal: false,
+        },
+        {
+          value: '20px',
+          oldValue: '10px',
+          type: 'className',
+          name: 'padding',
+          componentId: elementInstances[0].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: '8px',
+          oldValue: '',
+          type: 'className',
+          name: 'padding',
+          componentId: elementInstances[0].id,
+          childIndex: 2,
+          isGlobal: false,
+        },
+      ]
 
-      expect(codeUpdates.locations[4].snippet).toBe('"bg-black"')
-      expectLocationOfString(file, codeUpdates.locations[4], '"bg-blue-50"')
-      expect(codeUpdates.locations[5].snippet).toBe('"text-black"')
-      expectLocationOfString(file, codeUpdates.locations[5], '"text-white"')
-      expect(codeUpdates.locations[6].snippet).toBe('"name1-changed"')
-      expectLocationOfString(file, codeUpdates.locations[6], '"name1"')
-      expect(codeUpdates.locations[7].snippet).toBe('"name2-changed"')
-      expectLocationOfString(file, codeUpdates.locations[7], '"name2"')
-      expect(codeUpdates.locations[8].snippet).toBe('"Hello good sir"')
-      expectLocationOfString(file, codeUpdates.locations[8], '"Hello"')
-      expect(codeUpdates.locations[9].snippet).toBe('"There good sir"')
-      expectLocationOfString(file, codeUpdates.locations[9], '"There"')
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const AddComponent = () => {
+          return (
+            <div>
+              <h1>Change Hello</h1>
+              <div className='p-5'>
+                <span className='p-2'>Change this</span>
+              </div>
+              <h2>Change There</h2>
+              <div>
+                <span>Label</span>
+              </div>
+            </div>
+          )
+        }
+        `),
+      )
+    })
+
+    it('Should delete components', async () => {
+      const file: TestFile = 'addComponent'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: createUpdate<DeleteComponent>({
+            action: 'delete',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'Change There',
+          oldValue: 'There',
+          type: 'text',
+          name: '0',
+          componentId: elementInstances[2].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            action: 'create',
+            component: 'text',
+            parentId: elementInstances[3].id,
+            parentChildIndex: 0,
+            index: 0,
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[3].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<DeleteComponent>({
+            action: 'delete',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[3].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const AddComponent = () => {
+          return (
+            <div>
+              <h2>Change There</h2>
+              <div></div>
+            </div>
+          )
+        }
+        `),
+      )
+    })
+
+    it('Should reorder components', async () => {
+      const file: TestFile = 'addComponent'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: createUpdate<ReorderComponent>({
+            parentId: elementInstances[0].id,
+            parentChildIndex: 0,
+            index: 1,
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'reorder',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: '8px',
+          oldValue: '',
+          type: 'className',
+          name: 'padding',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<ReorderComponent>({
+            parentId: elementInstances[0].id,
+            parentChildIndex: 0,
+            index: 2,
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'reorder',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const AddComponent = () => {
+          return (
+            <div>
+              <h2>There</h2>
+              <div></div>
+              <h1 className='p-2'>Hello</h1>
+            </div>
+          )
+        }
+        `),
+      )
+    })
+
+    it('Should add component with dependencies', async () => {
+      const file: TestFile = 'addComponent'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: createUpdate<AddComponent>({
+            parentId: elementInstances[0].id,
+            parentChildIndex: 0,
+            index: 1,
+            action: 'create',
+            component: 'Button',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: elementInstances[0].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          import { Button } from '@/components/button'
+        const AddComponent = () => {
+          return (
+            <div>
+              <h1>Hello</h1>
+              <Button>Click me</Button>
+              <h2>There</h2>
+              <div></div>
+            </div>
+          )
+        }
+        `),
+      )
+    })
+
+    it('Should update property', async () => {
+      const file: TestFile = 'updateProperty'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: createUpdate<UpdateProperty>({
+            name: 'variant',
+            value: 'secondary',
+            valueMapping: '',
+            type: 'classNameVariant',
+          }),
+          oldValue: createUpdate<UpdateProperty>({
+            name: 'variant',
+            value: 'default',
+            valueMapping: '',
+            type: 'classNameVariant',
+          }),
+          type: 'property',
+          name: 'variant',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<UpdateProperty>({
+            name: 'size',
+            value: 'sm',
+            valueMapping: '',
+            type: 'classNameVariant',
+          }),
+          oldValue: createUpdate<UpdateProperty>({
+            name: 'size',
+            value: 'default',
+            valueMapping: '',
+            type: 'classNameVariant',
+          }),
+          type: 'property',
+          name: 'size',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+            (
+              { className, variant, size, asChild = false, children, loading, ...props },
+              ref
+            ) => {
+              const Comp = asChild ? Slot : 'button';
+              return (
+                <Comp
+                  className={getClass(
+                    buttonVariants({
+                      variant,
+                      size,
+                      className,
+                    })
+                  )}
+                  ref={ref}
+                  {...props}
+                >
+                  {loading ? (
+                    <Spinner className='rounded' sizeClass='w-5 h-5' />
+                  ) : (
+                    children
+                  )}
+                </Comp>
+              );
+            }
+          );
+          const UpdateProperty = () => {
+            const variant = 'secondary';
+            return (
+              <div>
+                <Button variant={variant} size="sm">Click me</Button>
+              </div>
+              )
+          } 
+        `),
+      )
     })
   })
 })
@@ -608,24 +1163,23 @@ const testFiles = {
   tailwindPrefix: `
         const TailwindComponent = ({label, innerClassName, noOp, noWhere}) => {
             return (
-                <div className="hw-group hw-flex hw-py-2">
-                    <h1 className="hw-flex hw-flex-col">Hello there</h1>
+                <div className='hw-group hw-flex hw-py-2'>
+                    <h1 className='hw-flex hw-flex-col'>Hello there</h1>
                     <h2 className={innerClassName}>{label}</h2>
                     <h3 className={noWhere}>{noOp}</h3>
                 </div>
             )
         }
-
         const UseTailwindComponent = ({noWhere}) => {
           return (
-            <TailwindComponent label="Thank you" innerClassName="hw-p-2" noWhere={noWhere}/>
+            <TailwindComponent label='Thank you' innerClassName='hw-p-2' noWhere={noWhere}/>
           )
         }
     `,
   nonTailwindClass: `
         const NonTailwindClass = () => {
             return (
-                <div className="flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm">
+                <div className='flex cursor-default flex-col items-start justify-between space-y-2 rounded-lg border border-slate-200 bg-white p-4 text-left shadow-sm'>
                     Bob
                 </div>
             )
@@ -641,7 +1195,6 @@ const testFiles = {
                 </div>
             )
         }
-
         const Parent = () => {
             return (
                 <Child />
@@ -654,7 +1207,6 @@ const testFiles = {
                 <h1 className={className} {...rest}/>
             )
         }
-
         const ChildWithoutClass = ({label, ...rest}) => {
             return (
                 <div {...rest}>
@@ -662,7 +1214,6 @@ const testFiles = {
                 </div>
             )
         }
-
         const ParentWithSpread = ({temp, ...rest}) => {
             return (
                 <div>
@@ -671,13 +1222,12 @@ const testFiles = {
                 </div>
             )
         }
-
         const Parent = () => {
             return (
                 <div>
-                    <ChildWithoutChildren className="mx-1">Bob</ChildWithoutChildren>
-                    <ChildWithoutClass className="text-sm" label="Hello there"/>
-                    <ParentWithSpread label="Label me" className="bg-white">Some Children</ParentWithSpread>
+                    <ChildWithoutChildren className='mx-1'>Bob</ChildWithoutChildren>
+                    <ChildWithoutClass className='text-sm' label='Hello there'/>
+                    <ParentWithSpread label='Label me' className='bg-white'>Some Children</ParentWithSpread>
                 </div>
             )
         }
@@ -686,9 +1236,8 @@ const testFiles = {
       const ImageSrc = ({image}) => {
         return <img src={image} />
       }
-
       const Home = () => {
-        const image = "https://google.com/image.jpg"
+        const image = 'https://google.com/image.jpg'
         return <ImageSrc image={image} />
       }
     `,
@@ -707,20 +1256,59 @@ const testFiles = {
                 })}
             </div>
         }
-
         const App = () => {
-            const categories = [{name: "Hello sir", style: "flex"}, {name: "There sir", style: "gap-2"}];
-            const classes = [{start: "bg-blue-50"}, {end: "text-white"}];
-            const inHouseMapping = [{name: "name1"}, {name: "name2"}];
+            const categories = [{name: 'Hello sir', style: 'flex'}, {name: 'There sir', style: 'gap-2'}];
+            const classes = [{start: 'bg-blue-50'}, {end: 'text-white'}];
+            const inHouseMapping = [{name: 'name1'}, {name: 'name2'}];
             return <>
-                <ComponentArrays array1={["Hello", "There"]} array2={classes}/>
+                <ComponentArrays array1={['Hello', 'There']} array2={classes}/>
                 <ComponentMapping categories={categories}/>
                 {inHouseMapping.map((category) => <div key={category.name}>{category.name}</div>)}
             </>
         }
   `,
-}
+  addComponent: `
+      const AddComponent = () => {
+        return (
+          <div>
+            <h1>Hello</h1>
+            <h2>There</h2>
+            <div></div>
+          </div>
+        )
+      }
+  `,
+  updateProperty: `
+    const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+      (
+        { className, variant, size, asChild = false, children, loading, ...props },
+        ref
+      ) => {
+        const Comp = asChild ? Slot : 'button';
+        return (
+          <Comp
+            className={getClass(buttonVariants({ variant, size, className }))}
+            ref={ref}
+            {...props}
+          >
+            {loading ? (
+              <Spinner className='rounded' sizeClass='w-5 h-5' />
+            ) : (
+              children
+            )}
+          </Comp>
+        );
+      }
+    );
 
-const removeLines = (str: string): string => {
-  return str.replace(/\n/g, '').replace(/\s+/g, ' ')
+    const UpdateProperty = () => {
+      const variant = 'default';
+      return (
+        <div>
+          <Button variant={variant}>Click me</Button>
+        </div>
+        )
+    } 
+  
+  `,
 }

@@ -26,6 +26,9 @@ export class JSXAttribute<T extends t.Node = t.Node>
     base: NodeBase<T>,
   ) {
     super(base)
+    if (value.id === this.id) {
+      this.value.id = `${this.id}-value`
+    }
   }
 
   public getValueNode() {
@@ -55,7 +58,7 @@ export class JSXAttribute<T extends t.Node = t.Node>
     values: Node[]
   }[] {
     const ret = this.value.getValuesWithParents(
-      (node): node is Node => node.dependencies.size === 0,
+      (node): node is Node => node.dataDependencies.size === 0,
       isJSXElement,
       (node) => node,
       [],
@@ -121,7 +124,7 @@ export class JSXAttribute<T extends t.Node = t.Node>
 
         const elementValues = elements.map((element) =>
           element.getValuesWithParents(
-            (_node): _node is Node => node.dependencies.size === 0,
+            (_node): _node is Node => node.dataDependencies.size === 0,
             isJSXElement,
             (_node) => _node,
             parents,

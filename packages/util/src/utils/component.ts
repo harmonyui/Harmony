@@ -98,20 +98,25 @@ export function getLocationsFromComponentId(id: string): {
   endLine: number
   endColumn: number
 }[] {
-  const stuffs = id.split('#').map((i) => atob(i))
-  const locations = stuffs.map((stuff) => {
-    const [file, startLine, startColumn, endLine, endColumn] = stuff.split(':')
+  try {
+    const stuffs = id.split('#').map((i) => atob(i))
+    const locations = stuffs.map((stuff) => {
+      const [file, startLine, startColumn, endLine, endColumn] =
+        stuff.split(':')
 
-    return {
-      file,
-      startLine: Number(startLine),
-      startColumn: Number(startColumn),
-      endLine: Number(endLine),
-      endColumn: Number(endColumn),
-    }
-  })
+      return {
+        file,
+        startLine: Number(startLine),
+        startColumn: Number(startColumn),
+        endLine: Number(endLine),
+        endColumn: Number(endColumn),
+      }
+    })
 
-  return locations
+    return locations
+  } catch (e) {
+    return []
+  }
 }
 
 export const reverseUpdates = <T extends ComponentUpdate>(
@@ -319,7 +324,11 @@ export function updateIndexFromDiffs(
 }
 
 export const getBaseId = (componentId: string): string => {
+  return getLevelId(componentId, 0)
+}
+
+export const getLevelId = (componentId: string, level: number): string => {
   const split = componentId.split('#')
 
-  return split[split.length - 1]
+  return split[split.length - 1 - level]
 }

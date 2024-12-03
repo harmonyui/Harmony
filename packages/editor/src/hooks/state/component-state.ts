@@ -4,11 +4,15 @@ import type {
 } from '@harmony/util/src/types/component'
 import type { ComponentUpdateWithoutGlobal } from '../../components/harmony-context'
 import type { ComponentElement } from '../../components/inspector/component-identifier'
-import { createComponentId } from '../../utils/element-utils'
+import {
+  createComponentId,
+  findElementsFromId,
+} from '../../utils/element-utils'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
-import type { ComponentUpdateState } from './component-update'
+import type { ComponentUpdateState } from './component-update/slice'
 import type { ProjectInfoState } from './project-info'
+import type { HarmonyCnState } from './harmonycn'
 
 export type Source = 'document' | 'iframe'
 export interface ComponentState {
@@ -24,11 +28,15 @@ export interface ComponentState {
   updateTheCounter: () => void
   source: Source
   setSource: (value: Source) => void
+  getNewChildIndex: (parentId: string) => number
 }
 
 export const createComponentStateSlice = createHarmonySlice<
   ComponentState,
-  HarmonyComponentsState & ComponentUpdateState & ProjectInfoState
+  HarmonyComponentsState &
+    ComponentUpdateState &
+    ProjectInfoState &
+    HarmonyCnState
 >((set, get) => {
   const getRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
     const source = get().source
@@ -141,6 +149,17 @@ export const createComponentStateSlice = createHarmonySlice<
       setSource(value: Source) {
         set({ source: value })
       },
+      getNewChildIndex(parentId: string) {
+        let amountOfIndexes = findElementsFromId(
+          parentId,
+          get().rootComponent?.element,
+        ).length
+        amountOfIndexes += get().createdElements.filter(
+          (el) => el.componentId === parentId,
+        ).length
+
+        return amountOfIndexes
+      },
       hoverComponent(element: HTMLElement | undefined) {
         set({ hoveredComponent: element })
       },
@@ -193,9 +212,9 @@ export const createComponentStateSlice = createHarmonySlice<
             (update) => update.componentId === component?.id,
           )?.type
           const prop = component?.props.find(
-            (_prop) => _prop.propName === updateType,
+            (_prop) => _prop.name === updateType,
           )
-          return prop && !prop.isStatic
+          return prop && !prop.isEditable
         })
         if (globalChange) {
           set({ globalUpdate: updates })
@@ -208,6 +227,13 @@ export const createComponentStateSlice = createHarmonySlice<
       },
       componentUpdates() {
         updateRootElement(get().harmonyComponents)
+      },
+      createdElements() {
+        updateRootElement(get().harmonyComponents)
+      },
+      activeComponents() {
+        //For some reason the components are not mounted immediately
+        setTimeout(() => updateRootElement(get().harmonyComponents))
       },
       isInitialized(curr, prev) {
         if (curr && !prev) {

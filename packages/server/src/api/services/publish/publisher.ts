@@ -2,7 +2,6 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { translateUpdatesToCss } from '@harmony/util/src/utils/component'
 import type { BranchItem, PullRequest } from '@harmony/util/src/types/branch'
-import { replaceByIndex } from '@harmony/util/src/utils/common'
 import type { GitRepository } from '../../repository/git/types'
 import { createPullRequest } from '../../repository/database/pull-request'
 import { CodeUpdator } from './code-updator'
@@ -17,7 +16,13 @@ export class Publisher {
   ): Promise<PullRequest> {
     const updates = prepareUpdatesForGenerator(updatesRaw)
 
-    const codeUpdator = new CodeUpdator(this.gitRepository)
+    const codeUpdator = new CodeUpdator(this.gitRepository, {
+      trailingComma: 'es5',
+      semi: true,
+      tabWidth: 2,
+      singleQuote: true,
+      jsxSingleQuote: true,
+    })
     const fileUpdates = await codeUpdator.updateFiles(updates)
 
     await this.gitRepository.createBranch(branch.name)
@@ -38,7 +43,13 @@ export class Publisher {
   public async updateChanges(updatesRaw: ComponentUpdate[]) {
     const _updates = prepareUpdatesForGenerator(updatesRaw)
 
-    const codeUpdator = new CodeUpdator(this.gitRepository)
+    const codeUpdator = new CodeUpdator(this.gitRepository, {
+      trailingComma: 'es5',
+      semi: true,
+      tabWidth: 2,
+      singleQuote: true,
+      jsxSingleQuote: true,
+    })
     const fileUpdates = await codeUpdator.updateFiles(_updates)
 
     const updates: {
@@ -49,15 +60,7 @@ export class Publisher {
     for (const change of Object.values(fileUpdates)) {
       const contentText = await this.gitRepository.getContent(change.filePath)
 
-      let newContent = contentText
-      for (const location of change.locations) {
-        newContent = replaceByIndex(
-          newContent,
-          location.snippet,
-          location.start,
-          location.end,
-        )
-      }
+      const newContent = change.newContent
 
       updates.push({
         oldContent: contentText,

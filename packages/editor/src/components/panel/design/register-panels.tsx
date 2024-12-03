@@ -20,6 +20,14 @@ export const useDesignPanels = () => {
         SpacingSection,
         StyleSection,
       ],
+      [ComponentType.Component]: [
+        PropertySection,
+        LayoutSection,
+        SizeSection,
+        BorderSection,
+        SpacingSection,
+        StyleSection,
+      ],
       [ComponentType.Text]: [
         PropertySection,
         SizeSection,

@@ -72,7 +72,7 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
         throw new Error('Error when getting component parent in harmony text')
       }
       index = Array.from(element.children).indexOf(component)
-      childIndex = Array.from(element.parentElement!.children).indexOf(element)
+      childIndex = Number(element.dataset.harmonyChildIndex)
       componentId = element.dataset.harmonyId
     }
 

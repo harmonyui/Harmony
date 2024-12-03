@@ -2,20 +2,34 @@ import type * as t from '@babel/types'
 import type { ArrayProperty, NodeBase, ObjectNode } from '../types'
 import { Node } from '../types'
 import { isArray } from '../predicates/simple-predicates'
+import { getNameValue } from '../utils'
 import type { JSXAttribute } from './jsx-attribute'
 import type { ComponentNode } from './component'
+import { ImportStatement } from './import-statement'
 
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   private mappingExpression: ArrayProperty | undefined
+  private children: JSXElementNode[] = []
+  private parentElement: JSXElementNode | undefined
+  private definitionComponent: ComponentNode | undefined
 
   constructor(
     private attributes: JSXAttribute[],
     private parentComponent: ComponentNode,
-    private definitionComponent: ComponentNode | undefined,
     private openingElement: Node<t.JSXOpeningElement>,
+    private closingElement: Node<t.JSXClosingElement> | undefined,
+    private nameNode: Node,
     base: NodeBase<t.JSXElement>,
   ) {
     super(base)
+  }
+
+  public getName() {
+    return getNameValue(this.nameNode) || this.name
+  }
+
+  public getNameNode() {
+    return this.nameNode
   }
 
   public getAttributes(componentIdTree?: string) {
@@ -32,8 +46,32 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     )
   }
 
+  public getDependencies(): Node[] {
+    const dependencies: Node[] = []
+    const importStatements = this.nameNode.getValues(
+      (node) => node instanceof ImportStatement,
+    )
+    dependencies.push(...importStatements)
+
+    return dependencies
+  }
+
   public getParentComponent() {
     return this.parentComponent
+  }
+  public setParentComponent(parentComponent: ComponentNode) {
+    this.parentComponent = parentComponent
+  }
+
+  public getChildren() {
+    return this.children
+  }
+
+  public getParentElement() {
+    return this.parentElement
+  }
+  public setParentElement(parentElement: JSXElementNode | undefined) {
+    this.parentElement = parentElement
   }
 
   public getRootInstances(): JSXElementNode[][]
@@ -42,7 +80,7 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     componentId?: string,
   ): (JSXElementNode[] | undefined) | JSXElementNode[][] {
     const parentElements = traverseInstances(this)
-    if (parentElements.length === 0) return [[this]]
+    if (parentElements.length === 0) return componentId ? [this] : [[this]]
 
     const allInstances = parentElements.map((parentInstance) => [
       this,
@@ -77,8 +115,19 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     this.attributes.push(attribute)
   }
 
+  public addChild(child: JSXElementNode) {
+    this.children.push(child)
+  }
+
   public getOpeningElement(): Node<t.JSXOpeningElement> {
     return this.openingElement
+  }
+
+  public getClosingElement(): Node<t.JSXClosingElement> | undefined {
+    return this.closingElement
+  }
+  public setClosingElement(closingElement: Node<t.JSXClosingElement>) {
+    this.closingElement = closingElement
   }
 
   public setMappingExpression(node: ArrayProperty) {

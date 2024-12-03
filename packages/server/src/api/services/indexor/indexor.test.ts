@@ -434,6 +434,28 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         )
     }
     `,
+
+  'app/importedComponents1.tsx': `
+    import DifferentName, {Button} from 'app/importedComponents2';
+
+    const App = () => {
+        return <div>
+            <Button>Click me</Button>
+            <DifferentName label="Change me"/>
+        </div>
+    }
+    `,
+  'app/importedComponents2.tsx': `
+        export const Button = ({children}) => {
+            return <button className="flex rounded-full">{children}</button>
+        }
+
+        function DefaultExportComponent({label}) {
+            return <div>{label}</div>
+        }
+
+        export default DefaultExportComponent
+    `,
 } as const
 
 export type TestFile = keyof typeof testCases

@@ -14,7 +14,7 @@ export const ComponentPropsPanel: React.FunctionComponent<
 > = ({ isOpen, onClose }) => {
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
   const properties = useMemo(
-    () => selectedComponent?.props.filter((prop) => prop.isStatic) || [],
+    () => selectedComponent?.props.filter((prop) => prop.isEditable) || [],
     [selectedComponent],
   )
   return (
@@ -22,7 +22,7 @@ export const ComponentPropsPanel: React.FunctionComponent<
       {properties.length
         ? properties.map((prop) => (
             <ComponentPropertyField
-              key={`${prop.propName}:${prop.propValue}`}
+              key={`${prop.name}:${prop.defaultValue}`}
               property={prop}
               onChange={() => undefined}
             />
@@ -43,8 +43,8 @@ export const ComponentPropertyField: React.FC<ComponentPropertyFieldProps> = ({
 }) => {
   return (
     <div>
-      <Label label={property.propName}>
-        <Input value={property.propValue} onChange={onChange} />
+      <Label label={property.name}>
+        <Input value={property.defaultValue} onChange={onChange} />
       </Label>
     </div>
   )

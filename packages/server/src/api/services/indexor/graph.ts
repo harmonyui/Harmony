@@ -1,48 +1,40 @@
 import * as parser from '@babel/parser'
-import type { NodePath } from '@babel/traverse'
-import traverse from '@babel/traverse'
+import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
-import { replaceByIndex } from '@harmony/util/src/utils/common'
+import * as prettier from 'prettier'
+import { groupBy } from '@harmony/util/src/utils/common'
 import type { ArrayProperty, Node } from './types'
 import type { LiteralNode } from './utils'
-import {
-  createNode,
-  getComponentName,
-  getLocationId,
-  getSnippetFromNode,
-  isLiteralNode,
-} from './utils'
+import { createNode, getLocationId, getSnippetFromNode } from './utils'
 import { addDataEdge } from './data-flow'
 import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
-import { JSXElementNode } from './nodes/jsx-element'
+import type { JSXElementNode } from './nodes/jsx-element'
+import { isJSXElement } from './nodes/jsx-element'
 import type { JSXAttribute } from './nodes/jsx-attribute'
-import { JSXAttributeNode } from './nodes/jsx-attribute'
 import { ComponentNode } from './nodes/component'
 import {
   isJSXText,
   isStringLiteral,
   isTemplateElement,
 } from './predicates/simple-predicates'
+import { ImportStatement } from './nodes/import-statement'
+import { ProgramNode } from './nodes/program'
 
 export type FileUpdateInfo = Record<
   string,
   {
     filePath: string
-    locations: {
-      snippet: string
-      start: number
-      end: number
-      updatedTo: number
-      diff: number
-    }[]
+    newContent: string
   }
 >
 export class FlowGraph {
   public nodes: Map<string, Node>
   public file = ''
   public code = ''
-  private dirtyNodes: Set<Node> = new Set<Node>()
   private mappedDependencyStack: ArrayProperty[] = []
+  public idMapping: Record<string, string> = {}
+  public files: Record<string, ProgramNode> = {}
+  private dirtyFiles: Set<string> = new Set<string>()
 
   constructor() {
     this.nodes = new Map()
@@ -56,7 +48,12 @@ export class FlowGraph {
   public getNodes() {
     const values = Array.from(this.nodes.values())
 
-    return values.sort((a, b) => a.location.start - b.location.start)
+    return values.sort((a, b) => {
+      const nameCompare = a.location.file.localeCompare(b.location.file)
+      if (nameCompare !== 0) return nameCompare
+
+      return a.location.start - b.location.start
+    })
   }
 
   public addNode<T extends t.Node>(name: string, path: NodePath<T>): Node {
@@ -75,6 +72,8 @@ export class FlowGraph {
     if (!this.nodes.has(node.id)) {
       this.nodes.set(node.id, node)
     }
+    const program = this.files[this.file]
+    program.addNode(node)
   }
 
   public createNode<T extends t.Node>(
@@ -89,8 +88,8 @@ export class FlowGraph {
     const toNode = this.nodes.get(toId)
 
     if (fromNode && toNode) {
-      fromNode.dependencies.add(toNode)
-      toNode.dependents.add(fromNode)
+      fromNode.dataDependencies.add(toNode)
+      toNode.dataDependents.add(fromNode)
       const parent = fromNode.getParent()
       parent && this.addParent(toNode.id, parent.id)
     }
@@ -101,8 +100,8 @@ export class FlowGraph {
     const toNode = this.nodes.get(toId)
 
     if (fromNode && toNode) {
-      fromNode.dependencies.add(toNode)
-      toNode.dependents.add(fromNode)
+      fromNode.dataDependencies.add(toNode)
+      toNode.dataDependents.add(fromNode)
     }
   }
 
@@ -141,10 +140,27 @@ export class FlowGraph {
 
   public addJSXElement(
     jsxElementNode: JSXElementNode,
+    parentElement: JSXElementNode | undefined,
     component: ComponentNode,
   ) {
     this.setNode(jsxElementNode)
+    this.setNode(jsxElementNode.getOpeningElement())
+    const closingElement = jsxElementNode.getClosingElement()
+    closingElement && this.setNode(closingElement)
     component.addJSXElement(jsxElementNode)
+    jsxElementNode.setParentComponent(component)
+    parentElement?.addChild(jsxElementNode)
+    jsxElementNode.setParentElement(parentElement)
+    const nameNode = jsxElementNode.getNameNode()
+    this.addDataFlowEdge(nameNode)
+
+    const elementDefinition = this.getDefinition(jsxElementNode.getName())
+
+    //Connect the element to the definition component
+    if (elementDefinition) {
+      jsxElementNode.setDefinitionComponent(elementDefinition)
+      this.addJSXInstanceComponentEdge(elementDefinition, jsxElementNode)
+    }
   }
 
   public addJSXAttribute(
@@ -212,7 +228,7 @@ export class FlowGraph {
   public getElementInstances(name: string): JSXElementNode[] {
     const instances: JSXElementNode[] = []
     this.nodes.forEach((node) => {
-      if (node instanceof JSXElementNode && node.name === name) {
+      if (isJSXElement(node) && node.name === name) {
         instances.push(node)
       }
     })
@@ -223,23 +239,67 @@ export class FlowGraph {
     return this.nodes.get(id)
   }
 
-  // Output graph dependencies for debugging
-  public printDependencies() {
-    this.nodes.forEach((node) => {
-      console.log(`${node.type} ${node.name} (${node.id}):`)
-      console.log('  Dependencies:', Array.from(node.dependencies))
-      console.log('  Dependents:', Array.from(node.dependents))
-    })
+  public getJSXElementById(
+    id: string,
+    childIndex: number,
+  ): JSXElementNode | undefined {
+    const node =
+      this.nodes.get(this.idMapping[`${id}-${childIndex}`]) ??
+      this.nodes.get(id)
+    if (node && isJSXElement(node)) {
+      return node
+    }
+
+    return undefined
+  }
+
+  public tryConnectImportStatementToDefinition(node: ImportStatement) {
+    const source = node.getSource()
+    const program = this.files[source] as ProgramNode | undefined
+    if (!program) {
+      return
+    }
+    const nodes = program.getExportStatements()
+
+    for (const exportNode of nodes) {
+      if (exportNode.name === node.getName()) {
+        this.addDataDependency(node.id, exportNode.id)
+        return
+      }
+    }
+  }
+
+  public connectExportStatementsToImports(
+    node: Node<t.ExportNamedDeclaration>,
+  ) {
+    for (const program of Object.values(this.files)) {
+      const nodes = program
+        .getNodes()
+        .filter((_node) => _node instanceof ImportStatement)
+      for (const importNode of nodes) {
+        if (this.resolvePaths(importNode.getSource(), node.location.file)) {
+          this.addDataDependency(importNode.id, node.id)
+        }
+      }
+    }
+  }
+
+  public resolvePaths(p1: string, p2: string): boolean {
+    return p1.replace('.tsx', '') === p2.replace('.tsx', '')
+  }
+
+  public dirtyNode(node: Node) {
+    this.dirtyFiles.add(node.location.file)
   }
 
   public replaceNode(node: Node, newNode: t.Node) {
     node.path.replaceWith(newNode)
-    this.dirtyNodes.add(node)
+    this.dirtyNode(node)
   }
 
   public addLeadingComment(node: Node, comment: string) {
     node.path.addComment('leading', comment)
-    this.dirtyNodes.add(node)
+    this.dirtyNode(node)
   }
 
   public changeLiteralNode(node: Node<LiteralNode>, newValue: string) {
@@ -267,22 +327,149 @@ export class FlowGraph {
       t.stringLiteral(newValue),
     )
     node.path.node.openingElement.attributes.push(newNode)
-    this.dirtyNodes.add(node)
+    this.dirtyNode(node)
   }
 
-  public saveChanges() {
-    this.dirtyNodes.forEach((node) => {
-      if (!isLiteralNode(node.node)) return
-      const value = getSnippetFromNode(node.node)
-      if (!value) return
-      this.code = replaceByIndex(
-        this.code,
-        value,
-        node.location.start,
-        node.location.end,
+  public async saveChanges(options: prettier.Options) {
+    await Promise.all(
+      Array.from(this.dirtyFiles).map(async (file) => {
+        const program = this.files[file]
+        program.setContent(
+          await this.formatCode(getSnippetFromNode(program.node), options),
+        )
+      }),
+    )
+  }
+
+  public addChildElement(
+    {
+      element: childElement,
+      nodes,
+    }: { element: JSXElementNode; nodes: Node[] },
+    componentId: string,
+    childIndex: number,
+    index: number,
+    parentElement: JSXElementNode,
+  ) {
+    this.setNode(childElement)
+    nodes.forEach((node) => this.setNode(node))
+    const dependencies = childElement.getDependencies()
+
+    const beforeElement = parentElement.getChildren()[index] as
+      | JSXElementNode
+      | undefined
+    if (!beforeElement) {
+      parentElement.path.pushContainer('children', childElement.node)
+      childElement.path = parentElement.path.get(
+        `children.${parentElement.node.children.length - 1}`,
+      ) as NodePath<t.JSXElement>
+      let parentClosingElement = parentElement.getClosingElement()
+      if (!parentClosingElement) {
+        parentClosingElement = this.createNodeAndPath(
+          parentElement.name,
+          t.jSXClosingElement(t.jSXIdentifier(parentElement.name)),
+          parentElement.path,
+        )
+        parentElement.setClosingElement(parentClosingElement)
+        parentClosingElement.id = `${parentElement.id}-closing`
+        this.setNode(parentClosingElement)
+        this.dirtyNode(parentElement)
+      }
+      this.dirtyNode(childElement)
+    } else {
+      beforeElement.path.insertBefore(childElement.node)
+      childElement.path =
+        beforeElement.path.getPrevSibling() as NodePath<t.JSXElement>
+      this.dirtyNode(childElement)
+    }
+
+    this.addJSXElement(
+      childElement,
+      parentElement,
+      parentElement.getParentComponent(),
+    )
+    childElement.getNameNode().dataDependencies = new Set()
+
+    this.idMapping[`${componentId}-${childIndex}`] = childElement.id
+
+    this.addDependencyImports(
+      childElement,
+      dependencies.filter((node) => node instanceof ImportStatement),
+    )
+
+    return childElement
+  }
+
+  public addDependencyImports(
+    jsxElement: JSXElementNode,
+    nodes: ImportStatement[],
+  ) {
+    const program = this.files[jsxElement.location.file]
+    const importStatements = groupBy(nodes, 'source')
+    for (const [file, statements] of Object.entries(importStatements)) {
+      const importSpecifiers = statements.map((node) => {
+        const identifier = t.identifier(node.getName())
+        const importSpecifier = node.isDefault()
+          ? t.importDefaultSpecifier(identifier)
+          : t.importSpecifier(identifier, identifier)
+        return importSpecifier
+      })
+      const importDeclaration = t.importDeclaration(
+        importSpecifiers,
+        t.stringLiteral(file),
       )
-    })
-    this.dirtyNodes.clear()
+      program.path.unshiftContainer('body', importDeclaration)
+
+      importSpecifiers.forEach((specifier, i) => {
+        const path = program.path.get(`body.0.specifiers.${i}`) as NodePath<
+          t.ImportSpecifier | t.ImportDefaultSpecifier
+        >
+        path.node.loc = statements[i].node.loc
+        const importStatement = new ImportStatement(
+          file,
+          this.createNode(getSnippetFromNode(specifier), path),
+        )
+        importStatement.id = statements[i].id
+
+        this.setNode(importStatement)
+        this.tryConnectImportStatementToDefinition(importStatement)
+        this.addDataDependency(jsxElement.getNameNode().id, importStatement.id)
+      })
+    }
+  }
+
+  public deleteElement(jsxElement: JSXElementNode) {
+    const parentElement = jsxElement.getParentElement()
+    if (parentElement) {
+      const parentChildren = parentElement.getChildren()
+      const index = parentChildren.indexOf(jsxElement)
+      if (index === -1) throw new Error('Cannot find child of element')
+      parentChildren.splice(index, 1)
+    }
+
+    const parentComponent = jsxElement.getParentComponent()
+    const parentComponentChildren = parentComponent.getJSXElements()
+    const componentIndex = parentComponentChildren.indexOf(jsxElement)
+    if (componentIndex === -1) throw new Error('Cannot find child of element')
+    parentComponentChildren.splice(componentIndex, 1)
+
+    const content = getSnippetFromNode(jsxElement.node)
+    jsxElement.path.remove()
+    this.dirtyNode(jsxElement)
+
+    return content
+  }
+
+  public createNodeAndPath<T extends t.Node>(
+    name: string,
+    node: T,
+    parentPath: NodePath,
+  ): Node<T> {
+    const path = new NodePath<T>(parentPath.hub, parentPath.node)
+    path.node = node
+    path.node.loc = parentPath.node.loc
+
+    return this.createNode<T>(name, path)
   }
 
   public getCode() {
@@ -297,50 +484,32 @@ export class FlowGraph {
     return this.mappedDependencyStack.pop()
   }
 
-  public getFileUpdates(): FileUpdateInfo {
-    const codeUpdates = Array.from(this.dirtyNodes.values())
-      .map((node) => ({ node, location: node.location }))
-      .sort((a, b) => a.location.start - b.location.start)
-    const commitChanges: FileUpdateInfo = {}
-    for (const update of codeUpdates) {
-      let change = commitChanges[update.location.file] as
-        | FileUpdateInfo[string]
-        | undefined
-      if (!change) {
-        change = { filePath: update.location.file, locations: [] }
-        commitChanges[update.location.file] = change
-      }
-      const snippet = getSnippetFromNode(update.node.node)
-      const updatedTo = update.location.start + snippet.length
+  public async getFileUpdates(
+    options: prettier.Options,
+  ): Promise<FileUpdateInfo> {
+    const changes = await Promise.all(
+      Array.from(this.dirtyFiles).map<Promise<[string, string]>>(
+        async (file) => {
+          const program = this.files[file]
+          const newContent = getSnippetFromNode(program.node)
+          const formatted = await this.formatCode(newContent, options)
 
-      const newLocation = {
-        snippet,
-        start: update.location.start,
-        end: update.location.end,
-        updatedTo,
-        diff: 0,
-      }
-      const last = change.locations[change.locations.length - 1] as
-        | FileUpdateInfo[string]['locations'][number]
-        | undefined
-      if (last) {
-        const diff = last.updatedTo - last.end + last.diff
-        if (last.updatedTo > newLocation.start + diff) {
-          if (last.snippet === newLocation.snippet) continue
-          //throw new Error("Conflict in changes")
-          console.log(`Conflict?: ${last.end}, ${newLocation.start + diff}`)
-        }
+          return [file, formatted]
+        },
+      ),
+    )
 
-        newLocation.start += diff
-        newLocation.end += diff
-        newLocation.updatedTo += diff
-        newLocation.diff = diff
-      }
+    return changes.reduce<FileUpdateInfo>((prev, [file, newContent]) => {
+      prev[file] = { filePath: file, newContent }
+      return prev
+    }, {})
+  }
 
-      change.locations.push(newLocation)
-    }
-
-    return commitChanges
+  public async formatCode(code: string, options: prettier.Options = {}) {
+    return prettier.format(code, {
+      ...options,
+      parser: 'typescript',
+    })
   }
 }
 
@@ -354,124 +523,34 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
     plugins: ['typescript', 'jsx'],
   })
 
+  let program: ProgramNode
+
   // Traverse the AST to populate the graph with explicit dependencies and data flow edges
   traverse(ast, {
+    Program(path) {
+      program = new ProgramNode(code, graph.createNode(file, path))
+      graph.files[file] = program
+    },
+    ExportNamedDeclaration(path) {
+      if (path.node.declaration) {
+        const newNode = graph.addNode(
+          'export',
+          path,
+        ) as Node<t.ExportNamedDeclaration>
+        program.addExportStatement(newNode)
+        const declarationPath = path.get('declaration') as NodePath
+        const declarationNode = graph.createNode(
+          getSnippetFromNode(declarationPath.node),
+          declarationPath,
+        )
+        graph.addDataFlowEdge(declarationNode)
+        graph.addDataDependency(newNode.id, declarationNode.id)
+        graph.connectExportStatementsToImports(newNode)
+      }
+    },
     'FunctionDeclaration|ArrowFunctionExpression'(path) {
-      if (
-        !t.isFunctionDeclaration(path.node) &&
-        !t.isArrowFunctionExpression(path.node)
-      )
-        return
-      const functionName = getComponentName(path)
-      if (!functionName) return
-
-      const containingComponent = graph.addComponentNode(
-        functionName,
-        path as NodePath<t.FunctionDeclaration | t.ArrowFunctionExpression>,
-      )
-      const instances = graph.getElementInstances(functionName)
-      instances.forEach((instance) => {
-        graph.addJSXInstanceComponentEdge(containingComponent, instance)
-      })
-
-      path.traverse({
-        JSXElement(jsxPath) {
-          const name = t.isJSXIdentifier(jsxPath.node.openingElement.name)
-            ? jsxPath.node.openingElement.name.name
-            : getSnippetFromNode(jsxPath.node.openingElement.name)
-          const definitionComponent = graph.getDefinition(name)
-
-          const openingElement = graph.createNode(
-            getSnippetFromNode(jsxPath.node.openingElement),
-            jsxPath.get('openingElement'),
-          )
-          if (graph.nodes.get(openingElement.id)) return
-
-          const elementNode = new JSXElementNode(
-            [],
-            containingComponent,
-            definitionComponent,
-            openingElement,
-            graph.createNode(name, jsxPath),
-          )
-
-          graph.addJSXElement(elementNode, containingComponent)
-
-          const currAttributes: JSXAttributeNode[] = []
-          for (
-            let i = 0;
-            i < jsxPath.node.openingElement.attributes.length;
-            i++
-          ) {
-            const attributePath = jsxPath.get(
-              `openingElement.attributes.${i}`,
-            ) as NodePath<t.JSXAttribute | t.JSXSpreadAttribute>
-
-            if (t.isJSXAttribute(attributePath.node)) {
-              const attributeName = t.isJSXIdentifier(attributePath.node.name)
-                ? attributePath.node.name.name
-                : getSnippetFromNode(attributePath.node)
-              const attributeNode = new JSXAttributeNode(
-                elementNode,
-                -1,
-                graph.code,
-                graph.createNode(
-                  attributeName,
-                  attributePath as NodePath<t.JSXAttribute>,
-                ),
-              )
-
-              graph.addJSXAttribute(attributeNode, elementNode)
-              currAttributes.push(attributeNode)
-            } else {
-              const spreadAttributeNode = new JSXSpreadAttributeNode(
-                elementNode,
-                currAttributes,
-                graph.code,
-                graph.createNode(
-                  getSnippetFromNode(attributePath.node),
-                  attributePath as NodePath<t.JSXSpreadAttribute>,
-                ),
-              )
-
-              graph.addJSXAttribute(spreadAttributeNode, elementNode)
-            }
-          }
-
-          let childIndex = 0
-          for (let i = 0; i < jsxPath.node.children.length; i++) {
-            const node = jsxPath.node.children[i]
-            if (t.isJSXText(node) && node.value.trim().length === 0) continue
-
-            const childPath = jsxPath.get(`children.${i}`)
-            if (Array.isArray(childPath)) throw new Error('Should not be array')
-
-            if (
-              t.isJSXExpressionContainer(childPath.node) ||
-              t.isJSXText(childPath.node)
-            ) {
-              const attributeNode = new JSXAttributeNode(
-                elementNode,
-                childIndex,
-                graph.code,
-                graph.createNode(
-                  'children',
-                  childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
-                ),
-              )
-
-              graph.addJSXAttribute(attributeNode, elementNode)
-            }
-            childIndex++
-          }
-
-          //Connect the element to the definition component
-          const elementDefinition = elementNode.getDefinitionComponent()
-          if (elementDefinition) {
-            graph.addJSXInstanceComponentEdge(elementDefinition, elementNode)
-          }
-        },
-      })
+      const newNode = graph.createNode(getSnippetFromNode(path.node), path)
+      graph.addDataFlowEdge(newNode)
     },
     CallExpression(path) {
       if (t.isIdentifier(path.node.callee)) {

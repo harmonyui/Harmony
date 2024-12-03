@@ -1,23 +1,31 @@
-import {
-  jsonSchema,
-  updateAttributeValue,
-} from '@harmony/util/src/updates/component'
+import { updateAttributeValue } from '@harmony/util/src/updates/component'
+import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { UpdateComponent } from './types'
-import { addCommentToElement, rotateThroughValuesAndMakeChanges } from './utils'
+import {
+  addCommentToElement,
+  getInstanceInfo,
+  rotateThroughValuesAndMakeChanges,
+} from './utils'
 
 export const updateAttribute: UpdateComponent = (
-  { value, oldValue, attributes, graphElements },
+  { value, oldValue, update },
   graph,
 ) => {
   const {
     value: updateValue,
     action,
     name,
-  } = jsonSchema.pipe(updateAttributeValue).parse(value)
+  } = parseUpdate(updateAttributeValue, value)
+
+  const { attributes, instances: graphElements } = getInstanceInfo(
+    update.componentId,
+    update.childIndex,
+    graph,
+  )
   if (action === 'update') {
     const srcAttribute = attributes.find(
-      (attribute) => attribute.attribute.getName() === name,
+      (attribute) => attribute.attribute?.getName() === name,
     )
     if (!srcAttribute) {
       const commentValue = `Change ${name} property for ${graphElements[0].name} tag from ${oldValue} to ${updateValue}`

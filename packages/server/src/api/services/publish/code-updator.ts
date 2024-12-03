@@ -1,19 +1,26 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { camelToKebab } from '@harmony/util/src/utils/common'
-import { getBaseId } from '@harmony/util/src/utils/component'
+import { addDeleteComponentSchema } from '@harmony/util/src/updates/component'
+import { parseUpdate } from '@harmony/util/src/updates/utils'
+import type * as prettier from 'prettier'
 import type { GitRepository } from '../../repository/git/types'
 import { buildGraphForComponents } from '../indexor/indexor'
-import type { JSXElementNode } from '../indexor/nodes/jsx-element'
-import { isJSXElement } from '../indexor/nodes/jsx-element'
 import type { FileUpdateInfo, FlowGraph } from '../indexor/graph'
 import { converter } from './css-conveter'
 import { updateClassName } from './updates/classname'
-import type { CodeUpdateInfo, UpdateInfo } from './updates/types'
+import type { UpdateInfo } from './updates/types'
 import { updateAttribute } from './updates/update-attribute'
 import { updateText } from './updates/text'
+import { createUpdate } from './updates/create'
+import { deleteUpdate } from './updates/delete'
+import { reorderUpdate } from './updates/reorder'
+import { propertyUpdate } from './updates/property'
 
 export class CodeUpdator {
-  constructor(private gitRepository: GitRepository) {}
+  constructor(
+    private gitRepository: GitRepository,
+    private options: prettier.Options,
+  ) {}
 
   public async updateFiles(
     updates: ComponentUpdate[],
@@ -23,64 +30,20 @@ export class CodeUpdator {
       this.gitRepository,
     )
 
-    const updateInfo = await this.getUpdateInfo(updates, graph)
+    const updateInfo = await this.getUpdateInfo(updates)
 
     updateInfo.forEach((info) => this.getChangeAndLocation(info, graph))
-    const codeUpdates: CodeUpdateInfo[] = []
-    codeUpdates.sort((a, b) => a.location.start - b.location.start)
 
-    const fileUpdates = graph.getFileUpdates()
+    const fileUpdates = await graph.getFileUpdates(this.options)
 
     return fileUpdates
   }
 
   private async getUpdateInfo(
     updates: ComponentUpdate[],
-    graph: FlowGraph,
   ): Promise<UpdateInfo[]> {
-    const updateInfo: UpdateInfo[] = []
-    const elements = graph.getNodes().filter(isJSXElement)
-    const setMappingIndex = (
-      element: JSXElementNode,
-      componentId: string,
-      index: number,
-    ) => {
-      const mappingIndexes = element.getMappingExpression(componentId)
-      const allIndexes = mappingIndexes.reduce<number[]>(
-        (prev, curr) => [...prev, ...curr.values],
-        [],
-      )
-      if (allIndexes.includes(index)) {
-        element.setMappingIndex(index)
-      }
-    }
-    await Promise.all(
+    return Promise.all(
       updates.map(async (update) => {
-        const baseId = getBaseId(update.componentId)
-
-        const element = elements.find((_element) => _element.id === baseId)
-        if (!element) throw new Error('Element not found')
-
-        const instances = element.getRootInstances(update.componentId)
-        if (!instances) throw new Error('Instances not found')
-
-        setMappingIndex(element, update.componentId, update.childIndex)
-        const attributes = element
-          .getAttributes(update.componentId)
-          .map((attribute) => ({
-            attribute,
-            elementValues: attribute.getDataFlowWithParents(update.componentId),
-            addArguments:
-              instances.length > 1
-                ? attribute
-                    .getArgumentReferences(instances[1])
-                    .identifiers.map((identifier) => ({
-                      parent: instances[1],
-                      propertyName: identifier.name,
-                    }))
-                : [],
-          }))
-
         //Get the css value if the update is a className
         const value =
           update.type === 'className' &&
@@ -93,18 +56,14 @@ export class CodeUpdator {
             ? await convertCSSToTailwind(update.name, update.oldValue)
             : update.oldValue
 
-        updateInfo.push({
+        return {
           componentId: update.componentId,
-          graphElements: instances,
-          attributes,
           update,
           value,
           oldValue,
-        })
+        }
       }),
     )
-
-    return updateInfo
   }
 
   private getChangeAndLocation(update: UpdateInfo, graph: FlowGraph) {
@@ -120,7 +79,19 @@ export class CodeUpdator {
       case 'component':
         if (update.update.name === 'update-attribute') {
           updateAttribute(update, graph, repository)
+        } else if (update.update.name === 'delete-create') {
+          const { action } = parseUpdate(addDeleteComponentSchema, update.value)
+          if (action === 'create') {
+            createUpdate(update, graph, repository)
+          } else {
+            deleteUpdate(update, graph, repository)
+          }
+        } else if (update.update.name === 'reorder') {
+          reorderUpdate(update, graph, repository)
         }
+        break
+      case 'property':
+        propertyUpdate(update, graph, repository)
         break
       default:
         throw new Error('Invalid use case')

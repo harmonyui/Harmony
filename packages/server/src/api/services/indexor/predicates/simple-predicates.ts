@@ -11,6 +11,8 @@ import { isLiteralNode } from '../utils'
 
 export const isIdentifier = (node: Node): node is Node<t.Identifier> =>
   t.isIdentifier(node.node)
+export const isJSXIdentifier = (node: Node): node is Node<t.JSXIdentifier> =>
+  t.isJSXIdentifier(node.node)
 export const isCallExpression = (node: Node): node is Node<t.CallExpression> =>
   t.isCallExpression(node.node)
 export const isObjectPattern = (node: Node): node is Node<t.ObjectPattern> =>
@@ -22,6 +24,10 @@ export const isArrowFunctionExpression = (
   node: Node,
 ): node is Node<t.ArrowFunctionExpression> =>
   t.isArrowFunctionExpression(node.node)
+export const isFunction = (
+  node: Node,
+): node is Node<t.FunctionDeclaration | t.ArrowFunctionExpression> =>
+  isFunctionDeclaration(node) || isArrowFunctionExpression(node)
 export const isVariableDeclarator = (
   node: Node,
 ): node is Node<t.VariableDeclarator> => t.isVariableDeclarator(node.node)
@@ -64,3 +70,9 @@ export const isTemplateElement = (
 ): node is Node<t.TemplateElement> => t.isTemplateElement(node.node)
 export const isObjectProperty = (node: Node): node is ObjectProperty =>
   'getName' in node && 'getValueNode' in node
+export const isImportSpecifier = (
+  node: Node,
+): node is Node<t.ImportSpecifier> => t.isImportSpecifier(node.node)
+export const isVariableDeclaration = (
+  node: Node,
+): node is Node<t.VariableDeclaration> => t.isVariableDeclaration(node.node)

@@ -25,6 +25,7 @@ type HarmonySetupProps = Pick<
   | 'overlay'
   | 'cdnImages'
   | 'uploadImage'
+  | 'components'
 > & {
   local?: boolean
 }

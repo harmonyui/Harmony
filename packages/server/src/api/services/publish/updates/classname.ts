@@ -7,18 +7,26 @@ import type { Node } from '../../indexor/types'
 import { addPrefixToClassName } from '../css-conveter'
 import {
   addCommentToElement,
+  getInstanceInfo,
   replaceAll,
   rotateThroughValuesAndMakeChanges,
 } from './utils'
 import type { UpdateComponent } from './types'
 
 export const updateClassName: UpdateComponent = (
-  { value, oldValue, attributes, graphElements, update: componentUpdate },
+  { value, oldValue, update: componentUpdate },
   graph,
   repository,
 ) => {
+  const { attributes, instances: graphElements } = getInstanceInfo(
+    componentUpdate.componentId,
+    componentUpdate.childIndex,
+    graph,
+  )
+
   const classNameAttribute = attributes.find(
-    (attr) => attr.attribute.getName() === 'className',
+    (attr) =>
+      attr.attribute?.getName() === 'className' || attr.addArguments.length > 0,
   )
 
   if (!classNameAttribute) {
@@ -60,15 +68,16 @@ export const updateClassName: UpdateComponent = (
     let defaultValue: Node<LiteralNode> | undefined
     if (
       !rotateThroughValuesAndMakeChanges(classNameAttribute, (node, parent) => {
+        const addArgument = classNameAttribute.addArguments.find(
+          (arg) => arg.propertyName === 'className' && arg.values.length === 0,
+        )
         const shouldDoAddArgument =
-          classNameAttribute.addArguments.length > 0 &&
-          graphElements.findIndex(
-            (el) => el.id === classNameAttribute.addArguments[0].parent.id,
-          ) > graphElements.findIndex((el) => el.id === parent.id)
+          addArgument &&
+          graphElements.findIndex((el) => el.id === addArgument.parent.id) >
+            graphElements.findIndex((el) => el.id === parent.id)
 
         if (shouldDoAddArgument) {
-          const { parent: addArgumentParent, propertyName } =
-            classNameAttribute.addArguments[0]
+          const { parent: addArgumentParent, propertyName } = addArgument
           graph.addAttributeToElement(addArgumentParent, propertyName, value)
           return true
         }
@@ -91,9 +100,14 @@ export const updateClassName: UpdateComponent = (
         return false
       })
     ) {
+      const addArgumet = classNameAttribute.addArguments.find(
+        (arg) =>
+          arg.propertyName.toLowerCase().includes('class') &&
+          arg.values.length === 0,
+      )
       //If we can add an attribute to the parent, let's do that
-      if (classNameAttribute.addArguments.length > 0) {
-        const { parent, propertyName } = classNameAttribute.addArguments[0]
+      if (addArgumet) {
+        const { parent, propertyName } = addArgumet
         graph.addAttributeToElement(parent, propertyName, value)
         return
       }

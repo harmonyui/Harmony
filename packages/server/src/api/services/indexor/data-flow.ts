@@ -1,8 +1,8 @@
-import type { Binding, NodePath } from '@babel/traverse'
+import type { Binding, NodePath, Scope } from '@babel/traverse'
 import * as t from '@babel/types'
 import type { FlowGraph } from './graph'
 import type { Node, ObjectProperty } from './types'
-import { getLocationId, getSnippetFromNode } from './utils'
+import { getComponentName, getLocationId, getSnippetFromNode } from './utils'
 import { MemberExpressionNode } from './nodes/member-expression'
 import { ObjectExpressionNode } from './nodes/object-expression'
 import { RestElementNode } from './nodes/rest-element'
@@ -24,9 +24,17 @@ import {
   isArrayPattern,
   isArrayExpression,
   isNumericLiteral,
+  isJSXIdentifier,
+  isImportSpecifier,
+  isFunctionDeclaration,
+  isVariableDeclaration,
 } from './predicates/simple-predicates'
 import { ArrayPropertyNode } from './nodes/array-property'
 import { ArrayExpression } from './nodes/array-expression'
+import { ImportStatement } from './nodes/import-statement'
+import { JSXElementNode } from './nodes/jsx-element'
+import { JSXAttributeNode } from './nodes/jsx-attribute'
+import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
 
 export type AddEdge<T extends t.Node> = (
   node: Node<T>,
@@ -40,10 +48,16 @@ export const addDataEdge = (node: Node, graph: FlowGraph) => {
 const addEdge: AddEdge<t.Node> = (node, graph) => {
   const edges: string[] = []
   const visitor = createVisitor(graph, edges)
-  if (isMappedExpression(node)) {
+  if (isFunctionDeclaration(node)) {
+    visitor.FunctionDeclaration(node)
+  } else if (isArrowFunctionExpression(node)) {
+    visitor.ArrowFunctionExpression(node)
+  } else if (isMappedExpression(node)) {
     edges.push(...addMappedExpressionEdge(node, graph))
   } else if (isIdentifier(node)) {
     visitor.Identifier(node)
+  } else if (isJSXIdentifier(node)) {
+    visitor.JSXIdentifier(node)
   } else if (isCallExpression(node)) {
     visitor.CallExpression(node)
   } else if (isObjectPattern(node)) {
@@ -54,12 +68,16 @@ const addEdge: AddEdge<t.Node> = (node, graph) => {
     visitor.MemberExpression(node)
   } else if (isObjectExpression(node)) {
     visitor.ObjectExpression(node)
+  } else if (isVariableDeclaration(node)) {
+    visitor.VariableDeclaration(node)
   } else if (isVariableDeclarator(node)) {
     visitor.VariableDeclarator(node)
   } else if (isArrayPattern(node)) {
     visitor.ArrayPattern(node)
   } else if (isArrayExpression(node)) {
     visitor.ArrayExpression(node)
+  } else if (isImportSpecifier(node)) {
+    visitor.ImportSpecifier(node)
   } else if (
     isExpression(node) &&
     !isFunctionExpression(node) &&
@@ -76,7 +94,7 @@ const addEdge: AddEdge<t.Node> = (node, graph) => {
 const createVisitor = (graph: FlowGraph, edges: string[]) => {
   const isNode = <T extends t.Node>(
     path: NodePath<T> | Node<T>,
-  ): path is Node<T> => 'dependencies' in path
+  ): path is Node<T> => 'dataDependencies' in path
   const nodeOrCreate = <T extends t.Node>(
     path: NodePath<T> | Node<T>,
   ): Node<T> => {
@@ -86,6 +104,20 @@ const createVisitor = (graph: FlowGraph, edges: string[]) => {
     return graph.createNode(getSnippetFromNode(path.node), path)
   }
   return {
+    ArrowFunctionExpression(
+      path:
+        | NodePath<t.ArrowFunctionExpression>
+        | Node<t.ArrowFunctionExpression>,
+    ) {
+      const newNode = nodeOrCreate(path)
+      addFunctionEdge(newNode, graph)
+    },
+    FunctionDeclaration(
+      path: NodePath<t.FunctionDeclaration> | Node<t.FunctionDeclaration>,
+    ) {
+      const newNode = nodeOrCreate(path)
+      addFunctionEdge(newNode, graph)
+    },
     CallExpression(path: NodePath<t.CallExpression> | Node<t.CallExpression>) {
       const newNode = nodeOrCreate(path)
       edges.push(...addCallExpressionEdge(newNode, graph))
@@ -93,6 +125,10 @@ const createVisitor = (graph: FlowGraph, edges: string[]) => {
     Identifier(path: NodePath<t.Identifier> | Node<t.Identifier>) {
       const newNode = nodeOrCreate(path)
       edges.push(...addIdentifierEdge(newNode, graph))
+    },
+    JSXIdentifier(path: NodePath<t.JSXIdentifier> | Node<t.JSXIdentifier>) {
+      const newNode = nodeOrCreate(path)
+      edges.push(...addJSXIdentifier(newNode, graph))
     },
     MemberExpression(
       path: NodePath<t.MemberExpression> | Node<t.MemberExpression>,
@@ -116,6 +152,12 @@ const createVisitor = (graph: FlowGraph, edges: string[]) => {
       const newNode = nodeOrCreate(path)
       edges.push(...addTemplateLiteralEdge(newNode, graph))
     },
+    VariableDeclaration(
+      path: NodePath<t.VariableDeclaration> | Node<t.VariableDeclaration>,
+    ) {
+      const newNode = nodeOrCreate(path)
+      edges.push(...addVariableDeclarationEdge(newNode, graph))
+    },
     VariableDeclarator(
       path: NodePath<t.VariableDeclarator> | Node<t.VariableDeclarator>,
     ) {
@@ -137,8 +179,144 @@ const createVisitor = (graph: FlowGraph, edges: string[]) => {
       const newNode = nodeOrCreate(path)
       edges.push(...addArrayExpressionEdge(newNode, graph))
     },
+    ImportSpecifier(
+      path: NodePath<t.ImportSpecifier> | Node<t.ImportSpecifier>,
+    ) {
+      const newNode = nodeOrCreate(path)
+      edges.push(...addImportSpecifier(newNode, graph))
+    },
   }
 }
+
+const addFunctionEdge: AddEdge<t.Function> = (node, graph) => {
+  const path = node.path
+  const functionName = getComponentName(path)
+  if (!functionName || graph.nodes.get(node.id)) return []
+
+  const containingComponent = graph.addComponentNode(
+    functionName,
+    path as NodePath<t.FunctionDeclaration | t.ArrowFunctionExpression>,
+  )
+  const instances = graph.getElementInstances(functionName)
+  instances.forEach((instance) => {
+    graph.addJSXInstanceComponentEdge(containingComponent, instance)
+  })
+
+  const currentElements: JSXElementNode[] = []
+
+  path.traverse({
+    JSXElement: {
+      enter(jsxPath) {
+        const name = getSnippetFromNode(jsxPath.node.openingElement.name)
+
+        const openingElement = graph.createNode(
+          getSnippetFromNode(jsxPath.node.openingElement),
+          jsxPath.get('openingElement'),
+        )
+        if (graph.nodes.get(openingElement.id)) return
+
+        const closingElement = jsxPath.node.closingElement
+          ? graph.createNode(
+              getSnippetFromNode(jsxPath.node.closingElement),
+              jsxPath.get('closingElement') as NodePath<t.JSXClosingElement>,
+            )
+          : undefined
+
+        const nameNode = graph.createNode(
+          name,
+          jsxPath.get('openingElement.name') as NodePath,
+        )
+
+        const elementNode = new JSXElementNode(
+          [],
+          containingComponent,
+          openingElement,
+          closingElement,
+          nameNode,
+          graph.createNode(name, jsxPath),
+        )
+
+        const parentElement = currentElements[currentElements.length - 1]
+        graph.addJSXElement(elementNode, parentElement, containingComponent)
+        currentElements.push(elementNode)
+
+        const currAttributes: JSXAttributeNode[] = []
+        for (
+          let i = 0;
+          i < jsxPath.node.openingElement.attributes.length;
+          i++
+        ) {
+          const attributePath = jsxPath.get(
+            `openingElement.attributes.${i}`,
+          ) as NodePath<t.JSXAttribute | t.JSXSpreadAttribute>
+
+          if (t.isJSXAttribute(attributePath.node)) {
+            const attributeName = t.isJSXIdentifier(attributePath.node.name)
+              ? attributePath.node.name.name
+              : getSnippetFromNode(attributePath.node)
+            const attributeNode = new JSXAttributeNode(
+              elementNode,
+              -1,
+              graph.code,
+              graph.createNode(
+                attributeName,
+                attributePath as NodePath<t.JSXAttribute>,
+              ),
+            )
+
+            graph.addJSXAttribute(attributeNode, elementNode)
+            currAttributes.push(attributeNode)
+          } else {
+            const spreadAttributeNode = new JSXSpreadAttributeNode(
+              elementNode,
+              currAttributes,
+              graph.code,
+              graph.createNode(
+                getSnippetFromNode(attributePath.node),
+                attributePath as NodePath<t.JSXSpreadAttribute>,
+              ),
+            )
+
+            graph.addJSXAttribute(spreadAttributeNode, elementNode)
+          }
+        }
+
+        let childIndex = 0
+        for (let i = 0; i < jsxPath.node.children.length; i++) {
+          const _node = jsxPath.node.children[i]
+          if (t.isJSXText(_node) && _node.value.trim().length === 0) continue
+
+          const childPath = jsxPath.get(`children.${i}`)
+          if (Array.isArray(childPath)) throw new Error('Should not be array')
+
+          if (
+            t.isJSXExpressionContainer(childPath.node) ||
+            t.isJSXText(childPath.node)
+          ) {
+            const attributeNode = new JSXAttributeNode(
+              elementNode,
+              childIndex,
+              graph.code,
+              graph.createNode(
+                'children',
+                childPath as NodePath<t.JSXExpressionContainer | t.JSXText>,
+              ),
+            )
+
+            graph.addJSXAttribute(attributeNode, elementNode)
+          }
+          childIndex++
+        }
+      },
+      exit() {
+        currentElements.pop()
+      },
+    },
+  })
+
+  return []
+}
+
 const addCallExpressionEdge: AddEdge<t.CallExpression> = (node, graph) => {
   graph.setNode(node)
   return node.node.arguments.map((argument, i) => {
@@ -179,6 +357,58 @@ const addIdentifierEdge: AddEdge<t.Identifier> = (node, graph) => {
   }
 
   return [identifierNode.id]
+}
+
+const addJSXIdentifier: AddEdge<t.JSXIdentifier> = (node, graph) => {
+  graph.setNode(node)
+  let scope: Scope = node.path.scope
+  //Assume for now that the jsx definition is at the top level
+  while ((scope.parent as Scope | undefined) !== undefined) {
+    scope = scope.parent
+  }
+
+  const binding = scope.bindings[node.node.name] as Binding | undefined
+  if (!binding) {
+    return []
+  }
+
+  const identifier = binding.identifier
+  const identifierId = getLocationId(identifier, graph.file, graph.code)
+
+  //If we are currently already visiting this node, just return
+  if (node.id === identifierId) return []
+
+  const referencePath = binding.path
+  const newNode = graph.createNode(
+    getSnippetFromNode(referencePath.node),
+    referencePath,
+  )
+  addDataEdge(newNode, graph)
+
+  const identifierNode = graph.nodes.get(identifierId)
+  if (!identifierNode) {
+    //console.error(`Identifier ${identifierId} not found`)
+    return []
+  }
+
+  return [identifierNode.id]
+}
+
+const addVariableDeclarationEdge: AddEdge<t.VariableDeclaration> = (
+  node,
+  graph,
+) => {
+  graph.setNode(node)
+  return node.node.declarations.map((declaration, i) => {
+    const declarationPath = node.path.get(`declarations.${i}`) as NodePath
+    const newNode = graph.createNode(
+      getSnippetFromNode(declaration),
+      declarationPath,
+    )
+    addDataEdge(newNode, graph)
+
+    return newNode.id
+  })
 }
 
 const addVariableDeclaratorEdge: AddEdge<t.VariableDeclarator> = (
@@ -461,7 +691,7 @@ const addArrayPatternEdge: AddEdge<t.ArrayPattern> = (node, graph) => {
         graph.createNode(getSnippetFromNode(elementPath.node), elementPath),
       )
       addDataEdge(newElement, graph)
-      graph.addDependency(newElement.id, node.id)
+      graph.addDataDependency(newElement.id, node.id)
 
       currElements.push(newElement)
     }
@@ -486,6 +716,16 @@ const addArrayExpressionEdge: AddEdge<t.ArrayExpression> = (node, graph) => {
   const arrayExpression = new ArrayExpression(elements, node)
   graph.setNode(arrayExpression)
 
+  return []
+}
+
+const addImportSpecifier: AddEdge<t.ImportSpecifier> = (node, graph) => {
+  const parentNode = node.path.parent as t.ImportDeclaration
+  const newNode = new ImportStatement(
+    parentNode.source.value,
+    graph.createNode(getSnippetFromNode(node.node), node.path),
+  )
+  graph.setNode(newNode)
   return []
 }
 

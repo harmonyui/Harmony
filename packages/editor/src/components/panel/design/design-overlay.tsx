@@ -9,7 +9,7 @@ export const DesignOverlay: React.FunctionComponent = () => {
     <DraggablePanel
       title='Design Panel'
       id={Panels.Design}
-      defaultActive={isDemo}
+      defaultActive={isDemo ?? false}
     >
       <ComponentAttributePanel />
     </DraggablePanel>

@@ -8,6 +8,7 @@ import {
 import generator from '@babel/generator'
 import type { Attribute } from './types'
 import { Node } from './types'
+import { ComponentNode } from './nodes/component'
 
 export function createNode<T extends t.Node>(
   name: string,
@@ -27,10 +28,11 @@ export function createNode<T extends t.Node>(
     id,
     type,
     name,
-    dependencies: new Set(),
-    dependents: new Set(),
+    dataDependencies: new Set(),
+    dataDependents: new Set(),
     path,
     location,
+    content: getSnippetFromNode(_node),
   })
   return newNode
 }
@@ -48,7 +50,7 @@ export function traceDataFlow(node: Node): Node[] {
       origins.push(current)
     } else {
       // Recursively trace dependencies to find origins
-      current.dependencies.forEach((depId) => dfs(depId))
+      current.dataDependencies.forEach((depId) => dfs(depId))
     }
   }
 
@@ -150,6 +152,9 @@ export const isChildNode = (node: Node, parent: Node): boolean => {
 }
 
 export const getSnippetFromNode = (node: t.Node): string => {
+  if (t.isTemplateElement(node)) {
+    return node.value.raw
+  }
   const result = generator(node)
 
   return result.code
@@ -164,4 +169,24 @@ export function getAttributeName(attribute: Attribute): string {
 
   const [name] = attribute.value.split(':')
   return name
+}
+
+export const getNameValue = (node: Node): string => {
+  const values = node.getValues()
+  if (values.length !== 1) {
+    return ''
+  }
+  if (isLiteralNode(values[0].node)) {
+    return getLiteralValue(values[0].node)
+  }
+
+  if (t.isIdentifier(values[0].node)) {
+    return values[0].node.name
+  }
+
+  if (values[0].node instanceof ComponentNode) {
+    return values[0].node.name
+  }
+
+  return ''
 }

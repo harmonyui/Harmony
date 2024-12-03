@@ -1,6 +1,7 @@
 import type * as t from '@babel/types'
 import type { NodeBase, ObjectProperty, ObjectNode } from '../types'
 import { Node } from '../types'
+import { isObjectProperty } from '../predicates/simple-predicates'
 import type { RestElementNode } from './rest-element'
 
 export class ObjectExpressionNode
@@ -17,7 +18,7 @@ export class ObjectExpressionNode
   public getAttributes() {
     const attributes: ObjectProperty[] = []
     this.properties.forEach((property) => {
-      if ('getName' in property) {
+      if (isObjectProperty(property)) {
         attributes.push(property)
       } else {
         attributes.push(...property.getNameAndValues())

@@ -1,9 +1,19 @@
+import type { HarmonyComponentInfo } from '@harmony/util/src/types/component'
 import { getElementText } from '../../../utils/element-utils'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { isTextElement } from '../../inspector/inspector'
 import { ComponentType } from './types'
 
-export const getComponentType = (element: HTMLElement): ComponentType => {
+export const getComponentType = (
+  element: HTMLElement,
+  harmonyComponents: HarmonyComponentInfo[],
+): ComponentType => {
+  const componentId = element.dataset.harmonyId
+  const component = harmonyComponents.find((cmp) => cmp.id === componentId)
+  if (component && component.isComponent) {
+    return ComponentType.Component
+  }
+
   const tagName = element.tagName.toLowerCase()
   if (isTextElement(element)) {
     return ComponentType.Text
@@ -31,7 +41,7 @@ export const getComponentName = (component: ComponentElement): string => {
     return component.name
   }
 
-  const type = getComponentType(component.element)
+  const type = getComponentType(component.element, [])
   if (type === ComponentType.Text) {
     return getElementText(component.element)
   }

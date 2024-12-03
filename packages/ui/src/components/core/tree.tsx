@@ -144,6 +144,7 @@ const NodeWithContextMenu = <T,>({
         <Node {...props} />
       </ContextMenuTrigger>
       <ContextMenuContent
+        className='hw-w-64'
         container={document.getElementById('harmony-container') || undefined}
       >
         <ContextMenuContentChildren data={props.node.data} />
