@@ -156,13 +156,13 @@ export const createComponentStateSlice = createHarmonySlice<
         set({ source: value })
       },
       getNewChildIndex(parentId: string) {
-        let amountOfIndexes = findElementsFromId(
+        const amountOfIndexes = findElementsFromId(
           parentId,
           get().rootComponent?.element,
         ).length
-        amountOfIndexes += get().createdElements.filter(
-          (el) => el.componentId === parentId,
-        ).length
+        // amountOfIndexes += get().createdElements.filter(
+        //   (el) => el.componentId === parentId,
+        // ).length
 
         return amountOfIndexes
       },

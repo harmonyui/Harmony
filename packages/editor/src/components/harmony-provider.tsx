@@ -242,7 +242,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         const componentId = split[split.length - 1]
         element.dataset.harmonyComponentId = componentId
 
-        if (/pages\/_app\.(tsx|jsx|js)/.exec(atob(split[0]))) {
+        if (
+          !split[0].includes('-') &&
+          /pages\/_app\.(tsx|jsx|js)/.exec(atob(split[0]))
+        ) {
           id = split.slice(1).join('#')
           element.dataset.harmonyId = id
         }

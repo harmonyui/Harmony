@@ -63,8 +63,13 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     this.parentComponent = parentComponent
   }
 
-  public getChildren() {
-    return this.children
+  public getChildren(traverse = false): JSXElementNode[] {
+    if (!traverse) return this.children
+
+    return this.children.reduce<JSXElementNode[]>(
+      (prev, curr) => [...prev, ...curr.getChildren(traverse)],
+      this.children,
+    )
   }
 
   public getParentElement() {
@@ -117,6 +122,10 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
 
   public addChild(child: JSXElementNode) {
     this.children.push(child)
+  }
+
+  public insertChild(child: JSXElementNode, index: number) {
+    this.children.splice(index, 0, child)
   }
 
   public getOpeningElement(): Node<t.JSXOpeningElement> {
