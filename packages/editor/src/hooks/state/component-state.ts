@@ -179,11 +179,20 @@ export const createComponentStateSlice = createHarmonySlice<
         const findElement = (
           currComponent: ComponentElement,
           elementIdToFind: string,
+          childIndexToFind: number,
         ): ComponentElement | undefined => {
-          if (currComponent.id === elementIdToFind) return currComponent
+          if (
+            currComponent.id === elementIdToFind &&
+            currComponent.childIndex === childIndexToFind
+          )
+            return currComponent
 
           for (const child of currComponent.children) {
-            const foundInChild = findElement(child, elementIdToFind)
+            const foundInChild = findElement(
+              child,
+              elementIdToFind,
+              childIndexToFind,
+            )
             if (foundInChild) {
               return foundInChild
             }
@@ -196,7 +205,8 @@ export const createComponentStateSlice = createHarmonySlice<
           element.dataset.harmonyText === 'true'
             ? element.parentElement?.dataset.harmonyId
             : element.dataset.harmonyId
-        const component = findElement(rootComponent, id || '')
+        const childIndex = Number(element.dataset.harmonyChildIndex)
+        const component = findElement(rootComponent, id || '', childIndex)
         set({
           selectedComponent: component ? { ...component, element } : undefined,
         })

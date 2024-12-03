@@ -22,6 +22,7 @@ import { getProperty } from '../snapping/calculations'
 import { useSidePanel } from '../panel/side-panel'
 import { useHarmonyContext } from '../harmony-context'
 import { useHarmonyStore } from '../../hooks/state'
+import { useCopyPasteDelete } from '../../hooks/copy-paste-delete'
 import { useHighlighter } from './highlighter'
 
 interface RectSize {
@@ -205,6 +206,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
 
   const previousError = usePrevious(error)
   const { panel } = useSidePanel()
+
+  useCopyPasteDelete()
 
   //If the source is not the document, then the overlay needs an offset to get it's position right
   const offsetElement =

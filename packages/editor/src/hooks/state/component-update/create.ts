@@ -144,7 +144,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
       return {
         deletedElements: state.deletedElements.filter(
           (c) =>
-            c.componentId !== update.componentId &&
+            c.componentId !== update.componentId ||
             c.childIndex !== update.childIndex,
         ),
       }

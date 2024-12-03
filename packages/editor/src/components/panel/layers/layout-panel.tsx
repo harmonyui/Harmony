@@ -9,7 +9,6 @@ import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
 import { getComponentName } from '../design/utils'
 import { Card } from '../_common/panel/card'
-import { useCopyPaste } from '../../../hooks/copy-paste'
 import { TreeView } from './tree-view'
 
 export const LayoutPanel: React.FunctionComponent = () => {
@@ -85,7 +84,6 @@ const ComponentTreeView: React.FunctionComponent = () => {
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
   const rootComponent = useHarmonyStore((state) => state.rootComponent)
   const [search, setSearch] = useState('')
-  useCopyPaste()
 
   const treeItems = useComponentTreeItems(
     rootComponent,
