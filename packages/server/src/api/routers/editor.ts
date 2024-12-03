@@ -26,6 +26,7 @@ import { Publisher } from '../services/publish/publisher'
 import { generateUpdatesFromText } from '../repository/openai'
 import { getRepository, getBranch } from '../repository/database/branch'
 import { getComponentUpdates } from '../services/component-update'
+import { resolveTailwindConfig } from '../repository/tailwind/tailwind'
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
@@ -102,6 +103,8 @@ export const editorRouter = createTRPCRouter({
         },
       })
 
+      const tokens = resolveTailwindConfig()
+
       const isDemo = accountTiedToBranch.role === 'quick'
 
       return {
@@ -113,6 +116,7 @@ export const editorRouter = createTRPCRouter({
         pullRequest: pullRequest || undefined,
         showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
         isDemo,
+        harmonyTokens: tokens,
       }
     }),
   saveProject: publicProcedure
@@ -288,6 +292,7 @@ export const editorRouter = createTRPCRouter({
       )
       const { harmonyComponents, errorElements } =
         formatComponentAndErrors(instances)
+      const config = resolveTailwindConfig()
 
       return {
         harmonyComponents,
@@ -295,6 +300,7 @@ export const editorRouter = createTRPCRouter({
           componentId: error.id,
           type: error.type,
         })),
+        harmonyTokens: config,
       }
     }),
 

@@ -1,4 +1,5 @@
 import type { Environment } from '@harmony/util/src/utils/component'
+import type { Token } from '@harmony/util/src/types/tokens'
 import type { RegistryComponent } from '../../utils/harmonycn/types'
 import type { PullRequestState } from './pull-request'
 import type { ComponentUpdateState } from './component-update/slice'
@@ -16,6 +17,7 @@ export interface ProjectInfoState {
   isInitialized: boolean
   isRepositoryConnected: boolean
   isOverlay: boolean
+  harmonyTokens: Token[]
   setIsOverlay: (value: boolean) => void
   updateWelcomeScreen: (value: boolean) => void
   initializeProject: (props: {
@@ -44,6 +46,7 @@ export const createProjectInfoSlice = createHarmonySlice<
   isInitialized: false,
   isOverlay: false,
   isRepositoryConnected: false,
+  harmonyTokens: [],
   setIsOverlay(value: boolean) {
     set({ isOverlay: value })
   },
@@ -78,8 +81,14 @@ export const createProjectInfoSlice = createHarmonySlice<
     try {
       const response = await get().loadProject({ branchId, repositoryId })
 
-      const { updates, branches, pullRequest, showWelcomeScreen, isDemo } =
-        response
+      const {
+        updates,
+        branches,
+        pullRequest,
+        showWelcomeScreen,
+        isDemo,
+        harmonyTokens,
+      } = response
       const currentBranch = branches.find((branch) => branch.id === branchId)
       if (!currentBranch) {
         throw new Error(`Invalid branch with id ${branchId}`)
@@ -95,6 +104,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         repositoryId,
         isInitialized: true,
         isRepositoryConnected: repositoryId !== undefined,
+        harmonyTokens,
       })
     } catch (err) {
       console.log(err)
