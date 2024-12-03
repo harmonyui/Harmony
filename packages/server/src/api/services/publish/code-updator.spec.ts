@@ -10,6 +10,7 @@ import type {
 import { createUpdate } from '@harmony/util/src/updates/utils'
 import { replaceByIndex } from '@harmony/util/src/utils/common'
 import * as prettier from 'prettier'
+import type { UpdateProperty } from '@harmony/util/src/updates/property'
 import type { GitRepository } from '../../repository/git/types'
 import { indexFiles } from '../indexor/indexor'
 import { CodeUpdator } from './code-updator'
@@ -1061,6 +1062,99 @@ describe('code-updator', () => {
         `),
       )
     })
+
+    it('Should update property', async () => {
+      const file: TestFile = 'updateProperty'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          value: createUpdate<UpdateProperty>({
+            name: 'variant',
+            value: 'secondary',
+            valueMapping: '',
+            type: 'classNameVariant',
+          }),
+          oldValue: createUpdate<UpdateProperty>({
+            name: 'variant',
+            value: 'default',
+            valueMapping: '',
+            type: 'classNameVariant',
+          }),
+          type: 'property',
+          name: 'variant',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<UpdateProperty>({
+            name: 'size',
+            value: 'sm',
+            valueMapping: '',
+            type: 'classNameVariant',
+          }),
+          oldValue: createUpdate<UpdateProperty>({
+            name: 'size',
+            value: 'default',
+            valueMapping: '',
+            type: 'classNameVariant',
+          }),
+          type: 'property',
+          name: 'size',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+            (
+              { className, variant, size, asChild = false, children, loading, ...props },
+              ref
+            ) => {
+              const Comp = asChild ? Slot : 'button';
+              return (
+                <Comp
+                  className={getClass(
+                    buttonVariants({
+                      variant,
+                      size,
+                      className,
+                    })
+                  )}
+                  ref={ref}
+                  {...props}
+                >
+                  {loading ? (
+                    <Spinner className='rounded' sizeClass='w-5 h-5' />
+                  ) : (
+                    children
+                  )}
+                </Comp>
+              );
+            }
+          );
+          const UpdateProperty = () => {
+            const variant = 'secondary';
+            return (
+              <div>
+                <Button variant={variant} size="sm">Click me</Button>
+              </div>
+              )
+          } 
+        `),
+      )
+    })
   })
 })
 
@@ -1183,5 +1277,38 @@ const testFiles = {
           </div>
         )
       }
+  `,
+  updateProperty: `
+    const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
+      (
+        { className, variant, size, asChild = false, children, loading, ...props },
+        ref
+      ) => {
+        const Comp = asChild ? Slot : 'button';
+        return (
+          <Comp
+            className={getClass(buttonVariants({ variant, size, className }))}
+            ref={ref}
+            {...props}
+          >
+            {loading ? (
+              <Spinner className='rounded' sizeClass='w-5 h-5' />
+            ) : (
+              children
+            )}
+          </Comp>
+        );
+      }
+    );
+
+    const UpdateProperty = () => {
+      const variant = 'default';
+      return (
+        <div>
+          <Button variant={variant}>Click me</Button>
+        </div>
+        )
+    } 
+  
   `,
 }

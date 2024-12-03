@@ -47,7 +47,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
     const simpleComponent = harmonyCnSchema.safeParse(component)
     if (simpleComponent.success || !component) {
       const element = getCreatedElement(
-        simpleComponent.data,
+        simpleComponent.success ? simpleComponent.data : undefined,
         componentId,
         childIndex,
       )
