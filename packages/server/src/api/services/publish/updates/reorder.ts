@@ -6,12 +6,12 @@ import type { UpdateComponent } from './types'
 
 export const reorderUpdate: UpdateComponent = (info, graph) => {
   const value = parseUpdate(reorderComponentSchema, info.value)
-  const code = deleteComponent(info.update, graph)
+  const codeInfo = deleteComponent(info.update, graph)
 
   createComponent(
-    info.update,
+    { componentId: codeInfo.componentId, childIndex: info.update.childIndex },
     value,
-    { implementation: code, dependencies: [], name: '', props: [] },
+    codeInfo,
     graph,
   )
 }

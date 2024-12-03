@@ -3,6 +3,7 @@ import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import * as prettier from 'prettier'
 import { groupBy } from '@harmony/util/src/utils/common'
+import { getBaseId } from '@harmony/util/src/utils/component'
 import type { ArrayProperty, Node } from './types'
 import type { LiteralNode } from './utils'
 import { createNode, getLocationId, getSnippetFromNode } from './utils'
@@ -32,7 +33,6 @@ export class FlowGraph {
   public file = ''
   public code = ''
   private mappedDependencyStack: ArrayProperty[] = []
-  public idMapping: Record<string, string> = {}
   public files: Record<string, ProgramNode> = {}
   private dirtyFiles: Set<string> = new Set<string>()
 
@@ -73,6 +73,22 @@ export class FlowGraph {
       this.nodes.set(node.id, node)
     }
     const program = this.files[this.file]
+    program.addNode(node)
+  }
+
+  public setNewNode(node: Node) {
+    const existingNode = this.getNodes().find(
+      (n) => n.id === node.id && n.getChildIndex() === node.getChildIndex(),
+    )
+    if (existingNode) {
+      node.setChildIndex(existingNode.getChildIndex() + 1)
+      const id = `${node.id}-${node.getChildIndex()}`
+      this.nodes.set(id, node)
+      node.id = id
+    } else {
+      this.nodes.set(node.id, node)
+    }
+    const program = this.files[node.location.file]
     program.addNode(node)
   }
 
@@ -142,6 +158,7 @@ export class FlowGraph {
     jsxElementNode: JSXElementNode,
     parentElement: JSXElementNode | undefined,
     component: ComponentNode,
+    beforeSibling?: JSXElementNode,
   ) {
     this.setNode(jsxElementNode)
     this.setNode(jsxElementNode.getOpeningElement())
@@ -149,7 +166,13 @@ export class FlowGraph {
     closingElement && this.setNode(closingElement)
     component.addJSXElement(jsxElementNode)
     jsxElementNode.setParentComponent(component)
-    parentElement?.addChild(jsxElementNode)
+    if (beforeSibling && parentElement) {
+      const index = parentElement.getChildren().indexOf(beforeSibling)
+      if (index === -1) throw new Error('Cannot find child of element')
+      parentElement.insertChild(jsxElementNode, index)
+    } else {
+      parentElement?.addChild(jsxElementNode)
+    }
     jsxElementNode.setParentElement(parentElement)
     const nameNode = jsxElementNode.getNameNode()
     this.addDataFlowEdge(nameNode)
@@ -244,8 +267,9 @@ export class FlowGraph {
     childIndex: number,
   ): JSXElementNode | undefined {
     const node =
-      this.nodes.get(this.idMapping[`${id}-${childIndex}`]) ??
-      this.nodes.get(id)
+      childIndex > 0
+        ? this.nodes.get(`${id}-${childIndex}`)
+        : this.nodes.get(id)
     if (node && isJSXElement(node)) {
       return node
     }
@@ -351,8 +375,12 @@ export class FlowGraph {
     index: number,
     parentElement: JSXElementNode,
   ) {
-    this.setNode(childElement)
-    nodes.forEach((node) => this.setNode(node))
+    childElement.id = getBaseId(componentId)
+    this.setNewNode(childElement)
+    if (childElement.getChildIndex() !== childIndex) {
+      throw new Error('Child index does not match')
+    }
+    nodes.forEach((node) => this.setNewNode(node))
     const dependencies = childElement.getDependencies()
 
     const beforeElement = parentElement.getChildren()[index] as
@@ -372,7 +400,7 @@ export class FlowGraph {
         )
         parentElement.setClosingElement(parentClosingElement)
         parentClosingElement.id = `${parentElement.id}-closing`
-        this.setNode(parentClosingElement)
+        this.setNewNode(parentClosingElement)
         this.dirtyNode(parentElement)
       }
       this.dirtyNode(childElement)
@@ -387,10 +415,9 @@ export class FlowGraph {
       childElement,
       parentElement,
       parentElement.getParentComponent(),
+      beforeElement,
     )
     childElement.getNameNode().dataDependencies = new Set()
-
-    this.idMapping[`${componentId}-${childIndex}`] = childElement.id
 
     this.addDependencyImports(
       childElement,
@@ -456,6 +483,7 @@ export class FlowGraph {
     const content = getSnippetFromNode(jsxElement.node)
     jsxElement.path.remove()
     this.dirtyNode(jsxElement)
+    this.nodes.delete(jsxElement.id)
 
     return content
   }

@@ -12,6 +12,7 @@ import type { JSXAttribute } from '../../indexor/nodes/jsx-attribute'
 import { addPrefixToClassName } from '../css-conveter'
 import type { LiteralNode } from '../../indexor/utils'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
+import type { InstanceInfo } from './types'
 
 interface AttributeInfo {
   attribute?: JSXAttribute
@@ -85,11 +86,18 @@ export const getInstanceInfo = (
 
   const baseId = getBaseId(componentId)
   const rootId = componentId.split('#')[0]
-  const realComponentId = graph.idMapping[`${rootId}-${childIndex}`]
-    ? componentId.replace(rootId, graph.idMapping[`${rootId}-${childIndex}`])
+  const realComponentId = graph.nodes.get(`${rootId}-${childIndex}`)
+    ? componentId.replace(rootId, `${rootId}-${childIndex}`)
     : componentId
 
-  const element = graph.getJSXElementById(baseId, childIndex)
+  let element = graph.getJSXElementById(
+    baseId,
+    baseId === componentId ? childIndex : 0,
+  )
+  if (!element) {
+    element = graph.getJSXElementById(baseId, 0)
+  }
+
   if (!element) {
     throw new Error('Element not found')
   }
@@ -132,7 +140,7 @@ export const getInstanceInfo = (
 export const getInstanceFromComponent = (
   component: string,
   repository: Repository,
-): RegistryItem => {
+): InstanceInfo => {
   const defaultComponent = harmonyCnSchema.safeParse(component)
   let instance = defaultComponent.success
     ? componentInstances[defaultComponent.data]
@@ -152,5 +160,9 @@ export const getInstanceFromComponent = (
     )
   }
 
-  return instance
+  return {
+    implementation: instance.implementation,
+    dependencies: instance.dependencies,
+    componentIds: [],
+  }
 }

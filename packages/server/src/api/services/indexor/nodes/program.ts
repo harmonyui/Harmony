@@ -1,6 +1,7 @@
 import type * as t from '@babel/types'
 import type { NodeBase } from '../types'
 import { Node } from '../types'
+import { isChildNode } from '../utils'
 
 export class ProgramNode extends Node<t.Program> {
   private exportStatements: Node<t.ExportNamedDeclaration>[] = []
@@ -27,8 +28,10 @@ export class ProgramNode extends Node<t.Program> {
     }
   }
 
-  public getNodes() {
+  public getNodes(node?: Node) {
     return Array.from(this.nodes.values())
+      .filter((n) => (node ? isChildNode(n, node) : true))
+      .sort((a, b) => a.location.start - b.location.start)
   }
 
   public getContent() {

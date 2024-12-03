@@ -6,22 +6,59 @@ import { harmonyCnSchema } from '@harmony/util/src/harmonycn/types'
 import type { HarmonyCnState } from '../harmonycn'
 import type { CreatedComponent } from '../../../utils/harmonycn/types'
 import { createComponentElement } from '../../../utils/harmonycn/create-component'
-import { findElementFromId } from '../../../utils/element-utils'
+import {
+  findElementFromId,
+  recurseElements,
+} from '../../../utils/element-utils'
+import type { ComponentState } from '../component-state'
 import type { ComponentUpdateState } from './slice'
 
 export const createComponentUpdate = ([set, get]: Parameters<
-  StateCreator<ComponentUpdateState & HarmonyCnState>
+  StateCreator<ComponentUpdateState & HarmonyCnState & ComponentState>
 >) => {
   const getCreatedElement = (
     component: HarmonyCn | undefined,
+    copiedFrom: AddComponent['copiedFrom'],
     componentId: string,
     childIndex: number,
+    rootElement: HTMLElement | undefined,
   ): CreatedComponent => {
     const cachedElement = get().deletedElements.find(
       (c) => c.componentId === componentId && c.childIndex === childIndex,
     )
     if (cachedElement) {
       return cachedElement
+    }
+
+    if (copiedFrom) {
+      const { componentId: copiedComponentId, childIndex: copiedChildIndex } =
+        copiedFrom
+      const copiedElement = findElementFromId(
+        copiedComponentId,
+        copiedChildIndex,
+        rootElement,
+      )
+
+      if (!copiedElement) {
+        throw new Error('Cannot find copied from element')
+      }
+
+      const clonedElement = copiedElement.cloneNode(true) as HTMLElement
+      // Give each new element a new child index to not conflict with the copied element
+      recurseElements(clonedElement, [
+        (element) => {
+          const harmonyId = element.dataset.harmonyId ?? ''
+          element.dataset.harmonyChildIndex = String(
+            get().getNewChildIndex(harmonyId),
+          )
+        },
+      ])
+
+      return {
+        componentId,
+        childIndex,
+        element: clonedElement,
+      }
     }
     if (!component) {
       throw new Error(
@@ -37,20 +74,28 @@ export const createComponentUpdate = ([set, get]: Parameters<
     childIndex,
     parentElement,
     index,
+    copiedFrom,
+    rootElement,
   }: {
     component: string | undefined
     componentId: string
     childIndex: number
     parentElement: HTMLElement
     index: number
+    copiedFrom: AddComponent['copiedFrom']
+    rootElement: HTMLElement | undefined
   }) => {
     const simpleComponent = harmonyCnSchema.safeParse(component)
     if (simpleComponent.success || !component) {
       const element = getCreatedElement(
         simpleComponent.success ? simpleComponent.data : undefined,
+        copiedFrom,
         componentId,
         childIndex,
+        rootElement,
       )
+      element.element.dataset.harmonyId = componentId
+      element.element.dataset.harmonyChildIndex = String(childIndex)
 
       const children = parentElement.children
       if (index < children.length) {
@@ -78,7 +123,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
     value: AddComponent,
     rootElement: HTMLElement | undefined,
   ) => {
-    const { parentId, component, parentChildIndex, index } = value
+    const { parentId, component, parentChildIndex, index, copiedFrom } = value
 
     const parent = findElementFromId(parentId, parentChildIndex, rootElement)
 
@@ -92,12 +137,14 @@ export const createComponentUpdate = ([set, get]: Parameters<
       childIndex: update.childIndex,
       parentElement: parent,
       index,
+      copiedFrom,
+      rootElement,
     })
     set((state) => {
       return {
         deletedElements: state.deletedElements.filter(
           (c) =>
-            c.componentId !== update.componentId &&
+            c.componentId !== update.componentId ||
             c.childIndex !== update.childIndex,
         ),
       }

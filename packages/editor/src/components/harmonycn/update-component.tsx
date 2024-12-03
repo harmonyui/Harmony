@@ -3,6 +3,11 @@ import type {
   AddComponent,
   DeleteComponent,
 } from '@harmony/util/src/updates/component'
+import { v4 as uuidv4 } from 'uuid'
+import {
+  getBaseId,
+  getLocationsFromComponentId,
+} from '@harmony/util/src/utils/component'
 import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
 import { getComponentIdAndChildIndex } from '../../utils/element-utils'
@@ -12,6 +17,10 @@ import { useHarmonyStore } from '../../hooks/state'
 export interface UpdateComponentOptions {
   position?: 'above' | 'below'
   parent?: HTMLElement
+  copiedFrom?: {
+    componentId: string
+    childIndex: number
+  }
 }
 export const useUpdateComponent = () => {
   const { onAttributesChange } = useHarmonyContext()
@@ -31,10 +40,10 @@ export const useUpdateComponent = () => {
       const { componentId: parentId, childIndex: parentChildIndex } =
         getComponentIdAndChildIndex(parent)
 
-      //New element is the same id as the parent, but different child index so that
-      //the backend does not get messed up by a weird, random id
-      const componentId = parentId
-      const childIndex = getNewChildIndex(parentId)
+      const location = getLocationsFromComponentId(getBaseId(parentId))[0]
+      const componentId = btoa(`${location.file}:${uuidv4()}`)
+
+      const childIndex = getNewChildIndex(componentId)
 
       let index = options.position
         ? Array.from(parent.children).indexOf(element)
@@ -54,6 +63,7 @@ export const useUpdateComponent = () => {
         value: createUpdate<AddComponent>({
           parentId,
           component,
+          copiedFrom: options.copiedFrom,
           parentChildIndex,
           index,
           action: 'create',

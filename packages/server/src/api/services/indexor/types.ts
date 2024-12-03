@@ -59,6 +59,7 @@ export class Node<T extends t.Node = t.Node> {
     return this.path.node
   }
   public path: NodePath<T>
+  private instanceIndex = 0
 
   constructor({
     id,
@@ -78,6 +79,14 @@ export class Node<T extends t.Node = t.Node> {
     this.dataDependents = dataDependents
     this.path = path
     this.content = content
+  }
+
+  public getChildIndex() {
+    return this.instanceIndex
+  }
+
+  public setChildIndex(index: number) {
+    this.instanceIndex = index
   }
 
   public getValues(

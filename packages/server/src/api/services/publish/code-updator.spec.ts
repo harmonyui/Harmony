@@ -786,23 +786,23 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'component',
           name: 'delete-create',
-          componentId: elementInstances[0].id,
-          childIndex: 1,
+          componentId: 'new-frame-1',
+          childIndex: 0,
           isGlobal: false,
         },
         {
           value: createUpdate<AddComponent>({
             action: 'create',
             component: 'text',
-            parentId: elementInstances[0].id,
-            parentChildIndex: 1,
+            parentId: 'new-frame-1',
+            parentChildIndex: 0,
             index: 0,
           }),
           oldValue: '',
           type: 'component',
           name: 'delete-create',
-          componentId: elementInstances[0].id,
-          childIndex: 2,
+          componentId: 'new-frame-2',
+          childIndex: 0,
           isGlobal: false,
         },
         {
@@ -816,8 +816,8 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'component',
           name: 'delete-create',
-          componentId: elementInstances[3].id,
-          childIndex: 1,
+          componentId: 'new-frame-3',
+          childIndex: 0,
           isGlobal: false,
         },
         {
@@ -825,8 +825,8 @@ describe('code-updator', () => {
           oldValue: 'Label',
           type: 'text',
           name: '0',
-          componentId: elementInstances[0].id,
-          childIndex: 2,
+          componentId: 'new-frame-2',
+          childIndex: 0,
           isGlobal: false,
         },
         {
@@ -834,8 +834,8 @@ describe('code-updator', () => {
           oldValue: '10px',
           type: 'className',
           name: 'padding',
-          componentId: elementInstances[0].id,
-          childIndex: 1,
+          componentId: 'new-frame-1',
+          childIndex: 0,
           isGlobal: false,
         },
         {
@@ -843,8 +843,8 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'className',
           name: 'padding',
-          componentId: elementInstances[0].id,
-          childIndex: 2,
+          componentId: 'new-frame-2',
+          childIndex: 0,
           isGlobal: false,
         },
       ]
@@ -913,8 +913,8 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'component',
           name: 'delete-create',
-          componentId: elementInstances[3].id,
-          childIndex: 1,
+          componentId: 'new-frame-1',
+          childIndex: 0,
           isGlobal: false,
         },
         {
@@ -924,8 +924,8 @@ describe('code-updator', () => {
           oldValue: '',
           type: 'component',
           name: 'delete-create',
-          componentId: elementInstances[3].id,
-          childIndex: 1,
+          componentId: 'new-frame-1',
+          childIndex: 0,
           isGlobal: false,
         },
       ]
@@ -1155,6 +1155,123 @@ describe('code-updator', () => {
         `),
       )
     })
+
+    it('Should copy paste', async () => {
+      const file: TestFile = 'copyPaste'
+      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'text',
+          name: '0',
+          value: 'Tbere',
+          oldValue: 'Hello',
+          componentId: elementInstances[2].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            parentId: elementInstances[1].id,
+            parentChildIndex: 0,
+            index: 1,
+            action: 'create',
+            component: 'Button',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: 'new-button',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'component',
+          name: 'delete-create',
+          value: createUpdate<AddComponent>({
+            action: 'create',
+            parentId: elementInstances[0].id,
+            parentChildIndex: 0,
+            index: 1,
+            copiedFrom: {
+              componentId: elementInstances[1].id,
+              childIndex: 0,
+            },
+          }),
+          oldValue: '',
+          componentId: 'copy-paste-1',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'text',
+          name: '0',
+          value: 'Change this',
+          oldValue: 'Click me',
+          componentId: 'new-button',
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          type: 'text',
+          name: '0',
+          value: 'Changed',
+          oldValue: 'Tbere',
+          componentId: elementInstances[2].id,
+          childIndex: 1,
+          isGlobal: false,
+        },
+        {
+          type: 'className',
+          name: 'padding',
+          value: '8px',
+          oldValue: 'Hello',
+          componentId: 'copy-paste-1',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'component',
+          name: 'delete-create',
+          value: createUpdate<DeleteComponent>({
+            action: 'delete',
+          }),
+          oldValue: '',
+          componentId: 'new-button',
+          childIndex: 1,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          import { Button } from '@/components/button'
+          const CopyPaste = () => {
+            return (
+              <div>
+                <div>
+                  <h1>Tbere</h1>
+                  <Button>Click me</Button>
+                  <h2>There</h2>
+                </div>
+                <div className="p-2">
+                  <h1>Changed</h1>
+                  <h2>There</h2>
+                </div>
+                <p>Here is some text</p>
+              </div>
+            )
+          }
+        `),
+      )
+    })
   })
 })
 
@@ -1310,5 +1427,18 @@ const testFiles = {
         )
     } 
   
+  `,
+  copyPaste: `
+    const CopyPaste = () => {
+      return (
+        <div>
+          <div>
+            <h1>Hello</h1>
+            <h2>There</h2>
+          </div>
+          <p>Here is some text</p>
+        </div>
+      )
+    }
   `,
 }

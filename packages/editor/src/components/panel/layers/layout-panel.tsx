@@ -38,6 +38,7 @@ export const useComponentTreeItems = (
   selectedComponent: HTMLElement | undefined,
 ): TreeData<HTMLElement>[] => {
   const { scale } = useHarmonyContext()
+
   const ids: string[] = []
   const getTreeItems = useCallback(
     (children: ComponentElement[]): TreeData<HTMLElement>[] | undefined => {
