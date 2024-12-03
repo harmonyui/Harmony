@@ -7,6 +7,7 @@ import type { ComponentElement } from '../../components/inspector/component-iden
 import {
   createComponentId,
   findElementsFromId,
+  getComponentIdAndChildIndex,
 } from '../../utils/element-utils'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
@@ -201,12 +202,10 @@ export const createComponentStateSlice = createHarmonySlice<
           return undefined
         }
 
-        const id =
-          element.dataset.harmonyText === 'true'
-            ? element.parentElement?.dataset.harmonyId
-            : element.dataset.harmonyId
-        const childIndex = Number(element.dataset.harmonyChildIndex)
-        const component = findElement(rootComponent, id || '', childIndex)
+        const { componentId: id, childIndex } =
+          getComponentIdAndChildIndex(element)
+
+        const component = findElement(rootComponent, id, childIndex)
         set({
           selectedComponent: component ? { ...component, element } : undefined,
         })

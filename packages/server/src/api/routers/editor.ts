@@ -186,7 +186,6 @@ export const editorRouter = createTRPCRouter({
           const split = update.componentId.split('#')
           if (
             split.length > 1 &&
-            !split[0].includes('-') &&
             /pages\/_app\.(tsx|jsx|js)/.exec(atob(split[0]))
           ) {
             update.componentId = split.slice(1).join('#')
