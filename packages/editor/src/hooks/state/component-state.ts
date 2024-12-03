@@ -65,6 +65,7 @@ export const createComponentStateSlice = createHarmonySlice<
       element: HTMLElement,
     ): ComponentElement | undefined => {
       let id = element.dataset.harmonyId
+      let childIndex = Number(element.dataset.harmonyChildIndex)
 
       // If the element doesn't have an id, we need to create one
       if (!id && !get().isRepositoryConnected) {
@@ -78,9 +79,13 @@ export const createComponentStateSlice = createHarmonySlice<
         const name = harmonyComponent.name
         const isComponent = harmonyComponent.isComponent
         const props: ComponentProp[] = harmonyComponent.props
+        if (isNaN(childIndex)) {
+          childIndex = get().getNewChildIndex(id)
+        }
 
         return {
           id,
+          childIndex,
           element,
           name,
           children: getComponentChildren(element),
@@ -97,6 +102,7 @@ export const createComponentStateSlice = createHarmonySlice<
 
       return {
         id: id || '',
+        childIndex,
         element,
         name: element.tagName.toLowerCase(),
         children: getComponentChildren(element),

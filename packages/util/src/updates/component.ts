@@ -33,6 +33,12 @@ export const addComponentSchema = componentSchemaBase.extend({
   action: z.literal('create'),
   component: z.optional(z.string()),
   cached: z.optional(z.boolean()),
+  copiedFrom: z.optional(
+    z.object({
+      componentId: z.string(),
+      childIndex: z.number(),
+    }),
+  ),
 })
 export type AddComponent = z.infer<typeof addComponentSchema>
 

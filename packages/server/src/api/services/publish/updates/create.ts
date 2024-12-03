@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
@@ -7,18 +8,20 @@ import { getGraph } from '../../indexor/graph'
 import type { Node } from '../../indexor/types'
 import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
 import { isJSXElement } from '../../indexor/nodes/jsx-element'
+import { getSnippetFromNode } from '../../indexor/utils'
+import { ImportStatement } from '../../indexor/nodes/import-statement'
 import type { UpdateComponent } from './types'
 import { getInstanceFromComponent } from './utils'
+
+type InstanceInfo = Pick<RegistryItem, 'implementation' | 'dependencies'>
 
 export const createUpdate: UpdateComponent = (
   { value, update: componentUpdate },
   graph,
   repository,
 ) => {
-  const { parentId, parentChildIndex, index, component } = parseUpdate(
-    addComponentSchema,
-    value,
-  )
+  const { parentId, parentChildIndex, index, component, copiedFrom } =
+    parseUpdate(addComponentSchema, value)
 
   const parentElement = graph.getJSXElementById(parentId, parentChildIndex)
   if (!parentElement) {
@@ -26,11 +29,17 @@ export const createUpdate: UpdateComponent = (
   }
 
   //If there is no comonent attached, it is probably just the result of an undo delete
-  if (!component) {
+  if (!component && !copiedFrom) {
     return
   }
 
-  const instanceCode = getInstanceFromComponent(component, repository)
+  const instanceCode = copiedFrom
+    ? getInstanceFromElement(
+        copiedFrom.componentId,
+        copiedFrom.childIndex,
+        graph,
+      )
+    : getInstanceFromComponent(component!, repository)
 
   createComponent(
     componentUpdate,
@@ -47,7 +56,7 @@ export const createComponent = (
     parentChildIndex,
     index,
   }: { parentId: string; parentChildIndex: number; index: number },
-  code: RegistryItem,
+  code: InstanceInfo,
   graph: FlowGraph,
 ) => {
   const parentElement = graph.getJSXElementById(parentId, parentChildIndex)
@@ -71,7 +80,7 @@ export const createComponent = (
 
 const getElementInstanceNodes = (
   file: string,
-  { implementation, dependencies }: RegistryItem,
+  { implementation, dependencies }: InstanceInfo,
 ): { element: JSXElementNode; nodes: Node[] } => {
   const importStatements = dependencies
     .map((dependency) => {
@@ -114,4 +123,27 @@ const getElementInstanceNodes = (
     node.location.file = file
   })
   return { element: elementInstance, nodes: otherNodes }
+}
+
+const getInstanceFromElement = (
+  componentId: string,
+  childIndex: number,
+  graph: FlowGraph,
+): InstanceInfo => {
+  const element = graph.getJSXElementById(componentId, childIndex)
+  if (!element) {
+    throw new Error(`Element with id ${componentId} not found`)
+  }
+
+  return {
+    implementation: getSnippetFromNode(element.node),
+    dependencies: element
+      .getDependencies()
+      .filter((dep) => dep instanceof ImportStatement)
+      .map((dep) => ({
+        name: dep.getName(),
+        path: dep.getSource(),
+        isDefault: dep.isDefault(),
+      })),
+  }
 }

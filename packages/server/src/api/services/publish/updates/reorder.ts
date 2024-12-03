@@ -11,7 +11,7 @@ export const reorderUpdate: UpdateComponent = (info, graph) => {
   createComponent(
     info.update,
     value,
-    { implementation: code, dependencies: [], name: '', props: [] },
+    { implementation: code, dependencies: [] },
     graph,
   )
 }

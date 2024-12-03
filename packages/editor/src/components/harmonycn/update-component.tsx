@@ -12,6 +12,10 @@ import { useHarmonyStore } from '../../hooks/state'
 export interface UpdateComponentOptions {
   position?: 'above' | 'below'
   parent?: HTMLElement
+  copiedFrom?: {
+    componentId: string
+    childIndex: number
+  }
 }
 export const useUpdateComponent = () => {
   const { onAttributesChange } = useHarmonyContext()
@@ -34,6 +38,7 @@ export const useUpdateComponent = () => {
       //New element is the same id as the parent, but different child index so that
       //the backend does not get messed up by a weird, random id
       const componentId = parentId
+
       const childIndex = getNewChildIndex(parentId)
 
       let index = options.position
@@ -54,6 +59,7 @@ export const useUpdateComponent = () => {
         value: createUpdate<AddComponent>({
           parentId,
           component,
+          copiedFrom: options.copiedFrom,
           parentChildIndex,
           index,
           action: 'create',

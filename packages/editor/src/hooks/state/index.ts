@@ -9,6 +9,7 @@ import { createDataLayerSlice } from './data-layer'
 import { createQueryStateSlice } from './query-state'
 import { createImageCDNSlice } from './image-cdn'
 import { createHarmonyCnSlice } from './harmonycn'
+import { createCopyPasteComponentSlice } from './copy-paste-component'
 
 export const useHarmonyStore = createHarmonyStore(
   createComponentStateSlice,
@@ -21,4 +22,5 @@ export const useHarmonyStore = createHarmonyStore(
   createQueryStateSlice,
   createImageCDNSlice,
   createHarmonyCnSlice,
+  createCopyPasteComponentSlice,
 )

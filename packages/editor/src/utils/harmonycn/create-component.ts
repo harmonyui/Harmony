@@ -15,8 +15,6 @@ export const createComponentElement = (
   }
 
   const createdComponent = componentCreationFunction()
-  createdComponent.element.dataset.harmonyId = componentId
-  createdComponent.element.dataset.harmonyChildIndex = String(childIndex)
 
   return { ...createdComponent, componentId, childIndex }
 }

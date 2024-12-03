@@ -14,6 +14,7 @@ import {
 import type { CreatedComponent } from '../../../utils/harmonycn/types'
 import { createHarmonySlice } from '../factory'
 import type { HarmonyCnState } from '../harmonycn'
+import type { ComponentState } from '../component-state'
 import { deleteComponentUpdate } from './delete'
 import { createComponentUpdate } from './create'
 import { reorderComponentUpdate } from './reorder'
@@ -33,7 +34,7 @@ export interface ComponentUpdateState {
 
 export const createComponentUpdateSlice = createHarmonySlice<
   ComponentUpdateState,
-  HarmonyCnState
+  HarmonyCnState & ComponentState
 >((set, get, api) => ({
   deletedElements: [],
   componentUpdates: [],
