@@ -4,8 +4,6 @@ import * as React from 'react'
 import * as PopoverPrimitive from '@radix-ui/react-popover'
 import { getClass } from '@harmony/util/src/utils/common'
 import type { AllOrNothing } from '@harmony/util/src/types/utils'
-import { useEffect, useRef, useState } from 'react'
-import { Popover as ReactPopover } from './date-picker'
 
 const PopoverBase = PopoverPrimitive.Root
 
@@ -65,85 +63,5 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
         {children}
       </PopoverContent>
     </PopoverBase>
-  )
-}
-
-type PopoverPropsAria = React.PropsWithChildren<
-  {
-    button: React.ReactNode
-    className?: string
-    buttonClass?: string
-    container?: HTMLElement
-    closeTrigger?: number
-  } & AllOrNothing<{ isOpen: boolean; setIsOpen: (value: boolean) => void }>
->
-export const PopoverAria: React.FunctionComponent<PopoverPropsAria> = ({
-  children,
-  button,
-  isOpen,
-  setIsOpen,
-  container,
-  buttonClass,
-  className = 'hw-p-2',
-  closeTrigger,
-}) => {
-  const [isOpenState, setIsOpenState] = useState<boolean | undefined>(
-    isOpen === undefined ? false : undefined,
-  )
-  const isOpenActual: boolean =
-    isOpen !== undefined ? isOpen : Boolean(isOpenState)
-  const setIsOpenActual =
-    isOpen !== undefined
-      ? setIsOpen
-      : (setIsOpenState as (value: boolean) => void)
-  const ref = useRef<HTMLDivElement>(null)
-  const state = {
-    isOpen: isOpenActual,
-    setOpen: setIsOpenActual,
-    open: () => {
-      setIsOpenActual(true)
-    },
-    close: () => {
-      setIsOpenActual(false)
-    },
-    toggle: () => {
-      setIsOpenActual(!isOpenActual)
-    },
-  }
-
-  useEffect(() => {
-    if (closeTrigger) {
-      setIsOpenActual(false)
-    }
-  }, [closeTrigger])
-  return (
-    <>
-      <div
-        onClick={() => {
-          setIsOpenActual(!isOpenActual)
-        }}
-        onKeyDown={() => {
-          setIsOpenActual(!isOpenActual)
-        }}
-        ref={ref}
-        role='button'
-        tabIndex={0}
-        className={buttonClass}
-        //className="hw-w-full"
-        //style={{width: '100%'}}
-      >
-        {button}
-      </div>
-      {isOpenActual ? (
-        <ReactPopover
-          className={getClass(className, 'hw-overflow-hidden')}
-          state={state}
-          triggerRef={ref}
-          container={container}
-        >
-          {children}
-        </ReactPopover>
-      ) : null}
-    </>
   )
 }

@@ -1194,6 +1194,19 @@ describe('indexor', () => {
       ).toBe(true)
     })
 
+    it('Should get correct element name', () => {
+      const file: TestFile = 'app/complexElementNames.tsx'
+      const content = testCases[file]
+
+      const result = getGraph(file, content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(3)
+
+      expect(componentElements[2].getName()).toBe('AnotherComponent')
+    })
+
     //TODO: Finish this
     // it('Should handle imports from various files', () => {
     //   const componentElements: HarmonyComponent[] = []

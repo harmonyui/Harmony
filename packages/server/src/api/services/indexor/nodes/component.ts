@@ -33,6 +33,9 @@ export class ComponentNode extends Node<
   }
 
   public addInstance(instance: JSXElementNode) {
+    if (instance.getName() !== this.name) {
+      throw new Error('Instance should be same name as component')
+    }
     this.instances.add(instance)
   }
 

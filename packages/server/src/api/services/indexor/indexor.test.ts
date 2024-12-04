@@ -456,6 +456,21 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
 
         export default DefaultExportComponent
     `,
+  'app/complexElementNames.tsx': `
+        const Component = ({children}) => {
+            return (
+                <div>{children}</div>
+            )
+        }
+
+        const COMPONENT_NAME = "Component"
+
+        const AnotherComponent = createComponentThatIsntComponent(COMPONENT_NAME)
+
+        const App = () => {
+            return <Component><AnotherComponent/></Component>
+        }
+    `,
 } as const
 
 export type TestFile = keyof typeof testCases

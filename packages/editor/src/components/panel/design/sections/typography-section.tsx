@@ -1,5 +1,4 @@
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
-import type { CSSProperties } from 'react'
 import React, { useMemo } from 'react'
 import {
   BoldIcon,
@@ -21,6 +20,7 @@ import { ColorAttribute } from './components/color-attribute'
 import { DesignDropdown } from './components/design-dropdown'
 import { DesignInput } from './components/design-input'
 import { ButtonGroupButton } from './components/button-group'
+import { TokenDropdown } from './components/token-dropdown'
 
 export const TypographySection: DesignPanelSectionComponent = () => {
   const { getAttribute, onAttributeChange } = useComponentAttribute()
@@ -34,11 +34,8 @@ export const TypographySection: DesignPanelSectionComponent = () => {
       <div className='hw-grid hw-grid-cols-3 hw-gap-2 hw-items-center'>
         <FontDropdown />
         <FontWeightDropdown />
-        <DesignInput
-          className='hw-col-span-1'
-          value={getAttribute('fontSize')}
-          onChange={onChange('fontSize')}
-        />
+        <TokenDropdown attribute='fontSize' />
+        <ColorAttribute className='hw-col-span-2' attribute='color' />
         <TextAlignSection />
         <TextTypeSection />
         <Label label='Line Height'>
@@ -55,7 +52,6 @@ export const TypographySection: DesignPanelSectionComponent = () => {
             onChange={onChange('letterSpacing')}
           />
         </Label>
-        <ColorAttribute className='hw-col-span-2' attribute='color' />
       </div>
     </Section>
   )
@@ -88,25 +84,8 @@ const FontDropdown: React.FunctionComponent = () => {
 }
 
 const FontWeightDropdown: React.FunctionComponent = () => {
-  const { getAttribute, onAttributeChange } = useComponentAttribute()
-  const items: DropdownItem<Exclude<CSSProperties['fontWeight'], undefined>>[] =
-    useMemo(
-      () => [
-        { id: '400', name: 'Normal' },
-        { id: '700', name: 'Bold' },
-      ],
-      [],
-    )
-
   return (
-    <DesignDropdown
-      className='hw-col-span-2 hw-w-full'
-      items={items}
-      initialValue={getAttribute('fontWeight')}
-      onChange={(value) =>
-        onAttributeChange({ name: 'fontWeight', value: value.id as string })
-      }
-    />
+    <TokenDropdown className='hw-col-span-2 hw-w-full' attribute='fontWeight' />
   )
 }
 

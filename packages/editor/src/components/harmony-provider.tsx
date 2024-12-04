@@ -39,7 +39,6 @@ import { HarmonyContext, viewModes } from './harmony-context'
 import type { Setup } from './harmony-setup'
 import { Inspector, replaceTextContentWithSpans } from './inspector/inspector'
 import { HarmonyPanel } from './panel/harmony-panel'
-import { WelcomeModal } from './panel/welcome/welcome-modal'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'
 import { ComponentProvider } from './harmonycn/component-provider'
@@ -517,7 +516,6 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                   </button>
                 </div>
               )}
-              <WelcomeModal />
               <GlobalUpdatePopup
                 onUndo={onUndo}
                 executeCommand={executeCommand}

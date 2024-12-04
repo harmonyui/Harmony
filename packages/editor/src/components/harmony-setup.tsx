@@ -244,7 +244,7 @@ export class Setuper implements Setup {
       ReactDOM.createPortal = function create(
         children: React.ReactNode,
         _container: Element | DocumentFragment,
-        key?: string | null | undefined,
+        key?: React.Key | null | undefined,
       ) {
         if (_container === document.body) {
           // eslint-disable-next-line no-param-reassign -- ok

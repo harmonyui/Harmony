@@ -306,6 +306,13 @@ export const wordToKebabCase = (str: string): string => {
     .join('-')
 }
 
+export const kebabToWord = (kebabCase: string): string => {
+  return kebabCase
+    .split('-')
+    .map((word) => capitalizeFirstLetter(word.toLowerCase()))
+    .join(' ')
+}
+
 export const camelToKebab = (camelCase: string): string => {
   return camelCase.replace(/([a-z])([A-Z])/g, '$1-$2').toLowerCase()
 }
@@ -314,4 +321,20 @@ export const validPathRegex =
   /^(?!.*[\/\\]\.[^\/\\]*)(?!.*[\/\\]node_modules[\/\\])[^\s.\/\\][^\s]*\.(tsx|jsx|js)$/
 export const isValidPath = (path: string): boolean => {
   return validPathRegex.test(path)
+}
+
+export function areHexColorsEqual(color1: HexColor, color2: HexColor): boolean {
+  const normalize = (color: HexColor) => {
+    // Remove the hash if present, and make it lowercase
+    const hex = color.replace('#', '').toLowerCase()
+    // If it's a 3-character hex, expand it to 6-character
+    return hex.length === 3
+      ? hex
+          .split('')
+          .map((char) => char + char)
+          .join('')
+      : hex
+  }
+
+  return normalize(color1) === normalize(color2)
 }
