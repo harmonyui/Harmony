@@ -2,9 +2,8 @@ import type * as t from '@babel/types'
 import type { ArrayProperty, NodeBase, ObjectNode } from '../types'
 import { Node } from '../types'
 import { isArray } from '../predicates/simple-predicates'
-import { getNameValue } from '../utils'
 import type { JSXAttribute } from './jsx-attribute'
-import type { ComponentNode } from './component'
+import { ComponentNode } from './component'
 import { ImportStatement } from './import-statement'
 
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
@@ -25,7 +24,14 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getName() {
-    return getNameValue(this.nameNode) || this.name
+    const referencedComponent = this.nameNode.getValues(
+      (node) => node instanceof ComponentNode,
+    )
+    if (referencedComponent.length > 0) {
+      return referencedComponent[0].name
+    }
+
+    return this.name
   }
 
   public getNameNode() {
