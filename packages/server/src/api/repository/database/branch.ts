@@ -39,6 +39,7 @@ export const getRepository = async ({
     installationId: repository.installationId,
     cssFramework: repository.css_framework,
     tailwindPrefix: repository.tailwind_prefix || undefined,
+    tailwindConfig: repository.tailwind_config,
     defaultUrl: repository.default_url,
     registry: {
       Button: {

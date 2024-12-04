@@ -40,6 +40,7 @@ export const repositorySchema = z.object({
   installationId: z.number(),
   cssFramework: z.string(),
   tailwindPrefix: z.optional(z.string()),
+  tailwindConfig: z.string(),
   defaultUrl: z.string(),
   registry: z.record(z.string(), registryItemSchema),
 })

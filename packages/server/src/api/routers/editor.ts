@@ -16,6 +16,7 @@ import type {
 } from '@harmony/util/src/types/network'
 import { reverseUpdates } from '@harmony/util/src/utils/component'
 import { z } from 'zod'
+import type { Token } from '@harmony/util/src/types/tokens'
 import {
   formatComponentAndErrors,
   indexForComponents,
@@ -61,6 +62,7 @@ export const editorRouter = createTRPCRouter({
         ctx.componentUpdateRepository,
       )
 
+      let tokens: Token[] = []
       if (repositoryId !== undefined) {
         const repository = await getRepository({
           prisma,
@@ -70,6 +72,8 @@ export const editorRouter = createTRPCRouter({
 
         const githubRepository =
           ctx.gitRepositoryFactory.createGitRepository(repository)
+
+        tokens = await resolveTailwindConfig(repository)
 
         const ref = await githubRepository.getBranchRef(repository.branch)
 
@@ -102,8 +106,6 @@ export const editorRouter = createTRPCRouter({
           repository_id: repositoryId,
         },
       })
-
-      const tokens = resolveTailwindConfig()
 
       const isDemo = accountTiedToBranch.role === 'quick'
 
@@ -292,7 +294,6 @@ export const editorRouter = createTRPCRouter({
       )
       const { harmonyComponents, errorElements } =
         formatComponentAndErrors(instances)
-      const config = resolveTailwindConfig()
 
       return {
         harmonyComponents,
@@ -300,7 +301,6 @@ export const editorRouter = createTRPCRouter({
           componentId: error.id,
           type: error.type,
         })),
-        harmonyTokens: config,
       }
     }),
 

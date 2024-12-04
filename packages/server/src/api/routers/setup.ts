@@ -84,6 +84,7 @@ export const setupRoute = createTRPCRouter({
           team_id: teamId,
           css_framework: input.repository.cssFramework,
           tailwind_prefix: input.repository.tailwindPrefix,
+          tailwind_config: input.repository.tailwindConfig,
           default_url: input.repository.defaultUrl,
         },
       })
@@ -98,6 +99,7 @@ export const setupRoute = createTRPCRouter({
         tailwindPrefix: newRepository.tailwind_prefix || undefined,
         cssFramework: newRepository.css_framework,
         defaultUrl: newRepository.default_url,
+        tailwindConfig: newRepository.tailwind_config,
         registry: {},
       } satisfies Repository
     }),
@@ -195,6 +197,7 @@ export const setupRoute = createTRPCRouter({
             installationId: curr.installation_id,
             cssFramework: 'other',
             tailwindPrefix: undefined,
+            tailwindConfig: 'tailwind.config.ts',
             defaultUrl: '',
             registry: {},
           })),

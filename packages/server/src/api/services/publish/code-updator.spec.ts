@@ -77,6 +77,7 @@ describe('code-updator', () => {
       cssFramework: cssFramework || 'tailwind',
       defaultUrl: '',
       tailwindPrefix,
+      tailwindConfig: 'tailwind.config.ts',
       registry: {
         Button: {
           name: 'Button',
