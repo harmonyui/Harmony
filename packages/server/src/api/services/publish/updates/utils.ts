@@ -1,4 +1,4 @@
-import { getBaseId } from '@harmony/util/src/utils/component'
+import { getBaseId, getLevelId } from '@harmony/util/src/utils/component'
 import type { Repository } from '@harmony/util/src/types/branch'
 import {
   harmonyCnSchema,
@@ -165,4 +165,28 @@ export const getInstanceFromComponent = (
     dependencies: instance.dependencies,
     componentIds: [],
   }
+}
+
+export const getJSXElementFromLevels = (
+  componentId: string,
+  childIndex: number,
+  graph: FlowGraph,
+): JSXElementNode | undefined => {
+  const numLevels = componentId.split('#').length
+  let element: JSXElementNode | undefined
+  for (let i = 0; i < numLevels; i++) {
+    const _componentId = getLevelId(componentId, i)
+    element = graph.getJSXElementById(_componentId, childIndex)
+    if (!element) {
+      continue
+    }
+    const parentComponent = element.getParentComponent()
+    if (parentComponent.getJSXElements()[0].id === element.id) {
+      continue
+    }
+
+    return element
+  }
+
+  return element
 }

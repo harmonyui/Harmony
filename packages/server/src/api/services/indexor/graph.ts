@@ -76,7 +76,7 @@ export class FlowGraph {
     program.addNode(node)
   }
 
-  public setNewNode(node: Node) {
+  public setNewNode(node: Node, parent: Node) {
     const existingNode = this.getNodes().find(
       (n) => n.id === node.id && n.getChildIndex() === node.getChildIndex(),
     )
@@ -90,6 +90,7 @@ export class FlowGraph {
     }
     const program = this.files[node.location.file]
     program.addNode(node)
+    node.path.scope = parent.path.scope
   }
 
   public createNode<T extends t.Node>(
@@ -376,11 +377,13 @@ export class FlowGraph {
     parentElement: JSXElementNode,
   ) {
     childElement.id = getBaseId(componentId)
-    this.setNewNode(childElement)
+    this.setNewNode(childElement, parentElement)
     if (childElement.getChildIndex() !== childIndex) {
       throw new Error('Child index does not match')
     }
-    nodes.forEach((node) => this.setNewNode(node))
+    nodes.forEach((node) => {
+      this.setNewNode(node, parentElement)
+    })
     const dependencies = childElement.getDependencies()
 
     const beforeElement = parentElement.getChildren()[index] as
@@ -400,7 +403,7 @@ export class FlowGraph {
         )
         parentElement.setClosingElement(parentClosingElement)
         parentClosingElement.id = `${parentElement.id}-closing`
-        this.setNewNode(parentClosingElement)
+        this.setNewNode(parentClosingElement, parentElement)
         this.dirtyNode(parentElement)
       }
       this.dirtyNode(childElement)
@@ -411,17 +414,21 @@ export class FlowGraph {
       this.dirtyNode(childElement)
     }
 
+    childElement.getNameNode().dataDependencies = new Set()
     this.addJSXElement(
       childElement,
       parentElement,
       parentElement.getParentComponent(),
       beforeElement,
     )
-    childElement.getNameNode().dataDependencies = new Set()
 
     this.addDependencyImports(
       childElement,
-      dependencies.filter((node) => node instanceof ImportStatement),
+      dependencies.filter(
+        (node): node is ImportStatement =>
+          node instanceof ImportStatement &&
+          !this.files[childElement.location.file].hasImportStatement(node),
+      ),
     )
 
     return childElement

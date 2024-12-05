@@ -2,6 +2,7 @@ import type * as t from '@babel/types'
 import type { NodeBase } from '../types'
 import { Node } from '../types'
 import { isChildNode } from '../utils'
+import { ImportStatement } from './import-statement'
 
 export class ProgramNode extends Node<t.Program> {
   private exportStatements: Node<t.ExportNamedDeclaration>[] = []
@@ -40,5 +41,17 @@ export class ProgramNode extends Node<t.Program> {
 
   public setContent(content: string) {
     this.fileContent = content
+  }
+
+  public hasImportStatement(statement: ImportStatement) {
+    const statements = this.getNodes().filter(
+      (node) => node instanceof ImportStatement,
+    )
+    return statements.some(
+      (s) =>
+        s.getSource() === statement.getSource() &&
+        s.getName() === statement.getName() &&
+        s.isDefault === statement.isDefault,
+    )
   }
 }

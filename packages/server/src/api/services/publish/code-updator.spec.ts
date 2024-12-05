@@ -58,7 +58,7 @@ describe('code-updator', () => {
   }
 
   const setupGitRepo = async (
-    testFile: TestFile,
+    files: TestFile[],
     {
       tailwindPrefix,
       cssFramework,
@@ -131,7 +131,7 @@ describe('code-updator', () => {
     }
 
     const result = await indexFiles(
-      [testFile],
+      files,
       async (file) => testFiles[file as TestFile],
     )
     expect(result).toBeTruthy()
@@ -166,7 +166,7 @@ describe('code-updator', () => {
   describe('updateFiles', () => {
     it('Should add on tailwind prefix correctly', async () => {
       const file: TestFile = 'tailwindPrefix'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         tailwindPrefix: 'hw-',
       })
       const updateInfos: ComponentUpdate[] = [
@@ -219,7 +219,7 @@ describe('code-updator', () => {
 
     it('Should handle non tailwind classes', async () => {
       const file: TestFile = 'nonTailwindClass'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file)
+      const { codeUpdator, elementInstances } = await setupGitRepo([file])
       const updateInfos: ComponentUpdate[] = [
         {
           value: '3px',
@@ -252,7 +252,7 @@ describe('code-updator', () => {
 
     it('Should update text literals and comments for dynamic text', async () => {
       const file: TestFile = 'tailwindPrefix'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file)
+      const { codeUpdator, elementInstances } = await setupGitRepo([file])
       const updates: ComponentUpdate[] = [
         {
           value: 'Hello',
@@ -312,7 +312,7 @@ describe('code-updator', () => {
 
     it('Should apply className literals and comments for dynamic classes', async () => {
       const file: TestFile = 'tailwindPrefix'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         tailwindPrefix: 'hw-',
       })
       const updateInfos: ComponentUpdate[] = [
@@ -365,7 +365,7 @@ describe('code-updator', () => {
 
     it('Should apply className to parent when parent does not already have class name but can', async () => {
       const file: TestFile = 'classNameParent'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file)
+      const { codeUpdator, elementInstances } = await setupGitRepo([file])
       const updates: ComponentUpdate[] = [
         {
           value: '#000',
@@ -415,7 +415,7 @@ describe('code-updator', () => {
 
     it('Should apply className and children updates to spread prop', async () => {
       const file: TestFile = 'spreadProp'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file)
+      const { codeUpdator, elementInstances } = await setupGitRepo([file])
       const updates: ComponentUpdate[] = [
         {
           value: 'Bobby Boi',
@@ -507,7 +507,7 @@ describe('code-updator', () => {
 
     it('Should add comment for non supported framework', async () => {
       const file: TestFile = 'tailwindPrefix'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'bootstrap',
       })
       const updates: ComponentUpdate[] = [
@@ -551,7 +551,7 @@ describe('code-updator', () => {
 
     it('Should update image src', async () => {
       const file: TestFile = 'imageSrc'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'bootstrap',
       })
       const updates: ComponentUpdate[] = [
@@ -596,7 +596,7 @@ describe('code-updator', () => {
 
     it('Should update array data', async () => {
       const file: TestFile = 'arrayStuff'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'tailwind',
       })
       const updates: ComponentUpdate[] = [
@@ -754,7 +754,7 @@ describe('code-updator', () => {
 
     it('Should add component', async () => {
       const file: TestFile = 'addComponent'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'tailwind',
       })
       const updates: ComponentUpdate[] = [
@@ -879,7 +879,7 @@ describe('code-updator', () => {
 
     it('Should delete components', async () => {
       const file: TestFile = 'addComponent'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'tailwind',
       })
       const updates: ComponentUpdate[] = [
@@ -954,7 +954,7 @@ describe('code-updator', () => {
 
     it('Should reorder components', async () => {
       const file: TestFile = 'addComponent'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'tailwind',
       })
       const updates: ComponentUpdate[] = [
@@ -1019,7 +1019,7 @@ describe('code-updator', () => {
 
     it('Should add component with dependencies', async () => {
       const file: TestFile = 'addComponent'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'tailwind',
       })
       const updates: ComponentUpdate[] = [
@@ -1066,7 +1066,7 @@ describe('code-updator', () => {
 
     it('Should update property', async () => {
       const file: TestFile = 'updateProperty'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'tailwind',
       })
       const updates: ComponentUpdate[] = [
@@ -1159,7 +1159,7 @@ describe('code-updator', () => {
 
     it('Should copy paste', async () => {
       const file: TestFile = 'copyPaste'
-      const { codeUpdator, elementInstances } = await setupGitRepo(file, {
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'tailwind',
       })
       const updates: ComponentUpdate[] = [
@@ -1271,6 +1271,72 @@ describe('code-updator', () => {
             )
           }
         `),
+      )
+    })
+
+    it('Should do updates with multple layers', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(
+        ['file1', 'file2'],
+        {
+          cssFramework: 'tailwind',
+        },
+      )
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'component',
+          name: 'reorder',
+          value: createUpdate<ReorderComponent>({
+            parentId: elementInstances[0].id,
+            parentChildIndex: 0,
+            index: 0,
+          }),
+          oldValue: '',
+          componentId: elementInstances[4].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'component',
+          name: 'delete-create',
+          value: createUpdate<AddComponent>({
+            action: 'create',
+            parentId: elementInstances[1].id,
+            parentChildIndex: 0,
+            index: 1,
+            copiedFrom: {
+              componentId: elementInstances[0].id,
+              childIndex: 0,
+            },
+          }),
+          oldValue: '',
+          componentId: 'new-button',
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.file2).toBeTruthy()
+
+      const codeUpdates = fileUpdates.file2
+      expect(codeUpdates.filePath).toBe('file2')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+              import { Button } from 'file1'
+              const App = () => {
+                return <div>
+                  <Button>
+                    <span>Content2</span>
+                    <span>Content1</span>
+                  </Button>
+                  <Button>
+                    <span>Content2</span>
+                    <span>Content1</span>
+                  </Button>
+                </div>
+              }
+            `),
       )
     })
   })
@@ -1440,6 +1506,23 @@ const testFiles = {
           <p>Here is some text</p>
         </div>
       )
+    }
+  `,
+  file1: `
+    export const Button = ({children}) => {
+        return <button>{children}</button>
+    }
+  `,
+  file2: `
+    import { Button } from 'file1'
+
+    const App = () => {
+      return <div>
+        <Button>
+          <span>Content1</span>
+          <span>Content2</span>
+        </Button>
+      </div>
     }
   `,
 }

@@ -9,7 +9,7 @@ import { isJSXElement } from '../../indexor/nodes/jsx-element'
 import { getSnippetFromNode } from '../../indexor/utils'
 import { ImportStatement } from '../../indexor/nodes/import-statement'
 import type { InstanceInfo, UpdateComponent } from './types'
-import { getInstanceFromComponent } from './utils'
+import { getInstanceFromComponent, getJSXElementFromLevels } from './utils'
 
 export const createUpdate: UpdateComponent = (
   { value, update: componentUpdate },
@@ -19,7 +19,11 @@ export const createUpdate: UpdateComponent = (
   const { parentId, parentChildIndex, index, component, copiedFrom } =
     parseUpdate(addComponentSchema, value)
 
-  const parentElement = graph.getJSXElementById(parentId, parentChildIndex)
+  const parentElement = getJSXElementFromLevels(
+    parentId,
+    parentChildIndex,
+    graph,
+  )
   if (!parentElement) {
     throw new Error(`Parent element with id ${parentId} not found`)
   }
@@ -55,7 +59,11 @@ export const createComponent = (
   code: InstanceInfo,
   graph: FlowGraph,
 ) => {
-  const parentElement = graph.getJSXElementById(parentId, parentChildIndex)
+  const parentElement = getJSXElementFromLevels(
+    parentId,
+    parentChildIndex,
+    graph,
+  )
   if (!parentElement) {
     throw new Error(`Parent element with id ${parentId} not found`)
   }
@@ -131,7 +139,7 @@ const getInstanceFromElement = (
   childIndex: number,
   graph: FlowGraph,
 ): InstanceInfo => {
-  const element = graph.getJSXElementById(componentId, childIndex)
+  const element = getJSXElementFromLevels(componentId, childIndex, graph)
   if (!element) {
     throw new Error(`Element with id ${componentId} not found`)
   }

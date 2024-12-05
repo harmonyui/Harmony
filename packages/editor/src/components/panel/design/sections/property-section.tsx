@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { ComponentProp } from '@harmony/util/src/types/component'
 import type { UpdateProperty } from '@harmony/util/src/updates/property'
 import { useHarmonyStore } from '../../../../hooks/state'
@@ -13,24 +13,31 @@ export const PropertySection: DesignPanelSectionComponent = () => {
   const { onElementPropertyChange, onComponentPropertyChange } =
     useHarmonyContext()
   const selectedComponent = useHarmonyStore((store) => store.selectedComponent)
-  const props = useMemo(
-    () => selectedComponent?.props.filter((prop) => prop.isEditable) ?? [],
+  const getPropValue = useCallback(
+    (prop: ComponentProp) => {
+      if (prop.type === 'classVariant') {
+        const classes = selectedComponent?.element.getAttribute('class') ?? ''
+        const value = Object.entries(prop.values).find(([_, _value]) =>
+          classes.includes(_value),
+        )
+        if (value) return value[0]
+
+        return ''
+      }
+
+      const attributeName = prop.name === 'className' ? 'class' : prop.name
+      return selectedComponent?.element.getAttribute(attributeName) ?? ''
+    },
     [selectedComponent],
   )
 
-  const getPropValue = (prop: ComponentProp) => {
-    if (prop.type === 'classVariant') {
-      const classes = selectedComponent?.element.getAttribute('class') ?? ''
-      const value = Object.entries(prop.values).find(([_, _value]) =>
-        classes.includes(_value),
-      )
-      if (value) return value[0]
-
-      return ''
-    }
-
-    return selectedComponent?.element.getAttribute(prop.name) ?? ''
-  }
+  const props = useMemo(
+    () =>
+      selectedComponent?.props
+        .map((prop) => ({ ...prop, value: getPropValue(prop) }))
+        .filter((prop) => prop.isEditable && prop.value) ?? [],
+    [selectedComponent, getPropValue],
+  )
 
   if (props.length === 0) return null
 
@@ -69,7 +76,7 @@ export const PropertySection: DesignPanelSectionComponent = () => {
             <PropertyInput
               type={prop.type}
               key={prop.name}
-              value={getPropValue(prop)}
+              value={prop.value}
               onChange={(value) => onPropChange(prop, value)}
               values={prop.values}
             />

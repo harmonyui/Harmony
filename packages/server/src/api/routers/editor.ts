@@ -26,8 +26,11 @@ import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
 import { generateUpdatesFromText } from '../repository/openai'
 import { getRepository, getBranch } from '../repository/database/branch'
-import { getComponentUpdates } from '../services/component-update'
 import { resolveTailwindConfig } from '../repository/tailwind/tailwind'
+import {
+  createComponentUpdates,
+  getComponentUpdates,
+} from '../services/component-update'
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
@@ -213,7 +216,11 @@ export const editorRouter = createTRPCRouter({
         }
       }
 
-      await ctx.componentUpdateRepository.createUpdates(updates, branchId)
+      await createComponentUpdates(
+        updates,
+        branchId,
+        ctx.componentUpdateRepository,
+      )
 
       const reversed = reverseUpdates(errorUpdates)
       const response: UpdateResponse = { errorUpdates: reversed }
