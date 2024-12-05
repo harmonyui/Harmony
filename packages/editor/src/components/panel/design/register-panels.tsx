@@ -1,7 +1,7 @@
 import { useMemo } from 'react'
 import type { DesignPanelSectionComponent } from './sections/components/section'
 import { SizeSection } from './sections/size-section'
-import { ComponentType } from './types'
+import { ComponentType } from '../../attributes/types'
 import { LayoutSection } from './sections/layout-section'
 import { BorderSection } from './sections/border-section'
 import { StyleSection } from './sections/style-section'

@@ -88,6 +88,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const updateComponentsFromIds = useHarmonyStore(
     (state) => state.updateComponentsFromIds,
   )
+  const initHarmonyComponents = useHarmonyStore(
+    (state) => state.initHarmonyComponents,
+  )
   const updateTheCounter = useHarmonyStore((state) => state.updateTheCounter)
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
   const rootComponent = useHarmonyStore((state) => state.rootComponent)?.element
@@ -198,6 +201,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             { branchId, components: componentIds, repositoryId },
             rootComponent,
           )
+        } else {
+          initHarmonyComponents()
         }
       }
       initMutationObserverRef.current = new MutationObserver((mutations) => {

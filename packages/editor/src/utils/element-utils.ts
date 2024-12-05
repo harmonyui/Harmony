@@ -1,15 +1,19 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion --- ok*/
 export const recurseElements = (
   element: HTMLElement,
-  callbacks: ((element: HTMLElement) => void)[],
+  callbacks: ((
+    element: HTMLElement,
+    parentElement: HTMLElement | undefined,
+  ) => void)[],
+  parent?: HTMLElement,
 ) => {
   callbacks.forEach((callback) => {
-    callback(element)
+    callback(element, parent)
   })
   Array.from(element.children)
     .filter((child) => (child as HTMLElement).dataset.harmonyText !== 'true')
     .forEach((child) => {
-      recurseElements(child as HTMLElement, callbacks)
+      recurseElements(child as HTMLElement, callbacks, element)
     })
 }
 

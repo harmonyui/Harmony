@@ -161,10 +161,6 @@ export const createComponentStateSlice = createHarmonySlice<
           parentId,
           get().rootComponent?.element,
         ).length
-        // amountOfIndexes += get().createdElements.filter(
-        //   (el) => el.componentId === parentId,
-        // ).length
-
         return amountOfIndexes
       },
       hoverComponent(element: HTMLElement | undefined) {

@@ -32,6 +32,7 @@ export const EditorChrome: React.FunctionComponent = () => {
 
 const EditorChromeAfterProviders: React.FunctionComponent = () => {
   const [branchId, setBranchId] = useQueryState<string>({ key: 'branch-id' })
+  const [chrome, setChrome] = useQueryState<boolean>({ key: 'chrome' })
   const [showStartModal, setShowStartModal] = useQueryState({
     key: 'start-modal',
     defaultValue: false,
@@ -50,6 +51,7 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
   const onSelectProject = useCallback((_branchId: string) => {
     setShowStartModal(false)
     setBranchId(_branchId)
+    setChrome(true)
   }, [])
 
   useToggleEvent(onToggleEditor)
@@ -61,6 +63,7 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
       overlay: true,
       show: Boolean(branchId),
       environment,
+      initShow: chrome,
     },
     branchId,
   )

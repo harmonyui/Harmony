@@ -1,5 +1,5 @@
-import { useComponentAttribute } from '../attribute-provider'
-import type { CommonTools } from '../types'
+import { useComponentAttribute } from '../../../attributes/attribute-provider'
+import type { CommonTools } from '../../../attributes/types'
 import { Section } from './components/section'
 import { InputLabel } from './components/input-label'
 

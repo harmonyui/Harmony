@@ -259,7 +259,9 @@ export const createComponentUpdateSlice = createHarmonySlice<
         if (isNaN(index)) {
           throw new Error(`Invalid update text element ${update.name}`)
         }
-        if (textNodes[index]?.textContent !== update.value) {
+        if (textNodes.length === 0 && index === 0) {
+          el.textContent = update.value
+        } else if (textNodes[index]?.textContent !== update.value) {
           textNodes[index].textContent = update.value
         }
       }

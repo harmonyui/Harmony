@@ -6,8 +6,8 @@ import {
   PaddingTopIcon,
 } from '@harmony/ui/src/components/core/icons'
 import { useState } from 'react'
-import { useComponentAttribute } from '../attribute-provider'
-import type { CommonTools } from '../types'
+import { useComponentAttribute } from '../../../attributes/attribute-provider'
+import type { CommonTools } from '../../../attributes/types'
 import type { DesignPanelSectionComponent } from './components/section'
 import { Section } from './components/section'
 import { AttributeExpand } from './components/attribute-expand'

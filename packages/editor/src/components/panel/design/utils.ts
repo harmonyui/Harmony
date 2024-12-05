@@ -4,8 +4,8 @@ import type { HexColor } from '@harmony/util/src/types/colors'
 import { getElementText } from '../../../utils/element-utils'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { isTextElement } from '../../inspector/inspector'
-import type { CommonTools } from './types'
-import { colorTools, ComponentType } from './types'
+import type { CommonTools } from '../../attributes/types'
+import { colorTools, ComponentType } from '../../attributes/types'
 
 export const getComponentType = (
   element: HTMLElement,

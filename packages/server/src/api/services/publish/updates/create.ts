@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable no-nested-ternary -- ok*/
+
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
 import type { FlowGraph } from '../../indexor/graph'
@@ -16,7 +17,7 @@ export const createUpdate: UpdateComponent = (
   graph,
   repository,
 ) => {
-  const { parentId, parentChildIndex, index, component, copiedFrom } =
+  const { parentId, parentChildIndex, index, component, copiedFrom, element } =
     parseUpdate(addComponentSchema, value)
 
   const parentElement = getJSXElementFromLevels(
@@ -29,17 +30,25 @@ export const createUpdate: UpdateComponent = (
   }
 
   //If there is no comonent attached, it is probably just the result of an undo delete
-  if (!component && !copiedFrom) {
+  if (!component && !copiedFrom && !element) {
     return
   }
 
   const instanceCode = copiedFrom
-    ? getInstanceFromElement(
+    ? getInstanceFromCopiedFrom(
         copiedFrom.componentId,
         copiedFrom.childIndex,
         graph,
       )
-    : getInstanceFromComponent(component!, repository)
+    : element
+      ? getInstanceFromElement(element)
+      : component
+        ? getInstanceFromComponent(component, repository)
+        : undefined
+
+  if (!instanceCode) {
+    throw new Error('Instance code not found')
+  }
 
   createComponent(
     componentUpdate,
@@ -134,7 +143,7 @@ const getElementInstanceNodes = (
   return { element: elementInstance, nodes: otherNodes }
 }
 
-const getInstanceFromElement = (
+const getInstanceFromCopiedFrom = (
   componentId: string,
   childIndex: number,
   graph: FlowGraph,
@@ -156,5 +165,13 @@ const getInstanceFromElement = (
         isDefault: dep.isDefault(),
       })),
     componentIds: allElements.map((node) => node.id),
+  }
+}
+
+const getInstanceFromElement = (element: string): InstanceInfo => {
+  return {
+    implementation: `<${element}></${element}>`,
+    dependencies: [],
+    componentIds: [],
   }
 }
