@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/prefer-for-of */
 /* eslint-disable @typescript-eslint/no-non-null-assertion --- ok*/
 export const recurseElements = (
   element: HTMLElement,
@@ -151,4 +152,132 @@ export const translatePropertyName = (name: string): string => {
     default:
       return name
   }
+}
+
+interface StyleInfo {
+  selectors: {
+    selector: string
+    class: string
+    styles: {
+      name: string
+      value: string
+    }[]
+    cssText: string
+  }[]
+  variables: {
+    name: string
+    value: string
+    selector: string
+  }[]
+  keyframes: {
+    name: string
+    text: string
+  }[]
+}
+const getStyleInfo = (): StyleInfo => {
+  const stylesheets = Array.from(document.styleSheets)
+  const styleInfo: StyleInfo = {
+    selectors: [],
+    keyframes: [],
+    variables: [],
+  }
+
+  const extractCSSStyle = (rule: CSSRule) => {
+    if (rule instanceof CSSStyleRule) {
+      const style: StyleInfo['selectors'][number] = {
+        selector: rule.selectorText,
+        styles: [],
+        class: '',
+        cssText: rule.cssText,
+      }
+      for (let i = 0; i < rule.style.length; i++) {
+        const name = rule.style[i]
+        const value = rule.style.getPropertyValue(name)
+        style.styles.push({ name, value })
+        if (name.startsWith('--')) {
+          styleInfo.variables.push({
+            name,
+            value,
+            selector: rule.selectorText,
+          })
+        }
+      }
+      styleInfo.selectors.push(style)
+    } else if (rule instanceof CSSMediaRule) {
+      const mediaRules = Array.from(rule.cssRules)
+      for (const mediaRule of mediaRules) {
+        extractCSSStyle(mediaRule)
+      }
+    } else if (rule instanceof CSSKeyframesRule) {
+      styleInfo.keyframes.push({ name: rule.name, text: rule.cssText })
+    }
+  }
+
+  for (const stylesheet of stylesheets) {
+    try {
+      const rules = Array.from(stylesheet.cssRules)
+
+      for (const rule of rules) {
+        extractCSSStyle(rule)
+      }
+    } catch (e) {
+      console.warn(
+        `Could not access rules for stylesheet: ${stylesheet.href}`,
+        e,
+      )
+    }
+  }
+  return styleInfo
+}
+export const getStyleInfoForElement = (element: HTMLElement): StyleInfo => {
+  const styleInfo = getStyleInfo()
+
+  const infoForElement: StyleInfo = {
+    selectors: [],
+    keyframes: [],
+    variables: [],
+  }
+  const computedStyles = getComputedStyle(element)
+  for (const selector of styleInfo.selectors) {
+    if (element.matches(selector.selector) || selector.selector === ':root') {
+      const styles = selector.styles.map((style) => {
+        const value = style.value
+          ? style.value
+          : computedStyles.getPropertyValue(style.name)
+        if (style.name === 'animation-name') {
+          const animationName = value
+          const keyframe = styleInfo.keyframes.find(
+            (frame) => frame.name === animationName,
+          )
+          if (keyframe) {
+            infoForElement.keyframes.push(keyframe)
+          }
+        }
+
+        return {
+          name: style.name,
+          value,
+        }
+      })
+
+      const sameClasses = Array.from(element.classList).filter((c) =>
+        selector.selector.includes(`.${c}`),
+      )
+      infoForElement.selectors.push({
+        ...selector,
+        class: sameClasses.join(' '),
+        styles,
+      })
+      const variables = selector.styles.filter((v) => v.name.startsWith('--'))
+      infoForElement.variables.push(
+        ...variables.map((v) => ({
+          name: v.name,
+          value: v.value,
+          selector: selector.selector,
+        })),
+      )
+    }
+  }
+
+  return infoForElement
 }

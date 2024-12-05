@@ -7,7 +7,10 @@ import type {
 } from '@harmony/util/src/updates/component'
 import { jsonSchema } from '@harmony/util/src/updates/component'
 import type { z } from 'zod'
-import type { ComponentUpdate } from '@harmony/util/src/types/component'
+import {
+  updateSchema,
+  type ComponentUpdate,
+} from '@harmony/util/src/types/component'
 import type { Font } from '@harmony/util/src/fonts'
 import type {
   CommonTools,
@@ -16,7 +19,11 @@ import type {
 import { isTextElement } from '../components/inspector/inspector'
 import { defaultToolValues } from '../components/attributes/utils'
 import { getComputedValue } from '../components/snapping/position-updator'
-import { getComponentIdAndChildIndex } from './element-utils'
+import {
+  getComponentIdAndChildIndex,
+  getStyleInfoForElement,
+} from './element-utils'
+import { generateUniqueId } from './common'
 
 export const createUpdate = <T>(value: T): string => {
   const jsonValue = JSON.stringify(value)
@@ -77,6 +84,85 @@ export const createNewElementUpdates = (
     }),
     isGlobal: false,
   })
+  const info = getStyleInfoForElement(element)
+  const animationStyles = info.selectors.filter((selector) =>
+    selector.styles.find(
+      (style) =>
+        style.name.includes('animation') && !style.name.startsWith('--'),
+    ),
+  )
+
+  if (animationStyles.length > 0) {
+    const classes = animationStyles.reduce<string[]>(
+      (prev, curr) => Array.from(new Set([...prev, ...curr.class.split(' ')])),
+      [],
+    )
+    const selectorsWithSameClasses = info.selectors.filter((selector) =>
+      selector.class
+        .split(' ')
+        .some((className) => classes.includes(className)),
+    )
+    const styleText = `${selectorsWithSameClasses
+      .map(
+        (selector) => `${selector.selector} {
+      ${selector.styles.map((style) => `${style.name}: ${style.value};`).join('\n')}
+    }`,
+      )
+      .join('\n')}
+
+    ${info.keyframes.map((keyframe) => keyframe.text).join('\n')}`
+
+    const newStyleId = generateUniqueId()
+    updates.push({
+      type: 'component',
+      name: parent ? 'delete-create' : 'delete-create-minimal',
+      componentId: newStyleId,
+      childIndex: 0,
+      value: createUpdate<
+        | AddComponent
+        | {
+            action: 'create'
+            element: string
+          }
+      >({
+        action: 'create',
+        element: 'style',
+        index,
+        parentChildIndex,
+        parentId,
+      }),
+      oldValue: createUpdate<DeleteComponent>({
+        action: 'delete',
+      }),
+      isGlobal: false,
+    })
+    updates.push({
+      type: 'text',
+      name: '0',
+      componentId: newStyleId,
+      childIndex: 0,
+      value: styleText,
+      oldValue: '',
+      isGlobal: false,
+    })
+    updates.push({
+      type: 'component',
+      name: 'update-attribute',
+      componentId,
+      childIndex,
+      value: createUpdate<UpdateAttributeValue>({
+        name: 'class',
+        value: classes.join(' '),
+        action: 'update',
+      }),
+      oldValue: createUpdate<UpdateAttributeValue>({
+        name: 'class',
+        value: '',
+        action: 'update',
+      }),
+      isGlobal: false,
+    })
+  }
   for (const { name, value } of data) {
     if (defaultToolValues[name] === value) continue
     if (name === 'font') {
@@ -99,6 +185,7 @@ export const createNewElementUpdates = (
       })
       continue
     }
+
     updates.push({
       type: 'className',
       name,
