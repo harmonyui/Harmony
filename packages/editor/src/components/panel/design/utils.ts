@@ -1,9 +1,22 @@
+import type { HarmonyComponentInfo } from '@harmony/util/src/types/component'
+import { areHexColorsEqual } from '@harmony/util/src/utils/common'
+import type { HexColor } from '@harmony/util/src/types/colors'
 import { getElementText } from '../../../utils/element-utils'
 import type { ComponentElement } from '../../inspector/component-identifier'
 import { isTextElement } from '../../inspector/inspector'
-import { ComponentType } from './types'
+import type { CommonTools } from './types'
+import { colorTools, ComponentType } from './types'
 
-export const getComponentType = (element: HTMLElement): ComponentType => {
+export const getComponentType = (
+  element: HTMLElement,
+  harmonyComponents: HarmonyComponentInfo[],
+): ComponentType => {
+  const componentId = element.dataset.harmonyId
+  const component = harmonyComponents.find((cmp) => cmp.id === componentId)
+  if (component && component.isComponent) {
+    return ComponentType.Component
+  }
+
   const tagName = element.tagName.toLowerCase()
   if (isTextElement(element)) {
     return ComponentType.Text
@@ -31,7 +44,7 @@ export const getComponentName = (component: ComponentElement): string => {
     return component.name
   }
 
-  const type = getComponentType(component.element)
+  const type = getComponentType(component.element, [])
   if (type === ComponentType.Text) {
     return getElementText(component.element)
   }
@@ -42,4 +55,45 @@ export const getComponentName = (component: ComponentElement): string => {
   }
 
   return component.name
+}
+
+export function compareCSSValues(
+  attributeName: CommonTools,
+  value1: string,
+  value2: string,
+): boolean {
+  if (value1.includes('px') || value1.includes('rem')) {
+    return areCSSPixelValuesEqual(value1, value2)
+  }
+  if ((colorTools as readonly string[]).includes(attributeName)) {
+    return areHexColorsEqual(value1 as HexColor, value2 as HexColor)
+  }
+
+  return value1 === value2
+}
+
+export function areCSSPixelValuesEqual(value1: string, value2: string) {
+  const htmlRoot = document.documentElement
+  const baseFontSize = parseFloat(
+    window.getComputedStyle(htmlRoot).getPropertyValue('font-size'),
+  )
+
+  function normalizeCssValue(value: string) {
+    if (typeof value === 'string') {
+      if (value.endsWith('px')) {
+        return parseFloat(value) // Convert px directly to a number
+      } else if (value.endsWith('rem')) {
+        return parseFloat(value) * baseFontSize // Convert rem to px
+      } else if (value === 'normal') {
+        return 0
+      }
+    }
+    throw new Error(
+      'Unsupported CSS value format. Only "px" and "rem" are supported.',
+    )
+  }
+
+  const normalizedValue1 = normalizeCssValue(value1)
+  const normalizedValue2 = normalizeCssValue(value2)
+  return normalizedValue1 === normalizedValue2
 }

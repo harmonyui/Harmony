@@ -61,6 +61,9 @@ export const getRepositoryFromTeam = (
         cssFramework: team.repository[0].css_framework,
         tailwindPrefix: team.repository[0].tailwind_prefix || undefined,
         defaultUrl: team.repository[0].default_url,
+        tailwindConfig: team.repository[0].tailwind_config,
+        prettierConfig: team.repository[0].prettier_config,
+        registry: {},
       }
     : undefined
 }

@@ -7,7 +7,7 @@ export const Card: React.FunctionComponent<CardProps> = ({
   children,
 }) => {
   return (
-    <div className='hw-bg-white hw-rounded-lg hw-p-4'>
+    <div className='hw-bg-white hw-rounded-lg hw-p-4 hw-shadow-sm'>
       {label ? (
         <div className='hw-flex hw-justify-between hw-items-center hw-mb-2'>
           <h3 className='hw-text-sm hw-text-gray-600'>{label}</h3>

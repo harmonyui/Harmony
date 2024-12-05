@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-shadow -- ok */
+import crypto from 'node:crypto'
 import { z } from 'zod'
 import type { Repository } from '@harmony/util/src/types/branch'
 import { repositorySchema } from '@harmony/util/src/types/branch'
@@ -83,6 +84,8 @@ export const setupRoute = createTRPCRouter({
           team_id: teamId,
           css_framework: input.repository.cssFramework,
           tailwind_prefix: input.repository.tailwindPrefix,
+          tailwind_config: input.repository.tailwindConfig,
+          prettier_config: input.repository.prettierConfig,
           default_url: input.repository.defaultUrl,
         },
       })
@@ -97,6 +100,9 @@ export const setupRoute = createTRPCRouter({
         tailwindPrefix: newRepository.tailwind_prefix || undefined,
         cssFramework: newRepository.css_framework,
         defaultUrl: newRepository.default_url,
+        tailwindConfig: newRepository.tailwind_config,
+        prettierConfig: newRepository.prettier_config,
+        registry: {},
       } satisfies Repository
     }),
   // importRepository: protectedProcedure
@@ -193,7 +199,11 @@ export const setupRoute = createTRPCRouter({
             installationId: curr.installation_id,
             cssFramework: 'other',
             tailwindPrefix: undefined,
+            tailwindConfig: '{}',
+            prettierConfig:
+              '{"trailingComma":"es5","semi":true,"tabWidth":2,"singleQuote":true,"jsxSingleQuote":true}',
             defaultUrl: '',
+            registry: {},
           })),
         ],
         [],

@@ -1,3 +1,4 @@
+/* eslint-disable no-await-in-loop -- ok*/
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import type { Font } from '@harmony/util/src/fonts'
 import type {
@@ -56,7 +57,7 @@ export const useComponentUpdator = ({
       saveCommand(saveStack, { branchId, repositoryId })
         .then((errorUpdates) => {
           if (errorUpdates.length > 0) {
-            change({ name: 'change', update: errorUpdates })
+            void change({ name: 'change', update: errorUpdates })
             errorUpdates.forEach((error) => {
               const elements = findElementsFromId(
                 error.componentId,
@@ -70,11 +71,14 @@ export const useComponentUpdator = ({
           }
           resolve()
         })
-        .catch(() => {
+        .catch(async () => {
           setIsSaving(false)
           for (let i = copy.length - 1; i >= 0; i--) {
             const update = copy[i]
-            change({ name: update.name, update: reverseUpdates(update.update) })
+            await change({
+              name: update.name,
+              update: reverseUpdates(update.update),
+            })
           }
           onError('There was an error saving the project')
           resolve()
@@ -105,70 +109,72 @@ export const useComponentUpdator = ({
     }
   }, [])
 
-  const executeCommand = (update: ComponentUpdate[], execute = true): void => {
-    const newCommand: HarmonyCommand = {
-      name: 'change',
-      update: update.filter((_update) => _update.oldValue !== _update.value),
-    }
+  const executeCommand = useEffectEvent(
+    (update: ComponentUpdate[], execute = true): void => {
+      const newCommand: HarmonyCommand = {
+        name: 'change',
+        update: update.filter((_update) => _update.oldValue !== _update.value),
+      }
 
-    //TODO: find a better way to do this
-    if (execute) change(newCommand)
+      //TODO: find a better way to do this
+      if (execute) void change(newCommand)
 
-    const newEdits = undoStack.slice()
-    const newSaves = saveStack.slice()
-    const lastEdits = newEdits[newEdits.length - 1] as
-      | HarmonyCommandChange
-      | undefined
-    const lastEdit =
-      lastEdits?.update.length === 1 ? lastEdits.update[0] : undefined
-    const newEdit =
-      newCommand.update.length === 1 ? newCommand.update[0] : undefined
-    const isSameCommandType =
-      newEdit &&
-      lastEdit &&
-      newEdit.type === lastEdit.type &&
-      newEdit.name === lastEdit.name &&
-      newEdit.componentId === lastEdit.componentId
+      const newEdits = undoStack.slice()
+      const newSaves = saveStack.slice()
+      const lastEdits = newEdits[newEdits.length - 1] as
+        | HarmonyCommandChange
+        | undefined
+      const lastEdit =
+        lastEdits?.update.length === 1 ? lastEdits.update[0] : undefined
+      const newEdit =
+        newCommand.update.length === 1 ? newCommand.update[0] : undefined
+      const isSameCommandType =
+        newEdit &&
+        lastEdit &&
+        newEdit.type === lastEdit.type &&
+        newEdit.name === lastEdit.name &&
+        newEdit.componentId === lastEdit.componentId
 
-    const currTime = new Date().getTime()
-    if (editTimeout < currTime || !isSameCommandType) {
-      newEdits.push(newCommand)
-      newSaves.push(newCommand)
-      const newTime = currTime + 1000
-      setEditTimeout(newTime)
-    } else {
-      //TODO: Get rid of type = 'component' dependency
-      // eslint-disable-next-line no-lonely-if -- ok
-      if (
-        newEdits.length &&
-        newCommand.update.length === 1 &&
-        newCommand.update[0] &&
-        lastEdits?.update[0] &&
-        newCommand.update[0].type !== 'component'
-      ) {
-        newCommand.update[0].oldValue = lastEdits.update[0].oldValue
-        newEdits[newEdits.length - 1] = newCommand
-        //TODO: test this to make sure this works
-        newSaves[newSaves.length - 1] = newCommand
-      } else {
+      const currTime = new Date().getTime()
+      if (editTimeout < currTime || !isSameCommandType) {
         newEdits.push(newCommand)
         newSaves.push(newCommand)
+        const newTime = currTime + 1000
+        setEditTimeout(newTime)
+      } else {
+        //TODO: Get rid of type = 'component' dependency
+        // eslint-disable-next-line no-lonely-if -- ok
+        if (
+          newEdits.length &&
+          newCommand.update.length === 1 &&
+          newCommand.update[0] &&
+          lastEdits?.update[0] &&
+          newCommand.update[0].type !== 'component'
+        ) {
+          newCommand.update[0].oldValue = lastEdits.update[0].oldValue
+          newEdits[newEdits.length - 1] = newCommand
+          //TODO: test this to make sure this works
+          newSaves[newSaves.length - 1] = newCommand
+        } else {
+          newEdits.push(newCommand)
+          newSaves.push(newCommand)
+        }
       }
-    }
-    addUpdates(newCommand.update)
-    setUndoStack(newEdits)
-    setSaveStack(newSaves)
-    setRedoStack([])
+      addUpdates(newCommand.update)
+      setUndoStack(newEdits)
+      setSaveStack(newSaves)
+      setRedoStack([])
+    },
+  )
+
+  const clearUpdates = async (): Promise<void> => {
+    return change({ name: 'change', update: reverseUpdates(updates) })
   }
 
-  const clearUpdates = (): void => {
-    change({ name: 'change', update: reverseUpdates(updates) })
-  }
-
-  const change = ({ update }: HarmonyCommandChange): void => {
+  const change = async ({ update }: HarmonyCommandChange): Promise<void> => {
     if (!rootComponent) return
     for (const up of update) {
-      makeUpdates([up], fonts, rootElement)
+      await makeUpdates([up], fonts, rootElement)
     }
 
     onChange && onChange()
@@ -197,7 +203,7 @@ export const useComponentUpdator = ({
       oldValue: up.value,
     }))
     const newEdit: HarmonyCommand = { name: 'change', update: newUpdates }
-    change(newEdit)
+    void change(newEdit)
     const newFrom = fromValue.slice()
     newFrom.splice(newFrom.length - 1)
 

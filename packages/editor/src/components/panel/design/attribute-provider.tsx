@@ -9,6 +9,7 @@ import {
 import { createContext, useCallback, useContext, useMemo } from 'react'
 import type { Font } from '@harmony/util/src/fonts'
 import type { HexColor } from '@harmony/util/src/types/colors'
+import type { Token } from '@harmony/util/src/types/tokens'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
 import { getComputedValue } from '../../snapping/position-updator'
@@ -18,6 +19,7 @@ import { useHarmonyStore } from '../../../hooks/state'
 import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
 import type { ColorTools, CommonTools, ComponentToolData } from './types'
 import { attributeTools, colorTools } from './types'
+import { compareCSSValues } from './utils'
 
 interface ComponentAttributeContextProps {
   selectedComponent: HTMLElement | undefined
@@ -27,6 +29,10 @@ interface ComponentAttributeContextProps {
     value: T,
     isComputed?: boolean,
   ) => ToolAttributeValue<T>['value']
+  getCurrentToken: <T extends CommonTools>(
+    name: T,
+  ) => Token['values'][number] | undefined
+  getTokenValues: <T extends CommonTools>(name: T) => Token['values']
 }
 const ComponentAttributeContext = createContext<ComponentAttributeContextProps>(
   {
@@ -34,6 +40,8 @@ const ComponentAttributeContext = createContext<ComponentAttributeContextProps>(
     onAttributeChange: () => undefined,
     data: [],
     getAttribute: () => '',
+    getCurrentToken: () => undefined,
+    getTokenValues: () => [],
   },
 )
 interface ComponentAttributeProviderProps {
@@ -46,6 +54,7 @@ export const ComponentAttributeProvider: React.FunctionComponent<
   const { fonts } = useHarmonyContext()
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
   const updateCounter = useHarmonyStore((state) => state.updateCounter)
+  const tokens = useHarmonyStore((state) => state.harmonyTokens)
   const data = useMemo(
     () =>
       selectedComponent
@@ -96,6 +105,36 @@ export const ComponentAttributeProvider: React.FunctionComponent<
     [data, selectedElement],
   )
 
+  const getCurrentToken = useCallback(
+    <T extends CommonTools>(name: T): Token['values'][number] | undefined => {
+      const value = getAttribute(name)
+      const token = tokens.find((t) => t.name === name)
+      if (token) {
+        const tokenValue = token.values.find((v) =>
+          compareCSSValues(name, v.value, value),
+        )
+        if (tokenValue) {
+          return tokenValue
+        }
+      }
+
+      return undefined
+    },
+    [getAttribute, tokens],
+  )
+
+  const getTokenValues = useCallback(
+    <T extends CommonTools>(name: T): Token['values'] => {
+      const token = tokens.find((t) => t.name === name)
+      if (token) {
+        return token.values
+      }
+
+      return []
+    },
+    [tokens],
+  )
+
   return (
     <ComponentAttributeContext.Provider
       value={{
@@ -103,6 +142,8 @@ export const ComponentAttributeProvider: React.FunctionComponent<
         onAttributeChange,
         data,
         getAttribute,
+        getCurrentToken,
+        getTokenValues,
       }}
     >
       {children}

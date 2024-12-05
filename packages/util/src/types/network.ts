@@ -6,6 +6,7 @@ import {
 } from './component'
 import { pullRequestSchema } from './branch'
 import { emailSchema } from './utils'
+import { tokenSchema } from './tokens'
 
 export const updateRequestBodySchema = z.object({
   values: z.array(
@@ -39,6 +40,7 @@ export const loadResponseSchema = z.object({
   pullRequest: z.optional(pullRequestSchema),
   showWelcomeScreen: z.boolean(),
   isDemo: z.boolean(),
+  harmonyTokens: z.array(tokenSchema),
 })
 export type LoadResponse = z.infer<typeof loadResponseSchema>
 

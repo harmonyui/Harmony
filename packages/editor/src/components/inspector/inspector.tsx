@@ -22,6 +22,7 @@ import { getProperty } from '../snapping/calculations'
 import { useSidePanel } from '../panel/side-panel'
 import { useHarmonyContext } from '../harmony-context'
 import { useHarmonyStore } from '../../hooks/state'
+import { useCopyPasteDelete } from '../../hooks/copy-paste-delete'
 import { useHighlighter } from './highlighter'
 
 interface RectSize {
@@ -125,6 +126,10 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
   )
     return false
 
+  if (element.dataset.nonSelectable === 'true') {
+    return false
+  }
+
   return isSizeThreshold(element, scale)
 }
 
@@ -202,6 +207,8 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   const previousError = usePrevious(error)
   const { panel } = useSidePanel()
 
+  useCopyPasteDelete()
+
   //If the source is not the document, then the overlay needs an offset to get it's position right
   const offsetElement =
     source === 'iframe' ? document.getElementsByTagName('iframe')[0] : undefined
@@ -232,6 +239,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     scale,
     inspectorState,
     onFlexClick,
+    onTextChange,
   })
 
   const { isDragging } = useSnapping({
@@ -254,6 +262,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       if (selectedComponent) {
         overlayRef.current.select(element, scale, false, inspectorState, {
           onFlexClick,
+          onTextChange,
         })
       } else {
         overlayRef.current.remove('select')
@@ -349,7 +358,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
           scale,
           true,
           inspectorState,
-          { onFlexClick },
+          { onFlexClick, onTextChange },
         )
       } else {
         overlayRef.current.remove('select')
@@ -639,6 +648,7 @@ const useOverlayRef = ({
   scale,
   inspectorState,
   onFlexClick,
+  onTextChange,
 }: {
   parentElement: HTMLElement | undefined
   containerElement: HTMLElement | null
@@ -646,6 +656,11 @@ const useOverlayRef = ({
   scale: number
   inspectorState: InspectorState
   onFlexClick: () => void
+  onTextChange: (
+    value: string,
+    oldValue: string,
+    selectedElement: HTMLElement | undefined,
+  ) => void
 }): React.MutableRefObject<Overlay | undefined> => {
   const overlayRef = useRef<Overlay>()
   const update = useHarmonyStore((state) => state.updateTheCounter)
@@ -678,7 +693,7 @@ const useOverlayRef = ({
         scale,
         false,
         inspectorState,
-        { onFlexClick },
+        { onFlexClick, onTextChange },
       )
     } else {
       overlayRef.current.remove('select')
@@ -841,7 +856,7 @@ class Overlay {
     error: boolean,
     inspectorState: InspectorState,
     listeners: {
-      onTextChange?: (
+      onTextChange: (
         value: string,
         oldValue: string,
         selectedElement: HTMLElement | undefined,
@@ -855,7 +870,6 @@ class Overlay {
     if (!stuff) throw new Error('What happend??')
 
     if (
-      listeners.onTextChange &&
       Array.from(element.children).every(
         (child) => child.nodeType === Node.TEXT_NODE,
       )
@@ -866,8 +880,7 @@ class Overlay {
         (e) => {
           const target = e.target as HTMLElement
           const value = target.textContent || ''
-          listeners.onTextChange &&
-            listeners.onTextChange(value, lastTextValue, target)
+          listeners.onTextChange(value, lastTextValue, target)
           lastTextValue = value
         },
         { signal: stuff.aborter.signal },

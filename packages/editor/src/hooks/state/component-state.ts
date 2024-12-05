@@ -4,11 +4,16 @@ import type {
 } from '@harmony/util/src/types/component'
 import type { ComponentUpdateWithoutGlobal } from '../../components/harmony-context'
 import type { ComponentElement } from '../../components/inspector/component-identifier'
-import { createComponentId } from '../../utils/element-utils'
+import {
+  createComponentId,
+  findElementsFromId,
+  getComponentIdAndChildIndex,
+} from '../../utils/element-utils'
 import type { HarmonyComponentsState } from './harmony-components'
 import { createHarmonySlice } from './factory'
-import type { ComponentUpdateState } from './component-update'
+import type { ComponentUpdateState } from './component-update/slice'
 import type { ProjectInfoState } from './project-info'
+import type { HarmonyCnState } from './harmonycn'
 
 export type Source = 'document' | 'iframe'
 export interface ComponentState {
@@ -24,11 +29,15 @@ export interface ComponentState {
   updateTheCounter: () => void
   source: Source
   setSource: (value: Source) => void
+  getNewChildIndex: (parentId: string) => number
 }
 
 export const createComponentStateSlice = createHarmonySlice<
   ComponentState,
-  HarmonyComponentsState & ComponentUpdateState & ProjectInfoState
+  HarmonyComponentsState &
+    ComponentUpdateState &
+    ProjectInfoState &
+    HarmonyCnState
 >((set, get) => {
   const getRootElement = (harmonyComponents: HarmonyComponentInfo[]) => {
     const source = get().source
@@ -57,6 +66,7 @@ export const createComponentStateSlice = createHarmonySlice<
       element: HTMLElement,
     ): ComponentElement | undefined => {
       let id = element.dataset.harmonyId
+      let childIndex = Number(element.dataset.harmonyChildIndex)
 
       // If the element doesn't have an id, we need to create one
       if (!id && !get().isRepositoryConnected) {
@@ -70,9 +80,13 @@ export const createComponentStateSlice = createHarmonySlice<
         const name = harmonyComponent.name
         const isComponent = harmonyComponent.isComponent
         const props: ComponentProp[] = harmonyComponent.props
+        if (isNaN(childIndex)) {
+          childIndex = get().getNewChildIndex(id)
+        }
 
         return {
           id,
+          childIndex,
           element,
           name,
           children: getComponentChildren(element),
@@ -89,6 +103,7 @@ export const createComponentStateSlice = createHarmonySlice<
 
       return {
         id: id || '',
+        childIndex,
         element,
         name: element.tagName.toLowerCase(),
         children: getComponentChildren(element),
@@ -141,6 +156,17 @@ export const createComponentStateSlice = createHarmonySlice<
       setSource(value: Source) {
         set({ source: value })
       },
+      getNewChildIndex(parentId: string) {
+        const amountOfIndexes = findElementsFromId(
+          parentId,
+          get().rootComponent?.element,
+        ).length
+        // amountOfIndexes += get().createdElements.filter(
+        //   (el) => el.componentId === parentId,
+        // ).length
+
+        return amountOfIndexes
+      },
       hoverComponent(element: HTMLElement | undefined) {
         set({ hoveredComponent: element })
       },
@@ -154,11 +180,20 @@ export const createComponentStateSlice = createHarmonySlice<
         const findElement = (
           currComponent: ComponentElement,
           elementIdToFind: string,
+          childIndexToFind: number,
         ): ComponentElement | undefined => {
-          if (currComponent.id === elementIdToFind) return currComponent
+          if (
+            currComponent.id === elementIdToFind &&
+            currComponent.childIndex === childIndexToFind
+          )
+            return currComponent
 
           for (const child of currComponent.children) {
-            const foundInChild = findElement(child, elementIdToFind)
+            const foundInChild = findElement(
+              child,
+              elementIdToFind,
+              childIndexToFind,
+            )
             if (foundInChild) {
               return foundInChild
             }
@@ -167,11 +202,10 @@ export const createComponentStateSlice = createHarmonySlice<
           return undefined
         }
 
-        const id =
-          element.dataset.harmonyText === 'true'
-            ? element.parentElement?.dataset.harmonyId
-            : element.dataset.harmonyId
-        const component = findElement(rootComponent, id || '')
+        const { componentId: id, childIndex } =
+          getComponentIdAndChildIndex(element)
+
+        const component = findElement(rootComponent, id, childIndex)
         set({
           selectedComponent: component ? { ...component, element } : undefined,
         })
@@ -193,9 +227,9 @@ export const createComponentStateSlice = createHarmonySlice<
             (update) => update.componentId === component?.id,
           )?.type
           const prop = component?.props.find(
-            (_prop) => _prop.propName === updateType,
+            (_prop) => _prop.name === updateType,
           )
-          return prop && !prop.isStatic
+          return prop && !prop.isEditable
         })
         if (globalChange) {
           set({ globalUpdate: updates })
@@ -208,6 +242,13 @@ export const createComponentStateSlice = createHarmonySlice<
       },
       componentUpdates() {
         updateRootElement(get().harmonyComponents)
+      },
+      createdElements() {
+        updateRootElement(get().harmonyComponents)
+      },
+      activeComponents() {
+        //For some reason the components are not mounted immediately
+        setTimeout(() => updateRootElement(get().harmonyComponents))
       },
       isInitialized(curr, prev) {
         if (curr && !prev) {

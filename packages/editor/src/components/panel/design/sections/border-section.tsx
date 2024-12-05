@@ -1,9 +1,4 @@
 import {
-  BorderAllIcon,
-  BorderBottomLeftIcon,
-  BorderBottomRightIcon,
-  BorderTopLeftIcon,
-  BorderTopRightIcon,
   PaddingAllIcon,
   PaddingBottomIcon,
   PaddingLeftIcon,
@@ -11,11 +6,19 @@ import {
   PaddingTopIcon,
 } from '@harmony/ui/src/components/core/icons'
 import { useState } from 'react'
+import { useComponentAttribute } from '../attribute-provider'
+import type { CommonTools } from '../types'
 import type { DesignPanelSectionComponent } from './components/section'
 import { Section } from './components/section'
 import { AttributeExpand } from './components/attribute-expand'
 import { ButtonGroup } from './components/button-group'
 import { ColorAttribute } from './components/color-attribute'
+import { Label } from './components/label'
+import { TokenDropdown } from './components/token-dropdown'
+import { useLink } from './hooks/link'
+import { LinkButton } from './components/link-button'
+import { useMultiValue } from './hooks/multi-value'
+import { DesignInput } from './components/design-input'
 
 export const BorderSection: DesignPanelSectionComponent = () => {
   return (
@@ -29,38 +32,42 @@ export const BorderSection: DesignPanelSectionComponent = () => {
   )
 }
 
+const borderRadiusNames: CommonTools[] = [
+  'borderTopLeftRadius',
+  'borderTopRightRadius',
+  'borderBottomLeftRadius',
+  'borderBottomRightRadius',
+]
 const RadiusSection: React.FunctionComponent = () => {
-  const [isExpanded, setIsExpanded] = useState(false)
+  const { onAttributeChange } = useComponentAttribute()
+  const { isExpanded, setIsExpanded } = useLink('borderRadius')
+  const { value: attrValue } = useMultiValue('borderRadius', borderRadiusNames)
+
   return (
-    <AttributeExpand
-      label='Radius'
-      isExpanded={isExpanded}
-      attribute='borderRadius'
-      expandedAttributes={[
-        'borderTopLeftRadius',
-        'borderTopRightRadius',
-        'borderBottomLeftRadius',
-        'borderBottomRightRadius',
-      ]}
-      icons={[
-        BorderTopLeftIcon,
-        BorderTopRightIcon,
-        BorderBottomLeftIcon,
-        BorderBottomRightIcon,
-      ]}
-      additionalContent={
-        <ButtonGroup
-          items={[
-            {
-              value: 'expand',
-              children: <BorderAllIcon className='hw-w-4 hw-h-4' />,
-            },
-          ]}
-          value={isExpanded ? 'expand' : ''}
-          onChange={() => setIsExpanded(!isExpanded)}
-        />
-      }
-    />
+    <>
+      <Label label='Corners'>
+        <div className='hw-flex hw-gap-1 hw-items-center hw-col-span-2'>
+          {isExpanded ? (
+            <div className='hw-col-span-2 hw-flex hw-gap-2 hw-items-center hw-flex-1'>
+              <TokenDropdown attribute='borderRadius' />
+            </div>
+          ) : (
+            <>
+              <div className='hw-flex hw-gap-2 hw-items-center'>
+                <DesignInput
+                  className='hw-w-full'
+                  value={attrValue}
+                  onChange={(value) =>
+                    onAttributeChange({ name: 'borderRadius', value })
+                  }
+                />
+              </div>
+            </>
+          )}
+          <LinkButton isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
+        </div>
+      </Label>
+    </>
   )
 }
 

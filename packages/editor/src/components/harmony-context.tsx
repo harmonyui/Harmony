@@ -3,6 +3,7 @@ import type {
   BehaviorType,
   ComponentUpdate,
 } from '@harmony/util/src/types/component'
+import type { UpdateProperty } from '@harmony/util/src/updates/property'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { createContext, useContext } from 'react'
 
@@ -47,9 +48,14 @@ interface HarmonyContextProps {
     oldValue: string,
     element: HTMLElement | undefined,
   ) => void
-  onPropertyChange: (
+  onElementPropertyChange: (
     name: string,
     value: string,
+    element: HTMLElement | undefined,
+  ) => void
+  onComponentPropertyChange: (
+    value: UpdateProperty,
+    oldValue: UpdateProperty,
     element: HTMLElement | undefined,
   ) => void
   onToggleInspector: () => void
@@ -73,7 +79,8 @@ export const HarmonyContext = createContext<HarmonyContextProps>({
   setIsGlobal: noop,
   onAttributesChange: noop,
   onTextChange: noop,
-  onPropertyChange: noop,
+  onElementPropertyChange: noop,
+  onComponentPropertyChange: noop,
   onToggleInspector: noop,
 })
 

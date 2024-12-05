@@ -16,6 +16,7 @@ import type {
 } from '@harmony/util/src/types/network'
 import { reverseUpdates } from '@harmony/util/src/utils/component'
 import { z } from 'zod'
+import type { Token } from '@harmony/util/src/types/tokens'
 import {
   formatComponentAndErrors,
   indexForComponents,
@@ -25,7 +26,11 @@ import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
 import { generateUpdatesFromText } from '../repository/openai'
 import { getRepository, getBranch } from '../repository/database/branch'
-import { getComponentUpdates } from '../services/component-update'
+import { resolveTailwindConfig } from '../repository/tailwind/tailwind'
+import {
+  createComponentUpdates,
+  getComponentUpdates,
+} from '../services/component-update'
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
@@ -60,6 +65,7 @@ export const editorRouter = createTRPCRouter({
         ctx.componentUpdateRepository,
       )
 
+      let tokens: Token[] = []
       if (repositoryId !== undefined) {
         const repository = await getRepository({
           prisma,
@@ -69,6 +75,8 @@ export const editorRouter = createTRPCRouter({
 
         const githubRepository =
           ctx.gitRepositoryFactory.createGitRepository(repository)
+
+        tokens = await resolveTailwindConfig(repository)
 
         const ref = await githubRepository.getBranchRef(repository.branch)
 
@@ -113,6 +121,7 @@ export const editorRouter = createTRPCRouter({
         pullRequest: pullRequest || undefined,
         showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
         isDemo,
+        harmonyTokens: tokens,
       }
     }),
   saveProject: publicProcedure
@@ -207,7 +216,11 @@ export const editorRouter = createTRPCRouter({
         }
       }
 
-      await ctx.componentUpdateRepository.createUpdates(updates, branchId)
+      await createComponentUpdates(
+        updates,
+        branchId,
+        ctx.componentUpdateRepository,
+      )
 
       const reversed = reverseUpdates(errorUpdates)
       const response: UpdateResponse = { errorUpdates: reversed }

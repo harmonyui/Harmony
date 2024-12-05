@@ -8,9 +8,8 @@ import path from 'node:path'
 import type { Octokit } from 'octokit'
 import { App } from 'octokit'
 import type { CommitItem, Repository } from '@harmony/util/src/types/branch'
-import { replaceByIndex } from '@harmony/util/src/utils/common'
 import type { Change } from 'diff'
-import { diffChars, diffLines } from 'diff'
+import { diffLines } from 'diff'
 import { LOCALHOST } from '@harmony/util/src/utils/component'
 import type { components } from '@octokit/openapi-types'
 import type { GithubCache } from '../cache/types'
@@ -260,7 +259,7 @@ export class GithubRepository implements GitRepository {
     branch: string,
     changes: {
       filePath: string
-      locations: { snippet: string; start: number; end: number }[]
+      newContent: string
     }[],
   ) {
     const octokit = await this.getOctokit()
@@ -290,16 +289,7 @@ export class GithubRepository implements GitRepository {
     // Iterate through each change and update the files
     for (const change of changes) {
       // Get the content SHA of the existing file
-      let contentText = await this.getContent(change.filePath, branch)
-
-      for (const location of change.locations) {
-        contentText = replaceByIndex(
-          contentText,
-          location.snippet,
-          location.start,
-          location.end,
-        )
-      }
+      const contentText = change.newContent
 
       const { data: updatedFileInfo } = await octokit.rest.git.createBlob({
         owner: this.repository.owner,
@@ -500,22 +490,14 @@ export class LocalGitRepository implements GitRepository {
     branch: string,
     changes: {
       filePath: string
-      locations: { snippet: string; start: number; end: number }[]
+      newContent: string
     }[],
   ): Promise<void> {
     const updates: LocalUpdate[] = []
+
     for (const change of changes) {
       const contentText = await this.getContent(change.filePath)
-
-      let newContent = contentText
-      for (const location of change.locations) {
-        newContent = replaceByIndex(
-          newContent,
-          location.snippet,
-          location.start,
-          location.end,
-        )
-      }
+      const newContent = change.newContent
 
       updates.push({
         oldContent: contentText,
@@ -541,7 +523,7 @@ export class LocalGitRepository implements GitRepository {
     }
     const sections: string[] = []
     for (const update of updates) {
-      const diffs = diffChars(update.oldContent, update.newContent)
+      const diffs = diffLines(update.oldContent, update.newContent)
 
       const spans: string[] = []
       diffs.forEach((part) => {
@@ -556,6 +538,7 @@ export class LocalGitRepository implements GitRepository {
         // fragment.appendChild(span);
         spans.push(span)
       })
+      //spans.push(`<span style="color: grey;">${update.newContent.split('\n').map(line => encode(line)).join('<br>')}</span>`)
 
       const section = `<div>
                 <h4>${update.filePath}</h4>

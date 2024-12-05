@@ -9,12 +9,17 @@ import {
   DEFAULT_WIDTH as WIDTH,
 } from '@harmony/util/src/constants'
 import type { Font } from '@harmony/util/src/fonts'
-import type { BehaviorType } from '@harmony/util/src/types/component'
+import type {
+  BehaviorType,
+  ComponentUpdate,
+} from '@harmony/util/src/types/component'
 import type { Environment } from '@harmony/util/src/utils/component'
 import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
 import React, { useEffect, useRef, useState } from 'react'
 import type { UpdateAttributeValue } from '@harmony/util/src/updates/component'
+import type { UpdateProperty } from '@harmony/util/src/updates/property'
+import { createUpdate } from '@harmony/util/src/updates/utils'
 import {
   getComponentIdAndChildIndex,
   getImageSrc,
@@ -24,6 +29,7 @@ import { useHarmonyStore } from '../hooks/state'
 import type { Source } from '../hooks/state/component-state'
 import { dispatchToggleEvent } from '../hooks/toggle-event'
 import { useComponentUpdator } from '../hooks/component-updater'
+import type { RegistryComponent } from '../utils/harmonycn/types'
 import type {
   ComponentUpdateWithoutGlobal,
   DisplayMode,
@@ -33,9 +39,9 @@ import { HarmonyContext, viewModes } from './harmony-context'
 import type { Setup } from './harmony-setup'
 import { Inspector, replaceTextContentWithSpans } from './inspector/inspector'
 import { HarmonyPanel } from './panel/harmony-panel'
-import { WelcomeModal } from './panel/welcome/welcome-modal'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'
+import { ComponentProvider } from './harmonycn/component-provider'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -48,6 +54,7 @@ export interface HarmonyProviderProps {
   overlay?: boolean
   cdnImages?: string[]
   uploadImage?: (data: FormData) => Promise<string>
+  components?: RegistryComponent[]
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   repositoryId,
@@ -57,6 +64,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   setup,
   cdnImages,
   uploadImage,
+  components = [],
   environment = 'production',
   source = 'document',
   overlay = true,
@@ -120,6 +128,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         environment,
         cdnImages,
         uploadImage,
+        registryComponents: components,
       })
     }
 
@@ -171,10 +180,18 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
   useEffect(() => {
     if (rootComponent && isInitialized) {
-      const recurseAndUpdateElements = () => {
+      const recurseAndUpdateElements = async (
+        updateFilter?: (update: ComponentUpdate) => boolean,
+      ) => {
         const componentIds: string[] = []
         recurseElements(rootComponent, [initElements(componentIds)])
-        makeUpdates(componentUpdates, fonts, rootComponent)
+        await makeUpdates(
+          updateFilter
+            ? componentUpdates.filter(updateFilter)
+            : componentUpdates,
+          fonts,
+          rootComponent,
+        )
 
         if (repositoryId) {
           void updateComponentsFromIds(
@@ -192,14 +209,15 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             ),
           )
         ) {
-          recurseAndUpdateElements()
+          recurseElements(rootComponent, [initElements([])])
         }
       })
       const body = rootComponent.querySelector('body')
       initMutationObserverRef.current.observe(body || rootComponent, {
         childList: true,
+        subtree: true,
       })
-      recurseAndUpdateElements()
+      void recurseAndUpdateElements()
 
       //Hacky fix for the toolbar zooming weird and the user does not have the updated editor
       const harmonyContainer = document.getElementById('harmony-container')
@@ -227,6 +245,10 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
           id = split.slice(1).join('#')
           element.dataset.harmonyId = id
         }
+
+        const childIndex = componentIds.filter((c) => c === id).length
+        if (!element.dataset.harmonyChildIndex)
+          element.dataset.harmonyChildIndex = String(childIndex)
 
         id && componentIds.push(id)
       }
@@ -331,7 +353,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     },
   )
 
-  const onPropertyChange = useEffectEvent(
+  const onElementPropertyChange = useEffectEvent(
     (name: string, value: string, element: HTMLElement | undefined) => {
       if (!element) return
 
@@ -358,6 +380,28 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     },
   )
 
+  const onComponentPropertyChange = useEffectEvent(
+    (
+      value: UpdateProperty,
+      oldValue: UpdateProperty,
+      element: HTMLElement | undefined,
+    ) => {
+      if (!element) return
+
+      const { componentId, childIndex } = getComponentIdAndChildIndex(element)
+
+      const update: ComponentUpdateWithoutGlobal = {
+        componentId,
+        type: 'property',
+        name: value.name,
+        value: createUpdate<UpdateProperty>(value),
+        oldValue: createUpdate<UpdateProperty>(oldValue),
+        childIndex,
+      }
+      onAttributesChange([update], true)
+    },
+  )
+
   const onElementChange = (
     element: HTMLElement,
     update: ComponentUpdateWithoutGlobal[],
@@ -378,7 +422,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   }
 
   const onClose = () => {
-    clearUpdates()
+    void clearUpdates()
     initMutationObserverRef.current?.disconnect()
     dispatchToggleEvent()
   }
@@ -417,65 +461,67 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             setIsGlobal,
             onAttributesChange,
             onTextChange,
-            onPropertyChange,
+            onElementPropertyChange,
+            onComponentPropertyChange,
             onToggleInspector: onToggle,
           }}
         >
-          <UploadImageProvider>
-            {displayMode !== 'preview-full' ? (
-              <>
-                <HarmonyPanel
-                  onAttributesChange={onAttributesChange}
-                  mode={mode}
-                  onModeChange={setMode}
-                  toggle={isToggled}
-                  onToggleChange={setIsToggled}
-                  isDirty={isDirty}
-                  setIsDirty={setIsDirty}
-                  inspector={inspector}
-                >
-                  <div
-                    style={{
-                      width: `${WIDTH * scale}px`,
-                      minHeight: `${HEIGHT * scale}px`,
-                    }}
+          <ComponentProvider>
+            <UploadImageProvider>
+              {displayMode !== 'preview-full' ? (
+                <>
+                  <HarmonyPanel
+                    onAttributesChange={onAttributesChange}
+                    mode={mode}
+                    onModeChange={setMode}
+                    toggle={isToggled}
+                    onToggleChange={setIsToggled}
+                    isDirty={isDirty}
+                    setIsDirty={setIsDirty}
+                    inspector={inspector}
                   >
                     <div
-                      id='harmony-scaled'
-                      ref={(d) => {
-                        if (d && d !== harmonyContainerRef.current) {
-                          harmonyContainerRef.current = d
-                        }
-                      }}
                       style={{
-                        width: `${WIDTH}px`,
-                        minHeight: `${HEIGHT}px`,
-                        transformOrigin: '0 0',
-                        transform: `scale(${scale})`,
+                        width: `${WIDTH * scale}px`,
+                        minHeight: `${HEIGHT * scale}px`,
                       }}
                     >
-                      {inspector}
-                      {children}
+                      <div
+                        id='harmony-scaled'
+                        ref={(d) => {
+                          if (d && d !== harmonyContainerRef.current) {
+                            harmonyContainerRef.current = d
+                          }
+                        }}
+                        style={{
+                          width: `${WIDTH}px`,
+                          minHeight: `${HEIGHT}px`,
+                          transformOrigin: '0 0',
+                          transform: `scale(${scale})`,
+                        }}
+                      >
+                        {inspector}
+                        {children}
+                      </div>
                     </div>
-                  </div>
-                </HarmonyPanel>
-              </>
-            ) : (
-              <div className='hw-fixed hw-z-[100] hw-group hw-p-2 hw-bottom-0 hw-left-0'>
-                <button
-                  className='hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2'
-                  onClick={onMinimize}
-                >
-                  <MinimizeIcon className='hw-h-5 hw-w-5 hw-fill-white hw-stroke-none' />
-                </button>
-              </div>
-            )}
-            <WelcomeModal />
-            <GlobalUpdatePopup
-              onUndo={onUndo}
-              executeCommand={executeCommand}
-            />
-          </UploadImageProvider>
+                  </HarmonyPanel>
+                </>
+              ) : (
+                <div className='hw-fixed hw-z-[100] hw-group hw-p-2 hw-bottom-0 hw-left-0'>
+                  <button
+                    className='hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2'
+                    onClick={onMinimize}
+                  >
+                    <MinimizeIcon className='hw-h-5 hw-w-5 hw-fill-white hw-stroke-none' />
+                  </button>
+                </div>
+              )}
+              <GlobalUpdatePopup
+                onUndo={onUndo}
+                executeCommand={executeCommand}
+              />
+            </UploadImageProvider>
+          </ComponentProvider>
         </HarmonyContext.Provider>
       }
     </>

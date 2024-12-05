@@ -4,6 +4,7 @@ import { getElementFiberUpward, getReferenceFiber } from './fiber'
 
 export interface ComponentElement {
   id: string
+  childIndex: number
   name: string
   props: ComponentProp[]
   isComponent: boolean

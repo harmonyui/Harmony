@@ -1,17 +1,22 @@
-import { useMemo } from 'react'
 import type { IconComponent } from '@harmony/ui/src/components/core/icons'
+import { getClass } from '@harmony/util/src/utils/common'
 import { useComponentAttribute } from '../../attribute-provider'
 import type { CommonTools } from '../../types'
+import { useMultiValue } from '../hooks/multi-value'
+import { useLink } from '../hooks/link'
 import { DesignInput } from './design-input'
 import { Label } from './label'
+import { LinkButton } from './link-button'
+import { TokenDropdown } from './token-dropdown'
 
 interface AttributeExpandProps {
   attribute: CommonTools
-  label: string
+  label?: string
   isExpanded: boolean
   expandedAttributes: CommonTools[]
   icons?: IconComponent[]
   additionalContent?: React.ReactNode
+  spanFull?: boolean
 }
 export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
   label,
@@ -20,42 +25,41 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
   icons,
   isExpanded,
   additionalContent,
+  spanFull = true,
 }) => {
-  const { getAttribute, onAttributeChange } = useComponentAttribute()
+  const { onAttributeChange } = useComponentAttribute()
+  const { isExpanded: isLinkExpanded, setIsExpanded: setIsLinkExpanded } =
+    useLink(attribute)
 
-  const attrValue = useMemo(() => {
-    const val = getAttribute(attribute)
-    const split = val.split(' ')
-    if (split.length > 1) {
-      return `${Math.max(...split.map((v) => parseInt(v === 'normal' ? '0' : v)))}px`
-    }
-
-    return split[0]
-  }, [attribute, getAttribute])
-
-  const values = useMemo(() => {
-    const val = getAttribute(attribute)
-    const split = val.split(' ')
-    const vals: string[] = []
-    for (let i = 0; i < expandedAttributes.length; i++) {
-      const v = split[i % split.length]
-      vals.push(v === 'normal' ? '0px' : v)
-    }
-    return vals
-  }, [attribute, getAttribute])
+  const { value: attrValue, values } = useMultiValue(
+    attribute,
+    expandedAttributes,
+  )
 
   return (
     <>
-      <Label label={label}>
-        <div className='hw-col-span-2 hw-flex hw-gap-2 hw-items-center'>
+      {label ? <Label label={label}>{null}</Label> : null}
+      <div
+        className={getClass(
+          'hw-flex hw-gap-2 hw-items-center',
+          spanFull ? 'hw-col-span-2' : '',
+        )}
+      >
+        {isLinkExpanded ? (
+          <TokenDropdown attribute={attribute} />
+        ) : (
           <DesignInput
             className='hw-w-full'
             value={attrValue}
             onChange={(value) => onAttributeChange({ name: attribute, value })}
           />
-          {additionalContent}
-        </div>
-      </Label>
+        )}
+        {additionalContent}
+        <LinkButton
+          isExpanded={isLinkExpanded}
+          setIsExpanded={setIsLinkExpanded}
+        />
+      </div>
       {isExpanded ? (
         <div className='hw-grid hw-grid-cols-2 hw-gap-2 hw-col-span-3'>
           {values.map((value, index) => {
@@ -66,16 +70,20 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
                 className='hw-col-span-1 hw-flex hw-gap-2 hw-items-center'
               >
                 {Icon ? <Icon className='hw-h-4 hw-w-4' /> : null}
-                <DesignInput
-                  className='hw-w-full'
-                  value={value}
-                  onChange={(_value) =>
-                    onAttributeChange({
-                      name: expandedAttributes[index],
-                      value: _value,
-                    })
-                  }
-                />
+                {isLinkExpanded ? (
+                  <TokenDropdown attribute={expandedAttributes[index]} />
+                ) : (
+                  <DesignInput
+                    className='hw-w-full'
+                    value={value}
+                    onChange={(_value) =>
+                      onAttributeChange({
+                        name: expandedAttributes[index],
+                        value: _value,
+                      })
+                    }
+                  />
+                )}
               </div>
             )
           })}

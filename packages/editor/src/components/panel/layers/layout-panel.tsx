@@ -26,6 +26,7 @@ export const LayoutPanel: React.FunctionComponent = () => {
 
 const isLayerSelectable = (element: HTMLElement, scale: number): boolean => {
   const style = getComputedStyle(element)
+  if (!element.dataset.harmonyText && !element.dataset.harmonyId) return false
   //Layers that have absolute can be selectable
   return (
     isSelectable(element, scale) ||
@@ -38,6 +39,7 @@ export const useComponentTreeItems = (
   selectedComponent: HTMLElement | undefined,
 ): TreeData<HTMLElement>[] => {
   const { scale } = useHarmonyContext()
+
   const ids: string[] = []
   const getTreeItems = useCallback(
     (children: ComponentElement[]): TreeData<HTMLElement>[] | undefined => {

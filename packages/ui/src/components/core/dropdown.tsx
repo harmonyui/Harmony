@@ -24,7 +24,7 @@ export const ListBoxPopover = <T,>({
 }: ListBoxPopoverProps<T>): JSX.Element => {
   return (
     <Popover
-      className='hw-bg-white hw-border hw-rounded-lg'
+      className='hw-bg-white hw-border hw-rounded-lg hw-max-h-52'
       button={children}
       buttonClass={className}
       container={container}
@@ -173,7 +173,7 @@ export const DropdownLineItem = <C extends React.ElementType>({
       {...restProps}
       className={getClass(
         selected
-          ? 'hw-bg-primary-light hw-text-white hover:hw-bg-primary-light/80'
+          ? 'hw-bg-gray-200 hw-text-gray-900 hover:hw-bg-gray-300'
           : 'hw-text-gray-900 hover:hw-bg-gray-100 ',
         className,
         'group hw-flex hw-w-full hw-items-center hw-rounded-md hw-p-2 hw-text-sm hw-cursor-pointer [&>*]:hw-flex-1',

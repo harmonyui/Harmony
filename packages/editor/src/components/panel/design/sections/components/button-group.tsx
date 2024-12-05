@@ -26,6 +26,7 @@ export const ButtonGroup = ({
     >
       {items.map((item) => (
         <ButtonGroupButton
+          className='hw-flex-1'
           key={item.value}
           show={
             item.value === value ||
@@ -44,12 +45,14 @@ export const ButtonGroupButton: React.FunctionComponent<{
   show: boolean
   onClick: () => void
   children: React.ReactNode
-}> = ({ show, onClick, children }) => {
+  className?: string
+}> = ({ show, onClick, children, className }) => {
   return (
     <Button
       className={getClass(
-        'hw-flex hw-items-center hw-justify-center hw-p-1 hw-flex-1 !hw-border-0 hover:hw-bg-[#E5E7EB] hw-rounded-lg',
+        'hw-flex hw-items-center hw-justify-center hw-p-1 !hw-border-0 hover:hw-bg-[#E5E7EB] hw-rounded-lg',
         show ? 'hw-bg-[#E5E7EB]' : '',
+        className,
       )}
       mode='none'
       onClick={onClick}

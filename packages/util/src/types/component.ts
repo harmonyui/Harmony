@@ -28,12 +28,20 @@ export const locationSchema = z.object({
 })
 export type ComponentLocation = z.infer<typeof locationSchema>
 
+export const componentPropsTypes = z.union([
+  z.literal('string'),
+  z.literal('number'),
+  z.literal('classVariant'),
+  z.literal('image'),
+])
+export type ComponentPropsType = z.infer<typeof componentPropsTypes>
+
 export const componentPropSchema = z.object({
-  componentId: z.string(),
-  type: updateTypesSchema,
-  propName: z.string(),
-  propValue: z.string(),
-  isStatic: z.boolean(),
+  name: z.string(),
+  type: componentPropsTypes,
+  defaultValue: z.string(),
+  values: z.record(z.string(), z.string()),
+  isEditable: z.boolean(),
 })
 export type ComponentProp = z.infer<typeof componentPropSchema>
 

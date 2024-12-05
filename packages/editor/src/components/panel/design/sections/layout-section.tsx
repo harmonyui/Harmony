@@ -4,9 +4,10 @@ import {
   AlignTopIcon,
   ArrowHorizontalIcon,
   ArrowVerticalIcon,
+  EllipsisHorizontalIcon,
 } from '@harmony/ui/src/components/core/icons'
 import type { CSSProperties } from 'react'
-import React, { useState } from 'react'
+import React, { useMemo, useState } from 'react'
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
 import { useComponentAttribute } from '../attribute-provider'
 import type { DesignPanelSectionComponent } from './components/section'
@@ -18,6 +19,15 @@ import { AttributeExpand } from './components/attribute-expand'
 import { ButtonGroup } from './components/button-group'
 
 export const LayoutSection: DesignPanelSectionComponent = () => {
+  const { getAttribute } = useComponentAttribute()
+  const displayAttribute = useMemo(
+    () => getAttribute('display'),
+    [getAttribute],
+  )
+  if (displayAttribute !== 'flex') {
+    return null
+  }
+
   return (
     <Section label='Layout'>
       <div className='hw-grid hw-grid-cols-3 hw-gap-y-2 hw-items-center'>
@@ -141,7 +151,7 @@ const GapInput: React.FunctionComponent = () => {
           items={[
             {
               value: 'expand',
-              children: 'Expand',
+              children: <EllipsisHorizontalIcon className='hw-w-4 hw-h-4' />,
             },
           ]}
           onChange={() => setIsExpanded(!isExpanded)}

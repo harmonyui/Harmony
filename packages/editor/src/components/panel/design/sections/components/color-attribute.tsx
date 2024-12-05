@@ -3,7 +3,10 @@ import { getClass } from '@harmony/util/src/utils/common'
 import { useMemo } from 'react'
 import { useComponentAttribute } from '../../attribute-provider'
 import type { ColorTools } from '../../types'
+import { useLink } from '../hooks/link'
 import { DesignInput } from './design-input'
+import { TokenDropdown } from './token-dropdown'
+import { LinkButton } from './link-button'
 
 export const ColorAttribute: React.FunctionComponent<{
   attribute: ColorTools
@@ -22,6 +25,7 @@ export const ColorAttribute: React.FunctionComponent<{
 
     return Number(value) * 100
   }, [getAttribute, colorValue])
+  const { isExpanded, setIsExpanded } = useLink(attribute)
 
   const onOpacityChange = (value: string) => {
     onAttributeChange({ name: attribute, value: colorValue.slice(0, 7) })
@@ -30,28 +34,43 @@ export const ColorAttribute: React.FunctionComponent<{
 
   return (
     <div
-      className={getClass('hw-flex hw-gap-1 hw-items-center hw-h-6', className)}
+      className={getClass(
+        'hw-flex hw-gap-1 hw-items-center hw-h-6 hw-col-span-3',
+        className,
+      )}
     >
-      <ColorPicker
-        className='hw-h-6'
-        value={colorValue}
-        onChange={(value) =>
-          onAttributeChange({ name: attribute, value: value.slice(0, 7) })
-        }
-        container={document.getElementById('harmony-container') || undefined}
-      />
-      <DesignInput
-        className='hw-h-full hw-w-[80px]'
-        value={colorValue.slice(1, 7)}
-        onChange={(value) =>
-          onAttributeChange({ name: attribute, value: `#${value.slice(0, 6)}` })
-        }
-      />
-      <DesignInput
-        className='hw-h-full hw-w-[60px]'
-        value={`${opacity}`}
-        onChange={onOpacityChange}
-      />
+      {isExpanded ? (
+        <TokenDropdown attribute={attribute} />
+      ) : (
+        <div className='hw-flex hw-gap-1 hw-items-center hw-flex-1'>
+          <ColorPicker
+            className='hw-h-6'
+            value={colorValue}
+            onChange={(value) =>
+              onAttributeChange({ name: attribute, value: value.slice(0, 7) })
+            }
+            container={
+              document.getElementById('harmony-container') || undefined
+            }
+          />
+          <DesignInput
+            className='hw-h-full hw-w-[80px]'
+            value={colorValue.slice(1, 7)}
+            onChange={(value) =>
+              onAttributeChange({
+                name: attribute,
+                value: `#${value.slice(0, 6)}`,
+              })
+            }
+          />
+          <DesignInput
+            className='hw-h-full hw-w-[60px]'
+            value={`${opacity}`}
+            onChange={onOpacityChange}
+          />
+        </div>
+      )}
+      <LinkButton isExpanded={isExpanded} setIsExpanded={setIsExpanded} />
     </div>
   )
 }
