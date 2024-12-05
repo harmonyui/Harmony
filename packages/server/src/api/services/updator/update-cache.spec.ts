@@ -22,6 +22,7 @@ describe('update-cache', () => {
       cssFramework: 'tailwind',
       defaultUrl: '',
       tailwindConfig: '',
+      prettierConfig: '',
       registry: {},
     }
     type Files = 'file1.tsx' | 'file2.tsx' | 'file3.tsx'

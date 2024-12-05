@@ -85,6 +85,7 @@ export const setupRoute = createTRPCRouter({
           css_framework: input.repository.cssFramework,
           tailwind_prefix: input.repository.tailwindPrefix,
           tailwind_config: input.repository.tailwindConfig,
+          prettier_config: input.repository.prettierConfig,
           default_url: input.repository.defaultUrl,
         },
       })
@@ -100,6 +101,7 @@ export const setupRoute = createTRPCRouter({
         cssFramework: newRepository.css_framework,
         defaultUrl: newRepository.default_url,
         tailwindConfig: newRepository.tailwind_config,
+        prettierConfig: newRepository.prettier_config,
         registry: {},
       } satisfies Repository
     }),
@@ -197,7 +199,9 @@ export const setupRoute = createTRPCRouter({
             installationId: curr.installation_id,
             cssFramework: 'other',
             tailwindPrefix: undefined,
-            tailwindConfig: 'tailwind.config.ts',
+            tailwindConfig: '{}',
+            prettierConfig:
+              '{"trailingComma":"es5","semi":true,"tabWidth":2,"singleQuote":true,"jsxSingleQuote":true}',
             defaultUrl: '',
             registry: {},
           })),

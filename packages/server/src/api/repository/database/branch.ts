@@ -41,6 +41,7 @@ export const getRepository = async ({
     tailwindPrefix: repository.tailwind_prefix || undefined,
     tailwindConfig: repository.tailwind_config,
     defaultUrl: repository.default_url,
+    prettierConfig: repository.prettier_config,
     registry: {
       Button: {
         name: 'Button',

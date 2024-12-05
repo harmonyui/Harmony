@@ -78,6 +78,14 @@ describe('code-updator', () => {
       defaultUrl: '',
       tailwindPrefix,
       tailwindConfig: 'tailwind.config.ts',
+      prettierConfig: JSON.stringify({
+        trailingComma: 'es5',
+        semi: false,
+        tabWidth: 2,
+        singleQuote: true,
+        jsxSingleQuote: true,
+        parser: 'typescript',
+      }),
       registry: {
         Button: {
           name: 'Button',

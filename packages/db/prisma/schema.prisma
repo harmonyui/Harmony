@@ -147,6 +147,7 @@ model Repository {
   //TODO: We don't need this in the future hopefully
   tailwind_prefix String?
   tailwind_config String
+  prettier_config String
 }
 
 model ChangeLog {

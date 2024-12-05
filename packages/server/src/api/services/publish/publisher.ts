@@ -2,6 +2,7 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { translateUpdatesToCss } from '@harmony/util/src/utils/component'
 import type { BranchItem, PullRequest } from '@harmony/util/src/types/branch'
+import type prettier from 'prettier'
 import type { GitRepository } from '../../repository/git/types'
 import { createPullRequest } from '../../repository/database/pull-request'
 import { CodeUpdator } from './code-updator'
@@ -16,13 +17,10 @@ export class Publisher {
   ): Promise<PullRequest> {
     const updates = prepareUpdatesForGenerator(updatesRaw)
 
-    const codeUpdator = new CodeUpdator(this.gitRepository, {
-      trailingComma: 'es5',
-      semi: true,
-      tabWidth: 2,
-      singleQuote: true,
-      jsxSingleQuote: true,
-    })
+    const configOptions = JSON.parse(
+      this.gitRepository.repository.prettierConfig,
+    ) as prettier.Options
+    const codeUpdator = new CodeUpdator(this.gitRepository, configOptions)
     const fileUpdates = await codeUpdator.updateFiles(updates)
 
     await this.gitRepository.createBranch(branch.name)
