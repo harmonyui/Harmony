@@ -17,25 +17,11 @@ export class Publisher {
     const updates = prepareUpdatesForGenerator(updatesRaw)
 
     const codeUpdator = new CodeUpdator(this.gitRepository, {
-      bracketSpacing: true,
-      bracketSameLine: true,
-      singleQuote: false,
-      jsxSingleQuote: false,
       trailingComma: 'es5',
       semi: true,
-      printWidth: 110,
-      arrowParens: 'always',
-      importOrder: [
-        // Mocks must be at the top as they contain vi.mock calls
-        '(.*)/__mocks__/(.*)',
-        'server-only',
-        '<THIRD_PARTY_MODULES>',
-        '^@formbricks/(.*)$',
-        '^~/(.*)$',
-        '^[./]',
-      ],
-      importOrderSeparation: true,
-      importOrderSortSpecifiers: true,
+      tabWidth: 2,
+      singleQuote: true,
+      jsxSingleQuote: true,
     })
     const fileUpdates = await codeUpdator.updateFiles(updates)
 

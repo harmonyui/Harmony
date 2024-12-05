@@ -239,6 +239,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     scale,
     inspectorState,
     onFlexClick,
+    onTextChange,
   })
 
   const { isDragging } = useSnapping({
@@ -261,6 +262,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       if (selectedComponent) {
         overlayRef.current.select(element, scale, false, inspectorState, {
           onFlexClick,
+          onTextChange,
         })
       } else {
         overlayRef.current.remove('select')
@@ -356,7 +358,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
           scale,
           true,
           inspectorState,
-          { onFlexClick },
+          { onFlexClick, onTextChange },
         )
       } else {
         overlayRef.current.remove('select')
@@ -646,6 +648,7 @@ const useOverlayRef = ({
   scale,
   inspectorState,
   onFlexClick,
+  onTextChange,
 }: {
   parentElement: HTMLElement | undefined
   containerElement: HTMLElement | null
@@ -653,6 +656,11 @@ const useOverlayRef = ({
   scale: number
   inspectorState: InspectorState
   onFlexClick: () => void
+  onTextChange: (
+    value: string,
+    oldValue: string,
+    selectedElement: HTMLElement | undefined,
+  ) => void
 }): React.MutableRefObject<Overlay | undefined> => {
   const overlayRef = useRef<Overlay>()
   const update = useHarmonyStore((state) => state.updateTheCounter)
@@ -685,7 +693,7 @@ const useOverlayRef = ({
         scale,
         false,
         inspectorState,
-        { onFlexClick },
+        { onFlexClick, onTextChange },
       )
     } else {
       overlayRef.current.remove('select')
@@ -848,7 +856,7 @@ class Overlay {
     error: boolean,
     inspectorState: InspectorState,
     listeners: {
-      onTextChange?: (
+      onTextChange: (
         value: string,
         oldValue: string,
         selectedElement: HTMLElement | undefined,
@@ -862,7 +870,6 @@ class Overlay {
     if (!stuff) throw new Error('What happend??')
 
     if (
-      listeners.onTextChange &&
       Array.from(element.children).every(
         (child) => child.nodeType === Node.TEXT_NODE,
       )
@@ -873,8 +880,7 @@ class Overlay {
         (e) => {
           const target = e.target as HTMLElement
           const value = target.textContent || ''
-          listeners.onTextChange &&
-            listeners.onTextChange(value, lastTextValue, target)
+          listeners.onTextChange(value, lastTextValue, target)
           lastTextValue = value
         },
         { signal: stuff.aborter.signal },
