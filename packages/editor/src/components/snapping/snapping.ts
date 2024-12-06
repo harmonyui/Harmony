@@ -36,10 +36,12 @@ import {
   isTextElement,
   removeTextContentSpans,
   replaceTextContentWithSpans,
-  selectDesignerElement,
-  selectDesignerElementReverse,
 } from '../inspector/inspector'
 import type { Rect, RectBox } from '../inspector/inspector'
+import {
+  selectDesignerElement,
+  selectDesignerElementReverse,
+} from '../../utils/element-utils'
 import type {
   Axis,
   ChildEdgeInfo,

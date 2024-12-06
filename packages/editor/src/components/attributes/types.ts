@@ -10,6 +10,7 @@ export const attributeTools = [
   'textDecorationLine',
   'display',
   'justifyContent',
+  'justifySelf',
   'alignItems',
   'flexDirection',
   'alignSelf',
@@ -23,6 +24,7 @@ export const attributeTools = [
   'gridTemplateRows',
   'gridColumn',
   'gridRow',
+  'gridTemplateAreas',
   'opacity',
   'position',
   'top',
@@ -60,6 +62,7 @@ export const attributeTools = [
   'borderBottomRightRadius',
   'overflow',
   'listStyleType',
+  'clip',
 ] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {

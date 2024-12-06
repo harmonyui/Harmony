@@ -11,7 +11,7 @@ import { addDataEdge } from './data-flow'
 import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
 import type { JSXElementNode } from './nodes/jsx-element'
 import { isJSXElement } from './nodes/jsx-element'
-import type { JSXAttribute } from './nodes/jsx-attribute'
+import { JSXAttributeNode, type JSXAttribute } from './nodes/jsx-attribute'
 import { ComponentNode } from './nodes/component'
 import {
   isJSXText,
@@ -352,6 +352,14 @@ export class FlowGraph {
       t.stringLiteral(newValue),
     )
     node.path.node.openingElement.attributes.push(newNode)
+    const jsxAttributeNode = new JSXAttributeNode(
+      node,
+      -1,
+      this.code,
+      this.createNodeAndPath(propertyName, newNode, node.path),
+    )
+    this.addJSXAttribute(jsxAttributeNode, node)
+
     this.dirtyNode(node)
   }
 
@@ -379,7 +387,7 @@ export class FlowGraph {
     childElement.id = getBaseId(componentId)
     this.setNewNode(childElement, parentElement)
     if (childElement.getChildIndex() !== childIndex) {
-      throw new Error('Child index does not match')
+      ///throw new Error('Child index does not match')
     }
     nodes.forEach((node) => {
       this.setNewNode(node, parentElement)

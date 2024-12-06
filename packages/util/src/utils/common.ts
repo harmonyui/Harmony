@@ -338,3 +338,15 @@ export function areHexColorsEqual(color1: HexColor, color2: HexColor): boolean {
 
   return normalize(color1) === normalize(color2)
 }
+
+export const replaceAll = <T extends string | undefined>(
+  str: T,
+  findStr: string,
+  withStr: string,
+): T => {
+  if (!str) return str
+
+  const newStr = str.replace(new RegExp(findStr, 'g'), withStr)
+
+  return newStr as T
+}

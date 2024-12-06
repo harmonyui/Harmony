@@ -12,10 +12,8 @@
 import { capitalizeFirstLetter, close } from '@harmony/util/src/utils/common'
 import $ from 'jquery'
 import type { Rect } from '../inspector/inspector'
-import {
-  isImageElement,
-  selectDesignerElementReverse,
-} from '../inspector/inspector'
+import { isImageElement } from '../inspector/inspector'
+import { selectDesignerElementReverse } from '../../utils/element-utils'
 import type { UpdateRect } from './position-updator'
 import { isSelectable } from './snapping'
 
@@ -74,15 +72,6 @@ const getExtraD = (
 ) => {
   const upper = capitalizeFirstLetter(type)
   return parseFloat($(element).css(`margin${upper}`) || '0') // + parseFloat($(element).css(`border${upper}`) || '0');
-}
-
-export const getProperty = (
-  element: HTMLElement,
-  property: 'margin' | 'border' | 'padding',
-  type: 'top' | 'bottom' | 'left' | 'right',
-) => {
-  const upper = capitalizeFirstLetter(type)
-  return parseFloat($(element).css(`${property}${upper}`) || '0') // + parseFloat($(element).css(`border${upper}`) || '0');
 }
 
 export const getOffsetRect = (

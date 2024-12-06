@@ -6,6 +6,7 @@ import { updateSchema } from '@harmony/util/src/types/component'
 import { z } from 'zod'
 import type { AddComponent } from '@harmony/util/src/updates/component'
 import { jsonSchema } from '@harmony/util/src/updates/component'
+import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
 import { useUpdateComponent } from '../components/harmonycn/update-component'
 import { createNewElementUpdates, createUpdate } from '../utils/update'
 import { useHarmonyContext } from '../components/harmony-context'
@@ -29,11 +30,16 @@ export const useCopyPasteDelete = () => {
   const convertElementToUpdates = useCallback(
     (rootElement: HTMLElement) => {
       const allUpdates: ComponentUpdate[] = []
+      const getNewChildIndexLocal = (parentId: string) => {
+        return getNewChildIndex(parentId) - 1
+      }
 
       recurseElements(rootElement, [
         (element, parent) => {
+          if (['link', 'style'].includes(element.tagName.toLowerCase())) return
+
           const updates = createNewElementUpdates(
-            getNewChildIndex,
+            getNewChildIndexLocal,
             element,
             getTextToolsFromAttributes(element, []),
             fonts,
@@ -62,12 +68,12 @@ export const useCopyPasteDelete = () => {
   const pasteComponent = useCallback(async () => {
     if (!selectedComponent) return
 
+    const jsonUpdatesSchema = jsonSchema.pipe(z.array(updateSchema))
     const copiedText = await navigator.clipboard.readText()
-    const updateResult = jsonSchema
-      .pipe(z.array(updateSchema))
-      .safeParse(copiedText)
+    const updateResult = jsonUpdatesSchema.safeParse(copiedText)
     if (updateResult.success) {
       const updates = updateResult.data
+      const idMapping: Record<string, string> = {}
       updates.forEach((update) => {
         if (update.name === 'delete-create-minimal') {
           const { componentId: parentId, childIndex: parentChildIndex } =
@@ -89,8 +95,26 @@ export const useCopyPasteDelete = () => {
             index,
           })
         }
+        idMapping[update.componentId] = getLocationsFromComponentId(
+          selectedComponent.id,
+        )
+          .map((location) =>
+            btoa(`${location.file}:${atob(update.componentId)}`),
+          )
+          .join('#')
       })
-      onAttributesChange(updates, true)
+      const mappedUpdates = JSON.stringify(updates)
+      // Object.entries(idMapping).forEach(([oldId, newId], i) => {
+      //   if (i !== 0) return
+      //   // mappedUpdates = replaceAll(mappedUpdates, `"${oldId}"`, `"${newId}"`)
+      //   // mappedUpdates = replaceAll(
+      //   //   mappedUpdates,
+      //   //   `\\"${oldId}\\"`,
+      //   //   `\\"${newId}\\"`,
+      //   // )
+      //   //mappedUpdates = replaceAll(mappedUpdates, oldId, newId)
+      // })
+      onAttributesChange(jsonUpdatesSchema.parse(mappedUpdates), true)
       return
     }
 

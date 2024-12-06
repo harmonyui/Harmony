@@ -63,6 +63,15 @@ export const createComponentUpdate = ([set, get]: Parameters<
     }
 
     if (elementName) {
+      if (elementName.startsWith('<')) {
+        const parser = new DOMParser()
+        const doc = parser.parseFromString(elementName, 'text/html')
+        return {
+          componentId,
+          childIndex,
+          element: doc.body.firstChild as HTMLElement,
+        }
+      }
       return {
         componentId,
         childIndex,

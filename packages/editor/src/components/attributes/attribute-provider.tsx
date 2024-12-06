@@ -3,9 +3,11 @@ import { createContext, useCallback, useContext, useMemo } from 'react'
 import type { Token } from '@harmony/util/src/types/tokens'
 import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
-import { getComputedValue } from '../snapping/position-updator'
 import { useHarmonyStore } from '../../hooks/state'
-import { getComponentIdAndChildIndex } from '../../utils/element-utils'
+import {
+  getComponentIdAndChildIndex,
+  getComputedValue,
+} from '../../utils/element-utils'
 import { compareCSSValues } from '../panel/design/utils'
 import type {
   CommonTools,

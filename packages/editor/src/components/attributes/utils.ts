@@ -7,8 +7,10 @@ import {
   convertRgbToHex,
 } from '@harmony/util/src/utils/common'
 import type { HexColor } from '@harmony/util/src/types/colors'
-import { getComputedValue } from '../snapping/position-updator'
-import { isDesignerElementSelectable } from '../inspector/inspector'
+import {
+  getComputedValue,
+  isDesignerElementSelectable,
+} from '../../utils/element-utils'
 import { attributeTools, colorTools } from './types'
 import type {
   ColorTools,
@@ -134,6 +136,7 @@ export const defaultToolValues: Record<CommonTools, string> = {
   textDecorationLine: 'none',
   display: 'block',
   justifyContent: 'normal',
+  justifySelf: 'auto',
   alignItems: 'normal',
   flexDirection: 'row',
   alignSelf: 'auto',
@@ -147,6 +150,7 @@ export const defaultToolValues: Record<CommonTools, string> = {
   gridTemplateRows: 'none',
   gridColumn: 'auto',
   gridRow: 'auto',
+  gridTemplateAreas: 'none',
   opacity: '1',
   position: 'static',
   top: 'auto',
@@ -187,4 +191,5 @@ export const defaultToolValues: Record<CommonTools, string> = {
   backgroundColor: '#00000000',
   borderColor: '#000000',
   listStyleType: 'none',
+  clip: 'auto',
 }

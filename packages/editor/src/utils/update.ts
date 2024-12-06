@@ -7,10 +7,7 @@ import type {
 } from '@harmony/util/src/updates/component'
 import { jsonSchema } from '@harmony/util/src/updates/component'
 import type { z } from 'zod'
-import {
-  updateSchema,
-  type ComponentUpdate,
-} from '@harmony/util/src/types/component'
+import { type ComponentUpdate } from '@harmony/util/src/types/component'
 import type { Font } from '@harmony/util/src/fonts'
 import type {
   CommonTools,
@@ -18,9 +15,9 @@ import type {
 } from '../components/attributes/types'
 import { isTextElement } from '../components/inspector/inspector'
 import { defaultToolValues } from '../components/attributes/utils'
-import { getComputedValue } from '../components/snapping/position-updator'
 import {
   getComponentIdAndChildIndex,
+  getComputedValue,
   getStyleInfoForElement,
 } from './element-utils'
 import { generateUniqueId } from './common'
@@ -47,6 +44,8 @@ export const createNewElementUpdates = (
   fonts: Font[] | undefined,
   parent: HTMLElement | undefined,
 ): ComponentUpdate[] => {
+  if (parent?.closest('svg')) return []
+
   const updates: ComponentUpdate[] = []
 
   const { componentId: parentId } = parent
@@ -61,29 +60,55 @@ export const createNewElementUpdates = (
     ? Array.from(parent.children).indexOf(element) + 1
     : undefined
 
-  updates.push({
-    type: 'component',
-    name: parent ? 'delete-create' : 'delete-create-minimal',
-    componentId,
-    childIndex,
-    oldValue: createUpdate<DeleteComponent>({
-      action: 'delete',
-    }),
-    value: createUpdate<
-      | AddComponent
-      | {
-          action: 'create'
-          element: string
-        }
-    >({
-      action: 'create',
-      element: element.tagName.toLowerCase(),
-      index,
-      parentChildIndex,
-      parentId,
-    }),
-    isGlobal: false,
-  })
+  if (element.tagName.toLowerCase() === 'svg') {
+    updates.push({
+      type: 'component',
+      name: parent ? 'delete-create' : 'delete-create-minimal',
+      componentId,
+      childIndex,
+      oldValue: createUpdate<DeleteComponent>({
+        action: 'delete',
+      }),
+      value: createUpdate<
+        | AddComponent
+        | {
+            action: 'create'
+            element: string
+          }
+      >({
+        action: 'create',
+        element: element.outerHTML,
+        index,
+        parentChildIndex,
+        parentId,
+      }),
+      isGlobal: false,
+    })
+  } else {
+    updates.push({
+      type: 'component',
+      name: parent ? 'delete-create' : 'delete-create-minimal',
+      componentId,
+      childIndex,
+      oldValue: createUpdate<DeleteComponent>({
+        action: 'delete',
+      }),
+      value: createUpdate<
+        | AddComponent
+        | {
+            action: 'create'
+            element: string
+          }
+      >({
+        action: 'create',
+        element: element.tagName.toLowerCase(),
+        index,
+        parentChildIndex,
+        parentId,
+      }),
+      isGlobal: false,
+    })
+  }
   const info = getStyleInfoForElement(element)
   const animationStyles = info.selectors.filter((selector) =>
     selector.styles.find(
@@ -112,7 +137,7 @@ export const createNewElementUpdates = (
 
     ${info.keyframes.map((keyframe) => keyframe.text).join('\n')}`
 
-    const newStyleId = generateUniqueId()
+    const newStyleId = btoa(generateUniqueId())
     updates.push({
       type: 'component',
       name: parent ? 'delete-create' : 'delete-create-minimal',

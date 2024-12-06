@@ -221,6 +221,7 @@ function createValue(
       createNode('', attributePath, fileLocation, fileContent),
     )
   }
+  value.node.loc = value.node.loc ?? arg.loc
   const valueNode = createNode(
     getSnippetFromNode(value.node),
     value,

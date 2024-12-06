@@ -32,7 +32,10 @@ export const EditorChrome: React.FunctionComponent = () => {
 
 const EditorChromeAfterProviders: React.FunctionComponent = () => {
   const [branchId, setBranchId] = useQueryState<string>({ key: 'branch-id' })
-  const [chrome, setChrome] = useQueryState<boolean>({ key: 'chrome' })
+  const [chrome, setChrome] = useQueryState({
+    key: 'chrome',
+    defaultValue: false,
+  })
   const [showStartModal, setShowStartModal] = useQueryState({
     key: 'start-modal',
     defaultValue: false,
