@@ -23,20 +23,8 @@ import { useHarmonyContext } from '../harmony-context'
 import { useHarmonyStore } from '../../hooks/state'
 import { useCopyPasteDelete } from '../../hooks/copy-paste-delete'
 import { selectDesignerElement } from '../../utils/element-utils'
+import { isTextElement } from '../../utils/element-predicate'
 import { useHighlighter } from './highlighter'
-
-export function isTextElement(element: HTMLElement): boolean {
-  return (
-    element.childNodes.length > 0 &&
-    Array.from(element.childNodes).every(
-      (child) => child.nodeType === Node.TEXT_NODE,
-    )
-  )
-}
-
-export function isImageElement(element: Element): boolean {
-  return ['img', 'svg'].includes(element.tagName.toLowerCase())
-}
 
 export function isSizeThreshold(element: HTMLElement, scale: number): boolean {
   const sizeThreshold = 10

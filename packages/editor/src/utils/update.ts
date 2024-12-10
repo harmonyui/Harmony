@@ -13,14 +13,15 @@ import type {
   CommonTools,
   ToolAttributeValue,
 } from '../components/attributes/types'
-import { isTextElement } from '../components/inspector/inspector'
 import { defaultToolValues } from '../components/attributes/utils'
+import type { StyleInfo } from './element-utils'
 import {
   getComponentIdAndChildIndex,
   getComputedValue,
-  getStyleInfoForElement,
+  recurseElements,
 } from './element-utils'
 import { generateUniqueId } from './common'
+import { isTextElement } from './element-predicate'
 
 export const createUpdate = <T>(value: T): string => {
   const jsonValue = JSON.stringify(value)
@@ -41,6 +42,7 @@ export const createNewElementUpdates = (
   getNewChildIndex: (parentId: string) => number,
   element: HTMLElement,
   data: ToolAttributeValue<CommonTools>[],
+  styleInfo: StyleInfo,
   fonts: Font[] | undefined,
   parent: HTMLElement | undefined,
 ): ComponentUpdate[] => {
@@ -61,6 +63,16 @@ export const createNewElementUpdates = (
     : undefined
 
   if (element.tagName.toLowerCase() === 'svg') {
+    const clone = element.cloneNode(true) as HTMLElement
+    recurseElements(clone, [
+      (el) => {
+        el.removeAttribute('class')
+        el.removeAttribute('style')
+        el.removeAttribute('data-harmony-id')
+        el.removeAttribute('data-harmony-child-index')
+        el.removeAttribute('data-harmony-component-id')
+      },
+    ])
     updates.push({
       type: 'component',
       name: parent ? 'delete-create' : 'delete-create-minimal',
@@ -77,7 +89,7 @@ export const createNewElementUpdates = (
           }
       >({
         action: 'create',
-        element: element.outerHTML,
+        element: clone.outerHTML,
         index,
         parentChildIndex,
         parentId,
@@ -109,8 +121,7 @@ export const createNewElementUpdates = (
       isGlobal: false,
     })
   }
-  const info = getStyleInfoForElement(element)
-  const animationStyles = info.selectors.filter((selector) =>
+  const animationStyles = styleInfo.selectors.filter((selector) =>
     selector.styles.find(
       (style) =>
         style.name.includes('animation') && !style.name.startsWith('--'),
@@ -122,7 +133,7 @@ export const createNewElementUpdates = (
       (prev, curr) => Array.from(new Set([...prev, ...curr.class.split(' ')])),
       [],
     )
-    const selectorsWithSameClasses = info.selectors.filter((selector) =>
+    const selectorsWithSameClasses = styleInfo.selectors.filter((selector) =>
       selector.class
         .split(' ')
         .some((className) => classes.includes(className)),
@@ -135,7 +146,7 @@ export const createNewElementUpdates = (
       )
       .join('\n')}
 
-    ${info.keyframes.map((keyframe) => keyframe.text).join('\n')}`
+    ${styleInfo.keyframes.map((keyframe) => keyframe.text).join('\n')}`
 
     const newStyleId = btoa(generateUniqueId())
     updates.push({
@@ -210,7 +221,6 @@ export const createNewElementUpdates = (
       })
       continue
     }
-
     updates.push({
       type: 'className',
       name,

@@ -157,7 +157,7 @@ export const translatePropertyName = (name: string): string => {
   }
 }
 
-interface StyleInfo {
+export interface StyleInfo {
   selectors: {
     selector: string
     class: string
@@ -177,7 +177,7 @@ interface StyleInfo {
     text: string
   }[]
 }
-const getStyleInfo = (): StyleInfo => {
+export const getStyleInfo = (): StyleInfo => {
   const stylesheets = Array.from(document.styleSheets)
   const styleInfo: StyleInfo = {
     selectors: [],
@@ -223,17 +223,17 @@ const getStyleInfo = (): StyleInfo => {
       for (const rule of rules) {
         extractCSSStyle(rule)
       }
-    } catch (e) {
-      console.warn(
-        `Could not access rules for stylesheet: ${stylesheet.href}`,
-        e,
-      )
+    } catch {
+      continue
     }
   }
   return styleInfo
 }
-export const getStyleInfoForElement = (element: HTMLElement): StyleInfo => {
-  const styleInfo = getStyleInfo()
+export const getStyleInfoForElement = (
+  element: HTMLElement,
+  info?: StyleInfo,
+): StyleInfo => {
+  const styleInfo = info ?? getStyleInfo()
 
   const infoForElement: StyleInfo = {
     selectors: [],

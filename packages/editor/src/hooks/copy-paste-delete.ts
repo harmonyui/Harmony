@@ -12,6 +12,8 @@ import { createNewElementUpdates, createUpdate } from '../utils/update'
 import { useHarmonyContext } from '../components/harmony-context'
 import {
   getComponentIdAndChildIndex,
+  getStyleInfo,
+  getStyleInfoForElement,
   recurseElements,
 } from '../utils/element-utils'
 import { getTextToolsFromAttributes } from '../components/attributes/utils'
@@ -33,6 +35,7 @@ export const useCopyPasteDelete = () => {
       const getNewChildIndexLocal = (parentId: string) => {
         return getNewChildIndex(parentId) - 1
       }
+      const styleInfo = getStyleInfo()
 
       recurseElements(rootElement, [
         (element, parent) => {
@@ -42,6 +45,7 @@ export const useCopyPasteDelete = () => {
             getNewChildIndexLocal,
             element,
             getTextToolsFromAttributes(element, []),
+            getStyleInfoForElement(element, styleInfo),
             fonts,
             parent,
           )

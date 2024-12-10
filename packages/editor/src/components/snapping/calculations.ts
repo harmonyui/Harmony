@@ -12,8 +12,8 @@
 import { capitalizeFirstLetter, close } from '@harmony/util/src/utils/common'
 import $ from 'jquery'
 import type { Rect } from '../inspector/inspector'
-import { isImageElement } from '../inspector/inspector'
 import { selectDesignerElementReverse } from '../../utils/element-utils'
+import { isImageElement } from '../../utils/element-predicate'
 import type { UpdateRect } from './position-updator'
 import { isSelectable } from './snapping'
 

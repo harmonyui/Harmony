@@ -108,6 +108,7 @@ function getAppliedComputedStyles(
   pseudo?: string | null,
 ) {
   const styles = window.getComputedStyle(element, pseudo)
+  const styleMap = element.computedStyleMap()
   const inlineStyles = element.getAttribute('style')
 
   const retval: Record<string, string> = {}
@@ -122,7 +123,12 @@ function getAppliedComputedStyles(
     if (inlineStyles) element.setAttribute('style', inlineStyles)
     else element.removeAttribute('style')
 
-    if (unsetValue !== value) retval[key] = value
+    if (unsetValue !== value) {
+      const computedValue = styleMap.get(key)
+      if (!computedValue)
+        throw new Error(`Could not find computed vlaue ${key}`)
+      retval[key] = computedValue.toString()
+    }
   }
 
   return retval

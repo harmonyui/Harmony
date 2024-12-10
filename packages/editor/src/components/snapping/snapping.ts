@@ -31,9 +31,7 @@ import type {
 } from '@interactjs/modifiers/aspectRatio'
 import $ from 'jquery'
 import {
-  isImageElement,
   isSelectable as isSelectableInspector,
-  isTextElement,
   removeTextContentSpans,
   replaceTextContentWithSpans,
 } from '../inspector/inspector'
@@ -42,6 +40,7 @@ import {
   selectDesignerElement,
   selectDesignerElementReverse,
 } from '../../utils/element-utils'
+import { isImageElement, isTextElement } from '../../utils/element-predicate'
 import type {
   Axis,
   ChildEdgeInfo,
