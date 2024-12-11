@@ -177,11 +177,9 @@ const getInstanceFromElement = (element: string): InstanceInfo => {
       case 'style':
         return `<style>{\`text\`}</style>`
       case 'img':
-        return `<img src="image.jpg" />`
+        return `<img />`
       case 'input':
         return `<input />`
-      case 'a':
-        return `<a href="https://example.com"></a>`
       default:
         return `<${tagName}></${tagName}>`
     }

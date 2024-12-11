@@ -126,26 +126,33 @@ export const getInstanceInfo = (
           : [],
     }))
 
-  const isComponent = element.name[0].toUpperCase() === element.name[0]
-  if (!isComponent) {
-    if (!attributes.find((attr) => attr.attribute?.getName() === 'className'))
-      attributes.push({
-        name: 'className',
-        elementValues: [],
-        addArguments: [
-          { parent: element, propertyName: 'className', values: [] },
-        ],
-      })
+  const getAddProperties = (elementName: string): string[] => {
+    const properties: string[] = []
+    const isComponent = elementName[0].toUpperCase() === elementName[0]
+    if (!isComponent) {
+      properties.push(...['className', 'children'])
+    }
+    switch (elementName) {
+      case 'img':
+        properties.push(...['src', 'alt'])
+        break
+      case 'a':
+        properties.push(...['href'])
+        break
+    }
 
-    if (!attributes.find((attr) => attr.attribute?.getName() === 'children'))
-      attributes.push({
-        name: 'children',
-        elementValues: [],
-        addArguments: [
-          { parent: element, propertyName: 'children', values: [] },
-        ],
-      })
+    return properties
   }
+
+  const addProperties = getAddProperties(element.name)
+  addProperties.forEach((prop) => {
+    if (!attributes.find((attr) => attr.attribute?.getName() === prop))
+      attributes.push({
+        name: prop,
+        elementValues: [],
+        addArguments: [{ parent: element, propertyName: prop, values: [] }],
+      })
+  })
 
   return { instances, attributes }
 }

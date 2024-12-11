@@ -24,9 +24,7 @@ export const updateAttribute: UpdateComponent = async (
     graph,
   )
   if (action === 'update') {
-    const srcAttribute = attributes.find(
-      (attribute) => attribute.attribute?.getName() === name,
-    )
+    const srcAttribute = attributes.find((attribute) => attribute.name === name)
     if (!srcAttribute) {
       const commentValue = `Change ${name} property for ${graphElements[0].name} tag from ${oldValue} to ${updateValue}`
       addCommentToElement(graphElements[0], commentValue, graph)
@@ -34,7 +32,21 @@ export const updateAttribute: UpdateComponent = async (
     }
 
     if (
-      !rotateThroughValuesAndMakeChanges(srcAttribute, (node) => {
+      !rotateThroughValuesAndMakeChanges(srcAttribute, (node, parent) => {
+        const addArgument = srcAttribute.addArguments.find(
+          (arg) => arg.propertyName === name && arg.values.length === 0,
+        )
+        const shouldDoAddArgument =
+          addArgument &&
+          graphElements.findIndex((el) => el.id === addArgument.parent.id) >
+            graphElements.findIndex((el) => el.id === parent.id)
+
+        if (shouldDoAddArgument) {
+          const { parent: addArgumentParent } = addArgument
+          graph.addAttributeToElement(addArgumentParent, name, updateValue)
+          return true
+        }
+
         if (isLiteral(node)) {
           graph.changeLiteralNode(node, updateValue)
           return true
@@ -43,6 +55,16 @@ export const updateAttribute: UpdateComponent = async (
         return false
       })
     ) {
+      const addArgument = srcAttribute.addArguments.find(
+        (arg) => arg.propertyName === name && arg.values.length === 0,
+      )
+      //If we can add an attribute to the parent, let's do that
+      if (addArgument) {
+        const { parent: addArgumentParent } = addArgument
+        graph.addAttributeToElement(addArgumentParent, name, updateValue)
+        return
+      }
+
       const topLevelAttributeParent =
         srcAttribute.elementValues[srcAttribute.elementValues.length - 1]
           ?.parent ?? graphElements[0]

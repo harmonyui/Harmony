@@ -1459,6 +1459,95 @@ describe('code-updator', () => {
           childIndex: 0,
           isGlobal: false,
         },
+        {
+          value: createUpdate<AddComponent>({
+            parentId: elementInstances[1].id,
+            parentChildIndex: 0,
+            index: 1,
+            action: 'create',
+            element: 'a',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: 'new-link-1',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<UpdateAttributeValue>({
+            action: 'update',
+            value: 'https://google.com',
+            name: 'href',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'update-attribute',
+          componentId: 'new-link-1',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'Link',
+          oldValue: '',
+          type: 'text',
+          name: '0',
+          componentId: 'new-link-1',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            parentId: elementInstances[1].id,
+            parentChildIndex: 0,
+            index: 2,
+            action: 'create',
+            element: 'a',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: 'new-link-2',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: 'Link 2',
+          oldValue: '',
+          type: 'text',
+          name: '0',
+          componentId: 'new-link-2',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            parentId: elementInstances[1].id,
+            parentChildIndex: 0,
+            index: 3,
+            action: 'create',
+            element: 'img',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: 'new-image-1',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<UpdateAttributeValue>({
+            action: 'update',
+            value: 'https://google.com/image.jpg',
+            name: 'src',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'update-attribute',
+          componentId: 'new-image-1',
+          childIndex: 0,
+          isGlobal: false,
+        },
       ]
 
       const fileUpdates = await codeUpdator.updateFiles(updates)
@@ -1474,6 +1563,9 @@ describe('code-updator', () => {
             return <div className="flex p-3">
               <Button>
                 <span>Content1</span>
+                <a href="https://google.com">Link</a>
+                <a>Link 2</a>
+                <img src="https://google.com/image.jpg" />
                 <span>Content2</span>
               </Button>
               <div className="block">
