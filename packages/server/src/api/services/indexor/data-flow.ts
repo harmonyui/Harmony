@@ -28,6 +28,7 @@ import {
   isImportSpecifier,
   isFunctionDeclaration,
   isVariableDeclaration,
+  isLiteral,
 } from './predicates/simple-predicates'
 import { ArrayPropertyNode } from './nodes/array-property'
 import { ArrayExpression } from './nodes/array-expression'
@@ -78,6 +79,8 @@ const addEdge: AddEdge<t.Node> = (node, graph) => {
     visitor.ArrayExpression(node)
   } else if (isImportSpecifier(node)) {
     visitor.ImportSpecifier(node)
+  } else if (isLiteral(node)) {
+    graph.setNode(node)
   } else if (
     isExpression(node) &&
     !isFunctionExpression(node) &&

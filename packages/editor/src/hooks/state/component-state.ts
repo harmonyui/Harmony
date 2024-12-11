@@ -29,7 +29,7 @@ export interface ComponentState {
   updateTheCounter: () => void
   source: Source
   setSource: (value: Source) => void
-  getNewChildIndex: (parentId: string) => number
+  getNewChildIndex: (parentId: string, rootElement?: HTMLElement) => number
 }
 
 export const createComponentStateSlice = createHarmonySlice<
@@ -65,6 +65,10 @@ export const createComponentStateSlice = createHarmonySlice<
     const getComponentFromElement = (
       element: HTMLElement,
     ): ComponentElement | undefined => {
+      if (element.tagName.toLocaleLowerCase() === 'script') {
+        return undefined
+      }
+
       let id = element.dataset.harmonyId
       let childIndex = Number(element.dataset.harmonyChildIndex)
 
@@ -156,15 +160,11 @@ export const createComponentStateSlice = createHarmonySlice<
       setSource(value: Source) {
         set({ source: value })
       },
-      getNewChildIndex(parentId: string) {
+      getNewChildIndex(parentId: string, rootElement?: HTMLElement) {
         const amountOfIndexes = findElementsFromId(
           parentId,
-          get().rootComponent?.element,
+          rootElement ?? get().rootComponent?.element,
         ).length
-        // amountOfIndexes += get().createdElements.filter(
-        //   (el) => el.componentId === parentId,
-        // ).length
-
         return amountOfIndexes
       },
       hoverComponent(element: HTMLElement | undefined) {

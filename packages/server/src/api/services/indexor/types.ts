@@ -1,6 +1,7 @@
 import type { ComponentLocation } from '@harmony/util/src/types/component'
 import type * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
+import type { FlowGraph } from './graph'
 
 export interface Attribute {
   id: string
@@ -42,6 +43,7 @@ export interface NodeBase<T extends t.Node> {
   dataDependents: Set<Node>
   path: NodePath<T>
   content: string
+  graph: FlowGraph
 }
 
 const simplePredicate = (node: Node): boolean =>
@@ -54,6 +56,7 @@ export class Node<T extends t.Node = t.Node> {
   public dataDependencies: Set<Node>
   public dataDependents: Set<Node>
   public content: string
+  public graph: FlowGraph
   private parent: Node | undefined
   public get node(): T {
     return this.path.node
@@ -70,6 +73,7 @@ export class Node<T extends t.Node = t.Node> {
     dataDependents,
     path,
     content,
+    graph,
   }: NodeBase<T>) {
     this.id = id
     this.location = location
@@ -79,6 +83,7 @@ export class Node<T extends t.Node = t.Node> {
     this.dataDependents = dataDependents
     this.path = path
     this.content = content
+    this.graph = graph
   }
 
   public getChildIndex() {
@@ -175,6 +180,7 @@ export class Node<T extends t.Node = t.Node> {
 
 export interface ObjectNode extends Node {
   getAttributes: () => ObjectProperty[]
+  addProperty: (name: string, value: string | Node<t.Expression>) => void
 }
 
 export interface ObjectProperty extends Node {

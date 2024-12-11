@@ -18,90 +18,13 @@ import type {
   SelectMode,
   ComponentUpdateWithoutGlobal,
 } from '../harmony-context'
-import { getProperty } from '../snapping/calculations'
 import { useSidePanel } from '../panel/side-panel'
 import { useHarmonyContext } from '../harmony-context'
 import { useHarmonyStore } from '../../hooks/state'
 import { useCopyPasteDelete } from '../../hooks/copy-paste-delete'
+import { selectDesignerElement } from '../../utils/element-utils'
+import { isTextElement } from '../../utils/element-predicate'
 import { useHighlighter } from './highlighter'
-
-interface RectSize {
-  width: number
-  height: number
-}
-
-export const isDesignerElementSelectable = (
-  element: HTMLElement | null,
-): element is HTMLElement => {
-  if (!element) return false
-
-  const getClientSize = (
-    element: HTMLElement,
-    withBorder = false,
-  ): RectSize => {
-    const width =
-      element.clientWidth +
-      (withBorder
-        ? getProperty(element, 'border', 'left') +
-          getProperty(element, 'border', 'right')
-        : 0)
-    const height =
-      element.clientHeight +
-      (withBorder
-        ? getProperty(element, 'border', 'top') +
-          getProperty(element, 'border', 'bottom')
-        : 0)
-
-    return { width, height }
-  }
-
-  const sizesAreEqual = (size1: RectSize, size2: RectSize): boolean => {
-    return size1.width === size2.width && size1.height === size2.height
-  }
-
-  return (
-    element.children.length === 1 &&
-    (['bottom', 'top', 'left', 'right'] as const).every(
-      (d) => getProperty(element, 'padding', d) === 0,
-    ) &&
-    sizesAreEqual(
-      getClientSize(element.children[0] as HTMLElement, true),
-      getClientSize(element),
-    )
-  )
-}
-//Returns the element as understood from a designer (no nested containers with one child and no padding)
-export function selectDesignerElement(element: HTMLElement): HTMLElement {
-  let target = element
-
-  while (isDesignerElementSelectable(target.parentElement)) {
-    target = target.parentElement
-  }
-
-  return target
-}
-
-export function selectDesignerElementReverse(
-  element: HTMLElement,
-): HTMLElement {
-  const isDesignerSelected =
-    element.children.length === 1 &&
-    selectDesignerElement(element.children[0] as HTMLElement) === element
-  return isDesignerSelected ? (element.children[0] as HTMLElement) : element
-}
-
-export function isTextElement(element: HTMLElement): boolean {
-  return (
-    element.childNodes.length > 0 &&
-    Array.from(element.childNodes).every(
-      (child) => child.nodeType === Node.TEXT_NODE,
-    )
-  )
-}
-
-export function isImageElement(element: Element): boolean {
-  return ['img', 'svg'].includes(element.tagName.toLowerCase())
-}
 
 export function isSizeThreshold(element: HTMLElement, scale: number): boolean {
   const sizeThreshold = 10

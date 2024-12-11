@@ -3,7 +3,7 @@ import { updatePropertySchema } from '@harmony/util/src/updates/property'
 import type { UpdateComponent } from './types'
 import { addCommentToElement, getInstanceInfo } from './utils'
 
-export const propertyUpdate: UpdateComponent = (info, graph) => {
+export const propertyUpdate: UpdateComponent = async (info, graph) => {
   const { name, value } = parseUpdate(updatePropertySchema, info.value)
   const { value: oldValue } = parseUpdate(updatePropertySchema, info.oldValue)
 

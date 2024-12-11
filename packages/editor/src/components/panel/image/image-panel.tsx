@@ -3,9 +3,9 @@ import { Button } from '@harmony/ui/src/components/core/button'
 import { useHarmonyStore } from '../../../hooks/state'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
-import { isImageElement } from '../../inspector/inspector'
 import { ImageList } from '../../image/image-list'
 import { useUploadImage } from '../../image/image-provider'
+import { isImageElement } from '../../../utils/element-predicate'
 
 export type ImageType = 'image' | 'svg'
 

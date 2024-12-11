@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
-import { useComponentAttribute } from '../../attribute-provider'
-import type { CommonTools } from '../../types'
+import { useComponentAttribute } from '../../../../attributes/attribute-provider'
+import type { CommonTools } from '../../../../attributes/types'
 
 export const useMultiValue = (
   attribute: CommonTools,

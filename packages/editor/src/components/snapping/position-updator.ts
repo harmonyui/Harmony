@@ -6,13 +6,16 @@
 /* eslint-disable import/no-cycle -- ok*/
 import { close, round } from '@harmony/util/src/utils/common'
 import type { Rect } from '../inspector/inspector'
-import { selectDesignerElementReverse } from '../inspector/inspector'
+import {
+  getComputedValue,
+  getProperty,
+  selectDesignerElementReverse,
+} from '../../utils/element-utils'
 import type { RectSide } from './calculations'
 import {
   calculateFlexParentEdgeInfoWithSizing,
   calculateParentEdgeInfoWithSizing,
   getBoundingRect,
-  getProperty,
   getSiblingGap,
   setSpaceForElement,
 } from './calculations'
@@ -38,21 +41,6 @@ export interface UpdateRect {
 export interface UpdateRectsProps {
   parentUpdate: UpdateRect
   childrenUpdates: UpdateRect[]
-}
-
-export const getComputedValue = (
-  element: HTMLElement | StylePropertyMapReadOnly,
-  property: string,
-): string => {
-  const styleMap =
-    'computedStyleMap' in element ? element.computedStyleMap() : element
-  const styleValue = styleMap.get(property)
-  if (!styleValue) return ''
-
-  if (styleValue instanceof CSSKeywordValue) {
-    return styleValue.value
-  }
-  return styleValue.toString()
 }
 
 const updateElementValues = (

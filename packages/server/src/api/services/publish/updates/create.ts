@@ -1,4 +1,5 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
+/* eslint-disable no-nested-ternary -- ok*/
+
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
 import type { FlowGraph } from '../../indexor/graph'
@@ -11,12 +12,12 @@ import { ImportStatement } from '../../indexor/nodes/import-statement'
 import type { InstanceInfo, UpdateComponent } from './types'
 import { getInstanceFromComponent, getJSXElementFromLevels } from './utils'
 
-export const createUpdate: UpdateComponent = (
+export const createUpdate: UpdateComponent = async (
   { value, update: componentUpdate },
   graph,
   repository,
 ) => {
-  const { parentId, parentChildIndex, index, component, copiedFrom } =
+  const { parentId, parentChildIndex, index, component, copiedFrom, element } =
     parseUpdate(addComponentSchema, value)
 
   const parentElement = getJSXElementFromLevels(
@@ -29,17 +30,25 @@ export const createUpdate: UpdateComponent = (
   }
 
   //If there is no comonent attached, it is probably just the result of an undo delete
-  if (!component && !copiedFrom) {
+  if (!component && !copiedFrom && !element) {
     return
   }
 
   const instanceCode = copiedFrom
-    ? getInstanceFromElement(
+    ? getInstanceFromCopiedFrom(
         copiedFrom.componentId,
         copiedFrom.childIndex,
         graph,
       )
-    : getInstanceFromComponent(component!, repository)
+    : element
+      ? getInstanceFromElement(element)
+      : component
+        ? getInstanceFromComponent(component, repository)
+        : undefined
+
+  if (!instanceCode) {
+    throw new Error('Instance code not found')
+  }
 
   createComponent(
     componentUpdate,
@@ -112,17 +121,20 @@ const getElementInstanceNodes = (
 
   const otherNodes = nodes.filter((node) => node !== elementInstance)
   const childElements = elementInstance.getChildren(true)
-  if (childElements.length !== componentIds.length) {
-    throw new Error(
-      `Number of child elements (${childElements.length}) does not match number of component ids (${componentIds.length})`,
-    )
-  }
-  childElements.forEach((childElement) => {
-    const id = componentIds.shift()
-    if (id) {
-      childElement.id = id
+
+  if (componentIds.length > 0) {
+    if (childElements.length !== componentIds.length) {
+      throw new Error(
+        `Number of child elements (${childElements.length}) does not match number of component ids (${componentIds.length})`,
+      )
     }
-  })
+    childElements.forEach((childElement) => {
+      const id = componentIds.shift()
+      if (id) {
+        childElement.id = id
+      }
+    })
+  }
 
   //Normalize the location of the nodes
   const offset = elementInstance.location.start
@@ -134,7 +146,7 @@ const getElementInstanceNodes = (
   return { element: elementInstance, nodes: otherNodes }
 }
 
-const getInstanceFromElement = (
+const getInstanceFromCopiedFrom = (
   componentId: string,
   childIndex: number,
   graph: FlowGraph,
@@ -156,5 +168,29 @@ const getInstanceFromElement = (
         isDefault: dep.isDefault(),
       })),
     componentIds: allElements.map((node) => node.id),
+  }
+}
+
+const getInstanceFromElement = (element: string): InstanceInfo => {
+  const getImplementationFromTagName = (tagName: string) => {
+    switch (tagName) {
+      case 'style':
+        return `<style>{\`text\`}</style>`
+      case 'img':
+        return `<img src="image.jpg" />`
+      case 'input':
+        return `<input />`
+      case 'a':
+        return `<a href="https://example.com"></a>`
+      default:
+        return `<${tagName}></${tagName}>`
+    }
+  }
+  return {
+    implementation: element.startsWith('<')
+      ? element
+      : getImplementationFromTagName(element),
+    dependencies: [],
+    componentIds: [],
   }
 }

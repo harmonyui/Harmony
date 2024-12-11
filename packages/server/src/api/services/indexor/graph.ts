@@ -1,25 +1,30 @@
+/* eslint-disable no-nested-ternary -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 import * as parser from '@babel/parser'
 import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import * as prettier from 'prettier'
 import { groupBy } from '@harmony/util/src/utils/common'
 import { getBaseId } from '@harmony/util/src/utils/component'
-import type { ArrayProperty, Node } from './types'
+import type { ArrayProperty, Node, ObjectNode } from './types'
 import type { LiteralNode } from './utils'
 import { createNode, getLocationId, getSnippetFromNode } from './utils'
 import { addDataEdge } from './data-flow'
 import { JSXSpreadAttributeNode } from './nodes/jsxspread-attribute'
 import type { JSXElementNode } from './nodes/jsx-element'
 import { isJSXElement } from './nodes/jsx-element'
-import type { JSXAttribute } from './nodes/jsx-attribute'
+import { JSXAttributeNode, type JSXAttribute } from './nodes/jsx-attribute'
 import { ComponentNode } from './nodes/component'
 import {
   isJSXText,
+  isObject,
   isStringLiteral,
   isTemplateElement,
 } from './predicates/simple-predicates'
 import { ImportStatement } from './nodes/import-statement'
 import { ProgramNode } from './nodes/program'
+import { ObjectExpressionNode } from './nodes/object-expression'
+import { ObjectPropertyExpressionNode } from './nodes/object-property'
 
 export type FileUpdateInfo = Record<
   string,
@@ -90,6 +95,7 @@ export class FlowGraph {
     }
     const program = this.files[node.location.file]
     program.addNode(node)
+    node.graph = this
     node.path.scope = parent.path.scope
   }
 
@@ -97,7 +103,7 @@ export class FlowGraph {
     name: string,
     path: NodePath<T>,
   ): Node<T> {
-    return createNode(name, path, this.file, this.code)
+    return createNode(name, path, this.file, this.code, this)
   }
 
   public addDataDependency(fromId: string, toId: string) {
@@ -295,14 +301,18 @@ export class FlowGraph {
   }
 
   public connectExportStatementsToImports(
-    node: Node<t.ExportNamedDeclaration>,
+    node: Node<t.ExportNamedDeclaration | t.ExportDefaultDeclaration>,
   ) {
+    const isDefaultExport = node.type === 'ExportDefaultDeclaration'
     for (const program of Object.values(this.files)) {
       const nodes = program
         .getNodes()
         .filter((_node) => _node instanceof ImportStatement)
       for (const importNode of nodes) {
-        if (this.resolvePaths(importNode.getSource(), node.location.file)) {
+        if (
+          this.resolvePaths(importNode.getSource(), node.location.file) &&
+          importNode.isDefault() === isDefaultExport
+        ) {
           this.addDataDependency(importNode.id, node.id)
         }
       }
@@ -314,7 +324,70 @@ export class FlowGraph {
   }
 
   public dirtyNode(node: Node) {
-    this.dirtyFiles.add(node.location.file)
+    if (this.files[node.location.file]) {
+      this.dirtyFiles.add(node.location.file)
+    }
+  }
+
+  public evaluateProperty(node: Node, property: string): Node | undefined {
+    const objectNode = node.getValues(isObject) as ObjectNode[]
+    if (objectNode.length !== 1) {
+      return undefined
+    }
+    if (!property) {
+      return objectNode[0]
+    }
+
+    const properties = property.split('.')
+    const firstProperty = properties[0]
+    const propertyNode = objectNode[0]
+      .getAttributes()
+      .find((attr) => attr.getName() === firstProperty)
+    if (!propertyNode) {
+      return undefined
+    }
+    if (properties.length === 1) {
+      return propertyNode.getValueNode()
+    }
+
+    return this.evaluateProperty(propertyNode, properties.slice(1).join('.'))
+  }
+
+  public evaluatePropertyOrAdd(node: Node, property: string): Node {
+    const properties = property.split('.')
+    if (!property) {
+      const _node = this.evaluateProperty(node, property)
+      if (_node) {
+        return _node
+      }
+      throw new Error('Property not found')
+    }
+
+    const parentProperty = this.evaluatePropertyOrAdd(
+      node,
+      properties.slice(0, -1).join('.'),
+    )
+    if (!isObject(parentProperty)) {
+      throw new Error('Parent property is not an object')
+    }
+    const propertyNode = this.evaluateProperty(
+      parentProperty,
+      properties[properties.length - 1],
+    )
+    if (!propertyNode) {
+      const newNode = this.createObjectExpressionNode(
+        t.objectExpression([]),
+        node,
+      )
+      parentProperty.addProperty(properties[properties.length - 1], newNode)
+      return newNode
+    }
+
+    const _node = this.evaluateProperty(propertyNode, '')
+    if (_node) {
+      return _node
+    }
+    throw new Error('Property not found')
   }
 
   public replaceNode(node: Node, newNode: t.Node) {
@@ -347,12 +420,110 @@ export class FlowGraph {
     propertyName: string,
     newValue: string,
   ) {
-    const newNode = t.jsxAttribute(
-      t.jsxIdentifier(propertyName),
-      t.stringLiteral(newValue),
-    )
-    node.path.node.openingElement.attributes.push(newNode)
+    node.addProperty(propertyName, newValue)
     this.dirtyNode(node)
+  }
+
+  public addJSXTextToElement(node: JSXElementNode, newValue: string) {
+    node.addProperty('children', newValue)
+    this.dirtyNode(node)
+  }
+
+  public addStyleToElement(
+    node: JSXElementNode,
+    propertyName: string,
+    newValue: string,
+  ) {
+    const styleAttribute = node
+      .getAttributes()
+      .find((attr) => attr.getName() === 'style')
+    if (!styleAttribute) {
+      const expressionNode = this.createObjectExpressionNode(
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier(propertyName),
+            t.stringLiteral(newValue),
+          ),
+        ]),
+        node,
+      )
+
+      node.addProperty('style', expressionNode)
+    } else {
+      const styleValue = styleAttribute.getValueNode()
+      const objectNodes = styleValue.getValues(isObject) as ObjectNode[]
+      if (objectNodes.length !== 1) {
+        throw new Error('Style value is not an object')
+      }
+      objectNodes[0].addProperty(propertyName, newValue)
+    }
+    this.dirtyNode(node)
+  }
+
+  public createJSXAttributeNode(
+    parent: JSXElementNode,
+    name: string,
+    value: Node | string,
+  ) {
+    this.file = parent.location.file
+    const newNode =
+      name === 'children'
+        ? typeof value === 'string'
+          ? t.jsxText(value)
+          : t.jsxExpressionContainer(value.node as t.Expression)
+        : t.jsxAttribute(
+            t.jsxIdentifier(name),
+            typeof value === 'string'
+              ? t.stringLiteral(value)
+              : t.jsxExpressionContainer(value.node as t.Expression),
+          )
+    return new JSXAttributeNode(
+      parent,
+      name === 'children' ? 0 : -1,
+      this.code,
+      this.createNodeAndPath(name, newNode, parent.path),
+    )
+  }
+
+  public createObjectExpressionNode(
+    node: t.ObjectExpression,
+    parent: Node,
+  ): ObjectExpressionNode {
+    this.file = parent.location.file
+    const objectProperties = node.properties.map((property) => {
+      if (t.isObjectProperty(property)) {
+        return this.createObjectPropertyNode(property, parent)
+      }
+      throw new Error('Rest properties not supported')
+    })
+
+    return new ObjectExpressionNode(
+      objectProperties,
+      this.createNodeAndPath(getSnippetFromNode(node), node, parent.path),
+    )
+  }
+
+  public createObjectPropertyNode(
+    node: t.ObjectProperty,
+    parent: Node,
+  ): ObjectPropertyExpressionNode {
+    this.file = parent.location.file
+    const keyNode = this.createNodeAndPath(
+      getSnippetFromNode(node.key),
+      node.key,
+      parent.path,
+    )
+    const valueNode = this.createNodeAndPath(
+      getSnippetFromNode(node.value),
+      node.value,
+      parent.path,
+    )
+
+    return new ObjectPropertyExpressionNode(
+      keyNode,
+      valueNode,
+      this.createNodeAndPath(getSnippetFromNode(node), node, parent.path),
+    )
   }
 
   public async saveChanges(options: prettier.Options) {
@@ -379,7 +550,7 @@ export class FlowGraph {
     childElement.id = getBaseId(componentId)
     this.setNewNode(childElement, parentElement)
     if (childElement.getChildIndex() !== childIndex) {
-      throw new Error('Child index does not match')
+      ///throw new Error('Child index does not match')
     }
     nodes.forEach((node) => {
       this.setNewNode(node, parentElement)
@@ -582,6 +753,21 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
         graph.addDataDependency(newNode.id, declarationNode.id)
         graph.connectExportStatementsToImports(newNode)
       }
+    },
+    ExportDefaultDeclaration(path) {
+      const newNode = graph.addNode(
+        'default export',
+        path,
+      ) as Node<t.ExportDefaultDeclaration>
+      program.setDefaultExport(newNode)
+      const declarationPath = path.get('declaration')
+      const declarationNode = graph.createNode(
+        getSnippetFromNode(declarationPath.node),
+        declarationPath,
+      )
+      graph.addDataFlowEdge(declarationNode)
+      graph.addDataDependency(newNode.id, declarationNode.id)
+      graph.connectExportStatementsToImports(newNode)
     },
     'FunctionDeclaration|ArrowFunctionExpression'(path) {
       const newNode = graph.createNode(getSnippetFromNode(path.node), path)

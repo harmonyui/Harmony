@@ -31,15 +31,16 @@ import type {
 } from '@interactjs/modifiers/aspectRatio'
 import $ from 'jquery'
 import {
-  isImageElement,
   isSelectable as isSelectableInspector,
-  isTextElement,
   removeTextContentSpans,
   replaceTextContentWithSpans,
-  selectDesignerElement,
-  selectDesignerElementReverse,
 } from '../inspector/inspector'
 import type { Rect, RectBox } from '../inspector/inspector'
+import {
+  selectDesignerElement,
+  selectDesignerElementReverse,
+} from '../../utils/element-utils'
+import { isImageElement, isTextElement } from '../../utils/element-predicate'
 import type {
   Axis,
   ChildEdgeInfo,

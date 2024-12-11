@@ -6,6 +6,7 @@ import { ImportStatement } from './import-statement'
 
 export class ProgramNode extends Node<t.Program> {
   private exportStatements: Node<t.ExportNamedDeclaration>[] = []
+  private defaultExport: Node<t.ExportDefaultDeclaration> | null = null
   private nodes = new Map<string, Node>()
 
   constructor(
@@ -17,6 +18,14 @@ export class ProgramNode extends Node<t.Program> {
 
   public addExportStatement(exportStatement: Node<t.ExportNamedDeclaration>) {
     this.exportStatements.push(exportStatement)
+  }
+
+  public getDefaultExport() {
+    return this.defaultExport
+  }
+
+  public setDefaultExport(exportStatement: Node<t.ExportDefaultDeclaration>) {
+    this.defaultExport = exportStatement
   }
 
   public getExportStatements() {

@@ -1,5 +1,7 @@
 import { DEFAULT_WIDTH } from '@harmony/util/src/constants'
 import { mergeClassesWithScreenSize } from '@harmony/util/src/utils/tailwind-merge'
+import { parseUpdate } from '@harmony/util/src/updates/utils'
+import { classNameValueSchema } from '@harmony/util/src/updates/classname'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { LiteralNode } from '../../indexor/utils'
 import { getLiteralValue } from '../../indexor/utils'
@@ -13,8 +15,8 @@ import {
 } from './utils'
 import type { UpdateComponent } from './types'
 
-export const updateClassName: UpdateComponent = (
-  { value, oldValue, update: componentUpdate },
+export const updateClassName: UpdateComponent = async (
+  { value: unparsedValue, oldValue: unparsedOldValue, update: componentUpdate },
   graph,
   repository,
 ) => {
@@ -22,6 +24,11 @@ export const updateClassName: UpdateComponent = (
     componentUpdate.componentId,
     componentUpdate.childIndex,
     graph,
+  )
+  const { value, type } = parseUpdate(classNameValueSchema, unparsedValue)
+  const { value: oldValue } = parseUpdate(
+    classNameValueSchema,
+    unparsedOldValue,
   )
 
   const classNameAttribute = attributes.find(
@@ -35,7 +42,7 @@ export const updateClassName: UpdateComponent = (
     return
   }
 
-  if (repository.cssFramework === 'tailwind') {
+  if (repository.cssFramework === 'tailwind' && type === 'class') {
     const removeTailwindPrefix = (classes: string) => {
       return repository.tailwindPrefix
         ? replaceAll(classes, repository.tailwindPrefix, '')
@@ -131,14 +138,15 @@ export const updateClassName: UpdateComponent = (
       addCommentToElement(topLevelAttributeParent, commentValue, graph)
     }
   } else {
-    const topLevelAttributeParent =
-      classNameAttribute.elementValues[
-        classNameAttribute.elementValues.length - 1
-      ]?.parent ?? graphElements[0]
-    addCommentToElement(
-      topLevelAttributeParent,
-      `${componentUpdate.name}:${value};`,
-      graph,
-    )
+    // const topLevelAttributeParent =
+    //   classNameAttribute.elementValues[
+    //     classNameAttribute.elementValues.length - 1
+    //   ]?.parent ?? graphElements[0]
+    // addCommentToElement(
+    //   topLevelAttributeParent,
+    //   `${componentUpdate.name}:${value};`,
+    //   graph,
+    // )
+    graph.addStyleToElement(graphElements[0], componentUpdate.name, value)
   }
 }
