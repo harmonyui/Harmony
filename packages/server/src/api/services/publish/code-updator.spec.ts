@@ -1,10 +1,11 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { Repository } from '@harmony/util/src/types/branch'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import type {
   AddComponent,
   DeleteComponent,
   ReorderComponent,
+  StyleUpdate,
   UpdateAttributeValue,
 } from '@harmony/util/src/updates/component'
 import { createUpdate } from '@harmony/util/src/updates/utils'
@@ -14,6 +15,24 @@ import type { UpdateProperty } from '@harmony/util/src/updates/property'
 import type { GitRepository } from '../../repository/git/types'
 import { indexFiles } from '../indexor/indexor'
 import { CodeUpdator } from './code-updator'
+
+vi.mock('../../repository/openai', () => ({
+  generateTailwindAnimations() {
+    return {
+      'theme.extend.animation': {
+        'slide-in': 'slideIn 0.6s cubic-bezier(0, 0, 0.3, 1) forwards',
+      },
+      'theme.extend.keyframes': {
+        slideIn: {
+          '0%': { transform: 'translateY(2rem)', opacity: '0.01' },
+          '100%': { transform: 'translateY(0px)', opacity: '1' },
+        },
+      },
+      classes:
+        'opacity-0 animate-slide-in [animation-delay:calc(var(--animation-order)*75ms)]',
+    }
+  },
+}))
 
 describe('code-updator', () => {
   const _expectLocationOfString = (
@@ -77,7 +96,7 @@ describe('code-updator', () => {
       cssFramework: cssFramework || 'tailwind',
       defaultUrl: '',
       tailwindPrefix,
-      tailwindConfig: 'tailwind.config.ts',
+      tailwindConfig: testFiles['tailwind.config.ts'],
       prettierConfig: JSON.stringify({
         trailingComma: 'es5',
         semi: false,
@@ -513,7 +532,7 @@ describe('code-updator', () => {
       )
     })
 
-    it('Should add comment for non supported framework', async () => {
+    it('Should add style for non supported framework', async () => {
       const file: TestFile = 'tailwindPrefix'
       const { codeUpdator, elementInstances } = await setupGitRepo([file], {
         cssFramework: 'bootstrap',
@@ -523,7 +542,7 @@ describe('code-updator', () => {
           value: '10px',
           oldValue: '4px',
           type: 'className',
-          name: 'padding-left',
+          name: 'paddingLeft',
           componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
@@ -543,14 +562,16 @@ describe('code-updator', () => {
             return (
                 <div className='hw-group hw-flex hw-py-2'>
                     <h1 className='hw-flex hw-flex-col'>Hello there</h1>
-                    <h2 className={innerClassName}>{label}</h2>
+                    <h2 className={innerClassName} style={{
+                      paddingLeft: '10px'
+                    }}>{label}</h2>
                     <h3 className={noWhere}>{noOp}</h3>
                 </div>
             )
         }
         const UseTailwindComponent = ({noWhere}) => {
           return (
-            /*padding-left:10px;*/<TailwindComponent label='Thank you' innerClassName='hw-p-2' noWhere={noWhere}/>
+            <TailwindComponent label='Thank you' innerClassName='hw-p-2' noWhere={noWhere}/>
           )
         }
         `),
@@ -1419,6 +1440,105 @@ describe('code-updator', () => {
         `),
       )
     })
+
+    it('Should update tailwind config with style update', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(['file2'], {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'component',
+          name: 'style',
+          value: createUpdate<StyleUpdate>({
+            css: ``,
+            classes: [],
+          }),
+          oldValue: createUpdate<StyleUpdate>({
+            css: ``,
+            classes: [],
+          }),
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(fileUpdates['tailwind.config.ts']).toBeTruthy()
+
+      const tailwindUpdates = fileUpdates['tailwind.config.ts']
+      expect(tailwindUpdates.filePath).toBe('tailwind.config.ts')
+      expect(await formatCode(tailwindUpdates.newContent)).toBe(
+        await formatCode(`
+              const config = {
+                theme: {
+                  extend: {
+                    colors: {
+                      'slate-200': '#f5f7fa',
+                    },
+                    keyframes: {
+                      'fade-in': {
+                        from: { 
+                          opacity: '0', 
+                          transform: 'translateY(-10px)' 
+                        },
+                        to: { 
+                          opacity: '1', 
+                          transform: 'none' 
+                        },
+                      },
+                      'fade-up': {
+                        from: { 
+                          opacity: '0', 
+                          transform: 'translateY(20px)' 
+                        },
+                        to: { 
+                          opacity: '1', 
+                          transform: 'none' 
+                        },
+                      },
+                      'slideIn': {
+                        '0%': { 
+                          'transform': 'translateY(2rem)', 
+                          'opacity': '0.01' 
+                        },
+                        '100%': { 
+                          'transform': 'translateY(0px)', 
+                          'opacity': '1' 
+                        }
+                      }
+                    },
+                    animation: {
+                      'fade-in': 'fade-in 1s var(--animation-delay,0ms) ease forwards',
+                      'fade-up': 'fade-up 1s var(--animation-delay,0ms) ease forwards',
+                      'slide-in': 'slideIn 0.6s cubic-bezier(0, 0, 0.3, 1) forwards'
+                    },
+                  },
+                },
+              }
+              export default config
+            `),
+      )
+
+      expect(fileUpdates.file2).toBeTruthy()
+
+      const codeUpdates = fileUpdates.file2
+      expect(codeUpdates.filePath).toBe('file2')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+              import { Button } from 'file1'
+              const App = () => {
+                return <div className="opacity-0 animate-slide-in [animation-delay:calc(var(--animation-order)*75ms)]">
+                  <Button>
+                    <span>Content1</span>
+                    <span>Content2</span>
+                  </Button>
+                </div>
+              }
+            `),
+      )
+    })
   })
 })
 
@@ -1604,5 +1724,32 @@ const testFiles = {
         </Button>
       </div>
     }
+  `,
+  'tailwind.config.ts': `
+    const config = {
+      theme: {
+        extend: {
+          colors: {
+            'slate-200': '#f5f7fa',
+          },
+          keyframes: {
+            'fade-in': {
+              from: { opacity: '0', transform: 'translateY(-10px)' },
+              to: { opacity: '1', transform: 'none' },
+            },
+            'fade-up': {
+              from: { opacity: '0', transform: 'translateY(20px)' },
+              to: { opacity: '1', transform: 'none' },
+            },
+          },
+          animation: {
+            'fade-in': 'fade-in 1s var(--animation-delay,0ms) ease forwards',
+            'fade-up': 'fade-up 1s var(--animation-delay,0ms) ease forwards',
+          },
+        },
+      },
+    }
+
+    export default config
   `,
 }

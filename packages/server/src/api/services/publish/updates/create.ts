@@ -12,7 +12,7 @@ import { ImportStatement } from '../../indexor/nodes/import-statement'
 import type { InstanceInfo, UpdateComponent } from './types'
 import { getInstanceFromComponent, getJSXElementFromLevels } from './utils'
 
-export const createUpdate: UpdateComponent = (
+export const createUpdate: UpdateComponent = async (
   { value, update: componentUpdate },
   graph,
   repository,

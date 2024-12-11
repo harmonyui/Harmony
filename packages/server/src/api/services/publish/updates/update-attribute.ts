@@ -8,7 +8,7 @@ import {
   rotateThroughValuesAndMakeChanges,
 } from './utils'
 
-export const updateAttribute: UpdateComponent = (
+export const updateAttribute: UpdateComponent = async (
   { value, oldValue, update },
   graph,
 ) => {

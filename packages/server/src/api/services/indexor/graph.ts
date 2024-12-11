@@ -95,6 +95,7 @@ export class FlowGraph {
     }
     const program = this.files[node.location.file]
     program.addNode(node)
+    node.graph = this
     node.path.scope = parent.path.scope
   }
 
@@ -300,14 +301,18 @@ export class FlowGraph {
   }
 
   public connectExportStatementsToImports(
-    node: Node<t.ExportNamedDeclaration>,
+    node: Node<t.ExportNamedDeclaration | t.ExportDefaultDeclaration>,
   ) {
+    const isDefaultExport = node.type === 'ExportDefaultDeclaration'
     for (const program of Object.values(this.files)) {
       const nodes = program
         .getNodes()
         .filter((_node) => _node instanceof ImportStatement)
       for (const importNode of nodes) {
-        if (this.resolvePaths(importNode.getSource(), node.location.file)) {
+        if (
+          this.resolvePaths(importNode.getSource(), node.location.file) &&
+          importNode.isDefault() === isDefaultExport
+        ) {
           this.addDataDependency(importNode.id, node.id)
         }
       }
@@ -322,6 +327,67 @@ export class FlowGraph {
     if (this.files[node.location.file]) {
       this.dirtyFiles.add(node.location.file)
     }
+  }
+
+  public evaluateProperty(node: Node, property: string): Node | undefined {
+    const objectNode = node.getValues(isObject) as ObjectNode[]
+    if (objectNode.length !== 1) {
+      return undefined
+    }
+    if (!property) {
+      return objectNode[0]
+    }
+
+    const properties = property.split('.')
+    const firstProperty = properties[0]
+    const propertyNode = objectNode[0]
+      .getAttributes()
+      .find((attr) => attr.getName() === firstProperty)
+    if (!propertyNode) {
+      return undefined
+    }
+    if (properties.length === 1) {
+      return propertyNode.getValueNode()
+    }
+
+    return this.evaluateProperty(propertyNode, properties.slice(1).join('.'))
+  }
+
+  public evaluatePropertyOrAdd(node: Node, property: string): Node {
+    const properties = property.split('.')
+    if (!property) {
+      const _node = this.evaluateProperty(node, property)
+      if (_node) {
+        return _node
+      }
+      throw new Error('Property not found')
+    }
+
+    const parentProperty = this.evaluatePropertyOrAdd(
+      node,
+      properties.slice(0, -1).join('.'),
+    )
+    if (!isObject(parentProperty)) {
+      throw new Error('Parent property is not an object')
+    }
+    const propertyNode = this.evaluateProperty(
+      parentProperty,
+      properties[properties.length - 1],
+    )
+    if (!propertyNode) {
+      const newNode = this.createObjectExpressionNode(
+        t.objectExpression([]),
+        node,
+      )
+      parentProperty.addProperty(properties[properties.length - 1], newNode)
+      return newNode
+    }
+
+    const _node = this.evaluateProperty(propertyNode, '')
+    if (_node) {
+      return _node
+    }
+    throw new Error('Property not found')
   }
 
   public replaceNode(node: Node, newNode: t.Node) {
@@ -381,13 +447,8 @@ export class FlowGraph {
         ]),
         node,
       )
-      const jsxAttributeNode = this.createJSXAttributeNode(
-        node,
-        'style',
-        expressionNode,
-      )
 
-      this.addJSXAttribute(jsxAttributeNode, node)
+      node.addProperty('style', expressionNode)
     } else {
       const styleValue = styleAttribute.getValueNode()
       const objectNodes = styleValue.getValues(isObject) as ObjectNode[]
@@ -404,6 +465,7 @@ export class FlowGraph {
     name: string,
     value: Node | string,
   ) {
+    this.file = parent.location.file
     const newNode =
       name === 'children'
         ? typeof value === 'string'
@@ -427,6 +489,7 @@ export class FlowGraph {
     node: t.ObjectExpression,
     parent: Node,
   ): ObjectExpressionNode {
+    this.file = parent.location.file
     const objectProperties = node.properties.map((property) => {
       if (t.isObjectProperty(property)) {
         return this.createObjectPropertyNode(property, parent)
@@ -444,6 +507,7 @@ export class FlowGraph {
     node: t.ObjectProperty,
     parent: Node,
   ): ObjectPropertyExpressionNode {
+    this.file = parent.location.file
     const keyNode = this.createNodeAndPath(
       getSnippetFromNode(node.key),
       node.key,
@@ -689,6 +753,21 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
         graph.addDataDependency(newNode.id, declarationNode.id)
         graph.connectExportStatementsToImports(newNode)
       }
+    },
+    ExportDefaultDeclaration(path) {
+      const newNode = graph.addNode(
+        'default export',
+        path,
+      ) as Node<t.ExportDefaultDeclaration>
+      program.setDefaultExport(newNode)
+      const declarationPath = path.get('declaration')
+      const declarationNode = graph.createNode(
+        getSnippetFromNode(declarationPath.node),
+        declarationPath,
+      )
+      graph.addDataFlowEdge(declarationNode)
+      graph.addDataDependency(newNode.id, declarationNode.id)
+      graph.connectExportStatementsToImports(newNode)
     },
     'FunctionDeclaration|ArrowFunctionExpression'(path) {
       const newNode = graph.createNode(getSnippetFromNode(path.node), path)

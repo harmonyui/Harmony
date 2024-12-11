@@ -6,7 +6,7 @@ import {
   rotateThroughValuesAndMakeChanges,
 } from './utils'
 
-export const updateText: UpdateComponent = (
+export const updateText: UpdateComponent = async (
   { update: componentUpdate, oldValue, value },
   graph,
 ) => {

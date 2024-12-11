@@ -69,6 +69,7 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     }
 
     this.graph.addJSXAttribute(jsxAttributeNode, this)
+    this.graph.dirtyNode(this)
   }
 
   public getDependencies(): Node[] {

@@ -46,6 +46,7 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
     objectNodes.forEach((objectNode) => {
       objectNode.addProperty(name, value)
     })
+    this.graph.dirtyNode(this)
   }
 
   public override getValues(predicate?: (node: Node) => boolean): Node[] {

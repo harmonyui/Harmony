@@ -55,3 +55,9 @@ export const addDeleteComponentSchema = z.union([
 
 export const reorderComponentSchema = componentSchemaBase
 export type ReorderComponent = z.infer<typeof reorderComponentSchema>
+
+export const styleUpdateSchema = z.object({
+  css: z.string(),
+  classes: z.array(z.string()),
+})
+export type StyleUpdate = z.infer<typeof styleUpdateSchema>

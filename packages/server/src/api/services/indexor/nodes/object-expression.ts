@@ -32,7 +32,7 @@ export class ObjectExpressionNode
 
   public addProperty(name: string, value: string | Node<t.Expression>) {
     const newNode = t.objectProperty(
-      t.identifier(name),
+      t.stringLiteral(name),
       typeof value === 'string' ? t.stringLiteral(value) : value.node,
     )
     const newKeyNode = new Node(
@@ -57,5 +57,6 @@ export class ObjectExpressionNode
 
     this.path.node.properties.push(newPropertyNode.path.node)
     this.properties.push(newPropertyNode)
+    this.graph.dirtyNode(this)
   }
 }

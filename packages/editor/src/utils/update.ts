@@ -4,6 +4,7 @@ import type {
   DeleteComponent,
   AddComponent,
   UpdateAttributeValue,
+  StyleUpdate,
 } from '@harmony/util/src/updates/component'
 import { jsonSchema } from '@harmony/util/src/updates/component'
 import type { z } from 'zod'
@@ -147,45 +148,15 @@ export const createNewElementUpdates = (
 
     ${styleInfo.keyframes.map((keyframe) => keyframe.text).join('\n')}`
 
-    const newStyleId = btoa(generateUniqueId())
     updates.push({
       type: 'component',
-      name: parent ? 'delete-create' : 'delete-create-minimal',
-      componentId: newStyleId,
-      childIndex: 0,
-      value: createUpdate<
-        | AddComponent
-        | {
-            action: 'create'
-            element: string
-          }
-      >({
-        action: 'create',
-        element: 'style',
-        index,
-        parentChildIndex,
-        parentId,
-      }),
-      oldValue: createUpdate<DeleteComponent>({
-        action: 'delete',
-      }),
-      isGlobal: false,
-    })
-    updates.push({
-      type: 'text',
-      name: '0',
-      componentId: newStyleId,
-      childIndex: 0,
-      value: styleText,
-      oldValue: '',
-      isGlobal: false,
-    })
-    updates.push({
-      type: 'className',
-      name: 'class',
+      name: 'style',
       componentId,
       childIndex,
-      value: classes.join(' '),
+      value: createUpdate<StyleUpdate>({
+        css: styleText,
+        classes,
+      }),
       oldValue: '',
       isGlobal: false,
     })

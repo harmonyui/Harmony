@@ -19,6 +19,9 @@ import { deleteComponentUpdate } from './delete'
 import { createComponentUpdate } from './create'
 import { reorderComponentUpdate } from './reorder'
 import { propertyUpdate } from './property'
+import { classNameComponentUpdate } from './classname'
+import { styleComponentUpdate } from './style'
+import { textComponentUpdate } from './text'
 
 export interface ComponentUpdateState {
   componentUpdates: ComponentUpdate[]
@@ -58,6 +61,12 @@ export const createComponentUpdateSlice = createHarmonySlice<
     const reorderComponent = reorderComponentUpdate([set, get, api])
     //Updates that should happen just for the element (reordering)
     for (const update of updates) {
+      const element = findElementFromId(
+        update.componentId,
+        update.childIndex,
+        rootElement,
+      )
+
       if (update.type === 'component') {
         if (update.name === 'reorder') {
           await reorderComponent(update, rootElement)
@@ -73,6 +82,17 @@ export const createComponentUpdateSlice = createHarmonySlice<
               rootElement,
             )
           }
+        }
+        if (update.name === 'style') {
+          if (!element)
+            throw new Error(
+              `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
+            )
+          await styleComponentUpdate([set, get, api])(
+            update,
+            element,
+            rootElement,
+          )
         }
 
         const _getElementsBetween = (
@@ -178,15 +198,11 @@ export const createComponentUpdateSlice = createHarmonySlice<
             value: string
             type: 'text' | 'image' | 'svg'
           }
-          const element = findElementFromId(
-            update.componentId,
-            update.childIndex,
-            rootElement,
-          )
           if (!element)
             throw new Error(
               `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
             )
+
           if (actionValue === '') {
             element.innerHTML = ''
           } else if (type === 'text') {
@@ -213,21 +229,16 @@ export const createComponentUpdateSlice = createHarmonySlice<
         }
 
         if (update.name === 'update-attribute') {
+          if (!element)
+            throw new Error(
+              `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
+            )
           const { value } = update
           const {
             action,
             name,
             value: newValue,
           } = parseUpdate(updateAttributeValue, value)
-          const element = findElementFromId(
-            update.componentId,
-            update.childIndex,
-            rootElement,
-          )
-          if (!element)
-            throw new Error(
-              `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-            )
           if (action === 'delete') {
             element.removeAttribute(name)
           } else if (action === 'create') {
@@ -247,23 +258,11 @@ export const createComponentUpdateSlice = createHarmonySlice<
         propertyUpdate(update, el)
         //}
       } else if (update.type === 'text') {
-        const el = findElementFromId(
-          update.componentId,
-          update.childIndex,
-          rootElement,
-        )
-        if (!el) continue
-
-        const textNodes = Array.from(el.childNodes)
-        const index = parseInt(update.name)
-        if (isNaN(index)) {
-          throw new Error(`Invalid update text element ${update.name}`)
-        }
-        if (textNodes.length === 0 && index === 0) {
-          el.textContent = update.value
-        } else if (textNodes[index]?.textContent !== update.value) {
-          textNodes[index].textContent = update.value
-        }
+        if (!element)
+          throw new Error(
+            `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
+          )
+        textComponentUpdate(update, element)
       }
     }
 
@@ -280,26 +279,7 @@ export const createComponentUpdateSlice = createHarmonySlice<
         const htmlElement = element
 
         if (update.type === 'className') {
-          if (update.name === 'font') {
-            if (!fonts) {
-              console.log('No fonts are installed')
-              continue
-            }
-            const font = fonts.find((f) => f.id === update.value)
-            if (!font) throw new Error(`Invlaid font ${update.value}`)
-
-            fonts.forEach((f) => {
-              htmlElement.className = htmlElement.className.replace(f.id, '')
-            })
-
-            htmlElement.classList.add(font.font.className)
-          } else if (update.name === 'class') {
-            update.value
-              .split(' ')
-              .forEach((value) => htmlElement.classList.add(value))
-          } else {
-            htmlElement.style[update.name as unknown as number] = update.value
-          }
+          classNameComponentUpdate(update, htmlElement, fonts)
         }
       }
     }

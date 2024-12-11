@@ -1,3 +1,4 @@
+import { replaceAll } from '@harmony/util/src/utils/common'
 import OpenAI from 'openai'
 import { z } from 'zod'
 
@@ -31,6 +32,30 @@ Input: ${text}`
   return newValues
 }
 
+export const transformCssToTailwindConfigSchema = z.object({
+  'theme.extend.animation': z.record(z.string()),
+  'theme.extend.keyframes': z.record(z.unknown()),
+  classes: z.string(),
+})
+export type TransformedTailwindConfig = z.infer<
+  typeof transformCssToTailwindConfigSchema
+>
+export const generateTailwindAnimations = async (
+  css: string,
+): Promise<TransformedTailwindConfig> => {
+  const prompt = `Transform this css that describes an animation from a stylesheet to tailwind styles. Give your answer as a JSON result gives information about both the values needed to update the theme.extend in the tailwind config file and also the tailwind classes used for the animation. The JSON format should look like this: {"theme.extend.animation": {"<animation-key>": "<animation-value>", ...}, "theme.extend.keyframes": {"<keyframes-key>": {...}, ...}, "classes": "..."}. Only respond in JSON. \n \`${css}\``
+  const context =
+    'You are a frontend web developer tasked with converting css animations to tailwind animations.'
+
+  const response = await generateFromPrompt({
+    prompt,
+    context,
+    responseSchema: transformCssToTailwindConfigSchema,
+  })
+
+  return response
+}
+
 const generateFromPrompt = async <Response>({
   prompt,
   context,
@@ -56,9 +81,11 @@ const generateFromPrompt = async <Response>({
   ) {
     return responseSchema.parse(
       JSON.parse(
-        response.choices[0].message.content
-          .replace('json', '')
-          .replaceAll('```', ''),
+        replaceAll(
+          response.choices[0].message.content.replace('json', ''),
+          '```',
+          '',
+        ),
       ),
     )
   }
