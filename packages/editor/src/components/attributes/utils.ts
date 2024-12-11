@@ -54,7 +54,6 @@ export const getTextToolsFromAttributes = (
         : undefined
     }
     if (!selectedElement) {
-      selectedElement = element
       value =
         allStyles.find((style) => style[0] === element)?.[1][name as string] ||
         getComputedValue(element, camelToKebab(name as string))
@@ -64,7 +63,7 @@ export const getTextToolsFromAttributes = (
 
   const getAttr = (
     name: keyof CSSStyleDeclaration,
-  ): { value: string; element: HTMLElement } => {
+  ): { value: string; element: HTMLElement | undefined } => {
     const computed = getComputed(name)
 
     if (name === 'font') {
@@ -87,7 +86,7 @@ export const getTextToolsFromAttributes = (
 
   const getColor = (
     name: ColorTools,
-  ): { value: HexColor; element: HTMLElement } => {
+  ): { value: HexColor; element: HTMLElement | undefined } => {
     const color = getAttr(name)
 
     return {

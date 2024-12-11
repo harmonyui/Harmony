@@ -293,6 +293,10 @@ export const createComponentUpdateSlice = createHarmonySlice<
             })
 
             htmlElement.classList.add(font.font.className)
+          } else if (update.name === 'class') {
+            update.value
+              .split(' ')
+              .forEach((value) => htmlElement.classList.add(value))
           } else {
             htmlElement.style[update.name as unknown as number] = update.value
           }

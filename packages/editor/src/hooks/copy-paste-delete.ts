@@ -7,6 +7,7 @@ import { z } from 'zod'
 import type { AddComponent } from '@harmony/util/src/updates/component'
 import { jsonSchema } from '@harmony/util/src/updates/component'
 import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
+import { replaceAll } from '@harmony/util/src/utils/common'
 import { useUpdateComponent } from '../components/harmonycn/update-component'
 import { createNewElementUpdates, createUpdate } from '../utils/update'
 import { useHarmonyContext } from '../components/harmony-context'
@@ -107,17 +108,15 @@ export const useCopyPasteDelete = () => {
           )
           .join('#')
       })
-      const mappedUpdates = JSON.stringify(updates)
-      // Object.entries(idMapping).forEach(([oldId, newId], i) => {
-      //   if (i !== 0) return
-      //   // mappedUpdates = replaceAll(mappedUpdates, `"${oldId}"`, `"${newId}"`)
-      //   // mappedUpdates = replaceAll(
-      //   //   mappedUpdates,
-      //   //   `\\"${oldId}\\"`,
-      //   //   `\\"${newId}\\"`,
-      //   // )
-      //   //mappedUpdates = replaceAll(mappedUpdates, oldId, newId)
-      // })
+      let mappedUpdates = JSON.stringify(updates)
+      Object.entries(idMapping).forEach(([oldId, newId]) => {
+        mappedUpdates = replaceAll(mappedUpdates, `"${oldId}"`, `"${newId}"`)
+        mappedUpdates = replaceAll(
+          mappedUpdates,
+          `\\"${oldId}\\"`,
+          `\\"${newId}\\"`,
+        )
+      })
       onAttributesChange(jsonUpdatesSchema.parse(mappedUpdates), true)
       return
     }

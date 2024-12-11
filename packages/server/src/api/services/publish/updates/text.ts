@@ -19,8 +19,9 @@ export const updateText: UpdateComponent = (
   const index = parseInt(componentUpdate.name)
   const textAttribute = attributes.find(
     (attr) =>
-      attr.attribute?.getName() === 'children' &&
-      attr.attribute.getChildIndex() === index,
+      attr.name === 'children' &&
+      (attr.attribute?.getChildIndex() === index ||
+        attr.addArguments.length > 0),
   )
   if (!textAttribute) {
     const commentValue = `Change inner text for ${graphElements[0].name} tag from ${oldValue} to ${value}`
@@ -29,7 +30,21 @@ export const updateText: UpdateComponent = (
   }
 
   if (
-    !rotateThroughValuesAndMakeChanges(textAttribute, (nodeValue) => {
+    !rotateThroughValuesAndMakeChanges(textAttribute, (nodeValue, parent) => {
+      const addArgument = textAttribute.addArguments.find(
+        (arg) => arg.propertyName === 'children' && arg.values.length === 0,
+      )
+      const shouldDoAddArgument =
+        addArgument &&
+        graphElements.findIndex((el) => el.id === addArgument.parent.id) >
+          graphElements.findIndex((el) => el.id === parent.id)
+
+      if (shouldDoAddArgument) {
+        const { parent: addArgumentParent } = addArgument
+        graph.addJSXTextToElement(addArgumentParent, value)
+        return true
+      }
+
       if (isLiteral(nodeValue)) {
         graph.changeLiteralNode(nodeValue, componentUpdate.value)
         return true
@@ -38,6 +53,16 @@ export const updateText: UpdateComponent = (
       return false
     })
   ) {
+    const addArgument = textAttribute.addArguments.find(
+      (arg) => arg.propertyName === 'children' && arg.values.length === 0,
+    )
+    //If we can add an attribute to the parent, let's do that
+    if (addArgument) {
+      const { parent: addArgumentParent } = addArgument
+      graph.addJSXTextToElement(addArgumentParent, value)
+      return
+    }
+
     const commentValue = `Change inner text for ${graphElements[0].name} tag from ${oldValue} to ${value}`
     addCommentToElement(graphElements[0], commentValue, graph)
   }

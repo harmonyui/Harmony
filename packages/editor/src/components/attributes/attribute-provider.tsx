@@ -64,7 +64,9 @@ export const ComponentAttributeProvider: React.FunctionComponent<
     const old = data.find((t) => t.name === values.name)
     if (!old) throw new Error('Cannot find old property')
     const oldValue = old.value
-    const { componentId, childIndex } = getComponentIdAndChildIndex(old.element)
+    const { componentId, childIndex } = getComponentIdAndChildIndex(
+      old.element ?? selectedComponent.element,
+    )
 
     const update: ComponentUpdateWithoutGlobal = {
       componentId,

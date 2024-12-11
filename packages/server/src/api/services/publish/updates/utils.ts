@@ -15,6 +15,7 @@ import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { InstanceInfo } from './types'
 
 interface AttributeInfo {
+  name: string
   attribute?: JSXAttribute
   elementValues: {
     parent: JSXElementNode
@@ -99,7 +100,10 @@ export const getInstanceInfo = (
   }
 
   if (!element) {
-    throw new Error('Element not found')
+    return {
+      instances: [],
+      attributes: [],
+    }
   }
 
   const instances = element.getRootInstances(realComponentId)
@@ -109,6 +113,7 @@ export const getInstanceInfo = (
   const attributes: AttributeInfo[] = element
     .getAttributes(realComponentId)
     .map((attribute) => ({
+      name: attribute.getName(),
       attribute,
       elementValues: attribute.getDataFlowWithParents(realComponentId),
       addArguments:
@@ -122,16 +127,24 @@ export const getInstanceInfo = (
     }))
 
   const isComponent = element.name[0].toUpperCase() === element.name[0]
-  if (
-    !isComponent &&
-    !attributes.find((attr) => attr.attribute?.getName() === 'className')
-  ) {
-    attributes.push({
-      elementValues: [],
-      addArguments: [
-        { parent: element, propertyName: 'className', values: [] },
-      ],
-    })
+  if (!isComponent) {
+    if (!attributes.find((attr) => attr.attribute?.getName() === 'className'))
+      attributes.push({
+        name: 'className',
+        elementValues: [],
+        addArguments: [
+          { parent: element, propertyName: 'className', values: [] },
+        ],
+      })
+
+    if (!attributes.find((attr) => attr.attribute?.getName() === 'children'))
+      attributes.push({
+        name: 'children',
+        elementValues: [],
+        addArguments: [
+          { parent: element, propertyName: 'children', values: [] },
+        ],
+      })
   }
 
   return { instances, attributes }

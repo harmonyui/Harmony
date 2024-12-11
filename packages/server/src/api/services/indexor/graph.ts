@@ -1,10 +1,12 @@
+/* eslint-disable no-nested-ternary -- ok*/
+/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 import * as parser from '@babel/parser'
 import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import * as prettier from 'prettier'
 import { groupBy } from '@harmony/util/src/utils/common'
 import { getBaseId } from '@harmony/util/src/utils/component'
-import type { ArrayProperty, Node } from './types'
+import type { ArrayProperty, Node, ObjectNode } from './types'
 import type { LiteralNode } from './utils'
 import { createNode, getLocationId, getSnippetFromNode } from './utils'
 import { addDataEdge } from './data-flow'
@@ -15,11 +17,14 @@ import { JSXAttributeNode, type JSXAttribute } from './nodes/jsx-attribute'
 import { ComponentNode } from './nodes/component'
 import {
   isJSXText,
+  isObject,
   isStringLiteral,
   isTemplateElement,
 } from './predicates/simple-predicates'
 import { ImportStatement } from './nodes/import-statement'
 import { ProgramNode } from './nodes/program'
+import { ObjectExpressionNode } from './nodes/object-expression'
+import { ObjectPropertyExpressionNode } from './nodes/object-property'
 
 export type FileUpdateInfo = Record<
   string,
@@ -97,7 +102,7 @@ export class FlowGraph {
     name: string,
     path: NodePath<T>,
   ): Node<T> {
-    return createNode(name, path, this.file, this.code)
+    return createNode(name, path, this.file, this.code, this)
   }
 
   public addDataDependency(fromId: string, toId: string) {
@@ -314,7 +319,9 @@ export class FlowGraph {
   }
 
   public dirtyNode(node: Node) {
-    this.dirtyFiles.add(node.location.file)
+    if (this.files[node.location.file]) {
+      this.dirtyFiles.add(node.location.file)
+    }
   }
 
   public replaceNode(node: Node, newNode: t.Node) {
@@ -347,20 +354,112 @@ export class FlowGraph {
     propertyName: string,
     newValue: string,
   ) {
-    const newNode = t.jsxAttribute(
-      t.jsxIdentifier(propertyName),
-      t.stringLiteral(newValue),
-    )
-    node.path.node.openingElement.attributes.push(newNode)
-    const jsxAttributeNode = new JSXAttributeNode(
-      node,
-      -1,
-      this.code,
-      this.createNodeAndPath(propertyName, newNode, node.path),
-    )
-    this.addJSXAttribute(jsxAttributeNode, node)
-
+    node.addProperty(propertyName, newValue)
     this.dirtyNode(node)
+  }
+
+  public addJSXTextToElement(node: JSXElementNode, newValue: string) {
+    node.addProperty('children', newValue)
+    this.dirtyNode(node)
+  }
+
+  public addStyleToElement(
+    node: JSXElementNode,
+    propertyName: string,
+    newValue: string,
+  ) {
+    const styleAttribute = node
+      .getAttributes()
+      .find((attr) => attr.getName() === 'style')
+    if (!styleAttribute) {
+      const expressionNode = this.createObjectExpressionNode(
+        t.objectExpression([
+          t.objectProperty(
+            t.identifier(propertyName),
+            t.stringLiteral(newValue),
+          ),
+        ]),
+        node,
+      )
+      const jsxAttributeNode = this.createJSXAttributeNode(
+        node,
+        'style',
+        expressionNode,
+      )
+
+      this.addJSXAttribute(jsxAttributeNode, node)
+    } else {
+      const styleValue = styleAttribute.getValueNode()
+      const objectNodes = styleValue.getValues(isObject) as ObjectNode[]
+      if (objectNodes.length !== 1) {
+        throw new Error('Style value is not an object')
+      }
+      objectNodes[0].addProperty(propertyName, newValue)
+    }
+    this.dirtyNode(node)
+  }
+
+  public createJSXAttributeNode(
+    parent: JSXElementNode,
+    name: string,
+    value: Node | string,
+  ) {
+    const newNode =
+      name === 'children'
+        ? typeof value === 'string'
+          ? t.jsxText(value)
+          : t.jsxExpressionContainer(value.node as t.Expression)
+        : t.jsxAttribute(
+            t.jsxIdentifier(name),
+            typeof value === 'string'
+              ? t.stringLiteral(value)
+              : t.jsxExpressionContainer(value.node as t.Expression),
+          )
+    return new JSXAttributeNode(
+      parent,
+      name === 'children' ? 0 : -1,
+      this.code,
+      this.createNodeAndPath(name, newNode, parent.path),
+    )
+  }
+
+  public createObjectExpressionNode(
+    node: t.ObjectExpression,
+    parent: Node,
+  ): ObjectExpressionNode {
+    const objectProperties = node.properties.map((property) => {
+      if (t.isObjectProperty(property)) {
+        return this.createObjectPropertyNode(property, parent)
+      }
+      throw new Error('Rest properties not supported')
+    })
+
+    return new ObjectExpressionNode(
+      objectProperties,
+      this.createNodeAndPath(getSnippetFromNode(node), node, parent.path),
+    )
+  }
+
+  public createObjectPropertyNode(
+    node: t.ObjectProperty,
+    parent: Node,
+  ): ObjectPropertyExpressionNode {
+    const keyNode = this.createNodeAndPath(
+      getSnippetFromNode(node.key),
+      node.key,
+      parent.path,
+    )
+    const valueNode = this.createNodeAndPath(
+      getSnippetFromNode(node.value),
+      node.value,
+      parent.path,
+    )
+
+    return new ObjectPropertyExpressionNode(
+      keyNode,
+      valueNode,
+      this.createNodeAndPath(getSnippetFromNode(node), node, parent.path),
+    )
   }
 
   public async saveChanges(options: prettier.Options) {

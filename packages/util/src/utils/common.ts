@@ -346,7 +346,7 @@ export const replaceAll = <T extends string | undefined>(
 ): T => {
   if (!str) return str
 
-  const newStr = str.replace(new RegExp(findStr, 'g'), withStr)
+  const newStr = str.replaceAll(findStr, withStr)
 
   return newStr as T
 }

@@ -84,10 +84,10 @@ export type ToolAttributeValue<T extends CommonTools> = T extends ColorTools
   ? {
       value: HexColor
       name: ColorTools
-      element: HTMLElement
+      element: HTMLElement | undefined
     }
   : {
       value: string
       name: Exclude<CommonTools, ColorTools>
-      element: HTMLElement
+      element: HTMLElement | undefined
     }

@@ -121,7 +121,7 @@ export const createComponentId = (element: HTMLElement): string => {
     else {
       const siblings = Array.from(currElement.parentElement.children)
       const index = siblings.indexOf(currElement) + 1
-      tagName += `:nth-child(${index})`
+      tagName += `;nth-child(${index})`
     }
     path.unshift(tagName)
     currElement = currElement.parentElement

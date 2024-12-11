@@ -121,17 +121,20 @@ const getElementInstanceNodes = (
 
   const otherNodes = nodes.filter((node) => node !== elementInstance)
   const childElements = elementInstance.getChildren(true)
-  if (childElements.length !== componentIds.length) {
-    throw new Error(
-      `Number of child elements (${childElements.length}) does not match number of component ids (${componentIds.length})`,
-    )
-  }
-  childElements.forEach((childElement) => {
-    const id = componentIds.shift()
-    if (id) {
-      childElement.id = id
+
+  if (componentIds.length > 0) {
+    if (childElements.length !== componentIds.length) {
+      throw new Error(
+        `Number of child elements (${childElements.length}) does not match number of component ids (${componentIds.length})`,
+      )
     }
-  })
+    childElements.forEach((childElement) => {
+      const id = componentIds.shift()
+      if (id) {
+        childElement.id = id
+      }
+    })
+  }
 
   //Normalize the location of the nodes
   const offset = elementInstance.location.start
@@ -169,8 +172,24 @@ const getInstanceFromCopiedFrom = (
 }
 
 const getInstanceFromElement = (element: string): InstanceInfo => {
+  const getImplementationFromTagName = (tagName: string) => {
+    switch (tagName) {
+      case 'style':
+        return `<style>{\`text\`}</style>`
+      case 'img':
+        return `<img src="image.jpg" />`
+      case 'input':
+        return `<input />`
+      case 'a':
+        return `<a href="https://example.com"></a>`
+      default:
+        return `<${tagName}></${tagName}>`
+    }
+  }
   return {
-    implementation: `<${element}></${element}>`,
+    implementation: element.startsWith('<')
+      ? element
+      : getImplementationFromTagName(element),
     dependencies: [],
     componentIds: [],
   }

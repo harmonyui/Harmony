@@ -1,5 +1,4 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
-import { camelToKebab } from '@harmony/util/src/utils/common'
 import { addDeleteComponentSchema } from '@harmony/util/src/updates/component'
 import {
   parseUpdate,
@@ -10,7 +9,7 @@ import type { ClassNameValue } from '@harmony/util/src/updates/classname'
 import type { GitRepository } from '../../repository/git/types'
 import { buildGraphForComponents } from '../indexor/indexor'
 import type { FileUpdateInfo, FlowGraph } from '../indexor/graph'
-import { convertCSSToTailwind, converter } from './css-conveter'
+import { convertCSSToTailwind } from './css-conveter'
 import { updateClassName } from './updates/classname'
 import type { UpdateInfo } from './updates/types'
 import { updateAttribute } from './updates/update-attribute'
@@ -33,8 +32,6 @@ export class CodeUpdator {
       updates.map((update) => update.componentId),
       this.gitRepository,
     )
-    const borderTest = await convertCSSToTailwind('borderColor', '#e5e7eb')
-
     const updateInfo = await this.getUpdateInfo(updates)
 
     updateInfo.forEach((info, i) => {

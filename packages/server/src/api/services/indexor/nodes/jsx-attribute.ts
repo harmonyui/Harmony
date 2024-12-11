@@ -10,6 +10,7 @@ import {
   isIdentifier,
   isLiteral,
 } from '../predicates/simple-predicates'
+import type { FlowGraph } from '../graph'
 import { isJSXElement, type JSXElementNode } from './jsx-element'
 import { UndefinedNode } from './undefined'
 
@@ -184,7 +185,7 @@ export class JSXAttributeNode extends JSXAttribute<
   ) {
     super(
       parentElement,
-      createValue(base.path, base.location.file, content),
+      createValue(base.path, base.location.file, content, base.graph),
       childIndex,
       base,
     )
@@ -195,6 +196,7 @@ function createValue(
   path: NodePath,
   fileLocation: string,
   fileContent: string,
+  graph: FlowGraph,
 ) {
   const arg = path.node
   const attributePath = path
@@ -218,7 +220,7 @@ function createValue(
   if (Array.isArray(value)) throw new Error('Should not be array')
   if (!(value.node as Node | null)) {
     return new UndefinedNode(
-      createNode('', attributePath, fileLocation, fileContent),
+      createNode('', attributePath, fileLocation, fileContent, graph),
     )
   }
   value.node.loc = value.node.loc ?? arg.loc
@@ -227,6 +229,7 @@ function createValue(
     value,
     fileLocation,
     fileContent,
+    graph,
   )
 
   return valueNode

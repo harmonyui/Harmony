@@ -1347,6 +1347,78 @@ describe('code-updator', () => {
             `),
       )
     })
+
+    it('Should add jsx attributes', async () => {
+      const file: TestFile = 'file2'
+      const { codeUpdator, elementInstances } = await setupGitRepo([file], {
+        cssFramework: 'tailwind',
+      })
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'className',
+          name: 'display',
+          value: 'flex',
+          oldValue: '',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'className',
+          name: 'padding',
+          value: '12px',
+          oldValue: '',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            parentId: elementInstances[1].id,
+            parentChildIndex: 0,
+            index: 1,
+            action: 'create',
+            element: 'span',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: 'new-button',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'text',
+          name: '0',
+          value: 'New Content',
+          oldValue: '',
+          componentId: 'new-button',
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          import { Button } from 'file1'
+          const App = () => {
+            return <div className="flex p-3">
+              <Button>
+                <span>Content1</span>
+                <span>New Content</span>
+                <span>Content2</span>
+              </Button>
+            </div>
+          }
+        `),
+      )
+    })
   })
 })
 

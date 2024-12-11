@@ -13,7 +13,6 @@ import type {
   CommonTools,
   ToolAttributeValue,
 } from '../components/attributes/types'
-import { defaultToolValues } from '../components/attributes/utils'
 import type { StyleInfo } from './element-utils'
 import {
   getComponentIdAndChildIndex,
@@ -182,25 +181,19 @@ export const createNewElementUpdates = (
       isGlobal: false,
     })
     updates.push({
-      type: 'component',
-      name: 'update-attribute',
+      type: 'className',
+      name: 'class',
       componentId,
       childIndex,
-      value: createUpdate<UpdateAttributeValue>({
-        name: 'class',
-        value: classes.join(' '),
-        action: 'update',
-      }),
-      oldValue: createUpdate<UpdateAttributeValue>({
-        name: 'class',
-        value: '',
-        action: 'update',
-      }),
+      value: classes.join(' '),
+      oldValue: '',
       isGlobal: false,
     })
   }
-  for (const { name, value } of data) {
-    if (defaultToolValues[name] === value) continue
+  for (const { name, value, element: dataElement } of data) {
+    //If the element tied to this value is not our current element, that means it is
+    //a default value
+    if (element !== dataElement) continue
     if (name === 'font') {
       if (!fonts) continue
       const defaultFont = getComputedValue(document.body, 'font-family')
