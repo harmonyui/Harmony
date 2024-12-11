@@ -20,7 +20,6 @@ import {
   getComputedValue,
   recurseElements,
 } from './element-utils'
-import { generateUniqueId } from './common'
 import { isTextElement } from './element-predicate'
 
 export const createUpdate = <T>(value: T): string => {
