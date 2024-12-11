@@ -36,23 +36,19 @@ export class ObjectExpressionNode
       typeof value === 'string' ? t.stringLiteral(value) : value.node,
     )
     const newKeyNode = new Node(
-      this.graph.createNodeAndPath(name, newNode.key, this.path),
+      this.graph.createNodeAndPath(name, newNode.key, this),
     )
     const newValueNode = new Node(
       this.graph.createNodeAndPath(
         getSnippetFromNode(newNode.value),
         newNode.value,
-        this.path,
+        this,
       ),
     )
     const newPropertyNode = new ObjectPropertyNode(
       newKeyNode,
       newValueNode,
-      this.graph.createNodeAndPath(
-        getSnippetFromNode(newNode),
-        newNode,
-        this.path,
-      ),
+      this.graph.createNodeAndPath(getSnippetFromNode(newNode), newNode, this),
     )
 
     this.path.node.properties.push(newPropertyNode.path.node)

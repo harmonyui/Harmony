@@ -460,6 +460,19 @@ export class FlowGraph {
     this.dirtyNode(node)
   }
 
+  public createNewLocation(parent: Node): t.SourceLocation {
+    return {
+      start: {
+        line: 0,
+        column: 0,
+        index: parent.location.start + Math.random(),
+      },
+      end: { line: 0, column: 0, index: parent.location.end - Math.random() },
+      filename: parent.location.file,
+      identifierName: parent.node.loc?.identifierName,
+    }
+  }
+
   public createJSXAttributeNode(
     parent: JSXElementNode,
     name: string,
@@ -477,11 +490,12 @@ export class FlowGraph {
               ? t.stringLiteral(value)
               : t.jsxExpressionContainer(value.node as t.Expression),
           )
+    newNode.loc = this.createNewLocation(parent)
     return new JSXAttributeNode(
       parent,
       name === 'children' ? 0 : -1,
       this.code,
-      this.createNodeAndPath(name, newNode, parent.path),
+      this.createNodeAndPath(name, newNode, parent),
     )
   }
 
@@ -499,7 +513,7 @@ export class FlowGraph {
 
     return new ObjectExpressionNode(
       objectProperties,
-      this.createNodeAndPath(getSnippetFromNode(node), node, parent.path),
+      this.createNodeAndPath(getSnippetFromNode(node), node, parent),
     )
   }
 
@@ -511,18 +525,18 @@ export class FlowGraph {
     const keyNode = this.createNodeAndPath(
       getSnippetFromNode(node.key),
       node.key,
-      parent.path,
+      parent,
     )
     const valueNode = this.createNodeAndPath(
       getSnippetFromNode(node.value),
       node.value,
-      parent.path,
+      parent,
     )
 
     return new ObjectPropertyExpressionNode(
       keyNode,
       valueNode,
-      this.createNodeAndPath(getSnippetFromNode(node), node, parent.path),
+      this.createNodeAndPath(getSnippetFromNode(node), node, parent),
     )
   }
 
@@ -570,7 +584,7 @@ export class FlowGraph {
         parentClosingElement = this.createNodeAndPath(
           parentElement.name,
           t.jSXClosingElement(t.jSXIdentifier(parentElement.name)),
-          parentElement.path,
+          parentElement,
         )
         parentElement.setClosingElement(parentClosingElement)
         parentClosingElement.id = `${parentElement.id}-closing`
@@ -669,11 +683,12 @@ export class FlowGraph {
   public createNodeAndPath<T extends t.Node>(
     name: string,
     node: T,
-    parentPath: NodePath,
+    parent: Node,
   ): Node<T> {
+    const parentPath = parent.path
     const path = new NodePath<T>(parentPath.hub, parentPath.node)
     path.node = node
-    path.node.loc = parentPath.node.loc
+    path.node.loc = this.createNewLocation(parent)
 
     return this.createNode<T>(name, path)
   }

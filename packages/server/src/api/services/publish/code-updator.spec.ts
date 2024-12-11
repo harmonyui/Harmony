@@ -1395,11 +1395,11 @@ describe('code-updator', () => {
         },
         {
           value: createUpdate<AddComponent>({
-            parentId: elementInstances[1].id,
+            parentId: elementInstances[0].id,
             parentChildIndex: 0,
             index: 1,
             action: 'create',
-            element: 'span',
+            element: 'div',
           }),
           oldValue: '',
           type: 'component',
@@ -1409,11 +1409,53 @@ describe('code-updator', () => {
           isGlobal: false,
         },
         {
+          type: 'className',
+          name: 'display',
+          value: 'block',
+          oldValue: '',
+          componentId: 'new-button',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: createUpdate<AddComponent>({
+            parentId: 'new-button',
+            parentChildIndex: 0,
+            index: 0,
+            action: 'create',
+            element: 'div',
+          }),
+          oldValue: '',
+          type: 'component',
+          name: 'delete-create',
+          componentId: 'new-button-2',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'className',
+          name: 'padding',
+          value: '12px',
+          oldValue: '',
+          componentId: 'new-button-2',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'className',
+          name: 'margin',
+          value: '12px',
+          oldValue: '',
+          componentId: 'new-button-2',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
           type: 'text',
           name: '0',
           value: 'New Content',
           oldValue: '',
-          componentId: 'new-button',
+          componentId: 'new-button-2',
           childIndex: 0,
           isGlobal: false,
         },
@@ -1432,9 +1474,11 @@ describe('code-updator', () => {
             return <div className="flex p-3">
               <Button>
                 <span>Content1</span>
-                <span>New Content</span>
                 <span>Content2</span>
               </Button>
+              <div className="block">
+                <div className="p-3 m-3">New Content</div>
+              </div>
             </div>
           }
         `),
