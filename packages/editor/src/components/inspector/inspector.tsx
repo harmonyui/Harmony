@@ -61,7 +61,7 @@ export function replaceTextContentWithSpans(element: HTMLElement) {
   for (let i = 0; i < children.length; i++) {
     const node = children[i] as HTMLElement
     if (node.nodeType !== Node.TEXT_NODE) continue
-    if (!node.textContent?.trim()) return
+    if (!node.textContent?.trim()) continue
     const span = document.createElement('span')
     span.dataset.harmonyText = 'true'
 

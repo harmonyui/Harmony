@@ -4,7 +4,7 @@ import * as parser from '@babel/parser'
 import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
 import * as prettier from 'prettier'
-import { groupBy } from '@harmony/util/src/utils/common'
+import { groupBy, htmlEncode } from '@harmony/util/src/utils/common'
 import { getBaseId } from '@harmony/util/src/utils/component'
 import type { ArrayProperty, Node, ObjectNode } from './types'
 import type { LiteralNode } from './utils'
@@ -402,7 +402,7 @@ export class FlowGraph {
 
   public changeLiteralNode(node: Node<LiteralNode>, newValue: string) {
     if (isJSXText(node)) {
-      const newNode = t.jsxText(newValue)
+      const newNode = t.jsxText(htmlEncode(newValue))
       this.replaceNode(node, newNode)
     } else if (isStringLiteral(node)) {
       const newNode = t.stringLiteral(newValue)
@@ -425,7 +425,7 @@ export class FlowGraph {
   }
 
   public addJSXTextToElement(node: JSXElementNode, newValue: string) {
-    node.addProperty('children', newValue)
+    node.addProperty('children', htmlEncode(newValue))
     this.dirtyNode(node)
   }
 

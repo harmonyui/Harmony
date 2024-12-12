@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/no-unsafe-return -- ok */
 import type {
   DeleteComponent,
@@ -57,9 +56,14 @@ export const createNewElementUpdates = (
   const childIndex = getNewChildIndex(componentId)
   const parentChildIndex = parentId ? getNewChildIndex(parentId) : undefined
 
-  const index = parent
-    ? Array.from(parent.children).indexOf(element) + 1
-    : undefined
+  const getChildren = (el: HTMLElement) =>
+    Array.from(el.childNodes).filter(
+      (node) =>
+        node.nodeType !== Node.TEXT_NODE ||
+        (node.textContent || '').trim().length > 0,
+    )
+
+  const index = parent ? getChildren(parent).indexOf(element) : undefined
 
   if (element.tagName.toLowerCase() === 'svg') {
     const clone = element.cloneNode(true) as HTMLElement
@@ -95,7 +99,7 @@ export const createNewElementUpdates = (
       }),
       isGlobal: false,
     })
-  } else {
+  } else if (element.dataset.harmonyText !== 'true') {
     updates.push({
       type: 'component',
       name: parent ? 'delete-create' : 'delete-create-minimal',
@@ -195,16 +199,11 @@ export const createNewElementUpdates = (
     })
   }
 
-  const textElement = isTextElement(element)
-    ? element
-    : element.childNodes.length === 1 &&
-        isTextElement(element.childNodes[0] as HTMLElement)
-      ? (element.childNodes[0] as HTMLElement)
-      : undefined
+  const textElement = isTextElement(element) ? element : undefined
   if (textElement) {
     updates.push({
       type: 'text',
-      name: '0',
+      name: (index ?? 0).toString(),
       componentId,
       childIndex,
       value: textElement.textContent || '',

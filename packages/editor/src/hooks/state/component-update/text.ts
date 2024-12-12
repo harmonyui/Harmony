@@ -1,4 +1,5 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
+import { replaceTextContentWithSpans } from '../../../components/inspector/inspector'
 
 export const textComponentUpdate = (
   update: ComponentUpdate,
@@ -9,8 +10,11 @@ export const textComponentUpdate = (
   if (isNaN(index)) {
     throw new Error(`Invalid update text element ${update.name}`)
   }
-  if (textNodes.length === 0 && index === 0) {
+  if (textNodes.length === 0) {
     element.textContent = update.value
+    if (index > 0) {
+      replaceTextContentWithSpans(element)
+    }
   } else if (textNodes[index]?.textContent !== update.value) {
     textNodes[index].textContent = update.value
   }

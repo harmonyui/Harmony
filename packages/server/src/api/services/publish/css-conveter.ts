@@ -21,6 +21,9 @@ export const convertCSSToTailwind = async (
   if (propertyName === 'borderColor') {
     const classes = await convertToCSSBase('color', value)
     return classes.replace('text', 'border')
+    //The converter also has a bug with background images where underscores are escaped
+  } else if (propertyName === 'backgroundImage') {
+    return `bg-[${value}]`
   }
 
   return convertToCSSBase(propertyName, value)

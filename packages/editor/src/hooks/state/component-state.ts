@@ -73,7 +73,11 @@ export const createComponentStateSlice = createHarmonySlice<
       let childIndex = Number(element.dataset.harmonyChildIndex)
 
       // If the element doesn't have an id, we need to create one
-      if (!id && !get().isRepositoryConnected) {
+      if (
+        !id &&
+        !get().isRepositoryConnected &&
+        element.dataset.harmonyText !== 'true'
+      ) {
         id = createComponentId(element)
         element.dataset.harmonyId = id
       }

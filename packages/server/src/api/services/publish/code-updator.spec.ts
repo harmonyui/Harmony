@@ -1443,8 +1443,9 @@ describe('code-updator', () => {
         },
         {
           type: 'className',
-          name: 'margin',
-          value: '12px',
+          name: 'backgroundImage',
+          value:
+            'url("https://maeflowerswim.com/cdn/shop/files/IMG_8836.jpg?v=1721103505")',
           oldValue: '',
           componentId: 'new-button-2',
           childIndex: 0,
@@ -1488,7 +1489,7 @@ describe('code-updator', () => {
           isGlobal: false,
         },
         {
-          value: 'Link',
+          value: 'I <3 You',
           oldValue: '',
           type: 'text',
           name: '0',
@@ -1563,13 +1564,13 @@ describe('code-updator', () => {
             return <div className="flex p-3">
               <Button>
                 <span>Content1</span>
-                <a href="https://google.com">Link</a>
+                <a href="https://google.com">I &lt;3 You</a>
                 <a>Link 2</a>
                 <img src="https://google.com/image.jpg" />
                 <span>Content2</span>
               </Button>
               <div className="block">
-                <div className="p-3 m-3">New Content</div>
+                <div className="p-3 bg-[url('https://maeflowerswim.com/cdn/shop/files/IMG_8836.jpg?v=1721103505')]">New Content</div>
               </div>
             </div>
           }

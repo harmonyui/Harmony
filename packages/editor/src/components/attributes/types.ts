@@ -63,6 +63,11 @@ export const attributeTools = [
   'overflow',
   'listStyleType',
   'clip',
+  'boxShadow',
+  'zIndex',
+  'backgroundImage',
+  'backgroundSize',
+  'backgroundPosition',
 ] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {

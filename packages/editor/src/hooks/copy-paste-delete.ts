@@ -38,21 +38,31 @@ export const useCopyPasteDelete = () => {
       }
       const styleInfo = getStyleInfo()
 
-      recurseElements(rootElement, [
-        (element, parent) => {
-          if (['link', 'style'].includes(element.tagName.toLowerCase())) return
+      recurseElements(
+        rootElement,
+        [
+          (element, parent) => {
+            if (
+              ['link', 'style', 'noscript'].includes(
+                element.tagName.toLowerCase(),
+              )
+            )
+              return
 
-          const updates = createNewElementUpdates(
-            getNewChildIndexLocal,
-            element,
-            getTextToolsFromAttributes(element, []),
-            getStyleInfoForElement(element, styleInfo),
-            fonts,
-            parent,
-          )
-          allUpdates.push(...updates)
-        },
-      ])
+            const updates = createNewElementUpdates(
+              getNewChildIndexLocal,
+              element,
+              getTextToolsFromAttributes(element, []),
+              getStyleInfoForElement(element, styleInfo),
+              fonts,
+              parent,
+            )
+            allUpdates.push(...updates)
+          },
+        ],
+        undefined,
+        true,
+      )
 
       return allUpdates
     },

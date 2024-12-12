@@ -19,6 +19,7 @@ import { deleteUpdate } from './updates/delete'
 import { reorderUpdate } from './updates/reorder'
 import { propertyUpdate } from './updates/property'
 import { updateStyle } from './updates/style'
+import { replaceAll } from './updates/utils'
 
 export class CodeUpdator {
   constructor(
@@ -140,6 +141,6 @@ const getClassNameValue = async (
 
   return createUpdateValue<ClassNameValue>({
     type: 'class',
-    value: tailwindValue,
+    value: replaceAll(tailwindValue, '"', "'"),
   })
 }

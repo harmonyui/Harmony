@@ -10,14 +10,17 @@ export const recurseElements = (
     parentElement: HTMLElement | undefined,
   ) => void)[],
   parent?: HTMLElement,
+  text = false,
 ) => {
   callbacks.forEach((callback) => {
     callback(element, parent)
   })
   Array.from(element.children)
-    .filter((child) => (child as HTMLElement).dataset.harmonyText !== 'true')
+    .filter((child) =>
+      text ? true : (child as HTMLElement).dataset.harmonyText !== 'true',
+    )
     .forEach((child) => {
-      recurseElements(child as HTMLElement, callbacks, element)
+      recurseElements(child as HTMLElement, callbacks, element, text)
     })
 }
 
