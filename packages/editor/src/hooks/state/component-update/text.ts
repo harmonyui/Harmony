@@ -1,5 +1,5 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
-import { replaceTextContentWithSpans } from '../../../components/inspector/inspector'
+import { replaceTextContentWithSpans } from '../../../utils/element-utils'
 
 export const textComponentUpdate = (
   update: ComponentUpdate,

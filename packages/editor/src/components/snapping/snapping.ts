@@ -33,10 +33,10 @@ import $ from 'jquery'
 import {
   isSelectable as isSelectableInspector,
   removeTextContentSpans,
-  replaceTextContentWithSpans,
 } from '../inspector/inspector'
 import type { Rect, RectBox } from '../inspector/inspector'
 import {
+  replaceTextContentWithSpans,
   selectDesignerElement,
   selectDesignerElementReverse,
 } from '../../utils/element-utils'

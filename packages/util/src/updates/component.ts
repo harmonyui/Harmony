@@ -57,7 +57,23 @@ export const reorderComponentSchema = componentSchemaBase
 export type ReorderComponent = z.infer<typeof reorderComponentSchema>
 
 export const styleUpdateSchema = z.object({
+  type: z.union([z.literal('animation'), z.literal('hover')]),
+  styleCss: z.string(),
   css: z.string(),
-  classes: z.array(z.string()),
+  classes: z.array(
+    z.object({
+      componentId: z.string(),
+      childIndex: z.number(),
+      className: z.string(),
+    }),
+  ),
+  properties: z.array(
+    z.object({
+      componentId: z.string(),
+      childIndex: z.number(),
+      property: z.string(),
+      value: z.string(),
+    }),
+  ),
 })
 export type StyleUpdate = z.infer<typeof styleUpdateSchema>

@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-/* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
+
 import type { Font } from '@harmony/util/src/fonts'
 import {
   camelToKebab,
@@ -7,8 +7,11 @@ import {
   convertRgbToHex,
 } from '@harmony/util/src/utils/common'
 import type { HexColor } from '@harmony/util/src/types/colors'
+import type { StyleInfo } from '../../utils/element-utils'
 import {
   getComputedValue,
+  getStyleInfo,
+  getStyleInfoForElement,
   isDesignerElementSelectable,
 } from '../../utils/element-utils'
 import { attributeTools, colorTools } from './types'
@@ -22,8 +25,10 @@ import type {
 export const getTextToolsFromAttributes = (
   element: HTMLElement,
   fonts: Font[] | undefined,
+  info?: StyleInfo,
 ): ToolAttributeValue<CommonTools>[] => {
   const allStyles: [HTMLElement, Record<string, string>][] = []
+  const styleInfo = info ?? getStyleInfo()
 
   const getComputed = (name: keyof CSSStyleDeclaration) => {
     let selectedElement: HTMLElement | undefined = element
@@ -38,7 +43,7 @@ export const getTextToolsFromAttributes = (
       if (!styles) {
         const newStyles: [HTMLElement, Record<string, string>] = [
           selectedElement,
-          getAppliedComputedStyles(selectedElement),
+          getAppliedComputedStyles(selectedElement, styleInfo),
         ]
         allStyles.push(newStyles)
         styles = newStyles
@@ -84,6 +89,42 @@ export const getTextToolsFromAttributes = (
     return computed
   }
 
+  const _getAttrs = (): ToolAttributeValue<CommonTools>[] => {
+    attributeTools.forEach((tool) => getComputed(tool))
+
+    const values = allStyles.reduce<
+      Record<string, ToolAttributeValue<CommonTools>>
+    >((acc, [_element, styles]) => {
+      Object.keys(styles).forEach((key) => {
+        if (colorTools.includes(key as ColorTools)) return
+        if (key.startsWith('--')) return
+
+        if (key === 'font') {
+          if (!fonts) {
+            return
+          }
+          const font = fonts.find(
+            (f) =>
+              _element.classList.contains(f.id) ||
+              styles[key].toLowerCase().includes(f.name.toLowerCase()),
+          )
+
+          if (font) acc[key] = { element: _element, name: key, value: font.id }
+          else acc[key] = { element: _element, name: key, value: styles[key] }
+        } else {
+          acc[key] = {
+            element: _element,
+            name: key as Exclude<CommonTools, ColorTools>,
+            value: styles[key],
+          }
+        }
+      })
+      return acc
+    }, {})
+
+    return Object.values(values)
+  }
+
   const getColor = (
     name: ColorTools,
   ): { value: HexColor; element: HTMLElement | undefined } => {
@@ -104,13 +145,17 @@ export const getTextToolsFromAttributes = (
 
 function getAppliedComputedStyles(
   element: HTMLElement,
+  info: StyleInfo,
   pseudo?: string | null,
 ) {
   const styles = window.getComputedStyle(element, pseudo)
   const styleMap = element.computedStyleMap()
   const inlineStyles = element.getAttribute('style')
+  const styleInfo = getStyleInfoForElement(element, info)
 
   const retval: Record<string, string> = {}
+
+  // eslint-disable-next-line @typescript-eslint/prefer-for-of -- ok
   for (let i = 0; i < styles.length; i++) {
     const key = styles[i]
     const value = styles.getPropertyValue(key)
@@ -129,6 +174,17 @@ function getAppliedComputedStyles(
       retval[key] = computedValue.toString()
     }
   }
+
+  styleInfo.matches.forEach((match) => {
+    match.styles.forEach((style) => {
+      if (
+        style.value === styleMap.get(style.name)?.toString() &&
+        !retval[style.name]
+      ) {
+        retval[style.name] = style.value
+      }
+    })
+  })
 
   return retval
 }

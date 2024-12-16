@@ -4,13 +4,17 @@ import hotkeys from 'hotkeys-js'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { updateSchema } from '@harmony/util/src/types/component'
 import { z } from 'zod'
-import type { AddComponent } from '@harmony/util/src/updates/component'
+import type {
+  AddComponent,
+  StyleUpdate,
+} from '@harmony/util/src/updates/component'
 import { jsonSchema } from '@harmony/util/src/updates/component'
 import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
 import { replaceAll } from '@harmony/util/src/utils/common'
 import { useUpdateComponent } from '../components/harmonycn/update-component'
 import { createNewElementUpdates, createUpdate } from '../utils/update'
 import { useHarmonyContext } from '../components/harmony-context'
+import type { SelectorInfo, StyleInfo } from '../utils/element-utils'
 import {
   getComponentIdAndChildIndex,
   getStyleInfo,
@@ -33,10 +37,101 @@ export const useCopyPasteDelete = () => {
   const convertElementToUpdates = useCallback(
     (rootElement: HTMLElement) => {
       const allUpdates: ComponentUpdate[] = []
+      const styleUpdates: StyleUpdate[] = []
+
+      const styleInfo = getStyleInfo()
+      const addSelectorInfo = (
+        update: SelectorInfo | StyleInfo['keyframes'][number],
+        type: StyleUpdate['type'],
+        element: HTMLElement,
+        property?: StyleUpdate['properties'][number],
+      ) => {
+        let styleUpdate = styleUpdates.find((style) => style.type === type)
+        if (!styleUpdate) {
+          styleUpdate = {
+            type,
+            css: '',
+            styleCss: '',
+            classes: [],
+            properties: [],
+          }
+          styleUpdates.push(styleUpdate)
+        }
+        if ('selector' in update) {
+          const styleText = `${update.selector} {
+            ${update.styles.map((style) => `${style.name}: ${style.value};`).join('\n')}
+          }
+          `
+          if (!styleUpdate.styleCss.includes(styleText)) {
+            styleUpdate.styleCss += styleText
+            if (!property) {
+              styleUpdate.css += styleText
+            }
+
+            const mainStyleInfo = styleInfo.matches.find(
+              (s) => s.selector === update.selector,
+            )
+            if (!mainStyleInfo)
+              throw new Error(`Cannot find main style info ${update.selector}`)
+
+            mainStyleInfo.class.split(' ').forEach((c) => {
+              const classElements = Array.from(
+                document.querySelectorAll(`.${c}`),
+              ).filter((e) => e.contains(element))
+              classElements.forEach((el) => {
+                const { componentId, childIndex } = getComponentIdAndChildIndex(
+                  el as HTMLElement,
+                )
+                const info = styleUpdate.classes.find(
+                  (classInfo) =>
+                    componentId === classInfo.componentId &&
+                    childIndex === classInfo.childIndex,
+                )
+                if (info) {
+                  if (!info.className.split(' ').includes(c)) {
+                    info.className += ` ${c}`
+                  }
+                } else {
+                  styleUpdate.classes.push({
+                    componentId,
+                    childIndex,
+                    className: c,
+                  })
+                }
+              })
+            })
+
+            //If the element has not been added yet, add it with an empty class (this is needed in the backend)
+            //When the styles are translated to tailwilnd
+            const { componentId, childIndex } =
+              getComponentIdAndChildIndex(element)
+            const info = styleUpdate.classes.find(
+              (classInfo) =>
+                componentId === classInfo.componentId &&
+                childIndex === classInfo.childIndex,
+            )
+            if (!info) {
+              styleUpdate.classes.push({
+                componentId,
+                childIndex,
+                className: '',
+              })
+            }
+          }
+        } else if (!styleUpdate.styleCss.includes(update.text)) {
+          styleUpdate.styleCss += update.text
+          if (!property) {
+            styleUpdate.css += update.text
+          }
+        }
+
+        if (property) {
+          styleUpdate.properties.push(property)
+        }
+      }
       const getNewChildIndexLocal = (parentId: string) => {
         return getNewChildIndex(parentId) - 1
       }
-      const styleInfo = getStyleInfo()
 
       recurseElements(
         rootElement,
@@ -49,14 +144,17 @@ export const useCopyPasteDelete = () => {
             )
               return
 
-            const updates = createNewElementUpdates(
-              getNewChildIndexLocal,
+            const updates = createNewElementUpdates({
+              getNewChildIndex: getNewChildIndexLocal,
               element,
-              getTextToolsFromAttributes(element, []),
-              getStyleInfoForElement(element, styleInfo),
+              data: getTextToolsFromAttributes(element, [], styleInfo),
+              styleInfo: getStyleInfoForElement(element, styleInfo),
               fonts,
               parent,
-            )
+              addSelectorInfo(info, type, property) {
+                addSelectorInfo(info, type, element, property)
+              },
+            })
             allUpdates.push(...updates)
           },
         ],
@@ -64,6 +162,20 @@ export const useCopyPasteDelete = () => {
         true,
       )
 
+      const { componentId, childIndex } =
+        getComponentIdAndChildIndex(rootElement)
+
+      styleUpdates.forEach((styleUpdate) => {
+        allUpdates.push({
+          type: 'component',
+          name: 'style',
+          value: createUpdate<StyleUpdate>(styleUpdate),
+          oldValue: '',
+          componentId,
+          childIndex,
+          isGlobal: false,
+        })
+      })
       return allUpdates
     },
     [fonts, getNewChildIndex],

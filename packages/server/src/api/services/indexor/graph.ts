@@ -93,6 +93,7 @@ export class FlowGraph {
     } else {
       this.nodes.set(node.id, node)
     }
+    node.location.file = parent.location.file
     const program = this.files[node.location.file]
     program.addNode(node)
     node.graph = this

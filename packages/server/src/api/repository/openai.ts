@@ -1,6 +1,7 @@
-import { replaceAll } from '@harmony/util/src/utils/common'
+import { getTextInBetween } from '@harmony/util/src/utils/common'
 import OpenAI from 'openai'
 import { z } from 'zod'
+import { getCacheItem, setCacheItem } from './cache/redis'
 
 const openai = new OpenAI()
 
@@ -27,6 +28,7 @@ Input: ${text}`
     prompt,
     context,
     responseSchema: z.array(updateAttributeSchema),
+    type: 'json',
   })
 
   return newValues
@@ -51,22 +53,93 @@ export const generateTailwindAnimations = async (
     prompt,
     context,
     responseSchema: transformCssToTailwindConfigSchema,
+    type: 'json',
   })
 
   return response
 }
 
+export const refactorTailwindClasses = async (
+  css: string,
+  elements: string,
+): Promise<string> => {
+  const prompt = `### Task: Convert the provided JSX and CSS rules into Tailwind CSS equivalents.
+### Input: 
+
+\`\`\`css
+${css}
+\`\`\`
+\`\`\`jsx
+${elements}
+\`\`\`
+
+### Requirements: 
+1. Convert all CSS rules into their corresponding Tailwind CSS classes. 
+2. For parent-child relationships with pseudo-classes (e.g., \`hover\`, \`focus\`), use Tailwind’s \`group\` or \`group-hover\` utilities. 
+3. Ensure all styles, including states, responsive classes, and complex selectors, are retained. The original css classes should not be retained.
+4. Maintain the original structure of the JSX; only replace class names. Do not add any text elements or element attributes.
+5. Make sure that complex css selectors map to the correct JSX element for that style. Do not assume that a style applies to all elements of a certain type.
+
+### Tailwind Class Mapping Examples: 
+- \`opacity: 0\` → \`opacity-0\` 
+- \`:hover\` → \`hover:\`
+- \`.container:hover .item\` → Use \`group\` and \`group-hover\`. 
+- \`.container:hover > div + div\` -> Use \`group\` and \`group-hover\` on the second sibling div element that is a child of container
+- \`.container > div:first-child {opacity-0}\` -> Use tailwind classes only on first div that is a child of container
+
+### Output: Return the refactored JSX code only. Do not include additional text.`
+  const context =
+    'You are a frontend web developer tasked with refactoring React code to use tailwind classes.'
+
+  const response = await generateFromPrompt<string>({
+    prompt,
+    context,
+    responseSchema: z.string(),
+    type: 'jsx',
+  })
+
+  return response
+}
+
+/**
+ * Generates a response from a prompt and context and caches it
+ * @param param0 - prompt, context, responseSchema, type
+ * @returns
+ */
 const generateFromPrompt = async <Response>({
   prompt,
   context,
   responseSchema,
+  type,
 }: {
   prompt: string
   context: string
+  type: 'json' | 'jsx'
   responseSchema: z.ZodType<Response>
 }): Promise<Response> => {
+  const cacheResponse = await getCacheResponse(prompt, context)
+  const message =
+    cacheResponse ?? (await generateOpeanAIResponse(prompt, context))
+  const result = responseSchema.parse(
+    type === 'json'
+      ? JSON.parse(getTextInBetween(message, '```json', '```'))
+      : getTextInBetween(message, `\`\`\`${type}`, '```'),
+  )
+
+  if (!cacheResponse) {
+    const key = `${prompt}${context}`
+    await setCacheItem(key, message)
+  }
+
+  return result
+}
+
+const generateOpeanAIResponse = async (
+  prompt: string,
+  context: string,
+): Promise<string> => {
   const response = await openai.chat.completions.create({
-    model: 'gpt-3.5-turbo',
+    model: 'gpt-4',
     messages: [
       {
         role: 'system',
@@ -79,16 +152,16 @@ const generateFromPrompt = async <Response>({
     response.choices[0].finish_reason === 'stop' &&
     response.choices[0].message.content
   ) {
-    return responseSchema.parse(
-      JSON.parse(
-        replaceAll(
-          response.choices[0].message.content.replace('json', ''),
-          '```',
-          '',
-        ),
-      ),
-    )
+    return response.choices[0].message.content
   }
 
   throw new Error('Invalid response from openai')
+}
+
+const getCacheResponse = (
+  prompt: string,
+  context: string,
+): Promise<string | null> => {
+  const key = `${prompt}${context}`
+  return getCacheItem(key)
 }

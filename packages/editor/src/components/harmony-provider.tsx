@@ -24,6 +24,7 @@ import {
   getComponentIdAndChildIndex,
   getImageSrc,
   recurseElements,
+  replaceTextContentWithSpans,
 } from '../utils/element-utils'
 import { useHarmonyStore } from '../hooks/state'
 import type { Source } from '../hooks/state/component-state'
@@ -37,7 +38,7 @@ import type {
 } from './harmony-context'
 import { HarmonyContext, viewModes } from './harmony-context'
 import type { Setup } from './harmony-setup'
-import { Inspector, replaceTextContentWithSpans } from './inspector/inspector'
+import { Inspector } from './inspector/inspector'
 import { HarmonyPanel } from './panel/harmony-panel'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'

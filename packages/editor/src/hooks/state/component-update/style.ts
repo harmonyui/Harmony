@@ -25,7 +25,10 @@ export const styleComponentUpdate =
     element: HTMLElement,
     rootElement: HTMLElement | undefined,
   ): Promise<void> => {
-    const { css, classes } = parseUpdate(styleUpdateSchema, update.value)
+    const { styleCss: css, classes } = parseUpdate(
+      styleUpdateSchema,
+      update.value,
+    )
     if (!element.parentElement) return
 
     const { componentId: parentId, childIndex: parentChildIndex } =
@@ -49,16 +52,28 @@ export const styleComponentUpdate =
     if (!styleElement) {
       throw new Error('Cannot find style element')
     }
-    classNameComponentUpdate(
-      {
-        ...update,
-        value: classes.join(' '),
-        oldValue: '',
-        name: 'class',
-      },
-      element,
-      [],
-    )
+    classes.forEach((classInfo) => {
+      const classElement = findElementFromId(
+        classInfo.componentId,
+        classInfo.childIndex,
+        rootElement,
+      )
+      if (!classElement) {
+        throw new Error('Cannot find class element')
+      }
+      classNameComponentUpdate(
+        {
+          ...update,
+          componentId: classInfo.componentId,
+          childIndex: classInfo.childIndex,
+          value: classInfo.className,
+          oldValue: '',
+          name: 'class',
+        },
+        classElement,
+        [],
+      )
+    })
     textComponentUpdate(
       { ...newStyleUpdate, value: css, name: '0' },
       styleElement,

@@ -29,6 +29,12 @@ export const convertCSSToTailwind = async (
   return convertToCSSBase(propertyName, value)
 }
 
+export const convertStyleSheetToTailwind = async (
+  css: string,
+): Promise<ReturnType<typeof converter.convertCSS>> => {
+  return converter.convertCSS(css)
+}
+
 const convertToCSSBase = async (
   propertyName: string,
   value: string,

@@ -56,26 +56,6 @@ export function isSelectable(element: HTMLElement, scale: number): boolean {
   return isSizeThreshold(element, scale)
 }
 
-export function replaceTextContentWithSpans(element: HTMLElement) {
-  const children = element.childNodes
-  for (let i = 0; i < children.length; i++) {
-    const node = children[i] as HTMLElement
-    if (node.nodeType !== Node.TEXT_NODE) continue
-    if (!node.textContent?.trim()) continue
-    const span = document.createElement('span')
-    span.dataset.harmonyText = 'true'
-
-    const beforeNode = i < children.length - 1 ? children[i + 1] : undefined
-    span.appendChild(node)
-
-    if (beforeNode) {
-      element.insertBefore(span, beforeNode)
-    } else {
-      element.appendChild(span)
-    }
-  }
-}
-
 export function removeTextContentSpans(element: HTMLElement) {
   const children = element.children
   for (let i = 0; i < children.length; i++) {

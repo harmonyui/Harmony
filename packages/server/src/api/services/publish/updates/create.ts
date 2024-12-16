@@ -3,14 +3,15 @@
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
 import type { FlowGraph } from '../../indexor/graph'
-import { getGraph } from '../../indexor/graph'
-import type { Node } from '../../indexor/types'
-import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
-import { isJSXElement } from '../../indexor/nodes/jsx-element'
 import { getSnippetFromNode } from '../../indexor/utils'
 import { ImportStatement } from '../../indexor/nodes/import-statement'
 import type { InstanceInfo, UpdateComponent } from './types'
-import { getInstanceFromComponent, getJSXElementFromLevels } from './utils'
+import {
+  getElementInstanceNodes,
+  getInstanceFromComponent,
+  getInstanceFromElement,
+  getJSXElementFromLevels,
+} from './utils'
 
 export const createUpdate: UpdateComponent = async (
   { value, update: componentUpdate },
@@ -91,61 +92,6 @@ export const createComponent = (
   )
 }
 
-const getElementInstanceNodes = (
-  file: string,
-  { implementation, dependencies, componentIds }: InstanceInfo,
-): { element: JSXElementNode; nodes: Node[] } => {
-  const importStatements = dependencies
-    .map((dependency) => {
-      return dependency.isDefault
-        ? `import ${dependency.name} from '${dependency.path}'`
-        : `import { ${dependency.name} } from '${dependency.path}'`
-    })
-    .join('\n')
-  const graph = getGraph(
-    Math.random().toString(),
-    `${importStatements}
-
-    const App = () => {
-      return ${implementation}
-    }
-  `,
-  )
-
-  const elementInstance = graph.getNodes().find(isJSXElement)
-  if (!elementInstance) {
-    throw new Error('Element instance node is not a JSX element')
-  }
-  const nodes =
-    graph.files[elementInstance.location.file].getNodes(elementInstance)
-
-  const otherNodes = nodes.filter((node) => node !== elementInstance)
-  const childElements = elementInstance.getChildren(true)
-
-  if (componentIds.length > 0) {
-    if (childElements.length !== componentIds.length) {
-      throw new Error(
-        `Number of child elements (${childElements.length}) does not match number of component ids (${componentIds.length})`,
-      )
-    }
-    childElements.forEach((childElement) => {
-      const id = componentIds.shift()
-      if (id) {
-        childElement.id = id
-      }
-    })
-  }
-
-  //Normalize the location of the nodes
-  const offset = elementInstance.location.start
-  nodes.forEach((node) => {
-    node.location.file = file
-    node.location.start -= offset
-    node.location.end -= offset
-  })
-  return { element: elementInstance, nodes: otherNodes }
-}
-
 const getInstanceFromCopiedFrom = (
   componentId: string,
   childIndex: number,
@@ -168,27 +114,5 @@ const getInstanceFromCopiedFrom = (
         isDefault: dep.isDefault(),
       })),
     componentIds: allElements.map((node) => node.id),
-  }
-}
-
-const getInstanceFromElement = (element: string): InstanceInfo => {
-  const getImplementationFromTagName = (tagName: string) => {
-    switch (tagName) {
-      case 'style':
-        return `<style>{\`text\`}</style>`
-      case 'img':
-        return `<img />`
-      case 'input':
-        return `<input />`
-      default:
-        return `<${tagName}></${tagName}>`
-    }
-  }
-  return {
-    implementation: element.startsWith('<')
-      ? element
-      : getImplementationFromTagName(element),
-    dependencies: [],
-    componentIds: [],
   }
 }

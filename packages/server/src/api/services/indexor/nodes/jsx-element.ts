@@ -101,6 +101,18 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   public getParentElement() {
     return this.parentElement
   }
+
+  public isDescendantOf(element: JSXElementNode) {
+    let parentElement = this.parentElement
+    while (parentElement) {
+      if (parentElement === element) return true
+
+      parentElement = parentElement.parentElement
+    }
+
+    return false
+  }
+
   public setParentElement(parentElement: JSXElementNode | undefined) {
     this.parentElement = parentElement
   }

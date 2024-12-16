@@ -160,16 +160,19 @@ export const translatePropertyName = (name: string): string => {
   }
 }
 
-export interface StyleInfo {
-  selectors: {
-    selector: string
-    class: string
-    styles: {
-      name: string
-      value: string
-    }[]
-    cssText: string
+export interface SelectorInfo {
+  selector: string
+  class: string
+  styles: {
+    name: string
+    value: string
   }[]
+  cssText: string
+}
+export interface StyleInfo {
+  matches: SelectorInfo[]
+  selectors: { type: string; values: SelectorInfo[] }[]
+  classes: SelectorInfo[]
   variables: {
     name: string
     value: string
@@ -184,22 +187,42 @@ export const getStyleInfo = (): StyleInfo => {
   const stylesheets = Array.from(document.styleSheets)
   const styleInfo: StyleInfo = {
     selectors: [],
+    matches: [],
+    classes: [],
     keyframes: [],
     variables: [],
   }
 
+  const extractClassNames = (className: string): string[] => {
+    const classList: string[] = []
+    let match: RegExpExecArray | null = null
+    const classRegex = /\.([a-zA-Z0-9_-]+)/g
+    while ((match = classRegex.exec(className))) {
+      const [_, _class] = match
+      classList.push(_class)
+    }
+    return classList
+  }
+
   const extractCSSStyle = (rule: CSSRule) => {
     if (rule instanceof CSSStyleRule) {
-      const style: StyleInfo['selectors'][number] = {
+      const style: SelectorInfo = {
         selector: rule.selectorText,
         styles: [],
-        class: '',
+        class: extractClassNames(rule.selectorText).join(' '),
         cssText: rule.cssText,
       }
       for (let i = 0; i < rule.style.length; i++) {
         const name = rule.style[i]
         const value = rule.style.getPropertyValue(name)
-        style.styles.push({ name, value })
+
+        const transitionMatch = /transition: ([^;]*);/.exec(rule.cssText)
+        if (name === 'transition-property' && transitionMatch && !value) {
+          const [transitionProperty] = transitionMatch[1].split(' ')
+          style.styles.push({ name, value: transitionProperty })
+        } else {
+          style.styles.push({ name, value })
+        }
         if (name.startsWith('--')) {
           styleInfo.variables.push({
             name,
@@ -208,9 +231,11 @@ export const getStyleInfo = (): StyleInfo => {
           })
         }
       }
-      styleInfo.selectors.push(style)
+      styleInfo.matches.push(style)
     } else if (rule instanceof CSSMediaRule) {
       const mediaRules = Array.from(rule.cssRules)
+      if (!window.matchMedia(rule.conditionText).matches) return
+
       for (const mediaRule of mediaRules) {
         extractCSSStyle(mediaRule)
       }
@@ -239,13 +264,30 @@ export const getStyleInfoForElement = (
   const styleInfo = info ?? getStyleInfo()
 
   const infoForElement: StyleInfo = {
+    matches: [],
     selectors: [],
+    classes: [],
     keyframes: [],
     variables: [],
   }
+
+  // If this selector matches this element (or the non-hover version of the selector)
+  const isMatch = (selector: SelectorInfo) =>
+    element.matches(selector.selector) || selector.selector === ':root'
+
+  const isHoverMatch = (selector: SelectorInfo) =>
+    selector.selector.includes(':hover') &&
+    element.matches(selector.selector.replace(/(?<!\\):hover(?!\))/g, ''))
+
+  // If this selector contains a class that matches this element
+  const isClassMatch = (selector: SelectorInfo) =>
+    Array.from(element.classList).some((c) =>
+      selector.selector.includes(`.${c}`),
+    )
+
   const computedStyles = getComputedStyle(element)
-  for (const selector of styleInfo.selectors) {
-    if (element.matches(selector.selector) || selector.selector === ':root') {
+  for (const selector of styleInfo.matches) {
+    if (isMatch(selector) || isHoverMatch(selector) || isClassMatch(selector)) {
       const styles = selector.styles.map((style) => {
         const value = style.value
           ? style.value
@@ -269,11 +311,40 @@ export const getStyleInfoForElement = (
       const sameClasses = Array.from(element.classList).filter((c) =>
         selector.selector.includes(`.${c}`),
       )
-      infoForElement.selectors.push({
-        ...selector,
-        class: sameClasses.join(' '),
-        styles,
-      })
+      if (isMatch(selector))
+        infoForElement.matches.push({
+          ...selector,
+          class: sameClasses.join(' '),
+          styles,
+        })
+      if (isHoverMatch(selector)) {
+        const hoverSelector = infoForElement.selectors.find(
+          (s) => s.type === 'hover',
+        )
+        if (hoverSelector)
+          hoverSelector.values.push({
+            ...selector,
+            class: sameClasses.join(' '),
+            styles,
+          })
+        else
+          infoForElement.selectors.push({
+            type: 'hover',
+            values: [
+              {
+                ...selector,
+                class: sameClasses.join(' '),
+                styles,
+              },
+            ],
+          })
+      }
+      if (isClassMatch(selector))
+        infoForElement.classes.push({
+          ...selector,
+          class: sameClasses.join(' '),
+          styles,
+        })
       const variables = selector.styles.filter((v) => v.name.startsWith('--'))
       infoForElement.variables.push(
         ...variables.map((v) => ({
@@ -376,4 +447,24 @@ export function selectDesignerElementReverse(
     element.children.length === 1 &&
     selectDesignerElement(element.children[0] as HTMLElement) === element
   return isDesignerSelected ? (element.children[0] as HTMLElement) : element
+}
+
+export function replaceTextContentWithSpans(element: HTMLElement) {
+  const children = element.childNodes
+  for (let i = 0; i < children.length; i++) {
+    const node = children[i] as HTMLElement
+    if (node.nodeType !== Node.TEXT_NODE) continue
+    if (!node.textContent?.trim()) continue
+    const span = document.createElement('span')
+    span.dataset.harmonyText = 'true'
+
+    const beforeNode = i < children.length - 1 ? children[i + 1] : undefined
+    span.appendChild(node)
+
+    if (beforeNode) {
+      element.insertBefore(span, beforeNode)
+    } else {
+      element.appendChild(span)
+    }
+  }
 }

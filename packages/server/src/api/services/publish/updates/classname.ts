@@ -1,12 +1,15 @@
 import { DEFAULT_WIDTH } from '@harmony/util/src/constants'
 import { mergeClassesWithScreenSize } from '@harmony/util/src/utils/tailwind-merge'
 import { parseUpdate } from '@harmony/util/src/updates/utils'
+import type { ClassNameValue } from '@harmony/util/src/updates/classname'
 import { classNameValueSchema } from '@harmony/util/src/updates/classname'
+import type { Repository } from '@harmony/util/src/types/branch'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { LiteralNode } from '../../indexor/utils'
 import { getLiteralValue } from '../../indexor/utils'
 import type { Node } from '../../indexor/types'
 import { addPrefixToClassName } from '../css-conveter'
+import type { FlowGraph } from '../../indexor/graph'
 import {
   addCommentToElement,
   getInstanceInfo,
@@ -20,15 +23,47 @@ export const updateClassName: UpdateComponent = async (
   graph,
   repository,
 ) => {
-  const { attributes, instances: graphElements } = getInstanceInfo(
-    componentUpdate.componentId,
-    componentUpdate.childIndex,
-    graph,
-  )
   const { value, type } = parseUpdate(classNameValueSchema, unparsedValue)
   const { value: oldValue } = parseUpdate(
     classNameValueSchema,
     unparsedOldValue,
+  )
+
+  updateElementClassName({
+    childIndex: componentUpdate.childIndex,
+    componentId: componentUpdate.componentId,
+    value,
+    oldValue,
+    type,
+    propertyName: componentUpdate.name,
+    graph,
+    repository,
+  })
+}
+
+export const updateElementClassName = ({
+  childIndex,
+  componentId,
+  value,
+  oldValue,
+  type,
+  propertyName,
+  graph,
+  repository,
+}: {
+  value: string
+  type: ClassNameValue['type']
+  oldValue: string
+  propertyName: string
+  componentId: string
+  childIndex: number
+  graph: FlowGraph
+  repository: Repository
+}) => {
+  const { attributes, instances: graphElements } = getInstanceInfo(
+    componentId,
+    childIndex,
+    graph,
   )
 
   const classNameAttribute = attributes.find(
@@ -84,8 +119,9 @@ export const updateClassName: UpdateComponent = async (
             graphElements.findIndex((el) => el.id === parent.id)
 
         if (shouldDoAddArgument) {
-          const { parent: addArgumentParent, propertyName } = addArgument
-          graph.addAttributeToElement(addArgumentParent, propertyName, value)
+          const { parent: addArgumentParent, propertyName: _propertyName } =
+            addArgument
+          graph.addAttributeToElement(addArgumentParent, _propertyName, value)
           return true
         }
 
@@ -114,8 +150,8 @@ export const updateClassName: UpdateComponent = async (
       )
       //If we can add an attribute to the parent, let's do that
       if (addArgumet) {
-        const { parent, propertyName } = addArgumet
-        graph.addAttributeToElement(parent, propertyName, value)
+        const { parent, propertyName: _propertyName } = addArgumet
+        graph.addAttributeToElement(parent, _propertyName, value)
         return
       }
 
@@ -138,15 +174,6 @@ export const updateClassName: UpdateComponent = async (
       addCommentToElement(topLevelAttributeParent, commentValue, graph)
     }
   } else {
-    // const topLevelAttributeParent =
-    //   classNameAttribute.elementValues[
-    //     classNameAttribute.elementValues.length - 1
-    //   ]?.parent ?? graphElements[0]
-    // addCommentToElement(
-    //   topLevelAttributeParent,
-    //   `${componentUpdate.name}:${value};`,
-    //   graph,
-    // )
-    graph.addStyleToElement(graphElements[0], componentUpdate.name, value)
+    graph.addStyleToElement(graphElements[0], propertyName, value)
   }
 }

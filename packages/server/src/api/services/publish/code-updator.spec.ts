@@ -32,6 +32,13 @@ vi.mock('../../repository/openai', () => ({
         'opacity-0 animate-slide-in [animation-delay:calc(var(--animation-order)*75ms)]',
     }
   },
+  refactorTailwindClasses() {
+    return `
+      <div className="group">
+        <h1 className="group-hover:underline"></h1>
+      </div>
+    `
+  },
 }))
 
 describe('code-updator', () => {
@@ -1578,7 +1585,7 @@ describe('code-updator', () => {
       )
     })
 
-    it('Should update tailwind config with style update', async () => {
+    it('Should update tailwind config with animation style update', async () => {
       const { codeUpdator, elementInstances } = await setupGitRepo(['file2'], {
         cssFramework: 'tailwind',
       })
@@ -1589,10 +1596,12 @@ describe('code-updator', () => {
           value: createUpdate<StyleUpdate>({
             css: ``,
             classes: [],
+            type: 'animation',
           }),
           oldValue: createUpdate<StyleUpdate>({
             css: ``,
             classes: [],
+            type: 'animation',
           }),
           componentId: elementInstances[0].id,
           childIndex: 0,
@@ -1671,6 +1680,65 @@ describe('code-updator', () => {
                     <span>Content1</span>
                     <span>Content2</span>
                   </Button>
+                </div>
+              }
+            `),
+      )
+    })
+
+    it('Should update classes for hover style update', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(
+        ['hoverStyle'],
+        {
+          cssFramework: 'tailwind',
+        },
+      )
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'component',
+          name: 'style',
+          value: createUpdate<StyleUpdate>({
+            css: `.card-wrapper:hover .card-information__text {
+                    text-decoration-line: underline;
+                  }`,
+            classes: [
+              {
+                componentId: elementInstances[0].id,
+                className: 'card-wrapper',
+                childIndex: 0,
+              },
+              {
+                componentId: elementInstances[2].id,
+                childIndex: 0,
+                className: 'card-information__text',
+              },
+            ],
+            type: 'hover',
+          }),
+          oldValue: createUpdate<StyleUpdate>({
+            css: ``,
+            classes: [],
+            type: 'hover',
+          }),
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(fileUpdates.hoverStyle).toBeTruthy()
+
+      const tailwindUpdates = fileUpdates.hoverStyle
+      expect(tailwindUpdates.filePath).toBe('hoverStyle')
+      expect(await formatCode(tailwindUpdates.newContent)).toBe(
+        await formatCode(`
+              const App = () => {
+                return <div className="group">
+                  <div>
+                    <h1 className="group-hover:underline">Hello there</h1>
+                  </div>
                 </div>
               }
             `),
@@ -1859,6 +1927,15 @@ const testFiles = {
           <span>Content1</span>
           <span>Content2</span>
         </Button>
+      </div>
+    }
+  `,
+  hoverStyle: `
+    const App = () => {
+      return <div>
+        <div>
+          <h1>Hello there</h1>
+        </div>
       </div>
     }
   `,

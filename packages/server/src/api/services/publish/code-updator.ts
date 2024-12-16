@@ -1,15 +1,10 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { addDeleteComponentSchema } from '@harmony/util/src/updates/component'
-import {
-  parseUpdate,
-  createUpdate as createUpdateValue,
-} from '@harmony/util/src/updates/utils'
+import { parseUpdate } from '@harmony/util/src/updates/utils'
 import type * as prettier from 'prettier'
-import type { ClassNameValue } from '@harmony/util/src/updates/classname'
 import type { GitRepository } from '../../repository/git/types'
 import { buildGraphForComponents } from '../indexor/indexor'
 import { getGraph, type FileUpdateInfo, type FlowGraph } from '../indexor/graph'
-import { convertCSSToTailwind } from './css-conveter'
 import { updateClassName } from './updates/classname'
 import type { UpdateInfo } from './updates/types'
 import { updateAttribute } from './updates/update-attribute'
@@ -19,7 +14,7 @@ import { deleteUpdate } from './updates/delete'
 import { reorderUpdate } from './updates/reorder'
 import { propertyUpdate } from './updates/property'
 import { updateStyle } from './updates/style'
-import { replaceAll } from './updates/utils'
+import { getClassNameValue } from './updates/utils'
 
 export class CodeUpdator {
   constructor(
@@ -119,28 +114,4 @@ export class CodeUpdator {
         throw new Error('Invalid use case')
     }
   }
-}
-
-const getClassNameValue = async (
-  name: string,
-  value: string,
-  cssFramework: string,
-) => {
-  if (name === 'class')
-    return createUpdateValue<ClassNameValue>({ type: 'class', value })
-  if (cssFramework !== 'tailwind')
-    return createUpdateValue<ClassNameValue>({ type: 'style', value })
-
-  const tailwindValue = await convertCSSToTailwind(name, value)
-  if (!tailwindValue) {
-    return createUpdateValue<ClassNameValue>({
-      type: 'style',
-      value,
-    })
-  }
-
-  return createUpdateValue<ClassNameValue>({
-    type: 'class',
-    value: replaceAll(tailwindValue, '"', "'"),
-  })
 }

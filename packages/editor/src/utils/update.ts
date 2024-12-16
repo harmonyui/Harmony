@@ -9,11 +9,12 @@ import { jsonSchema } from '@harmony/util/src/updates/component'
 import type { z } from 'zod'
 import { type ComponentUpdate } from '@harmony/util/src/types/component'
 import type { Font } from '@harmony/util/src/fonts'
+import { camelToKebab } from '@harmony/util/src/utils/common'
 import type {
   CommonTools,
   ToolAttributeValue,
 } from '../components/attributes/types'
-import type { StyleInfo } from './element-utils'
+import type { SelectorInfo, StyleInfo } from './element-utils'
 import {
   getComponentIdAndChildIndex,
   getComputedValue,
@@ -36,14 +37,27 @@ export const parseUpdate = <T extends z.ZodType>(
   return ret
 }
 
-export const createNewElementUpdates = (
-  getNewChildIndex: (parentId: string) => number,
-  element: HTMLElement,
-  data: ToolAttributeValue<CommonTools>[],
-  styleInfo: StyleInfo,
-  fonts: Font[] | undefined,
-  parent: HTMLElement | undefined,
-): ComponentUpdate[] => {
+export const createNewElementUpdates = ({
+  getNewChildIndex,
+  element,
+  data,
+  styleInfo,
+  fonts,
+  parent,
+  addSelectorInfo,
+}: {
+  getNewChildIndex: (parentId: string) => number
+  element: HTMLElement
+  data: ToolAttributeValue<CommonTools>[]
+  styleInfo: StyleInfo
+  fonts: Font[] | undefined
+  parent: HTMLElement | undefined
+  addSelectorInfo: (
+    update: SelectorInfo | StyleInfo['keyframes'][number],
+    type: StyleUpdate['type'],
+    property?: StyleUpdate['properties'][number],
+  ) => void
+}): ComponentUpdate[] => {
   if (parent?.closest('svg')) return []
 
   const updates: ComponentUpdate[] = []
@@ -124,7 +138,7 @@ export const createNewElementUpdates = (
       isGlobal: false,
     })
   }
-  const animationStyles = styleInfo.selectors.filter((selector) =>
+  const animationStyles = styleInfo.matches.filter((selector) =>
     selector.styles.find(
       (style) =>
         style.name.includes('animation') && !style.name.startsWith('--'),
@@ -132,42 +146,37 @@ export const createNewElementUpdates = (
   )
 
   if (animationStyles.length > 0) {
-    const classes = animationStyles.reduce<string[]>(
-      (prev, curr) => Array.from(new Set([...prev, ...curr.class.split(' ')])),
-      [],
-    )
-    const selectorsWithSameClasses = styleInfo.selectors.filter((selector) =>
+    const classes = animationStyles
+      .reduce<
+        string[]
+      >((prev, curr) => Array.from(new Set([...prev, ...curr.class.split(' ')])), [])
+      .filter(Boolean)
+    const selectorsWithSameClasses = styleInfo.matches.filter((selector) =>
       selector.class
         .split(' ')
         .some((className) => classes.includes(className)),
     )
-    const styleText = `${selectorsWithSameClasses
-      .map(
-        (selector) => `${selector.selector} {
-      ${selector.styles.map((style) => `${style.name}: ${style.value};`).join('\n')}
-    }`,
-      )
-      .join('\n')}
 
-    ${styleInfo.keyframes.map((keyframe) => keyframe.text).join('\n')}`
+    selectorsWithSameClasses.forEach((selector) =>
+      addSelectorInfo(selector, 'animation'),
+    )
 
-    updates.push({
-      type: 'component',
-      name: 'style',
-      componentId,
-      childIndex,
-      value: createUpdate<StyleUpdate>({
-        css: styleText,
-        classes,
-      }),
-      oldValue: '',
-      isGlobal: false,
-    })
+    styleInfo.keyframes.forEach((selector) =>
+      addSelectorInfo(selector, 'animation'),
+    )
   }
+
+  const hoverStyles =
+    styleInfo.selectors.find((s) => s.type === 'hover')?.values ?? []
+  if (hoverStyles.length > 0) {
+    hoverStyles.forEach((selector) => addSelectorInfo(selector, 'hover'))
+  }
+
   for (const { name, value, element: dataElement } of data) {
     //If the element tied to this value is not our current element, that means it is
     //a default value
     if (element !== dataElement) continue
+
     if (name === 'font') {
       if (!fonts) continue
       const defaultFont = getComputedValue(document.body, 'font-family')
@@ -188,15 +197,36 @@ export const createNewElementUpdates = (
       })
       continue
     }
-    updates.push({
-      type: 'className',
-      name,
-      componentId,
-      childIndex,
-      value,
-      oldValue: '',
-      isGlobal: false,
-    })
+
+    const cssStyleValue = styleInfo.matches.find((style) =>
+      style.styles.find((s) => s.name === camelToKebab(name)),
+    )
+
+    //If a style is being affected by a hover state but has a default value from a class, then we do not want the `style` attribute to override this hover state,
+    //so instead apply the class name that has the default style value
+    if (
+      hoverStyles.find((s) =>
+        s.styles.find((style) => style.name === camelToKebab(name)),
+      ) &&
+      cssStyleValue
+    ) {
+      addSelectorInfo(cssStyleValue, 'hover', {
+        componentId,
+        childIndex,
+        property: name,
+        value,
+      })
+    } else {
+      updates.push({
+        type: 'className',
+        name,
+        componentId,
+        childIndex,
+        value,
+        oldValue: '',
+        isGlobal: false,
+      })
+    }
   }
 
   const textElement = isTextElement(element) ? element : undefined

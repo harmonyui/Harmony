@@ -359,3 +359,17 @@ export const htmlEncode = (str: string): string => {
     .replace(/"/g, '&quot;')
     .replace(/'/g, '&#039;')
 }
+
+export const getTextInBetween = (str: string, start: string, end: string) => {
+  const startIndex = str.indexOf(start)
+  if (startIndex === -1) {
+    return ''
+  }
+
+  const endIndex = str.indexOf(end, startIndex + start.length)
+  if (endIndex === -1) {
+    return ''
+  }
+
+  return str.substring(startIndex + start.length, endIndex)
+}

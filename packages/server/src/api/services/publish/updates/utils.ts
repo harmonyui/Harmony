@@ -5,11 +5,16 @@ import {
   type RegistryItem,
 } from '@harmony/util/src/harmonycn/types'
 import { componentInstances } from '@harmony/util/src/harmonycn/components'
-import type { FlowGraph } from '../../indexor/graph'
-import type { JSXElementNode } from '../../indexor/nodes/jsx-element'
+import type { ClassNameValue } from '@harmony/util/src/updates/classname'
+import { createUpdate } from '@harmony/util/src/updates/utils'
+import { getGraph, type FlowGraph } from '../../indexor/graph'
+import {
+  isJSXElement,
+  type JSXElementNode,
+} from '../../indexor/nodes/jsx-element'
 import type { Node } from '../../indexor/types'
 import type { JSXAttribute } from '../../indexor/nodes/jsx-attribute'
-import { addPrefixToClassName } from '../css-conveter'
+import { addPrefixToClassName, convertCSSToTailwind } from '../css-conveter'
 import type { LiteralNode } from '../../indexor/utils'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { InstanceInfo } from './types'
@@ -187,6 +192,87 @@ export const getInstanceFromComponent = (
   }
 }
 
+export const getInstanceFromElement = (
+  element: string,
+  className?: string,
+): InstanceInfo => {
+  const getImplementationFromTagName = (tagName: string) => {
+    const classNameImplementation = className ? ` className="${className}"` : ''
+    switch (tagName) {
+      case 'style':
+        return `<style>{\`text\`}</style>`
+      case 'img':
+        return `<img${classNameImplementation}/>`
+      case 'input':
+        return `<input${classNameImplementation}/>`
+      default:
+        return `<${tagName}${classNameImplementation}></${tagName}>`
+    }
+  }
+  return {
+    implementation: element.startsWith('<')
+      ? element
+      : getImplementationFromTagName(element),
+    dependencies: [],
+    componentIds: [],
+  }
+}
+
+export const getElementInstanceNodes = (
+  file: string,
+  { implementation, dependencies, componentIds }: InstanceInfo,
+): { element: JSXElementNode; nodes: Node[] } => {
+  const importStatements = dependencies
+    .map((dependency) => {
+      return dependency.isDefault
+        ? `import ${dependency.name} from '${dependency.path}'`
+        : `import { ${dependency.name} } from '${dependency.path}'`
+    })
+    .join('\n')
+  const graph = getGraph(
+    Math.random().toString(),
+    `${importStatements}
+
+    const App = () => {
+      return ${implementation}
+    }
+  `,
+  )
+
+  const elementInstance = graph.getNodes().find(isJSXElement)
+  if (!elementInstance) {
+    throw new Error('Element instance node is not a JSX element')
+  }
+  const nodes =
+    graph.files[elementInstance.location.file].getNodes(elementInstance)
+
+  const otherNodes = nodes.filter((node) => node !== elementInstance)
+  const childElements = elementInstance.getChildren(true)
+
+  if (componentIds.length > 0) {
+    if (childElements.length !== componentIds.length) {
+      throw new Error(
+        `Number of child elements (${childElements.length}) does not match number of component ids (${componentIds.length})`,
+      )
+    }
+    childElements.forEach((childElement) => {
+      const id = componentIds.shift()
+      if (id) {
+        childElement.id = id
+      }
+    })
+  }
+
+  //Normalize the location of the nodes
+  const offset = elementInstance.location.start
+  nodes.forEach((node) => {
+    node.location.file = file
+    node.location.start -= offset
+    node.location.end -= offset
+  })
+  return { element: elementInstance, nodes: otherNodes }
+}
+
 export const getJSXElementFromLevels = (
   componentId: string,
   childIndex: number,
@@ -209,4 +295,46 @@ export const getJSXElementFromLevels = (
   }
 
   return element
+}
+
+export const parseText = <T extends Node>(
+  text: string,
+  filter: (node: Node) => node is T,
+): T[] => {
+  const graph = getGraph(
+    'file',
+    `
+      export const temp = ${text}
+    `,
+  )
+
+  return graph.getNodes().filter(filter)
+}
+
+export const parseJSXElementText = (text: string): JSXElementNode[] => {
+  return parseText(`() => ${text}`, isJSXElement)
+}
+
+export const getClassNameValue = async (
+  name: string,
+  value: string,
+  cssFramework: string,
+) => {
+  if (name === 'class')
+    return createUpdate<ClassNameValue>({ type: 'class', value })
+  if (cssFramework !== 'tailwind')
+    return createUpdate<ClassNameValue>({ type: 'style', value })
+
+  const tailwindValue = await convertCSSToTailwind(name, value)
+  if (!tailwindValue) {
+    return createUpdate<ClassNameValue>({
+      type: 'style',
+      value,
+    })
+  }
+
+  return createUpdate<ClassNameValue>({
+    type: 'class',
+    value: replaceAll(tailwindValue, '"', "'"),
+  })
 }

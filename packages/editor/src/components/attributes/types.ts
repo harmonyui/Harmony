@@ -20,6 +20,7 @@ export const attributeTools = [
   'flexWrap',
   'flexGrow',
   'flexShrink',
+  'order',
   'gridTemplateColumns',
   'gridTemplateRows',
   'gridColumn',
@@ -61,6 +62,8 @@ export const attributeTools = [
   'borderBottomLeftRadius',
   'borderBottomRightRadius',
   'overflow',
+  'overflowX',
+  'overflowY',
   'listStyleType',
   'clip',
   'boxShadow',
@@ -68,6 +71,13 @@ export const attributeTools = [
   'backgroundImage',
   'backgroundSize',
   'backgroundPosition',
+  'transitionProperty',
+  'transitionBehavior',
+  'transitionDuration',
+  'transitionTimingFunction',
+  'transitionDelay',
+  'objectFit',
+  'objectPosition',
 ] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {
