@@ -21,6 +21,7 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
       this.path.get('argument') as NodePath,
       this.location.file,
       content,
+      base.graph,
     )
   }
 
@@ -38,6 +39,14 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
 
   public getAttributes(): ObjectProperty[] {
     return this.getNameAndValues()
+  }
+
+  public addProperty(name: string, value: string | Node<t.Expression>) {
+    const objectNodes = this.getObjectNodes()
+    objectNodes.forEach((objectNode) => {
+      objectNode.addProperty(name, value)
+    })
+    this.graph.dirtyNode(this)
   }
 
   public override getValues(predicate?: (node: Node) => boolean): Node[] {
@@ -69,9 +78,7 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
   }
 
   public getNameAndValues(): ObjectProperty[] {
-    const argumentValues = super.getValues(
-      (node) => node !== this && isObject(node),
-    ) as ObjectNode[]
+    const argumentValues = this.getObjectNodes()
     const notPropertyNames = this.notProperties.map((notProperty) =>
       notProperty.getName(),
     )
@@ -87,6 +94,12 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
     })
 
     return values
+  }
+
+  private getObjectNodes(): ObjectNode[] {
+    return super.getValues(
+      (node) => node !== this && isObject(node),
+    ) as ObjectNode[]
   }
 }
 

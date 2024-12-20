@@ -18,6 +18,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
 >) => {
   const getCreatedElement = (
     component: HarmonyCn | undefined,
+    elementName: AddComponent['element'],
     copiedFrom: AddComponent['copiedFrom'],
     componentId: string,
     childIndex: number,
@@ -60,6 +61,24 @@ export const createComponentUpdate = ([set, get]: Parameters<
         element: clonedElement,
       }
     }
+
+    if (elementName) {
+      if (elementName.startsWith('<')) {
+        const parser = new DOMParser()
+        const doc = parser.parseFromString(elementName, 'text/html')
+        return {
+          componentId,
+          childIndex,
+          element: doc.body.firstChild as HTMLElement,
+        }
+      }
+      return {
+        componentId,
+        childIndex,
+        element: document.createElement(elementName),
+      }
+    }
+
     if (!component) {
       throw new Error(
         'New Component marked as cached but no cached element found',
@@ -75,6 +94,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
     parentElement,
     index,
     copiedFrom,
+    elementName,
     rootElement,
   }: {
     component: string | undefined
@@ -83,12 +103,14 @@ export const createComponentUpdate = ([set, get]: Parameters<
     parentElement: HTMLElement
     index: number
     copiedFrom: AddComponent['copiedFrom']
+    elementName: AddComponent['element']
     rootElement: HTMLElement | undefined
   }) => {
     const simpleComponent = harmonyCnSchema.safeParse(component)
     if (simpleComponent.success || !component) {
       const element = getCreatedElement(
         simpleComponent.success ? simpleComponent.data : undefined,
+        elementName,
         copiedFrom,
         componentId,
         childIndex,
@@ -139,6 +161,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
       index,
       copiedFrom,
       rootElement,
+      elementName: value.element,
     })
     set((state) => {
       return {

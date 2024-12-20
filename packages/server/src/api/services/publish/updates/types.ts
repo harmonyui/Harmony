@@ -23,7 +23,7 @@ export type UpdateComponent = (
   info: UpdateInfo,
   graph: FlowGraph,
   repository: Repository,
-) => void
+) => Promise<void>
 
 export type InstanceInfo = Pick<
   RegistryItem,

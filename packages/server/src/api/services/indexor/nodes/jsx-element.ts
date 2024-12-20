@@ -1,8 +1,8 @@
-import type * as t from '@babel/types'
+import * as t from '@babel/types'
 import type { ArrayProperty, NodeBase, ObjectNode } from '../types'
 import { Node } from '../types'
 import { isArray } from '../predicates/simple-predicates'
-import type { JSXAttribute } from './jsx-attribute'
+import { type JSXAttribute } from './jsx-attribute'
 import { ComponentNode } from './component'
 import { ImportStatement } from './import-statement'
 
@@ -52,6 +52,26 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     )
   }
 
+  public addProperty(name: string, value: string | Node<t.Expression>) {
+    const jsxAttributeNode = this.graph.createJSXAttributeNode(
+      this,
+      name,
+      value,
+    )
+    const newNode = jsxAttributeNode.node
+
+    if (t.isJSXAttribute(newNode)) {
+      this.path.node.openingElement.attributes.push(newNode)
+    } else if (t.isJSXText(newNode)) {
+      this.path.node.children.push(newNode)
+    } else {
+      throw new Error(`Invalid attribute node type ${newNode.type}`)
+    }
+
+    this.graph.addJSXAttribute(jsxAttributeNode, this)
+    this.graph.dirtyNode(this)
+  }
+
   public getDependencies(): Node[] {
     const dependencies: Node[] = []
     const importStatements = this.nameNode.getValues(
@@ -81,6 +101,18 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   public getParentElement() {
     return this.parentElement
   }
+
+  public isDescendantOf(element: JSXElementNode) {
+    let parentElement = this.parentElement
+    while (parentElement) {
+      if (parentElement === element) return true
+
+      parentElement = parentElement.parentElement
+    }
+
+    return false
+  }
+
   public setParentElement(parentElement: JSXElementNode | undefined) {
     this.parentElement = parentElement
   }

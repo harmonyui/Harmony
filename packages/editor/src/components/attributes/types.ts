@@ -1,3 +1,4 @@
+import type { HexColor } from '@harmony/util/src/types/colors'
 import type { CSSProperties } from 'react'
 
 /** Register */
@@ -9,6 +10,7 @@ export const attributeTools = [
   'textDecorationLine',
   'display',
   'justifyContent',
+  'justifySelf',
   'alignItems',
   'flexDirection',
   'alignSelf',
@@ -18,10 +20,12 @@ export const attributeTools = [
   'flexWrap',
   'flexGrow',
   'flexShrink',
+  'order',
   'gridTemplateColumns',
   'gridTemplateRows',
   'gridColumn',
   'gridRow',
+  'gridTemplateAreas',
   'opacity',
   'position',
   'top',
@@ -58,6 +62,22 @@ export const attributeTools = [
   'borderBottomLeftRadius',
   'borderBottomRightRadius',
   'overflow',
+  'overflowX',
+  'overflowY',
+  'listStyleType',
+  'clip',
+  'boxShadow',
+  'zIndex',
+  'backgroundImage',
+  'backgroundSize',
+  'backgroundPosition',
+  'transitionProperty',
+  'transitionBehavior',
+  'transitionDuration',
+  'transitionTimingFunction',
+  'transitionDelay',
+  'objectFit',
+  'objectPosition',
 ] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {
@@ -75,3 +95,14 @@ export interface ComponentToolData {
   name: CommonTools
   value: string
 }
+export type ToolAttributeValue<T extends CommonTools> = T extends ColorTools
+  ? {
+      value: HexColor
+      name: ColorTools
+      element: HTMLElement | undefined
+    }
+  : {
+      value: string
+      name: Exclude<CommonTools, ColorTools>
+      element: HTMLElement | undefined
+    }

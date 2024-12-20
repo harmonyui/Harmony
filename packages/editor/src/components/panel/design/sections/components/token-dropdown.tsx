@@ -1,7 +1,7 @@
 import { getClass, kebabToWord } from '@harmony/util/src/utils/common'
 import { useMemo } from 'react'
-import { useComponentAttribute } from '../../attribute-provider'
-import { colorTools, type CommonTools } from '../../types'
+import { useComponentAttribute } from '../../../../attributes/attribute-provider'
+import { colorTools, type CommonTools } from '../../../../attributes/types'
 import { DesignDropdown } from './design-dropdown'
 
 export const TokenDropdown: React.FunctionComponent<{

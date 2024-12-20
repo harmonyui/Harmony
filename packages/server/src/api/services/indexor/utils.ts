@@ -9,12 +9,14 @@ import generator from '@babel/generator'
 import type { Attribute } from './types'
 import { Node } from './types'
 import { ComponentNode } from './nodes/component'
+import type { FlowGraph } from './graph'
 
 export function createNode<T extends t.Node>(
   name: string,
   path: NodePath<T>,
   file: string,
   content: string,
+  graph: FlowGraph,
 ): Node<T> {
   const _node = path.node
   const id = getLocationId(_node, file, content)
@@ -33,6 +35,7 @@ export function createNode<T extends t.Node>(
     path,
     location,
     content: getSnippetFromNode(_node),
+    graph,
   })
   return newNode
 }

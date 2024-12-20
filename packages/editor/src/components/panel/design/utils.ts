@@ -3,9 +3,9 @@ import { areHexColorsEqual } from '@harmony/util/src/utils/common'
 import type { HexColor } from '@harmony/util/src/types/colors'
 import { getElementText } from '../../../utils/element-utils'
 import type { ComponentElement } from '../../inspector/component-identifier'
-import { isTextElement } from '../../inspector/inspector'
-import type { CommonTools } from './types'
-import { colorTools, ComponentType } from './types'
+import type { CommonTools } from '../../attributes/types'
+import { colorTools, ComponentType } from '../../attributes/types'
+import { isTextElement } from '../../../utils/element-predicate'
 
 export const getComponentType = (
   element: HTMLElement,
@@ -89,7 +89,7 @@ export function areCSSPixelValuesEqual(value1: string, value2: string) {
       }
     }
     throw new Error(
-      'Unsupported CSS value format. Only "px" and "rem" are supported.',
+      `Unsupported CSS value format. Only "px" and "rem" are supported. Got ${value}`,
     )
   }
 

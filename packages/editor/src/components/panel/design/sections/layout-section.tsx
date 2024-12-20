@@ -9,7 +9,7 @@ import {
 import type { CSSProperties } from 'react'
 import React, { useMemo, useState } from 'react'
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
-import { useComponentAttribute } from '../attribute-provider'
+import { useComponentAttribute } from '../../../attributes/attribute-provider'
 import type { DesignPanelSectionComponent } from './components/section'
 import { Section } from './components/section'
 import { Label } from './components/label'

@@ -100,18 +100,22 @@ export function getLocationsFromComponentId(id: string): {
 }[] {
   try {
     const stuffs = id.split('#').map((i) => atob(i))
-    const locations = stuffs.map((stuff) => {
-      const [file, startLine, startColumn, endLine, endColumn] =
-        stuff.split(':')
+    const locations = stuffs
+      .map((stuff) => {
+        if (!stuff.includes(':')) return undefined
 
-      return {
-        file,
-        startLine: Number(startLine),
-        startColumn: Number(startColumn),
-        endLine: Number(endLine),
-        endColumn: Number(endColumn),
-      }
-    })
+        const [file, startLine, startColumn, endLine, endColumn] =
+          stuff.split(':')
+
+        return {
+          file,
+          startLine: Number(startLine),
+          startColumn: Number(startColumn),
+          endLine: Number(endLine),
+          endColumn: Number(endColumn),
+        }
+      })
+      .filter((location) => location !== undefined)
 
     return locations
   } catch (e) {

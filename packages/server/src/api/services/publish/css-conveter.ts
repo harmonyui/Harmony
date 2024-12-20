@@ -1,4 +1,5 @@
 import { TailwindConverter } from 'css-to-tailwindcss'
+import { camelToKebab } from '@harmony/util/src/utils/common'
 
 export const converter = new TailwindConverter({
   remInPx: 16, // set null if you don't want to convert rem to pixels
@@ -11,6 +12,41 @@ export const converter = new TailwindConverter({
     },
   },
 })
+
+export const convertCSSToTailwind = async (
+  propertyName: string,
+  value: string,
+): Promise<string> => {
+  // This converter has a bug where border color does not work
+  if (propertyName === 'borderColor') {
+    const classes = await convertToCSSBase('color', value)
+    return classes.replace('text', 'border')
+    //The converter also has a bug with background images where underscores are escaped
+  } else if (propertyName === 'backgroundImage') {
+    return `bg-[${value}]`
+  }
+
+  return convertToCSSBase(propertyName, value)
+}
+
+export const convertStyleSheetToTailwind = async (
+  css: string,
+): Promise<ReturnType<typeof converter.convertCSS>> => {
+  return converter.convertCSS(css)
+}
+
+const convertToCSSBase = async (
+  propertyName: string,
+  value: string,
+): Promise<string> => {
+  const converted = await converter.convertCSS(`.example {
+    ${camelToKebab(propertyName)}: ${value}
+}`)
+  return converted.nodes.reduce(
+    (prev, curr) => prev + curr.tailwindClasses.join(' '),
+    '',
+  )
+}
 
 export function addPrefixToClassName(
   className: string,

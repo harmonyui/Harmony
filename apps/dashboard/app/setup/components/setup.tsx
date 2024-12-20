@@ -488,7 +488,7 @@ const GitImportRepository: React.FunctionComponent<
           <Button
             onClick={() =>
               window.open(
-                'https://github.com/apps/harmony-ai-app/installations/new',
+                'https://github.com/apps/harmony-ui-app/installations/new',
                 'MyWindow',
                 'width=600,height=300',
               )

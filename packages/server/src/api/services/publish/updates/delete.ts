@@ -5,10 +5,13 @@ import type { FlowGraph } from '../../indexor/graph'
 import type { InstanceInfo, UpdateComponent } from './types'
 import { getJSXElementFromLevels } from './utils'
 
-export const deleteUpdate: UpdateComponent = ({ value, update }, graph) => {
+export const deleteUpdate: UpdateComponent = async (
+  { value, update },
+  graph,
+) => {
   parseUpdate(deleteComponentSchema, value)
 
-  return deleteComponent(update, graph)
+  deleteComponent(update, graph)
 }
 
 export const deleteComponent = (

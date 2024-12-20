@@ -40,7 +40,7 @@ export class PrismaComponentUpdateRepository
     >`
             SELECT u.type, u.name, u."childIndex", u.value, u.old_value as "oldValue", u.is_global as "isGlobal", u.component_id as "id", u.date_modified as "dateModified" FROM "ComponentUpdate" u
             WHERE u.branch_id = ${branchId}
-            ORDER BY u.date_modified ASC`
+            ORDER BY u.date_modified, u.order ASC`
 
     const updates: (ComponentUpdate & Pick<Selector, T>)[] = query.map((up) => {
       const selector: Selector = {
@@ -70,7 +70,7 @@ export class PrismaComponentUpdateRepository
     branchId: string,
   ): Promise<ComponentUpdate[]> {
     const newUpdates = await this.prisma.componentUpdate.createManyAndReturn({
-      data: updates.map((up) => ({
+      data: updates.map((up, i) => ({
         component_id: up.componentId,
         type: up.type,
         name: up.name,
@@ -79,6 +79,7 @@ export class PrismaComponentUpdateRepository
         old_value: up.oldValue,
         childIndex: up.childIndex,
         is_global: up.isGlobal,
+        order: i,
       })),
     })
 

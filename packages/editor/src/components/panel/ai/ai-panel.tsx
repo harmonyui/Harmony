@@ -5,7 +5,7 @@ import { useHarmonyStore } from '../../../hooks/state'
 import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
 import { useHarmonyContext } from '../../harmony-context'
-import { useComponentAttribute } from '../design/attribute-provider'
+import { useComponentAttribute } from '../../attributes/attribute-provider'
 import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
 
 export const AIPanel: React.FunctionComponent = () => {

@@ -1,7 +1,7 @@
 import type { CSSProperties } from 'react'
 import { useMemo } from 'react'
-import type { CommonTools } from '../../types'
-import { useComponentAttribute } from '../../attribute-provider'
+import type { CommonTools } from '../../../../attributes/types'
+import { useComponentAttribute } from '../../../../attributes/attribute-provider'
 import { ButtonGroup } from './button-group'
 
 export interface ButtonItem<P extends CommonTools> {

@@ -4,7 +4,7 @@ import { createComponent } from './create'
 import { deleteComponent } from './delete'
 import type { UpdateComponent } from './types'
 
-export const reorderUpdate: UpdateComponent = (info, graph) => {
+export const reorderUpdate: UpdateComponent = async (info, graph) => {
   const value = parseUpdate(reorderComponentSchema, info.value)
   const codeInfo = deleteComponent(info.update, graph)
 

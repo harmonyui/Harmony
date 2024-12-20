@@ -67,12 +67,19 @@ const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
 }
 
 export const useHarmonySetup = (
-  { local = false, show, ...options }: HarmonySetupProps & { show?: boolean },
+  {
+    local = false,
+    show,
+    initShow = true,
+    ...options
+  }: HarmonySetupProps & { show?: boolean; initShow?: boolean },
   branchId: string | undefined,
 ) => {
   const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>()
 
   useEffect(() => {
+    if (!initShow) return
+
     if (!show) {
       resultRef.current?.setup.changeMode(false)
       const container = document.getElementById('harmony-container')

@@ -10,8 +10,8 @@ import {
   UnderlineIcon,
 } from '@harmony/ui/src/components/core/icons'
 import { useHarmonyContext } from '../../../harmony-context'
-import { useComponentAttribute } from '../attribute-provider'
-import type { CommonTools } from '../types'
+import { useComponentAttribute } from '../../../attributes/attribute-provider'
+import type { CommonTools } from '../../../attributes/types'
 import { Section } from './components/section'
 import type { DesignPanelSectionComponent } from './components/section'
 import { Label } from './components/label'

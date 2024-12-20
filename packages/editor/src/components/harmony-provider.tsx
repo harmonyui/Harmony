@@ -24,6 +24,7 @@ import {
   getComponentIdAndChildIndex,
   getImageSrc,
   recurseElements,
+  replaceTextContentWithSpans,
 } from '../utils/element-utils'
 import { useHarmonyStore } from '../hooks/state'
 import type { Source } from '../hooks/state/component-state'
@@ -37,7 +38,7 @@ import type {
 } from './harmony-context'
 import { HarmonyContext, viewModes } from './harmony-context'
 import type { Setup } from './harmony-setup'
-import { Inspector, replaceTextContentWithSpans } from './inspector/inspector'
+import { Inspector } from './inspector/inspector'
 import { HarmonyPanel } from './panel/harmony-panel'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'
@@ -87,6 +88,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const initializeProject = useHarmonyStore((state) => state.initializeProject)
   const updateComponentsFromIds = useHarmonyStore(
     (state) => state.updateComponentsFromIds,
+  )
+  const initHarmonyComponents = useHarmonyStore(
+    (state) => state.initHarmonyComponents,
   )
   const updateTheCounter = useHarmonyStore((state) => state.updateTheCounter)
   const makeUpdates = useHarmonyStore((state) => state.makeUpdates)
@@ -198,6 +202,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             { branchId, components: componentIds, repositoryId },
             rootComponent,
           )
+        } else {
+          initHarmonyComponents()
         }
       }
       initMutationObserverRef.current = new MutationObserver((mutations) => {

@@ -338,3 +338,38 @@ export function areHexColorsEqual(color1: HexColor, color2: HexColor): boolean {
 
   return normalize(color1) === normalize(color2)
 }
+
+export const replaceAll = <T extends string | undefined>(
+  str: T,
+  findStr: string,
+  withStr: string,
+): T => {
+  if (!str) return str
+
+  const newStr = str.replaceAll(findStr, withStr)
+
+  return newStr as T
+}
+
+export const htmlEncode = (str: string): string => {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#039;')
+}
+
+export const getTextInBetween = (str: string, start: string, end: string) => {
+  const startIndex = str.indexOf(start)
+  if (startIndex === -1) {
+    return ''
+  }
+
+  const endIndex = str.indexOf(end, startIndex + start.length)
+  if (endIndex === -1) {
+    return ''
+  }
+
+  return str.substring(startIndex + start.length, endIndex)
+}

@@ -5,14 +5,37 @@ import type {
   IndexingCacheKeyInfo,
 } from './types'
 
-export class RedisGithubCache implements GithubCache {
-  private redisClient: Redis
-  constructor() {
-    this.redisClient = new Redis({
+export const getCacheItem = async (key: string): Promise<string | null> => {
+  const client = getRedisClient()
+
+  return client.get(key)
+}
+
+export const setCacheItem = async (
+  key: string,
+  value: string,
+): Promise<void> => {
+  const client = getRedisClient()
+
+  await client.set(key, value)
+}
+
+let redisClient: Redis | undefined
+const getRedisClient = (): Redis => {
+  if (!redisClient) {
+    redisClient = new Redis({
       port: Number(process.env.REDIS_PORT || 0), // Redis port
       host: process.env.REDIS_HOST, // Redis host
       password: process.env.REDIS_PASSWORD,
     })
+  }
+  return redisClient
+}
+
+export class RedisGithubCache implements GithubCache {
+  private redisClient: Redis
+  constructor() {
+    this.redisClient = getRedisClient()
   }
 
   public async getFileContents(

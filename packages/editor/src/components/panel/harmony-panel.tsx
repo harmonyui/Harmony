@@ -3,7 +3,7 @@ import type {
   ComponentUpdateWithoutGlobal,
   SelectMode,
 } from '../harmony-context'
-import { ComponentAttributeProvider } from './design/attribute-provider'
+import { ComponentAttributeProvider } from '../attributes/attribute-provider'
 import { SidePanel, SidePanelProvider } from './side-panel'
 import { PublishProvider } from './publish/publish-button'
 import { HarmonyToolbar } from './toolbar/harmony-toolbar'
