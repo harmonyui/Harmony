@@ -142,16 +142,9 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getDefinitionComponent() {
-    return this.definitionComponent
-  }
-  public setDefinitionComponent(component: ComponentNode) {
-    if (
-      this.definitionComponent &&
-      component.id !== this.definitionComponent.id
-    )
-      throw new Error('Definition component already set')
-
-    this.definitionComponent = component
+    return this.nameNode.getValues(
+      (node) => node instanceof ComponentNode,
+    )[0] as ComponentNode | undefined
   }
 
   public addAttribute(attribute: JSXAttribute) {

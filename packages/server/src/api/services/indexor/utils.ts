@@ -61,10 +61,10 @@ export function traceDataFlow(node: Node): Node[] {
   return origins
 }
 
-export function getComponentName(path: NodePath): string | undefined {
+export function getComponentName(path: NodePath): t.Node | undefined {
   // Check if the function is assigned to a variable or exported
   if (t.isVariableDeclarator(path.parent) && t.isIdentifier(path.parent.id)) {
-    return path.parent.id.name
+    return path.parent.id
   } else if (
     t.isExportDeclaration(path.parent) &&
     path.parent.type !== 'ExportAllDeclaration' &&
@@ -72,18 +72,18 @@ export function getComponentName(path: NodePath): string | undefined {
     'id' in path.parent.declaration &&
     t.isIdentifier(path.parent.declaration.id)
   ) {
-    return path.parent.declaration.id.name
+    return path.parent.declaration.id
   } else if (
     t.isFunctionDeclaration(path.node) &&
     t.isIdentifier(path.node.id)
   ) {
-    return path.node.id.name
+    return path.node.id
   } else if (
     t.isCallExpression(path.parent) &&
     t.isVariableDeclarator(path.parentPath?.parent) &&
     t.isIdentifier(path.parentPath.parent.id)
   ) {
-    return path.parentPath.parent.id.name
+    return path.parentPath.parent.id
   }
 
   return undefined

@@ -141,7 +141,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     export default Component2
     `,
   'app/multipleLayers2.tsx': `
-    import Component2 from './app/multipleLayers2.tsx';
+    import Component2 from './multipleLayers1';
 
     const App = () => {
         return (
@@ -471,6 +471,17 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
             return <Component><AnotherComponent/></Component>
         }
     `,
+  'app/complexJSXElements.tsx': `
+    const Component = () => {
+        const urls = ["https://google.com", "https://bing.com"];
+        return <div>
+            <SideNav
+                title={<div>{urls.map(url => <div>{url}</div>)}</div>}
+            />
+            {urls.length > 0 ? <div>{urls.map(url => <div>{url}</div>)}</div> : <div>No urls</div>}
+        </div>
+    }
+  `,
 } as const
 
 export type TestFile = keyof typeof testCases

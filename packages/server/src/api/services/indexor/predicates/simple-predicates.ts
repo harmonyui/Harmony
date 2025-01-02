@@ -73,6 +73,15 @@ export const isObjectProperty = (node: Node): node is ObjectProperty =>
 export const isImportSpecifier = (
   node: Node,
 ): node is Node<t.ImportSpecifier> => t.isImportSpecifier(node.node)
+export const isImportDefaultSpecifier = (
+  node: Node,
+): node is Node<t.ImportDefaultSpecifier> =>
+  t.isImportDefaultSpecifier(node.node)
 export const isVariableDeclaration = (
   node: Node,
 ): node is Node<t.VariableDeclaration> => t.isVariableDeclaration(node.node)
+export const isJSXElement = (node: Node): node is Node<t.JSXElement> =>
+  t.isJSXElement(node.node)
+export const isLogicalExpression = (
+  node: Node,
+): node is Node<t.LogicalExpression> => t.isLogicalExpression(node.node)

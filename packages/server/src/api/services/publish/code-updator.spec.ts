@@ -1359,7 +1359,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('file2')
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
-              import { Button } from 'file1'
+              import { Button } from './file1'
               const App = () => {
                 return <div>
                   <Button>
@@ -1566,7 +1566,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe(file)
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
-          import { Button } from 'file1'
+          import { Button } from './file1'
           const App = () => {
             return <div className="flex p-3">
               <Button>
@@ -1677,7 +1677,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('file2')
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
-              import { Button } from 'file1'
+              import { Button } from './file1'
               const App = () => {
                 return <div className="opacity-0 animate-slide-in [animation-delay:calc(var(--animation-order)*75ms)]">
                   <Button>
@@ -1927,7 +1927,7 @@ const testFiles = {
     }
   `,
   file2: `
-    import { Button } from 'file1'
+    import { Button } from './file1'
 
     const App = () => {
       return <div>

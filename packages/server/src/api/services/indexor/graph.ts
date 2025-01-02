@@ -39,6 +39,10 @@ export class FlowGraph {
   public code = ''
   private mappedDependencyStack: ArrayProperty[] = []
   public files: Record<string, ProgramNode> = {}
+
+  //Sometimes jsxelements that are in other files can not be connected
+  //until the whole file has been parsed (because exports show up at the bottom)
+  public unconnectedInstances: JSXElementNode[] = []
   private dirtyFiles: Set<string> = new Set<string>()
 
   constructor() {
@@ -185,12 +189,14 @@ export class FlowGraph {
     const nameNode = jsxElementNode.getNameNode()
     this.addDataFlowEdge(nameNode)
 
-    const elementDefinition = this.getDefinition(jsxElementNode.getName())
+    const elementDefinition = this.getDefinition(jsxElementNode)
 
     //Connect the element to the definition component
     if (elementDefinition) {
-      jsxElementNode.setDefinitionComponent(elementDefinition)
+      //jsxElementNode.setDefinitionComponent(elementDefinition)
       this.addJSXInstanceComponentEdge(elementDefinition, jsxElementNode)
+    } else {
+      this.unconnectedInstances.push(jsxElementNode)
     }
   }
 
@@ -239,27 +245,33 @@ export class FlowGraph {
   ) {
     this.addFunctionArgumentDataEdge(elementDefinition, [elementNode])
     elementDefinition.addInstance(elementNode)
-    elementNode.setDefinitionComponent(elementDefinition)
+    //elementNode.setDefinitionComponent(elementDefinition)
   }
 
   public addDataFlowEdge(node: Node) {
     addDataEdge(node, this)
   }
 
-  public getDefinition(name: string): ComponentNode | undefined {
-    let definitionNode: ComponentNode | undefined
-    this.nodes.forEach((node) => {
-      if (node.type === 'FunctionDeclaration' && node.name === name) {
-        definitionNode = node as ComponentNode
-      }
-    })
+  public getDefinition(element: JSXElementNode): ComponentNode | undefined {
+    const definitionNode = element
+      .getNameNode()
+      .getValues((node) => node instanceof ComponentNode)[0] as
+      | ComponentNode
+      | undefined
+    if (!definitionNode) {
+      return undefined
+    }
+
     return definitionNode
   }
 
-  public getElementInstances(name: string): JSXElementNode[] {
+  public getElementInstances(component: ComponentNode): JSXElementNode[] {
     const instances: JSXElementNode[] = []
     this.nodes.forEach((node) => {
-      if (isJSXElement(node) && node.name === name) {
+      if (
+        isJSXElement(node) &&
+        node.getDefinitionComponent()?.id === component.id
+      ) {
         instances.push(node)
       }
     })
@@ -286,11 +298,21 @@ export class FlowGraph {
   }
 
   public tryConnectImportStatementToDefinition(node: ImportStatement) {
-    const source = node.getSource()
-    const program = this.files[source] as ProgramNode | undefined
+    const source = node.getResolvedSource()
+    const program =
+      this.files[source] ??
+      (this.files[`${source}.tsx`] as ProgramNode | undefined)
     if (!program) {
       return
     }
+    if (node.isDefault()) {
+      const defaultExport = program.getDefaultExport()
+      if (defaultExport) {
+        this.addDataDependency(node.id, defaultExport.id)
+      }
+      return
+    }
+
     const nodes = program.getExportStatements()
 
     for (const exportNode of nodes) {
@@ -311,7 +333,10 @@ export class FlowGraph {
         .filter((_node) => _node instanceof ImportStatement)
       for (const importNode of nodes) {
         if (
-          this.resolvePaths(importNode.getSource(), node.location.file) &&
+          this.resolvePaths(
+            importNode.getResolvedSource(),
+            node.location.file,
+          ) &&
           importNode.isDefault() === isDefaultExport
         ) {
           this.addDataDependency(importNode.id, node.id)
@@ -459,6 +484,54 @@ export class FlowGraph {
       objectNodes[0].addProperty(propertyName, newValue)
     }
     this.dirtyNode(node)
+  }
+
+  public getComponentName(path: NodePath): Node | undefined {
+    let node: NodePath<t.Identifier> | undefined
+    // Check if the function is assigned to a variable or exported
+    if (t.isVariableDeclarator(path.parent) && t.isIdentifier(path.parent.id)) {
+      node = path.parentPath?.get('id') as NodePath<t.Identifier>
+    } else if (
+      t.isExportDeclaration(path.parent) &&
+      path.parent.type !== 'ExportAllDeclaration' &&
+      path.parent.declaration &&
+      'id' in path.parent.declaration &&
+      t.isIdentifier(path.parent.declaration.id)
+    ) {
+      node = path.parentPath?.get('declaration.id') as NodePath<t.Identifier>
+    } else if (
+      t.isFunctionDeclaration(path.node) &&
+      t.isIdentifier(path.node.id)
+    ) {
+      node = path.get('id') as NodePath<t.Identifier>
+    } else if (
+      t.isCallExpression(path.parent) &&
+      t.isVariableDeclarator(path.parentPath?.parent) &&
+      t.isIdentifier(path.parentPath.parent.id)
+    ) {
+      node = path.parentPath.parentPath?.get('id') as NodePath<t.Identifier>
+    }
+
+    if (node) {
+      return this.createNode(node.node.name, node)
+    }
+
+    return undefined
+  }
+
+  public getDeclarationName(node: t.Node): string {
+    if (
+      t.isVariableDeclaration(node) &&
+      t.isIdentifier(node.declarations[0].id)
+    ) {
+      return node.declarations[0].id.name
+    } else if (t.isFunctionDeclaration(node)) {
+      return node.id?.name ?? ''
+    } else if (t.isClassDeclaration(node)) {
+      return node.id?.name ?? ''
+    }
+
+    return ''
   }
 
   public createNewLocation(parent: Node): t.SourceLocation {
@@ -755,33 +828,43 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
     },
     ExportNamedDeclaration(path) {
       if (path.node.declaration) {
-        const newNode = graph.addNode(
-          'export',
-          path,
-        ) as Node<t.ExportNamedDeclaration>
-        program.addExportStatement(newNode)
-        const declarationPath = path.get('declaration') as NodePath
+        const declarationPath = path.get(
+          'declaration',
+        ) as NodePath<t.Declaration>
         const declarationNode = graph.createNode(
           getSnippetFromNode(declarationPath.node),
           declarationPath,
         )
         graph.addDataFlowEdge(declarationNode)
-        graph.addDataDependency(newNode.id, declarationNode.id)
+
+        const exportName =
+          graph.getDeclarationName(declarationPath.node) ?? 'export'
+        const newNode = graph.addNode(
+          exportName,
+          path,
+        ) as Node<t.ExportNamedDeclaration>
+        program.addExportStatement(newNode)
+
         graph.connectExportStatementsToImports(newNode)
+        graph.addDataDependency(newNode.id, declarationNode.id)
       }
     },
     ExportDefaultDeclaration(path) {
-      const newNode = graph.addNode(
-        'default export',
-        path,
-      ) as Node<t.ExportDefaultDeclaration>
-      program.setDefaultExport(newNode)
       const declarationPath = path.get('declaration')
       const declarationNode = graph.createNode(
         getSnippetFromNode(declarationPath.node),
         declarationPath,
       )
       graph.addDataFlowEdge(declarationNode)
+
+      const exportName =
+        graph.getDeclarationName(declarationPath.node) ?? 'default export'
+      const newNode = graph.addNode(
+        exportName,
+        path,
+      ) as Node<t.ExportDefaultDeclaration>
+      program.setDefaultExport(newNode)
+
       graph.addDataDependency(newNode.id, declarationNode.id)
       graph.connectExportStatementsToImports(newNode)
     },
@@ -789,32 +872,42 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
       const newNode = graph.createNode(getSnippetFromNode(path.node), path)
       graph.addDataFlowEdge(newNode)
     },
-    CallExpression(path) {
-      if (t.isIdentifier(path.node.callee)) {
-        const calleeName = path.node.callee.name
-        const callNode = graph.addNode(calleeName, path)
+    // CallExpression(path) {
+    //   if (t.isIdentifier(path.node.callee)) {
+    //     const calleeName = path.node.callee.name
+    //     const callNode = graph.addNode(calleeName, path)
 
-        const definitionNode = graph.getDefinition(calleeName)
+    //     const definitionNode = graph.getDefinition(calleeName)
 
-        if (definitionNode) {
-          graph.addDataDependency(callNode.id, definitionNode.id)
-        }
+    //     if (definitionNode) {
+    //       graph.addDataDependency(callNode.id, definitionNode.id)
+    //     }
 
-        // Map arguments to parameters and establish data flow edges
-        path.node.arguments.forEach((arg, index) => {
-          if (t.isStringLiteral(arg) || t.isIdentifier(arg)) {
-            const argPath = path.get(`arguments.${index}`)
-            if (Array.isArray(argPath)) throw new Error('Should not be array')
-            const argumentNode = graph.createNode(
-              getSnippetFromNode(arg),
-              argPath,
-            )
-            graph.addDataFlowEdge(argumentNode)
-          }
-        })
-      }
-    },
+    //     // Map arguments to parameters and establish data flow edges
+    //     path.node.arguments.forEach((arg, index) => {
+    //       if (t.isStringLiteral(arg) || t.isIdentifier(arg)) {
+    //         const argPath = path.get(`arguments.${index}`)
+    //         if (Array.isArray(argPath)) throw new Error('Should not be array')
+    //         const argumentNode = graph.createNode(
+    //           getSnippetFromNode(arg),
+    //           argPath,
+    //         )
+    //         graph.addDataFlowEdge(argumentNode)
+    //       }
+    //     })
+    //   }
+    // },
   })
+
+  // Connect the unconnected instances to their definition components
+  for (let i = graph.unconnectedInstances.length - 1; i >= 0; i--) {
+    const instance = graph.unconnectedInstances[i]
+    const elementDefinition = graph.getDefinition(instance)
+    if (elementDefinition) {
+      graph.addJSXInstanceComponentEdge(elementDefinition, instance)
+      graph.unconnectedInstances.splice(i, 1)
+    }
+  }
 
   return graph
 }

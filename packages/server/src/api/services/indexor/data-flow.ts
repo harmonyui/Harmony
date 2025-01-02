@@ -2,7 +2,7 @@ import type { Binding, NodePath, Scope } from '@babel/traverse'
 import * as t from '@babel/types'
 import type { FlowGraph } from './graph'
 import type { Node, ObjectProperty } from './types'
-import { getComponentName, getLocationId, getSnippetFromNode } from './utils'
+import { getLocationId, getSnippetFromNode } from './utils'
 import { MemberExpressionNode } from './nodes/member-expression'
 import { ObjectExpressionNode } from './nodes/object-expression'
 import { RestElementNode } from './nodes/rest-element'
@@ -18,8 +18,6 @@ import {
   isObjectPattern,
   isTemplateLiteral,
   isVariableDeclarator,
-  isExpression,
-  isFunctionExpression,
   isArrowFunctionExpression,
   isArrayPattern,
   isArrayExpression,
@@ -29,6 +27,10 @@ import {
   isFunctionDeclaration,
   isVariableDeclaration,
   isLiteral,
+  isImportDefaultSpecifier,
+  isJSXElement,
+  isArrayProperty,
+  isLogicalExpression,
 } from './predicates/simple-predicates'
 import { ArrayPropertyNode } from './nodes/array-property'
 import { ArrayExpression } from './nodes/array-expression'
@@ -79,16 +81,24 @@ const addEdge: AddEdge<t.Node> = (node, graph) => {
     visitor.ArrayExpression(node)
   } else if (isImportSpecifier(node)) {
     visitor.ImportSpecifier(node)
+  } else if (isImportDefaultSpecifier(node)) {
+    visitor.ImportDefaultSpecifier(node)
+  } else if (isLogicalExpression(node)) {
+    visitor.LogicalExpression(node)
+  } else if (isJSXElement(node)) {
+    return [] //We already visit jsx elements in a function, so no need to visit as a data edge
   } else if (isLiteral(node)) {
     graph.setNode(node)
-  } else if (
-    isExpression(node) &&
-    !isFunctionExpression(node) &&
-    !isArrowFunctionExpression(node)
-  ) {
-    graph.setNode(node)
-    node.path.traverse(visitor)
-  } else {
+  }
+  // else if (
+  //   isExpression(node) &&
+  //   !isFunctionExpression(node) &&
+  //   !isArrowFunctionExpression(node)
+  // ) {
+  //   graph.setNode(node)
+  //   node.path.traverse(visitor)
+  // }
+  else {
     graph.setNode(node)
   }
   return edges
@@ -188,19 +198,34 @@ const createVisitor = (graph: FlowGraph, edges: string[]) => {
       const newNode = nodeOrCreate(path)
       edges.push(...addImportSpecifier(newNode, graph))
     },
+    ImportDefaultSpecifier(
+      path: NodePath<t.ImportDefaultSpecifier> | Node<t.ImportDefaultSpecifier>,
+    ) {
+      const newNode = nodeOrCreate(path)
+      edges.push(...addImportSpecifier(newNode, graph))
+    },
+    LogicalExpression(
+      path: NodePath<t.LogicalExpression> | Node<t.LogicalExpression>,
+    ) {
+      const newNode = nodeOrCreate(path)
+      edges.push(...addLogicalExpressionEdge(newNode, graph))
+    },
   }
 }
 
 const addFunctionEdge: AddEdge<t.Function> = (node, graph) => {
   const path = node.path
-  const functionName = getComponentName(path)
+  const functionName = graph.getComponentName(path)
   if (!functionName || graph.nodes.get(node.id)) return []
 
   const containingComponent = graph.addComponentNode(
-    functionName,
+    functionName.name,
     path as NodePath<t.FunctionDeclaration | t.ArrowFunctionExpression>,
   )
-  const instances = graph.getElementInstances(functionName)
+  graph.addDataFlowEdge(functionName)
+  graph.addDependency(functionName.id, containingComponent.id)
+
+  const instances = graph.getElementInstances(containingComponent)
   instances.forEach((instance) => {
     graph.addJSXInstanceComponentEdge(containingComponent, instance)
   })
@@ -722,13 +747,16 @@ const addArrayExpressionEdge: AddEdge<t.ArrayExpression> = (node, graph) => {
   return []
 }
 
-const addImportSpecifier: AddEdge<t.ImportSpecifier> = (node, graph) => {
+const addImportSpecifier: AddEdge<
+  t.ImportSpecifier | t.ImportDefaultSpecifier
+> = (node, graph) => {
   const parentNode = node.path.parent as t.ImportDeclaration
   const newNode = new ImportStatement(
     parentNode.source.value,
     graph.createNode(getSnippetFromNode(node.node), node.path),
   )
   graph.setNode(newNode)
+  graph.tryConnectImportStatementToDefinition(newNode)
   return []
 }
 
@@ -744,9 +772,11 @@ const addMappedExpressionEdge: AddEdge<t.Node> = (node, graph) => {
     graph.createNode(getSnippetFromNode(node.node), node.path),
   )
   graph.setNode(arrayPropertyNode)
-  graph.pushMappedDependency(
-    graph.nodes.get(arrayPropertyNode.id) as ArrayPropertyNode,
-  )
+  const setNode = graph.nodes.get(arrayPropertyNode.id) ?? arrayPropertyNode
+  if (!isArrayProperty(setNode)) {
+    throw new Error('Array property node not found')
+  }
+  graph.pushMappedDependency(setNode)
 
   const objectPath = memberExpressionPath.get('object') as NodePath
   const objectNode = graph.createNode(
@@ -777,3 +807,25 @@ const isMappedExpression = (node: Node) =>
         .callee as t.MemberExpression
     ).property as t.Identifier
   ).name === 'map'
+
+const addLogicalExpressionEdge: AddEdge<t.LogicalExpression> = (
+  node,
+  graph,
+) => {
+  graph.setNode(node)
+  const leftPath = node.path.get('left') as NodePath
+  const leftNode = graph.createNode(
+    getSnippetFromNode(node.node.left),
+    leftPath,
+  )
+  addDataEdge(leftNode, graph)
+
+  const rightPath = node.path.get('right') as NodePath
+  const rightNode = graph.createNode(
+    getSnippetFromNode(node.node.right),
+    rightPath,
+  )
+  addDataEdge(rightNode, graph)
+
+  return [leftNode.id, rightNode.id]
+}

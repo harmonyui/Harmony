@@ -1,3 +1,4 @@
+import path from 'node:path'
 import type * as t from '@babel/types'
 import type { NodeBase } from '../types'
 import { Node } from '../types'
@@ -14,6 +15,17 @@ export class ImportStatement extends Node<
 
   public getSource() {
     return this.source
+  }
+
+  public getResolvedSource() {
+    if (!this.source.startsWith('.')) {
+      return this.source
+    }
+
+    const basePath = path.dirname(this.location.file)
+    const resolvedPath = path.join(basePath, this.source)
+
+    return resolvedPath
   }
 
   public getName() {
