@@ -1,4 +1,4 @@
-import path from 'node:path'
+import * as path from 'node:path'
 import type * as t from '@babel/types'
 import type { NodeBase } from '../types'
 import { Node } from '../types'
