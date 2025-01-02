@@ -9,6 +9,7 @@ import { DraggablePanel } from '../_common/panel/draggable-panel'
 import { Panels } from '../_common/panel/types'
 import { getComponentName } from '../design/utils'
 import { Card } from '../_common/panel/card'
+import { recurseComponents } from '../../../utils/element-utils'
 import { TreeView } from './tree-view'
 
 export const LayoutPanel: React.FunctionComponent = () => {
@@ -43,9 +44,31 @@ export const useComponentTreeItems = (
   const ids: string[] = []
   const getTreeItems = useCallback(
     (children: ComponentElement[]): TreeData<HTMLElement>[] | undefined => {
-      const filtered = children.filter((child) =>
-        isLayerSelectable(child.element, scale),
-      )
+      const filtered = children.reduce<ComponentElement[]>((prev, curr) => {
+        if (isLayerSelectable(curr.element, scale)) {
+          prev.push(curr)
+          return prev
+        }
+
+        let foundSelectable = false
+        recurseComponents(curr, (component) => {
+          if (foundSelectable) return false
+
+          const filteredChildren = component.children.filter((child) =>
+            isLayerSelectable(child.element, scale),
+          )
+          if (filteredChildren.length > 0) {
+            prev.push(...filteredChildren)
+            foundSelectable = true
+            return false
+          }
+
+          return true
+        })
+
+        return prev
+      }, [])
+
       if (filtered.length === 0) return undefined
 
       return filtered.map<TreeData<HTMLElement>>((child) => {

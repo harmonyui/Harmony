@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
 import $ from 'jquery'
 import { capitalizeFirstLetter } from '@harmony/util/src/utils/common'
+import type { ComponentElement } from '../components/inspector/component-identifier'
 
 /* eslint-disable @typescript-eslint/no-non-null-assertion --- ok*/
 export const recurseElements = (
@@ -22,6 +23,16 @@ export const recurseElements = (
     .forEach((child) => {
       recurseElements(child as HTMLElement, callbacks, element, text)
     })
+}
+
+export const recurseComponents = (
+  component: ComponentElement,
+  callback: (component: ComponentElement) => void,
+) => {
+  callback(component)
+  component.children.forEach((child) => {
+    recurseComponents(child, callback)
+  })
 }
 
 export function findElementFromId(

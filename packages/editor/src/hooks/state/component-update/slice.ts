@@ -30,7 +30,7 @@ export interface ComponentUpdateState {
     updates: ComponentUpdate[],
     fonts: Font[] | undefined,
     rootElement: HTMLElement | undefined,
-  ) => Promise<void>
+  ) => Promise<ComponentUpdate[]>
   deletedElements: CreatedComponent[]
   createdElements: CreatedComponent[]
 }
@@ -56,6 +56,8 @@ export const createComponentUpdateSlice = createHarmonySlice<
     fonts: Font[] | undefined,
     rootElement: HTMLElement | undefined,
   ) {
+    const appliedUpdates: ComponentUpdate[] = []
+
     const deleteComponent = deleteComponentUpdate([set, get, api])
     const createComponent = createComponentUpdate([set, get, api])
     const reorderComponent = reorderComponentUpdate([set, get, api])
@@ -69,25 +71,28 @@ export const createComponentUpdateSlice = createHarmonySlice<
 
       if (update.type === 'component') {
         if (update.name === 'reorder') {
-          await reorderComponent(update, rootElement)
+          if (!(await reorderComponent(update, rootElement))) {
+            continue
+          }
         }
         if (update.name === 'delete-create') {
           const result = parseUpdate(addDeleteComponentSchema, update.value)
           if (result.action === 'delete') {
-            deleteComponent(update, rootElement)
-          } else {
-            await createComponent(
+            if (!deleteComponent(update, rootElement)) {
+              continue
+            }
+          } else if (
+            !(await createComponent(
               update,
               parseUpdate(addComponentSchema, update.value),
               rootElement,
-            )
+            ))
+          ) {
+            continue
           }
         }
         if (update.name === 'style') {
-          if (!element)
-            throw new Error(
-              `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-            )
+          if (!element) continue
           await styleComponentUpdate([set, get, api])(
             update,
             element,
@@ -198,10 +203,7 @@ export const createComponentUpdateSlice = createHarmonySlice<
             value: string
             type: 'text' | 'image' | 'svg'
           }
-          if (!element)
-            throw new Error(
-              `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-            )
+          if (!element) continue
 
           if (actionValue === '') {
             element.innerHTML = ''
@@ -229,10 +231,7 @@ export const createComponentUpdateSlice = createHarmonySlice<
         }
 
         if (update.name === 'update-attribute') {
-          if (!element)
-            throw new Error(
-              `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-            )
+          if (!element) continue
           const { value } = update
           const {
             action,
@@ -258,12 +257,12 @@ export const createComponentUpdateSlice = createHarmonySlice<
         propertyUpdate(update, el)
         //}
       } else if (update.type === 'text') {
-        if (!element)
-          throw new Error(
-            `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-          )
+        //If the element does not exist, it probably has not been mounted yet (like a modal)
+        if (!element) continue
         textComponentUpdate(update, element)
       }
+
+      appliedUpdates.push(update)
     }
 
     //Updates that should happen for every element in a component
@@ -280,8 +279,11 @@ export const createComponentUpdateSlice = createHarmonySlice<
 
         if (update.type === 'className') {
           classNameComponentUpdate(update, htmlElement, fonts)
+          appliedUpdates.push(update)
         }
       }
     }
+
+    return appliedUpdates
   },
 }))

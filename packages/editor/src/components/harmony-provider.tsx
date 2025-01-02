@@ -184,17 +184,20 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
   useEffect(() => {
     if (rootComponent && isInitialized) {
+      const appliedUpdates: string[] = []
       const recurseAndUpdateElements = async (
         updateFilter?: (update: ComponentUpdate) => boolean,
       ) => {
         const componentIds: string[] = []
         recurseElements(rootComponent, [initElements(componentIds)])
-        await makeUpdates(
-          updateFilter
-            ? componentUpdates.filter(updateFilter)
-            : componentUpdates,
-          fonts,
-          rootComponent,
+        const filteredUpdates = updateFilter
+          ? componentUpdates.filter(updateFilter)
+          : componentUpdates
+
+        appliedUpdates.push(
+          ...(await makeUpdates(filteredUpdates, fonts, rootComponent)).map(
+            ({ componentId }) => componentId,
+          ),
         )
 
         if (repositoryId) {
@@ -207,15 +210,26 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         }
       }
       initMutationObserverRef.current = new MutationObserver((mutations) => {
-        //Only update if this is a harmony element
+        //Only update if this or any children is a harmony element
         if (
           mutations.some((m) =>
-            Array.from(m.addedNodes).some((n) =>
-              n instanceof HTMLElement ? n.dataset.harmonyId : false,
+            Array.from(m.addedNodes).some(
+              (n) =>
+                (n instanceof HTMLElement
+                  ? n.dataset.harmonyId &&
+                    !componentUpdates.find(
+                      ({ componentId, type }) =>
+                        type === 'component' &&
+                        n.dataset.harmonyId === componentId,
+                    )
+                  : false) ||
+                (n instanceof HTMLElement
+                  ? n.querySelector('[data-harmony-id]')
+                  : false),
             ),
           )
         ) {
-          recurseElements(rootComponent, [initElements([])])
+          void recurseAndUpdateElements()
         }
       })
       const body = rootComponent.querySelector('body')

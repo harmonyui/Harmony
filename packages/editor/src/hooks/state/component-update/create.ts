@@ -144,15 +144,13 @@ export const createComponentUpdate = ([set, get]: Parameters<
     update: ComponentUpdate,
     value: AddComponent,
     rootElement: HTMLElement | undefined,
-  ) => {
+  ): Promise<boolean> => {
     const { parentId, component, parentChildIndex, index, copiedFrom } = value
 
     const parent = findElementFromId(parentId, parentChildIndex, rootElement)
 
-    if (!parent)
-      throw new Error(
-        `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-      )
+    //If there is no parent, then that probably means it hasn't mounted yet (like in a modal)
+    if (!parent) return false
     await mountComponent({
       component,
       componentId: update.componentId,
@@ -172,5 +170,7 @@ export const createComponentUpdate = ([set, get]: Parameters<
         ),
       }
     })
+
+    return true
   }
 }

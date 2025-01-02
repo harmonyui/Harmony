@@ -8,7 +8,7 @@ export const deleteComponentUpdate =
   ([set, get]: Parameters<
     StateCreator<ComponentUpdateState & HarmonyCnState>
   >) =>
-  (update: ComponentUpdate, rootElement: HTMLElement | undefined) => {
+  (update: ComponentUpdate, rootElement: HTMLElement | undefined): boolean => {
     const createdElement = get().createdElements.find(
       (c) =>
         c.componentId === update.componentId &&
@@ -17,7 +17,9 @@ export const deleteComponentUpdate =
     const element =
       createdElement?.element ??
       findElementFromId(update.componentId, update.childIndex, rootElement)
-    if (!element) throw new Error("Can't find element to delete")
+
+    //If the element does not exist, it probably has not been mounted yet (like a modal)
+    if (!element) return false
 
     get().removeComponent(update.componentId, update.childIndex)
 
@@ -41,4 +43,6 @@ export const deleteComponentUpdate =
           : state.createdElements,
       }
     })
+
+    return true
   }

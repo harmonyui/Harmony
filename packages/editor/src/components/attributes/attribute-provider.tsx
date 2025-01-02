@@ -106,7 +106,8 @@ export const ComponentAttributeProvider: React.FunctionComponent<
     <T extends CommonTools>(name: T): Token['values'][number] | undefined => {
       const value = getAttribute(name)
       const token = tokens.find((t) => t.name === name)
-      if (token) {
+      // If the token is found and the value is not empty and is not a compound value
+      if (token && value && value.split(' ').length === 1) {
         const tokenValue = token.values.find((v) =>
           compareCSSValues(name, v.value, value),
         )
