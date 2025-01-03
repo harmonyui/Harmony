@@ -18,7 +18,11 @@ export const componentUpdateRepository = new PrismaComponentUpdateRepository(
 
 export const gitLocalRepositoryFactory: GitRepositoryFactory = {
   createGitRepository(repository: Repository) {
-    return new LocalGitRepository(repository, redisGithubCache)
+    return new LocalGitRepository(
+      repository,
+      redisGithubCache,
+      '/Users/braydonjones/Documents/Projects/sowards-vacations',
+    )
   },
   createGithubCache() {
     return redisGithubCache

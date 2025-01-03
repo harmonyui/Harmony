@@ -28,7 +28,7 @@ interface PublishState {
   setError: (error: string) => void
   loading: boolean
   setLoading: (loading: boolean) => void
-  sendPullRequest: (request: PullRequest) => Promise<void>
+  sendPullRequest: (request: PullRequest, isLocal: boolean) => Promise<void>
   currentBranch:
     | {
         name: string
@@ -62,11 +62,12 @@ export const PublishProvider: React.FunctionComponent<{
   )
 
   const sendPullRequest = useCallback(
-    async (pullRequest: PullRequest) => {
+    async (pullRequest: PullRequest, isLocal: boolean) => {
       setLoading(true)
       const request: PublishRequest = {
         branchId,
         pullRequest,
+        isLocal,
       }
       try {
         const published = await publish(request)
@@ -76,7 +77,9 @@ export const PublishProvider: React.FunctionComponent<{
         }
         setShow(false)
 
-        window.open(published.pullRequest.url, '_blank')?.focus()
+        if (published.pullRequest) {
+          window.open(published.pullRequest.url, '_blank')?.focus()
+        }
       } catch {
         setError('There was an error when publishing')
       } finally {
@@ -101,7 +104,7 @@ export const PublishProvider: React.FunctionComponent<{
       url: '',
     }
     if (!pullRequestProps) {
-      void sendPullRequest(pullRequest)
+      void sendPullRequest(pullRequest, false)
     } else {
       window.open(pullRequestProps.url, '_blank')?.focus()
     }
@@ -257,11 +260,14 @@ const Connected: React.FunctionComponent = () => {
     return true
   }
 
-  const onNewPullRequest = useCallback(() => {
-    if (!validate()) return
+  const onNewPullRequest = useCallback(
+    (isLocal: boolean) => {
+      if (!validate()) return
 
-    void sendPullRequest(pullRequest)
-  }, [pullRequest, sendPullRequest])
+      void sendPullRequest(pullRequest, isLocal)
+    },
+    [pullRequest, sendPullRequest],
+  )
 
   return (
     <div className='hw-w-full hw-flex hw-flex-col hw-gap-4'>
@@ -280,10 +286,17 @@ const Connected: React.FunctionComponent = () => {
         ) : null}
         <Button
           className='hw-w-full'
-          onClick={onNewPullRequest}
+          onClick={() => onNewPullRequest(false)}
           loading={loading}
         >
           Publish to Github
+        </Button>
+        <Button
+          className='hw-w-full hw-mt-2'
+          mode='none'
+          onClick={() => onNewPullRequest(true)}
+        >
+          Publish Locally
         </Button>
       </div>
     </div>

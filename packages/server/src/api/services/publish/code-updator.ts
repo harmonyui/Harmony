@@ -1,5 +1,10 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
-import { addDeleteComponentSchema } from '@harmony/util/src/updates/component'
+import {
+  addDeleteComponentSchema,
+  addComponentSchema,
+  reorderComponentSchema,
+  jsonSchema,
+} from '@harmony/util/src/updates/component'
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import type * as prettier from 'prettier'
 import type { GitRepository } from '../../repository/git/types'
@@ -26,12 +31,13 @@ export class CodeUpdator {
     updates: ComponentUpdate[],
   ): Promise<FileUpdateInfo> {
     const graph = await buildGraphForComponents(
-      updates.map((update) => update.componentId),
+      this.getComponentIds(updates),
       this.gitRepository,
     )
-    const tailwindFile =
-      await this.gitRepository.getContent('tailwind.config.ts')
-    getGraph('tailwind.config.ts', tailwindFile, graph)
+    const tailwindFile = await this.gitRepository.getContent(
+      'tooling/tailwind/tailwind.config.ts',
+    )
+    getGraph('tooling/tailwind/tailwind.config.ts', tailwindFile, graph)
 
     const updateInfo = await this.getUpdateInfo(updates)
 
@@ -43,6 +49,30 @@ export class CodeUpdator {
     const fileUpdates = await graph.getFileUpdates(this.options)
 
     return fileUpdates
+  }
+
+  private getComponentIds(updates: ComponentUpdate[]): string[] {
+    const componentIds: string[] = []
+    updates.forEach((update) => {
+      componentIds.push(update.componentId)
+      const addComponentUpdate = jsonSchema
+        .pipe(addComponentSchema)
+        .safeParse(update.value)
+      if (addComponentUpdate.success) {
+        componentIds.push(addComponentUpdate.data.parentId)
+        addComponentUpdate.data.copiedFrom?.componentId &&
+          componentIds.push(addComponentUpdate.data.copiedFrom.componentId)
+      }
+
+      const reorderComponentUpdate = jsonSchema
+        .pipe(reorderComponentSchema)
+        .safeParse(update.value)
+      if (reorderComponentUpdate.success) {
+        componentIds.push(reorderComponentUpdate.data.parentId)
+      }
+    })
+
+    return componentIds
   }
 
   private async getUpdateInfo(

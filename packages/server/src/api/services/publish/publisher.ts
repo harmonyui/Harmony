@@ -14,7 +14,8 @@ export class Publisher {
     updatesRaw: ComponentUpdate[],
     branch: BranchItem,
     pullRequest: { title: string; body: string },
-  ): Promise<PullRequest> {
+    isLocal: boolean,
+  ): Promise<PullRequest | undefined> {
     const updates = prepareUpdatesForGenerator(updatesRaw)
 
     const configOptions = JSON.parse(
@@ -29,13 +30,21 @@ export class Publisher {
       Object.values(fileUpdates),
     )
 
-    const newPullRequest = await createPullRequest({
-      branch,
-      pullRequest,
-      gitRepository: this.gitRepository,
-    })
+    if (isLocal) {
+      await this.gitRepository.createPullRequest(
+        branch.name,
+        pullRequest.title,
+        pullRequest.body,
+      )
+    } else {
+      const newPullRequest = await createPullRequest({
+        branch,
+        pullRequest,
+        gitRepository: this.gitRepository,
+      })
 
-    return newPullRequest
+      return newPullRequest
+    }
   }
 
   public async updateChanges(updatesRaw: ComponentUpdate[]) {

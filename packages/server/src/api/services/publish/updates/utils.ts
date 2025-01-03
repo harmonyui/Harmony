@@ -111,8 +111,10 @@ export const getInstanceInfo = (
     }
   }
 
-  const instances = element.getRootInstances(realComponentId)
-  if (!instances) throw new Error('Instances not found')
+  let instances = element.getRootInstances(realComponentId)
+  if (!instances) {
+    instances = [element]
+  }
 
   setMappingIndex(element, realComponentId, childIndex)
   const attributes: AttributeInfo[] = element
@@ -277,6 +279,8 @@ export const getJSXElementFromLevels = (
   componentId: string,
   childIndex: number,
   graph: FlowGraph,
+  filter: (element: JSXElementNode) => boolean = (element: JSXElementNode) =>
+    element.getParentComponent().getJSXElements()[0]?.id !== element.id,
 ): JSXElementNode | undefined => {
   const numLevels = componentId.split('#').length
   let element: JSXElementNode | undefined
@@ -286,8 +290,8 @@ export const getJSXElementFromLevels = (
     if (!element) {
       continue
     }
-    const parentComponent = element.getParentComponent()
-    if (parentComponent.getJSXElements()[0].id === element.id) {
+
+    if (!filter(element)) {
       continue
     }
 

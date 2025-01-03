@@ -909,6 +909,9 @@ describe('code-updator', () => {
             </div>
           )
         }
+        const App = () => {
+          return <AddComponent />
+        }
         `),
       )
     })
@@ -1873,6 +1876,10 @@ const testFiles = {
             <div></div>
           </div>
         )
+      }
+
+      const App = () => {
+        return <AddComponent />
       }
   `,
   updateProperty: `

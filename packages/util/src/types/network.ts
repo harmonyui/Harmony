@@ -50,11 +50,12 @@ export const publishRequestSchema = z.object({
     body: z.string(),
   }),
   branchId: z.string(),
+  isLocal: z.boolean(),
 })
 export type PublishRequest = z.infer<typeof publishRequestSchema>
 
 export const publishResponseSchema = z.object({
-  pullRequest: pullRequestSchema,
+  pullRequest: z.optional(pullRequestSchema),
 })
 export type PublishResponse = z.infer<typeof publishResponseSchema>
 

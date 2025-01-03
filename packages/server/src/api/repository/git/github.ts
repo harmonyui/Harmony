@@ -10,7 +10,6 @@ import { App } from 'octokit'
 import type { CommitItem, Repository } from '@harmony/util/src/types/branch'
 import type { Change } from 'diff'
 import { diffLines } from 'diff'
-import { LOCALHOST } from '@harmony/util/src/utils/component'
 import type { components } from '@octokit/openapi-types'
 import type { GithubCache } from '../cache/types'
 import type {
@@ -429,6 +428,7 @@ export class LocalGitRepository implements GitRepository {
   constructor(
     public repository: Repository,
     gitCache: GithubCache,
+    private filePath: string,
   ) {
     this.githubRepo = new GithubRepository(repository, gitCache)
   }
@@ -462,25 +462,22 @@ export class LocalGitRepository implements GitRepository {
   public diffFiles(): Promise<Change[]> {
     throw new Error('Not implemented')
   }
-  public getContent(file: string, ref?: string): Promise<string> {
-    return this.githubRepo.getContent(file, ref)
-    // const absolute = path.join(
-    //   '/Users/braydonjones/Documents/Projects/react-email',
-    //   file,
-    // )
-    // if (!fs.existsSync(absolute)) {
-    //   throw new Error(`Invalid path ${absolute}`)
-    // }
+  public getContent(file: string): Promise<string> {
+    //return this.githubRepo.getContent(file, ref)
+    const absolute = path.join(this.filePath, file)
+    if (!fs.existsSync(absolute)) {
+      throw new Error(`Invalid path ${absolute}`)
+    }
 
-    // return new Promise<string>((resolve, reject) => {
-    //   fs.readFile(absolute, 'utf-8', (err, data) => {
-    //     if (err) {
-    //       reject(new Error(err.message))
-    //     }
+    return new Promise<string>((resolve, reject) => {
+      fs.readFile(absolute, 'utf-8', (err, data) => {
+        if (err) {
+          reject(new Error(err.message))
+        }
 
-    //     resolve(data)
-    //   })
-    // })
+        resolve(data)
+      })
+    })
   }
 
   public async getUpdatedFiles(branch: string, oldRef: string) {
@@ -514,55 +511,15 @@ export class LocalGitRepository implements GitRepository {
     throw new Error('Not implemented')
   }
   public async createPullRequest(branch: string): Promise<string> {
-    const encode = (str: string): string => {
-      return str.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-    }
     const updates = this.commits[branch]
     if (!updates) {
       throw new Error('Cannot find updates')
     }
-    const sections: string[] = []
     for (const update of updates) {
-      const diffs = diffLines(update.oldContent, update.newContent)
-
-      const spans: string[] = []
-      diffs.forEach((part) => {
-        const color = part.added ? 'green' : part.removed ? 'red' : 'grey'
-        const lines = part.value.split('\n')
-
-        const span = `<span style="color: ${color};">${lines.map((line) => encode(line)).join('<br>')}</span>`
-        //span = document.createElement('span');
-        //span.style.color = color;
-        // span.appendChild(document
-        //   .createTextNode(part.value));
-        // fragment.appendChild(span);
-        spans.push(span)
-      })
-      //spans.push(`<span style="color: grey;">${update.newContent.split('\n').map(line => encode(line)).join('<br>')}</span>`)
-
-      const section = `<div>
-                <h4>${update.filePath}</h4>
-                <div>${spans.join('')}</div>
-            </div>`
-
-      sections.push(section)
+      const file = path.join(this.filePath, update.filePath)
+      fs.writeFileSync(file, update.newContent, 'utf8')
     }
 
-    const template = `<!DOCTYPE html>
-        <html>
-            <head></head>
-            <body>
-                ${sections.join('')}
-            </body>
-        </html>`
-
-    const diffPath = path.join(
-      __dirname,
-      '../../../../../../',
-      `packages/editor/public/${branch}.html`,
-    )
-    fs.writeFileSync(diffPath, template, 'utf-8')
-
-    return `http://${LOCALHOST}:4200/${branch}.html`
+    return ''
   }
 }

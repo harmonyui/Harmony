@@ -230,7 +230,7 @@ export const editorRouter = createTRPCRouter({
     .input(publishRequestSchema)
     .mutation(async ({ ctx, input }) => {
       const data = input
-      const { branchId, pullRequest } = data
+      const { branchId, pullRequest, isLocal } = data
       const { prisma } = ctx
 
       const branch = await getBranch({ prisma, branchId })
@@ -268,6 +268,7 @@ export const editorRouter = createTRPCRouter({
         updates,
         branch,
         pullRequest,
+        isLocal,
       )
 
       const response: PublishResponse = { pullRequest: newPullRequest }

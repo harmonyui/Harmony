@@ -21,15 +21,6 @@ export const createUpdate: UpdateComponent = async (
   const { parentId, parentChildIndex, index, component, copiedFrom, element } =
     parseUpdate(addComponentSchema, value)
 
-  const parentElement = getJSXElementFromLevels(
-    parentId,
-    parentChildIndex,
-    graph,
-  )
-  if (!parentElement) {
-    throw new Error(`Parent element with id ${parentId} not found`)
-  }
-
   //If there is no comonent attached, it is probably just the result of an undo delete
   if (!component && !copiedFrom && !element) {
     return
@@ -73,6 +64,7 @@ export const createComponent = (
     parentId,
     parentChildIndex,
     graph,
+    (_element) => _element.getChildren().length >= index,
   )
   if (!parentElement) {
     throw new Error(`Parent element with id ${parentId} not found`)
