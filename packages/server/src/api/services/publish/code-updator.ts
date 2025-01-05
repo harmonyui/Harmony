@@ -34,9 +34,15 @@ export class CodeUpdator {
       this.getComponentIds(updates),
       this.gitRepository,
     )
-    const tailwindFile =
-      await this.gitRepository.getContent('tailwind.config.ts')
-    getGraph('tailwind.config.ts', tailwindFile, graph)
+    const tailwindFile = await this.gitRepository.getContent(
+      this.gitRepository.repository.config.tailwindPath,
+    )
+    getGraph({
+      file: this.gitRepository.repository.config.tailwindPath,
+      code: tailwindFile,
+      graph,
+      importMappings: this.gitRepository.repository.config.packageResolution,
+    })
 
     const updateInfo = await this.getUpdateInfo(updates)
 

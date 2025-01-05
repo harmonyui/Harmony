@@ -1,5 +1,9 @@
 import type { Db, Prisma } from '@harmony/db/lib/prisma'
-import type { BranchItem, Repository } from '@harmony/util/src/types/branch'
+import {
+  repositoryConfigSchema,
+  type BranchItem,
+  type Repository,
+} from '@harmony/util/src/types/branch'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { compare } from '@harmony/util/src/utils/common'
 
@@ -42,6 +46,7 @@ export const getRepository = async ({
     tailwindConfig: repository.tailwind_config,
     defaultUrl: repository.default_url,
     prettierConfig: repository.prettier_config,
+    config: repositoryConfigSchema.parse(repository.config),
     registry: {
       Button: {
         name: 'Button',

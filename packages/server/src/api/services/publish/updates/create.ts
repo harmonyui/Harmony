@@ -76,6 +76,7 @@ export const createComponent = (
   const instanceNodes = getElementInstanceNodes(
     parentElement.location.file,
     code,
+    graph.importMappings,
   )
 
   graph.addChildElement(

@@ -40,16 +40,13 @@ export class FlowGraph {
   public code = ''
   private mappedDependencyStack: ArrayProperty[] = []
   public files: Record<string, ProgramNode> = {}
-  private importMappings: Record<string, string> = {
-    ui: 'packages/ui',
-  }
 
   //Sometimes jsxelements that are in other files can not be connected
   //until the whole file has been parsed (because exports show up at the bottom)
   public unconnectedInstances: JSXElementNode[] = []
   private dirtyFiles: Set<string> = new Set<string>()
 
-  constructor() {
+  constructor(public importMappings: Record<string, string>) {
     this.nodes = new Map()
   }
 
@@ -836,9 +833,19 @@ export class FlowGraph {
   }
 }
 
-export function getGraph(file: string, code: string, _graph?: FlowGraph) {
+export function getGraph({
+  file,
+  code,
+  importMappings,
+  graph: _graph,
+}: {
+  file: string
+  code: string
+  importMappings: Record<string, string>
+  graph?: FlowGraph
+}) {
   // Initialize the flow graph
-  const graph = _graph ?? new FlowGraph()
+  const graph = _graph ?? new FlowGraph(importMappings)
   graph.addProject(file, code)
 
   const ast = parser.parse(code, {

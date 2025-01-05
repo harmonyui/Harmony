@@ -223,6 +223,7 @@ export const getInstanceFromElement = (
 export const getElementInstanceNodes = (
   file: string,
   { implementation, dependencies, componentIds }: InstanceInfo,
+  importMappings: Record<string, string>,
 ): { element: JSXElementNode; nodes: Node[] } => {
   const importStatements = dependencies
     .map((dependency) => {
@@ -231,15 +232,16 @@ export const getElementInstanceNodes = (
         : `import { ${dependency.name} } from '${dependency.path}'`
     })
     .join('\n')
-  const graph = getGraph(
-    Math.random().toString(),
-    `${importStatements}
+  const graph = getGraph({
+    file: Math.random().toString(),
+    code: `${importStatements}
 
     const App = () => {
       return ${implementation}
     }
   `,
-  )
+    importMappings,
+  })
 
   const elementInstance = graph.getNodes().find(isJSXElement)
   if (!elementInstance) {
@@ -305,12 +307,13 @@ export const parseText = <T extends Node>(
   text: string,
   filter: (node: Node) => node is T,
 ): T[] => {
-  const graph = getGraph(
-    'file',
-    `
+  const graph = getGraph({
+    file: 'file',
+    code: `
       export const temp = ${text}
     `,
-  )
+    importMappings: {},
+  })
 
   return graph.getNodes().filter(filter)
 }

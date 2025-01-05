@@ -126,6 +126,12 @@ describe('code-updator', () => {
           props: [],
         },
       },
+      config: {
+        tailwindPath: 'tailwind.config.ts',
+        packageResolution: {
+          ui: 'packages/ui',
+        },
+      },
     }
     const gitRepository: GitRepository = {
       async getBranchRef() {
@@ -167,6 +173,7 @@ describe('code-updator', () => {
     const result = await indexFiles(
       files,
       async (file) => testFiles[file as TestFile],
+      repository.config.packageResolution,
     )
     expect(result).toBeTruthy()
     if (!result) throw new Error()
