@@ -1,4 +1,5 @@
 {
+  "rust-analyzer.linkedProjects": ["packages/swc-plugin/Cargo.toml"],
   "editor.fontSize": 12,
   "editor.tabSize": 2,
   "editor.insertSpaces": true,

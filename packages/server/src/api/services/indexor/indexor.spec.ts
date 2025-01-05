@@ -1217,6 +1217,72 @@ describe('indexor', () => {
       expect(componentElements.length).toBe(7)
     })
 
+    it('Should handle mapping with complex jsx and spread', () => {
+      const file: TestFile = 'app/ConditionalJSX.tsx'
+      const content = testCases[file]
+      const result = getGraph(file, content)
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(3)
+
+      expect(componentElements[0].getAttributes().length).toBe(1)
+      expect(componentElements[0].getAttributes()[0].name).toBe('className')
+      expect(componentElements[0].getAttributes()[0].getDataFlow().length).toBe(
+        2,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[1].node,
+        ),
+      ).toBe('bg-blue-50')
+    })
+
+    it('Should handle complex imports', () => {
+      const file1: TestFile = 'packages/ui/src/Button.tsx'
+      const content = testCases[file1]
+      const result = getGraph(file1, content)
+
+      const file2: TestFile = 'app/complexImports.tsx'
+      getGraph(file2, testCases['app/complexImports.tsx'], result)
+
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(2)
+
+      expect(componentElements[1].getName()).toBe('button')
+      expect(componentElements[1].getAttributes().length).toBe(2)
+      expect(componentElements[1].getAttributes()[0].name).toBe('className')
+      expect(componentElements[1].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe('bg-blue-50')
+      expectLocationOfString(
+        file2,
+        componentElements[1].getAttributes()[0].getDataFlow()[0].location,
+        '"bg-blue-50"',
+      )
+      expect(componentElements[1].getAttributes()[1].name).toBe('children')
+      expect(componentElements[1].getAttributes()[1].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[1].getDataFlow()[0].node,
+        ),
+      ).toBe('Hello there')
+      expectLocationOfString(
+        file2,
+        componentElements[1].getAttributes()[1].getDataFlow()[0].location,
+        'Hello there',
+      )
+    })
+
     //TODO: Finish this
     // it('Should handle imports from various files', () => {
     //   const componentElements: HarmonyComponent[] = []

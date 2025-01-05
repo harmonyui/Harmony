@@ -31,6 +31,7 @@ import {
   isJSXElement,
   isArrayProperty,
   isLogicalExpression,
+  isFunctionExpression,
 } from './predicates/simple-predicates'
 import { ArrayPropertyNode } from './nodes/array-property'
 import { ArrayExpression } from './nodes/array-expression'
@@ -55,6 +56,8 @@ const addEdge: AddEdge<t.Node> = (node, graph) => {
     visitor.FunctionDeclaration(node)
   } else if (isArrowFunctionExpression(node)) {
     visitor.ArrowFunctionExpression(node)
+  } else if (isFunctionExpression(node)) {
+    visitor.FunctionExpression(node)
   } else if (isMappedExpression(node)) {
     edges.push(...addMappedExpressionEdge(node, graph))
   } else if (isIdentifier(node)) {
@@ -127,6 +130,12 @@ const createVisitor = (graph: FlowGraph, edges: string[]) => {
     },
     FunctionDeclaration(
       path: NodePath<t.FunctionDeclaration> | Node<t.FunctionDeclaration>,
+    ) {
+      const newNode = nodeOrCreate(path)
+      addFunctionEdge(newNode, graph)
+    },
+    FunctionExpression(
+      path: NodePath<t.FunctionExpression> | Node<t.FunctionExpression>,
     ) {
       const newNode = nodeOrCreate(path)
       addFunctionEdge(newNode, graph)

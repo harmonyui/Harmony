@@ -1,5 +1,6 @@
 /* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+import { join } from 'node:path'
 import * as parser from '@babel/parser'
 import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
@@ -39,6 +40,9 @@ export class FlowGraph {
   public code = ''
   private mappedDependencyStack: ArrayProperty[] = []
   public files: Record<string, ProgramNode> = {}
+  private importMappings: Record<string, string> = {
+    ui: 'packages/ui',
+  }
 
   //Sometimes jsxelements that are in other files can not be connected
   //until the whole file has been parsed (because exports show up at the bottom)
@@ -815,6 +819,21 @@ export class FlowGraph {
       parser: 'typescript',
     })
   }
+
+  public resolveImports(importPath: string): string {
+    // Split the import path into parts (e.g., 'ui/src/button' -> ['ui', 'src/button'])
+    const [packageName, ...rest] = importPath.split('/')
+
+    // Check if the package name exists in the mappings
+    if (packageName in this.importMappings) {
+      // Resolve to the base path and append the rest of the path
+      const basePath = this.importMappings[packageName]
+      return join(basePath, ...rest)
+    }
+
+    // If no mapping is found, return the original path
+    return importPath
+  }
 }
 
 export function getGraph(file: string, code: string, _graph?: FlowGraph) {
@@ -878,6 +897,10 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
       graph.connectExportStatementsToImports(newNode)
     },
     'FunctionDeclaration|ArrowFunctionExpression'(path) {
+      const newNode = graph.createNode(getSnippetFromNode(path.node), path)
+      graph.addDataFlowEdge(newNode)
+    },
+    FunctionExpression(path) {
       const newNode = graph.createNode(getSnippetFromNode(path.node), path)
       graph.addDataFlowEdge(newNode)
     },

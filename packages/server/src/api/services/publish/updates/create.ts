@@ -65,7 +65,7 @@ export const createComponent = (
     parentChildIndex,
     graph,
     (_element) =>
-      _element.getChildren().length !== 1 ||
+      _element.getChildren().length > 1 ||
       _element.getAttributes().find((attr) => attr.getName() === 'children') ===
         undefined,
   )
