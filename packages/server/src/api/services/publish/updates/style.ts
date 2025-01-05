@@ -241,7 +241,7 @@ const buildReducedClassElement = (
   }
   addElements(elementTree, rootElement)
   const snippet = rootElement
-    .getChildren()
+    .getJSXChildren()
     .map((child) => getSnippetFromNode(child.node))
     .join('\n')
 

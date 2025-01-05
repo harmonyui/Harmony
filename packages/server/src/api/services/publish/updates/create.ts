@@ -64,7 +64,10 @@ export const createComponent = (
     parentId,
     parentChildIndex,
     graph,
-    (_element) => _element.getChildren().length >= index,
+    (_element) =>
+      _element.getChildren().length !== 1 ||
+      _element.getAttributes().find((attr) => attr.getName() === 'children') ===
+        undefined,
   )
   if (!parentElement) {
     throw new Error(`Parent element with id ${parentId} not found`)
@@ -93,7 +96,7 @@ const getInstanceFromCopiedFrom = (
   if (!element) {
     throw new Error(`Element with id ${componentId} not found`)
   }
-  const allElements = element.getChildren(true)
+  const allElements = element.getJSXChildren(true)
 
   return {
     implementation: getSnippetFromNode(element.node),

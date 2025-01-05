@@ -332,6 +332,11 @@ const addFunctionEdge: AddEdge<t.Function> = (node, graph) => {
             )
 
             graph.addJSXAttribute(attributeNode, elementNode)
+            elementNode.addChild(attributeNode)
+          } else {
+            elementNode.addChild(
+              graph.createNode(getSnippetFromNode(_node), childPath),
+            )
           }
           childIndex++
         }

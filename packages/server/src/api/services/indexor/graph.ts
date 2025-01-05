@@ -180,10 +180,12 @@ export class FlowGraph {
     jsxElementNode.setParentComponent(component)
     if (beforeSibling && parentElement) {
       const index = parentElement.getChildren().indexOf(beforeSibling)
-      if (index === -1) throw new Error('Cannot find child of element')
+      if (index === -1) {
+        throw new Error('Cannot find child of element')
+      }
       parentElement.insertChild(jsxElementNode, index)
     } else {
-      parentElement?.addChild(jsxElementNode)
+      parentElement?.addJSXChild(jsxElementNode)
     }
     jsxElementNode.setParentElement(parentElement)
     const nameNode = jsxElementNode.getNameNode()
@@ -680,6 +682,9 @@ export class FlowGraph {
       parentElement.getParentComponent(),
       beforeElement,
     )
+    if (!beforeElement) {
+      parentElement.addChild(childElement)
+    }
 
     this.addDependencyImports(
       childElement,
@@ -736,14 +741,18 @@ export class FlowGraph {
     if (parentElement) {
       const parentChildren = parentElement.getChildren()
       const index = parentChildren.indexOf(jsxElement)
-      if (index === -1) throw new Error('Cannot find child of element')
-      parentChildren.splice(index, 1)
+      if (index === -1) {
+        throw new Error('Cannot find child of element')
+      }
+      parentElement.deleteChild(index)
     }
 
     const parentComponent = jsxElement.getParentComponent()
     const parentComponentChildren = parentComponent.getJSXElements()
     const componentIndex = parentComponentChildren.indexOf(jsxElement)
-    if (componentIndex === -1) throw new Error('Cannot find child of element')
+    if (componentIndex === -1) {
+      throw new Error('Cannot find child of element')
+    }
     parentComponentChildren.splice(componentIndex, 1)
 
     const content = getSnippetFromNode(jsxElement.node)

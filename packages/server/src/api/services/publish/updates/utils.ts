@@ -249,7 +249,7 @@ export const getElementInstanceNodes = (
     graph.files[elementInstance.location.file].getNodes(elementInstance)
 
   const otherNodes = nodes.filter((node) => node !== elementInstance)
-  const childElements = elementInstance.getChildren(true)
+  const childElements = elementInstance.getJSXChildren(true)
 
   if (componentIds.length > 0) {
     if (childElements.length !== componentIds.length) {
