@@ -76,6 +76,25 @@ export type IndexComponentsResponse = z.infer<
   typeof indexComponentsResponseSchema
 >
 
+export const codeUpdatesRequestSchema = z.object({
+  repositoryId: z.string(),
+  updates: z.array(updateSchema),
+  contents: z.array(
+    z.object({
+      content: z.string(),
+      path: z.string(),
+    }),
+  ),
+})
+export type CodeUpdatesRequest = z.infer<typeof codeUpdatesRequestSchema>
+export const codeUpdatesResponseSchema = z.array(
+  z.object({
+    content: z.string(),
+    path: z.string(),
+  }),
+)
+export type CodeUpdatesResponse = z.infer<typeof codeUpdatesResponseSchema>
+
 export const emailFeedbackRequestSchema = z.object({
   name: z.string(),
   comments: z.string(),

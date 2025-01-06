@@ -1,6 +1,8 @@
 /* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import {
+  codeUpdatesRequestSchema,
+  codeUpdatesResponseSchema,
   createUpdateFromTextRequestSchema,
   createUpdateFromTextResponseSchema,
   indexComponentsRequestSchema,
@@ -15,8 +17,8 @@ import type {
   UpdateResponse,
 } from '@harmony/util/src/types/network'
 import { reverseUpdates } from '@harmony/util/src/utils/component'
-import { z } from 'zod'
 import type { Token } from '@harmony/util/src/types/tokens'
+import { z } from 'zod'
 import {
   formatComponentAndErrors,
   indexForComponents,
@@ -31,14 +33,16 @@ import {
   createComponentUpdates,
   getComponentUpdates,
 } from '../services/component-update'
+import { CachedGitRepository } from '../repository/git/cached-git'
 
-export const editorRouter = createTRPCRouter({
+const editorRoutes = {
   loadProject: publicProcedure
     .input(loadRequestSchema)
     .output(loadResponseSchema)
     .query(async ({ ctx, input }) => {
       const { repositoryId, branchId } = input
       const { prisma } = ctx
+      const isLocal = branchId === 'local'
 
       const pullRequest = await prisma.pullRequest.findUnique({
         where: {
@@ -56,14 +60,13 @@ export const editorRouter = createTRPCRouter({
         },
       })
 
-      if (!accountTiedToBranch) {
+      if (!accountTiedToBranch && !isLocal) {
         throw new Error(`Cannot find account tied to branch ${branchId}`)
       }
 
-      const updates = await getComponentUpdates(
-        branchId,
-        ctx.componentUpdateRepository,
-      )
+      const updates = isLocal
+        ? []
+        : await getComponentUpdates(branchId, ctx.componentUpdateRepository)
 
       let tokens: Token[] = []
       if (repositoryId !== undefined) {
@@ -110,7 +113,7 @@ export const editorRouter = createTRPCRouter({
         },
       })
 
-      const isDemo = accountTiedToBranch.role === 'quick'
+      const isDemo = accountTiedToBranch?.role === 'quick'
 
       return {
         updates,
@@ -281,7 +284,7 @@ export const editorRouter = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const { branchId, repositoryId } = input
       const branch = await getBranch({ prisma: ctx.prisma, branchId })
-      if (!branch) {
+      if (!branch && branchId !== 'local') {
         throw new Error(`Cannot find branch with id ${branchId}`)
       }
 
@@ -290,7 +293,7 @@ export const editorRouter = createTRPCRouter({
         repositoryId,
       })
       if (!repository) {
-        throw new Error(`Cannot find repository with id ${branch.repositoryId}`)
+        throw new Error(`Cannot find repository with id ${repositoryId}`)
       }
 
       const gitRepository =
@@ -312,43 +315,22 @@ export const editorRouter = createTRPCRouter({
       }
     }),
 
-  getPublishedFiles: publicProcedure
-    .input(z.object({ branchId: z.string() }))
-    .query(async ({ ctx, input }) => {
-      const data = input
-      const { branchId } = data
+  getCodeUpdates: publicProcedure
+    .input(codeUpdatesRequestSchema)
+    .output(codeUpdatesResponseSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { repositoryId, updates, contents } = input
       const { prisma } = ctx
-
-      const branch = await getBranch({ prisma, branchId })
-      if (!branch) {
-        throw new Error(`Cannot find branch with id ${branchId}`)
-      }
 
       const repository = await getRepository({
         prisma,
-        repositoryId: branch.repositoryId,
+        repositoryId,
       })
       if (!repository) {
-        throw new Error(`Cannot find repository with id ${branch.repositoryId}`)
+        throw new Error(`Cannot find repository with id ${repositoryId}`)
       }
 
-      const alreadyPublished = await prisma.pullRequest.findUnique({
-        where: {
-          branch_id: branch.id,
-        },
-      })
-
-      if (!alreadyPublished) {
-        return undefined
-      }
-
-      const updates = await getComponentUpdates(
-        branchId,
-        ctx.componentUpdateRepository,
-      )
-
-      const gitRepository =
-        ctx.gitRepositoryFactory.createGitRepository(repository)
+      const gitRepository = new CachedGitRepository(repository, contents)
       const publisher = new Publisher(gitRepository)
       const updateChanges = await publisher.updateChanges(updates)
 
@@ -380,4 +362,21 @@ export const editorRouter = createTRPCRouter({
 
       return updates
     }),
-})
+  getRepository: publicProcedure
+    .input(z.object({ repositoryId: z.string() }))
+    .query(async ({ ctx, input }) => {
+      const { prisma } = ctx
+      const repository = await getRepository({
+        prisma,
+        repositoryId: input.repositoryId,
+      })
+      if (!repository) {
+        throw new Error(`Cannot find repository with id ${input.repositoryId}`)
+      }
+
+      return repository
+    }),
+} satisfies Parameters<typeof createTRPCRouter>[0]
+
+export const editorRouter = createTRPCRouter(editorRoutes)
+export type EditorRoutes = typeof editorRoutes

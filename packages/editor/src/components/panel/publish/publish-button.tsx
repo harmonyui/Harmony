@@ -55,6 +55,7 @@ export const PublishProvider: React.FunctionComponent<{
   const currentBranch = useHarmonyStore((state) => state.currentBranch)
   const pullRequestProps = useHarmonyStore((state) => state.pullRequest)
   const isDemo = useHarmonyStore((state) => state.isDemo)
+  const isLocal = useHarmonyStore((state) => state.isLocal)
 
   const isPublished = useMemo(
     () => Boolean(pullRequestProps),
@@ -89,36 +90,33 @@ export const PublishProvider: React.FunctionComponent<{
     [setLoading, setError, setShow, publish, branchId],
   )
 
-  const onViewCode = useCallback(() => {
-    if (!currentBranch.id) return
+  const onViewCode = useCallback(
+    (isLocal: boolean) => {
+      if (!currentBranch.id) return
 
-    if (isSaving) {
-      setErrorProps('Please wait to finish saving before publishing')
-      return
-    }
+      if (isSaving) {
+        setErrorProps('Please wait to finish saving before publishing')
+        return
+      }
 
-    const pullRequest: PullRequest = {
-      id: '',
-      title: currentBranch.name,
-      body: '',
-      url: '',
-    }
-    if (!pullRequestProps) {
-      void sendPullRequest(pullRequest, false)
-    } else {
-      window.open(pullRequestProps.url, '_blank')?.focus()
-    }
-  }, [
-    currentBranch,
-    isSaving,
-    setErrorProps,
-    pullRequestProps,
-    sendPullRequest,
-  ])
+      const pullRequest: PullRequest = {
+        id: '',
+        title: currentBranch.name,
+        body: '',
+        url: '',
+      }
+      if (!pullRequestProps) {
+        void sendPullRequest(pullRequest, isLocal)
+      } else {
+        window.open(pullRequestProps.url, '_blank')?.focus()
+      }
+    },
+    [currentBranch, isSaving, setErrorProps, pullRequestProps, sendPullRequest],
+  )
 
   const onPublish = useCallback(() => {
-    if (isDemo || isPublished) {
-      onViewCode()
+    if (isDemo || isPublished || isLocal) {
+      onViewCode(isLocal)
       return
     }
 
@@ -127,7 +125,15 @@ export const PublishProvider: React.FunctionComponent<{
       return
     }
     setShow(true)
-  }, [setShow, setErrorProps, isSaving, onViewCode, isDemo, isPublished])
+  }, [
+    setShow,
+    setErrorProps,
+    isSaving,
+    onViewCode,
+    isDemo,
+    isPublished,
+    isLocal,
+  ])
 
   return (
     <PublishContext.Provider

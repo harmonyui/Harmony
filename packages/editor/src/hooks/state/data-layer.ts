@@ -35,6 +35,8 @@ export interface DataLayerState {
   initializeDataLayer: (
     environment: Environment,
     getToken: () => Promise<string>,
+    isLocal: boolean,
+    repositoryId: string,
   ) => void
   loadProject: (args: LoadRequest) => Promise<LoadResponse>
   saveProject: (args: UpdateRequest) => Promise<UpdateResponse>
@@ -68,8 +70,15 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
     initializeDataLayer(
       environment: Environment,
       getToken: () => Promise<string>,
+      isLocal,
+      repositoryId,
     ) {
-      const client = createClient({ environment, getToken })
+      const client = createClient({
+        environment,
+        getToken,
+        isLocal,
+        repositoryId,
+      })
       set({
         client,
         loadProject: dataFetch<LoadRequest, LoadResponse>(

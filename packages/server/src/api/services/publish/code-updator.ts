@@ -1,11 +1,9 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
+import { addDeleteComponentSchema } from '@harmony/util/src/updates/component'
 import {
-  addDeleteComponentSchema,
-  addComponentSchema,
-  reorderComponentSchema,
-  jsonSchema,
-} from '@harmony/util/src/updates/component'
-import { parseUpdate } from '@harmony/util/src/updates/utils'
+  getComponentIdsFromUpdates,
+  parseUpdate,
+} from '@harmony/util/src/updates/utils'
 import type * as prettier from 'prettier'
 import type { GitRepository } from '../../repository/git/types'
 import { buildGraphForComponents } from '../indexor/indexor'
@@ -31,7 +29,7 @@ export class CodeUpdator {
     updates: ComponentUpdate[],
   ): Promise<FileUpdateInfo> {
     const graph = await buildGraphForComponents(
-      this.getComponentIds(updates),
+      getComponentIdsFromUpdates(updates),
       this.gitRepository,
     )
     const tailwindFile = await this.gitRepository.getContent(
@@ -54,30 +52,6 @@ export class CodeUpdator {
     const fileUpdates = await graph.getFileUpdates(this.options)
 
     return fileUpdates
-  }
-
-  private getComponentIds(updates: ComponentUpdate[]): string[] {
-    const componentIds: string[] = []
-    updates.forEach((update) => {
-      componentIds.push(update.componentId)
-      const addComponentUpdate = jsonSchema
-        .pipe(addComponentSchema)
-        .safeParse(update.value)
-      if (addComponentUpdate.success) {
-        componentIds.push(addComponentUpdate.data.parentId)
-        addComponentUpdate.data.copiedFrom?.componentId &&
-          componentIds.push(addComponentUpdate.data.copiedFrom.componentId)
-      }
-
-      const reorderComponentUpdate = jsonSchema
-        .pipe(reorderComponentSchema)
-        .safeParse(update.value)
-      if (reorderComponentUpdate.success) {
-        componentIds.push(reorderComponentUpdate.data.parentId)
-      }
-    })
-
-    return componentIds
   }
 
   private async getUpdateInfo(
@@ -149,4 +123,18 @@ export class CodeUpdator {
         throw new Error('Invalid use case')
     }
   }
+}
+
+export const getCodeUpdates = ({
+  updates,
+  gitRepository,
+  prettierOptions,
+}: {
+  updates: ComponentUpdate[]
+  gitRepository: GitRepository
+  prettierOptions: prettier.Options
+}): Promise<FileUpdateInfo> => {
+  const codeUpdator = new CodeUpdator(gitRepository, prettierOptions)
+
+  return codeUpdator.updateFiles(updates)
 }

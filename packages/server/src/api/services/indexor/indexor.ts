@@ -7,8 +7,12 @@ import type {
   ComponentProp,
   HarmonyComponentInfo,
 } from '@harmony/util/src/types/component'
-import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
+import {
+  getFileContentsFromComponents,
+  getLocationsFromComponentId,
+} from '@harmony/util/src/utils/component'
 import type { Replace } from '@harmony/util/src/types/utils'
+import { getFileContents } from '@harmony/util/src/utils/common'
 import { PrismaHarmonyComponentRepository } from '../../repository/database/component-element'
 import type { GithubCache } from '../../repository/cache/types'
 import type { GitRepository } from '../../repository/git/types'
@@ -78,33 +82,6 @@ export const indexFiles = async (
   return { elementInstance, componentDefinitions }
 }
 
-const getFileContents = async (
-  files: string[],
-  readFile: (filepath: string) => Promise<string>,
-) => {
-  const visitedFiles: Set<string> = new Set<string>()
-  const fileContents: FileAndContent[] = []
-
-  const visitPaths = async (filepath: string) => {
-    if (visitedFiles.has(filepath)) return
-
-    visitedFiles.add(filepath)
-    const content = await readFile(filepath)
-    fileContents.push({ file: filepath, content })
-    // for (const componentName in importDeclarations) {
-    // 	const {path: importPath, name} = importDeclarations[componentName];
-    // 	const fullPath = path.join(filepath, importPath);
-    // 	await visitPaths(fullPath);
-    // }
-  }
-
-  for (const filepath of files) {
-    await visitPaths(filepath)
-  }
-
-  return fileContents
-}
-
 export const indexCodebase = async (
   dirname: string,
   gitRepository: GitRepository,
@@ -160,11 +137,10 @@ export async function buildGraphForComponents(
     return content
   }
 
-  const locations = componentIds.flatMap((componentId) =>
-    getLocationsFromComponentId(componentId),
+  const fileContents = await getFileContentsFromComponents(
+    componentIds,
+    readFile,
   )
-  const paths = locations.map((location) => location.file)
-  const fileContents = await getFileContents(paths, readFile)
 
   return buildGraphFromFiles(
     fileContents,
