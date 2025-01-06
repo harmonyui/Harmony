@@ -653,6 +653,9 @@ importers:
         specifier: ^3.22.4
         version: 3.23.8
     devDependencies:
+      '@harmony/eslint-config-custom':
+        specifier: workspace:^
+        version: link:../../tooling/eslint-config-custom
       '@harmony/prettier-config':
         specifier: workspace:^
         version: link:../../tooling/prettier-config

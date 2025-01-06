@@ -256,11 +256,7 @@ export class FlowGraph {
   }
 
   public getDefinition(element: JSXElementNode): ComponentNode | undefined {
-    const definitionNode = element
-      .getNameNode()
-      .getValues((node) => node instanceof ComponentNode)[0] as
-      | ComponentNode
-      | undefined
+    const definitionNode = element.getDefinitionComponent()
     if (!definitionNode) {
       return undefined
     }

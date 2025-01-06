@@ -24,12 +24,8 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getName() {
-    const referencedComponent = this.nameNode.getValues(
-      (node) => node instanceof ComponentNode,
-    )
-    if (referencedComponent.length > 0) {
-      return referencedComponent[0].name
-    }
+    const definitionComponent = this.getDefinitionComponent()
+    if (definitionComponent) return definitionComponent.name
 
     return this.name
   }
@@ -147,9 +143,9 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getDefinitionComponent() {
-    return this.nameNode.getValues(
-      (node) => node instanceof ComponentNode,
-    )[0] as ComponentNode | undefined
+    return this.nameNode
+      .getValues((node) => node instanceof ComponentNode)
+      .find((node) => node.name === this.name) as ComponentNode | undefined
   }
 
   public addAttribute(attribute: JSXAttribute) {

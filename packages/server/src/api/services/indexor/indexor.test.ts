@@ -492,16 +492,23 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         return <Button className="bg-blue-50" />
     }
   `,
-  'packages/ui/src/Button.tsx': `
-    export const Button = ({children, className}) => {
+  'packages/ui/src/Dialog.tsx': `
+    export const DialogButton = ({children, className}) => {
         return <button className={className}>{children}</button>
+    }
+
+    export const DialogText = ({children}) => {
+        return <p>{children}</p>
     }
   `,
   'app/complexImports.tsx': `
-    import {Button} from 'ui/src/Button'
+    import {DialogButton, DialogText} from 'ui/src/Dialog'
 
     export const App = () => {
-        return <Button className="bg-blue-50">Hello there</Button>
+        return <div>
+            <DialogButton className="bg-blue-50">Hello there</DialogButton>
+            <DialogText>Thank you</DialogText>
+        </div>
     }
   `,
 } as const

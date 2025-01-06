@@ -63,12 +63,11 @@ export const PublishProvider: React.FunctionComponent<{
   )
 
   const sendPullRequest = useCallback(
-    async (pullRequest: PullRequest, isLocal: boolean) => {
+    async (pullRequest: PullRequest) => {
       setLoading(true)
       const request: PublishRequest = {
         branchId,
         pullRequest,
-        isLocal,
       }
       try {
         const published = await publish(request)
@@ -90,33 +89,36 @@ export const PublishProvider: React.FunctionComponent<{
     [setLoading, setError, setShow, publish, branchId],
   )
 
-  const onViewCode = useCallback(
-    (isLocal: boolean) => {
-      if (!currentBranch.id) return
+  const onViewCode = useCallback(() => {
+    if (!currentBranch.id) return
 
-      if (isSaving) {
-        setErrorProps('Please wait to finish saving before publishing')
-        return
-      }
+    if (isSaving) {
+      setErrorProps('Please wait to finish saving before publishing')
+      return
+    }
 
-      const pullRequest: PullRequest = {
-        id: '',
-        title: currentBranch.name,
-        body: '',
-        url: '',
-      }
-      if (!pullRequestProps) {
-        void sendPullRequest(pullRequest, isLocal)
-      } else {
-        window.open(pullRequestProps.url, '_blank')?.focus()
-      }
-    },
-    [currentBranch, isSaving, setErrorProps, pullRequestProps, sendPullRequest],
-  )
+    const pullRequest: PullRequest = {
+      id: '',
+      title: currentBranch.name,
+      body: '',
+      url: '',
+    }
+    if (!pullRequestProps) {
+      void sendPullRequest(pullRequest)
+    } else {
+      window.open(pullRequestProps.url, '_blank')?.focus()
+    }
+  }, [
+    currentBranch,
+    isSaving,
+    setErrorProps,
+    pullRequestProps,
+    sendPullRequest,
+  ])
 
   const onPublish = useCallback(() => {
     if (isDemo || isPublished || isLocal) {
-      onViewCode(isLocal)
+      onViewCode()
       return
     }
 

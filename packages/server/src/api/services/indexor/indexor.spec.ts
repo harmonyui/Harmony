@@ -1244,17 +1244,17 @@ describe('indexor', () => {
     })
 
     it('Should handle complex imports', () => {
-      const file1: TestFile = 'packages/ui/src/Button.tsx'
+      const file1: TestFile = 'app/complexImports.tsx'
       const content = testCases[file1]
       const importMappings = {
         ui: 'packages/ui',
       }
       const result = getGraph({ file: file1, code: content, importMappings })
 
-      const file2: TestFile = 'app/complexImports.tsx'
+      const file2: TestFile = 'packages/ui/src/Dialog.tsx'
       getGraph({
         file: file2,
-        code: testCases['app/complexImports.tsx'],
+        code: testCases['packages/ui/src/Dialog.tsx'],
         graph: result,
         importMappings,
       })
@@ -1262,37 +1262,54 @@ describe('indexor', () => {
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
-      expect(componentElements.length).toBe(2)
+      expect(componentElements.length).toBe(5)
 
-      expect(componentElements[1].getName()).toBe('button')
-      expect(componentElements[1].getAttributes().length).toBe(2)
-      expect(componentElements[1].getAttributes()[0].name).toBe('className')
-      expect(componentElements[1].getAttributes()[0].getDataFlow().length).toBe(
+      expect(componentElements[3].getName()).toBe('button')
+      expect(componentElements[3].getAttributes().length).toBe(2)
+      expect(componentElements[3].getAttributes()[0].name).toBe('className')
+      expect(componentElements[3].getAttributes()[0].getDataFlow().length).toBe(
         1,
       )
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
+          componentElements[3].getAttributes()[0].getDataFlow()[0].node,
         ),
       ).toBe('bg-blue-50')
       expectLocationOfString(
-        file2,
-        componentElements[1].getAttributes()[0].getDataFlow()[0].location,
+        file1,
+        componentElements[3].getAttributes()[0].getDataFlow()[0].location,
         '"bg-blue-50"',
       )
-      expect(componentElements[1].getAttributes()[1].name).toBe('children')
-      expect(componentElements[1].getAttributes()[1].getDataFlow().length).toBe(
+      expect(componentElements[3].getAttributes()[1].name).toBe('children')
+      expect(componentElements[3].getAttributes()[1].getDataFlow().length).toBe(
         1,
       )
       expect(
         getLiteralValue(
-          componentElements[1].getAttributes()[1].getDataFlow()[0].node,
+          componentElements[3].getAttributes()[1].getDataFlow()[0].node,
         ),
       ).toBe('Hello there')
       expectLocationOfString(
-        file2,
-        componentElements[1].getAttributes()[1].getDataFlow()[0].location,
+        file1,
+        componentElements[3].getAttributes()[1].getDataFlow()[0].location,
         'Hello there',
+      )
+
+      expect(componentElements[4].getName()).toBe('p')
+      expect(componentElements[4].getAttributes().length).toBe(1)
+      expect(componentElements[4].getAttributes()[0].name).toBe('children')
+      expect(componentElements[4].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[4].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe('Thank you')
+      expectLocationOfString(
+        file1,
+        componentElements[4].getAttributes()[0].getDataFlow()[0].location,
+        'Thank you',
       )
     })
 

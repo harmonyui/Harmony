@@ -233,7 +233,7 @@ const editorRoutes = {
     .input(publishRequestSchema)
     .mutation(async ({ ctx, input }) => {
       const data = input
-      const { branchId, pullRequest, isLocal } = data
+      const { branchId, pullRequest } = data
       const { prisma } = ctx
 
       const branch = await getBranch({ prisma, branchId })
@@ -271,7 +271,6 @@ const editorRoutes = {
         updates,
         branch,
         pullRequest,
-        isLocal,
       )
 
       const response: PublishResponse = { pullRequest: newPullRequest }

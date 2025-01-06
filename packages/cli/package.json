@@ -21,11 +21,14 @@
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
     "dev": "pnpm withenv tsx watch src/index.ts",
-    "build": "pnpm withenv tsup"
+    "build": "pnpm withenv tsup",
+    "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix .",
+    "lint": "pnpm withenv eslint ."
   },
   "keywords": [],
   "prettier": "@harmony/prettier-config",
   "devDependencies": {
+    "@harmony/eslint-config-custom": "workspace:^",
     "@harmony/prettier-config": "workspace:^",
     "@harmony/server": "workspace:^",
     "@harmony/tsconfig": "workspace:^",
@@ -48,5 +51,11 @@
     "ora": "^8.1.1",
     "superjson": "^2.2.1",
     "zod": "^3.22.4"
+  },
+  "eslintConfig": {
+    "root": true,
+    "extends": [
+      "@harmony/eslint-config-custom/library"
+    ]
   }
 }
