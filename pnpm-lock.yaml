@@ -625,12 +625,6 @@ importers:
       '@clerk/clerk-sdk-node':
         specifier: ^5.0.2
         version: 5.0.2(react-dom@18.3.1)(react@18.3.1)
-      '@harmony/server':
-        specifier: workspace:^
-        version: link:../server
-      '@harmony/util':
-        specifier: workspace:*
-        version: link:../util
       '@trpc/client':
         specifier: ^10.45.0
         version: 10.45.0(@trpc/server@10.45.0)

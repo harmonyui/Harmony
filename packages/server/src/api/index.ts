@@ -21,3 +21,5 @@ export const createLocalGitRepositoryFactory = (localPath: string) => ({
     return redisGithubCache
   },
 })
+
+export const gitRepositoryFactory = githubRepository
