@@ -1,5 +1,6 @@
 /* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
+import { join } from 'node:path'
 import * as parser from '@babel/parser'
 import traverse, { NodePath } from '@babel/traverse'
 import * as t from '@babel/types'
@@ -45,7 +46,7 @@ export class FlowGraph {
   public unconnectedInstances: JSXElementNode[] = []
   private dirtyFiles: Set<string> = new Set<string>()
 
-  constructor() {
+  constructor(public importMappings: Record<string, string>) {
     this.nodes = new Map()
   }
 
@@ -180,10 +181,12 @@ export class FlowGraph {
     jsxElementNode.setParentComponent(component)
     if (beforeSibling && parentElement) {
       const index = parentElement.getChildren().indexOf(beforeSibling)
-      if (index === -1) throw new Error('Cannot find child of element')
+      if (index === -1) {
+        throw new Error('Cannot find child of element')
+      }
       parentElement.insertChild(jsxElementNode, index)
     } else {
-      parentElement?.addChild(jsxElementNode)
+      parentElement?.addJSXChild(jsxElementNode)
     }
     jsxElementNode.setParentElement(parentElement)
     const nameNode = jsxElementNode.getNameNode()
@@ -253,11 +256,7 @@ export class FlowGraph {
   }
 
   public getDefinition(element: JSXElementNode): ComponentNode | undefined {
-    const definitionNode = element
-      .getNameNode()
-      .getValues((node) => node instanceof ComponentNode)[0] as
-      | ComponentNode
-      | undefined
+    const definitionNode = element.getDefinitionComponent()
     if (!definitionNode) {
       return undefined
     }
@@ -680,6 +679,9 @@ export class FlowGraph {
       parentElement.getParentComponent(),
       beforeElement,
     )
+    if (!beforeElement) {
+      parentElement.addChild(childElement)
+    }
 
     this.addDependencyImports(
       childElement,
@@ -736,14 +738,18 @@ export class FlowGraph {
     if (parentElement) {
       const parentChildren = parentElement.getChildren()
       const index = parentChildren.indexOf(jsxElement)
-      if (index === -1) throw new Error('Cannot find child of element')
-      parentChildren.splice(index, 1)
+      if (index === -1) {
+        throw new Error('Cannot find child of element')
+      }
+      parentElement.deleteChild(index)
     }
 
     const parentComponent = jsxElement.getParentComponent()
     const parentComponentChildren = parentComponent.getJSXElements()
     const componentIndex = parentComponentChildren.indexOf(jsxElement)
-    if (componentIndex === -1) throw new Error('Cannot find child of element')
+    if (componentIndex === -1) {
+      throw new Error('Cannot find child of element')
+    }
     parentComponentChildren.splice(componentIndex, 1)
 
     const content = getSnippetFromNode(jsxElement.node)
@@ -806,11 +812,36 @@ export class FlowGraph {
       parser: 'typescript',
     })
   }
+
+  public resolveImports(importPath: string): string {
+    // Split the import path into parts (e.g., 'ui/src/button' -> ['ui', 'src/button'])
+    const [packageName, ...rest] = importPath.split('/')
+
+    // Check if the package name exists in the mappings
+    if (packageName in this.importMappings) {
+      // Resolve to the base path and append the rest of the path
+      const basePath = this.importMappings[packageName]
+      return join(basePath, ...rest)
+    }
+
+    // If no mapping is found, return the original path
+    return importPath
+  }
 }
 
-export function getGraph(file: string, code: string, _graph?: FlowGraph) {
+export function getGraph({
+  file,
+  code,
+  importMappings,
+  graph: _graph,
+}: {
+  file: string
+  code: string
+  importMappings: Record<string, string>
+  graph?: FlowGraph
+}) {
   // Initialize the flow graph
-  const graph = _graph ?? new FlowGraph()
+  const graph = _graph ?? new FlowGraph(importMappings)
   graph.addProject(file, code)
 
   const ast = parser.parse(code, {
@@ -869,6 +900,10 @@ export function getGraph(file: string, code: string, _graph?: FlowGraph) {
       graph.connectExportStatementsToImports(newNode)
     },
     'FunctionDeclaration|ArrowFunctionExpression'(path) {
+      const newNode = graph.createNode(getSnippetFromNode(path.node), path)
+      graph.addDataFlowEdge(newNode)
+    },
+    FunctionExpression(path) {
       const newNode = graph.createNode(getSnippetFromNode(path.node), path)
       graph.addDataFlowEdge(newNode)
     },

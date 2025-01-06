@@ -7,8 +7,12 @@ import type {
   ComponentProp,
   HarmonyComponentInfo,
 } from '@harmony/util/src/types/component'
-import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
+import {
+  getFileContentsFromComponents,
+  getLocationsFromComponentId,
+} from '@harmony/util/src/utils/component'
 import type { Replace } from '@harmony/util/src/types/utils'
+import { getFileContents } from '@harmony/util/src/utils/common'
 import { PrismaHarmonyComponentRepository } from '../../repository/database/component-element'
 import type { GithubCache } from '../../repository/cache/types'
 import type { GitRepository } from '../../repository/git/types'
@@ -37,8 +41,9 @@ export const indexFilesAndUpdateDatabase = async (
   files: string[],
   readFile: (filepath: string) => Promise<string>,
   repositoryId: string,
+  importMappings: Record<string, string>,
 ): Promise<HarmonyComponent[]> => {
-  const result = await indexFiles(files, readFile)
+  const result = await indexFiles(files, readFile, importMappings)
   if (result) {
     await updateDatabase(
       result.componentDefinitions,
@@ -54,6 +59,7 @@ export const indexFilesAndUpdateDatabase = async (
 export const indexFiles = async (
   files: string[],
   readFile: (filepath: string) => Promise<string>,
+  importMappings: Record<string, string>,
 ): Promise<
   | {
       elementInstance: HarmonyComponent[]
@@ -68,38 +74,12 @@ export const indexFiles = async (
   const elementInstance = getCodeInfoAndNormalizeFromFiles(
     fileContents,
     instances,
+    importMappings,
   )
 
   if (!elementInstance) return false
 
   return { elementInstance, componentDefinitions }
-}
-
-const getFileContents = async (
-  files: string[],
-  readFile: (filepath: string) => Promise<string>,
-) => {
-  const visitedFiles: Set<string> = new Set<string>()
-  const fileContents: FileAndContent[] = []
-
-  const visitPaths = async (filepath: string) => {
-    if (visitedFiles.has(filepath)) return
-
-    visitedFiles.add(filepath)
-    const content = await readFile(filepath)
-    fileContents.push({ file: filepath, content })
-    // for (const componentName in importDeclarations) {
-    // 	const {path: importPath, name} = importDeclarations[componentName];
-    // 	const fullPath = path.join(filepath, importPath);
-    // 	await visitPaths(fullPath);
-    // }
-  }
-
-  for (const filepath of files) {
-    await visitPaths(filepath)
-  }
-
-  return fileContents
 }
 
 export const indexCodebase = async (
@@ -115,6 +95,7 @@ export const indexCodebase = async (
   const elementInstances = getCodeInfoAndNormalizeFromFiles(
     fileContents,
     instances,
+    gitRepository.repository.config.packageResolution,
   )
   return elementInstances
 }
@@ -136,7 +117,11 @@ export async function indexForComponents(
     getLocationsFromComponentId(componentId),
   )
   const paths = locations.map((location) => location.file)
-  const result = await indexFiles(paths, readFile)
+  const result = await indexFiles(
+    paths,
+    readFile,
+    gitRepository.repository.config.packageResolution,
+  )
   if (!result) return []
 
   return result.elementInstance
@@ -152,13 +137,15 @@ export async function buildGraphForComponents(
     return content
   }
 
-  const locations = componentIds.flatMap((componentId) =>
-    getLocationsFromComponentId(componentId),
+  const fileContents = await getFileContentsFromComponents(
+    componentIds,
+    readFile,
   )
-  const paths = locations.map((location) => location.file)
-  const fileContents = await getFileContents(paths, readFile)
 
-  return buildGraphFromFiles(fileContents)
+  return buildGraphFromFiles(
+    fileContents,
+    gitRepository.repository.config.packageResolution,
+  )
 }
 
 export function formatComponentAndErrors(
@@ -231,9 +218,10 @@ interface FileAndContent {
 export function getCodeInfoAndNormalizeFromFiles(
   files: FileAndContent[],
   elementInstances: HarmonyComponent[],
+  importMappings: Record<string, string>,
 ): HarmonyComponent[] | false {
   try {
-    const graph = buildGraphFromFiles(files)
+    const graph = buildGraphFromFiles(files, importMappings)
 
     elementInstances.push(...convertGraphToHarmonyComponents(graph))
   } catch (err) {
@@ -244,8 +232,11 @@ export function getCodeInfoAndNormalizeFromFiles(
   return elementInstances
 }
 
-export function buildGraphFromFiles(files: FileAndContent[]): FlowGraph {
-  const graph = new FlowGraph()
+export function buildGraphFromFiles(
+  files: FileAndContent[],
+  importMappings: Record<string, string>,
+): FlowGraph {
+  const graph = new FlowGraph(importMappings)
   for (const { file, content } of files) {
     getCodeInfoFromFile(file, content, graph)
   }
@@ -258,7 +249,7 @@ function getCodeInfoFromFile(
   originalCode: string,
   graph: FlowGraph,
 ) {
-  getGraph(file, originalCode, graph)
+  getGraph({ file, code: originalCode, graph, importMappings: {} })
 
   return true
 }

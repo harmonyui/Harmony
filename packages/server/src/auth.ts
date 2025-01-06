@@ -3,7 +3,10 @@ import { z } from 'zod'
 import type { Prisma } from '@harmony/db/lib/prisma'
 import { prisma } from '@harmony/db/lib/prisma'
 import type { Repository } from '@harmony/util/src/types/branch'
-import { repositorySchema } from '@harmony/util/src/types/branch'
+import {
+  repositoryConfigSchema,
+  repositorySchema,
+} from '@harmony/util/src/types/branch'
 import { emailSchema } from '@harmony/util/src/types/utils'
 
 export interface User {
@@ -64,6 +67,7 @@ export const getRepositoryFromTeam = (
         tailwindConfig: team.repository[0].tailwind_config,
         prettierConfig: team.repository[0].prettier_config,
         registry: {},
+        config: repositoryConfigSchema.parse(team.repository[0].config),
       }
     : undefined
 }

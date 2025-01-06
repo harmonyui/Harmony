@@ -19,7 +19,7 @@ export class ImportStatement extends Node<
 
   public getResolvedSource() {
     if (!this.source.startsWith('.')) {
-      return this.source
+      return this.graph.resolveImports(this.source)
     }
 
     const basePath = path.dirname(this.location.file)

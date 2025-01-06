@@ -6,6 +6,7 @@
     "lib": ["ES2021"],
     "noEmit": true,
     "resolveJsonModule": true,
-    "target": "es6"
+    "target": "es6",
+    "module": "CommonJS"
   }
 }

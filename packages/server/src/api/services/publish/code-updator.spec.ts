@@ -126,6 +126,12 @@ describe('code-updator', () => {
           props: [],
         },
       },
+      config: {
+        tailwindPath: 'tailwind.config.ts',
+        packageResolution: {
+          ui: 'packages/ui',
+        },
+      },
     }
     const gitRepository: GitRepository = {
       async getBranchRef() {
@@ -167,6 +173,7 @@ describe('code-updator', () => {
     const result = await indexFiles(
       files,
       async (file) => testFiles[file as TestFile],
+      repository.config.packageResolution,
     )
     expect(result).toBeTruthy()
     if (!result) throw new Error()
@@ -896,18 +903,22 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
         const AddComponent = () => {
+          const error = ''
           return (
             <div>
               <h1>Change Hello</h1>
-              <div className='p-5'>
+              <div className='flex p-5'>
                 <span className='p-2'>Change this</span>
               </div>
-              <h2>Change There</h2>
+              {error ? <h2>Change There</h2> : null}
               <div>
                 <span>Label</span>
               </div>
             </div>
           )
+        }
+        const App = () => {
+          return <AddComponent />
         }
         `),
       )
@@ -977,12 +988,16 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
         const AddComponent = () => {
+          const error = ''
           return (
             <div>
-              <h2>Change There</h2>
+              {error ? <h2>Change There</h2> : null}
               <div></div>
             </div>
           )
+        }
+        const App = () => {
+          return <AddComponent />
         }
         `),
       )
@@ -1041,13 +1056,17 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
         const AddComponent = () => {
+          const error = ''
           return (
             <div>
-              <h2>There</h2>
+              {error ? <h2>There</h2> : null}
               <div></div>
               <h1 className='p-2'>Hello</h1>
             </div>
           )
+        }
+        const App = () => {
+          return <AddComponent />
         }
         `),
       )
@@ -1086,16 +1105,20 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
           import { Button } from '@/components/button'
-        const AddComponent = () => {
-          return (
-            <div>
-              <h1>Hello</h1>
-              <Button>Click me</Button>
-              <h2>There</h2>
-              <div></div>
-            </div>
-          )
-        }
+          const AddComponent = () => {
+            const error = ''
+            return (
+              <div>
+                <h1>Hello</h1>
+                <Button>Click me</Button>
+                {error ? <h2>There</h2> : null}
+                <div></div>
+              </div>
+            )
+          }
+          const App = () => {
+            return <AddComponent />
+          }
         `),
       )
     })
@@ -1866,13 +1889,19 @@ const testFiles = {
   `,
   addComponent: `
       const AddComponent = () => {
+        const error = ''
+
         return (
           <div>
             <h1>Hello</h1>
-            <h2>There</h2>
+            {error ? <h2>There</h2> : null}
             <div></div>
           </div>
         )
+      }
+
+      const App = () => {
+        return <AddComponent />
       }
   `,
   updateProperty: `

@@ -28,7 +28,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -51,7 +51,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -153,7 +153,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -185,7 +185,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/harderDyanmic.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -260,7 +260,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/text_stuff.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -298,7 +298,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/SummaryMetadata.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -419,7 +419,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/multipleLayers1.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -554,7 +554,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/innerClassName.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -581,7 +581,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/objectProperties.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -678,7 +678,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/complexDynamicCases.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -845,7 +845,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/classNameTests.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -902,7 +902,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/classNameTests.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -926,7 +926,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/complexText.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -961,7 +961,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/complexText.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -1038,7 +1038,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/errorComponents.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -1055,7 +1055,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/arrayStuff.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -1126,7 +1126,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/arrayStuff.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -1172,9 +1172,14 @@ describe('indexor', () => {
         },
       ]
 
-      const result = new FlowGraph()
+      const result = new FlowGraph({})
       for (const content of contents) {
-        getGraph(content.file, content.content, result)
+        getGraph({
+          file: content.file,
+          code: content.content,
+          graph: result,
+          importMappings: {},
+        })
       }
 
       const componentElements = result
@@ -1198,7 +1203,7 @@ describe('indexor', () => {
       const file: TestFile = 'app/complexElementNames.tsx'
       const content = testCases[file]
 
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
@@ -1210,11 +1215,102 @@ describe('indexor', () => {
     it('Should handle mapping with complex jsx', () => {
       const file: TestFile = 'app/complexJSXElements.tsx'
       const content = testCases[file]
-      const result = getGraph(file, content)
+      const result = getGraph({ file, code: content, importMappings: {} })
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
       expect(componentElements.length).toBe(7)
+    })
+
+    it('Should handle mapping with complex jsx and spread', () => {
+      const file: TestFile = 'app/ConditionalJSX.tsx'
+      const content = testCases[file]
+      const result = getGraph({ file, code: content, importMappings: {} })
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(3)
+
+      expect(componentElements[0].getAttributes().length).toBe(1)
+      expect(componentElements[0].getAttributes()[0].name).toBe('className')
+      expect(componentElements[0].getAttributes()[0].getDataFlow().length).toBe(
+        2,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[0].getAttributes()[0].getDataFlow()[1].node,
+        ),
+      ).toBe('bg-blue-50')
+    })
+
+    it('Should handle complex imports', () => {
+      const file1: TestFile = 'app/complexImports.tsx'
+      const content = testCases[file1]
+      const importMappings = {
+        ui: 'packages/ui',
+      }
+      const result = getGraph({ file: file1, code: content, importMappings })
+
+      const file2: TestFile = 'packages/ui/src/Dialog.tsx'
+      getGraph({
+        file: file2,
+        code: testCases['packages/ui/src/Dialog.tsx'],
+        graph: result,
+        importMappings,
+      })
+
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(5)
+
+      expect(componentElements[3].getName()).toBe('button')
+      expect(componentElements[3].getAttributes().length).toBe(2)
+      expect(componentElements[3].getAttributes()[0].name).toBe('className')
+      expect(componentElements[3].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[3].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe('bg-blue-50')
+      expectLocationOfString(
+        file1,
+        componentElements[3].getAttributes()[0].getDataFlow()[0].location,
+        '"bg-blue-50"',
+      )
+      expect(componentElements[3].getAttributes()[1].name).toBe('children')
+      expect(componentElements[3].getAttributes()[1].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[3].getAttributes()[1].getDataFlow()[0].node,
+        ),
+      ).toBe('Hello there')
+      expectLocationOfString(
+        file1,
+        componentElements[3].getAttributes()[1].getDataFlow()[0].location,
+        'Hello there',
+      )
+
+      expect(componentElements[4].getName()).toBe('p')
+      expect(componentElements[4].getAttributes().length).toBe(1)
+      expect(componentElements[4].getAttributes()[0].name).toBe('children')
+      expect(componentElements[4].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[4].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe('Thank you')
+      expectLocationOfString(
+        file1,
+        componentElements[4].getAttributes()[0].getDataFlow()[0].location,
+        'Thank you',
+      )
     })
 
     //TODO: Finish this
@@ -1265,6 +1361,7 @@ describe('indexor', () => {
       const result = getCodeInfoAndNormalizeFromFiles(
         contents,
         componentElements,
+        {},
       )
       expect(result).toBeTruthy()
       if (!result) return
@@ -1334,6 +1431,7 @@ describe('indexor', () => {
       const result = getCodeInfoAndNormalizeFromFiles(
         contents,
         componentElements,
+        {},
       )
       expect(result).toBeTruthy()
       if (!result) return
@@ -1351,6 +1449,7 @@ describe('indexor', () => {
       const result = getCodeInfoAndNormalizeFromFiles(
         [{ file, content }],
         componentElements,
+        {},
       )
       expect(result).toBeTruthy()
       if (!result) return
@@ -1369,6 +1468,7 @@ describe('indexor', () => {
       const result = getCodeInfoAndNormalizeFromFiles(
         [{ file, content }],
         componentElements,
+        {},
       )
       expect(result).toBeTruthy()
       if (!result) return
@@ -1387,6 +1487,7 @@ describe('indexor', () => {
       const result = getCodeInfoAndNormalizeFromFiles(
         [{ file, content }],
         componentElements,
+        {},
       )
       expect(result).toBeTruthy()
       if (!result) return

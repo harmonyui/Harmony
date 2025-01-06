@@ -482,6 +482,35 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         </div>
     }
   `,
+  'app/ConditionalJSX.tsx': `
+    const Button = forwardRef(function Button({className, ...props}) {
+        const classes = clsx("flex", className);
+        return 'href' in props ? <a className={classes} {...props}/> : <button className={classes} {...props}/>
+    })
+
+    export const App = () => {
+        return <Button className="bg-blue-50" />
+    }
+  `,
+  'packages/ui/src/Dialog.tsx': `
+    export const DialogButton = ({children, className}) => {
+        return <button className={className}>{children}</button>
+    }
+
+    export const DialogText = ({children}) => {
+        return <p>{children}</p>
+    }
+  `,
+  'app/complexImports.tsx': `
+    import {DialogButton, DialogText} from 'ui/src/Dialog'
+
+    export const App = () => {
+        return <div>
+            <DialogButton className="bg-blue-50">Hello there</DialogButton>
+            <DialogText>Thank you</DialogText>
+        </div>
+    }
+  `,
 } as const
 
 export type TestFile = keyof typeof testCases

@@ -75,6 +75,12 @@ describe('babel-plugin', () => {
       const res = runPlugin(code, false, '1234')
       expect(res.code).toMatchSnapshot()
     })
+
+    it('Should add ids to complex jsx', () => {
+      const code = testCases['app/complexJSX.tsx']
+      const res = runPlugin(code, false)
+      expect(res.code).toMatchSnapshot()
+    })
   })
 })
 
@@ -278,4 +284,12 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
             </html>
         }
     `,
+  'app/complexJSX.tsx': `
+    export const Button = forwardRef(function Button({children, ...props}, ref) {
+      return 'href' in props ? 
+        <a ref={ref} {...props}/> : 
+        <button ref={ref} {...props}/>
+      
+    })
+  `,
 }

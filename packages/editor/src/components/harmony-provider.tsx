@@ -1,3 +1,4 @@
+/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style -- ok*/
 /* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 /* eslint-disable @typescript-eslint/no-shadow -- ok*/
 
@@ -182,56 +183,61 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     }
   }, [rootComponent])
 
+  const recurseAndUpdateElements = useEffectEvent(
+    async (updateFilter?: (update: ComponentUpdate) => boolean) => {
+      if (!rootComponent || !isInitialized) return
+
+      const componentIds: string[] = []
+      recurseElements(rootComponent, [initElements(componentIds)])
+      const filteredUpdates = updateFilter
+        ? componentUpdates.filter(updateFilter)
+        : componentUpdates
+
+      await makeUpdates(filteredUpdates, fonts, rootComponent)
+
+      if (repositoryId) {
+        void updateComponentsFromIds(
+          { branchId, components: componentIds, repositoryId },
+          rootComponent,
+        )
+      } else {
+        initHarmonyComponents()
+      }
+    },
+  )
+
+  const mutationFunc = useEffectEvent((mutations: MutationRecord[]) => {
+    //Only update if this or any children is a harmony element
+    if (
+      mutations.some((m) =>
+        Array.from(m.addedNodes).some(
+          (n) =>
+            (n instanceof HTMLElement
+              ? n.dataset.harmonyId &&
+                !componentUpdates.find(
+                  ({ componentId, type }) =>
+                    type === 'component' && n.dataset.harmonyId === componentId,
+                )
+              : false) ||
+            (n instanceof HTMLElement
+              ? n.querySelector('[data-harmony-id]') &&
+                !componentUpdates.find(
+                  ({ componentId, type }) =>
+                    type === 'component' &&
+                    (n.querySelector('[data-harmony-id]') as HTMLElement)
+                      .dataset.harmonyId === componentId,
+                )
+              : false),
+        ),
+      )
+    ) {
+      void recurseAndUpdateElements()
+    }
+  })
+
   useEffect(() => {
     if (rootComponent && isInitialized) {
-      const appliedUpdates: string[] = []
-      const recurseAndUpdateElements = async (
-        updateFilter?: (update: ComponentUpdate) => boolean,
-      ) => {
-        const componentIds: string[] = []
-        recurseElements(rootComponent, [initElements(componentIds)])
-        const filteredUpdates = updateFilter
-          ? componentUpdates.filter(updateFilter)
-          : componentUpdates
-
-        appliedUpdates.push(
-          ...(await makeUpdates(filteredUpdates, fonts, rootComponent)).map(
-            ({ componentId }) => componentId,
-          ),
-        )
-
-        if (repositoryId) {
-          void updateComponentsFromIds(
-            { branchId, components: componentIds, repositoryId },
-            rootComponent,
-          )
-        } else {
-          initHarmonyComponents()
-        }
-      }
-      initMutationObserverRef.current = new MutationObserver((mutations) => {
-        //Only update if this or any children is a harmony element
-        if (
-          mutations.some((m) =>
-            Array.from(m.addedNodes).some(
-              (n) =>
-                (n instanceof HTMLElement
-                  ? n.dataset.harmonyId &&
-                    !componentUpdates.find(
-                      ({ componentId, type }) =>
-                        type === 'component' &&
-                        n.dataset.harmonyId === componentId,
-                    )
-                  : false) ||
-                (n instanceof HTMLElement
-                  ? n.querySelector('[data-harmony-id]')
-                  : false),
-            ),
-          )
-        ) {
-          void recurseAndUpdateElements()
-        }
-      })
+      initMutationObserverRef.current = new MutationObserver(mutationFunc)
       const body = rootComponent.querySelector('body')
       initMutationObserverRef.current.observe(body || rootComponent, {
         childList: true,

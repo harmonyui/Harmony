@@ -26,7 +26,7 @@ export const deleteComponent = (
   if (!deleteElement) {
     throw new Error('Could not find element to delete')
   }
-  const childElements = deleteElement.getChildren(true)
+  const childElements = deleteElement.getJSXChildren(true)
   const code = graph.deleteElement(deleteElement)
 
   return {

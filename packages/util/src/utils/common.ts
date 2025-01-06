@@ -373,3 +373,23 @@ export const getTextInBetween = (str: string, start: string, end: string) => {
 
   return str.substring(startIndex + start.length, endIndex)
 }
+
+export const getFileContents = async (
+  files: string[],
+  readFile: (filepath: string) => Promise<string>,
+) => {
+  const visitedFiles: Set<string> = new Set<string>()
+  const fileContents: { file: string; content: string }[] = []
+
+  const visitPaths = async (filepath: string) => {
+    if (visitedFiles.has(filepath)) return
+
+    visitedFiles.add(filepath)
+    const content = await readFile(filepath)
+    fileContents.push({ file: filepath, content })
+  }
+
+  await Promise.all(files.map(visitPaths))
+
+  return fileContents
+}

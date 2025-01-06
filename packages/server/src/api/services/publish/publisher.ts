@@ -5,7 +5,7 @@ import type { BranchItem, PullRequest } from '@harmony/util/src/types/branch'
 import type prettier from 'prettier'
 import type { GitRepository } from '../../repository/git/types'
 import { createPullRequest } from '../../repository/database/pull-request'
-import { CodeUpdator } from './code-updator'
+import { getCodeUpdates } from './code-updator'
 
 export class Publisher {
   constructor(private gitRepository: GitRepository) {}
@@ -14,14 +14,17 @@ export class Publisher {
     updatesRaw: ComponentUpdate[],
     branch: BranchItem,
     pullRequest: { title: string; body: string },
-  ): Promise<PullRequest> {
+  ): Promise<PullRequest | undefined> {
     const updates = prepareUpdatesForGenerator(updatesRaw)
 
     const configOptions = JSON.parse(
       this.gitRepository.repository.prettierConfig,
     ) as prettier.Options
-    const codeUpdator = new CodeUpdator(this.gitRepository, configOptions)
-    const fileUpdates = await codeUpdator.updateFiles(updates)
+    const fileUpdates = await getCodeUpdates({
+      updates,
+      gitRepository: this.gitRepository,
+      prettierOptions: configOptions,
+    })
 
     await this.gitRepository.createBranch(branch.name)
     await this.gitRepository.updateFilesAndCommit(
@@ -41,14 +44,14 @@ export class Publisher {
   public async updateChanges(updatesRaw: ComponentUpdate[]) {
     const _updates = prepareUpdatesForGenerator(updatesRaw)
 
-    const codeUpdator = new CodeUpdator(this.gitRepository, {
-      trailingComma: 'es5',
-      semi: true,
-      tabWidth: 2,
-      singleQuote: true,
-      jsxSingleQuote: true,
+    const configOptions = JSON.parse(
+      this.gitRepository.repository.prettierConfig,
+    ) as prettier.Options
+    const fileUpdates = await getCodeUpdates({
+      updates: _updates,
+      gitRepository: this.gitRepository,
+      prettierOptions: configOptions,
     })
-    const fileUpdates = await codeUpdator.updateFiles(_updates)
 
     const updates: {
       oldContent: string

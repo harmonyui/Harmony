@@ -111,8 +111,10 @@ export const getInstanceInfo = (
     }
   }
 
-  const instances = element.getRootInstances(realComponentId)
-  if (!instances) throw new Error('Instances not found')
+  let instances = element.getRootInstances(realComponentId)
+  if (!instances) {
+    instances = [element]
+  }
 
   setMappingIndex(element, realComponentId, childIndex)
   const attributes: AttributeInfo[] = element
@@ -221,6 +223,7 @@ export const getInstanceFromElement = (
 export const getElementInstanceNodes = (
   file: string,
   { implementation, dependencies, componentIds }: InstanceInfo,
+  importMappings: Record<string, string>,
 ): { element: JSXElementNode; nodes: Node[] } => {
   const importStatements = dependencies
     .map((dependency) => {
@@ -229,15 +232,16 @@ export const getElementInstanceNodes = (
         : `import { ${dependency.name} } from '${dependency.path}'`
     })
     .join('\n')
-  const graph = getGraph(
-    Math.random().toString(),
-    `${importStatements}
+  const graph = getGraph({
+    file: Math.random().toString(),
+    code: `${importStatements}
 
     const App = () => {
       return ${implementation}
     }
   `,
-  )
+    importMappings,
+  })
 
   const elementInstance = graph.getNodes().find(isJSXElement)
   if (!elementInstance) {
@@ -247,7 +251,7 @@ export const getElementInstanceNodes = (
     graph.files[elementInstance.location.file].getNodes(elementInstance)
 
   const otherNodes = nodes.filter((node) => node !== elementInstance)
-  const childElements = elementInstance.getChildren(true)
+  const childElements = elementInstance.getJSXChildren(true)
 
   if (componentIds.length > 0) {
     if (childElements.length !== componentIds.length) {
@@ -277,6 +281,8 @@ export const getJSXElementFromLevels = (
   componentId: string,
   childIndex: number,
   graph: FlowGraph,
+  filter: (element: JSXElementNode) => boolean = (element: JSXElementNode) =>
+    element.getParentComponent().getJSXElements()[0]?.id !== element.id,
 ): JSXElementNode | undefined => {
   const numLevels = componentId.split('#').length
   let element: JSXElementNode | undefined
@@ -286,8 +292,8 @@ export const getJSXElementFromLevels = (
     if (!element) {
       continue
     }
-    const parentComponent = element.getParentComponent()
-    if (parentComponent.getJSXElements()[0].id === element.id) {
+
+    if (!filter(element)) {
       continue
     }
 
@@ -301,12 +307,13 @@ export const parseText = <T extends Node>(
   text: string,
   filter: (node: Node) => node is T,
 ): T[] => {
-  const graph = getGraph(
-    'file',
-    `
+  const graph = getGraph({
+    file: 'file',
+    code: `
       export const temp = ${text}
     `,
-  )
+    importMappings: {},
+  })
 
   return graph.getNodes().filter(filter)
 }

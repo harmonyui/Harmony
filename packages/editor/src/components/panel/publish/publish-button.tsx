@@ -28,7 +28,7 @@ interface PublishState {
   setError: (error: string) => void
   loading: boolean
   setLoading: (loading: boolean) => void
-  sendPullRequest: (request: PullRequest) => Promise<void>
+  sendPullRequest: (request: PullRequest, isLocal: boolean) => Promise<void>
   currentBranch:
     | {
         name: string
@@ -55,6 +55,7 @@ export const PublishProvider: React.FunctionComponent<{
   const currentBranch = useHarmonyStore((state) => state.currentBranch)
   const pullRequestProps = useHarmonyStore((state) => state.pullRequest)
   const isDemo = useHarmonyStore((state) => state.isDemo)
+  const isLocal = useHarmonyStore((state) => state.isLocal)
 
   const isPublished = useMemo(
     () => Boolean(pullRequestProps),
@@ -76,7 +77,9 @@ export const PublishProvider: React.FunctionComponent<{
         }
         setShow(false)
 
-        window.open(published.pullRequest.url, '_blank')?.focus()
+        if (published.pullRequest) {
+          window.open(published.pullRequest.url, '_blank')?.focus()
+        }
       } catch {
         setError('There was an error when publishing')
       } finally {
@@ -114,7 +117,7 @@ export const PublishProvider: React.FunctionComponent<{
   ])
 
   const onPublish = useCallback(() => {
-    if (isDemo || isPublished) {
+    if (isDemo || isPublished || isLocal) {
       onViewCode()
       return
     }
@@ -124,7 +127,15 @@ export const PublishProvider: React.FunctionComponent<{
       return
     }
     setShow(true)
-  }, [setShow, setErrorProps, isSaving, onViewCode, isDemo, isPublished])
+  }, [
+    setShow,
+    setErrorProps,
+    isSaving,
+    onViewCode,
+    isDemo,
+    isPublished,
+    isLocal,
+  ])
 
   return (
     <PublishContext.Provider
@@ -257,11 +268,14 @@ const Connected: React.FunctionComponent = () => {
     return true
   }
 
-  const onNewPullRequest = useCallback(() => {
-    if (!validate()) return
+  const onNewPullRequest = useCallback(
+    (isLocal: boolean) => {
+      if (!validate()) return
 
-    void sendPullRequest(pullRequest)
-  }, [pullRequest, sendPullRequest])
+      void sendPullRequest(pullRequest, isLocal)
+    },
+    [pullRequest, sendPullRequest],
+  )
 
   return (
     <div className='hw-w-full hw-flex hw-flex-col hw-gap-4'>
@@ -280,10 +294,17 @@ const Connected: React.FunctionComponent = () => {
         ) : null}
         <Button
           className='hw-w-full'
-          onClick={onNewPullRequest}
+          onClick={() => onNewPullRequest(false)}
           loading={loading}
         >
           Publish to Github
+        </Button>
+        <Button
+          className='hw-w-full hw-mt-2'
+          mode='none'
+          onClick={() => onNewPullRequest(true)}
+        >
+          Publish Locally
         </Button>
       </div>
     </div>

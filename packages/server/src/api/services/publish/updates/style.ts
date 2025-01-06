@@ -209,12 +209,13 @@ const buildReducedClassElement = (
     }
   })
 
-  const newGraph = getGraph(
-    'file',
-    `
+  const newGraph = getGraph({
+    file: 'file',
+    code: `
       export const App = () => <div id="root"></div>
     `,
-  )
+    importMappings: {},
+  })
   const rootElement = newGraph.getNodes().find(isJSXElement)
   if (!rootElement) throw new Error('What happened here')
 
@@ -228,6 +229,7 @@ const buildReducedClassElement = (
       const newElement = getElementInstanceNodes(
         'file',
         getInstanceFromElement(element.getName(), className),
+        graph.importMappings,
       )
       const el = newGraph.addChildElement(
         newElement,
@@ -241,7 +243,7 @@ const buildReducedClassElement = (
   }
   addElements(elementTree, rootElement)
   const snippet = rootElement
-    .getChildren()
+    .getJSXChildren()
     .map((child) => getSnippetFromNode(child.node))
     .join('\n')
 

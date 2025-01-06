@@ -8,7 +8,7 @@ import { ImportStatement } from './import-statement'
 
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   private mappingExpression: ArrayProperty | undefined
-  private children: JSXElementNode[] = []
+  private children: Node[] = []
   private parentElement: JSXElementNode | undefined
   private definitionComponent: ComponentNode | undefined
 
@@ -24,12 +24,8 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getName() {
-    const referencedComponent = this.nameNode.getValues(
-      (node) => node instanceof ComponentNode,
-    )
-    if (referencedComponent.length > 0) {
-      return referencedComponent[0].name
-    }
+    const definitionComponent = this.getDefinitionComponent()
+    if (definitionComponent) return definitionComponent.name
 
     return this.name
   }
@@ -89,13 +85,18 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     this.parentComponent = parentComponent
   }
 
-  public getChildren(traverse = false): JSXElementNode[] {
-    if (!traverse) return this.children
+  public getJSXChildren(traverse = false): JSXElementNode[] {
+    const children = this.getChildren().filter(isJSXElement)
+    if (!traverse) return children
 
-    return this.children.reduce<JSXElementNode[]>(
-      (prev, curr) => [...prev, ...curr.getChildren(traverse)],
-      this.children,
+    return children.reduce<JSXElementNode[]>(
+      (prev, curr) => [...prev, ...curr.getJSXChildren(traverse)],
+      children,
     )
+  }
+
+  public getChildren() {
+    return this.children
   }
 
   public getParentElement() {
@@ -142,21 +143,32 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getDefinitionComponent() {
-    return this.nameNode.getValues(
-      (node) => node instanceof ComponentNode,
-    )[0] as ComponentNode | undefined
+    return this.nameNode
+      .getValues((node) => node instanceof ComponentNode)
+      .find((node) => node.name === this.name) as ComponentNode | undefined
   }
 
   public addAttribute(attribute: JSXAttribute) {
     this.attributes.push(attribute)
   }
 
-  public addChild(child: JSXElementNode) {
+  public addChild(child: Node) {
     this.children.push(child)
+  }
+
+  public addJSXChild(child: JSXElementNode) {
+    const childIndex = this.children.findIndex((c) => c.id === child.id)
+    if (childIndex > -1) {
+      this.children[childIndex] = child
+    }
   }
 
   public insertChild(child: JSXElementNode, index: number) {
     this.children.splice(index, 0, child)
+  }
+
+  public deleteChild(index: number): void {
+    this.children.splice(index, 1)
   }
 
   public getOpeningElement(): Node<t.JSXOpeningElement> {
