@@ -31,6 +31,11 @@ export const pullRequestSchema = z.object({
 
 export type PullRequest = z.infer<typeof pullRequestSchema>
 
+export const repositoryConfigSchema = z.object({
+  tailwindPath: z.string(),
+  packageResolution: z.record(z.string(), z.string()),
+})
+
 export const repositorySchema = z.object({
   id: z.string(),
   name: z.string(),
@@ -44,6 +49,7 @@ export const repositorySchema = z.object({
   prettierConfig: z.string(),
   defaultUrl: z.string(),
   registry: z.record(z.string(), registryItemSchema),
+  config: repositoryConfigSchema,
 })
 
 export type Repository = z.infer<typeof repositorySchema>

@@ -1,6 +1,9 @@
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { addDeleteComponentSchema } from '@harmony/util/src/updates/component'
-import { parseUpdate } from '@harmony/util/src/updates/utils'
+import {
+  getComponentIdsFromUpdates,
+  parseUpdate,
+} from '@harmony/util/src/updates/utils'
 import type * as prettier from 'prettier'
 import type { GitRepository } from '../../repository/git/types'
 import { buildGraphForComponents } from '../indexor/indexor'
@@ -26,12 +29,18 @@ export class CodeUpdator {
     updates: ComponentUpdate[],
   ): Promise<FileUpdateInfo> {
     const graph = await buildGraphForComponents(
-      updates.map((update) => update.componentId),
+      getComponentIdsFromUpdates(updates),
       this.gitRepository,
     )
-    const tailwindFile =
-      await this.gitRepository.getContent('tailwind.config.ts')
-    getGraph('tailwind.config.ts', tailwindFile, graph)
+    const tailwindFile = await this.gitRepository.getContent(
+      this.gitRepository.repository.config.tailwindPath,
+    )
+    getGraph({
+      file: this.gitRepository.repository.config.tailwindPath,
+      code: tailwindFile,
+      graph,
+      importMappings: this.gitRepository.repository.config.packageResolution,
+    })
 
     const updateInfo = await this.getUpdateInfo(updates)
 
@@ -114,4 +123,18 @@ export class CodeUpdator {
         throw new Error('Invalid use case')
     }
   }
+}
+
+export const getCodeUpdates = ({
+  updates,
+  gitRepository,
+  prettierOptions,
+}: {
+  updates: ComponentUpdate[]
+  gitRepository: GitRepository
+  prettierOptions: prettier.Options
+}): Promise<FileUpdateInfo> => {
+  const codeUpdator = new CodeUpdator(gitRepository, prettierOptions)
+
+  return codeUpdator.updateFiles(updates)
 }

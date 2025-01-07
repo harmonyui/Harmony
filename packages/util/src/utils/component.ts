@@ -1,7 +1,9 @@
 import type { Change } from 'diff'
 import { diffChars } from 'diff'
+import { z } from 'zod'
 import type { ComponentUpdate } from '../types/component'
 import type { BranchItem } from '../types/branch'
+import { getFileContents } from './common'
 
 export const LOCALHOST = 'localhost'
 export const environment =
@@ -184,7 +186,12 @@ export function getIndexFromLineAndColumn(
   return undefined // Column number out of range
 }
 
-export type Environment = 'production' | 'staging' | 'development'
+export const environmentSchema = z.union([
+  z.literal('production'),
+  z.literal('staging'),
+  z.literal('development'),
+])
+export type Environment = z.infer<typeof environmentSchema>
 
 export function getWebUrl(_environment: Environment) {
   if (_environment === 'production') {
@@ -335,4 +342,17 @@ export const getLevelId = (componentId: string, level: number): string => {
   const split = componentId.split('#')
 
   return split[split.length - 1 - level]
+}
+
+export const getFileContentsFromComponents = async (
+  componentIds: string[],
+  readFile: (path: string) => Promise<string>,
+): Promise<{ file: string; content: string }[]> => {
+  const locations = componentIds.flatMap((componentId) =>
+    getLocationsFromComponentId(componentId),
+  )
+  const paths = locations.map((location) => location.file)
+  const fileContents = await getFileContents(paths, readFile)
+
+  return fileContents
 }

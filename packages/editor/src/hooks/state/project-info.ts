@@ -17,6 +17,7 @@ export interface ProjectInfoState {
   isInitialized: boolean
   isRepositoryConnected: boolean
   isOverlay: boolean
+  isLocal: boolean
   harmonyTokens: Token[]
   setIsOverlay: (value: boolean) => void
   updateWelcomeScreen: (value: boolean) => void
@@ -47,6 +48,7 @@ export const createProjectInfoSlice = createHarmonySlice<
   isOverlay: false,
   isRepositoryConnected: false,
   harmonyTokens: [],
+  isLocal: window.location.hostname === 'localhost',
   setIsOverlay(value: boolean) {
     set({ isOverlay: value })
   },
@@ -62,7 +64,12 @@ export const createProjectInfoSlice = createHarmonySlice<
     registryComponents,
   }) {
     if (get().client === undefined) {
-      get().initializeDataLayer(environment, async () => '')
+      get().initializeDataLayer(
+        environment,
+        async () => '',
+        branchId === 'local',
+        repositoryId ?? '',
+      )
     }
 
     get().initializeRegistry(registryComponents)
@@ -90,7 +97,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         harmonyTokens,
       } = response
       const currentBranch = branches.find((branch) => branch.id === branchId)
-      if (!currentBranch) {
+      if (!currentBranch && branchId !== 'local') {
         throw new Error(`Invalid branch with id ${branchId}`)
       }
 
@@ -100,7 +107,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         pullRequest,
         showWelcomeScreen,
         isDemo,
-        currentBranch,
+        currentBranch: currentBranch ?? { name: 'local', id: 'local' },
         repositoryId,
         isInitialized: true,
         isRepositoryConnected: repositoryId !== undefined,

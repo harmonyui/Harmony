@@ -23,7 +23,7 @@ export const updateAttributeValue = z.object({
 })
 export type UpdateAttributeValue = z.infer<typeof updateAttributeValue>
 
-const componentSchemaBase = z.object({
+export const componentSchemaBase = z.object({
   parentId: z.string(),
   parentChildIndex: z.number(),
   index: z.number(),

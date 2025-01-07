@@ -41,6 +41,7 @@ fn is_jsx_expr(expr: Expr) -> bool {
         Expr::JSXNamespacedName(_) => true,
         Expr::JSXEmpty(_) => true,
         Expr::Paren(ref expr) => is_jsx_expr(*expr.expr.clone()),
+        Expr::Cond(ref c_expr) => is_jsx_expr(*c_expr.cons.clone()) && is_jsx_expr(*c_expr.alt.clone()),
         _ => false
     }
 }

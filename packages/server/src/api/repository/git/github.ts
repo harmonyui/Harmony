@@ -4,21 +4,14 @@
 /* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 import fs from 'node:fs'
 import crypto from 'node:crypto'
-import path from 'node:path'
 import type { Octokit } from 'octokit'
 import { App } from 'octokit'
 import type { CommitItem, Repository } from '@harmony/util/src/types/branch'
 import type { Change } from 'diff'
 import { diffLines } from 'diff'
-import { LOCALHOST } from '@harmony/util/src/utils/component'
 import type { components } from '@octokit/openapi-types'
 import type { GithubCache } from '../cache/types'
-import type {
-  ContentOrDirectory,
-  GitRepository,
-  GitRepositoryFactory,
-  UpdateFile,
-} from './types'
+import type { GitRepository, GitRepositoryFactory, UpdateFile } from './types'
 
 const privateKeyPath = process.env.PRIVATE_KEY_PATH
 const privateKeyEnv = process.env.PRIVATE_KEY
@@ -414,155 +407,5 @@ export class GithubRepository implements GitRepository {
         })
         .join(''),
     )
-  }
-}
-
-interface LocalUpdate {
-  oldContent: string
-  newContent: string
-  filePath: string
-}
-export class LocalGitRepository implements GitRepository {
-  private commits: Record<string, LocalUpdate[]> = {}
-  private githubRepo: GithubRepository
-
-  constructor(
-    public repository: Repository,
-    gitCache: GithubCache,
-  ) {
-    this.githubRepo = new GithubRepository(repository, gitCache)
-  }
-
-  public async getStarCount(): Promise<number> {
-    return this.githubRepo.getStarCount()
-  }
-
-  public async getProjectUrl(): Promise<string> {
-    return this.githubRepo.getProjectUrl()
-  }
-
-  public async getContentOrDirectory(
-    _path: string,
-    branch?: string,
-  ): Promise<
-    | ContentOrDirectory
-    | { content: string; path: string }
-    | ContentOrDirectory[]
-  > {
-    return this.githubRepo.getContentOrDirectory(_path, branch)
-    // const content = await this.getContent(_path);
-    // return {content, path: _path};
-  }
-  public async createBranch(): Promise<void> {
-    return undefined
-  }
-  public async getBranchRef(branch: string): Promise<string> {
-    return this.githubRepo.getBranchRef(branch)
-  }
-  public diffFiles(): Promise<Change[]> {
-    throw new Error('Not implemented')
-  }
-  public getContent(file: string, ref?: string): Promise<string> {
-    return this.githubRepo.getContent(file, ref)
-    // const absolute = path.join(
-    //   '/Users/braydonjones/Documents/Projects/react-email',
-    //   file,
-    // )
-    // if (!fs.existsSync(absolute)) {
-    //   throw new Error(`Invalid path ${absolute}`)
-    // }
-
-    // return new Promise<string>((resolve, reject) => {
-    //   fs.readFile(absolute, 'utf-8', (err, data) => {
-    //     if (err) {
-    //       reject(new Error(err.message))
-    //     }
-
-    //     resolve(data)
-    //   })
-    // })
-  }
-
-  public async getUpdatedFiles(branch: string, oldRef: string) {
-    return this.githubRepo.getUpdatedFiles(branch, oldRef)
-  }
-  public async updateFilesAndCommit(
-    branch: string,
-    changes: {
-      filePath: string
-      newContent: string
-    }[],
-  ): Promise<void> {
-    const updates: LocalUpdate[] = []
-
-    for (const change of changes) {
-      const contentText = await this.getContent(change.filePath)
-      const newContent = change.newContent
-
-      updates.push({
-        oldContent: contentText,
-        newContent,
-        filePath: change.filePath,
-      })
-    }
-
-    this.commits[branch] = updates
-  }
-  public getCommits(): Promise<
-    { message: string; date: Date; author: string }[]
-  > {
-    throw new Error('Not implemented')
-  }
-  public async createPullRequest(branch: string): Promise<string> {
-    const encode = (str: string): string => {
-      return str.replaceAll('<', '&lt;').replaceAll('>', '&gt;')
-    }
-    const updates = this.commits[branch]
-    if (!updates) {
-      throw new Error('Cannot find updates')
-    }
-    const sections: string[] = []
-    for (const update of updates) {
-      const diffs = diffLines(update.oldContent, update.newContent)
-
-      const spans: string[] = []
-      diffs.forEach((part) => {
-        const color = part.added ? 'green' : part.removed ? 'red' : 'grey'
-        const lines = part.value.split('\n')
-
-        const span = `<span style="color: ${color};">${lines.map((line) => encode(line)).join('<br>')}</span>`
-        //span = document.createElement('span');
-        //span.style.color = color;
-        // span.appendChild(document
-        //   .createTextNode(part.value));
-        // fragment.appendChild(span);
-        spans.push(span)
-      })
-      //spans.push(`<span style="color: grey;">${update.newContent.split('\n').map(line => encode(line)).join('<br>')}</span>`)
-
-      const section = `<div>
-                <h4>${update.filePath}</h4>
-                <div>${spans.join('')}</div>
-            </div>`
-
-      sections.push(section)
-    }
-
-    const template = `<!DOCTYPE html>
-        <html>
-            <head></head>
-            <body>
-                ${sections.join('')}
-            </body>
-        </html>`
-
-    const diffPath = path.join(
-      __dirname,
-      '../../../../../../',
-      `packages/editor/public/${branch}.html`,
-    )
-    fs.writeFileSync(diffPath, template, 'utf-8')
-
-    return `http://${LOCALHOST}:4200/${branch}.html`
   }
 }

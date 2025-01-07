@@ -42,7 +42,9 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
 
   const visitFunction = function (
     path: NodePath<
-      BabelTypes.ArrowFunctionExpression | BabelTypes.FunctionDeclaration
+      | BabelTypes.ArrowFunctionExpression
+      | BabelTypes.FunctionDeclaration
+      | BabelTypes.FunctionExpression
     >,
     state: PluginOptions,
   ) {
@@ -101,24 +103,32 @@ export default function harmonyPlugin(babel: Babel): PluginObj<PluginOptions> {
   }
 
   const isJSX = (node: BabelTypes.Node | undefined | null): boolean => {
-    return [t.isJSXElement, t.isJSXFragment].some((func) => func(node))
+    return (
+      [t.isJSXElement, t.isJSXFragment].some((func) => func(node)) ||
+      (t.isConditionalExpression(node) &&
+        isJSX(node.consequent) &&
+        isJSX(node.alternate))
+    )
   }
 
   const nestedFunctions: string[] = []
 
   return {
     visitor: {
-      'FunctionDeclaration|ArrowFunctionExpression': {
+      'FunctionDeclaration|ArrowFunctionExpression|FunctionExpression': {
         enter(path, state) {
           const keepTranspiledCode = state.opts.keepTranspiledCode === true
           if (
             path.type !== 'ArrowFunctionExpression' &&
-            path.type !== 'FunctionDeclaration'
+            path.type !== 'FunctionDeclaration' &&
+            path.type !== 'FunctionExpression'
           ) {
             return
           }
           const pathFunction = path as NodePath<
-            BabelTypes.ArrowFunctionExpression | BabelTypes.FunctionDeclaration
+            | BabelTypes.ArrowFunctionExpression
+            | BabelTypes.FunctionDeclaration
+            | BabelTypes.FunctionExpression
           >
           const returnExpressionOrStatement = t.isExpression(
             pathFunction.node.body,

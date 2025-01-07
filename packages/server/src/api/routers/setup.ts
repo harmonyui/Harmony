@@ -2,7 +2,10 @@
 import crypto from 'node:crypto'
 import { z } from 'zod'
 import type { Repository } from '@harmony/util/src/types/branch'
-import { repositorySchema } from '@harmony/util/src/types/branch'
+import {
+  repositoryConfigSchema,
+  repositorySchema,
+} from '@harmony/util/src/types/branch'
 import type { components } from '@octokit/openapi-types/types'
 import { emailSchema } from '@harmony/util/src/types/utils'
 import { cookies } from 'next/headers'
@@ -87,6 +90,7 @@ export const setupRoute = createTRPCRouter({
           tailwind_config: input.repository.tailwindConfig,
           prettier_config: input.repository.prettierConfig,
           default_url: input.repository.defaultUrl,
+          config: input.repository.config,
         },
       })
 
@@ -103,6 +107,7 @@ export const setupRoute = createTRPCRouter({
         tailwindConfig: newRepository.tailwind_config,
         prettierConfig: newRepository.prettier_config,
         registry: {},
+        config: repositoryConfigSchema.parse(newRepository.config),
       } satisfies Repository
     }),
   // importRepository: protectedProcedure
@@ -204,6 +209,10 @@ export const setupRoute = createTRPCRouter({
               '{"trailingComma":"es5","semi":true,"tabWidth":2,"singleQuote":true,"jsxSingleQuote":true}',
             defaultUrl: '',
             registry: {},
+            config: {
+              tailwindPath: 'tailwind.config.ts',
+              packageResolution: {},
+            },
           })),
         ],
         [],

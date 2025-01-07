@@ -54,7 +54,7 @@ export const publishRequestSchema = z.object({
 export type PublishRequest = z.infer<typeof publishRequestSchema>
 
 export const publishResponseSchema = z.object({
-  pullRequest: pullRequestSchema,
+  pullRequest: z.optional(pullRequestSchema),
 })
 export type PublishResponse = z.infer<typeof publishResponseSchema>
 
@@ -62,6 +62,9 @@ export const indexComponentsRequestSchema = z.object({
   branchId: z.string(),
   repositoryId: z.string(),
   components: z.array(z.string()),
+  contents: z.optional(
+    z.array(z.object({ content: z.string(), path: z.string() })),
+  ),
 })
 export type IndexComponentsRequest = z.infer<
   typeof indexComponentsRequestSchema
@@ -74,6 +77,25 @@ export const indexComponentsResponseSchema = z.object({
 export type IndexComponentsResponse = z.infer<
   typeof indexComponentsResponseSchema
 >
+
+export const codeUpdatesRequestSchema = z.object({
+  repositoryId: z.string(),
+  updates: z.array(updateSchema),
+  contents: z.array(
+    z.object({
+      content: z.string(),
+      path: z.string(),
+    }),
+  ),
+})
+export type CodeUpdatesRequest = z.infer<typeof codeUpdatesRequestSchema>
+export const codeUpdatesResponseSchema = z.array(
+  z.object({
+    content: z.string(),
+    path: z.string(),
+  }),
+)
+export type CodeUpdatesResponse = z.infer<typeof codeUpdatesResponseSchema>
 
 export const emailFeedbackRequestSchema = z.object({
   name: z.string(),

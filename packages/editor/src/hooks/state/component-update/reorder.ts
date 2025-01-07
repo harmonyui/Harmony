@@ -17,14 +17,16 @@ export const reorderComponentUpdate =
   async (
     update: ComponentUpdate,
     rootElement: HTMLElement | undefined,
-  ): Promise<void> => {
+  ): Promise<boolean> => {
     const { parentId, parentChildIndex, index } = parseUpdate(
       reorderComponentSchema,
       update.value,
     )
 
-    deleteComponentUpdate(props)(update, rootElement)
-    await createComponentUpdate(props)(
+    if (!deleteComponentUpdate(props)(update, rootElement)) {
+      return false
+    }
+    return createComponentUpdate(props)(
       update,
       {
         parentId,

@@ -11,7 +11,7 @@ export const componentInstances: Record<HarmonyCn, RegistryItem> = {
     name: 'frame',
     implementation: '<div className="%"></div>',
     dependencies: [],
-    classes: 'p-2',
+    classes: 'flex p-2',
     props: [],
   },
   image: {

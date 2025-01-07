@@ -16,6 +16,13 @@
       "cwd": "${workspaceFolder}/packages/editor"
     },
     {
+      "type": "node-terminal",
+      "request": "launch",
+      "name": "CLI",
+      "command": "pnpm dev start -c /Users/braydonjones/Documents/Projects/sowards-vacations",
+      "cwd": "${workspaceFolder}/packages/cli"
+    },
+    {
       "name": "Landing Page",
       "type": "node-terminal",
       "request": "launch",

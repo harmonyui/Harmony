@@ -141,7 +141,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     export default Component2
     `,
   'app/multipleLayers2.tsx': `
-    import Component2 from './app/multipleLayers2.tsx';
+    import Component2 from './multipleLayers1';
 
     const App = () => {
         return (
@@ -471,6 +471,46 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
             return <Component><AnotherComponent/></Component>
         }
     `,
+  'app/complexJSXElements.tsx': `
+    const Component = () => {
+        const urls = ["https://google.com", "https://bing.com"];
+        return <div>
+            <SideNav
+                title={<div>{urls.map(url => <div>{url}</div>)}</div>}
+            />
+            {urls.length > 0 ? <div>{urls.map(url => <div>{url}</div>)}</div> : <div>No urls</div>}
+        </div>
+    }
+  `,
+  'app/ConditionalJSX.tsx': `
+    const Button = forwardRef(function Button({className, ...props}) {
+        const classes = clsx("flex", className);
+        return 'href' in props ? <a className={classes} {...props}/> : <button className={classes} {...props}/>
+    })
+
+    export const App = () => {
+        return <Button className="bg-blue-50" />
+    }
+  `,
+  'packages/ui/src/Dialog.tsx': `
+    export const DialogButton = ({children, className}) => {
+        return <button className={className}>{children}</button>
+    }
+
+    export const DialogText = ({children}) => {
+        return <p>{children}</p>
+    }
+  `,
+  'app/complexImports.tsx': `
+    import {DialogButton, DialogText} from 'ui/src/Dialog'
+
+    export const App = () => {
+        return <div>
+            <DialogButton className="bg-blue-50">Hello there</DialogButton>
+            <DialogText>Thank you</DialogText>
+        </div>
+    }
+  `,
 } as const
 
 export type TestFile = keyof typeof testCases

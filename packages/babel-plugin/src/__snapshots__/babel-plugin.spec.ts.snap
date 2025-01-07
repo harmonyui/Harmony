@@ -45,6 +45,17 @@ export default function SummaryMetadata(...harmonyArguments) {
 }"
 `;
 
+exports[`babel-plugin > transform > Should add ids to complex jsx 1`] = `
+"export const Button = forwardRef(function Button(...harmonyArguments) {
+  let {
+    children,
+    ...props
+  } = harmonyArguments[0];
+  let ref = harmonyArguments[1];
+  return 'href' in props ? <a ref={ref} {...props} data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDo4OjQ6MzM=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NDo4OjQ6MzM="} /> : <button ref={ref} {...props} data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NTo4OjU6Mzg=") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6NTo4OjU6Mzg="} />;
+});"
+`;
+
 exports[`babel-plugin > transform > Should add repositoryId to the body tag 1`] = `
 "export const App = (...harmonyArguments) => {
   return <html data-harmony-id={typeof harmonyArguments !== "undefined" && harmonyArguments[0]?.["data-harmony-id"] ? harmonyArguments[0]?.["data-harmony-id"] + ("#" + "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoxOTo3OjE5") : "SGFybW9ueS9wYWNrYWdlcy9iYWJlbC1wbHVnaW4vdGVzdC50c3g6MzoxOTo3OjE5"}>

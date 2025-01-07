@@ -149,6 +149,7 @@ model Repository {
   tailwind_prefix String?
   tailwind_config String
   prettier_config String
+  config          Json
 }
 
 model ChangeLog {

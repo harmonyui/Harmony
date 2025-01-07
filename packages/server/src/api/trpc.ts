@@ -27,7 +27,8 @@ import {
 } from './repository/database/component-element'
 import type { ComponentUpdateRepository } from './repository/database/component-update'
 import {
-  gitRepositoryFactory,
+  createLocalGitRepositoryFactory,
+  githubRepository,
   mailer,
   componentUpdateRepository,
 } from './index'
@@ -88,6 +89,7 @@ const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
 const createTRPCContext = async (
   cookies: string | null | undefined,
   userId: string | null,
+  localPath: string | null,
 ) => {
   let mockUserId: string | undefined
   if (cookies) {
@@ -104,6 +106,9 @@ const createTRPCContext = async (
   const harmonyComponentRepository = new PrismaHarmonyComponentRepository(
     prisma,
   )
+  const gitRepositoryFactory = localPath
+    ? createLocalGitRepositoryFactory(localPath)
+    : githubRepository
 
   return createInnerTRPCContext({
     session,
@@ -123,7 +128,8 @@ const createTRPCContext = async (
 export const createTRPCContextFetch = async ({
   req,
 }: FetchCreateContextFnOptions) => {
-  return createTRPCContext(req.headers.get('cookie'), auth().userId)
+  const localPath = req.headers.get('local-path')
+  return createTRPCContext(req.headers.get('cookie'), auth().userId, localPath)
 }
 
 export const createTRPCContextExpress = async ({
@@ -132,7 +138,12 @@ export const createTRPCContextExpress = async ({
   res: CreateExpressContextOptions['res']
   req: WithAuthProp<Request>
 }) => {
-  return createTRPCContext(req.headers.cookie, req.auth.userId)
+  const localPath = req.headers['local-path']
+  return createTRPCContext(
+    req.headers.cookie,
+    req.auth.userId,
+    Array.isArray(localPath) ? null : (localPath ?? null),
+  )
 }
 
 /**

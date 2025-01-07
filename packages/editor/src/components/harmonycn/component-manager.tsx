@@ -23,6 +23,7 @@ const FrameComponent: React.FunctionComponent<{
 }> = ({ component }) => {
   const { setIsOpen } = useComponentMenu()
   const selectElement = useHarmonyStore((store) => store.selectElement)
+  const updateCounter = useHarmonyStore((store) => store.updateCounter)
 
   const onAddClick = () => {
     setIsOpen(true, { parent: component.element })
@@ -31,7 +32,7 @@ const FrameComponent: React.FunctionComponent<{
 
   const isEmpty = useMemo(() => {
     if (component.element.querySelector('[data-harmony-id]')) return true
-  }, [component.element])
+  }, [component.element, updateCounter])
 
   if (isEmpty) {
     return true
