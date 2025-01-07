@@ -62,6 +62,9 @@ export const indexComponentsRequestSchema = z.object({
   branchId: z.string(),
   repositoryId: z.string(),
   components: z.array(z.string()),
+  contents: z.optional(
+    z.array(z.object({ content: z.string(), path: z.string() })),
+  ),
 })
 export type IndexComponentsRequest = z.infer<
   typeof indexComponentsRequestSchema

@@ -7,23 +7,19 @@
  * need to use are documented accordingly near the end.
  */
 
-import { initTRPC, TRPCError } from '@trpc/server'
+import { initTRPC } from '@trpc/server'
 import superjson from 'superjson'
 import { ZodError } from 'zod'
 import type { CreateExpressContextOptions } from '@trpc/server/adapters/express'
 import type { Request } from 'express'
+import type { Environment } from '@harmony/util/src/utils/component'
 import {
-  Environment,
   getEditorUrl,
   environmentSchema,
 } from '@harmony/util/src/utils/component'
-import {
-  CreateTRPCProxyClient,
-  createTRPCProxyClient,
-  httpBatchLink,
-} from '@trpc/client'
-import { AppRouter } from '@harmony/server/src/api/root'
-import { GitRepository } from '@harmony/server/src/api/repository/git/types'
+import type { CreateTRPCProxyClient } from '@trpc/client'
+import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
+import type { AppRouter } from '@harmony/server/src/api/root'
 
 /**
  * 1. CONTEXT
@@ -33,13 +29,13 @@ import { GitRepository } from '@harmony/server/src/api/repository/git/types'
  * These allow you to access things when processing a request, like the database, the session, etc.
  */
 
-interface CreateContextOptions {
+export interface CreateContextOptions {
   path: string
   repositoryId: string
   serverClient: CreateTRPCProxyClient<AppRouter>
 }
 
-export interface CreateContext extends CreateContextOptions {}
+export type CreateContext = CreateContextOptions
 
 /**
  * This helper generates the "internals" for a tRPC context. If you need to use it, you can export

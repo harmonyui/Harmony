@@ -281,7 +281,7 @@ const editorRoutes = {
     .input(indexComponentsRequestSchema)
     .output(indexComponentsResponseSchema)
     .mutation(async ({ ctx, input }) => {
-      const { branchId, repositoryId } = input
+      const { branchId, repositoryId, contents } = input
       const branch = await getBranch({ prisma: ctx.prisma, branchId })
       if (!branch && branchId !== 'local') {
         throw new Error(`Cannot find branch with id ${branchId}`)
@@ -295,8 +295,9 @@ const editorRoutes = {
         throw new Error(`Cannot find repository with id ${repositoryId}`)
       }
 
-      const gitRepository =
-        ctx.gitRepositoryFactory.createGitRepository(repository)
+      const gitRepository = contents
+        ? new CachedGitRepository(repository, contents)
+        : ctx.gitRepositoryFactory.createGitRepository(repository)
 
       const instances = await indexForComponents(
         input.components,

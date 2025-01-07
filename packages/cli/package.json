@@ -1,6 +1,6 @@
 {
   "name": "harmonyapp",
-  "version": "0.0.3",
+  "version": "0.0.6",
   "description": "",
   "publishConfig": {
     "access": "public"
@@ -18,9 +18,9 @@
   "files": [
     "dist"
   ],
-  "exports": "./dist/index.js",
-  "bin": "./dist/index.js",
-  "type": "module",
+  "exports": "./dist/index.mjs",
+  "bin": "./dist/index.mjs",
+  "main": "./dist/index.mjs",
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
     "dev": "pnpm withenv tsx watch src/index.ts",
@@ -42,6 +42,8 @@
     "tsx": "^4.7.3"
   },
   "dependencies": {
+    "@harmony/server": "workspace:*",
+    "@harmony/util": "workspace:*",
     "@clerk/clerk-sdk-node": "^5.0.2",
     "@trpc/client": "^10.45.0",
     "@trpc/server": "^10.45.0",

@@ -1,8 +1,4 @@
-import { z } from 'zod'
-import { createTRPCRouter, publicProcedure } from '../trpc'
 import {
-  createUpdateFromTextRequestSchema,
-  createUpdateFromTextResponseSchema,
   indexComponentsRequestSchema,
   indexComponentsResponseSchema,
   loadRequestSchema,
@@ -12,9 +8,10 @@ import {
   updateRequestBodySchema,
   updateResponseSchema,
 } from '@harmony/util/src/types/network'
-import { ComponentUpdate } from '@harmony/util/src/types/component'
+import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { getComponentIdsFromUpdates } from '@harmony/util/src/updates/utils'
 import { getFileContentsFromComponents } from '@harmony/util/src/utils/component'
+import { createTRPCRouter, publicProcedure } from '../trpc'
 import { getFileContent, updateFileContent } from '../utils/get-files'
 
 const updates: ComponentUpdate[] = []
@@ -55,7 +52,7 @@ export const editorRouter = createTRPCRouter({
         repositoryId: ctx.repositoryId,
       })
       fileContents.push({
-        content: await getFileContent(repository.config.tailwindPath, path),
+        content: getFileContent(repository.config.tailwindPath, path),
         file: repository.config.tailwindPath,
       })
 
@@ -81,6 +78,16 @@ export const editorRouter = createTRPCRouter({
     .input(indexComponentsRequestSchema)
     .output(indexComponentsResponseSchema)
     .mutation(async ({ ctx, input }) => {
-      return ctx.serverClient.editor.indexComponents.mutate(input)
+      const fileContents = await getFileContentsFromComponents(
+        input.components,
+        async (file) => getFileContent(file, ctx.path),
+      )
+      return ctx.serverClient.editor.indexComponents.mutate({
+        ...input,
+        contents: fileContents.map(({ file, content }) => ({
+          path: file,
+          content,
+        })),
+      })
     }),
 })
