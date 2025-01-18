@@ -31,7 +31,7 @@ import type { AppRouter } from '@harmony/server/src/api/root'
 
 export interface CreateContextOptions {
   path: string
-  repositoryId: string
+  repositoryId: string | undefined
   serverClient: CreateTRPCProxyClient<AppRouter>
 }
 

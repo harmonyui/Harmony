@@ -20,24 +20,24 @@
   ],
   "preferUnplugged": true,
   "dependencies": {
-    "@babel/core": "^7.23.7"
+    "@babel/core": "^7.26.0"
   },
   "devDependencies": {
-    "babel-plugin-harmony": "workspace:*",
-    "@harmony/util": "workspace:*",
-    "@types/babel__core": "^7.20.5",
-    "@types/node": "^20",
-    "ts-loader": "^9.5.1",
-    "vitest": "^1.5.0",
-    "vite": "^5.1.5",
-    "webpack": "^5.90.0",
-    "webpack-cli": "^5.1.4",
-    "eslint": "^8.48.0",
     "@harmony/eslint-config-custom": "workspace:^",
-    "prettier": "^3.0.3",
     "@harmony/prettier-config": "workspace:^",
     "@harmony/tsconfig": "workspace:^",
-    "typescript": "^5.2.2"
+    "@harmony/util": "workspace:*",
+    "@types/babel__core": "^7.20.5",
+    "@types/node": "^22.10.7",
+    "babel-plugin-harmony": "workspace:*",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.7.3",
+    "vite": "^6.0.7",
+    "vitest": "^3.0.2",
+    "webpack": "^5.97.1",
+    "webpack-cli": "^6.0.1"
   },
   "eslintConfig": {
     "root": true,

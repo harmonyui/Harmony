@@ -19,7 +19,7 @@ import {
 
 export type IconComponent = (
   props: React.ComponentPropsWithoutRef<'svg'>,
-) => JSX.Element
+) => React.JSX.Element
 export const DeleteIcon: IconComponent = ({ className, ...props }) => {
   return (
     <svg

@@ -71,7 +71,7 @@ export const Tree = <T,>({
           ...props,
           onHover: () => onHover(props.node.data),
           onClick: () => onSelect([props.node]),
-          children: children({ data: props.node.data }),
+          children: children({ data: props.node.data }) as React.ReactNode,
           isParentSelected: parentSelected,
         }
 
@@ -108,7 +108,7 @@ const Node = <T,>({
   onHover,
   onClick,
   isParentSelected: parentSelected,
-}: NodeProps<T>): JSX.Element => {
+}: NodeProps<T>) => {
   const onExpand: React.MouseEventHandler = (e) => {
     e.stopPropagation()
     node.isInternal && node.toggle()

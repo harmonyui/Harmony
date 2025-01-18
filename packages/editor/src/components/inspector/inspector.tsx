@@ -565,7 +565,7 @@ const useOverlayRef = ({
     selectedElement: HTMLElement | undefined,
   ) => void
 }): React.MutableRefObject<Overlay | undefined> => {
-  const overlayRef = useRef<Overlay>()
+  const overlayRef = useRef<Overlay>(undefined)
   const update = useHarmonyStore((state) => state.updateTheCounter)
   const updateOverlay = useHarmonyStore((state) => state.updateCounter)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)

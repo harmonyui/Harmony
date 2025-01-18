@@ -50,6 +50,8 @@ export function useQueryState<T>({
   }, [])
 
   const value: T | undefined = useMemo(() => {
+    if (typeof window === 'undefined') return defaultValue
+
     if (!searchParams)
       throw new Error('Must use QueryStateProvider to use useQueryState')
     const val = searchParams.get(key)
@@ -76,13 +78,13 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
   children,
 }) => {
   const urlRef = useRef(
-    typeof window !== 'undefined' ? window.location.href : '',
+    typeof window !== 'undefined' ? window.location.href : undefined,
   )
   const [forceRerender, setForceRerender] = useState(0)
   const router = typeof window !== 'undefined' ? window.location : undefined
 
   const searchParams = useMemo(
-    () => new URL(urlRef.current).searchParams,
+    () => (urlRef.current ? new URL(urlRef.current).searchParams : undefined),
     [urlRef.current],
   )
 
@@ -101,6 +103,8 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const setSearchParam = useCallback(
     (key: string, value: string) => {
+      if (!urlRef.current) return
+
       const url = new URL(urlRef.current)
       url.searchParams.set(key, value)
       setUrl(url.href)
@@ -110,6 +114,8 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
 
   const deleteSearchParam = useCallback(
     (key: string) => {
+      if (!urlRef.current) return
+
       const url = new URL(urlRef.current)
       url.searchParams.delete(key)
       setUrl(url.href)
@@ -119,7 +125,7 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
 
   //Whenever the urlRef changes, update the url
   useEffect(() => {
-    if (window.location.href !== urlRef.current) {
+    if (urlRef.current && window.location.href !== urlRef.current) {
       const url = new URL(urlRef.current)
       const path = url.pathname + url.search + url.hash
       window.history.pushState({}, '', path)
@@ -136,7 +142,7 @@ export const QueryStateProvider: React.FC<{ children: React.ReactNode }> = ({
   return (
     <QueryStateContext.Provider
       value={{
-        url: urlRef.current,
+        url: urlRef.current ?? '',
         setSearchParam,
         deleteSearchParam,
         searchParams,
