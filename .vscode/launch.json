@@ -19,7 +19,7 @@
       "type": "node-terminal",
       "request": "launch",
       "name": "CLI",
-      "command": "pnpm dev start -c /Users/braydonjones/Documents/leland/leland-site",
+      "command": "pnpm dev start -c /Users/braydonjones/Documents/Projects/sowards-vacations",
       "cwd": "${workspaceFolder}/packages/cli"
     },
     {

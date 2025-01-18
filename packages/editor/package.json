@@ -112,5 +112,5 @@
     ]
   },
   "prettier": "@harmony/prettier-config",
-  "version": "0.13.0"
+  "version": "0.13.2"
 }
