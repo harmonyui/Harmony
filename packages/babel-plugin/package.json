@@ -43,11 +43,5 @@
     "webpack": "^5.97.1",
     "webpack-cli": "^6.0.1"
   },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@harmony/eslint-config-custom/library"
-    ]
-  },
   "prettier": "@harmony/prettier-config"
 }

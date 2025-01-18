@@ -56,12 +56,6 @@
     "format": "prettier --write \"**/*.{prisma,ts,tsx,md,json}\" && eslint --fix",
     "lint": "eslint ."
   },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@harmony/eslint-config-custom/library"
-    ]
-  },
   "prettier": "@harmony/prettier-config",
   "keywords": [],
   "author": "",

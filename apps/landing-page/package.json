@@ -57,11 +57,5 @@
     "typescript": "^5.7.3",
     "vitest": "^3.0.2"
   },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@harmony/eslint-config-custom/library"
-    ]
-  },
   "prettier": "@harmony/prettier-config"
 }

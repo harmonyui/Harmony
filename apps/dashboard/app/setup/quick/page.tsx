@@ -5,7 +5,7 @@ import { getServerAuthSession } from '@harmony/server/src/auth'
 import { prisma } from '@harmony/db/lib/prisma'
 import { createNewAccount } from '@harmony/server/src/api/routers/setup'
 import { wordToKebabCase } from '@harmony/util/src/utils/common'
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { createUrlFromProject } from '@harmony/util/src/utils/component'
 import {
   createBranch,
@@ -35,7 +35,7 @@ async function QuickPage({
     notFound()
   }
 
-  const { userId } = auth()
+  const { userId } = await auth()
   const session = await getServerAuthSession(userId)
   if (!session) {
     notFound()

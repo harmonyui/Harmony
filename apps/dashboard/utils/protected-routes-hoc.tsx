@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation'
 import type { AuthContext } from '@harmony/server/src/api/trpc'
 import { prisma } from '@harmony/db/lib/prisma'
 import { cookies } from 'next/headers'
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { mailer } from '@harmony/server/src/api'
 
 interface RequireRouteProps {
@@ -19,7 +19,7 @@ export const requireRoute =
   ({ redirect, check }: RequireRouteProps) =>
   () =>
   async (mockUserId?: string) => {
-    const { userId } = auth()
+    const { userId } = await auth()
     const session = await getServerAuthSession(userId, mockUserId)
 
     if (!session?.auth || !session.account || (check && check(session))) {
@@ -63,7 +63,7 @@ export const withAuth =
     Component: React.FunctionComponent<AuthProps>,
   ): React.FunctionComponent<PageProps> =>
   async () => {
-    const cookie = cookies()
+    const cookie = await cookies()
     const mockUserId = cookie.get('harmony-user-id')
     const response = await requireAuth()(mockUserId?.value)
 

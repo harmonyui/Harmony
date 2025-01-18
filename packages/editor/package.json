@@ -105,12 +105,6 @@
     "webpack-dev-middleware": "^7.4.2",
     "webpack-hot-middleware": "^2.26.1"
   },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@harmony/eslint-config-custom/library"
-    ]
-  },
   "prettier": "@harmony/prettier-config",
   "version": "0.13.2"
 }

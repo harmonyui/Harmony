@@ -1,5 +1,6 @@
+'use client'
+
 import { createRoot } from 'react-dom/client'
-;('use client')
 import React, { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import type { Fiber } from 'react-reconciler'

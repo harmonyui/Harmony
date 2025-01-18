@@ -3,8 +3,20 @@
   "license": "MIT",
   "version": "0.0.0",
   "private": true,
+  "type": "module",
   "devDependencies": {
     "@vercel/style-guide": "^6.0.0",
     "eslint-config-turbo": "^2.3.3"
+  },
+  "exports": {
+    "./library": "./library.js",
+    "./next": "./next.js",
+    "./react-internal": "./react-internal.js"
+  },
+  "dependencies": {
+    "eslint-config-prettier": "^10.0.1",
+    "eslint-plugin-only-warn": "^1.1.0",
+    "eslint-plugin-turbo": "^2.3.3",
+    "typescript-eslint": "^8.20.0"
   }
 }

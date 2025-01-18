@@ -13,12 +13,6 @@
     "db:studio": "pnpm withenv prisma studio",
     "db:deploy": "pnpm withenv prisma migrate deploy"
   },
-  "eslint": {
-    "root": true,
-    "extends": [
-      "@harmony/eslint-config-custom/library"
-    ]
-  },
   "prettier": "@harmony/prettier-config",
   "dependencies": {
     "@prisma/client": "^6.2.1",

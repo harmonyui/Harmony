@@ -11,12 +11,6 @@
     "typecheck": "tsc --noEmit",
     "test": "vitest run"
   },
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@harmony/eslint-config-custom/library"
-    ]
-  },
   "prettier": "@harmony/prettier-config",
   "dependencies": {
     "@babel/core": "^7.26.0",

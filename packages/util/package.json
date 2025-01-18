@@ -38,11 +38,5 @@
   "keywords": [],
   "author": "",
   "license": "ISC",
-  "eslintConfig": {
-    "root": true,
-    "extends": [
-      "@harmony/eslint-config-custom/library"
-    ]
-  },
   "prettier": "@harmony/prettier-config"
 }
