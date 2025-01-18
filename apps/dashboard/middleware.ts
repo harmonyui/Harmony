@@ -49,9 +49,11 @@ export default clerkMiddleware(async (auth, request) => {
   const res = await configureCookies(request)
 
   if (!isPublicRoute(request)) {
-    await auth.protect()
+    const userAuth = await auth.protect()
 
-    res.cookies.delete('harmony-user-id')
+    if (!userAuth.userId) {
+      res.cookies.delete('harmony-user-id')
+    }
     return res
   }
 

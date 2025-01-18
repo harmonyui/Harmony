@@ -55,14 +55,14 @@ export interface AuthProps {
   ctx: AuthContext
 }
 interface PageProps {
-  params: Record<string, string>
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: Promise<Record<string, string>>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 export const withAuth =
   (
-    Component: React.FunctionComponent<AuthProps>,
+    Component: React.FunctionComponent<AuthProps & PageProps>,
   ): React.FunctionComponent<PageProps> =>
-  async () => {
+  async (pageProps) => {
     const cookie = await cookies()
     const mockUserId = cookie.get('harmony-user-id')
     const response = await requireAuth()(mockUserId?.value)
@@ -71,7 +71,12 @@ export const withAuth =
       redirect('/setup')
     }
 
-    return <Component ctx={{ prisma, session: response.session!, mailer }} />
+    return (
+      <Component
+        ctx={{ prisma, session: response.session!, mailer }}
+        {...pageProps}
+      />
+    )
   }
 
 // export const requireRole = (role: UserRole) =>
