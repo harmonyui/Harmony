@@ -3,17 +3,15 @@ use std::panic;
 use std::sync::Arc;
 use base64::prelude::*;
 use fancy_regex::Regex;
+use swc_ecma_visit::{visit_mut_pass, VisitMut, VisitMutWith};
 
 use std::path::Path;
 use path_slash::PathExt as _;
 
 use serde_json::Value;
-use swc_common::{Mark,SourceMapper, plugin::metadata::TransformPluginMetadataContextKind, DUMMY_SP};
+use swc_common::{plugin::metadata::TransformPluginMetadataContextKind, SourceMapper, SyntaxContext, DUMMY_SP};
 use swc_core::{
-    atoms::js_word, ecma::{
-        ast::{op, BinExpr, BinaryOp, BindingIdent, BlockStmt, BlockStmtOrExpr, ComputedPropName, CondExpr, Decl, Expr, Function, Ident, JSXAttr, JSXAttrName, JSXAttrValue, JSXElement, JSXElementName, JSXExpr, JSXExprContainer, Lit, MemberExpr, MemberProp, Number, OptChainBase, OptChainExpr, Param, Pat, Program, RestPat, ReturnStmt, Stmt, Str, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator}, 
-        visit::{as_folder, FoldWith, VisitMut, VisitMutWith}
-    }, plugin::{plugin_transform, proxies::{PluginSourceMapProxy, TransformPluginProgramMetadata}}
+    ecma::ast::{op, BinExpr, BinaryOp, BindingIdent, BlockStmt, BlockStmtOrExpr, ComputedPropName, CondExpr, Decl, Expr, Ident, JSXAttr, JSXAttrName, JSXAttrValue, JSXElementName, JSXExpr, JSXExprContainer, Lit, MemberExpr, MemberProp, Number, OptChainBase, OptChainExpr, Param, Pat, Program, RestPat, ReturnStmt, Stmt, Str, UnaryExpr, VarDecl, VarDeclKind, VarDeclarator}, plugin::{plugin_transform, proxies::{PluginSourceMapProxy, TransformPluginProgramMetadata}}
 };
 
 
@@ -121,7 +119,7 @@ fn valid_path(path: &str) -> bool {
 }
 
 impl VisitMut for TransformVisitor {
-    fn visit_mut_arrow_expr(&mut self,node: &mut swc_core::ecma::ast::ArrowExpr) {
+    fn visit_mut_arrow_expr(&mut self, node: &mut swc_core::ecma::ast::ArrowExpr) {
         if valid_path(&self.filename[1..]) && node.params.len() < 3 && is_react_comp_arrow(node) && !has_spread_operator_pat(&node.params) && !has_default_params_pat(&node.params) && self.fun_stack.len() == 0 {
             let params = node.params.clone();
 
@@ -129,14 +127,14 @@ impl VisitMut for TransformVisitor {
             let new_param = Pat::Rest(RestPat {
                 span: DUMMY_SP,
                 arg: Box::new(Pat::Ident(BindingIdent {
-                    id: Ident::new(js_word!("harmonyArguments"), DUMMY_SP),
+                    id: Ident::new(swc_core::atoms::atom!("harmonyArguments"), DUMMY_SP, SyntaxContext::empty()),
                     type_ann: None
                 })),
                 dot3_token: DUMMY_SP,
                 type_ann: None
             });
 
-            node.span = node.span.apply_mark(Mark::fresh(Mark::root()));
+            //node.span = node.span.apply_mark(Mark::fresh(Mark::root()));
             node.params = vec![new_param];
 
             for i in (0..params.len()).rev() {
@@ -153,7 +151,7 @@ impl VisitMut for TransformVisitor {
 
                 let mut init = Box::new(Expr::Member(MemberExpr {
                     span: DUMMY_SP,
-                    obj: Box::new(Expr::Ident(Ident::new(js_word!("harmonyArguments"), DUMMY_SP))),
+                    obj: Box::new(Expr::Ident(Ident::new(swc_core::atoms::atom!("harmonyArguments"), DUMMY_SP, SyntaxContext::empty()))),
                     prop: MemberProp::Computed(ComputedPropName {
                         expr: Box::new(Expr::Lit(Lit::Num(Number {
                             span: swc_common::DUMMY_SP,
@@ -183,6 +181,7 @@ impl VisitMut for TransformVisitor {
                         init: Some(init),
                         definite: false,
                     }],
+                    ctxt: SyntaxContext::empty()
                 };
 
                 if node.body.is_expr() {
@@ -192,7 +191,8 @@ impl VisitMut for TransformVisitor {
                         stmts: vec![Stmt::Return(ReturnStmt {
                             arg: Some(expr),
                             span: DUMMY_SP
-                    })],
+                        })],
+                        ctxt: SyntaxContext::empty()
                     }));
                 }
 
@@ -212,7 +212,7 @@ impl VisitMut for TransformVisitor {
         self.fun_stack.pop();
     }
 
-    fn visit_mut_function(&mut self, node: &mut Function) {
+    fn visit_mut_function(&mut self, node: &mut swc_core::ecma::ast::Function) {
         if valid_path(&self.filename[1..]) && node.params.len() < 3 && is_react_comp_func(node) && !has_spread_operator(&node.params) && !has_default_params(&node.params) && self.fun_stack.len() == 0 {
             let params = node.params.clone();
 
@@ -223,7 +223,7 @@ impl VisitMut for TransformVisitor {
                 pat: Pat::Rest(RestPat {
                     span: DUMMY_SP,
                     arg: Box::new(Pat::Ident(BindingIdent {
-                        id: Ident::new(js_word!("harmonyArguments"), DUMMY_SP),
+                        id: Ident::new(swc_core::atoms::atom!("harmonyArguments"), DUMMY_SP, SyntaxContext::empty()),
                         type_ann: None
                     })),
                     dot3_token: DUMMY_SP,
@@ -231,7 +231,7 @@ impl VisitMut for TransformVisitor {
                 }),
             };
 
-            node.span = node.span.apply_mark(Mark::fresh(Mark::root()));
+            //node.span = node.span.apply_mark(Mark::fresh(Mark::root()));
             node.params = vec![new_param];
 
             for i in (0..params.len()).rev() {
@@ -249,7 +249,7 @@ impl VisitMut for TransformVisitor {
 
                 let mut init = Box::new(Expr::Member(MemberExpr {
                     span: DUMMY_SP,
-                    obj: Box::new(Expr::Ident(Ident::new(js_word!("harmonyArguments"), DUMMY_SP))),
+                    obj: Box::new(Expr::Ident(Ident::new(swc_core::atoms::atom!("harmonyArguments"), DUMMY_SP, SyntaxContext::empty()))),
                     prop: MemberProp::Computed(ComputedPropName {
                         expr: Box::new(Expr::Lit(Lit::Num(Number {
                             span: swc_common::DUMMY_SP,
@@ -279,6 +279,7 @@ impl VisitMut for TransformVisitor {
                         init: Some(init),
                         definite: false,
                     }],
+                    ctxt: SyntaxContext::empty()
                 };
 
                 if let Some(body) = &mut node.body {
@@ -295,20 +296,20 @@ impl VisitMut for TransformVisitor {
         self.fun_stack.pop();
     }
 
-    fn visit_mut_jsx_element(&mut self, node: &mut JSXElement) {
+    fn visit_mut_jsx_element(&mut self, node: &mut swc_core::ecma::ast::JSXElement) {
         if let Some(repository_id) = &self.repository_id {
             if let JSXElementName::Ident(ref ident) = node.opening.name {
                 if ident.sym == "body" {
                     let data_harmony_id_attribute = JSXAttr {
                         span: swc_common::DUMMY_SP,
-                        name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-repository-id"), swc_common::DUMMY_SP)),
+                        name: JSXAttrName::Ident(Ident::new(swc_core::atoms::atom!("data-harmony-repository-id"), swc_common::DUMMY_SP, SyntaxContext::empty()).into()),
                         value: Some(JSXAttrValue::Lit(Lit::Str(Str {
                             span: swc_common::DUMMY_SP,
                             value: BASE64_STANDARD.encode(repository_id.clone()).into(),
                             raw: None
                         })))
                     };
-                    node.opening.span = node.opening.span.apply_mark(Mark::fresh(Mark::root()));
+                    //node.opening.span = node.opening.span.apply_mark(Mark::fresh(Mark::root()));
                     node.opening.attrs.push(swc_core::ecma::ast::JSXAttrOrSpread::JSXAttr(data_harmony_id_attribute));
                 }
             }
@@ -351,6 +352,7 @@ impl VisitMut for TransformVisitor {
                                 obj: Box::new(Expr::Ident(Ident::new(
                                     "harmonyArguments".into(),
                                     swc_common::DUMMY_SP,
+                                    SyntaxContext::empty()
                                 ))),
                                 prop: MemberProp::Computed(ComputedPropName {
                                     expr: Box::new(Expr::Lit(Lit::Num(Number {
@@ -387,7 +389,7 @@ impl VisitMut for TransformVisitor {
                                     left: Box::new(Expr::Unary(UnaryExpr {
                                         span: DUMMY_SP,
                                         op: op!("typeof"),
-                                        arg: Box::new(Expr::Ident(Ident::new("harmonyArguments".into(), DUMMY_SP)))
+                                        arg: Box::new(Expr::Ident(Ident::new("harmonyArguments".into(), DUMMY_SP, SyntaxContext::empty())))
                                     })),
                                     right: Box::new(Expr::Lit(Lit::Str(Str {
                                         span: DUMMY_SP,
@@ -414,11 +416,13 @@ impl VisitMut for TransformVisitor {
 
                     let data_harmony_id_attribute = JSXAttr {
                         span: swc_common::DUMMY_SP,
-                        name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-id"), swc_common::DUMMY_SP)),
+                        name: JSXAttrName::Ident(
+                            Ident::new(swc_core::atoms::atom!("data-harmony-id"), swc_common::DUMMY_SP, SyntaxContext::empty()).into()
+                        ),
                         value: Some(data_harmony_id),
                     };
 
-                    node.opening.span = node.opening.span.apply_mark(Mark::fresh(Mark::root()));
+                    //node.opening.span = node.opening.span.apply_mark(Mark::fresh(Mark::root()));
                     node.opening.attrs.push(swc_core::ecma::ast::JSXAttrOrSpread::JSXAttr(data_harmony_id_attribute));
                     //node.opening.attrs.push(swc_core::ecma::ast::JSXAttrOrSpread::JSXAttr(parent_attribute))
                 }
@@ -476,5 +480,5 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
     
     console_error_panic_hook::set_once();
     let source_map = std::sync::Arc::new(data.source_map);
-    program.fold_with(&mut as_folder(TransformVisitor::new(Some(source_map), cleaned_path, filename, repository_id.map(|s| s.to_string()))))
+    program.apply(&mut visit_mut_pass(TransformVisitor::new(Some(source_map), cleaned_path, filename, repository_id.map(|s| s.to_string()))))
 }
