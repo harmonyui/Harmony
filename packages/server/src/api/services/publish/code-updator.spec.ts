@@ -1847,6 +1847,27 @@ describe('code-updator', () => {
           childIndex: 0,
           isGlobal: false,
         },
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'wrap',
+            elements: [
+              {
+                componentId: 'new-wrapped-component-3',
+                childIndex: 0,
+              },
+              {
+                componentId: elementInstances[4].id,
+                childIndex: 0,
+              },
+            ],
+          }),
+          oldValue: '',
+          componentId: 'new-wrapped-component-4',
+          childIndex: 0,
+          isGlobal: false,
+        },
       ]
 
       const fileUpdates = await codeUpdator.updateFiles(updates)
@@ -1864,9 +1885,11 @@ describe('code-updator', () => {
                   <div className="flex">
                     <Button>
                       <div className="flex">
-                        <span>Content1</span>
+                        <div className="flex">
+                          <span>Content1</span>
+                        </div>
+                        <span>Content2</span>
                       </div>
-                      <span>Content2</span>
                     </Button>
                   </div>
                 </div>

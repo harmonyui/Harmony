@@ -51,10 +51,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
   const { deleteComponent } = useUpdateComponent()
   const getNewChildIndex = useHarmonyStore((store) => store.getNewChildIndex)
 
-  const [, setMultiSelect] = useState<{
-    start: HTMLElement
-    end: HTMLElement
-  }>()
+  const [selectedElements, setSelectedElements] = useState<HTMLElement[]>([])
 
   const selectedId = useMemo(() => {
     const findSelected = (
@@ -121,15 +118,8 @@ export const TreeView = ({ items }: TreeViewProps) => {
   }
 
   const onSelect: TreeProps<HTMLElement>['onSelect'] = (nodes) => {
-    if (nodes.length) {
-      onComponentSelect(nodes[0].data)
-    }
-
-    if (nodes.length > 1) {
-      const start = nodes[0].data
-      const end = nodes[nodes.length - 1].data
-      setMultiSelect({ start, end })
-    }
+    onComponentSelect(nodes[0].data)
+    setSelectedElements(nodes.map((node) => node.data))
   }
 
   const onHover: TreeProps<HTMLElement>['onHover'] = ({ data }) => {
@@ -137,12 +127,18 @@ export const TreeView = ({ items }: TreeViewProps) => {
   }
 
   const handleWrapElement = useEffectEvent(() => {
-    if (!selectedComponent) return
-    const { componentId, childIndex } = getComponentIdAndChildIndex(
-      selectedComponent.element,
-    )
+    if (selectedElements.length === 0) return
+    const { componentId } = getComponentIdAndChildIndex(selectedElements[0])
     const newComponentId = generateComponentIdFromParent(componentId)
     const newChildIndex = getNewChildIndex(newComponentId)
+
+    const parentElement = selectedElements[0].parentElement!
+    const topElements: HTMLElement[] = []
+    selectedElements.forEach((el) => {
+      if (el.parentElement === parentElement) {
+        topElements.push(el)
+      }
+    })
 
     const unwrap: WrapUnwrapComponent = {
       action: 'unwrap',
@@ -150,12 +146,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
 
     const wrap: WrapUnwrapComponent = {
       action: 'wrap',
-      elements: [
-        {
-          componentId,
-          childIndex,
-        },
-      ],
+      elements: topElements.map(getComponentIdAndChildIndex),
     }
 
     const update: ComponentUpdateWithoutGlobal = {
