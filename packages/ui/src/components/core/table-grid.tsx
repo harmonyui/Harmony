@@ -48,7 +48,7 @@ export const TableGrid = <T, S extends keyof T>({
   footer: footerFunc,
   className,
   children,
-}: TableGridProps<T, S>): JSX.Element => {
+}: TableGridProps<T, S>): React.JSX.Element => {
   const [sortId, setSortId] = useState<S | undefined>()
   const [sortOrder, setSortOrder] = useState<'ASC' | 'DESC'>('DESC')
   const [pageNum, setPageNum] = useState(1)
@@ -256,7 +256,7 @@ export const FilterTableGrid = <
   filterKeys,
   sortOptions,
   ...tableProps
-}: FilterTableGridProps<TFilter, TTable, TTableKey>): JSX.Element => {
+}: FilterTableGridProps<TFilter, TTable, TTableKey>): React.JSX.Element => {
   const [searchKey, setSearchKey] = useState<string | undefined>()
   const [sortId, setSortId] = useState<string | undefined>()
   const filteredData = searchItems(

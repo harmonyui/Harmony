@@ -24,6 +24,10 @@ describe('update-cache', () => {
       tailwindConfig: '',
       prettierConfig: '',
       registry: {},
+      config: {
+        tailwindPath: '',
+        packageResolution: {},
+      },
     }
     type Files = 'file1.tsx' | 'file2.tsx' | 'file3.tsx'
     const fileCache: Record<`${string}:indexing`, string[]> &

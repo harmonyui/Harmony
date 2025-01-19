@@ -1,17 +1,17 @@
-/* eslint-disable @typescript-eslint/consistent-indexed-object-style -- ok*/
 import { notFound } from 'next/navigation'
 import React from 'react'
 import { prisma } from '@harmony/db/lib/prisma'
 import { getServerAuthSession } from '@harmony/server/src/auth'
 import { cookies } from 'next/headers'
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { WelcomeDisplay } from './components/setup'
 
 export default async function SetupPage({
-  searchParams,
+  searchParams: unawaitedParams,
 }: {
-  searchParams?: { [key: string]: string | string[] | undefined }
+  searchParams?: Promise<{ [key: string]: string | string[] | undefined }>
 }) {
+  const searchParams = await unawaitedParams
   const teamId = searchParams?.teamId || undefined
 
   if (teamId && typeof teamId === 'string') {
@@ -29,8 +29,8 @@ export default async function SetupPage({
     notFound()
   }
 
-  const cookie = cookies()
-  const { userId } = auth()
+  const cookie = await cookies()
+  const { userId } = await auth()
   const mockUserId = cookie.get('harmony-user-id')?.value
   const authSession = await getServerAuthSession(userId, mockUserId)
 

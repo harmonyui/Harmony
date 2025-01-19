@@ -56,7 +56,7 @@ export const setupRoute = createTRPCRouter({
     .mutation(async ({ ctx, input }) => {
       const userId = input.userId ?? ctx.session.auth.userId
 
-      const cookie = cookies()
+      const cookie = await cookies()
       cookie.set('harmony-user-id', userId)
 
       return createNewAccount({

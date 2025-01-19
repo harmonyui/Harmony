@@ -1,4 +1,6 @@
 'use client'
+
+import { createRoot } from 'react-dom/client'
 import React, { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import type { Fiber } from 'react-reconciler'
@@ -75,7 +77,7 @@ export const useHarmonySetup = (
   }: HarmonySetupProps & { show?: boolean; initShow?: boolean },
   branchId: string | undefined,
 ) => {
-  const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>()
+  const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>(null)
 
   useEffect(() => {
     if (!initShow) return
@@ -84,7 +86,8 @@ export const useHarmonySetup = (
       resultRef.current?.setup.changeMode(false)
       const container = document.getElementById('harmony-container')
       if (container) {
-        ReactDOM.unmountComponentAtNode(container)
+        const root = createRoot(container)
+        root.unmount()
         container.remove()
       }
 

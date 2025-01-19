@@ -46,13 +46,19 @@ export function useQueryStorageState<T>({
   )
 
   useEffect(() => {
-    if (defaultValue && !getStorage().getItem(key)) {
+    if (
+      typeof window !== 'undefined' &&
+      defaultValue &&
+      !getStorage().getItem(key)
+    ) {
       setStorageValue(defaultValue)
     }
   }, [])
 
   //Prioritize the url, then the storage
   const storageValue = useMemo(() => {
+    if (typeof window === 'undefined') return defaultValue
+
     if (value) {
       putValueIntoStorage(value)
       return value

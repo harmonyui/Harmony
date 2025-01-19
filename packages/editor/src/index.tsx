@@ -1,7 +1,7 @@
 'use client'
+import { createRoot } from 'react-dom/client'
 import { getClass } from '@harmony/util/src/utils/common'
 import { useEffect, useRef } from 'react'
-import ReactDOM from 'react-dom'
 import { QueryStateProvider } from '@harmony/ui/src/hooks/query-state'
 import type { HarmonyProviderProps } from './components/harmony-provider'
 import { HarmonyProvider } from './components/harmony-provider'
@@ -18,46 +18,4 @@ declare global {
   }
 }
 
-export function HarmonyProviderFunc(
-  options: Omit<HarmonyProviderProps, 'children'>,
-  harmonyContainer: HTMLDivElement,
-) {
-  const Container: React.FunctionComponent<{
-    harmonyContainer: HTMLElement
-    className: string
-  }> = ({ className }) => {
-    const ref = useRef<HTMLBodyElement>(null)
-    useEffect(() => {
-      if (ref.current) {
-        options.setup.setContainer(ref.current)
-        //options.setup.changeMode(options.mode || 'designer')
-      }
-    }, [ref])
-    return (
-      <section
-        id='harmony-section'
-        className={className}
-        ref={ref}
-        style={{ backgroundColor: 'white' }}
-      ></section>
-    )
-  }
-  const container = (
-    <Container
-      harmonyContainer={harmonyContainer}
-      className={getClass(document.body.className, 'hw-select-none')}
-    />
-  ) //document.createElement('body');
-  ReactDOM.render(
-    <QueryStateProvider>
-      <HarmonyProvider {...options}>{container}</HarmonyProvider>
-    </QueryStateProvider>,
-    harmonyContainer,
-  )
-}
-
 export { HarmonySetup, useHarmonySetup }
-
-if (typeof window !== 'undefined') {
-  window.HarmonyProvider = HarmonyProviderFunc
-}

@@ -12,7 +12,7 @@ export const PropertyInput = <T,>({
   onChange,
   type,
   values,
-}: PropertyInputProps<T>): JSX.Element => {
+}: PropertyInputProps<T>): React.ReactElement => {
   const InputComponent = propertyInputs[type]
   return <InputComponent value={value} onChange={onChange} values={values} />
 }

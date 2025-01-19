@@ -393,7 +393,7 @@ const keys = [
   'width',
 ] as const
 const useWatchElementStyles = (
-  ref: React.RefObject<HTMLElement>,
+  ref: React.RefObject<HTMLElement | null>,
   initialValue?: Record<(typeof keys)[number], string>,
 ) => {
   const [style, setStyle] = useState('')

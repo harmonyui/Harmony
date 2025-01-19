@@ -21,7 +21,7 @@ export const ListBoxPopover = <T,>({
   children,
   container,
   ...isOpenStuff
-}: ListBoxPopoverProps<T>): JSX.Element => {
+}: ListBoxPopoverProps<T>): React.JSX.Element => {
   return (
     <Popover
       className='hw-bg-white hw-border hw-rounded-lg hw-max-h-52'
@@ -56,7 +56,7 @@ export const ListBox = <T,>({
   header,
   container,
   ...isOpenStuff
-}: ListBoxProps<T>): JSX.Element => {
+}: ListBoxProps<T>): React.JSX.Element => {
   const button = (
     <Button className={className} mode={mode}>
       <div className='hw-flex hw-items-center hw-w-full'>{children}</div>
@@ -104,7 +104,7 @@ export const Dropdown = <T,>({
   showValue = true,
   mode = 'secondary',
   container,
-}: DropdownProps<T>): JSX.Element => {
+}: DropdownProps<T>): React.JSX.Element => {
   const [value, setValue] = useState<DropdownItem<T> | undefined>(
     items.find((x) => x.id === initialValue),
   )
@@ -201,7 +201,7 @@ export const DropdownList = <T,>({
   items,
   setItems,
   ...rest
-}: ListItemProps<T>): JSX.Element => {
+}: ListItemProps<T>): React.JSX.Element => {
   const copy = items.slice()
   const onSelect = (item: ListItem): void => {
     item.value = !item.value
@@ -253,7 +253,7 @@ export const DropdownIcon = <T,>({
   className,
   mode,
   ...rest
-}: DropdownIconProps<T>): JSX.Element => {
+}: DropdownIconProps<T>): React.JSX.Element => {
   const Icon = icon
   const _class =
     mode === 'none'

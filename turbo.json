@@ -1,7 +1,7 @@
 {
 	"$schema": "https://turbo.build/schema.json",
 	"globalDependencies": ["**/.env.*local"],
-	"pipeline": {
+	"tasks": {
 	  "build": {
 		"dependsOn": ["^test", "^db:generate", "^db:deploy"],
 		"outputs": [".next/**", "!.next/cache/**"]
@@ -38,5 +38,20 @@
 		"cache": false
 	  }
 	},
-	"globalEnv": ["PORT", "DATABASE_URL", "VERCEL_URL", "NODE_ENV", "SMTP_EMAIL", "SMTP_KEY"]
+	"globalEnv": ["PORT", "DATABASE_URL", "VERCEL_URL", "NODE_ENV", "SMTP_EMAIL", "SMTP_KEY", 
+	"OPENAI_API_KEY", 
+	"GITHUB_APP_ID", 
+	"GITHUB_APP_CLIENT_ID", 
+	"GITHUB_APP_CLIENT_SECRET", 
+	"GITHUB_API_KEY", 
+	"GITHUB_CLIENT_ID", 
+	"GITHUB_CLIENT_SECRET", 
+	"CLERK_PUBLISHABLE_KEY", 
+	"CLERK_SECRET_KEY", 
+	"REDIS_HOST", 
+	"REDIS_PORT", 
+	"REDIS_PASSWORD", 
+	"PRIVATE_KEY", 
+	"ENV", 
+	"EDITOR_PORT" ]
 }

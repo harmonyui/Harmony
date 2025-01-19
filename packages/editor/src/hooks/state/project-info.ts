@@ -48,7 +48,10 @@ export const createProjectInfoSlice = createHarmonySlice<
   isOverlay: false,
   isRepositoryConnected: false,
   harmonyTokens: [],
-  isLocal: window.location.hostname === 'localhost',
+  isLocal:
+    typeof window !== 'undefined'
+      ? window.location.hostname === 'localhost'
+      : false,
   setIsOverlay(value: boolean) {
     set({ isOverlay: value })
   },
