@@ -57,7 +57,7 @@ export const wrapComponentUpdate =
           parentId,
           parentChildIndex,
           index,
-          element: 'div',
+          element: '<div class="flex"></div>',
         },
         rootElement,
       )

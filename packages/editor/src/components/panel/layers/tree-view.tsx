@@ -142,7 +142,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
       selectedComponent.element,
     )
     const newComponentId = generateComponentIdFromParent(componentId)
-    const newChildIndex = getNewChildIndex(componentId)
+    const newChildIndex = getNewChildIndex(newComponentId)
 
     const unwrap: WrapUnwrapComponent = {
       action: 'unwrap',

@@ -303,6 +303,21 @@ export const getJSXElementFromLevels = (
   return element
 }
 
+export const getJSXParentElement = (
+  componentId: string,
+  childIndex: number,
+  graph: FlowGraph,
+) =>
+  getJSXElementFromLevels(
+    componentId,
+    childIndex,
+    graph,
+    (_element) =>
+      _element.getChildren().length > 1 ||
+      _element.getAttributes().find((attr) => attr.getName() === 'children') ===
+        undefined,
+  )
+
 export const parseText = <T extends Node>(
   text: string,
   filter: (node: Node) => node is T,

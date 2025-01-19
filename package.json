@@ -19,7 +19,8 @@
     "@harmony/tsconfig": "workspace:*",
     "eslint": "^9.18.0",
     "prettier": "^3.4.2",
-    "turbo": "2.3.3"
+    "turbo": "2.3.3",
+    "vitest": "^3.0.2"
   },
   "packageManager": "pnpm@8.6.10",
   "name": "harmony",

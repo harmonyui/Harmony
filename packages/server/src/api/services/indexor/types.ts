@@ -2,6 +2,7 @@ import type { ComponentLocation } from '@harmony/util/src/types/component'
 import type * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
 import type { FlowGraph } from './graph'
+import { getSnippetFromNode } from './utils'
 
 export interface Attribute {
   id: string
@@ -175,6 +176,10 @@ export class Node<T extends t.Node = t.Node> {
   }
   public getParent(): Node | undefined {
     return this.parent
+  }
+
+  public getNodeContent(): string {
+    return getSnippetFromNode(this.node)
   }
 }
 
