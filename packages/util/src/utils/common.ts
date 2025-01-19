@@ -1,7 +1,7 @@
-/* eslint-disable no-bitwise -- Allow bitwise for some functions here*/
 import clsx from 'clsx'
 import dayjs from 'dayjs'
 import type { HexColor } from '../types/colors'
+import { v4 as uuidv4 } from 'uuid'
 
 export const displayDate = (date: Date) => {
   return dayjs(date).format('MM/DD/YY')
@@ -392,4 +392,8 @@ export const getFileContents = async (
   await Promise.all(files.map(visitPaths))
 
   return fileContents
+}
+
+export const generateUniqueId = () => {
+  return uuidv4()
 }

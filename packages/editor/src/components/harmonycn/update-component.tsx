@@ -3,11 +3,7 @@ import type {
   AddComponent,
   DeleteComponent,
 } from '@harmony/util/src/updates/component'
-import { v4 as uuidv4 } from 'uuid'
-import {
-  getBaseId,
-  getLocationsFromComponentId,
-} from '@harmony/util/src/utils/component'
+import { generateComponentIdFromParent } from '@harmony/util/src/utils/component'
 import type { ComponentUpdateWithoutGlobal } from '../harmony-context'
 import { useHarmonyContext } from '../harmony-context'
 import { getComponentIdAndChildIndex } from '../../utils/element-utils'
@@ -40,8 +36,7 @@ export const useUpdateComponent = () => {
       const { componentId: parentId, childIndex: parentChildIndex } =
         getComponentIdAndChildIndex(parent)
 
-      const location = getLocationsFromComponentId(getBaseId(parentId))[0]
-      const componentId = btoa(`${location.file}:${uuidv4()}`)
+      const componentId = generateComponentIdFromParent(parentId)
 
       const childIndex = getNewChildIndex(componentId)
 

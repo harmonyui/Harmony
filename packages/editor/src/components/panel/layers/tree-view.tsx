@@ -8,19 +8,25 @@ import {
   ComponentIcon as ComponentIconRaw,
 } from '@harmony/ui/src/components/core/icons'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
-import { v4 as uuidv4 } from 'uuid'
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
 import { ContextMenuItem } from '@harmony/ui/src/components/core/context-menu'
 import { createUpdate } from '@harmony/util/src/updates/utils'
-import type { ReorderComponent } from '@harmony/util/src/updates/component'
+import type {
+  ReorderComponent,
+  WrapUnwrapComponent,
+} from '@harmony/util/src/updates/component'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
-import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
+import {
+  getComponentIdAndChildIndex,
+  getInBetweenElements,
+} from '../../../utils/element-utils'
 import { ComponentType } from '../../attributes/types'
 import { getComponentType } from '../design/utils'
 import { useHarmonyStore } from '../../../hooks/state'
 import { useComponentMenu } from '../../harmonycn/component-provider'
 import { useUpdateComponent } from '../../harmonycn/update-component'
+import { generateComponentIdFromParent } from '@harmony/util/src/utils/component'
 
 export interface TransformNode extends Record<string, NonNullable<unknown>> {
   id: string
@@ -43,8 +49,9 @@ export const TreeView = ({ items }: TreeViewProps) => {
   const harmonyComponents = useHarmonyStore((store) => store.harmonyComponents)
   const { setIsOpen: setComponentMenuOpen } = useComponentMenu()
   const { deleteComponent } = useUpdateComponent()
+  const getNewChildIndex = useHarmonyStore((store) => store.getNewChildIndex)
 
-  const [multiSelect, setMultiSelect] = useState<{
+  const [, setMultiSelect] = useState<{
     start: HTMLElement
     end: HTMLElement
   }>()
@@ -114,7 +121,10 @@ export const TreeView = ({ items }: TreeViewProps) => {
   }
 
   const onSelect: TreeProps<HTMLElement>['onSelect'] = (nodes) => {
-    nodes.length && onComponentSelect(nodes[0].data)
+    if (nodes.length) {
+      onComponentSelect(nodes[0].data)
+    }
+
     if (nodes.length > 1) {
       const start = nodes[0].data
       const end = nodes[nodes.length - 1].data
@@ -126,59 +136,65 @@ export const TreeView = ({ items }: TreeViewProps) => {
     onComponentHover(data)
   }
 
-  const handleWrapElement = useEffectEvent((action: 'wrap' | 'unwrap') => {
-    const startComponent = multiSelect?.start
-    if (!startComponent) return
+  const handleWrapElement = useEffectEvent(() => {
+    if (!selectedComponent) return
+    const { componentId, childIndex } = getComponentIdAndChildIndex(
+      selectedComponent.element,
+    )
+    const newComponentId = generateComponentIdFromParent(componentId)
+    const newChildIndex = getNewChildIndex(componentId)
 
-    const { childIndex: startChildIndex } =
-      getComponentIdAndChildIndex(startComponent)
-    const endComponent = multiSelect.end
-
-    const { childIndex: endChildIndex } =
-      getComponentIdAndChildIndex(endComponent)
-
-    const componentId = () => {
-      if (action === 'wrap') {
-        return uuidv4()
-      }
-      return multiSelect.start.dataset.harmonyId || ''
-    }
-
-    const cacheId = uuidv4()
-
-    const unwrap = {
+    const unwrap: WrapUnwrapComponent = {
       action: 'unwrap',
-      start: {
-        id: multiSelect.start.dataset.harmonyId,
-        childIndex: startChildIndex,
-      },
-      end: {
-        id: multiSelect.end.dataset.harmonyId,
-        childIndex: endChildIndex,
-      },
-      id: cacheId,
     }
 
-    const wrap = {
+    const wrap: WrapUnwrapComponent = {
       action: 'wrap',
-      start: {
-        id: multiSelect.start.dataset.harmonyId,
-        childIndex: startChildIndex,
-      },
-      end: {
-        id: multiSelect.end.dataset.harmonyId,
-        childIndex: endChildIndex,
-      },
-      id: cacheId,
+      elements: [
+        {
+          componentId,
+          childIndex,
+        },
+      ],
     }
 
     const update: ComponentUpdateWithoutGlobal = {
       type: 'component',
       name: 'wrap-unwrap',
-      componentId: componentId(),
-      childIndex: startChildIndex,
-      oldValue: JSON.stringify(action === 'wrap' ? unwrap : wrap),
-      value: JSON.stringify(action === 'wrap' ? wrap : unwrap),
+      componentId: newComponentId,
+      childIndex: newChildIndex,
+      oldValue: createUpdate(unwrap),
+      value: createUpdate(wrap),
+    }
+    onAttributesChange([update])
+  })
+
+  const handleUnwrapElement = useEffectEvent(() => {
+    if (!selectedComponent) return
+    const { componentId, childIndex } = getComponentIdAndChildIndex(
+      selectedComponent.element,
+    )
+
+    const unwrap: WrapUnwrapComponent = {
+      action: 'unwrap',
+    }
+
+    const inBetweenElements = Array.from(
+      selectedComponent.element.children,
+    ) as HTMLElement[]
+
+    const wrap: WrapUnwrapComponent = {
+      action: 'wrap',
+      elements: inBetweenElements.map(getComponentIdAndChildIndex),
+    }
+
+    const update: ComponentUpdateWithoutGlobal = {
+      type: 'component',
+      name: 'wrap-unwrap',
+      componentId,
+      childIndex,
+      oldValue: createUpdate(wrap),
+      value: createUpdate(unwrap),
     }
     onAttributesChange([update])
   })
@@ -196,13 +212,13 @@ export const TreeView = ({ items }: TreeViewProps) => {
       onDrag={onDrag}
       onHover={onHover}
       onSelect={onSelect}
-      contextMenu={({ data: _ }) => (
+      contextMenu={() => (
         <TreeViewItem
           onAddAbove={() => setComponentMenuOpen(true, { position: 'above' })}
           onAddBelow={() => setComponentMenuOpen(true, { position: 'below' })}
           onDelete={onDelete}
-          onWrap={() => handleWrapElement('wrap')}
-          onUnWrap={() => handleWrapElement('unwrap')}
+          onWrap={() => handleWrapElement()}
+          onUnWrap={() => handleUnwrapElement()}
         />
       )}
     >

@@ -1,9 +1,7 @@
-/* eslint-disable @typescript-eslint/prefer-for-of -- ok*/
 import $ from 'jquery'
 import { capitalizeFirstLetter } from '@harmony/util/src/utils/common'
 import type { ComponentElement } from '../components/inspector/component-identifier'
 
-/* eslint-disable @typescript-eslint/no-non-null-assertion --- ok*/
 export const recurseElements = (
   element: HTMLElement,
   callbacks: ((
@@ -478,4 +476,14 @@ export function replaceTextContentWithSpans(element: HTMLElement) {
       element.appendChild(span)
     }
   }
+}
+
+export function getInBetweenElements(element: HTMLElement) {
+  const elements: HTMLElement[] = []
+  let currentElement = element
+  while (currentElement.nextElementSibling) {
+    currentElement = currentElement.nextElementSibling as HTMLElement
+    elements.push(currentElement)
+  }
+  return elements
 }

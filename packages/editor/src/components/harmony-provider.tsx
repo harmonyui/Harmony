@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style -- ok*/
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
-
 'use client'
 import { MinimizeIcon } from '@harmony/ui/src/components/core/icons'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
@@ -229,7 +225,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                 )
               : false),
         ),
-      )
+      ) &&
+      mutations[0].removedNodes[0] !== mutations[1].addedNodes[0]
     ) {
       void recurseAndUpdateElements()
     }

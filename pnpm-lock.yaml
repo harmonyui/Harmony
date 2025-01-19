@@ -1230,6 +1230,9 @@ importers:
       tailwind-merge:
         specifier: ^2.6.0
         version: 2.6.0
+      uuid:
+        specifier: ^11.0.5
+        version: 11.0.5
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -1255,6 +1258,9 @@ importers:
       '@types/react':
         specifier: ^19.0.7
         version: 19.0.7
+      '@types/uuid':
+        specifier: ^10.0.0
+        version: 10.0.0
       eslint:
         specifier: ^9.18.0
         version: 9.18.0
