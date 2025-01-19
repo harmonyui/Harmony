@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop  -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import type { Font } from '@harmony/util/src/fonts'
 import {
@@ -22,6 +21,7 @@ import { propertyUpdate } from './property'
 import { classNameComponentUpdate } from './classname'
 import { styleComponentUpdate } from './style'
 import { textComponentUpdate } from './text'
+import { wrapComponentUpdate } from './wrap'
 
 export interface ComponentUpdateState {
   componentUpdates: ComponentUpdate[]
@@ -61,6 +61,7 @@ export const createComponentUpdateSlice = createHarmonySlice<
     const deleteComponent = deleteComponentUpdate([set, get, api])
     const createComponent = createComponentUpdate([set, get, api])
     const reorderComponent = reorderComponentUpdate([set, get, api])
+    const wrapUnwrapComponent = wrapComponentUpdate([set, get, api])
     //Updates that should happen just for the element (reordering)
     for (const update of updates) {
       const element = findElementFromId(
@@ -118,84 +119,7 @@ export const createComponentUpdateSlice = createHarmonySlice<
         }
 
         if (update.name === 'wrap-unwrap') {
-          //const { value } = update
-          // const { id, start, end, action } = JSON.parse(value) as {
-          //   id: string
-          //   action: string
-          //   start: { id: string; childIndex: number }
-          //   end: { id: string; childIndex: number }
-          // }
-          // if (action === 'wrap') {
-          //   const cachedElement = get().cachedElements.find(
-          //     (c) => c.id === id,
-          //   )
-          //   if (cachedElement) {
-          //     const parent = cachedElement.parent
-          //     parent.childNodes.forEach((child, index) => {
-          //       if (index === start.childIndex) {
-          //         parent.insertBefore(cachedElement.element, child)
-          //         set((state) => {
-          //           state.cachedElements = state.cachedElements.filter(
-          //             (c) => c.id !== id,
-          //           )
-          //           return state
-          //         })
-          //         cachedElement.children!.forEach((c) => {
-          //           c.remove()
-          //         })
-          //       }
-          //     })
-          //   } else {
-          //     const startElement = findElementFromId(
-          //       start.id,
-          //       start.childIndex,
-          //       rootElement,
-          //     )
-          //     const parent = startElement?.parentElement
-          //     const endElement = findElementFromId(
-          //       end.id,
-          //       end.childIndex,
-          //       rootElement,
-          //     )
-          //     if (!startElement || !endElement)
-          //       throw new Error(
-          //         `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-          //       )
-          //     const newComponent = document.createElement('div')
-          //     newComponent.dataset.harmonyId = update.componentId
-          //     newComponent.classList.add('hw-bg-primary-light')
-          //     newComponent.classList.add('hw-p-[24px]')
-          //     parent?.appendChild(newComponent)
-          //     const elements = getElementsBetween(startElement, endElement)
-          //     elements.forEach((element) => {
-          //       element.remove()
-          //       newComponent.appendChild(element)
-          //     })
-          //   }
-          // } else if (action === 'unwrap') {
-          //   const element = document.querySelector(
-          //     `[data-harmony-id="${update.componentId}"]`,
-          //   )
-          //   const parent = element?.parentElement
-          //   set((state) => {
-          //     state.cachedElements.push({
-          //       id,
-          //       element: element?.cloneNode(true) as HTMLElement,
-          //       parent: parent!,
-          //       children: Array.from(element?.children || []),
-          //     })
-          //     return state
-          //   })
-          //   if (!element)
-          //     throw new Error(
-          //       `makeUpdates: Cannot find from element with componentId ${update.componentId} and childIndex ${update.childIndex}`,
-          //     )
-          //   const children = Array.from(element.children)
-          //   children.forEach((child) => {
-          //     parent?.appendChild(child)
-          //   })
-          //   element.remove()
-          // }
+          await wrapUnwrapComponent(update, rootElement)
         }
         if (update.name === 'replace-element') {
           const { value } = update

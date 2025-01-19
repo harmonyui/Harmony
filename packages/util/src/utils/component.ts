@@ -3,7 +3,7 @@ import { diffChars } from 'diff'
 import { z } from 'zod'
 import type { ComponentUpdate } from '../types/component'
 import type { BranchItem } from '../types/branch'
-import { getFileContents } from './common'
+import { generateUniqueId, getFileContents } from './common'
 
 export const LOCALHOST = 'localhost'
 export const environment =
@@ -120,9 +120,16 @@ export function getLocationsFromComponentId(id: string): {
       .filter((location) => location !== undefined)
 
     return locations
-  } catch (e) {
+  } catch {
     return []
   }
+}
+
+export const generateComponentIdFromParent = (parentId: string): string => {
+  const location = getLocationsFromComponentId(getBaseId(parentId))[0]
+  const componentId = btoa(`${location.file}:${generateUniqueId()}`)
+
+  return componentId
 }
 
 export const reverseUpdates = <T extends ComponentUpdate>(

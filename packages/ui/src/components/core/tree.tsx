@@ -39,7 +39,6 @@ export const Tree = <T,>({
   contextMenu,
 }: TreeProps<T>) => {
   const onSelect = (nodes: ReactTreePrimitive.NodeApi<TreeData<T>>[]) => {
-    console.log(`selecting: ${nodes[0]?.data.id}`)
     onSelectProps(nodes.map((node) => node.data))
   }
 
@@ -60,7 +59,7 @@ export const Tree = <T,>({
       data={data}
       indent={12}
       selection={selectedId}
-      //onSelect={onSelect}
+      onSelect={onSelect}
       onMove={onMove}
       //childrenAccessor='items'
       rowHeight={26}
@@ -70,7 +69,7 @@ export const Tree = <T,>({
         const nodeProps = {
           ...props,
           onHover: () => onHover(props.node.data),
-          onClick: () => onSelect([props.node]),
+          onClick: () => undefined,
           children: children({ data: props.node.data }) as React.ReactNode,
           isParentSelected: parentSelected,
         }

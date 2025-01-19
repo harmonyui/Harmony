@@ -18,6 +18,7 @@ import { reorderUpdate } from './updates/reorder'
 import { propertyUpdate } from './updates/property'
 import { updateStyle } from './updates/style'
 import { getClassNameValue } from './updates/utils'
+import { updateWrapUnwrap } from './updates/wrap'
 
 export class CodeUpdator {
   constructor(
@@ -45,7 +46,6 @@ export class CodeUpdator {
     const updateInfo = await this.getUpdateInfo(updates)
 
     for (const info of updateInfo) {
-      // eslint-disable-next-line no-await-in-loop -- ok
       await this.getChangeAndLocation(info, graph)
     }
 
@@ -114,6 +114,8 @@ export class CodeUpdator {
           await reorderUpdate(update, graph, repository)
         } else if (update.update.name === 'style') {
           await updateStyle(update, graph, repository)
+        } else if (update.update.name === 'wrap-unwrap') {
+          await updateWrapUnwrap(update, graph, repository)
         }
         break
       case 'property':

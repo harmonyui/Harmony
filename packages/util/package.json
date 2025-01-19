@@ -12,6 +12,7 @@
     "next": "15.1.5",
     "react": "^19.0.0",
     "tailwind-merge": "^2.6.0",
+    "uuid": "^11.0.5",
     "zod": "^3.24.1"
   },
   "devDependencies": {
@@ -22,6 +23,7 @@
     "@types/lodash": "^4.17.14",
     "@types/node": "^22.10.7",
     "@types/react": "^19.0.7",
+    "@types/uuid": "^10.0.0",
     "eslint": "^9.18.0",
     "prettier": "^3.4.2",
     "typescript": "^5.7.3",

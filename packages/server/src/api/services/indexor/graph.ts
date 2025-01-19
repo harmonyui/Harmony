@@ -1,5 +1,3 @@
-/* eslint-disable no-nested-ternary -- ok*/
-/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 import { join } from 'node:path'
 import * as parser from '@babel/parser'
 import traverse, { NodePath } from '@babel/traverse'
@@ -618,7 +616,7 @@ export class FlowGraph {
       Array.from(this.dirtyFiles).map(async (file) => {
         const program = this.files[file]
         program.setContent(
-          await this.formatCode(getSnippetFromNode(program.node), options),
+          await this.formatCode(program.getNodeContent(), options),
         )
       }),
     )
@@ -752,12 +750,15 @@ export class FlowGraph {
     }
     parentComponentChildren.splice(componentIndex, 1)
 
-    const content = getSnippetFromNode(jsxElement.node)
+    const childElements = jsxElement.getJSXChildren(true)
+
+    const content = jsxElement.getNodeContent()
     jsxElement.path.remove()
     this.dirtyNode(jsxElement)
     this.nodes.delete(jsxElement.id)
+    childElements.forEach((child) => this.nodes.delete(child.id))
 
-    return content
+    return { content, childElements }
   }
 
   public createNodeAndPath<T extends t.Node>(
@@ -792,7 +793,7 @@ export class FlowGraph {
       Array.from(this.dirtyFiles).map<Promise<[string, string]>>(
         async (file) => {
           const program = this.files[file]
-          const newContent = getSnippetFromNode(program.node)
+          const newContent = program.getNodeContent()
           const formatted = await this.formatCode(newContent, options)
 
           return [file, formatted]
