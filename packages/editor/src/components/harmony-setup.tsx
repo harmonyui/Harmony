@@ -11,7 +11,6 @@ import {
   useQueryState,
 } from '@harmony/ui/src/hooks/query-state'
 import { WEB_URL } from '@harmony/util/src/constants'
-import { useQueryStorageState } from '@harmony/ui/src/hooks/query-storage-state'
 import { useToggleEvent } from '../hooks/toggle-event'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
