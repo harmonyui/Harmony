@@ -59,6 +59,7 @@ interface HarmonyContextProps {
     element: HTMLElement | undefined,
   ) => void
   onToggleInspector: () => void
+  isToggled: boolean
 }
 export const HarmonyContext = createContext<HarmonyContextProps>({
   isSaving: false,
@@ -82,6 +83,7 @@ export const HarmonyContext = createContext<HarmonyContextProps>({
   onElementPropertyChange: noop,
   onComponentPropertyChange: noop,
   onToggleInspector: noop,
+  isToggled: false,
 })
 
 export const useHarmonyContext = () => {

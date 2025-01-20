@@ -3,7 +3,7 @@ import './global.css'
 import { QueryStateProvider } from '@harmony/ui/src/hooks/query-state'
 import { getClass } from '@harmony/util/src/utils/common'
 import { useRef, useEffect } from 'react'
-import { createRoot } from 'react-dom/client'
+import { createRoot, Root } from 'react-dom/client'
 import {
   HarmonyProviderProps,
   HarmonyProvider,
@@ -14,7 +14,7 @@ export { HarmonySetup }
 export function HarmonyProviderFunc(
   options: Omit<HarmonyProviderProps, 'children'>,
   harmonyContainer: HTMLDivElement,
-) {
+): Root {
   const Container: React.FunctionComponent<{
     harmonyContainer: HTMLElement
     className: string
@@ -48,6 +48,8 @@ export function HarmonyProviderFunc(
       <HarmonyProvider {...options}>{container}</HarmonyProvider>
     </QueryStateProvider>,
   )
+
+  return root
 }
 
 if (typeof window !== 'undefined') {

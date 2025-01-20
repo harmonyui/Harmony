@@ -4,6 +4,7 @@ import { Button } from '@harmony/ui/src/components/core/button'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { useSetHarmonyPanels } from '../_common/panel/panel'
 import { useHarmonyContext } from '../../harmony-context'
+import { useOnChange } from '@harmony/ui/src/hooks/on-change'
 
 interface PreviewButtonState {
   onPreview: () => void
@@ -12,10 +13,12 @@ interface PreviewButtonState {
 }
 export const usePreviewButton = (): PreviewButtonState => {
   const { isAllActive, setIsAllActive } = useSetHarmonyPanels()
-  const { onToggleInspector } = useHarmonyContext()
+  const { onToggleInspector, isToggled } = useHarmonyContext()
+  useOnChange(isToggled, (_, current) => {
+    setIsAllActive(current)
+  })
 
   const onPreview = useEffectEvent(() => {
-    setIsAllActive(!isAllActive)
     onToggleInspector()
   })
 

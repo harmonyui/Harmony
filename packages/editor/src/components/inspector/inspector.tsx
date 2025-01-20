@@ -1,10 +1,6 @@
 /* eslint-disable prefer-const -- ok */
 /* eslint-disable @typescript-eslint/no-explicit-any -- ok */
-/* eslint-disable @typescript-eslint/no-unsafe-call -- ok */
-/* eslint-disable @typescript-eslint/no-unsafe-member-access -- ok */
-/* eslint-disable @typescript-eslint/no-unsafe-assignment -- ok */
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok */
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+
 /* eslint-disable import/no-cycle -- ok*/
 'use client'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
@@ -25,6 +21,7 @@ import { useCopyPasteDelete } from '../../hooks/copy-paste-delete'
 import { selectDesignerElement } from '../../utils/element-utils'
 import { isTextElement } from '../../utils/element-predicate'
 import { useHighlighter } from './highlighter'
+import { useHotKeys } from '../../hooks/hotkeys'
 
 export function isSizeThreshold(element: HTMLElement, scale: number): boolean {
   const sizeThreshold = 10
@@ -271,22 +268,12 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     scale,
   })
 
-  useEffect(() => {
-    const onEscape = () => {
-      const parent = selectedComponent?.parentElement
-      onSelect(
-        rootElement?.contains(parent ?? null)
-          ? (parent ?? undefined)
-          : undefined,
-      )
-    }
-
-    hotkeys('esc', onEscape)
-
-    return () => {
-      hotkeys.unbind('esc', onEscape)
-    }
-  }, [selectedComponent, onSelect, rootElement])
+  useHotKeys('esc', () => {
+    const parent = selectedComponent?.parentElement
+    onSelect(
+      rootElement?.contains(parent ?? null) ? (parent ?? undefined) : undefined,
+    )
+  })
 
   useEffect(() => {
     const container = containerRef.current
