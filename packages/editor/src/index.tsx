@@ -1,8 +1,5 @@
 'use client'
-import { createRoot } from 'react-dom/client'
-import { getClass } from '@harmony/util/src/utils/common'
-import { useEffect, useRef } from 'react'
-import { QueryStateProvider } from '@harmony/ui/src/hooks/query-state'
+import { Root } from 'react-dom/client'
 import type { HarmonyProviderProps } from './components/harmony-provider'
 import { HarmonyProvider } from './components/harmony-provider'
 import { HarmonySetup, useHarmonySetup } from './components/harmony-setup'
@@ -10,7 +7,7 @@ import { HarmonySetup, useHarmonySetup } from './components/harmony-setup'
 type HarmonyProvider = (
   options: Omit<HarmonyProviderProps, 'children'>,
   harmonyContainer: HTMLDivElement,
-) => void
+) => Root
 
 declare global {
   interface Window {

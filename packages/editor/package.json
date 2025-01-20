@@ -106,5 +106,5 @@
     "webpack-hot-middleware": "^2.26.1"
   },
   "prettier": "@harmony/prettier-config",
-  "version": "0.13.2"
+  "version": "0.13.3"
 }

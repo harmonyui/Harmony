@@ -11,7 +11,6 @@ import type {
   ComponentUpdate,
 } from '@harmony/util/src/types/component'
 import type { Environment } from '@harmony/util/src/utils/component'
-import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
 import React, { useEffect, useRef, useState } from 'react'
 import type { UpdateAttributeValue } from '@harmony/util/src/updates/component'
@@ -40,6 +39,7 @@ import { HarmonyPanel } from './panel/harmony-panel'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'
 import { ComponentProvider } from './harmonycn/component-provider'
+import { useHotKeys } from '../hooks/hotkeys'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -157,13 +157,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     setIsToggled(!isToggled)
   })
 
-  useEffect(() => {
-    hotkeys('T', onToggle)
-
-    return () => {
-      hotkeys.unbind('esc', onToggle)
-    }
-  }, [])
+  useHotKeys('T', onToggle)
 
   useEffect(() => {
     if (!isToggled) {
@@ -487,6 +481,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             onElementPropertyChange,
             onComponentPropertyChange,
             onToggleInspector: onToggle,
+            isToggled,
           }}
         >
           <ComponentProvider>

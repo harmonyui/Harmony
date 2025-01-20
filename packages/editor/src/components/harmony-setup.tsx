@@ -1,6 +1,6 @@
 'use client'
 
-import { createRoot } from 'react-dom/client'
+import { Root } from 'react-dom/client'
 import React, { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import type { Fiber } from 'react-reconciler'
@@ -17,6 +17,7 @@ import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
+import { useToggleEnable } from '../hooks/toggle-enable'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
@@ -31,15 +32,14 @@ type HarmonySetupProps = Pick<
 > & {
   local?: boolean
 }
-export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> = (
-  options,
-) => {
-  return (
-    <QueryStateProvider>
-      <HarmonySetupPrimitive {...options} />
-    </QueryStateProvider>
-  )
-}
+export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> =
+  React.memo((options) => {
+    return (
+      <QueryStateProvider>
+        <HarmonySetupPrimitive {...options} />
+      </QueryStateProvider>
+    )
+  })
 
 const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
   options,
@@ -65,6 +65,8 @@ const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
     window.location.replace(WEB_URL)
   })
 
+  useToggleEnable()
+
   return <></>
 }
 
@@ -78,6 +80,7 @@ export const useHarmonySetup = (
   branchId: string | undefined,
 ) => {
   const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>(null)
+  const rootRef = useRef<Root>(null)
 
   useEffect(() => {
     if (!initShow) return
@@ -86,8 +89,7 @@ export const useHarmonySetup = (
       resultRef.current?.setup.changeMode(false)
       const container = document.getElementById('harmony-container')
       if (container) {
-        const root = createRoot(container)
-        root.unmount()
+        rootRef.current?.unmount()
         container.remove()
       }
 
@@ -113,9 +115,9 @@ export const useHarmonySetup = (
           branchId || '',
           harmonyContainer,
           resultRef.current.setup,
-        )
+        ).then((root) => (rootRef.current = root))
       } else {
-        window.HarmonyProvider(
+        rootRef.current = window.HarmonyProvider(
           {
             ...options,
             repositoryId,
@@ -134,15 +136,22 @@ function createProductionScript(
   branchId: string,
   harmonyContainer: HTMLDivElement,
   setup: Setuper,
-) {
-  const script = document.createElement('script')
-  const src = `${getEditorUrl(options.environment || 'production')}/bundle.js`
-  script.src = src
-  script.addEventListener('load', function load() {
-    window.HarmonyProvider({ ...options, branchId, setup }, harmonyContainer)
-  })
+): Promise<Root> {
+  return new Promise<Root>((resolve) => {
+    const script = document.createElement('script')
+    const src = `${getEditorUrl(options.environment || 'production')}/bundle.js`
+    script.src = src
+    script.addEventListener('load', function load() {
+      resolve(
+        window.HarmonyProvider(
+          { ...options, branchId, setup },
+          harmonyContainer,
+        ),
+      )
+    })
 
-  document.body.appendChild(script)
+    document.body.appendChild(script)
+  })
 }
 
 function isNativeElement(element: Element): boolean {
@@ -257,7 +266,6 @@ export class Setuper implements Setup {
         key?: React.Key | null | undefined,
       ) {
         if (_container === document.body) {
-          // eslint-disable-next-line no-param-reassign -- ok
           _container = self.container as HTMLElement
         }
 
@@ -267,7 +275,6 @@ export class Setuper implements Setup {
       this.bodyObserver.disconnect()
       this.bodyObserver = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
-          // eslint-disable-next-line @typescript-eslint/no-loop-func -- ok
           mutation.addedNodes.forEach((node) => {
             if (
               node.parentElement === document.body &&

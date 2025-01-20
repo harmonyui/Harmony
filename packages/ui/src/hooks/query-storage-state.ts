@@ -68,7 +68,7 @@ export function useQueryStorageState<T>({
     const retValue = storageValueString
       ? decodeState<T>(storageValueString)
       : defaultValue
-    setValue(retValue)
+    if (retValue !== value) setValue(retValue)
     return retValue
   }, [value, defaultValue, setValue])
 

@@ -7,10 +7,10 @@ import type {
 import type { UpdateRequest } from '@harmony/util/src/types/network'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { reverseUpdates } from '@harmony/util/src/utils/component'
-import hotkeys from 'hotkeys-js'
 import { useState, useEffect } from 'react'
 import { findElementsFromId } from '../utils/element-utils'
 import { useHarmonyStore } from './state'
+import { useHotKeys } from './hotkeys'
 
 interface HarmonyCommandChange {
   name: 'change'
@@ -244,15 +244,8 @@ export const useComponentUpdator = ({
     return resultData.errorUpdates
   }
 
-  useEffect(() => {
-    hotkeys('ctrl+z, command+z', onUndo)
-    hotkeys('ctrl+shift+z, command+shift+z', onRedo)
-
-    return () => {
-      hotkeys.unbind('ctrl+z, command+z', onUndo)
-      hotkeys.unbind('ctrl+shift+z, command+shift+z', onRedo)
-    }
-  }, [])
+  useHotKeys('ctrl+z, command+z', onUndo)
+  useHotKeys('ctrl+shift+z, command+shift+z', onRedo)
 
   return { executeCommand, onUndo, clearUpdates }
 }
