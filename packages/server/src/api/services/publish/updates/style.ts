@@ -226,7 +226,7 @@ const buildReducedClassElement = (
   ) => {
     tree.forEach(({ element, className, children }, i) => {
       allElements.push(element)
-      const newElement = getElementInstanceNodes(
+      const newElement = getElementInstanceNodes<JSXElementNode>(
         'file',
         getInstanceFromElement(element.getName(), className),
         graph.importMappings,

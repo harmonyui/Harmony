@@ -1897,6 +1897,59 @@ describe('code-updator', () => {
             `),
       )
     })
+
+    it('Should update component with single data dependency', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(
+        ['dataDependencies'],
+        {
+          cssFramework: 'tailwind',
+        },
+      )
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'wrap',
+            elements: [
+              {
+                componentId: elementInstances[1].id,
+                childIndex: 0,
+              },
+              {
+                componentId: elementInstances[2].id,
+                childIndex: 0,
+              },
+            ],
+          }),
+          oldValue: '',
+          componentId: btoa('dataDependencies:new-component'),
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.dataDependencies).toBeTruthy()
+
+      const codeUpdates = fileUpdates.dataDependencies
+      expect(codeUpdates.filePath).toBe('dataDependencies')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          export const App = () => {
+            const str = 'Hello';
+            return <div>
+              <div className="flex">
+                {str ? <h1>{str}</h1> : null}
+                <h2>There</h2>
+              </div>
+            </div>
+          }
+        `),
+      )
+    })
   })
 })
 
@@ -2124,5 +2177,14 @@ const testFiles = {
     }
 
     export default config
+  `,
+  dataDependencies: `
+    export const App = () => {
+      const str = 'Hello';
+      return <div>
+        {str ? <h1>{str}</h1> : null}
+        <h2>There</h2>
+      </div>
+    }
   `,
 }

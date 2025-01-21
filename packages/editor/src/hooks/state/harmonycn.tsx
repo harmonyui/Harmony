@@ -34,10 +34,8 @@ export const createHarmonyCnSlice = createHarmonySlice<
   activeComponents: [],
   registry: [],
   initializeRegistry(components: RegistryComponent[]) {
-    set(() => {
-      return {
-        registry: components,
-      }
+    set({
+      registry: components,
     })
   },
   mountComponent({ componentId, childIndex, name, parentElement, index }) {
