@@ -11,13 +11,14 @@ import {
   useQueryState,
 } from '@harmony/ui/src/hooks/query-state'
 import { WEB_URL } from '@harmony/util/src/constants'
-import { useQueryStorageState } from '@harmony/ui/src/hooks/query-storage-state'
 import { useToggleEvent } from '../hooks/toggle-event'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
 import { useToggleEnable } from '../hooks/toggle-enable'
+import { useBranchId } from '../hooks/branch-id'
+import { getRepositoryId } from '../utils/get-repository-id'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
@@ -44,9 +45,8 @@ export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> =
 const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
   options,
 ) => {
-  const [branchId, setBranchId] = useQueryStorageState<string>({
-    key: 'branch-id',
-  })
+  const { branchId, setBranchId } = useBranchId()
+
   const [_environment] = useQueryState<Environment | undefined>({
     key: 'harmony-environment',
     defaultValue: options.environment,
@@ -102,12 +102,8 @@ export const useHarmonySetup = (
       const { harmonyContainer } = resultRef.current
       let repositoryId = options.repositoryId
       //If the repository id is set in the plugin, then it will show up in the body tag
-      if (
-        repositoryId === undefined &&
-        document.body.dataset.harmonyRepositoryId &&
-        typeof document.body.dataset.harmonyRepositoryId === 'string'
-      ) {
-        repositoryId = atob(document.body.dataset.harmonyRepositoryId)
+      if (repositoryId === undefined) {
+        repositoryId = getRepositoryId()
       }
       if (!local) {
         createProductionScript(
