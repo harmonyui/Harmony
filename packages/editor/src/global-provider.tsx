@@ -1,3 +1,4 @@
+'use client'
 import { QueryStateProvider } from '@harmony/ui/src/hooks/query-state'
 import { getClass } from '@harmony/util/src/utils/common'
 import { useRef, useEffect } from 'react'
