@@ -18,6 +18,7 @@ import { addPrefixToClassName, convertCSSToTailwind } from '../css-conveter'
 import type { LiteralNode } from '../../indexor/utils'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { InstanceInfo } from './types'
+import * as t from '@babel/types'
 
 interface AttributeInfo {
   name: string
@@ -220,11 +221,17 @@ export const getInstanceFromElement = (
   }
 }
 
-export const getElementInstanceNodes = (
+export const getElementInstanceNodes = <
+  T extends JSXElementNode | Node<t.JSXExpressionContainer | t.JSXText>,
+>(
   file: string,
   { implementation, dependencies, componentIds }: InstanceInfo,
   importMappings: Record<string, string>,
-): { element: JSXElementNode; nodes: Node[] } => {
+): {
+  node: T
+  element: JSXElementNode
+  nodes: Node[]
+} => {
   const importStatements = dependencies
     .map((dependency) => {
       return dependency.isDefault
@@ -237,21 +244,24 @@ export const getElementInstanceNodes = (
     code: `${importStatements}
 
     const App = () => {
-      return ${implementation}
+      return <div>
+        ${implementation}
+      </div>
     }
   `,
     importMappings,
   })
 
-  const elementInstance = graph.getNodes().find(isJSXElement)
-  if (!elementInstance) {
-    throw new Error('Element instance node is not a JSX element')
-  }
+  const jsxElements = graph.getNodes().filter(isJSXElement)
+  const rootInstance = jsxElements[0]
+
+  const elementInstance = rootInstance.getChildren()[0] as T
+  const jsxElementInstance = rootInstance.getJSXChildren()[0]
   const nodes =
     graph.files[elementInstance.location.file].getNodes(elementInstance)
 
   const otherNodes = nodes.filter((node) => node !== elementInstance)
-  const childElements = elementInstance.getJSXChildren(true)
+  const childElements = jsxElementInstance.getJSXChildren(true)
 
   if (componentIds.length > 0) {
     if (childElements.length !== componentIds.length) {
@@ -274,7 +284,11 @@ export const getElementInstanceNodes = (
     node.location.start -= offset
     node.location.end -= offset
   })
-  return { element: elementInstance, nodes: otherNodes }
+  return {
+    node: elementInstance,
+    element: jsxElementInstance,
+    nodes: otherNodes,
+  }
 }
 
 export const getJSXElementFromLevels = (

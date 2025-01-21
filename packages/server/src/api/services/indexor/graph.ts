@@ -622,16 +622,23 @@ export class FlowGraph {
     )
   }
 
-  public addChildElement(
+  public addChildElement<
+    T extends JSXElementNode | Node<t.JSXExpressionContainer | t.JSXText>,
+  >(
     {
-      element: childElement,
+      element: chidldElement,
+      node: childElement,
       nodes,
-    }: { element: JSXElementNode; nodes: Node[] },
+    }: {
+      node: T
+      element: JSXElementNode
+      nodes: Node[]
+    },
     componentId: string,
     childIndex: number,
     index: number,
     parentElement: JSXElementNode,
-  ) {
+  ): T {
     childElement.id = getBaseId(componentId)
     this.setNewNode(childElement, parentElement)
     if (childElement.getChildIndex() !== childIndex) {
@@ -640,7 +647,7 @@ export class FlowGraph {
     nodes.forEach((node) => {
       this.setNewNode(node, parentElement)
     })
-    const dependencies = childElement.getDependencies()
+    const dependencies = chidldElement.getDependencies()
 
     const beforeElement = parentElement.getChildren()[index] as
       | JSXElementNode
@@ -670,9 +677,9 @@ export class FlowGraph {
       this.dirtyNode(childElement)
     }
 
-    childElement.getNameNode().dataDependencies = new Set()
+    chidldElement.getNameNode().dataDependencies = new Set()
     this.addJSXElement(
-      childElement,
+      chidldElement,
       parentElement,
       parentElement.getParentComponent(),
       beforeElement,
@@ -682,7 +689,7 @@ export class FlowGraph {
     }
 
     this.addDependencyImports(
-      childElement,
+      chidldElement,
       dependencies.filter(
         (node): node is ImportStatement =>
           node instanceof ImportStatement &&
@@ -733,12 +740,14 @@ export class FlowGraph {
 
   public deleteElement(jsxElement: JSXElementNode) {
     const parentElement = jsxElement.getParentElement()
+    let elementNode: Node = jsxElement
     if (parentElement) {
-      const parentChildren = parentElement.getChildren()
+      const parentChildren = parentElement.getJSXChildren()
       const index = parentChildren.indexOf(jsxElement)
       if (index === -1) {
         throw new Error('Cannot find child of element')
       }
+      elementNode = parentElement.getChildren()[index]
       parentElement.deleteChild(index)
     }
 
@@ -752,9 +761,10 @@ export class FlowGraph {
 
     const childElements = jsxElement.getJSXChildren(true)
 
-    const content = jsxElement.getNodeContent()
-    jsxElement.path.remove()
-    this.dirtyNode(jsxElement)
+    const content = elementNode.getNodeContent()
+    elementNode.path.remove()
+    this.dirtyNode(elementNode)
+    this.nodes.delete(elementNode.id)
     this.nodes.delete(jsxElement.id)
     childElements.forEach((child) => this.nodes.delete(child.id))
 
