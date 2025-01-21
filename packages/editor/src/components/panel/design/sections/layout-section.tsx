@@ -7,7 +7,7 @@ import {
   EllipsisHorizontalIcon,
 } from '@harmony/ui/src/components/core/icons'
 import type { CSSProperties } from 'react'
-import React, { useMemo, useState } from 'react'
+import React, { useMemo } from 'react'
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
 import { useComponentAttribute } from '../../../attributes/attribute-provider'
 import type { DesignPanelSectionComponent } from './components/section'
@@ -138,14 +138,12 @@ const JustifyDropdown: React.FunctionComponent = () => {
 }
 
 const GapInput: React.FunctionComponent = () => {
-  const [isExpanded, setIsExpanded] = useState(false)
   return (
     <AttributeExpand
       label='Gap'
       attribute='gap'
-      isExpanded={isExpanded}
       expandedAttributes={['rowGap', 'columnGap']}
-      additionalContent={
+      additionalContent={({ isExpanded, setIsExpanded }) => (
         <ButtonGroup
           value={isExpanded ? 'expand' : ''}
           items={[
@@ -156,7 +154,7 @@ const GapInput: React.FunctionComponent = () => {
           ]}
           onChange={() => setIsExpanded(!isExpanded)}
         />
-      }
+      )}
     />
   )
 }

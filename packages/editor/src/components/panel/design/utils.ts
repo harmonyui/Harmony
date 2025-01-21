@@ -73,27 +73,32 @@ export function compareCSSValues(
 }
 
 export function areCSSPixelValuesEqual(value1: string, value2: string) {
-  const htmlRoot = document.documentElement
-  const baseFontSize = parseFloat(
-    window.getComputedStyle(htmlRoot).getPropertyValue('font-size'),
-  )
-
   function normalizeCssValue(value: string) {
     if (typeof value === 'string') {
       if (value.endsWith('px')) {
         return parseFloat(value) // Convert px directly to a number
       } else if (value.endsWith('rem')) {
-        return parseFloat(value) * baseFontSize // Convert rem to px
+        return convertRemToPx(value) // Convert rem to px
       } else if (value === 'normal') {
         return 0
       }
     }
-    throw new Error(
-      `Unsupported CSS value format. Only "px" and "rem" are supported. Got ${value}`,
-    )
+    return value
   }
 
   const normalizedValue1 = normalizeCssValue(value1)
   const normalizedValue2 = normalizeCssValue(value2)
   return normalizedValue1 === normalizedValue2
+}
+
+export const convertRemToPx = (rem: string) => {
+  if (!rem.endsWith('rem')) {
+    return parseFloat(rem)
+  }
+
+  const htmlRoot = document.documentElement
+  const baseFontSize = parseFloat(
+    window.getComputedStyle(htmlRoot).getPropertyValue('font-size'),
+  )
+  return parseFloat(rem) * baseFontSize
 }

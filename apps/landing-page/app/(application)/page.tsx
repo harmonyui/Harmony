@@ -4,7 +4,6 @@ import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-di
 import { ShineBorder } from '@harmony/ui/src/components/design/shine-border'
 import { PricingCard } from '../components/pricing-card'
 import { GradientBackground } from '@/components/gradient'
-
 export default function Home() {
   return (
     <>

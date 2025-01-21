@@ -2,6 +2,8 @@ import type { Metadata } from 'next'
 import './globals.css'
 import { inter } from '@harmony/util/src/fonts'
 import { DarkmodeHTML } from './components/dark-mode-toggle'
+import { HarmonySetup } from 'harmony-ai-editor/src'
+import 'harmony-ai-editor/src/global-provider'
 
 export const metadata: Metadata = {
   title: 'Harmony UI',
@@ -31,6 +33,9 @@ export default function RootLayout({
         className={`hw-min-h-screen hw-bg-background hw-font-sans hw-antialiased ${inter.className}`}
       >
         {children}
+        {process.env.ENV !== 'production' ? (
+          <HarmonySetup repositoryId={process.env.REPOSITORY_ID} />
+        ) : null}
       </body>
     </DarkmodeHTML>
   )

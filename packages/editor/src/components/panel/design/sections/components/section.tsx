@@ -1,14 +1,15 @@
-import { Card } from '../../../_common/panel/card'
+import { Card, CardProps } from '../../../_common/panel/card'
 
 export type DesignPanelSectionComponent = React.FunctionComponent
 
-interface SectionProps {
-  children: React.ReactNode
+type SectionProps<T> = Omit<CardProps<T>, 'lable'> & {
   label: string
 }
-export const Section: React.FunctionComponent<SectionProps> = ({
-  children,
-  label,
-}) => {
-  return <Card label={label}>{children}</Card>
+export const Section = <T,>(props: SectionProps<T>): React.JSX.Element => {
+  return (
+    <Card
+      {...props}
+      container={document.getElementById('harmony-container') ?? undefined}
+    />
+  )
 }

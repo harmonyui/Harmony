@@ -47,10 +47,12 @@ export const ListBoxPopover = <T,>({
 
 export type ListBoxProps<T> = ListBoxPopoverProps<T> & {
   mode?: 'primary' | 'secondary' | 'none'
+  buttonClass?: string
 }
 export const ListBox = <T,>({
   items,
   className,
+  buttonClass,
   children,
   mode,
   header,
@@ -58,7 +60,7 @@ export const ListBox = <T,>({
   ...isOpenStuff
 }: ListBoxProps<T>): React.JSX.Element => {
   const button = (
-    <Button className={className} mode={mode}>
+    <Button className={buttonClass} mode={mode}>
       <div className='hw-flex hw-items-center hw-w-full'>{children}</div>
     </Button>
   )
@@ -85,6 +87,7 @@ interface DropdownProps<T> extends PropsWithChildren {
   items: DropdownItem<T>[]
   initialValue?: T
   className?: string
+  buttonClass?: string
   chevron?: boolean
   onChange?: ItemAction<T>
   beforeIcon?: IconComponent
@@ -100,6 +103,7 @@ export const Dropdown = <T,>({
   items,
   chevron = true,
   className,
+  buttonClass,
   beforeIcon,
   showValue = true,
   mode = 'secondary',
@@ -139,6 +143,7 @@ export const Dropdown = <T,>({
   return (
     <ListBox
       className={className}
+      buttonClass={buttonClass}
       isOpen={isOpen}
       items={dropdownItems}
       mode={mode}

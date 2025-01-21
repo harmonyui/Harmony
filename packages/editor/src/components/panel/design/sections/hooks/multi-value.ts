@@ -8,26 +8,28 @@ export const useMultiValue = (
 ) => {
   const { getAttribute } = useComponentAttribute()
 
+  const value = useMemo(() => getAttribute(attribute), [getAttribute])
+
   const attrValue = useMemo(() => {
-    const val = getAttribute(attribute)
-    const split = val.split(' ')
+    const split = value.split(' ')
     if (split.length > 1) {
       return `${Math.max(...split.map((v) => parseInt(v === 'normal' ? '0' : v)))}px`
     }
 
     return split[0]
-  }, [attribute, getAttribute])
+  }, [attribute, getAttribute, value])
 
   const values = useMemo(() => {
-    const val = getAttribute(attribute)
-    const split = val.split(' ')
+    const split = value.split(' ')
     const vals: string[] = []
     for (let i = 0; i < expandedAttributes.length; i++) {
       const v = split[i % split.length]
       vals.push(v === 'normal' ? '0px' : v)
     }
     return vals
-  }, [attribute, getAttribute])
+  }, [attribute, getAttribute, value, expandedAttributes])
 
-  return { value: attrValue, values }
+  const hasMultiValue = useMemo(() => value.split(' ').length > 1, [value])
+
+  return { value: attrValue, values, hasMultiValue }
 }

@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary -- ok*/
 import resolveConfig from 'tailwindcss/resolveConfig'
 import type { Config } from 'tailwindcss'
 import type { Token } from '@harmony/util/src/types/tokens'
@@ -12,6 +11,13 @@ const attributToConfigMapping: Record<
   color: 'colors',
   borderColor: 'colors',
   borderRadius: 'borderRadius',
+  borderWidth: 'borderWidth',
+  width: 'width',
+  height: 'height',
+  minWidth: 'minWidth',
+  minHeight: 'minHeight',
+  maxWidth: 'maxWidth',
+  maxHeight: 'maxHeight',
   padding: 'padding',
   paddingLeft: 'padding',
   paddingRight: 'padding',
@@ -36,7 +42,7 @@ export const resolveTailwindConfig = async (
     Required<Config>['theme']
   >['extend']
   const fullConfig = resolveConfig({
-    theme: { extend: { baseConfig } },
+    theme: { extend: { ...baseConfig } },
     content: [],
   })
 

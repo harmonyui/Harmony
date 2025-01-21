@@ -5,7 +5,6 @@ import {
   PaddingRightIcon,
   PaddingTopIcon,
 } from '@harmony/ui/src/components/core/icons'
-import { useState } from 'react'
 import { useComponentAttribute } from '../../../attributes/attribute-provider'
 import type { CommonTools } from '../../../attributes/types'
 import type { DesignPanelSectionComponent } from './components/section'
@@ -15,7 +14,7 @@ import { ButtonGroup } from './components/button-group'
 import { ColorAttribute } from './components/color-attribute'
 import { Label } from './components/label'
 import { TokenDropdown } from './components/token-dropdown'
-import { useLink } from './hooks/link'
+import { useTokenLink } from './hooks/token-link'
 import { LinkButton } from './components/link-button'
 import { useMultiValue } from './hooks/multi-value'
 import { DesignInput } from './components/design-input'
@@ -40,7 +39,7 @@ const borderRadiusNames: CommonTools[] = [
 ]
 const RadiusSection: React.FunctionComponent = () => {
   const { onAttributeChange } = useComponentAttribute()
-  const { isExpanded, setIsExpanded } = useLink('borderRadius')
+  const { isExpanded, setIsExpanded } = useTokenLink('borderRadius')
   const { value: attrValue } = useMultiValue('borderRadius', borderRadiusNames)
 
   return (
@@ -72,11 +71,9 @@ const RadiusSection: React.FunctionComponent = () => {
 }
 
 const StrokeSection: React.FunctionComponent = () => {
-  const [isExpanded, setIsExpanded] = useState(false)
   return (
     <AttributeExpand
       label='Stroke'
-      isExpanded={isExpanded}
       attribute='borderWidth'
       expandedAttributes={[
         'borderTopWidth',
@@ -90,7 +87,7 @@ const StrokeSection: React.FunctionComponent = () => {
         PaddingBottomIcon,
         PaddingLeftIcon,
       ]}
-      additionalContent={
+      additionalContent={({ isExpanded, setIsExpanded }) => (
         <ButtonGroup
           items={[
             {
@@ -101,7 +98,7 @@ const StrokeSection: React.FunctionComponent = () => {
           value={isExpanded ? 'expand' : ''}
           onChange={() => setIsExpanded(!isExpanded)}
         />
-      }
+      )}
     />
   )
 }

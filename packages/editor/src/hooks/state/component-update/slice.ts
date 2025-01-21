@@ -26,6 +26,7 @@ import { wrapComponentUpdate } from './wrap'
 export interface ComponentUpdateState {
   componentUpdates: ComponentUpdate[]
   addComponentUpdates: (values: ComponentUpdate[]) => void
+  clearComponentUpdates: () => void
   makeUpdates: (
     updates: ComponentUpdate[],
     fonts: Font[] | undefined,
@@ -49,6 +50,11 @@ export const createComponentUpdateSlice = createHarmonySlice<
       return {
         componentUpdates: copy,
       }
+    })
+  },
+  clearComponentUpdates() {
+    set({
+      componentUpdates: [],
     })
   },
   async makeUpdates(
@@ -99,23 +105,6 @@ export const createComponentUpdateSlice = createHarmonySlice<
             element,
             rootElement,
           )
-        }
-
-        const _getElementsBetween = (
-          start: Element,
-          end: Element,
-        ): Element[] => {
-          const elements: Element[] = []
-          elements.push(start)
-          elements.push(end)
-          let next = start.nextElementSibling
-
-          while (next && next !== end) {
-            elements.push(next)
-            next = next.nextElementSibling
-          }
-
-          return elements
         }
 
         if (update.name === 'wrap-unwrap') {
