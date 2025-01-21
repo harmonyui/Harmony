@@ -1927,6 +1927,17 @@ describe('code-updator', () => {
           childIndex: 0,
           isGlobal: false,
         },
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'unwrap',
+          }),
+          oldValue: '',
+          componentId: elementInstances[3].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
       ]
 
       const fileUpdates = await codeUpdator.updateFiles(updates)
@@ -1941,10 +1952,13 @@ describe('code-updator', () => {
           export const App = () => {
             const str = 'Hello';
             return <div>
-              <div className="flex">
+              <div className='flex'>
                 {str ? <h1>{str}</h1> : null}
                 <h2>There</h2>
               </div>
+              
+              <h3>Here</h3>
+              {str ? <h4>{str}</h4> : null}
             </div>
           }
         `),
@@ -2184,6 +2198,10 @@ const testFiles = {
       return <div>
         {str ? <h1>{str}</h1> : null}
         <h2>There</h2>
+        <div>
+          <h3>Here</h3>
+          {str ? <h4>{str}</h4> : null}
+        </div>
       </div>
     }
   `,

@@ -94,8 +94,8 @@ const updateUnwrap: UpdateComponent = async ({ value, update }, graph) => {
   }
 
   const index = parentElement.getJSXChildren().indexOf(jsxElement)
-
-  jsxElement.getJSXChildren().forEach((childElement, i) => {
+  const children = [...jsxElement.getJSXChildren()]
+  children.forEach((childElement, i) => {
     reorderElement(
       {
         parentId: parentElement.id,

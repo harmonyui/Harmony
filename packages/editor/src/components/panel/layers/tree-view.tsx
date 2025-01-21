@@ -118,7 +118,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
   }
 
   const onSelect: TreeProps<HTMLElement>['onSelect'] = (nodes) => {
-    onComponentSelect(nodes[0].data)
+    onComponentSelect(nodes[0]?.data)
     setSelectedElements(nodes.map((node) => node.data))
   }
 
