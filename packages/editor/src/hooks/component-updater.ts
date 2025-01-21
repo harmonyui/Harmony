@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop -- ok*/
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import type { Font } from '@harmony/util/src/fonts'
 import type {
@@ -8,10 +7,10 @@ import type {
 import type { UpdateRequest } from '@harmony/util/src/types/network'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { reverseUpdates } from '@harmony/util/src/utils/component'
-import hotkeys from 'hotkeys-js'
 import { useState, useEffect } from 'react'
 import { findElementsFromId } from '../utils/element-utils'
 import { useHarmonyStore } from './state'
+import { useHotKeys } from './hotkeys'
 
 interface HarmonyCommandChange {
   name: 'change'
@@ -110,14 +109,14 @@ export const useComponentUpdator = ({
   }, [])
 
   const executeCommand = useEffectEvent(
-    (update: ComponentUpdate[], execute = true): void => {
+    async (update: ComponentUpdate[], execute = true): Promise<void> => {
       const newCommand: HarmonyCommand = {
         name: 'change',
         update: update.filter((_update) => _update.oldValue !== _update.value),
       }
 
       //TODO: find a better way to do this
-      if (execute) void change(newCommand)
+      if (execute) await change(newCommand)
 
       const newEdits = undoStack.slice()
       const newSaves = saveStack.slice()
@@ -143,7 +142,7 @@ export const useComponentUpdator = ({
         setEditTimeout(newTime)
       } else {
         //TODO: Get rid of type = 'component' dependency
-        // eslint-disable-next-line no-lonely-if -- ok
+
         if (
           newEdits.length &&
           newCommand.update.length === 1 &&
@@ -180,7 +179,7 @@ export const useComponentUpdator = ({
     onChange && onChange()
   }
 
-  const changeStack = (
+  const changeStack = async (
     from: [
       HarmonyCommandChange[],
       React.Dispatch<React.SetStateAction<HarmonyCommandChange[]>>,
@@ -203,7 +202,7 @@ export const useComponentUpdator = ({
       oldValue: up.value,
     }))
     const newEdit: HarmonyCommand = { name: 'change', update: newUpdates }
-    void change(newEdit)
+    await change(newEdit)
     const newFrom = fromValue.slice()
     newFrom.splice(newFrom.length - 1)
 
@@ -245,15 +244,8 @@ export const useComponentUpdator = ({
     return resultData.errorUpdates
   }
 
-  useEffect(() => {
-    hotkeys('ctrl+z, command+z', onUndo)
-    hotkeys('ctrl+shift+z, command+shift+z', onRedo)
-
-    return () => {
-      hotkeys.unbind('ctrl+z, command+z', onUndo)
-      hotkeys.unbind('ctrl+shift+z, command+shift+z', onRedo)
-    }
-  }, [])
+  useHotKeys('ctrl+z, command+z', onUndo)
+  useHotKeys('ctrl+shift+z, command+shift+z', onRedo)
 
   return { executeCommand, onUndo, clearUpdates }
 }

@@ -1,5 +1,5 @@
 import { environment } from '@harmony/util/src/utils/component'
-import { useHarmonySetup } from 'harmony-ai-editor/src'
+import { useHarmonySetup } from 'harmony-ai-editor/src/components/harmony-setup'
 import 'harmony-ai-editor/src/global.css'
 import { useCallback, useEffect } from 'react'
 import {
@@ -12,6 +12,9 @@ import type { ActionsPayload } from '../../utils/helpers'
 import { Actions, AuthUrl } from '../../utils/helpers'
 import { sendMessage } from '../../utils/listeners'
 import { StartModal } from './start-modal/start-modal'
+import { useToggleEnable } from 'harmony-ai-editor/src/hooks/toggle-enable'
+import { HarmonyProviderFunc } from 'harmony-ai-editor/src/global-provider'
+import { useBranchId } from 'harmony-ai-editor/src/hooks/branch-id'
 
 export const EditorChrome: React.FunctionComponent = () => {
   const getToken = useCallback(async () => {
@@ -31,7 +34,8 @@ export const EditorChrome: React.FunctionComponent = () => {
 }
 
 const EditorChromeAfterProviders: React.FunctionComponent = () => {
-  const [branchId, setBranchId] = useQueryState<string>({ key: 'branch-id' })
+  const { branchId, setBranchId } = useBranchId()
+
   const [chrome, setChrome] = useQueryState({
     key: 'chrome',
     defaultValue: false,
@@ -58,6 +62,8 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
   }, [])
 
   useToggleEvent(onToggleEditor)
+
+  useToggleEnable()
 
   useHarmonySetup(
     {
@@ -105,4 +111,8 @@ const useSendAuthentication = () => {
       },
     )
   }, [])
+}
+
+if (typeof window !== 'undefined') {
+  window.HarmonyProvider = HarmonyProviderFunc
 }

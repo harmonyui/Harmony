@@ -1,5 +1,3 @@
-/* eslint-disable no-nested-ternary -- ok*/
-
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { addComponentSchema } from '@harmony/util/src/updates/component'
 import type { FlowGraph } from '../../indexor/graph'
@@ -11,6 +9,7 @@ import {
   getInstanceFromComponent,
   getInstanceFromElement,
   getJSXElementFromLevels,
+  getJSXParentElement,
 } from './utils'
 
 export const createUpdate: UpdateComponent = async (
@@ -60,15 +59,7 @@ export const createComponent = (
   code: InstanceInfo,
   graph: FlowGraph,
 ) => {
-  const parentElement = getJSXElementFromLevels(
-    parentId,
-    parentChildIndex,
-    graph,
-    (_element) =>
-      _element.getChildren().length > 1 ||
-      _element.getAttributes().find((attr) => attr.getName() === 'children') ===
-        undefined,
-  )
+  const parentElement = getJSXParentElement(parentId, parentChildIndex, graph)
   if (!parentElement) {
     throw new Error(`Parent element with id ${parentId} not found`)
   }

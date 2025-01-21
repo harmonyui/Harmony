@@ -1,7 +1,3 @@
-/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style -- ok*/
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
-
 'use client'
 import { MinimizeIcon } from '@harmony/ui/src/components/core/icons'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
@@ -15,7 +11,6 @@ import type {
   ComponentUpdate,
 } from '@harmony/util/src/types/component'
 import type { Environment } from '@harmony/util/src/utils/component'
-import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
 import React, { useEffect, useRef, useState } from 'react'
 import type { UpdateAttributeValue } from '@harmony/util/src/updates/component'
@@ -44,6 +39,7 @@ import { HarmonyPanel } from './panel/harmony-panel'
 import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'
 import { ComponentProvider } from './harmonycn/component-provider'
+import { useHotKeys } from '../hooks/hotkeys'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -161,13 +157,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     setIsToggled(!isToggled)
   })
 
-  useEffect(() => {
-    hotkeys('T', onToggle)
-
-    return () => {
-      hotkeys.unbind('esc', onToggle)
-    }
-  }, [])
+  useHotKeys('T', onToggle)
 
   useEffect(() => {
     if (!isToggled) {
@@ -229,7 +219,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                 )
               : false),
         ),
-      )
+      ) &&
+      mutations[0].removedNodes[0] !== mutations[1].addedNodes[0]
     ) {
       void recurseAndUpdateElements()
     }
@@ -490,6 +481,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             onElementPropertyChange,
             onComponentPropertyChange,
             onToggleInspector: onToggle,
+            isToggled,
           }}
         >
           <ComponentProvider>

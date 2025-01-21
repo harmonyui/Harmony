@@ -1,9 +1,9 @@
 import { useCallback, useEffect, useState } from 'react'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
-import hotkeys from 'hotkeys-js'
 import { useHarmonyStore } from '../../hooks/state'
 import { isSelectable } from '../inspector/inspector'
 import { getBoundingRect } from '../snapping/calculations'
+import { useHotKeys } from '../../hooks/hotkeys'
 
 export const useScale = () => {
   const rootComponent = useHarmonyStore((state) => state.rootComponent)?.element
@@ -79,9 +79,10 @@ export const useScale = () => {
     setOldSclae(scale)
   })
 
+  useHotKeys('ctrl+=,command+=', onScaleIn)
+  useHotKeys('ctrl+-,command+-', onScaleOut)
+
   useEffect(() => {
-    hotkeys('ctrl+=,command+=', onScaleIn)
-    hotkeys('ctrl+-,command+-', onScaleOut)
     document.addEventListener('mousemove', onMouseMove)
   }, [])
 

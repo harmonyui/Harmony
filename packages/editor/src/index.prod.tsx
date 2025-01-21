@@ -1,12 +1,8 @@
-import { HarmonySetup } from './components/harmony-setup'
-import { HarmonyProviderFunc } from './index'
+import { HarmonySetup, useHarmonySetup } from './components/harmony-setup'
 import './global.css'
+import './global-provider'
 
-export { HarmonySetup }
-
-if (typeof window !== 'undefined') {
-  window.HarmonyProvider = HarmonyProviderFunc
-}
+export { HarmonySetup, useHarmonySetup }
 
 if (module.hot) {
   module.hot.accept('./components/harmony-setup', () => {

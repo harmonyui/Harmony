@@ -3,16 +3,22 @@ import { useState, useEffect, useMemo } from 'react'
 import { EDITOR_URL } from '@harmony/util/src/constants'
 import type { StartPageComponent } from '../types'
 import { useDataLayer } from '../../../../hooks/data-layer'
+import { Spinner } from '@harmony/ui/src/components/core/spinner'
 
 export const SelectProjectsPage: StartPageComponent = ({ onOpenProject }) => {
   const [projects, setProjects] = useState<BranchItem[]>([])
+  const [loading, setLoading] = useState(false)
   const { client } = useDataLayer()
 
   useEffect(() => {
     const initialize = async () => {
       if (client) {
+        setLoading(true)
         const data = await client.branch.getBranches.query()
-        data && setProjects(data)
+        if (data) {
+          setProjects(data)
+        }
+        setLoading(false)
       }
     }
 
@@ -23,6 +29,10 @@ export const SelectProjectsPage: StartPageComponent = ({ onOpenProject }) => {
     () => projects.filter((item) => item.url.includes(window.location.origin)),
     [projects],
   )
+
+  if (loading) {
+    return <Spinner sizeClass='hw-h-5 hw-w-5'></Spinner>
+  }
 
   return (
     <div className='hw-grid hw-grid-cols-1 sm:hw-grid-cols-2 lg:hw-grid-cols-3 hw-gap-6 hw-mt-6'>

@@ -30,7 +30,7 @@ export function Button<T extends React.ElementType>({
   loading,
   disabled,
   ...rest
-}: ButtonProps<T>): JSX.Element {
+}: ButtonProps<T>): React.JSX.Element {
   const ref = useRef<HTMLButtonElement>(null)
   const [size, setSize] = useState<{ width: number; height: number }>()
 

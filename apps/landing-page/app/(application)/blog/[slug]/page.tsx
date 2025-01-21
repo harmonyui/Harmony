@@ -11,22 +11,22 @@ import { GradientBackground } from '@/components/gradient'
 import { Link } from '@/components/link'
 import { Heading, Subheading } from '@/components/text'
 
+type Params = Promise<{ slug: string }>
+
 export async function generateMetadata({
   params,
 }: {
-  params: { slug: string }
+  params: Params
 }): Promise<Metadata> {
-  const post = await getPost(params.slug)
+  const { slug } = await params
+  const post = await getPost(slug)
 
   return post ? { title: post.title, description: post.excerpt } : {}
 }
 
-export default async function BlogPost({
-  params,
-}: {
-  params: { slug: string }
-}) {
-  const post = (await getPost(params.slug)) || notFound()
+export default async function BlogPost({ params }: { params: Params }) {
+  const { slug } = await params
+  const post = (await getPost(slug)) || notFound()
 
   return (
     <main className='hw-overflow-hidden'>

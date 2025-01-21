@@ -1,4 +1,6 @@
 'use client'
+
+import { Root } from 'react-dom/client'
 import React, { useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import type { Fiber } from 'react-reconciler'
@@ -9,12 +11,14 @@ import {
   useQueryState,
 } from '@harmony/ui/src/hooks/query-state'
 import { WEB_URL } from '@harmony/util/src/constants'
-import { useQueryStorageState } from '@harmony/ui/src/hooks/query-storage-state'
 import { useToggleEvent } from '../hooks/toggle-event'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
 import type { FiberHTMLElement } from './inspector/fiber'
 import { getElementFiber } from './inspector/fiber'
+import { useToggleEnable } from '../hooks/toggle-enable'
+import { useBranchId } from '../hooks/branch-id'
+import { getRepositoryId } from '../utils/get-repository-id'
 
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
@@ -29,22 +33,20 @@ type HarmonySetupProps = Pick<
 > & {
   local?: boolean
 }
-export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> = (
-  options,
-) => {
-  return (
-    <QueryStateProvider>
-      <HarmonySetupPrimitive {...options} />
-    </QueryStateProvider>
-  )
-}
+export const HarmonySetup: React.FunctionComponent<HarmonySetupProps> =
+  React.memo((options) => {
+    return (
+      <QueryStateProvider>
+        <HarmonySetupPrimitive {...options} />
+      </QueryStateProvider>
+    )
+  })
 
 const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
   options,
 ) => {
-  const [branchId, setBranchId] = useQueryStorageState<string>({
-    key: 'branch-id',
-  })
+  const { branchId, setBranchId } = useBranchId()
+
   const [_environment] = useQueryState<Environment | undefined>({
     key: 'harmony-environment',
     defaultValue: options.environment,
@@ -63,6 +65,8 @@ const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
     window.location.replace(WEB_URL)
   })
 
+  useToggleEnable()
+
   return <></>
 }
 
@@ -75,7 +79,8 @@ export const useHarmonySetup = (
   }: HarmonySetupProps & { show?: boolean; initShow?: boolean },
   branchId: string | undefined,
 ) => {
-  const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>()
+  const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>(null)
+  const rootRef = useRef<Root>(null)
 
   useEffect(() => {
     if (!initShow) return
@@ -84,7 +89,7 @@ export const useHarmonySetup = (
       resultRef.current?.setup.changeMode(false)
       const container = document.getElementById('harmony-container')
       if (container) {
-        ReactDOM.unmountComponentAtNode(container)
+        rootRef.current?.unmount()
         container.remove()
       }
 
@@ -97,12 +102,8 @@ export const useHarmonySetup = (
       const { harmonyContainer } = resultRef.current
       let repositoryId = options.repositoryId
       //If the repository id is set in the plugin, then it will show up in the body tag
-      if (
-        repositoryId === undefined &&
-        document.body.dataset.harmonyRepositoryId &&
-        typeof document.body.dataset.harmonyRepositoryId === 'string'
-      ) {
-        repositoryId = atob(document.body.dataset.harmonyRepositoryId)
+      if (repositoryId === undefined) {
+        repositoryId = getRepositoryId()
       }
       if (!local) {
         createProductionScript(
@@ -110,9 +111,9 @@ export const useHarmonySetup = (
           branchId || '',
           harmonyContainer,
           resultRef.current.setup,
-        )
+        ).then((root) => (rootRef.current = root))
       } else {
-        window.HarmonyProvider(
+        rootRef.current = window.HarmonyProvider(
           {
             ...options,
             repositoryId,
@@ -131,15 +132,22 @@ function createProductionScript(
   branchId: string,
   harmonyContainer: HTMLDivElement,
   setup: Setuper,
-) {
-  const script = document.createElement('script')
-  const src = `${getEditorUrl(options.environment || 'production')}/bundle.js`
-  script.src = src
-  script.addEventListener('load', function load() {
-    window.HarmonyProvider({ ...options, branchId, setup }, harmonyContainer)
-  })
+): Promise<Root> {
+  return new Promise<Root>((resolve) => {
+    const script = document.createElement('script')
+    const src = `${getEditorUrl(options.environment || 'production')}/bundle.js`
+    script.src = src
+    script.addEventListener('load', function load() {
+      resolve(
+        window.HarmonyProvider(
+          { ...options, branchId, setup },
+          harmonyContainer,
+        ),
+      )
+    })
 
-  document.body.appendChild(script)
+    document.body.appendChild(script)
+  })
 }
 
 function isNativeElement(element: Element): boolean {
@@ -254,7 +262,6 @@ export class Setuper implements Setup {
         key?: React.Key | null | undefined,
       ) {
         if (_container === document.body) {
-          // eslint-disable-next-line no-param-reassign -- ok
           _container = self.container as HTMLElement
         }
 
@@ -264,7 +271,6 @@ export class Setuper implements Setup {
       this.bodyObserver.disconnect()
       this.bodyObserver = new MutationObserver((mutations) => {
         for (const mutation of mutations) {
-          // eslint-disable-next-line @typescript-eslint/no-loop-func -- ok
           mutation.addedNodes.forEach((node) => {
             if (
               node.parentElement === document.body &&

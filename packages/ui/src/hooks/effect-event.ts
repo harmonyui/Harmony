@@ -12,7 +12,7 @@ export const useEffectEvent = <T extends (...args: any[]) => any>(
    */
   callbackRef.current = useMemo(() => callback, [callback])
 
-  const stableRef = useRef<T>()
+  const stableRef = useRef<T>(undefined)
 
   // init once
   if (!stableRef.current) {

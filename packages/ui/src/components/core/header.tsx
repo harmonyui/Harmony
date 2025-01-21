@@ -21,7 +21,7 @@ export const Header = ({
   className,
   level,
   ...rest
-}: HeaderProps): JSX.Element => {
+}: HeaderProps): React.JSX.Element => {
   const size: Record<Headers, string> = {
     h1: 'hw-text-4xl',
     h2: 'hw-text-3xl ',

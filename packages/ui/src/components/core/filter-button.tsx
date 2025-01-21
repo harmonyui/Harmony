@@ -26,7 +26,7 @@ export const FilterButton = <T,>({
   items: initialItems,
   onChange,
   children,
-}: FilterButtonProps<T>): JSX.Element => {
+}: FilterButtonProps<T>): React.JSX.Element => {
   const [items, setItems] = useState(initialItems)
   const changeItems = useChangeArray(setItems)
   const [isOpen, setIsOpen] = useState(false)
@@ -101,7 +101,7 @@ const FilterButtonItem = <T,>({
   item,
   onChange,
   children,
-}: FilterButtonItemProps<T>): JSX.Element => {
+}: FilterButtonItemProps<T>): React.JSX.Element => {
   const isSelected = item.value !== undefined
   const dropdownItem = { ...item, value: isSelected }
   return (

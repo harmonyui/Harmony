@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary -- ok */
 import { Menu, MenuButton, MenuItem, MenuItems } from '@headlessui/react'
 import {
   CheckIcon,
@@ -271,10 +270,11 @@ async function Pagination({
 }
 
 export default async function Blog({
-  searchParams,
+  searchParams: unawaitedParams,
 }: {
-  searchParams: Record<string, string | string[] | undefined>
+  searchParams: Promise<Record<string, string | string[] | undefined>>
 }) {
+  const searchParams = await unawaitedParams
   const page =
     'page' in searchParams
       ? typeof searchParams.page === 'string' && parseInt(searchParams.page) > 1

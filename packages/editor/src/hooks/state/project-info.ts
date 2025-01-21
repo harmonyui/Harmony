@@ -48,7 +48,10 @@ export const createProjectInfoSlice = createHarmonySlice<
   isOverlay: false,
   isRepositoryConnected: false,
   harmonyTokens: [],
-  isLocal: window.location.hostname === 'localhost',
+  isLocal:
+    typeof window !== 'undefined'
+      ? window.location.hostname === 'localhost'
+      : false,
   setIsOverlay(value: boolean) {
     set({ isOverlay: value })
   },
@@ -63,11 +66,12 @@ export const createProjectInfoSlice = createHarmonySlice<
     uploadImage,
     registryComponents,
   }) {
+    const isLocal = branchId === 'local'
     if (get().client === undefined) {
       get().initializeDataLayer(
         environment,
         async () => '',
-        branchId === 'local',
+        isLocal,
         repositoryId ?? '',
       )
     }
@@ -84,6 +88,9 @@ export const createProjectInfoSlice = createHarmonySlice<
       })
       return
     }
+    set({
+      isLocal,
+    })
 
     try {
       const response = await get().loadProject({ branchId, repositoryId })

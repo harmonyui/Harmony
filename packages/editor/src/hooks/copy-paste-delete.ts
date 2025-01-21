@@ -1,6 +1,4 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-import { useCallback, useEffect } from 'react'
-import hotkeys from 'hotkeys-js'
+import { useCallback } from 'react'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { updateSchema } from '@harmony/util/src/types/component'
 import { z } from 'zod'
@@ -23,6 +21,9 @@ import {
 } from '../utils/element-utils'
 import { getTextToolsFromAttributes } from '../components/attributes/utils'
 import { useHarmonyStore } from './state'
+import { useHotKeys } from './hotkeys'
+
+const jsonUpdatesSchema = jsonSchema.pipe(z.array(updateSchema))
 
 export const useCopyPasteDelete = () => {
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
@@ -181,21 +182,9 @@ export const useCopyPasteDelete = () => {
     [fonts, getNewChildIndex],
   )
 
-  const copyComponent = useCallback(() => {
+  const pasteExternal = useCallback(async () => {
     if (!selectedComponent) return
 
-    const updates = convertElementToUpdates(selectedComponent.element)
-    const stringForm = JSON.stringify(updates)
-    void navigator.clipboard.writeText(stringForm)
-
-    const { element, id, childIndex } = selectedComponent
-    setCopiedComponent({ element, componentId: id, childIndex })
-  }, [selectedComponent, setCopiedComponent, convertElementToUpdates])
-
-  const pasteComponent = useCallback(async () => {
-    if (!selectedComponent) return
-
-    const jsonUpdatesSchema = jsonSchema.pipe(z.array(updateSchema))
     const copiedText = await navigator.clipboard.readText()
     const updateResult = jsonUpdatesSchema.safeParse(copiedText)
     if (updateResult.success) {
@@ -242,8 +231,21 @@ export const useCopyPasteDelete = () => {
       onAttributesChange(jsonUpdatesSchema.parse(mappedUpdates), true)
       return
     }
+  }, [selectedComponent])
 
-    if (!copiedComponent) return
+  const copyComponent = useCallback(() => {
+    if (!selectedComponent) return
+
+    const updates = convertElementToUpdates(selectedComponent.element)
+    const stringForm = JSON.stringify(updates)
+    void navigator.clipboard.writeText(stringForm)
+
+    const { element, id, childIndex } = selectedComponent
+    setCopiedComponent({ element, componentId: id, childIndex })
+  }, [selectedComponent, setCopiedComponent, convertElementToUpdates])
+
+  const pasteComponent = useCallback(async () => {
+    if (!selectedComponent || !copiedComponent) return
 
     const { componentId, childIndex } = copiedComponent
     addComponent(selectedComponent.element, '', {
@@ -258,28 +260,20 @@ export const useCopyPasteDelete = () => {
     deleteComponent(selectedComponent.element)
   }, [deleteComponent, selectedComponent])
 
-  useEffect(() => {
-    const copyEvent = (event: KeyboardEvent) => {
-      event.preventDefault()
-      copyComponent()
-    }
-    const pasteEvent = (event: KeyboardEvent) => {
-      event.preventDefault()
-      void pasteComponent()
-    }
-    const deleteEvent = (event: KeyboardEvent) => {
-      event.preventDefault()
-      deleteComp()
-    }
-    hotkeys('ctrl+c, command+c', copyEvent)
-
-    hotkeys('ctrl+v, command+v', pasteEvent)
-    hotkeys('delete', deleteEvent)
-
-    return () => {
-      hotkeys.unbind('ctrl+c, command+c', copyEvent)
-      hotkeys.unbind('ctrl+v, command+v', pasteEvent)
-      hotkeys.unbind('delete', deleteEvent)
-    }
+  useHotKeys('ctrl+c, command+c', (event: KeyboardEvent) => {
+    event.preventDefault()
+    copyComponent()
+  })
+  useHotKeys('ctrl+v, command+v', (event: KeyboardEvent) => {
+    event.preventDefault()
+    void pasteComponent()
+  })
+  useHotKeys('ctrl+shift+v, command+shift+v', (event: KeyboardEvent) => {
+    event.preventDefault()
+    void pasteExternal()
+  })
+  useHotKeys('delete', (event: KeyboardEvent) => {
+    event.preventDefault()
+    deleteComp()
   })
 }

@@ -56,6 +56,21 @@ export const addDeleteComponentSchema = z.union([
 export const reorderComponentSchema = componentSchemaBase
 export type ReorderComponent = z.infer<typeof reorderComponentSchema>
 
+export const wrapComponentSchema = z.object({
+  action: z.literal('wrap'),
+  elements: z.array(
+    z.object({ componentId: z.string(), childIndex: z.number() }),
+  ),
+})
+export const unwrapComponentSchema = z.object({
+  action: z.literal('unwrap'),
+})
+export const wrapUnwrapComponentSchema = z.union([
+  wrapComponentSchema,
+  unwrapComponentSchema,
+])
+export type WrapUnwrapComponent = z.infer<typeof wrapUnwrapComponentSchema>
+
 export const styleUpdateSchema = z.object({
   type: z.union([z.literal('animation'), z.literal('hover')]),
   styleCss: z.string(),

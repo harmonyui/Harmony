@@ -2021,7 +2021,7 @@ export const useDraggable = ({
   const refX = useRef(0)
   const refY = useRef(0)
   const snapGuides = useRef<SnapPoint[]>([])
-  const shiftSnapper = useRef<{ x: number; y: number }>()
+  const shiftSnapper = useRef<{ x: number; y: number }>(undefined)
   const $parent = $('#harmony-snap-guides')
 
   useEffect(() => {
@@ -2282,7 +2282,7 @@ export const useResizable = ({
   const aspectRef =
     useRef<
       Modifier<AspectRatioOptions, AspectRatioState, 'aspectRatio', unknown>
-    >()
+    >(undefined)
   const $parent = $('#harmony-snap-guides')
 
   useEffect(() => {

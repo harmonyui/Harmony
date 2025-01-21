@@ -13,25 +13,19 @@
     "db:studio": "pnpm withenv prisma studio",
     "db:deploy": "pnpm withenv prisma migrate deploy"
   },
-  "eslint": {
-    "root": true,
-    "extends": [
-      "@harmony/eslint-config-custom/library"
-    ]
-  },
   "prettier": "@harmony/prettier-config",
   "dependencies": {
-    "@prisma/client": "^5.15.0",
-    "dotenv-cli": "^7.3.0",
-    "prisma": "^5.15.0"
+    "@prisma/client": "^6.2.1",
+    "dotenv-cli": "^8.0.0",
+    "prisma": "^6.2.1"
   },
   "devDependencies": {
     "@harmony/eslint-config-custom": "workspace:^",
     "@harmony/prettier-config": "workspace:^",
     "@harmony/tsconfig": "workspace:^",
-    "@types/node": "^20.6.2",
-    "eslint": "^8.48.0",
-    "prettier": "^3.0.3",
-    "typescript": "^5.2.2"
+    "@types/node": "^22.10.7",
+    "eslint": "^9.18.0",
+    "prettier": "^3.4.2",
+    "typescript": "^5.7.3"
   }
 }

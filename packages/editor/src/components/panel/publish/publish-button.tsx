@@ -28,7 +28,7 @@ interface PublishState {
   setError: (error: string) => void
   loading: boolean
   setLoading: (loading: boolean) => void
-  sendPullRequest: (request: PullRequest, isLocal: boolean) => Promise<void>
+  sendPullRequest: (request: PullRequest) => Promise<void>
   currentBranch:
     | {
         name: string
@@ -268,14 +268,11 @@ const Connected: React.FunctionComponent = () => {
     return true
   }
 
-  const onNewPullRequest = useCallback(
-    (isLocal: boolean) => {
-      if (!validate()) return
+  const onNewPullRequest = useCallback(() => {
+    if (!validate()) return
 
-      void sendPullRequest(pullRequest, isLocal)
-    },
-    [pullRequest, sendPullRequest],
-  )
+    void sendPullRequest(pullRequest)
+  }, [pullRequest, sendPullRequest])
 
   return (
     <div className='hw-w-full hw-flex hw-flex-col hw-gap-4'>
@@ -294,17 +291,10 @@ const Connected: React.FunctionComponent = () => {
         ) : null}
         <Button
           className='hw-w-full'
-          onClick={() => onNewPullRequest(false)}
+          onClick={() => onNewPullRequest()}
           loading={loading}
         >
           Publish to Github
-        </Button>
-        <Button
-          className='hw-w-full hw-mt-2'
-          mode='none'
-          onClick={() => onNewPullRequest(true)}
-        >
-          Publish Locally
         </Button>
       </div>
     </div>

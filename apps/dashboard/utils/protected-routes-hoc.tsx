@@ -8,7 +8,7 @@ import { redirect } from 'next/navigation'
 import type { AuthContext } from '@harmony/server/src/api/trpc'
 import { prisma } from '@harmony/db/lib/prisma'
 import { cookies } from 'next/headers'
-import { auth } from '@clerk/nextjs'
+import { auth } from '@clerk/nextjs/server'
 import { mailer } from '@harmony/server/src/api'
 
 interface RequireRouteProps {
@@ -19,7 +19,7 @@ export const requireRoute =
   ({ redirect, check }: RequireRouteProps) =>
   () =>
   async (mockUserId?: string) => {
-    const { userId } = auth()
+    const { userId } = await auth()
     const session = await getServerAuthSession(userId, mockUserId)
 
     if (!session?.auth || !session.account || (check && check(session))) {
@@ -55,15 +55,15 @@ export interface AuthProps {
   ctx: AuthContext
 }
 interface PageProps {
-  params: Record<string, string>
-  searchParams: { [key: string]: string | string[] | undefined }
+  params: Promise<Record<string, string>>
+  searchParams: Promise<{ [key: string]: string | string[] | undefined }>
 }
 export const withAuth =
   (
-    Component: React.FunctionComponent<AuthProps>,
+    Component: React.FunctionComponent<AuthProps & PageProps>,
   ): React.FunctionComponent<PageProps> =>
-  async () => {
-    const cookie = cookies()
+  async (pageProps) => {
+    const cookie = await cookies()
     const mockUserId = cookie.get('harmony-user-id')
     const response = await requireAuth()(mockUserId?.value)
 
@@ -71,7 +71,12 @@ export const withAuth =
       redirect('/setup')
     }
 
-    return <Component ctx={{ prisma, session: response.session!, mailer }} />
+    return (
+      <Component
+        ctx={{ prisma, session: response.session!, mailer }}
+        {...pageProps}
+      />
+    )
   }
 
 // export const requireRole = (role: UserRole) =>

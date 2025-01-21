@@ -1,4 +1,4 @@
-import baseConfig from '@harmony/tailwind-config/tailwind.config'
+import baseConfig from 'harmony-ai-editor/tailwind.config'
 import type { Config } from 'tailwindcss'
 
 baseConfig.content = [

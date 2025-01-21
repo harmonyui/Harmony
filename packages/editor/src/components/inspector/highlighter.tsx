@@ -33,7 +33,7 @@ export const useHighlighter = ({
   container,
   noEvents,
 }: HighlighterProps) => {
-  const timeoutRef = useRef<NodeJS.Timeout>()
+  const timeoutRef = useRef<NodeJS.Timeout>(undefined)
   //const [isHolding, setIsHolding] = useState(false);
   const isHoldingRef = useRef(false)
   const registerListeners = useEffectEvent((): void => {

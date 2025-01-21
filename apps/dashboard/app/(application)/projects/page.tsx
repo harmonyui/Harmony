@@ -11,6 +11,7 @@ const ProjectsPage = withAuth(async ({ ctx }) => {
     ? await getBranches({
         prisma: ctx.prisma,
         repositoryId: ctx.session.account.repository.id,
+        accountId: ctx.session.account.id,
       })
     : undefined
   // const onClick = (): void => {

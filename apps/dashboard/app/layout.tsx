@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import './global.css'
 import { HarmonySetup } from 'harmony-ai-editor/src'
+import 'harmony-ai-editor/src/global-provider'
 import { ClerkProvider } from '@clerk/nextjs'
 import { fonts, mulish } from '@harmony/util/src/fonts'
 import { TrpcProvider } from '../utils/trpc-provider'

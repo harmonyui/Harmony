@@ -7,6 +7,7 @@ import type {
   ReorderComponent,
   StyleUpdate,
   UpdateAttributeValue,
+  WrapUnwrapComponent,
 } from '@harmony/util/src/updates/component'
 import { createUpdate } from '@harmony/util/src/updates/utils'
 import { replaceByIndex } from '@harmony/util/src/utils/common'
@@ -1775,6 +1776,194 @@ describe('code-updator', () => {
             `),
       )
     })
+
+    it('Should wrap a component with a new component', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(
+        ['file1', 'file2'],
+        {
+          cssFramework: 'tailwind',
+        },
+      )
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'wrap',
+            elements: [
+              {
+                componentId: elementInstances[0].id,
+                childIndex: 0,
+              },
+            ],
+          }),
+          oldValue: '',
+          componentId: btoa('file2:new-component'),
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'wrap',
+            elements: [
+              {
+                componentId: elementInstances[3].id,
+                childIndex: 0,
+              },
+            ],
+          }),
+          oldValue: '',
+          componentId: btoa('file1:new-wrapped-component-2'),
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'wrap',
+            elements: [
+              {
+                componentId: elementInstances[3].id,
+                childIndex: 0,
+              },
+            ],
+          }),
+          oldValue: '',
+          componentId: 'new-wrapped-component-3',
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'unwrap',
+          }),
+          oldValue: '',
+          componentId: btoa('file1:new-wrapped-component-2'),
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'wrap',
+            elements: [
+              {
+                componentId: 'new-wrapped-component-3',
+                childIndex: 0,
+              },
+              {
+                componentId: elementInstances[4].id,
+                childIndex: 0,
+              },
+            ],
+          }),
+          oldValue: '',
+          componentId: 'new-wrapped-component-4',
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.file2).toBeTruthy()
+
+      const codeUpdates = fileUpdates.file2
+      expect(codeUpdates.filePath).toBe('file2')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+              import { Button } from './file1'
+              const App = () => {
+                return <div>
+                  <div className="flex">
+                    <Button>
+                      <div className="flex">
+                        <div className="flex">
+                          <span>Content1</span>
+                        </div>
+                        <span>Content2</span>
+                      </div>
+                    </Button>
+                  </div>
+                </div>
+              }
+            `),
+      )
+    })
+
+    it('Should update component with single data dependency', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(
+        ['dataDependencies'],
+        {
+          cssFramework: 'tailwind',
+        },
+      )
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'wrap',
+            elements: [
+              {
+                componentId: elementInstances[1].id,
+                childIndex: 0,
+              },
+              {
+                componentId: elementInstances[2].id,
+                childIndex: 0,
+              },
+            ],
+          }),
+          oldValue: '',
+          componentId: btoa('dataDependencies:new-component'),
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          type: 'component',
+          name: 'wrap-unwrap',
+          value: createUpdate<WrapUnwrapComponent>({
+            action: 'unwrap',
+          }),
+          oldValue: '',
+          componentId: elementInstances[3].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.dataDependencies).toBeTruthy()
+
+      const codeUpdates = fileUpdates.dataDependencies
+      expect(codeUpdates.filePath).toBe('dataDependencies')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          export const App = () => {
+            const str = 'Hello';
+            return <div>
+              <div className='flex'>
+                {str ? <h1>{str}</h1> : null}
+                <h2>There</h2>
+              </div>
+              
+              <h3>Here</h3>
+              {str ? <h4>{str}</h4> : null}
+            </div>
+          }
+        `),
+      )
+    })
   })
 })
 
@@ -2002,5 +2191,18 @@ const testFiles = {
     }
 
     export default config
+  `,
+  dataDependencies: `
+    export const App = () => {
+      const str = 'Hello';
+      return <div>
+        {str ? <h1>{str}</h1> : null}
+        <h2>There</h2>
+        <div>
+          <h3>Here</h3>
+          {str ? <h4>{str}</h4> : null}
+        </div>
+      </div>
+    }
   `,
 }

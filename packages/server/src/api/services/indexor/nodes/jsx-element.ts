@@ -9,6 +9,7 @@ import { ImportStatement } from './import-statement'
 export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   private mappingExpression: ArrayProperty | undefined
   private children: Node[] = []
+  private jsxChildren: JSXElementNode[] = []
   private parentElement: JSXElementNode | undefined
   private definitionComponent: ComponentNode | undefined
 
@@ -86,8 +87,8 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getJSXChildren(traverse = false): JSXElementNode[] {
+    if (!traverse) return this.jsxChildren
     const children = this.getChildren().filter(isJSXElement)
-    if (!traverse) return children
 
     return children.reduce<JSXElementNode[]>(
       (prev, curr) => [...prev, ...curr.getJSXChildren(traverse)],
@@ -161,14 +162,18 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
     if (childIndex > -1) {
       this.children[childIndex] = child
     }
+
+    this.jsxChildren.push(child)
   }
 
   public insertChild(child: JSXElementNode, index: number) {
     this.children.splice(index, 0, child)
+    this.jsxChildren.splice(index, 0, child)
   }
 
   public deleteChild(index: number): void {
     this.children.splice(index, 1)
+    this.jsxChildren.splice(index, 1)
   }
 
   public getOpeningElement(): Node<t.JSXOpeningElement> {
@@ -238,6 +243,10 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
 
 export const isJSXElement = (node: Node): node is JSXElementNode =>
   node instanceof JSXElementNode
+
+export interface JSXChildNode {
+  getChildElement(): Node
+}
 
 const traverseInstances = (element: JSXElementNode): JSXElementNode[][] => {
   const parentInstances = element.getParentComponent().getInstances()
