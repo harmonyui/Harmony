@@ -414,7 +414,11 @@ export class FlowGraph {
   }
 
   public replaceNode(node: Node, newNode: t.Node) {
-    node.path.replaceWith(newNode)
+    if (!node.path.container) {
+      node.path.node = newNode
+    } else {
+      node.path.replaceWith(newNode)
+    }
     this.dirtyNode(node)
   }
 
