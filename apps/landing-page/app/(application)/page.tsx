@@ -1,9 +1,9 @@
-import { GradientButton } from '@harmony/ui/src/components/design/gradient-button';
-import { Particles } from '@harmony/ui/src/components/design/particles';
-import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog';
-import { ShineBorder } from '@harmony/ui/src/components/design/shine-border';
-import { PricingCard } from '../components/pricing-card';
-import { GradientBackground } from '@/components/gradient';
+import { GradientButton } from '@harmony/ui/src/components/design/gradient-button'
+import { Particles } from '@harmony/ui/src/components/design/particles'
+import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog'
+import { ShineBorder } from '@harmony/ui/src/components/design/shine-border'
+import { PricingCard } from '../components/pricing-card'
+import { GradientBackground } from '@/components/gradient'
 export default function Home() {
   return (
     <>
@@ -78,10 +78,10 @@ export default function Home() {
         <div className='[--color:var(--color-one)] hw-pointer-events-none hw-relative -hw-z-[2] hw-mx-auto hw-h-[50rem] hw-overflow-hidden [mask-image:radial-gradient(ellipse_at_center_center,#000,transparent_50%)] hw-my-[-18.8rem] before:hw-absolute before:hw-inset-0 before:hw-h-full before:hw-w-full before:hw-opacity-40 before:[background-image:radial-gradient(circle_at_bottom_center,var(--color),transparent_70%)] after:hw-absolute after:-hw-left-1/2 after:hw-top-1/2 after:hw-aspect-[1/0.7] after:hw-w-[200%] after:hw-rounded-[50%] after:hw-border-t after:hw-border-[hsl(var(--border))] after:hw-bg-background' />
         <div className='hw-flex hw-max-w-screen-md hw-mr-auto hw-ml-auto hw-p-0'>
           <div className='hw-flex hw-justify-center hw-items-start hw-flex-col hw-gap-y-6 hw-gap-x-6 hw-w-full hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0'>
-            <h2 className='hw-text-4xl hw-font-semibold hw-tracking-[-0.9px] hw-leading-10 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-black'>
+            <h2 className='hw-text-4xl hw-font-semibold hw-tracking-[-0.9px] hw-leading-10 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-black dark:hw-text-white'>
               Design directly inside your SaaS app.
             </h2>
-            <p className='hw-text-4xl hw-font-medium hw-tracking-[-1.26px] hw-leading-10 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-w-full hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-black hw-opacity-70'>
+            <p className='hw-text-4xl hw-font-medium hw-tracking-[-1.26px] hw-leading-10 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-w-full hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-opacity-70 hw-text-black dark:hw-text-white'>
               Unlike other design tools that leverage a copy-and-paste approach,
               Harmony makes changes directly in your deployed application.
               Changes are then shipped straight to Github, freeing up precious
@@ -220,5 +220,5 @@ export default function Home() {
         color='#fff1be'
       />
     </>
-  );
+  )
 }
