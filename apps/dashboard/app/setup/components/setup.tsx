@@ -1,12 +1,5 @@
-/* eslint-disable no-nested-ternary -- ok*/
 /* eslint-disable @typescript-eslint/no-useless-template-literals -- ok*/
-/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style -- ok*/
-/* eslint-disable camelcase -- ok*/
-/* eslint-disable @typescript-eslint/no-floating-promises -- ok*/
-/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
 
-/* eslint-disable no-promise-executor-return -- ok*/
 'use client'
 import { Button } from '@harmony/ui/src/components/core/button'
 import { Header } from '@harmony/ui/src/components/core/header'
@@ -469,6 +462,9 @@ const GitImportRepository: React.FunctionComponent<
 
   const repos = query.data
 
+  const githubInstallLink =
+    'https://github.com/apps/harmony-ui-app/installations/new'
+
   return (
     <>
       <Header level={4}>Step 1: Import Git Repository</Header>
@@ -479,19 +475,23 @@ const GitImportRepository: React.FunctionComponent<
       <p className='hw-text-sm dark:hw-text-white'>
         Please select which project you would like to intergrate with Harmony
       </p>
-      <p className='hw-text-gray-400 hw-text-sm dark:hw-text-gray-300'>
-        Note: while in beta, this cannot be changed later.
+      <p className='hw-text-sm dark:hw-text-white'>
+        To install the Harmony App in a new repo, visit{' '}
+        <a
+          className='hw-text-blue-500'
+          href={githubInstallLink}
+          target='_blank'
+        >
+          this
+        </a>{' '}
+        link
       </p>
       {error ? <p className='hw-text-red-400 hw-text-sm'>{error}</p> : null}
       {repos ? (
         repos.length === 0 ? (
           <Button
             onClick={() =>
-              window.open(
-                'https://github.com/apps/harmony-ui-app/installations/new',
-                'MyWindow',
-                'width=600,height=300',
-              )
+              window.open(githubInstallLink, 'MyWindow', 'width=600,height=300')
             }
           >
             Install
