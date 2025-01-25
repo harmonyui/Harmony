@@ -1,4 +1,3 @@
-import { useState } from 'react'
 import {
   PaddingAllIcon,
   PaddingBottomIcon,
@@ -23,11 +22,9 @@ export const SpacingSection: DesignPanelSectionComponent = () => {
 }
 
 const PaddingSection: React.FunctionComponent = () => {
-  const [isExpanded, setIsExpanded] = useState(false)
   return (
     <AttributeExpand
       label='Padding'
-      isExpanded={isExpanded}
       attribute='padding'
       expandedAttributes={[
         'paddingTop',
@@ -41,7 +38,7 @@ const PaddingSection: React.FunctionComponent = () => {
         PaddingBottomIcon,
         PaddingLeftIcon,
       ]}
-      additionalContent={
+      additionalContent={({ isExpanded, setIsExpanded }) => (
         <ButtonGroup
           items={[
             {
@@ -52,17 +49,15 @@ const PaddingSection: React.FunctionComponent = () => {
           value={isExpanded ? 'expand' : ''}
           onChange={() => setIsExpanded(!isExpanded)}
         />
-      }
+      )}
     />
   )
 }
 
 const MarginSection: React.FunctionComponent = () => {
-  const [isExpanded, setIsExpanded] = useState(false)
   return (
     <AttributeExpand
       label='Margin'
-      isExpanded={isExpanded}
       attribute='margin'
       expandedAttributes={[
         'marginTop',
@@ -76,7 +71,7 @@ const MarginSection: React.FunctionComponent = () => {
         PaddingBottomIcon,
         PaddingLeftIcon,
       ]}
-      additionalContent={
+      additionalContent={({ isExpanded, setIsExpanded }) => (
         <ButtonGroup
           items={[
             {
@@ -87,7 +82,7 @@ const MarginSection: React.FunctionComponent = () => {
           value={isExpanded ? 'expand' : ''}
           onChange={() => setIsExpanded(!isExpanded)}
         />
-      }
+      )}
     />
   )
 }

@@ -5,10 +5,8 @@ export const DesignDropdown: typeof Dropdown = (props) => {
   return (
     <Dropdown
       {...props}
-      className={getClass(
-        'hw-border-transparent !hw-bg-gray-100 hover:!hw-bg-gray-200 hw-rounded-md hover:!hw-border-gray-300',
-        props.className,
-      )}
+      className={getClass('hw-rounded-md', props.className)}
+      buttonClass='hw-w-full hw-border-transparent !hw-bg-gray-100 hover:!hw-bg-gray-200 hover:!hw-border-gray-300'
       container={document.getElementById('harmony-container') || undefined}
     />
   )

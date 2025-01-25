@@ -41,6 +41,7 @@ export const loadResponseSchema = z.object({
   showWelcomeScreen: z.boolean(),
   isDemo: z.boolean(),
   harmonyTokens: z.array(tokenSchema),
+  rootPath: z.optional(z.string()),
 })
 export type LoadResponse = z.infer<typeof loadResponseSchema>
 

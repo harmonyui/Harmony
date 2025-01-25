@@ -3,19 +3,23 @@ import { getClass } from '@harmony/util/src/utils/common'
 import { useComponentAttribute } from '../../../../attributes/attribute-provider'
 import type { CommonTools } from '../../../../attributes/types'
 import { useMultiValue } from '../hooks/multi-value'
-import { useLink } from '../hooks/link'
+import { useTokenLink } from '../hooks/token-link'
 import { DesignInput } from './design-input'
 import { Label } from './label'
 import { LinkButton } from './link-button'
 import { TokenDropdown } from './token-dropdown'
+import { useMemoState } from '@harmony/ui/src/hooks/memo-state'
+import { TokenLinkInput } from './token-link-input'
 
 interface AttributeExpandProps {
   attribute: CommonTools
   label?: string
-  isExpanded: boolean
   expandedAttributes: CommonTools[]
   icons?: IconComponent[]
-  additionalContent?: React.ReactNode
+  additionalContent?: (props: {
+    isExpanded: boolean
+    setIsExpanded: (value: boolean) => void
+  }) => React.ReactNode
   spanFull?: boolean
 }
 export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
@@ -23,17 +27,24 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
   attribute,
   expandedAttributes,
   icons,
-  isExpanded,
   additionalContent,
   spanFull = true,
 }) => {
   const { onAttributeChange } = useComponentAttribute()
-  const { isExpanded: isLinkExpanded, setIsExpanded: setIsLinkExpanded } =
-    useLink(attribute)
 
-  const { value: attrValue, values } = useMultiValue(
-    attribute,
-    expandedAttributes,
+  const {
+    value: attrValue,
+    values,
+    hasMultiValue,
+  } = useMultiValue(attribute, expandedAttributes)
+  const {
+    isExpanded: isLinkExpanded,
+    setIsExpanded: setIsLinkExpanded,
+    hasLink,
+  } = useTokenLink(attribute, attrValue)
+  const [isExpanded, setIsExpanded] = useMemoState(
+    () => hasMultiValue,
+    [hasMultiValue],
   )
 
   return (
@@ -46,7 +57,7 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
         )}
       >
         {isLinkExpanded ? (
-          <TokenDropdown attribute={attribute} />
+          <TokenDropdown attribute={attribute} valueOverride={attrValue} />
         ) : (
           <DesignInput
             className='hw-w-full'
@@ -54,41 +65,48 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
             onChange={(value) => onAttributeChange({ name: attribute, value })}
           />
         )}
-        {additionalContent}
-        <LinkButton
-          isExpanded={isLinkExpanded}
-          setIsExpanded={setIsLinkExpanded}
-        />
+        {additionalContent?.({ isExpanded, setIsExpanded })}
+        {hasLink ? (
+          <LinkButton
+            isExpanded={isLinkExpanded}
+            setIsExpanded={setIsLinkExpanded}
+          />
+        ) : null}
       </div>
       {isExpanded ? (
         <div className='hw-grid hw-grid-cols-2 hw-gap-2 hw-col-span-3'>
           {values.map((value, index) => {
             const Icon = icons ? icons[index] : null
             return (
-              <div
+              <AttributedExpanded
                 key={index}
-                className='hw-col-span-1 hw-flex hw-gap-2 hw-items-center'
-              >
-                {Icon ? <Icon className='hw-h-4 hw-w-4' /> : null}
-                {isLinkExpanded ? (
-                  <TokenDropdown attribute={expandedAttributes[index]} />
-                ) : (
-                  <DesignInput
-                    className='hw-w-full'
-                    value={value}
-                    onChange={(_value) =>
-                      onAttributeChange({
-                        name: expandedAttributes[index],
-                        value: _value,
-                      })
-                    }
-                  />
-                )}
-              </div>
+                Icon={Icon}
+                expandedAttribute={expandedAttributes[index]}
+              />
             )
           })}
         </div>
       ) : null}
     </>
+  )
+}
+
+interface AttributeExpandedProps {
+  Icon: IconComponent | null
+  expandedAttribute: CommonTools
+}
+const AttributedExpanded: React.FunctionComponent<AttributeExpandedProps> = ({
+  Icon,
+  expandedAttribute,
+}) => {
+  return (
+    <div className='hw-col-span-1 hw-flex hw-gap-2 hw-items-center'>
+      {Icon ? <Icon className='hw-h-4 hw-w-4' /> : null}
+      <TokenLinkInput
+        className='hw-w-full'
+        attribute={expandedAttribute}
+        hideButton
+      />
+    </div>
   )
 }

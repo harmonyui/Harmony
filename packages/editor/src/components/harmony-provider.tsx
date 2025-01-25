@@ -267,7 +267,9 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         if (!element.dataset.harmonyChildIndex)
           element.dataset.harmonyChildIndex = String(childIndex)
 
-        id && componentIds.push(id)
+        if (id) {
+          componentIds.push(id)
+        }
       }
 
       const children = Array.from(element.childNodes)

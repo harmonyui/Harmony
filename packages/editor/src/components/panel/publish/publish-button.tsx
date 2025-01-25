@@ -28,7 +28,10 @@ interface PublishState {
   setError: (error: string) => void
   loading: boolean
   setLoading: (loading: boolean) => void
-  sendPullRequest: (request: PullRequest) => Promise<void>
+  sendPullRequest: (
+    request: PullRequest,
+    setError?: (error: string) => void,
+  ) => Promise<void>
   currentBranch:
     | {
         name: string
@@ -56,6 +59,7 @@ export const PublishProvider: React.FunctionComponent<{
   const pullRequestProps = useHarmonyStore((state) => state.pullRequest)
   const isDemo = useHarmonyStore((state) => state.isDemo)
   const isLocal = useHarmonyStore((state) => state.isLocal)
+  const clearUpdates = useHarmonyStore((state) => state.clearComponentUpdates)
 
   const isPublished = useMemo(
     () => Boolean(pullRequestProps),
@@ -63,7 +67,10 @@ export const PublishProvider: React.FunctionComponent<{
   )
 
   const sendPullRequest = useCallback(
-    async (pullRequest: PullRequest) => {
+    async (
+      pullRequest: PullRequest,
+      _setError: (error: string) => void = setError,
+    ) => {
       setLoading(true)
       const request: PublishRequest = {
         branchId,
@@ -72,7 +79,7 @@ export const PublishProvider: React.FunctionComponent<{
       try {
         const published = await publish(request)
         if (!published) {
-          setError('There was an error when publishing')
+          _setError('There was an error when publishing')
           return
         }
         setShow(false)
@@ -81,15 +88,15 @@ export const PublishProvider: React.FunctionComponent<{
           window.open(published.pullRequest.url, '_blank')?.focus()
         }
       } catch {
-        setError('There was an error when publishing')
+        _setError('There was an error when publishing')
       } finally {
         setLoading(false)
       }
     },
-    [setLoading, setError, setShow, publish, branchId],
+    [setLoading, setShow, publish, branchId],
   )
 
-  const onViewCode = useCallback(() => {
+  const onViewCode = useCallback(async () => {
     if (!currentBranch.id) return
 
     if (isSaving) {
@@ -104,7 +111,7 @@ export const PublishProvider: React.FunctionComponent<{
       url: '',
     }
     if (!pullRequestProps) {
-      void sendPullRequest(pullRequest)
+      await sendPullRequest(pullRequest, setErrorProps)
     } else {
       window.open(pullRequestProps.url, '_blank')?.focus()
     }
@@ -114,11 +121,15 @@ export const PublishProvider: React.FunctionComponent<{
     setErrorProps,
     pullRequestProps,
     sendPullRequest,
+    setErrorProps,
   ])
 
   const onPublish = useCallback(() => {
     if (isDemo || isPublished || isLocal) {
-      onViewCode()
+      void onViewCode()
+      if (isLocal) {
+        clearUpdates()
+      }
       return
     }
 

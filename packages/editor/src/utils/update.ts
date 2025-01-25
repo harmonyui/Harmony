@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-unsafe-return -- ok */
 import type {
   DeleteComponent,
   AddComponent,
@@ -242,7 +241,7 @@ export const createNewElementUpdates = ({
     })
   }
 
-  if (element.tagName.toLowerCase() === 'img') {
+  if (['img', 'video'].includes(element.tagName.toLowerCase())) {
     updates.push({
       type: 'component',
       name: 'update-attribute',
@@ -250,7 +249,7 @@ export const createNewElementUpdates = ({
       childIndex,
       value: createUpdate<UpdateAttributeValue>({
         name: 'src',
-        value: element.getAttribute('src') || '',
+        value: normalizeSource(element.getAttribute('src') || ''),
         action: 'update',
       }),
       oldValue: createUpdate<UpdateAttributeValue>({
@@ -270,7 +269,7 @@ export const createNewElementUpdates = ({
       childIndex,
       value: createUpdate<UpdateAttributeValue>({
         name: 'href',
-        value: element.getAttribute('href') || '',
+        value: normalizeSource(element.getAttribute('href') || ''),
         action: 'update',
       }),
       oldValue: createUpdate<UpdateAttributeValue>({
@@ -283,4 +282,14 @@ export const createNewElementUpdates = ({
   }
 
   return updates
+}
+
+const normalizeSource = (source: string) => {
+  const base = window.location.origin
+
+  if (source.startsWith('/')) {
+    return base + source
+  }
+
+  return source
 }

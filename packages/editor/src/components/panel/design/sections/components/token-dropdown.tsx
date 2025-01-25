@@ -3,16 +3,18 @@ import { useMemo } from 'react'
 import { useComponentAttribute } from '../../../../attributes/attribute-provider'
 import { colorTools, type CommonTools } from '../../../../attributes/types'
 import { DesignDropdown } from './design-dropdown'
+import { convertRemToPx } from '../../utils'
 
 export const TokenDropdown: React.FunctionComponent<{
   attribute: CommonTools
+  valueOverride?: string
   className?: string
-}> = ({ attribute, className }) => {
+}> = ({ attribute, className, valueOverride }) => {
   const { onAttributeChange, getCurrentToken, getTokenValues } =
     useComponentAttribute()
   const tokenValue = useMemo(
-    () => getCurrentToken(attribute),
-    [getCurrentToken],
+    () => getCurrentToken(attribute, valueOverride),
+    [getCurrentToken, valueOverride],
   )
   const tokenValues = useMemo(() => getTokenValues(attribute), [getTokenValues])
   const items = tokenValues.map((token) => ({
@@ -28,7 +30,11 @@ export const TokenDropdown: React.FunctionComponent<{
     ) : (
       <div className='hw-flex hw-gap-2 hw-items-center hw-justify-between'>
         <div className='hw-text-xs'>{kebabToWord(token.name)}</div>
-        <div className='hw-text-xs hw-text-gray-400'>{token.value}</div>
+        <div className='hw-text-xs hw-text-gray-400'>
+          {token.value.includes('rem')
+            ? `${convertRemToPx(token.value)}px`
+            : token.value}
+        </div>
       </div>
     ),
   }))

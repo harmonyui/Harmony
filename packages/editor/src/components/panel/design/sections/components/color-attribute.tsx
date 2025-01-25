@@ -3,7 +3,7 @@ import { getClass } from '@harmony/util/src/utils/common'
 import { useMemo } from 'react'
 import { useComponentAttribute } from '../../../../attributes/attribute-provider'
 import type { ColorTools } from '../../../../attributes/types'
-import { useLink } from '../hooks/link'
+import { useTokenLink } from '../hooks/token-link'
 import { DesignInput } from './design-input'
 import { TokenDropdown } from './token-dropdown'
 import { LinkButton } from './link-button'
@@ -20,12 +20,12 @@ export const ColorAttribute: React.FunctionComponent<{
     if (colorOpacity) {
       const opacityValue = parseInt(colorOpacity, 16) / 255
       const percentage = opacityValue * 100
-      return percentage
+      return Math.round(percentage)
     }
 
-    return Number(value) * 100
+    return Math.round(Number(value) * 100)
   }, [getAttribute, colorValue])
-  const { isExpanded, setIsExpanded } = useLink(attribute)
+  const { isExpanded, setIsExpanded } = useTokenLink(attribute)
 
   const onOpacityChange = (value: string) => {
     onAttributeChange({ name: attribute, value: colorValue.slice(0, 7) })

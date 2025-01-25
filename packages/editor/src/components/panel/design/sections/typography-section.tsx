@@ -21,6 +21,7 @@ import { DesignDropdown } from './components/design-dropdown'
 import { DesignInput } from './components/design-input'
 import { ButtonGroupButton } from './components/button-group'
 import { TokenDropdown } from './components/token-dropdown'
+import { TokenLinkInput } from './components/token-link-input'
 
 export const TypographySection: DesignPanelSectionComponent = () => {
   const { getAttribute, onAttributeChange } = useComponentAttribute()
@@ -31,23 +32,23 @@ export const TypographySection: DesignPanelSectionComponent = () => {
 
   return (
     <Section label='Typography'>
-      <div className='hw-grid hw-grid-cols-3 hw-gap-2 hw-items-center'>
+      <div className='hw-grid hw-grid-cols-6 hw-gap-2 hw-items-center'>
         <FontDropdown />
         <FontWeightDropdown />
-        <TokenDropdown attribute='fontSize' />
-        <ColorAttribute className='hw-col-span-2' attribute='color' />
+        <TokenLinkInput className='hw-col-span-3' attribute='fontSize' />
+        <ColorAttribute className='hw-col-span-6' attribute='color' />
         <TextAlignSection />
         <TextTypeSection />
-        <Label label='Line Height'>
+        <Label className='hw-col-span-2' label='Line Height'>
           <DesignInput
-            className='hw-w-full hw-col-span-2'
+            className='hw-w-full hw-col-span-4'
             value={getAttribute('lineHeight')}
             onChange={onChange('lineHeight')}
           />
         </Label>
-        <Label label='Letter Spacing'>
+        <Label className='hw-col-span-2' label='Letter Spacing'>
           <DesignInput
-            className='hw-w-full hw-col-span-2'
+            className='hw-w-full hw-col-span-4'
             value={spacing === 'normal' ? '0px' : spacing}
             onChange={onChange('letterSpacing')}
           />
@@ -74,7 +75,7 @@ const FontDropdown: React.FunctionComponent = () => {
 
   return (
     <DesignDropdown
-      className='hw-col-span-3 hw-w-full'
+      className='hw-col-span-6 hw-w-full'
       items={items}
       initialValue={getAttribute('font')}
       onChange={(value) => onAttributeChange({ name: 'font', value: value.id })}
@@ -85,14 +86,14 @@ const FontDropdown: React.FunctionComponent = () => {
 
 const FontWeightDropdown: React.FunctionComponent = () => {
   return (
-    <TokenDropdown className='hw-col-span-2 hw-w-full' attribute='fontWeight' />
+    <TokenDropdown className='hw-col-span-3 hw-w-full' attribute='fontWeight' />
   )
 }
 
 const TextAlignSection: React.FunctionComponent = () => {
   return (
     <AttributeButtonGroup
-      className='hw-col-span-2'
+      className='hw-col-span-4'
       attribute='textAlign'
       items={[
         {
@@ -128,7 +129,7 @@ const TextTypeSection: React.FunctionComponent = () => {
   )
 
   return (
-    <div className='hw-flex hw-gap-1'>
+    <div className='hw-flex hw-gap-1 hw-col-span-2'>
       <ButtonGroupButton
         show={isBold}
         onClick={() =>

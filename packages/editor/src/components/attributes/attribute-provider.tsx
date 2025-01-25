@@ -26,6 +26,7 @@ interface ComponentAttributeContextProps {
   ) => ToolAttributeValue<T>['value']
   getCurrentToken: <T extends CommonTools>(
     name: T,
+    valueOverride?: string,
   ) => Token['values'][number] | undefined
   getTokenValues: <T extends CommonTools>(name: T) => Token['values']
 }
@@ -103,8 +104,11 @@ export const ComponentAttributeProvider: React.FunctionComponent<
   )
 
   const getCurrentToken = useCallback(
-    <T extends CommonTools>(name: T): Token['values'][number] | undefined => {
-      const value = getAttribute(name)
+    <T extends CommonTools>(
+      name: T,
+      valueOverride?: string,
+    ): Token['values'][number] | undefined => {
+      const value = valueOverride ?? getAttribute(name)
       const token = tokens.find((t) => t.name === name)
       // If the token is found and the value is not empty and is not a compound value
       if (token && value && value.split(' ').length === 1) {

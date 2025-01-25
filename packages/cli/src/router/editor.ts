@@ -25,6 +25,7 @@ export const editorRouter = createTRPCRouter({
       return {
         ...ret,
         updates,
+        rootPath: ctx.path,
       }
     }),
   saveProject: publicProcedure
