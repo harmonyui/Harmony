@@ -1,9 +1,9 @@
-import { GradientButton } from '@harmony/ui/src/components/design/gradient-button'
-import { Particles } from '@harmony/ui/src/components/design/particles'
-import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog'
-import { ShineBorder } from '@harmony/ui/src/components/design/shine-border'
-import { PricingCard } from '../components/pricing-card'
-import { GradientBackground } from '@/components/gradient'
+import { GradientButton } from '@harmony/ui/src/components/design/gradient-button';
+import { Particles } from '@harmony/ui/src/components/design/particles';
+import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog';
+import { ShineBorder } from '@harmony/ui/src/components/design/shine-border';
+import { PricingCard } from '../components/pricing-card';
+import { GradientBackground } from '@/components/gradient';
 export default function Home() {
   return (
     <>
@@ -76,6 +76,92 @@ export default function Home() {
           </div>
         </section>
         <div className='[--color:var(--color-one)] hw-pointer-events-none hw-relative -hw-z-[2] hw-mx-auto hw-h-[50rem] hw-overflow-hidden [mask-image:radial-gradient(ellipse_at_center_center,#000,transparent_50%)] hw-my-[-18.8rem] before:hw-absolute before:hw-inset-0 before:hw-h-full before:hw-w-full before:hw-opacity-40 before:[background-image:radial-gradient(circle_at_bottom_center,var(--color),transparent_70%)] after:hw-absolute after:-hw-left-1/2 after:hw-top-1/2 after:hw-aspect-[1/0.7] after:hw-w-[200%] after:hw-rounded-[50%] after:hw-border-t after:hw-border-[hsl(var(--border))] after:hw-bg-background' />
+        <div className='hw-flex hw-max-w-screen-md hw-mr-auto hw-ml-auto hw-p-0'>
+          <div className='hw-flex hw-justify-center hw-items-start hw-flex-col hw-gap-y-6 hw-gap-x-6 hw-w-full hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0'>
+            <h2 className='hw-text-4xl hw-font-semibold hw-tracking-[-0.9px] hw-leading-10 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-black'>
+              Design directly inside your SaaS app.
+            </h2>
+            <p className='hw-text-4xl hw-font-medium hw-tracking-[-1.26px] hw-leading-10 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-w-full hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-black hw-opacity-70'>
+              Unlike other design tools that leverage a copy-and-paste approach,
+              Harmony makes changes directly in your deployed application.
+              Changes are then shipped straight to Github, freeing up precious
+              developer time.
+            </p>
+            <div className='hw-flex hw-items-start hw-gap-y-4 hw-gap-x-4 hw-flex-wrap hw-pt-8 hw-w-full hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0'>
+              <div className='hw-flex hw-items-center hw-gap-y-2 hw-gap-x-2 hw-pr-4 hw-pl-4 hw-h-10 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-rounded-tl-full hw-rounded-tr-full hw-rounded-bl-full hw-rounded-br-full hw-bg-[#f0f0f0]'>
+                <span className='hw-text-base hw-font-semibold hw-flex hw-items-center hw-shrink-0 hw-leading-4 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-[#292929]'>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    width='1em'
+                    height='1em'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    stroke='currentColor'
+                    stroke-width='2'
+                    stroke-linecap='round'
+                    stroke-linejoin='round'
+                    className='hw-block hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-overflow-x-hidden hw-overflow-y-hidden'
+                  >
+                    <path d='M22 14a8 8 0 0 1-8 8'></path>
+                    <path d='M18 11v-1a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v0'></path>
+                    <path d='M14 10V9a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v1'></path>
+                    <path d='M10 9.5V4a2 2 0 0 0-2-2v0a2 2 0 0 0-2 2v10'></path>
+                    <path d='M18 11a2 2 0 1 1 4 0v3a8 8 0 0 1-8 8h-2c-2.8 0-4.5-.86-5.99-2.34l-3.6-3.6a2 2 0 0 1 2.83-2.82L7 15'></path>
+                  </svg>
+                </span>
+                <h3 className='hw-text-lg hw-font-medium hw-leading-7 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-black'>
+                  Custom components
+                </h3>
+              </div>
+              <div className='hw-flex hw-items-center hw-gap-y-2 hw-gap-x-2 hw-pr-4 hw-pl-4 hw-h-10 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-rounded-tl-full hw-rounded-tr-full hw-rounded-bl-full hw-rounded-br-full hw-bg-[#f0f0f0]'>
+                <span className='hw-text-base hw-font-semibold hw-flex hw-items-center hw-shrink-0 hw-leading-4 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-[#292929]'>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    width='1em'
+                    height='1em'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    stroke='currentColor'
+                    stroke-width='2'
+                    stroke-linecap='round'
+                    stroke-linejoin='round'
+                    className='hw-block hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-overflow-x-hidden hw-overflow-y-hidden'
+                  >
+                    <path d='M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6'></path>
+                    <path d='m12 12 4 10 1.7-4.3L22 16Z'></path>
+                  </svg>
+                </span>
+                <h3 className='hw-text-lg hw-font-medium hw-leading-7 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-black'>
+                  Company design system
+                </h3>
+              </div>
+              <div className='hw-flex hw-items-center hw-gap-y-2 hw-gap-x-2 hw-pr-4 hw-pl-4 hw-h-10 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-rounded-tl-full hw-rounded-tr-full hw-rounded-bl-full hw-rounded-br-full hw-bg-[#f0f0f0]'>
+                <span className='hw-text-base hw-font-semibold hw-flex hw-items-center hw-shrink-0 hw-leading-4 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-[#292929]'>
+                  <svg
+                    xmlns='http://www.w3.org/2000/svg'
+                    width='1em'
+                    height='1em'
+                    viewBox='0 0 24 24'
+                    fill='none'
+                    stroke='currentColor'
+                    stroke-width='2'
+                    stroke-linecap='round'
+                    stroke-linejoin='round'
+                    className='hw-block hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-overflow-x-hidden hw-overflow-y-hidden'
+                  >
+                    <line x1='22' x2='2' y1='6' y2='6'></line>
+                    <line x1='22' x2='2' y1='18' y2='18'></line>
+                    <line x1='6' x2='6' y1='2' y2='22'></line>
+                    <line x1='18' x2='18' y1='2' y2='22'></line>
+                  </svg>
+                </span>
+                <h3 className='hw-text-lg hw-font-medium hw-leading-7 hw-mr-0 hw-ml-0 hw-mt-0 hw-mb-0 hw-border-l-0 hw-border-r-0 hw-border-t-0 hw-border-b-0 hw-text-black'>
+                  Pixel-perfect design
+                </h3>
+              </div>
+            </div>
+          </div>
+        </div>
         <section id='pricing'>
           <div className='hw-mx-auto hw-flex hw-max-w-screen-xl hw-flex-col hw-gap-8 hw-px-4 hw-py-14 md:hw-px-8'>
             <div className='hw-mx-auto hw-max-w-5xl hw-text-center'>
@@ -134,5 +220,5 @@ export default function Home() {
         color='#fff1be'
       />
     </>
-  )
+  );
 }
