@@ -1,13 +1,11 @@
-import { NumberTicker } from '@harmony/ui/src/components/design/number-ticker'
+//import { NumberTicker } from '@harmony/ui/src/components/design/number-ticker'
 import { getGithubStars, getGithubUrl } from '../actions'
-
 export const GithubStars: React.FunctionComponent = async () => {
   const numStarts = await getGithubStars()
   const url = await getGithubUrl()
   if (numStarts === null || url === null) {
     return null
   }
-
   return (
     <a
       className='hw-mr-2 hw-inline-flex hw-items-center hw-justify-center hw-rounded-xl hw-text-sm hw-font-medium hw-transition-colors focus-visible:hw-outline-none focus-visible:hw-ring-1 focus-visible:hw-ring-ring disabled:hw-pointer-events-none disabled:hw-opacity-50 hw-group hw-relative hw-animate-rainbow hw-cursor-pointer hw-border-0 hw-bg-[linear-gradient(#121213,#121213),linear-gradient(#121213_50%,rgba(18,18,19,0.6)_80%,rgba(18,18,19,0)),linear-gradient(90deg,hsl(var(--color-1)),hsl(var(--color-5)),hsl(var(--color-3)),hsl(var(--color-4)),hsl(var(--color-2)))] hw-bg-[length:200%] hw-text-primary-foreground [background-clip:padding-box,border-box,border-box] [background-origin:border-box] [border:calc(0.08*1rem)_solid_transparent] before:hw-absolute before:hw-bottom-[-20%] before:hw-left-1/2 before:hw-z-[0] before:hw-h-[20%] before:hw-w-[60%] before:-hw-translate-x-1/2 before:hw-animate-rainbow before:hw-bg-[linear-gradient(90deg,hsl(var(--color-1)),hsl(var(--color-5)),hsl(var(--color-3)),hsl(var(--color-4)),hsl(var(--color-2)))] before:hw-bg-[length:200%] before:[filter:blur(calc(0.8*1rem))] dark:hw-bg-[linear-gradient(#fff,#fff),linear-gradient(#fff_50%,rgba(255,255,255,0.6)_80%,rgba(0,0,0,0)),linear-gradient(90deg,hsl(var(--color-1)),hsl(var(--color-5)),hsl(var(--color-3)),hsl(var(--color-4)),hsl(var(--color-2)))] hw-h-9 hw-px-4 hw-py-2'
@@ -26,7 +24,7 @@ export const GithubStars: React.FunctionComponent = async () => {
         </svg>
         <span className='hw-ml-1 dark:hw-text-gray-950'>Star on GitHub</span>{' '}
       </div>
-      <div className='hw-ml-2 hw-flex hw-items-center hw-gap-1 hw-text-sm md:hw-flex'>
+      {/* <div className='hw-ml-2 hw-flex hw-items-center hw-gap-1 hw-text-sm md:hw-flex'>
         <svg
           xmlns='http://www.w3.org/2000/svg'
           viewBox='0 0 24 24'
@@ -42,7 +40,7 @@ export const GithubStars: React.FunctionComponent = async () => {
           ></path>
         </svg>
         <NumberTicker value={numStarts} />
-      </div>
+      </div> */}
     </a>
   )
 }
