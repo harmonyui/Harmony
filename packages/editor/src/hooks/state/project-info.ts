@@ -18,6 +18,7 @@ export interface ProjectInfoState {
   isRepositoryConnected: boolean
   isOverlay: boolean
   isLocal: boolean
+  localRootPath: string | undefined
   harmonyTokens: Token[]
   setIsOverlay: (value: boolean) => void
   updateWelcomeScreen: (value: boolean) => void
@@ -52,6 +53,7 @@ export const createProjectInfoSlice = createHarmonySlice<
     typeof window !== 'undefined'
       ? window.location.hostname === 'localhost'
       : false,
+  localRootPath: undefined,
   setIsOverlay(value: boolean) {
     set({ isOverlay: value })
   },
@@ -102,10 +104,14 @@ export const createProjectInfoSlice = createHarmonySlice<
         showWelcomeScreen,
         isDemo,
         harmonyTokens,
+        rootPath,
       } = response
       const currentBranch = branches.find((branch) => branch.id === branchId)
       if (!currentBranch && branchId !== 'local') {
         throw new Error(`Invalid branch with id ${branchId}`)
+      }
+      if (isLocal && !rootPath) {
+        throw new Error('Root path is not set for local environment')
       }
 
       set({
@@ -119,6 +125,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         isInitialized: true,
         isRepositoryConnected: repositoryId !== undefined,
         harmonyTokens,
+        localRootPath: rootPath,
       })
     } catch (err) {
       console.log(err)

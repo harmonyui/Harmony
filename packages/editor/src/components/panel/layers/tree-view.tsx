@@ -19,7 +19,7 @@ import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
 import {
   getComponentIdAndChildIndex,
-  getInBetweenElements,
+  getVscodeLink,
 } from '../../../utils/element-utils'
 import { ComponentType } from '../../attributes/types'
 import { getComponentType } from '../design/utils'
@@ -254,6 +254,7 @@ const TreeViewItem = ({
   onUnWrap,
 }: TreeViewItemProps) => {
   const hoveredComponent = useHarmonyStore((store) => store.hoveredComponent)
+  const localRootPath = useHarmonyStore((store) => store.localRootPath)
   const isGroup = useMemo(() => {
     if (hoveredComponent) {
       if (hoveredComponent.children.length > 0) {
@@ -302,6 +303,24 @@ const TreeViewItem = ({
       ),
     })
   }
+
+  if (localRootPath && hoveredComponent) {
+    items.push({
+      id: 'open-in-editor',
+      name: (
+        <TreeViewPopupLineItem
+          onClick={() => {
+            window
+              .open(getVscodeLink(hoveredComponent, localRootPath), '_blank')
+              ?.focus()
+          }}
+        >
+          Open in Editor
+        </TreeViewPopupLineItem>
+      ),
+    })
+  }
+
   return <>{items.map((item) => item.name)}</>
 }
 

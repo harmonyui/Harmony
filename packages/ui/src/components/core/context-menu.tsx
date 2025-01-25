@@ -63,7 +63,7 @@ const ContextMenuContent = React.forwardRef<
     <ContextMenuPrimitive.Content
       ref={ref}
       className={getClass(
-        'hw-z-[10000] hw-min-w-[8rem] hw-overflow-hidden hw-rounded-md hw-border hw-bg-white hw-p-1 hw-text-popover-foreground hw-shadow-md hw-animate-in hw-fade-in-80 data-[state=open]:hw-animate-in data-[state=closed]:hw-animate-out data-[state=closed]:hw-fade-out-0 data-[state=open]:hw-fade-in-0 data-[state=closed]:hw-zoom-out-95 data-[state=open]:hw-zoom-in-95 data-[side=bottom]:hw-slide-in-from-top-2 data-[side=left]:hw-slide-in-from-right-2 data-[side=right]:hw-slide-in-from-left-2 data-[side=top]:hw-slide-in-from-bottom-2',
+        'hw-z-[10000] hw-min-w-[8rem] hw-overflow-hidden hw-rounded-md hw-border hw-bg-white dark:hw-bg-black hw-p-1 hw-text-popover-foreground hw-shadow-md hw-animate-in hw-fade-in-80 data-[state=open]:hw-animate-in data-[state=closed]:hw-animate-out data-[state=closed]:hw-fade-out-0 data-[state=open]:hw-fade-in-0 data-[state=closed]:hw-zoom-out-95 data-[state=open]:hw-zoom-in-95 data-[side=bottom]:hw-slide-in-from-top-2 data-[side=left]:hw-slide-in-from-right-2 data-[side=right]:hw-slide-in-from-left-2 data-[side=top]:hw-slide-in-from-bottom-2',
         className,
       )}
       {...props}

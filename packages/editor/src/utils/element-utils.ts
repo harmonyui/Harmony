@@ -1,6 +1,7 @@
 import $ from 'jquery'
 import { capitalizeFirstLetter } from '@harmony/util/src/utils/common'
 import type { ComponentElement } from '../components/inspector/component-identifier'
+import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
 
 export const recurseElements = (
   element: HTMLElement,
@@ -81,7 +82,22 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
   componentId: string
   index: number
 } {
-  let componentId = component.dataset.harmonyId
+  return getComponentBaseId(component, 'harmonyId')
+}
+
+export function getComponentId(
+  component: HTMLElement | undefined,
+): string | undefined {
+  if (!component) return undefined
+
+  return getComponentIdAndChildIndex(component).componentId
+}
+
+export function getComponentBaseId(
+  component: HTMLElement,
+  idType: 'harmonyId' | 'harmonyComponentId' = 'harmonyId',
+) {
+  let componentId = component.dataset[idType]
   let index = 0
   let childIndex = Number(component.dataset.harmonyChildIndex)
 
@@ -93,7 +109,7 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
       }
       index = Array.from(element.children).indexOf(component)
       childIndex = Number(element.dataset.harmonyChildIndex)
-      componentId = element.dataset.harmonyId
+      componentId = element.dataset[idType]
     }
 
     if (!componentId || index < 0) {
@@ -106,12 +122,18 @@ export function getComponentIdAndChildIndex(component: HTMLElement): {
   return { childIndex, componentId, index }
 }
 
-export function getComponentId(
-  component: HTMLElement | undefined,
+export function getVscodeLink(
+  component: HTMLElement,
+  rootPath: string,
 ): string | undefined {
-  if (!component) return undefined
+  const componentId = getComponentBaseId(
+    component,
+    'harmonyComponentId',
+  ).componentId
+  if (!componentId) return undefined
 
-  return getComponentIdAndChildIndex(component).componentId
+  const { file, startLine } = getLocationsFromComponentId(componentId)[0]
+  return `vscode://file${rootPath}/${file}:${startLine}`
 }
 
 export const createComponentId = (element: HTMLElement): string => {
