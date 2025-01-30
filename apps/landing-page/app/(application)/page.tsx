@@ -76,18 +76,23 @@ export default function Home() {
           </div>
         </section>
         <div className='[--color:var(--color-one)] pointer-events-none relative -z-[2] mx-auto h-[50rem] overflow-hidden [mask-image:radial-gradient(ellipse_at_center_center,#000,transparent_50%)] my-[-18.8rem] before:absolute before:inset-0 before:h-full before:w-full before:opacity-40 before:[background-image:radial-gradient(circle_at_bottom_center,var(--color),transparent_70%)] after:absolute after:-left-1/2 after:top-1/2 after:aspect-[1/0.7] after:w-[200%] after:rounded-[50%] after:border-t after:border-[hsl(var(--border))] after:bg-background' />
-        <div className='flex max-w-screen-md mr-auto ml-auto p-0'>
-          <div className='flex justify-center items-start flex-col gap-y-6 gap-x-6 w-full border-l-0 border-r-0 border-t-0 border-b-0'>
-            <h2 className='text-4xl font-semibold tracking-[-0.9px] leading-10 mr-0 ml-0 mt-0 mb-0 border-l-0 border-r-0 border-t-0 border-b-0 text-black dark:text-white'>
+        <div className='flex mr-auto ml-auto max-w-screen-xl p-8'>
+          <div className='flex justify-center flex-col gap-y-6 gap-x-6 w-full border-l-0 border-r-0 border-t-0 border-b-0 items-start'>
+            <h2 className='text-4xl font-semibold tracking-[-0.9px] leading-10 mr-0 ml-0 mt-0 mb-0 border-l-0 border-r-0 border-t-0 border-b-0 text-black dark:text-white text-start'>
               Design directly inside your SaaS app.
             </h2>
-            <p className='text-4xl font-medium tracking-[-1.26px] leading-10 mr-0 ml-0 mt-0 mb-0 w-full border-l-0 border-r-0 border-t-0 border-b-0 opacity-70 text-black dark:text-white'>
+            <p className='text-4xl font-medium tracking-[-1.26px] leading-10 mr-0 ml-0 mt-0 mb-0 w-full border-l-0 border-r-0 border-t-0 border-b-0 opacity-70 text-black dark:text-white text-start'>
               Unlike other design tools that leverage a copy-and-paste approach,
               Harmony makes changes directly in your deployed application.
               Changes are then shipped straight to Github, freeing up precious
               developer time.
             </p>
-            <div className='flex items-start gap-y-4 gap-x-4 flex-wrap pt-8 w-full border-l-0 border-r-0 border-t-0 border-b-0'>
+            <div
+              className='flex items-start gap-y-4 gap-x-4 flex-wrap pt-8 w-full border-l-0 border-r-0 border-t-0 border-b-0 justify-center'
+              style={{
+                justifyContent: 'normal',
+              }}
+            >
               <div className='flex items-center gap-y-2 gap-x-2 pr-4 pl-4 h-10 border-l-0 border-r-0 border-t-0 border-b-0 rounded-tl-full rounded-tr-full rounded-bl-full rounded-br-full bg-[#f0f0f0]'>
                 <span className='text-base font-semibold flex items-center shrink-0 leading-4 border-l-0 border-r-0 border-t-0 border-b-0 text-[#292929]'>
                   <svg
