@@ -40,6 +40,7 @@ import { GlobalUpdatePopup } from './panel/global-change-popup'
 import { UploadImageProvider } from './image/image-provider'
 import { ComponentProvider } from './harmonycn/component-provider'
 import { useHotKeys } from '../hooks/hotkeys'
+import { useHotKeyOpenEditor } from '../hooks/open-editor'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -158,6 +159,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   })
 
   useHotKeys('T', onToggle)
+  useHotKeyOpenEditor()
 
   useEffect(() => {
     if (!isToggled) {

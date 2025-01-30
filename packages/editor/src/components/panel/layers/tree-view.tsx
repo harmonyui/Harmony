@@ -17,16 +17,14 @@ import type {
 } from '@harmony/util/src/updates/component'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
-import {
-  getComponentIdAndChildIndex,
-  getVscodeLink,
-} from '../../../utils/element-utils'
+import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
 import { ComponentType } from '../../attributes/types'
 import { getComponentType } from '../design/utils'
 import { useHarmonyStore } from '../../../hooks/state'
 import { useComponentMenu } from '../../harmonycn/component-provider'
 import { useUpdateComponent } from '../../harmonycn/update-component'
 import { generateComponentIdFromParent } from '@harmony/util/src/utils/component'
+import { useOpenEditor } from '../../../hooks/open-editor'
 
 export interface TransformNode extends Record<string, NonNullable<unknown>> {
   id: string
@@ -253,8 +251,10 @@ const TreeViewItem = ({
   onWrap,
   onUnWrap,
 }: TreeViewItemProps) => {
+  const { openEditor, isActive } = useOpenEditor()
+
   const hoveredComponent = useHarmonyStore((store) => store.hoveredComponent)
-  const localRootPath = useHarmonyStore((store) => store.localRootPath)
+
   const isGroup = useMemo(() => {
     if (hoveredComponent) {
       if (hoveredComponent.children.length > 0) {
@@ -304,17 +304,11 @@ const TreeViewItem = ({
     })
   }
 
-  if (localRootPath && hoveredComponent) {
+  if (isActive) {
     items.push({
       id: 'open-in-editor',
       name: (
-        <TreeViewPopupLineItem
-          onClick={() => {
-            window
-              .open(getVscodeLink(hoveredComponent, localRootPath), '_blank')
-              ?.focus()
-          }}
-        >
+        <TreeViewPopupLineItem onClick={openEditor}>
           Open in Editor
         </TreeViewPopupLineItem>
       ),
