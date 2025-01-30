@@ -76,23 +76,23 @@ export default function Home() {
           </div>
         </section>
         <div className='[--color:var(--color-one)] pointer-events-none relative -z-[2] mx-auto h-[50rem] overflow-hidden [mask-image:radial-gradient(ellipse_at_center_center,#000,transparent_50%)] my-[-18.8rem] before:absolute before:inset-0 before:h-full before:w-full before:opacity-40 before:[background-image:radial-gradient(circle_at_bottom_center,var(--color),transparent_70%)] after:absolute after:-left-1/2 after:top-1/2 after:aspect-[1/0.7] after:w-[200%] after:rounded-[50%] after:border-t after:border-[hsl(var(--border))] after:bg-background' />
-        <div className='flex mr-auto ml-auto max-w-screen-xl p-8'>
-          <div className='flex justify-center flex-col gap-y-6 gap-x-6 w-full border-l-0 border-r-0 border-t-0 border-b-0 items-start'>
-            <h2 className='text-4xl font-semibold tracking-[-0.9px] leading-10 mr-0 ml-0 mt-0 mb-0 border-l-0 border-r-0 border-t-0 border-b-0 text-black dark:text-white text-start'>
+        <div
+          className='flex mr-auto ml-auto max-w-screen-xl p-8 justify-center'
+          style={{
+            justifyContent: 'normal',
+          }}
+        >
+          <div className='flex justify-center flex-col gap-y-6 gap-x-6 w-full border-l-0 border-r-0 border-t-0 border-b-0 items-center max-w-none'>
+            <h2 className='tracking-[-0.9px] mr-0 ml-0 mt-0 mb-0 border-l-0 border-r-0 border-t-0 border-b-0 text-black dark:text-white text-6xl font-bold text-start'>
               Design directly inside your SaaS app.
             </h2>
-            <p className='text-4xl font-medium tracking-[-1.26px] leading-10 mr-0 ml-0 mt-0 mb-0 w-full border-l-0 border-r-0 border-t-0 border-b-0 opacity-70 text-black dark:text-white text-start'>
+            <p className='tracking-[-1.26px] mr-0 ml-0 mt-0 mb-0 w-full border-l-0 border-r-0 border-t-0 border-b-0 text-black dark:text-white font-normal text-xl opacity-100 text-center'>
               Unlike other design tools that leverage a copy-and-paste approach,
               Harmony makes changes directly in your deployed application.
               Changes are then shipped straight to Github, freeing up precious
               developer time.
             </p>
-            <div
-              className='flex items-start gap-y-4 gap-x-4 flex-wrap pt-8 w-full border-l-0 border-r-0 border-t-0 border-b-0 justify-center'
-              style={{
-                justifyContent: 'normal',
-              }}
-            >
+            <div className='flex gap-y-4 gap-x-4 flex-wrap w-full border-l-0 border-r-0 border-t-0 border-b-0 items-start p-0 justify-center'>
               <div className='flex items-center gap-y-2 gap-x-2 pr-4 pl-4 h-10 border-l-0 border-r-0 border-t-0 border-b-0 rounded-tl-full rounded-tr-full rounded-bl-full rounded-br-full bg-[#f0f0f0]'>
                 <span className='text-base font-semibold flex items-center shrink-0 leading-4 border-l-0 border-r-0 border-t-0 border-b-0 text-[#292929]'>
                   <svg
@@ -168,8 +168,8 @@ export default function Home() {
           </div>
         </div>
         <section id='pricing'>
-          <div className='mx-auto flex max-w-screen-xl flex-col gap-8 px-4 py-14 md:px-8'>
-            <div className='mx-auto max-w-5xl text-center'>
+          <div className='mx-auto flex max-w-screen-xl flex-col gap-8 px-4 py-14 md:px-8 mt-16'>
+            <div className='mx-auto text-center max-w-none'>
               <h4 className='text-xl font-bold tracking-tight text-black dark:text-white'>
                 Pricing
               </h4>
