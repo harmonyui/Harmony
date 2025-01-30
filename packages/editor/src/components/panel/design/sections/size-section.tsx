@@ -35,7 +35,7 @@ export const SizeSection: React.FunctionComponent = () => {
   const onOptionChange = (option: DropdownItem<CommonTools>) => {
     onAttributeChange({
       name: option.id,
-      value: getTokenValues(option.id)[0]?.value ?? '0px',
+      value: getTokenValues(option.id)[4]?.value ?? '100px',
     })
   }
   return (
