@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-interface -- ok*/
-
 import { useMemo } from 'react'
 import { useHarmonyStore } from '../../../hooks/state'
 import { useDesignPanels } from './register-panels'
@@ -25,7 +23,7 @@ export const ComponentAttributePanel: React.FunctionComponent<
   )
 
   return (
-    <div className='hw-flex hw-flex-col hw-max-w-[300px] hw-min-w-[258px] hw-space-y-4'>
+    <div className='flex flex-col max-w-[300px] min-w-[258px] space-y-4'>
       {currPanels.map((Panel, index) => (
         <Panel key={index} />
       ))}

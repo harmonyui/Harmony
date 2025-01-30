@@ -29,38 +29,38 @@ export default async function BlogPost({ params }: { params: Params }) {
   const post = (await getPost(slug)) || notFound()
 
   return (
-    <main className='hw-overflow-hidden'>
+    <main className='overflow-hidden'>
       <GradientBackground />
       <Container>
-        <Subheading className='hw-mt-32'>
+        <Subheading className='mt-32'>
           {dayjs(post.publishedAt).format('dddd, MMMM D, YYYY')}
         </Subheading>
-        <Heading as='h1' className='hw-mt-2'>
+        <Heading as='h1' className='mt-2'>
           {post.title}
         </Heading>
-        <div className='hw-mt-16 hw-grid hw-grid-cols-1 hw-gap-8 hw-pb-24 lg:hw-grid-cols-[15rem_1fr] xl:hw-grid-cols-[15rem_1fr_15rem]'>
-          <div className='hw-flex hw-flex-wrap hw-items-center hw-gap-8 max-lg:hw-justify-between lg:hw-flex-col lg:hw-items-start'>
+        <div className='mt-16 grid grid-cols-1 gap-8 pb-24 lg:grid-cols-[15rem_1fr] xl:grid-cols-[15rem_1fr_15rem]'>
+          <div className='flex flex-wrap items-center gap-8 max-lg:justify-between lg:flex-col lg:items-start'>
             {post.author && (
-              <div className='hw-flex hw-items-center hw-gap-3'>
+              <div className='flex items-center gap-3'>
                 {post.author.image && (
                   <img
                     alt=''
                     src={image(post.author.image).size(64, 64).url()}
-                    className='hw-aspect-square hw-size-6 hw-rounded-full hw-object-cover'
+                    className='aspect-square size-6 rounded-full object-cover'
                   />
                 )}
-                <div className='hw-text-sm/5 hw-text-gray-700 dark:hw-text-white'>
+                <div className='text-sm/5 text-gray-700 dark:text-white'>
                   {post.author.name}
                 </div>
               </div>
             )}
             {Array.isArray(post.categories) && (
-              <div className='hw-flex hw-flex-wrap hw-gap-2'>
+              <div className='flex flex-wrap gap-2'>
                 {post.categories.map((category) => (
                   <Link
                     key={category.slug}
                     href={`/blog?category=${category.slug}`}
-                    className='hw-rounded-full hw-border hw-border-dotted hw-border-gray-300 hw-bg-gray-50 hw-px-2 hw-text-sm/6 hw-font-medium hw-text-gray-500'
+                    className='rounded-full border border-dotted border-gray-300 bg-gray-50 px-2 text-sm/6 font-medium text-gray-500'
                   >
                     {category.title}
                   </Link>
@@ -68,13 +68,13 @@ export default async function BlogPost({ params }: { params: Params }) {
               </div>
             )}
           </div>
-          <div className='hw-text-gray-700'>
-            <div className='hw-max-w-2xl xl:hw-mx-auto'>
+          <div className='text-gray-700'>
+            <div className='max-w-2xl xl:mx-auto'>
               {post.mainImage && (
                 <img
                   alt={post.mainImage.alt || ''}
                   src={image(post.mainImage).size(2016, 1344).url()}
-                  className='hw-mb-10 hw-aspect-[3/2] hw-w-full hw-rounded-2xl hw-object-cover hw-shadow-xl'
+                  className='mb-10 aspect-[3/2] w-full rounded-2xl object-cover shadow-xl'
                 />
               )}
               {post.body && (
@@ -83,22 +83,22 @@ export default async function BlogPost({ params }: { params: Params }) {
                   components={{
                     block: {
                       normal: ({ children }) => (
-                        <p className='hw-my-10 hw-text-base/8 first:hw-mt-0 last:hw-mb-0 dark:hw-text-white'>
+                        <p className='my-10 text-base/8 first:mt-0 last:mb-0 dark:text-white'>
                           {children}
                         </p>
                       ),
                       h2: ({ children }) => (
-                        <h2 className='hw-mb-10 hw-mt-12 hw-text-2xl/8 hw-font-medium hw-tracking-tight hw-text-gray-950 dark:hw-text-white first:hw-mt-0 last:hw-mb-0'>
+                        <h2 className='mb-10 mt-12 text-2xl/8 font-medium tracking-tight text-gray-950 dark:text-white first:mt-0 last:mb-0'>
                           {children}
                         </h2>
                       ),
                       h3: ({ children }) => (
-                        <h3 className='hw-mb-10 hw-mt-12 hw-text-xl/8 hw-font-medium hw-tracking-tight hw-text-gray-950 dark:hw-text-white first:hw-mt-0 last:hw-mb-0'>
+                        <h3 className='mb-10 mt-12 text-xl/8 font-medium tracking-tight text-gray-950 dark:text-white first:mt-0 last:mb-0'>
                           {children}
                         </h3>
                       ),
                       blockquote: ({ children }) => (
-                        <blockquote className='hw-my-10 hw-border-l-2 hw-border-l-gray-300 hw-pl-6 hw-text-base/8 hw-text-gray-950 dark:hw-text-white first:hw-mt-0 last:hw-mb-0'>
+                        <blockquote className='my-10 border-l-2 border-l-gray-300 pl-6 text-base/8 text-gray-950 dark:text-white first:mt-0 last:mb-0'>
                           {children}
                         </blockquote>
                       ),
@@ -108,17 +108,17 @@ export default async function BlogPost({ params }: { params: Params }) {
                         <img
                           alt={value.alt || ''}
                           src={image(value).width(2000).url()}
-                          className='hw-w-full hw-rounded-2xl'
+                          className='w-full rounded-2xl'
                         />
                       ),
                       separator: ({ value }: { value: { style: string } }) => {
                         switch (value.style) {
                           case 'line':
                             return (
-                              <hr className='hw-my-8 hw-border-t hw-border-gray-200' />
+                              <hr className='my-8 border-t border-gray-200' />
                             )
                           case 'space':
-                            return <div className='hw-my-8' />
+                            return <div className='my-8' />
                           default:
                             return null
                         }
@@ -126,12 +126,12 @@ export default async function BlogPost({ params }: { params: Params }) {
                     },
                     list: {
                       bullet: ({ children }) => (
-                        <ul className='hw-list-disc hw-pl-4 hw-text-base/8 marker:hw-text-gray-400 dark:marker:hw-text-gray-200'>
+                        <ul className='list-disc pl-4 text-base/8 marker:text-gray-400 dark:marker:text-gray-200'>
                           {children}
                         </ul>
                       ),
                       number: ({ children }) => (
-                        <ol className='hw-list-decimal hw-pl-4 hw-text-base/8 marker:hw-text-gray-400 dark:marker:hw-text-gray-200'>
+                        <ol className='list-decimal pl-4 text-base/8 marker:text-gray-400 dark:marker:text-gray-200'>
                           {children}
                         </ol>
                       ),
@@ -139,14 +139,14 @@ export default async function BlogPost({ params }: { params: Params }) {
                     listItem: {
                       bullet: ({ children }) => {
                         return (
-                          <li className='hw-my-2 hw-pl-2 has-[br]:hw-mb-8 dark:hw-text-white'>
+                          <li className='my-2 pl-2 has-[br]:mb-8 dark:text-white'>
                             {children}
                           </li>
                         )
                       },
                       number: ({ children }) => {
                         return (
-                          <li className='hw-my-2 hw-pl-2 has-[br]:hw-mb-8 dark:hw-text-white'>
+                          <li className='my-2 pl-2 has-[br]:mb-8 dark:text-white'>
                             {children}
                           </li>
                         )
@@ -154,14 +154,14 @@ export default async function BlogPost({ params }: { params: Params }) {
                     },
                     marks: {
                       strong: ({ children }) => (
-                        <strong className='hw-font-semibold hw-text-gray-950 dark:hw-text-white'>
+                        <strong className='font-semibold text-gray-950 dark:text-white'>
                           {children}
                         </strong>
                       ),
                       code: ({ children }) => (
                         <>
                           <span aria-hidden>`</span>
-                          <code className='hw-text-[15px]/8 hw-font-semibold hw-text-gray-950 dark:hw-text-white'>
+                          <code className='text-[15px]/8 font-semibold text-gray-950 dark:text-white'>
                             {children}
                           </code>
                           <span aria-hidden>`</span>
@@ -177,7 +177,7 @@ export default async function BlogPost({ params }: { params: Params }) {
                         return (
                           <Link
                             href={value?.href ?? ''}
-                            className='hw-font-medium hw-text-gray-950 hw-underline hw-decoration-gray-400 hw-underline-offset-4 data-[hover]:hw-decoration-gray-600 dark:hw-text-white'
+                            className='font-medium text-gray-950 underline decoration-gray-400 underline-offset-4 data-[hover]:decoration-gray-600 dark:text-white'
                           >
                             {children}
                           </Link>
@@ -187,9 +187,9 @@ export default async function BlogPost({ params }: { params: Params }) {
                   }}
                 />
               )}
-              <div className='hw-mt-10'>
+              <div className='mt-10'>
                 <Button variant='outline' href='/blog'>
-                  <ChevronLeftIcon className='hw-size-4' />
+                  <ChevronLeftIcon className='size-4' />
                   Back to blog
                 </Button>
               </div>

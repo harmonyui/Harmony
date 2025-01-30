@@ -115,11 +115,11 @@ const Node = <T,>({
   return (
     <div
       className={getClass(
-        'hw-flex hw-gap-2 hw-text-xs hw-items-center hover:hw-border-[#9F6CFF] hw-border hw-border-transparent hw-px-2 hw-py-1 hw-overflow-hidden hw-whitespace-nowrap',
-        node.isSelected ? 'hw-bg-[#e0e7ff] hw-rounded-t-md' : '',
-        parentSelected ? 'hw-bg-[#eef2ff]' : '',
+        'flex gap-2 text-xs items-center hover:border-[#9F6CFF] border border-transparent px-2 py-1 overflow-hidden whitespace-nowrap',
+        node.isSelected ? 'bg-[#e0e7ff] rounded-t-md' : '',
+        parentSelected ? 'bg-[#eef2ff]' : '',
         !parentSelected && (!node.isSelected || !node.isOpen)
-          ? 'hw-rounded-md'
+          ? 'rounded-md'
           : '',
       )}
       style={style}
@@ -143,7 +143,7 @@ const NodeWithContextMenu = <T,>({
         <Node {...props} />
       </ContextMenuTrigger>
       <ContextMenuContent
-        className='hw-w-64'
+        className='w-64'
         container={document.getElementById('harmony-container') || undefined}
       >
         <ContextMenuContentChildren data={props.node.data} />
@@ -161,13 +161,13 @@ const NodeArrow = <T,>({ node, onClick }: NodeArrowProps<T>) => {
 
   return (
     <span
-      className='hw-cursor-pointer hover:hw-text-gray-600 hw-text-gray-400'
+      className='cursor-pointer hover:text-gray-600 text-gray-400'
       onClick={onClick}
     >
       {node.isOpen ? (
-        <ChevronDownIcon className='hw-h-3 hw-w-3' />
+        <ChevronDownIcon className='h-3 w-3' />
       ) : (
-        <ChevronRightIcon className='hw-h-3 hw-w-3' />
+        <ChevronRightIcon className='h-3 w-3' />
       )}
     </span>
   )

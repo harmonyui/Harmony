@@ -41,7 +41,7 @@ export const ConfirmModal: React.FunctionComponent<ConfirmModalProps> = ({
     <HarmonyModal show={show} onClose={onCancel}>
       <Header level={3}>{header}</Header>
       {message}
-      <div className='hw-flex hw-justify-end hw-gap-2'>
+      <div className='flex justify-end gap-2'>
         {buttons.map(({ mode, label, handler }) => (
           <Button key={label} mode={mode} onClick={handler}>
             {label}

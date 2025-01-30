@@ -26,7 +26,7 @@ export const PullRequestDisplay: React.FunctionComponent<{
 
   return (
     <ModalProvider>
-      <div className='hw-flex hw-flex-col hw-gap-4'>
+      <div className='flex flex-col gap-4'>
         {items.length ? (
           <>
             {items.map((item) => (
@@ -87,34 +87,34 @@ export const CreateNewPullRequestModal: React.FunctionComponent<
 
   return (
     <HarmonyModal show={show} onClose={onClose}>
-      <div className='hw-flex hw-gap-2 hw-items-center'>
-        <GitBranchIcon className='hw-w-6 hw-h-6' />
+      <div className='flex gap-2 items-center'>
+        <GitBranchIcon className='w-6 h-6' />
         <Header level={3}>Create a Pull Request</Header>
       </div>
-      <div className='hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500 dark:hw-text-gray-200'>
+      <div className='mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-200'>
         <p>
           Fill out the following fields to create a new pull request through
           Harmony
         </p>
       </div>
-      <div className='hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2'>
-        <Label className='sm:hw-col-span-full' label='Title:'>
+      <div className='grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 my-2'>
+        <Label className='sm:col-span-full' label='Title:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={pullRequest.title}
             onChange={changeProperty.formFunc('title', pullRequest)}
           />
         </Label>
-        <Label className='sm:hw-col-span-full' label='Body:'>
+        <Label className='sm:col-span-full' label='Body:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             type='textarea'
             value={pullRequest.body}
             onChange={changeProperty.formFunc('body', pullRequest)}
           />
         </Label>
         {branch === undefined ? (
-          <Label className='sm:hw-col-span-3' label='Branch:'>
+          <Label className='sm:col-span-3' label='Branch:'>
             <Dropdown
               items={branchItems}
               initialValue={branchId}
@@ -125,10 +125,10 @@ export const CreateNewPullRequestModal: React.FunctionComponent<
           </Label>
         ) : null}
       </div>
-      <div className='hw-flex'>
+      <div className='flex'>
         {branchItem !== undefined ? (
           <Button
-            className='hw-ml-auto'
+            className='ml-auto'
             onClick={onNewPullRequest}
             loading={loading}
           >
@@ -150,24 +150,24 @@ export const PullRequestLineItem: React.FunctionComponent<
   const [isOpen, setIsOpen] = useState(false)
 
   return (
-    <div className='hw-w-full hw-border hw-rounded-md'>
+    <div className='w-full border rounded-md'>
       <a
-        className='hw-flex hw-px-2 hw-justify-between hw-py-3 hw-w-full hw-rounded-md hw-bg-white hover:hw-bg-gray-50 hover:hw-cursor-pointer'
+        className='flex px-2 justify-between py-3 w-full rounded-md bg-white hover:bg-gray-50 hover:cursor-pointer'
         href={url}
         target='_blank'
       >
-        <div className='hw-flex hw-gap-4'>
-          <GitPullRequestIcon className='hw-w-6 hw-h-6' />
+        <div className='flex gap-4'>
+          <GitPullRequestIcon className='w-6 h-6' />
           <span>{title}</span>
         </div>
         <span>Created by Jacob Hansen</span>
       </a>
 
-      {/* {isOpen ? <div className="hw-flex hw-flex-col hw-gap-2 hw-border-t hw-py-2 hw-px-4">
-				<div className="hw-flex hw-flex-col hw-border-2 hw-h-32 hw-text-sm hw-divide-y hw-overflow-auto">
+      {/* {isOpen ? <div className="flex flex-col gap-2 border-t py-2 px-4">
+				<div className="flex flex-col border-2 h-32 text-sm divide-y overflow-auto">
 				</div>
-				<div className="hw-flex">
-					<Button as='a' className="hw-ml-auto" target="_blank" href={url}>Open Pull Request</Button>
+				<div className="flex">
+					<Button as='a' className="ml-auto" target="_blank" href={url}>Open Pull Request</Button>
 				</div>
 			</div> : null} */}
     </div>

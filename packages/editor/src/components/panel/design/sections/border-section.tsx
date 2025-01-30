@@ -22,7 +22,7 @@ import { DesignInput } from './components/design-input'
 export const BorderSection: DesignPanelSectionComponent = () => {
   return (
     <Section label='Border'>
-      <div className='hw-grid hw-grid-cols-3 hw-items-center hw-gap-2'>
+      <div className='grid grid-cols-3 items-center gap-2'>
         <RadiusSection />
         <StrokeSection />
         <ColorAttribute attribute='borderColor' />
@@ -45,16 +45,16 @@ const RadiusSection: React.FunctionComponent = () => {
   return (
     <>
       <Label label='Corners'>
-        <div className='hw-flex hw-gap-1 hw-items-center hw-col-span-2'>
+        <div className='flex gap-1 items-center col-span-2'>
           {isExpanded ? (
-            <div className='hw-col-span-2 hw-flex hw-gap-2 hw-items-center hw-flex-1'>
+            <div className='col-span-2 flex gap-2 items-center flex-1'>
               <TokenDropdown attribute='borderRadius' />
             </div>
           ) : (
             <>
-              <div className='hw-flex hw-gap-2 hw-items-center'>
+              <div className='flex gap-2 items-center'>
                 <DesignInput
-                  className='hw-w-full'
+                  className='w-full'
                   value={attrValue}
                   onChange={(value) =>
                     onAttributeChange({ name: 'borderRadius', value })
@@ -92,7 +92,7 @@ const StrokeSection: React.FunctionComponent = () => {
           items={[
             {
               value: 'expand',
-              children: <PaddingAllIcon className='hw-w-4 hw-h-4' />,
+              children: <PaddingAllIcon className='w-4 h-4' />,
             },
           ]}
           value={isExpanded ? 'expand' : ''}

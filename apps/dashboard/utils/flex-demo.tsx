@@ -192,55 +192,55 @@ style="${styleChild2}"></div>
 style="${styleChild3}"></div>
 </div>`
   return (
-    <div className='hw-flex hw-mt-4'>
-      <div className='hw-flex hw-flex-col'>
+    <div className='flex mt-4'>
+      <div className='flex flex-col'>
         <div
-          className='hw-flex hw-px-10 hw-w-[400px] hw-h-[400px] hw-space-x-1 hw-gap-2 '
+          className='flex px-10 w-[400px] h-[400px] space-x-1 gap-2 '
           ref={ref}
         >
-          {/* {[1, 2, 3].map((i) => <div key={i} className="hw-w-[50px] hw-h-[50px] hw-bg-primary"></div>)} */}
+          {/* {[1, 2, 3].map((i) => <div key={i} className="w-[50px] h-[50px] bg-primary"></div>)} */}
           <div
             ref={refChild1}
             className={getClass(
-              'hw-bg-primary hw-h-[50px]',
-              stretch ? '' : 'hw-w-[50px]',
+              'bg-primary h-[50px]',
+              stretch ? '' : 'w-[50px]',
             )}
           ></div>
           <div
             ref={refChild2}
             className={getClass(
-              'hw-bg-primary hw-h-[50px]',
-              stretch ? '' : 'hw-w-[50px]',
+              'bg-primary h-[50px]',
+              stretch ? '' : 'w-[50px]',
             )}
           ></div>
           <div
             ref={refChild3}
             className={getClass(
-              'hw-bg-primary hw-h-[50px]',
-              stretch ? '' : 'hw-w-[50px]',
+              'bg-primary h-[50px]',
+              stretch ? '' : 'w-[50px]',
             )}
           ></div>
-          {/* <div className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div> */}
-          {/* <div className={getClass('hw-bg-primary hw-h-[50px]', stretch ? '' : 'hw-w-[50px]')}></div> */}
+          {/* <div className={getClass('bg-primary h-[50px]', stretch ? '' : 'w-[50px]')}></div> */}
+          {/* <div className={getClass('bg-primary h-[50px]', stretch ? '' : 'w-[50px]')}></div> */}
         </div>
         {/* <Button onClick={() => setIsLooping(!isLooping)}>Try Me</Button> */}
       </div>
 
       <div>
-        <div className='hw-relative hw-overflow-hidden hw-shadow-xl hw-flex hw-bg-slate-800 hw-h-[31.625rem] hw-max-h-[60vh] sm:hw-max-h-[none] sm:hw-rounded-xl lg:hw-h-[34.6875rem] xl:hw-h-[31.625rem] dark:hw-bg-slate-900/70 dark:hw-backdrop-blur dark:hw-ring-1 dark:hw-ring-inset dark:hw-ring-white/10 !hw-h-auto hw-max-h-[none]'>
-          <div className='hw-relative hw-w-full hw-flex hw-flex-col'>
-            <div className='hw-flex-none hw-border-b hw-border-slate-500/30'>
-              <div className='hw-flex hw-items-center hw-h-8 hw-space-x-1.5 hw-px-3'>
-                <div className='hw-w-2.5 hw-h-2.5 hw-bg-slate-600 hw-rounded-full'></div>
-                <div className='hw-w-2.5 hw-h-2.5 hw-bg-slate-600 hw-rounded-full'></div>
-                <div className='hw-w-2.5 hw-h-2.5 hw-bg-slate-600 hw-rounded-full'></div>
+        <div className='relative overflow-hidden shadow-xl flex bg-slate-800 h-[31.625rem] max-h-[60vh] sm:max-h-[none] sm:rounded-xl lg:h-[34.6875rem] xl:h-[31.625rem] dark:bg-slate-900/70 dark:backdrop-blur dark:ring-1 dark:ring-inset dark:ring-white/10 !h-auto max-h-[none]'>
+          <div className='relative w-full flex flex-col'>
+            <div className='flex-none border-b border-slate-500/30'>
+              <div className='flex items-center h-8 space-x-1.5 px-3'>
+                <div className='w-2.5 h-2.5 bg-slate-600 rounded-full'></div>
+                <div className='w-2.5 h-2.5 bg-slate-600 rounded-full'></div>
+                <div className='w-2.5 h-2.5 bg-slate-600 rounded-full'></div>
               </div>
             </div>
-            <div className='hw-relative hw-min-h-0 hw-flex-auto hw-flex hw-flex-col'>
-              <div className='hw-w-full hw-flex-auto hw-flex hw-min-h-0 hw-overflow-auto'>
-                <div className='hw-w-full hw-relative hw-flex-auto'>
-                  <pre className='hw-flex hw-min-h-full hw-text-sm hw-leading-6'>
-                    <code className='hw-flex-auto hw-relative hw-block hw-text-slate-50 hw-pt-4 hw-pb-4 hw-px-4 hw-overflow-auto'>
+            <div className='relative min-h-0 flex-auto flex flex-col'>
+              <div className='w-full flex-auto flex min-h-0 overflow-auto'>
+                <div className='w-full relative flex-auto'>
+                  <pre className='flex min-h-full text-sm leading-6'>
+                    <code className='flex-auto relative block text-slate-50 pt-4 pb-4 px-4 overflow-auto'>
                       <SyntaxHighlighter
                         language='html'
                         style={atomDark}
@@ -292,28 +292,28 @@ style="${parentStyle}">
 </div>`
   return (
     <DragDemo code={code}>
-      <div className='hw-ml-[200px] hw-w-[400px]'>
-        <div className='hw-py-[50px] hw-w-[200px]' ref={parentRef}>
+      <div className='ml-[200px] w-[400px]'>
+        <div className='py-[50px] w-[200px]' ref={parentRef}>
           <div
             className={getClass(
-              'hw-h-[50px] hw-bg-primary hw-border',
-              stretch ? '' : 'hw-w-[50px]',
+              'h-[50px] bg-primary border',
+              stretch ? '' : 'w-[50px]',
             )}
             ref={child1Ref}
             id='child-1'
           ></div>
           <div
             className={getClass(
-              'hw-h-[50px] hw-bg-primary hw-border',
-              stretch ? '' : 'hw-w-[50px]',
+              'h-[50px] bg-primary border',
+              stretch ? '' : 'w-[50px]',
             )}
             ref={child2Ref}
             id='child-2'
           ></div>
           <div
             className={getClass(
-              'hw-h-[50px] hw-bg-primary hw-border',
-              stretch ? '' : 'hw-w-[50px]',
+              'h-[50px] bg-primary border',
+              stretch ? '' : 'w-[50px]',
             )}
             ref={child3Ref}
             id='child-3'
@@ -333,27 +333,27 @@ const DragDemo: React.FunctionComponent<DragDemoProps> = ({
   code,
 }) => {
   return (
-    <div className='hw-flex'>
-      <div className='hw-flex hw-flex-col'>
+    <div className='flex'>
+      <div className='flex flex-col'>
         {children}
         {/* <Button onClick={() => setIsLooping(!isLooping)}>Try Me</Button> */}
       </div>
 
       <div>
-        <div className='hw-relative hw-overflow-hidden hw-shadow-xl hw-flex hw-bg-slate-800 hw-h-[31.625rem] hw-max-h-[60vh] sm:hw-max-h-[none] sm:hw-rounded-xl lg:hw-h-[34.6875rem] xl:hw-h-[31.625rem] dark:hw-bg-slate-900/70 dark:hw-backdrop-blur dark:hw-ring-1 dark:hw-ring-inset dark:hw-ring-white/10 !hw-h-auto hw-max-h-[none]'>
-          <div className='hw-relative hw-w-full hw-flex hw-flex-col'>
-            <div className='hw-flex-none hw-border-b hw-border-slate-500/30'>
-              <div className='hw-flex hw-items-center hw-h-8 hw-space-x-1.5 hw-px-3'>
-                <div className='hw-w-2.5 hw-h-2.5 hw-bg-slate-600 hw-rounded-full'></div>
-                <div className='hw-w-2.5 hw-h-2.5 hw-bg-slate-600 hw-rounded-full'></div>
-                <div className='hw-w-2.5 hw-h-2.5 hw-bg-slate-600 hw-rounded-full'></div>
+        <div className='relative overflow-hidden shadow-xl flex bg-slate-800 h-[31.625rem] max-h-[60vh] sm:max-h-[none] sm:rounded-xl lg:h-[34.6875rem] xl:h-[31.625rem] dark:bg-slate-900/70 dark:backdrop-blur dark:ring-1 dark:ring-inset dark:ring-white/10 !h-auto max-h-[none]'>
+          <div className='relative w-full flex flex-col'>
+            <div className='flex-none border-b border-slate-500/30'>
+              <div className='flex items-center h-8 space-x-1.5 px-3'>
+                <div className='w-2.5 h-2.5 bg-slate-600 rounded-full'></div>
+                <div className='w-2.5 h-2.5 bg-slate-600 rounded-full'></div>
+                <div className='w-2.5 h-2.5 bg-slate-600 rounded-full'></div>
               </div>
             </div>
-            <div className='hw-relative hw-min-h-0 hw-flex-auto hw-flex hw-flex-col'>
-              <div className='hw-w-full hw-flex-auto hw-flex hw-min-h-0 hw-overflow-auto'>
-                <div className='hw-w-full hw-relative hw-flex-auto'>
-                  <pre className='hw-flex hw-min-h-full hw-text-sm hw-leading-6'>
-                    <code className='hw-flex-auto hw-relative hw-block hw-text-slate-50 hw-pt-4 hw-pb-4 hw-px-4 hw-overflow-auto'>
+            <div className='relative min-h-0 flex-auto flex flex-col'>
+              <div className='w-full flex-auto flex min-h-0 overflow-auto'>
+                <div className='w-full relative flex-auto'>
+                  <pre className='flex min-h-full text-sm leading-6'>
+                    <code className='flex-auto relative block text-slate-50 pt-4 pb-4 px-4 overflow-auto'>
                       <SyntaxHighlighter
                         language='html'
                         style={atomDark}
@@ -446,7 +446,7 @@ export const SnappingDemo = () => {
 
   return (
     <div>
-      <div className='hw-flex'>
+      <div className='flex'>
         {demos.map((demo) => (
           <Button
             key={demo}

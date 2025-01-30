@@ -23,12 +23,12 @@ export const Header = ({
   ...rest
 }: HeaderProps): React.JSX.Element => {
   const size: Record<Headers, string> = {
-    h1: 'hw-text-4xl',
-    h2: 'hw-text-3xl ',
-    h3: 'hw-text-xl',
+    h1: 'text-4xl',
+    h2: 'text-3xl ',
+    h3: 'text-xl',
     h4: 'text-m',
     h5: 'text-s',
-    h6: 'hw-text-xs',
+    h6: 'text-xs',
   }
   const headerMapping: Record<HeaderLevels, Headers> = {
     1: 'h1',
@@ -43,7 +43,7 @@ export const Header = ({
     <Component
       className={`${
         size[Component]
-      } hw-leading-9 hw-tracking-tight hw-text-gray-900 dark:hw-text-gray-200 ${
+      } leading-9 tracking-tight text-gray-900 dark:text-gray-200 ${
         className || ''
       }`}
       {...rest}

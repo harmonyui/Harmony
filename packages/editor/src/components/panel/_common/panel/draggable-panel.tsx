@@ -23,16 +23,16 @@ export const DraggablePanel: React.FunctionComponent<DraggablePanelProps> = ({
 
   return show ? (
     <div
-      className='hw-absolute hw-top-0 hw-left-0 hw-bg-gray-100 hw-rounded-lg hw-p-4 hw-shadow-md hw-z-[1000]'
+      className='absolute top-0 left-0 bg-gray-100 rounded-lg p-4 shadow-md z-[1000]'
       ref={(ref) => setParentRef(ref)}
     >
-      <div className='hw-flex hw-justify-between hw-items-center hw-mb-2'>
-        <div className='hw-text-base hw-font-bold'>{title}</div>
+      <div className='flex justify-between items-center mb-2'>
+        <div className='text-base font-bold'>{title}</div>
         <div {...dragHandleProps}>
-          <Dots6Icon className='hw-h-5 hw-w-5' />
+          <Dots6Icon className='h-5 w-5' />
         </div>
       </div>
-      <div className='hw-overflow-auto hw-max-h-[600px]'>{children}</div>
+      <div className='overflow-auto max-h-[600px]'>{children}</div>
     </div>
   ) : null
 }

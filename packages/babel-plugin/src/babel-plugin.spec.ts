@@ -262,9 +262,9 @@ export default function SummaryMetadata({ surveySummary }: SummaryMetadataProps)
                     <a
                         className={getClass(
                             item.current
-                                ? 'hw-text-[#11283B]'
-                                : 'hw-text-[#88939D] hover:hw-text-[#11283B]',
-                            'hw-group hw-flex hw-gap-x-3 hw-rounded-md hw-p-2 hw-text-lg hw-leading-6 hw-pl-12'
+                                ? 'text-[#11283B]'
+                                : 'text-[#88939D] hover:text-[#11283B]',
+                            'group flex gap-x-3 rounded-md p-2 text-lg leading-6 pl-12'
                         )}
                         href={item.href}
                     >

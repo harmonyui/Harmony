@@ -32,11 +32,11 @@ export const HarmonyPanel: React.FunctionComponent<
         <HarmonyPanelProvider>
           <ComponentAttributeProvider onChange={props.onAttributesChange}>
             <div
-              className='hw-fixed hw-h-full hw-w-full hw-z-[10000] hw-pointer-events-none hw-top-0'
+              className='fixed h-full w-full z-[10000] pointer-events-none top-0'
               id='harmony-overlay'
             >
-              <div className='hw-pointer-events-auto'>
-                <div className='hw-absolute hw-top-[52px] hw-bottom-0 hw-left-0'>
+              <div className='pointer-events-auto'>
+                <div className='absolute top-[52px] bottom-0 left-0'>
                   <SidePanel />
                 </div>
                 <HarmonyToolbar />

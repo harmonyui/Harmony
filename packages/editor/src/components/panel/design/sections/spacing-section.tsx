@@ -13,7 +13,7 @@ import { ButtonGroup } from './components/button-group'
 export const SpacingSection: DesignPanelSectionComponent = () => {
   return (
     <Section label='Spacing'>
-      <div className='hw-grid hw-grid-cols-3 hw-items-center hw-gap-2'>
+      <div className='grid grid-cols-3 items-center gap-2'>
         <PaddingSection />
         <MarginSection />
       </div>
@@ -43,7 +43,7 @@ const PaddingSection: React.FunctionComponent = () => {
           items={[
             {
               value: 'expand',
-              children: <PaddingAllIcon className='hw-w-4 hw-h-4' />,
+              children: <PaddingAllIcon className='w-4 h-4' />,
             },
           ]}
           value={isExpanded ? 'expand' : ''}
@@ -76,7 +76,7 @@ const MarginSection: React.FunctionComponent = () => {
           items={[
             {
               value: 'expand',
-              children: <PaddingAllIcon className='hw-w-4 hw-h-4' />,
+              children: <PaddingAllIcon className='w-4 h-4' />,
             },
           ]}
           value={isExpanded ? 'expand' : ''}

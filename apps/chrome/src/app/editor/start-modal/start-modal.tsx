@@ -13,16 +13,12 @@ export const StartModal: React.FunctionComponent<StartModalProps> = ({
   onSelectProject,
 }) => {
   return (
-    <HarmonyModal
-      show={isOpen}
-      onClose={onClose}
-      maxWidthClassName='hw-max-w-lg'
-    >
-      <div className='hw-flex hw-flex-col hw-justify-between hw-items-center hw-mb-4 hw-gap-6 hw-text-base'>
-        <div className='hw-w-52 hw-h-12'>
-          <img className='hw-w-full' src={`${EDITOR_URL}/Logo_navy.png`} />
+    <HarmonyModal show={isOpen} onClose={onClose} maxWidthClassName='max-w-lg'>
+      <div className='flex flex-col justify-between items-center mb-4 gap-6 text-base'>
+        <div className='w-52 h-12'>
+          <img className='w-full' src={`${EDITOR_URL}/Logo_navy.png`} />
         </div>
-        <div className='hw-w-full'>
+        <div className='w-full'>
           <PageSelector onOpenProject={onSelectProject} />
         </div>
       </div>

@@ -32,23 +32,23 @@ export const TypographySection: DesignPanelSectionComponent = () => {
 
   return (
     <Section label='Typography'>
-      <div className='hw-grid hw-grid-cols-6 hw-gap-2 hw-items-center'>
+      <div className='grid grid-cols-6 gap-2 items-center'>
         <FontDropdown />
         <FontWeightDropdown />
-        <TokenLinkInput className='hw-col-span-3' attribute='fontSize' />
-        <ColorAttribute className='hw-col-span-6' attribute='color' />
+        <TokenLinkInput className='col-span-3' attribute='fontSize' />
+        <ColorAttribute className='col-span-6' attribute='color' />
         <TextAlignSection />
         <TextTypeSection />
-        <Label className='hw-col-span-2' label='Line Height'>
+        <Label className='col-span-2' label='Line Height'>
           <DesignInput
-            className='hw-w-full hw-col-span-4'
+            className='w-full col-span-4'
             value={getAttribute('lineHeight')}
             onChange={onChange('lineHeight')}
           />
         </Label>
-        <Label className='hw-col-span-2' label='Letter Spacing'>
+        <Label className='col-span-2' label='Letter Spacing'>
           <DesignInput
-            className='hw-w-full hw-col-span-4'
+            className='w-full col-span-4'
             value={spacing === 'normal' ? '0px' : spacing}
             onChange={onChange('letterSpacing')}
           />
@@ -75,7 +75,7 @@ const FontDropdown: React.FunctionComponent = () => {
 
   return (
     <DesignDropdown
-      className='hw-col-span-6 hw-w-full'
+      className='col-span-6 w-full'
       items={items}
       initialValue={getAttribute('font')}
       onChange={(value) => onAttributeChange({ name: 'font', value: value.id })}
@@ -85,32 +85,30 @@ const FontDropdown: React.FunctionComponent = () => {
 }
 
 const FontWeightDropdown: React.FunctionComponent = () => {
-  return (
-    <TokenDropdown className='hw-col-span-3 hw-w-full' attribute='fontWeight' />
-  )
+  return <TokenDropdown className='col-span-3 w-full' attribute='fontWeight' />
 }
 
 const TextAlignSection: React.FunctionComponent = () => {
   return (
     <AttributeButtonGroup
-      className='hw-col-span-4'
+      className='col-span-4'
       attribute='textAlign'
       items={[
         {
           value: 'left',
-          children: <TextAlignLeftIcon className='hw-h-4 hw-w-4' />,
+          children: <TextAlignLeftIcon className='h-4 w-4' />,
         },
         {
           value: 'center',
-          children: <TextAlignCenterIcon className='hw-h-4 hw-w-4' />,
+          children: <TextAlignCenterIcon className='h-4 w-4' />,
         },
         {
           value: 'right',
-          children: <TextAlignRightIcon className='hw-h-4 hw-w-4' />,
+          children: <TextAlignRightIcon className='h-4 w-4' />,
         },
         {
           value: 'justify',
-          children: <TextAlignJustifyIcon className='hw-h-4 hw-w-4' />,
+          children: <TextAlignJustifyIcon className='h-4 w-4' />,
         },
       ]}
     />
@@ -129,7 +127,7 @@ const TextTypeSection: React.FunctionComponent = () => {
   )
 
   return (
-    <div className='hw-flex hw-gap-1 hw-col-span-2'>
+    <div className='flex gap-1 col-span-2'>
       <ButtonGroupButton
         show={isBold}
         onClick={() =>
@@ -139,7 +137,7 @@ const TextTypeSection: React.FunctionComponent = () => {
           })
         }
       >
-        <BoldIcon className='hw-w-4 hw-h-4' />
+        <BoldIcon className='w-4 h-4' />
       </ButtonGroupButton>
       <ButtonGroupButton
         show={textDecorationLine === 'underline'}
@@ -150,7 +148,7 @@ const TextTypeSection: React.FunctionComponent = () => {
           })
         }
       >
-        <UnderlineIcon className='hw-w-4 hw-h-4' />
+        <UnderlineIcon className='w-4 h-4' />
       </ButtonGroupButton>
       <ButtonGroupButton
         show={textDecorationLine === 'line-through'}
@@ -162,7 +160,7 @@ const TextTypeSection: React.FunctionComponent = () => {
           })
         }
       >
-        <StrikeThroughIcon className='hw-w-4 hw-h-4' />
+        <StrikeThroughIcon className='w-4 h-4' />
       </ButtonGroupButton>
     </div>
   )

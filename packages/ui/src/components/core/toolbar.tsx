@@ -24,7 +24,7 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = ({
   ...props
 }) => {
   return (
-    <div className='hw-absolute hw-bottom-2 hw-left-1/2 -hw-translate-x-1/2 hw-z-[999]'>
+    <div className='absolute bottom-2 left-1/2 -translate-x-1/2 z-[999]'>
       <ToolbarContent {...props} />
     </div>
   )
@@ -32,7 +32,7 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = ({
 
 const ToolbarContent: React.FunctionComponent<ToolbarProps> = ({ items }) => {
   return (
-    <div className='hw-flex hw-gap-2 hw-bg-white hw-rounded-lg hw-p-1'>
+    <div className='flex gap-2 bg-white rounded-lg p-1'>
       {items.map((item, index) => (
         <ToolbarItem key={index} {...item} />
       ))}
@@ -57,20 +57,20 @@ const ToolbarItem: React.FunctionComponent<ToolbarItem> = ({
     <>
       <Button
         className={getClass(
-          'hw-group hw-flex hw-items-center hw-justify-center hw-w-12 hw-h-10 !hw-rounded-lg hover:hw-bg-[#E5E7EB]',
-          active ? 'hw-bg-[#E5E7EB]' : '',
+          'group flex items-center justify-center w-12 h-10 !rounded-lg hover:bg-[#E5E7EB]',
+          active ? 'bg-[#E5E7EB]' : '',
         )}
         onClick={() => (onClick ? onClick() : onClickDefault())}
         mode={mode}
         loading={loading}
         disabled={disabled}
       >
-        <div className='hw-block group-hover:hw-hidden hw-h-5 hw-w-5'>
-          <Icon className='hw-w-full hw-h-full' />
+        <div className='block group-hover:hidden h-5 w-5'>
+          <Icon className='w-full h-full' />
         </div>
-        <div className='hw-hidden group-hover:hw-flex hw-flex-col hw-items-center hw-h-6 hw-w-6 hw-gap-1'>
-          <span className='hw-text-[8px] hw-leading-[7px]'>{label}</span>
-          <Icon className='hw-h-4 hw-w-4' />
+        <div className='hidden group-hover:flex flex-col items-center h-6 w-6 gap-1'>
+          <span className='text-[8px] leading-[7px]'>{label}</span>
+          <Icon className='h-4 w-4' />
         </div>
       </Button>
       <Alert label={info} setLabel={setInfo} type='info' />

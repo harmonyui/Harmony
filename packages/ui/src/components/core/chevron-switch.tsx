@@ -18,7 +18,7 @@ export const ChevronSwitch: React.FunctionComponent<ChevronSwitchProps> = ({
     <button
       className={getClass(
         className,
-        'hw-flex hw-items-center hover:hw-bg-gray-200 dark:hw-text-white dark:hover:hw-bg-gray-800 hw-rounded-md hw-px-2 hw-py-1 hw-font-semibold',
+        'flex items-center hover:bg-gray-200 dark:text-white dark:hover:bg-gray-800 rounded-md px-2 py-1 font-semibold',
       )}
       onClick={() => {
         onChange(!value)
@@ -26,7 +26,7 @@ export const ChevronSwitch: React.FunctionComponent<ChevronSwitchProps> = ({
       type='button'
     >
       {label}
-      <Icon className='hw-w-3 hw-h-3 hw-ml-1' />
+      <Icon className='w-3 h-3 ml-1' />
     </button>
   )
 }

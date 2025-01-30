@@ -35,7 +35,7 @@ export function HarmonyProviderFunc(
   const container = (
     <Container
       harmonyContainer={harmonyContainer}
-      className={getClass(document.body.className, 'hw-select-none')}
+      className={getClass(document.body.className, 'select-none')}
     />
   ) //document.createElement('body');
   const root = createRoot(harmonyContainer)

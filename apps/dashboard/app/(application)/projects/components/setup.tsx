@@ -10,12 +10,12 @@ export const ProjectSetUp: React.FunctionComponent = () => {
   }
   return (
     <>
-      <div className='dark:hw-text-white'>
+      <div className='dark:text-white'>
         {' '}
         No Repositories. Please finish setting up here:
       </div>
 
-      <Button className='hw-w-fit hw-ml-auto hw-mt-2' onClick={onClick}>
+      <Button className='w-fit ml-auto mt-2' onClick={onClick}>
         Continue
       </Button>
     </>

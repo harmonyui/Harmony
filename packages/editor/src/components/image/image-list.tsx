@@ -19,8 +19,8 @@ export const ImageList: React.FunctionComponent<{
   return (
     <div
       className={getClass(
-        'hw-grid hw-gap-x-2 hw-gap-y-4 hw-overflow-auto hw-max-h-[480px]',
-        size === 'sm' ? 'hw-grid-cols-3 ' : 'hw-grid-cols-6',
+        'grid gap-x-2 gap-y-4 overflow-auto max-h-[480px]',
+        size === 'sm' ? 'grid-cols-3 ' : 'grid-cols-6',
       )}
     >
       {imageTags.map((image) => (
@@ -54,10 +54,10 @@ const CardContainer = forwardRef<HTMLDivElement, CardContainerProps>(
     return (
       <div
         className={getClass(
-          'hw-col-span-1 hover:hw-opacity-75 hw-cursor-pointer hw-border hw-rounded-md hw-bg-white',
+          'col-span-1 hover:opacity-75 cursor-pointer border rounded-md bg-white',
           selected
-            ? 'hw-border-primary'
-            : 'hover:hw-border-gray-300  hw-border-transparent',
+            ? 'border-primary'
+            : 'hover:border-gray-300  border-transparent',
           className,
         )}
         onClick={onClick}
@@ -81,7 +81,7 @@ const ImageCard: React.FunctionComponent<ImageCardProps> = ({
 }) => {
   return (
     <CardContainer onClick={onClick} selected={selected}>
-      <img className='hw-w-full hw-h-full hw-rounded-md' src={image} />
+      <img className='w-full h-full rounded-md' src={image} />
     </CardContainer>
   )
 }
@@ -105,7 +105,7 @@ const SVGCard: React.FunctionComponent<SVGCardProps> = ({
 
   return (
     <CardContainer
-      className='hw-flex hw-items-center hw-justify-center'
+      className='flex items-center justify-center'
       onClick={onClick}
       selected={selected}
       ref={ref}

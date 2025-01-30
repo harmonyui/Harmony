@@ -19,10 +19,10 @@ export const CopyText: React.FunctionComponent<CopyTextProps> = ({
   return (
     <div
       className={getClass(
-        'hw-rounded hw-h-6 hw-leading-6 hw-cursor-pointer hw-px-1 hw-inline-block hw-transition hw-whitespace-nowrap hw-overflow-hidden hw-text-ellipsis',
+        'rounded h-6 leading-6 cursor-pointer px-1 inline-block transition whitespace-nowrap overflow-hidden text-ellipsis',
         copied
-          ? 'hw-text-white hw-bg-primary'
-          : 'hw-text-teal-900 hw-bg-gray-200 hover:hw-bg-gray-300',
+          ? 'text-white bg-primary'
+          : 'text-teal-900 bg-gray-200 hover:bg-gray-300',
       )}
       onClick={() => {
         void navigator.clipboard.writeText(text)
@@ -30,7 +30,7 @@ export const CopyText: React.FunctionComponent<CopyTextProps> = ({
         setCopiedText(text)
       }}
     >
-      <div className='hw-flex hw-items-center'>
+      <div className='flex items-center'>
         <svg
           fill='none'
           stroke='currentColor'
@@ -38,7 +38,7 @@ export const CopyText: React.FunctionComponent<CopyTextProps> = ({
           strokeLinejoin='round'
           strokeWidth='2'
           viewBox='0 0 24 24'
-          className='hw-w-5 hw-h-5 hw-mr-1'
+          className='w-5 h-5 mr-1'
         >
           <path
             d={

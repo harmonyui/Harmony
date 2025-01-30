@@ -70,7 +70,7 @@ export const PropertySection: DesignPanelSectionComponent = () => {
 
   return (
     <Section label='Properties'>
-      <div className='hw-grid hw-grid-cols-3 hw-items-center hw-gap-2'>
+      <div className='grid grid-cols-3 items-center gap-2'>
         {props.map((prop) => (
           <Label key={prop.name} label={translatePropertyName(prop.name)}>
             <PropertyInput

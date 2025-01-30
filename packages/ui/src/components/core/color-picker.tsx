@@ -23,13 +23,13 @@ function ColorSwatch<T extends Color | HexColor>(props: ColorSwatchProps<T>) {
   return (
     <div
       role='img'
-      className='hw-inline-block hw-rounded-sm hw-relative hw-w-5 hw-h-5 hw-overflow-hidden  hw-border hw-border-gray-400'
+      className='inline-block rounded-sm relative w-5 h-5 overflow-hidden  border border-gray-400'
       aria-label={valueString}
       {...otherProps}
     >
-      <div className='hw-absolute hw-w-full hw-h-full hw-bg-white' />
+      <div className='absolute w-full h-full bg-white' />
       <div
-        className='hw-absolute hw-w-full hw-h-full'
+        className='absolute w-full h-full'
         style={{
           backgroundColor: valueString,
         }}

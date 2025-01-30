@@ -6,7 +6,7 @@ export const DesignInput: typeof InputBlur = (props) => {
     <InputBlur
       {...props}
       className={getClass(
-        '!hw-border-0 !hw-shadow-none hw-bg-gray-100 hw-h-[30px] hw-text-right hw-text-xs',
+        '!border-0 !shadow-none bg-gray-100 h-[30px] text-right text-xs',
         props.className,
       )}
     />

@@ -61,7 +61,7 @@ export const GlobalUpdatePopup: React.FunctionComponent<
         onApplyGlobal(undefined)
       }}
     >
-      <div className='hw-flex hw-justify-between hw-items-center hw-gap-4 hw-mx-4'>
+      <div className='flex justify-between items-center gap-4 mx-4'>
         <div>You have unlinked this property</div>
         <Button onClick={handleUndo}>Undo</Button>
         <Button onClick={handleApplyAll}>Apply All</Button>

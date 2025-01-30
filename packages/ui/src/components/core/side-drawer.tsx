@@ -14,13 +14,13 @@ export const SideDrawer: React.FunctionComponent<SideDrawerProps> = ({
 }) => {
   return isOpen
     ? createPortal(
-        <div className='hw-fixed hw-inset-0 hw-bg-black hw-bg-opacity-50 hw-z-50'>
-          <div className='hw-fixed hw-flex hw-flex-col hw-inset-y-0 hw-left-0 hw-w-64 hw-bg-white hw-shadow hw-z-50'>
-            <div className='hw-flex hw-justify-between hw-items-center hw-p-4 hw-border-b hw-border-gray-200'>
+        <div className='fixed inset-0 bg-black bg-opacity-50 z-50'>
+          <div className='fixed flex flex-col inset-y-0 left-0 w-64 bg-white shadow z-50'>
+            <div className='flex justify-between items-center p-4 border-b border-gray-200'>
               <div>{header}</div>
               <button onClick={onClose}>Close</button>
             </div>
-            <div className='hw-p-4 hw-h-full'>{children}</div>
+            <div className='p-4 h-full'>{children}</div>
           </div>
         </div>,
         document.getElementById('harmony-container') || document.body,

@@ -6,10 +6,10 @@ export const CreateOrSelectPage: StartPageComponent = ({
   onOpenProject,
 }) => {
   return (
-    <div className='hw-flex hw-flex-col hw-gap-2 hw-items-center'>
+    <div className='flex flex-col gap-2 items-center'>
       <Button onClick={() => setPage('createProject')}>Create Project</Button>
       <span>or</span>
-      <div className='hw-flex hw-gap-2'>
+      <div className='flex gap-2'>
         <Button onClick={() => setPage('selectProject')}>Select Project</Button>
         <Button onClick={() => onOpenProject('local')} mode='secondary'>
           Local Project

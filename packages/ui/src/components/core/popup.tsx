@@ -26,12 +26,12 @@ export const Popup: React.FunctionComponent<PopupProps> = ({
 
   return createPortal(
     show ? (
-      <div className='hw-fixed hw-bottom-[40px] hw-left-0 hw-right-0 hw-z-[100] hw-h-fit'>
+      <div className='fixed bottom-[40px] left-0 right-0 z-[100] h-fit'>
         <ClosableContent
-          className='hw-min-w-[400px] hw-w-fit hw-mx-auto hw-fill-white'
+          className='min-w-[400px] w-fit mx-auto fill-white'
           xMarkClassName={getClass(
-            type === 'base' ? '' : 'hw-fill-white',
-            'hw-h-2 hw-w-2 hw-mr-1 -hw-mt-[14px]',
+            type === 'base' ? '' : 'fill-white',
+            'h-2 w-2 mr-1 -mt-[14px]',
           )}
           onClose={onClose}
         >
@@ -57,19 +57,16 @@ export const InfoBox: React.FunctionComponent<InfoBoxProps> = ({
   type = 'base',
 }) => {
   const colors = {
-    danger: 'hw-bg-[#FF6565] hw-text-white',
-    info: 'hw-bg-[#FFE9BE] hw-text-[#11283B]',
-    base: 'hw-bg-white hw-text-gray-900',
+    danger: 'bg-[#FF6565] text-white',
+    info: 'bg-[#FFE9BE] text-[#11283B]',
+    base: 'bg-white text-gray-900',
   }
   const color = colors[type]
 
   return (
     <div
       style={{ opacity: `${(transparency || 1) * 100}%` }}
-      className={getClass(
-        'hw-py-2 hw-px-4 hw-mb-4 hw-text-sm hw-rounded-lg',
-        color,
-      )}
+      className={getClass('py-2 px-4 mb-4 text-sm rounded-lg', color)}
       role='alert'
     >
       {children}

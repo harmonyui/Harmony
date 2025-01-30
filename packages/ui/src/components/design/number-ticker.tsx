@@ -48,7 +48,7 @@ export function NumberTicker({
   return (
     <span
       className={getClass(
-        'hw-inline-block hw-tabular-nums hw-text-white dark:hw-text-black hw-tracking-wider',
+        'inline-block tabular-nums text-white dark:text-black tracking-wider',
         className,
       )}
       ref={ref}

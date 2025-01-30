@@ -52,15 +52,15 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
       {label ? <Label label={label}>{null}</Label> : null}
       <div
         className={getClass(
-          'hw-flex hw-gap-2 hw-items-center',
-          spanFull ? 'hw-col-span-2' : '',
+          'flex gap-2 items-center',
+          spanFull ? 'col-span-2' : '',
         )}
       >
         {isLinkExpanded ? (
           <TokenDropdown attribute={attribute} valueOverride={attrValue} />
         ) : (
           <DesignInput
-            className='hw-w-full'
+            className='w-full'
             value={attrValue}
             onChange={(value) => onAttributeChange({ name: attribute, value })}
           />
@@ -74,7 +74,7 @@ export const AttributeExpand: React.FunctionComponent<AttributeExpandProps> = ({
         ) : null}
       </div>
       {isExpanded ? (
-        <div className='hw-grid hw-grid-cols-2 hw-gap-2 hw-col-span-3'>
+        <div className='grid grid-cols-2 gap-2 col-span-3'>
           {values.map((value, index) => {
             const Icon = icons ? icons[index] : null
             return (
@@ -100,10 +100,10 @@ const AttributedExpanded: React.FunctionComponent<AttributeExpandedProps> = ({
   expandedAttribute,
 }) => {
   return (
-    <div className='hw-col-span-1 hw-flex hw-gap-2 hw-items-center'>
-      {Icon ? <Icon className='hw-h-4 hw-w-4' /> : null}
+    <div className='col-span-1 flex gap-2 items-center'>
+      {Icon ? <Icon className='h-4 w-4' /> : null}
       <TokenLinkInput
-        className='hw-w-full'
+        className='w-full'
         attribute={expandedAttribute}
         hideButton
       />

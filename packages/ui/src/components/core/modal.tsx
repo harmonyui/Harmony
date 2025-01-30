@@ -67,7 +67,7 @@ export const ModalProvider: React.FunctionComponent<
     >
       {children}
       {modals.length > 0 ? (
-        <div className='hw-fixed hw-top-0 hw-left-0 hw-w-full hw-z-50 hw-bg-gray-500/90 hw-h-screen hw-overflow-auto'>
+        <div className='fixed top-0 left-0 w-full z-50 bg-gray-500/90 h-screen overflow-auto'>
           {modals}
         </div>
       ) : null}
@@ -91,7 +91,7 @@ export const ModalPortal: React.FunctionComponent<ModalPortalProps> = ({
     <>
       {createPortal(
         show ? (
-          <div className='hw-fixed hw-top-0 hw-left-0 hw-w-full hw-bg-gray-500/90 hw-h-screen hw-overflow-auto hw-z-[10000]'>
+          <div className='fixed top-0 left-0 w-full bg-gray-500/90 h-screen overflow-auto z-[10000]'>
             {children}
           </div>
         ) : null,
@@ -138,16 +138,16 @@ export const HarmonyModal: React.FunctionComponent<HarmonyModalProps> = ({
           : undefined
       }
     >
-      <div className='hw-flex hw-justify-center hw-items-center hw-h-full hw-w-full'>
+      <div className='flex justify-center items-center h-full w-full'>
         <ClosableContent
           className={getClass(
-            'hw-mx-auto hw-w-full hw-max-h-full',
-            maxWidthClassName || 'hw-max-w-3xl',
+            'mx-auto w-full max-h-full',
+            maxWidthClassName || 'max-w-3xl',
           )}
           onClose={onClose}
         >
-          <div className='hw-bg-white dark:hw-bg-gray-900 hw-shadow sm:hw-rounded-lg'>
-            <div className='hw-px-4 hw-py-5 sm:hw-p-6'>{children}</div>
+          <div className='bg-white dark:bg-gray-900 shadow sm:rounded-lg'>
+            <div className='px-4 py-5 sm:p-6'>{children}</div>
           </div>
         </ClosableContent>
       </div>

@@ -47,20 +47,20 @@ export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
 
   return (
     <ModalProvider>
-      <div className='hw-flex hw-flex-col hw-gap-4 hw-h-full'>
-        <div className='hw-flex hw-items-center'>
+      <div className='flex flex-col gap-4 h-full'>
+        <div className='flex items-center'>
           <Header>My Projects</Header>
           <Button
-            className='hw-w-fit hw-ml-auto'
+            className='w-fit ml-auto'
             onClick={() => {
               setShowNewProject(true)
             }}
           >
-            <PlusIcon className='hw-ml-1 hw-h-5 hw-w-5 hw-mr-1' /> Add Project
+            <PlusIcon className='ml-1 h-5 w-5 mr-1' /> Add Project
           </Button>
         </div>
         {projects.length ? (
-          <div className='hw-flex hw-gap-16 hw-flex-wrap hw-overflow-auto hw-mt-4'>
+          <div className='flex gap-16 flex-wrap overflow-auto mt-4'>
             {projects.map((item) => (
               <ProjectLineItem
                 key={item.name}
@@ -76,7 +76,7 @@ export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
             ))}
           </div>
         ) : (
-          <div className='hw-h-full hw-items-center hw-justify-center hw-flex hw-text-lg hw-mb-48 hw-text-[#88939D]'>
+          <div className='h-full items-center justify-center flex text-lg mb-48 text-[#88939D]'>
             No Projects Yet!
           </div>
         )}
@@ -138,34 +138,34 @@ const CreateNewProjectModal: React.FunctionComponent<
   }
   return (
     <HarmonyModal show={show} onClose={onClose}>
-      <div className='hw-flex hw-gap-2 hw-items-center'>
-        <GitBranchIcon className='hw-w-6 hw-h-6 dark:hw-text-white' />
+      <div className='flex gap-2 items-center'>
+        <GitBranchIcon className='w-6 h-6 dark:text-white' />
         <Header level={3}>Create a Project</Header>
       </div>
-      <div className='hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500 dark:hw-text-gray-300'>
+      <div className='mt-2 max-w-xl text-sm text-gray-500 dark:text-gray-300'>
         <p>
           Fill out the following fields to create a new Project through Harmony
         </p>
       </div>
-      <div className='hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2'>
-        <Label className='sm:hw-col-span-full' label='Project Label:'>
+      <div className='grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 my-2'>
+        <Label className='sm:col-span-full' label='Project Label:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={project.label}
             onChange={changeProperty.formFunc('label', project)}
           />
         </Label>
-        <Label className='sm:hw-col-span-full' label='Url:'>
+        <Label className='sm:col-span-full' label='Url:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={project.url}
             onChange={changeProperty.formFunc('url', project)}
           />
         </Label>
       </div>
-      {error ? <p className='hw-text-red-400 hw-text-sm'>{error}</p> : null}
-      <div className='hw-flex'>
-        <Button className='hw-ml-auto' onClick={onNewProject} loading={loading}>
+      {error ? <p className='text-red-400 text-sm'>{error}</p> : null}
+      <div className='flex'>
+        <Button className='ml-auto' onClick={onNewProject} loading={loading}>
           Open in Harmony
         </Button>
       </div>
@@ -219,21 +219,21 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
 
   return (
     <>
-      <div className='hw-w-[250px] hw-border dark:hw-border-gray-700 hw-p-2 hw-rounded-md'>
-        {/* <h4 className="hw-mt-10">Hello there</h4>
-			<p className="hw-mt-5">Thank you please</p> */}
-        <button className='hw-rounded-md hw-overflow-auto hw-block'>
+      <div className='w-[250px] border dark:border-gray-700 p-2 rounded-md'>
+        {/* <h4 className="mt-10">Hello there</h4>
+			<p className="mt-5">Thank you please</p> */}
+        <button className='rounded-md overflow-auto block'>
           <img
-            className='hw-w-[250px] hw-h-[250px] hw-object-cover'
+            className='w-[250px] h-[250px] object-cover'
             src={thumbnail}
             onClick={onOpenHarmony}
           />
         </button>
-        <div className='hw-mt-2'>
-          <div className='hw-flex hw-justify-between hw-items-center'>
-            <span className='dark:hw-text-white'>{item.label}</span>
+        <div className='mt-2'>
+          <div className='flex justify-between items-center'>
+            <span className='dark:text-white'>{item.label}</span>
             <DropdownIcon
-              className='hover:hw-bg-gray-200 hw-rounded-full hw-h-5'
+              className='hover:bg-gray-200 rounded-full h-5'
               icon={EllipsisHorizontalIcon}
               items={moreItems}
               mode='none'
@@ -242,7 +242,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
               }}
             />
           </div>
-          <div className='hw-text-xs hw-text-gray-400 hw-text-start'>
+          <div className='text-xs text-gray-400 text-start'>
             Last updated {displayElapsedTime(item.lastUpdated)}
           </div>
         </div>

@@ -20,12 +20,12 @@ const links = [
 
 function DesktopNav() {
   return (
-    <nav className='hw-relative hw-hidden lg:hw-flex'>
+    <nav className='relative hidden lg:flex'>
       {links.map(({ href, label }) => (
-        <PlusGridItem key={href} className='hw-relative hw-flex'>
+        <PlusGridItem key={href} className='relative flex'>
           <Link
             href={href}
-            className='hw-flex hw-items-center hw-px-4 hw-py-3 hw-text-base hw-font-medium hw-text-gray-950 hw-bg-blend-multiply data-[hover]:hw-bg-black/[2.5%]'
+            className='flex items-center px-4 py-3 text-base font-medium text-gray-950 bg-blend-multiply data-[hover]:bg-black/[2.5%]'
           >
             {label}
           </Link>
@@ -38,18 +38,18 @@ function DesktopNav() {
 function MobileNavButton() {
   return (
     <DisclosureButton
-      className='hw-flex hw-size-12 hw-items-center hw-justify-center hw-self-center hw-rounded-lg data-[hover]:hw-bg-black/5 lg:hw-hidden'
+      className='flex size-12 items-center justify-center self-center rounded-lg data-[hover]:bg-black/5 lg:hidden'
       aria-label='Open main menu'
     >
-      <Bars2Icon className='hw-size-6' />
+      <Bars2Icon className='size-6' />
     </DisclosureButton>
   )
 }
 
 function MobileNav() {
   return (
-    <DisclosurePanel className='lg:hw-hidden'>
-      <div className='hw-flex hw-flex-col hw-gap-6 hw-py-4'>
+    <DisclosurePanel className='lg:hidden'>
+      <div className='flex flex-col gap-6 py-4'>
         {links.map(({ href, label }, linkIndex) => (
           <motion.div
             initial={{ opacity: 0, rotateX: -90 }}
@@ -61,18 +61,15 @@ function MobileNav() {
             }}
             key={href}
           >
-            <Link
-              href={href}
-              className='hw-text-base hw-font-medium hw-text-gray-950'
-            >
+            <Link href={href} className='text-base font-medium text-gray-950'>
               {label}
             </Link>
           </motion.div>
         ))}
       </div>
-      <div className='hw-absolute hw-left-1/2 hw-w-screen -hw-translate-x-1/2'>
-        <div className='hw-absolute hw-inset-x-0 hw-top-0 hw-border-t hw-border-black/5' />
-        <div className='hw-absolute hw-inset-x-0 hw-top-2 hw-border-t hw-border-black/5' />
+      <div className='absolute left-1/2 w-screen -translate-x-1/2'>
+        <div className='absolute inset-x-0 top-0 border-t border-black/5' />
+        <div className='absolute inset-x-0 top-2 border-t border-black/5' />
       </div>
     </DisclosurePanel>
   )
@@ -80,17 +77,17 @@ function MobileNav() {
 
 export function Navbar({ banner }: { banner?: React.ReactNode }) {
   return (
-    <Disclosure as='header' className='hw-pt-12 sm:hw-pt-16'>
+    <Disclosure as='header' className='pt-12 sm:pt-16'>
       <PlusGrid>
-        <PlusGridRow className='hw-relative hw-flex hw-justify-between'>
-          <div className='hw-relative hw-flex hw-gap-6'>
-            <PlusGridItem className='hw-py-3'>
+        <PlusGridRow className='relative flex justify-between'>
+          <div className='relative flex gap-6'>
+            <PlusGridItem className='py-3'>
               <Link href='/' title='Home'>
-                <Logo className='hw-h-9' />
+                <Logo className='h-9' />
               </Link>
             </PlusGridItem>
             {banner && (
-              <div className='hw-relative hw-hidden hw-items-center hw-py-3 lg:hw-flex'>
+              <div className='relative hidden items-center py-3 lg:flex'>
                 {banner}
               </div>
             )}

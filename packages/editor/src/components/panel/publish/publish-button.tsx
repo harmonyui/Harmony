@@ -183,12 +183,12 @@ export const PublishButton: React.FunctionComponent = () => {
   return (
     <Button
       mode='dark'
-      className='hw-h-7'
+      className='h-7'
       onClick={onPublish}
       loading={loading}
       disabled={disabled}
     >
-      <Icon className='hw-h-5 hw-w-5' />
+      <Icon className='h-5 w-5' />
     </Button>
   )
 }
@@ -213,10 +213,10 @@ const PublishModal: React.FunctionComponent<{ preview?: boolean }> = () => {
       <HarmonyModal
         show={show}
         onClose={onClose}
-        maxWidthClassName='hw-max-w-lg'
+        maxWidthClassName='max-w-lg'
         editor
       >
-        <div className='hw-flex hw-flex-col hw-justify-between hw-items-center hw-mb-4 hw-gap-6 hw-text-base'>
+        <div className='flex flex-col justify-between items-center mb-4 gap-6 text-base'>
           <Header level={3}>Publish Project</Header>
           {isRepositoryConnected ? <Connected /> : <NotConnected />}
         </div>
@@ -236,12 +236,12 @@ const NotConnected: React.FunctionComponent = () => {
   }, [branch])
 
   return (
-    <div className='hw-flex hw-flex-col hw-gap-2 hw-items-center'>
+    <div className='flex flex-col gap-2 items-center'>
       <Button as='a' href={`${WEB_URL}/setup`} target='_blank'>
         Connect Github
       </Button>
       <span>or</span>
-      <CopyText widthClass='hw-w-80' text={text} />
+      <CopyText widthClass='w-80' text={text} />
     </div>
   )
 }
@@ -286,10 +286,10 @@ const Connected: React.FunctionComponent = () => {
   }, [pullRequest, sendPullRequest])
 
   return (
-    <div className='hw-w-full hw-flex hw-flex-col hw-gap-4'>
+    <div className='w-full flex flex-col gap-4'>
       <Label label='Description'>
         <Input
-          className='hw-w-full hw-min-h-[100px]'
+          className='w-full min-h-[100px]'
           type='textarea'
           value={publishState?.body}
           onChange={changeProperty.formFunc('body', pullRequest)}
@@ -298,10 +298,10 @@ const Connected: React.FunctionComponent = () => {
       </Label>
       <div>
         {error ? (
-          <div className='hw-text-sm hw-text-red-400 hw-mb-2'>{error}</div>
+          <div className='text-sm text-red-400 mb-2'>{error}</div>
         ) : null}
         <Button
-          className='hw-w-full'
+          className='w-full'
           onClick={() => onNewPullRequest()}
           loading={loading}
         >

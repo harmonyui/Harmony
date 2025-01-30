@@ -40,12 +40,12 @@ export const SizeSection: React.FunctionComponent = () => {
   }
   return (
     <Section label='Size' options={options} onOptionChange={onOptionChange}>
-      <div className='hw-grid hw-grid-cols-3 hw-gap-y-2 hw-gap-x-2 hw-items-center hw-pt-1 hw-pr-1'>
+      <div className='grid grid-cols-3 gap-y-2 gap-x-2 items-center pt-1 pr-1'>
         <Label label='Width'>
-          <TokenLinkInput className='hw-col-span-2' attribute='width' />
+          <TokenLinkInput className='col-span-2' attribute='width' />
         </Label>
         <Label label='Height'>
-          <TokenLinkInput className='hw-col-span-2' attribute='height' />
+          <TokenLinkInput className='col-span-2' attribute='height' />
         </Label>
         <RemovableInput attribute='minWidth' />
         <RemovableInput attribute='minHeight' />
@@ -79,13 +79,10 @@ const RemovableInput: React.FunctionComponent<{
   }
   return show ? (
     <Label label={kebabToWord(camelToKebab(attribute))}>
-      <div className='hw-col-span-2 hw-flex hw-items-center hw-justify-between hw-gap-1'>
-        <TokenLinkInput
-          className='hw-col-span-2 hw-w-full'
-          attribute={attribute}
-        />
+      <div className='col-span-2 flex items-center justify-between gap-1'>
+        <TokenLinkInput className='col-span-2 w-full' attribute={attribute} />
         <Button mode='none' onClick={onRemove}>
-          <XMarkIcon className='hw-size-4' />
+          <XMarkIcon className='size-4' />
         </Button>
       </div>
     </Label>

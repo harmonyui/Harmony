@@ -41,17 +41,17 @@ export const TabControl: React.FunctionComponent<TabControlProps> = ({
 
   return (
     <div className={className}>
-      <div className='hw-text-sm hw-font-medium hw-text-center hw-border-b hw-border-gray-200 dark:hw-text-gray-400 dark:hw-border-gray-700'>
-        <ul className='hw-flex hw-flex-wrap -hw-mb-px hw-font-semibold hw-text-2xl'>
+      <div className='text-sm font-medium text-center border-b border-gray-200 dark:text-gray-400 dark:border-gray-700'>
+        <ul className='flex flex-wrap -mb-px font-semibold text-2xl'>
           {items.map((item, i) => (
-            <li className='hw-mr-2' key={i}>
+            <li className='mr-2' key={i}>
               <NotificationDot color={item.notification}>
                 <button
                   className={getClass(
-                    'hw-inline-block hw-px-4 hw-py-2 hw-border-b-2 hw-rounded-t-lg hw-outline-none',
+                    'inline-block px-4 py-2 border-b-2 rounded-t-lg outline-none',
                     selectedItem === item.id
-                      ? 'hw-border-b-4 hw-border-primary hw-rounded-t-lg hw-active dark:hw-text-primary-light dark:hw-border-primary-light'
-                      : 'hw-border-transparent hover:hw-border-gray-300 dark:hover:hw-text-gray-300',
+                      ? 'border-b-4 border-primary rounded-t-lg active dark:text-primary-light dark:border-primary-light'
+                      : 'border-transparent hover:border-gray-300 dark:hover:text-gray-300',
                   )}
                   onClick={() => {
                     onTabSelect(item.id)
@@ -65,7 +65,7 @@ export const TabControl: React.FunctionComponent<TabControlProps> = ({
           ))}
         </ul>
       </div>
-      <div className='hw-mt-8 hw-mx-2'>{selectedComponent}</div>
+      <div className='mt-8 mx-2'>{selectedComponent}</div>
     </div>
   )
 }
@@ -84,18 +84,18 @@ export const NotificationDot: React.FunctionComponent<NotificationDotProps> = ({
   }
 
   const colors: Record<NotificationDotColor, string> = {
-    gray: 'hw-bg-gray-300',
-    red: 'hw-bg-red-400',
-    green: 'hw-bg-green-400',
+    gray: 'bg-gray-300',
+    red: 'bg-red-400',
+    green: 'bg-green-400',
   }
 
   const dotColor = colors[color]
 
   return (
-    <span className='hw-relative'>
+    <span className='relative'>
       {children}
       <span
-        className={`hw-absolute hw-right-0 hw-top-0 hw-block hw-h-1.5 hw-w-1.5 hw-rounded-full ${dotColor} hw-ring-2 hw-ring-white`}
+        className={`absolute right-0 top-0 block h-1.5 w-1.5 rounded-full ${dotColor} ring-2 ring-white`}
       />
     </span>
   )
@@ -111,7 +111,7 @@ export const TabButton: React.FunctionComponent<TabControlProps> = ({
     <div className={className}>
       <ul
         className={getClass(
-          'hw-inline-flex hw-gap-2 hw-border hw-rounded-md hw-p-1 hw-bg-gray-100 hw-items-center',
+          'inline-flex gap-2 border rounded-md p-1 bg-gray-100 items-center',
         )}
       >
         {items.map((item) => (
@@ -119,10 +119,10 @@ export const TabButton: React.FunctionComponent<TabControlProps> = ({
             <button
               onClick={() => onTabSelect(item.id)}
               className={getClass(
-                'hw-py-1 hw-px-2 hw-rounded-md',
+                'py-1 px-2 rounded-md',
                 item.id === selectedItem
-                  ? 'hw-bg-white hw-shadow-sm hover:hw-bg-gray-50'
-                  : 'hover:hw-bg-gray-200 hover:hw-shadow-sm',
+                  ? 'bg-white shadow-sm hover:bg-gray-50'
+                  : 'hover:bg-gray-200 hover:shadow-sm',
               )}
             >
               {item.label}
@@ -130,7 +130,7 @@ export const TabButton: React.FunctionComponent<TabControlProps> = ({
           </li>
         ))}
       </ul>
-      <div className='hw-mt-2'>{selectedComponent}</div>
+      <div className='mt-2'>{selectedComponent}</div>
     </div>
   )
 }

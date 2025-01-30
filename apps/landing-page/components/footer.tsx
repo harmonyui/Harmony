@@ -7,20 +7,20 @@ import { PlusGrid, PlusGridItem, PlusGridRow } from '@/components/plus-grid'
 
 function CallToAction() {
   return (
-    <div className='hw-relative hw-pb-16 hw-pt-20 hw-text-center sm:hw-py-24'>
+    <div className='relative pb-16 pt-20 text-center sm:py-24'>
       <hgroup>
         <Subheading>Get started</Subheading>
-        <p className='hw-mt-6 hw-text-3xl hw-font-medium hw-tracking-tight hw-text-gray-950 dark:hw-text-white sm:hw-text-5xl'>
+        <p className='mt-6 text-3xl font-medium tracking-tight text-gray-950 dark:text-white sm:text-5xl'>
           Ready to dive in?
           <br />
           Start your free trial today.
         </p>
       </hgroup>
-      <p className='hw-mx-auto hw-mt-6 hw-max-w-xs hw-text-sm/6 hw-text-gray-500 dark:hw-text-gray-300'>
+      <p className='mx-auto mt-6 max-w-xs text-sm/6 text-gray-500 dark:text-gray-300'>
         Get the tools you need to build better websites and applications faster.
       </p>
-      <div className='hw-mt-6'>
-        <Button className='hw-w-full sm:hw-w-auto' href='#'>
+      <div className='mt-6'>
+        <Button className='w-full sm:w-auto' href='#'>
           Get started
         </Button>
       </div>
@@ -30,14 +30,14 @@ function CallToAction() {
 
 function SitemapHeading({ children }: { children: React.ReactNode }) {
   return (
-    <h3 className='hw-text-sm/6 hw-font-medium hw-text-gray-950/50 dark:hw-text-white'>
+    <h3 className='text-sm/6 font-medium text-gray-950/50 dark:text-white'>
       {children}
     </h3>
   )
 }
 
 function SitemapLinks({ children }: { children: React.ReactNode }) {
-  return <ul className='hw-mt-6 hw-space-y-4 hw-text-sm/6'>{children}</ul>
+  return <ul className='mt-6 space-y-4 text-sm/6'>{children}</ul>
 }
 
 function SitemapLink(props: React.ComponentPropsWithoutRef<typeof Link>) {
@@ -45,7 +45,7 @@ function SitemapLink(props: React.ComponentPropsWithoutRef<typeof Link>) {
     <li>
       <Link
         {...props}
-        className='hw-font-medium hw-text-gray-950 data-[hover]:hw-text-gray-950/75 dark:hw-text-gray-400 data-[hover]:dark:hw-text-gray-200'
+        className='font-medium text-gray-950 data-[hover]:text-gray-950/75 dark:text-gray-400 data-[hover]:dark:text-gray-200'
       />
     </li>
   )
@@ -123,25 +123,25 @@ function SocialLinks() {
         href='https://facebook.com'
         target='_blank'
         aria-label='Visit us on Facebook'
-        className='hw-text-gray-950 data-[hover]:hw-text-gray-950/75 dark:hw-text-white data-[hover]:dark:hw-text-white/75'
+        className='text-gray-950 data-[hover]:text-gray-950/75 dark:text-white data-[hover]:dark:text-white/75'
       >
-        <SocialIconFacebook className='hw-size-4' />
+        <SocialIconFacebook className='size-4' />
       </Link>
       <Link
         href='https://x.com'
         target='_blank'
         aria-label='Visit us on X'
-        className='hw-text-gray-950 data-[hover]:hw-text-gray-950/75 dark:hw-text-white data-[hover]:dark:hw-text-white/75'
+        className='text-gray-950 data-[hover]:text-gray-950/75 dark:text-white data-[hover]:dark:text-white/75'
       >
-        <SocialIconX className='hw-size-4' />
+        <SocialIconX className='size-4' />
       </Link>
       <Link
         href='https://linkedin.com'
         target='_blank'
         aria-label='Visit us on LinkedIn'
-        className='hw-text-gray-950 data-[hover]:hw-text-gray-950/75 dark:hw-text-white data-[hover]:dark:hw-text-white/75'
+        className='text-gray-950 data-[hover]:text-gray-950/75 dark:text-white data-[hover]:dark:text-white/75'
       >
-        <SocialIconLinkedIn className='hw-size-4' />
+        <SocialIconLinkedIn className='size-4' />
       </Link>
     </>
   )
@@ -149,7 +149,7 @@ function SocialLinks() {
 
 function Copyright() {
   return (
-    <div className='hw-text-sm/6 hw-text-gray-950 dark:hw-text-white'>
+    <div className='text-sm/6 text-gray-950 dark:text-white'>
       &copy; {new Date().getFullYear()} Harmony UI
     </div>
   )
@@ -158,48 +158,48 @@ function Copyright() {
 export function Footer() {
   return (
     <footer>
-      <Gradient className='hw-relative'>
-        <div className='hw-absolute hw-inset-2 hw-rounded-3xl hw-bg-background/80' />
+      <Gradient className='relative'>
+        <div className='absolute inset-2 rounded-3xl bg-background/80' />
         <Container>
           <CallToAction />
-          <PlusGrid className='hw-pb-16'>
+          <PlusGrid className='pb-16'>
             <PlusGridRow>
-              <div className='hw-grid hw-grid-cols-2 hw-gap-y-10 hw-pb-6 lg:hw-grid-cols-6 lg:hw-gap-8'>
-                <div className='hw-col-span-2 hw-flex'>
-                  <PlusGridItem className='hw-pt-6 lg:hw-pb-6'>
-                    <div className='hw-flex-col hw-flex hw-gap-4'>
-                      <a className='hw-flex hw-items-center hw-gap-2' href='/'>
+              <div className='grid grid-cols-2 gap-y-10 pb-6 lg:grid-cols-6 lg:gap-8'>
+                <div className='col-span-2 flex'>
+                  <PlusGridItem className='pt-6 lg:pb-6'>
+                    <div className='flex-col flex gap-4'>
+                      <a className='flex items-center gap-2' href='/'>
                         <img
                           src='/icon-128.png'
-                          className='hw-h-8 hw-w-8 hw-text-primary dark:hw-hidden'
+                          className='h-8 w-8 text-primary dark:hidden'
                         />
                         <img
                           src='/icon-dark-128.png'
-                          className='hw-h-8 hw-w-8 hw-text-primary hw-hidden dark:hw-inline-block'
+                          className='h-8 w-8 text-primary hidden dark:inline-block'
                         />
-                        <span className='hw-self-center hw-text-2xl hw-font-semibold hw-whitespace-nowrap dark:hw-text-white'>
+                        <span className='self-center text-2xl font-semibold whitespace-nowrap dark:text-white'>
                           Harmony UI
                         </span>
                       </a>
-                      <p className='hw-max-w-xs hw-text-secondary-foreground'>
+                      <p className='max-w-xs text-secondary-foreground'>
                         Become a visual developer
                       </p>
                     </div>
                   </PlusGridItem>
                 </div>
-                <div className='hw-col-span-2 hw-grid hw-grid-cols-2 hw-gap-x-8 hw-gap-y-12 lg:hw-col-span-4 lg:hw-grid-cols-subgrid lg:hw-pt-6'>
+                <div className='col-span-2 grid grid-cols-2 gap-x-8 gap-y-12 lg:col-span-4 lg:grid-cols-subgrid lg:pt-6'>
                   <Sitemap />
                 </div>
               </div>
             </PlusGridRow>
-            <PlusGridRow className='hw-flex hw-justify-between'>
+            <PlusGridRow className='flex justify-between'>
               <div>
-                <PlusGridItem className='hw-py-3'>
+                <PlusGridItem className='py-3'>
                   <Copyright />
                 </PlusGridItem>
               </div>
-              <div className='hw-flex'>
-                <PlusGridItem className='hw-flex hw-items-center hw-gap-8 hw-py-3'>
+              <div className='flex'>
+                <PlusGridItem className='flex items-center gap-8 py-3'>
                   <SocialLinks />
                 </PlusGridItem>
               </div>

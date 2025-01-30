@@ -7,8 +7,8 @@ import { Label } from './components/label'
 export const StyleSection: DesignPanelSectionComponent = () => {
   return (
     <Section label='Style'>
-      <div className='hw-grid hw-grid-cols-3 hw-gap-2 hw-items-center hw-pt-1'>
-        <ColorAttribute className='hw-col-span-3' attribute='backgroundColor' />
+      <div className='grid grid-cols-3 gap-2 items-center pt-1'>
+        <ColorAttribute className='col-span-3' attribute='backgroundColor' />
         <Label label='Overflow'>
           <AttributeButtonGroup
             attribute='overflow'

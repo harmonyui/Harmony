@@ -34,17 +34,14 @@ export const ColorAttribute: React.FunctionComponent<{
 
   return (
     <div
-      className={getClass(
-        'hw-flex hw-gap-1 hw-items-center hw-h-6 hw-col-span-3',
-        className,
-      )}
+      className={getClass('flex gap-1 items-center h-6 col-span-3', className)}
     >
       {isExpanded ? (
         <TokenDropdown attribute={attribute} />
       ) : (
-        <div className='hw-flex hw-gap-1 hw-items-center hw-flex-1'>
+        <div className='flex gap-1 items-center flex-1'>
           <ColorPicker
-            className='hw-h-6'
+            className='h-6'
             value={colorValue}
             onChange={(value) =>
               onAttributeChange({ name: attribute, value: value.slice(0, 7) })
@@ -54,7 +51,7 @@ export const ColorAttribute: React.FunctionComponent<{
             }
           />
           <DesignInput
-            className='hw-h-full hw-w-[80px]'
+            className='h-full w-[80px]'
             value={colorValue.slice(1, 7)}
             onChange={(value) =>
               onAttributeChange({
@@ -64,7 +61,7 @@ export const ColorAttribute: React.FunctionComponent<{
             }
           />
           <DesignInput
-            className='hw-h-full hw-w-[60px]'
+            className='h-full w-[60px]'
             value={`${opacity}`}
             onChange={onOpacityChange}
           />

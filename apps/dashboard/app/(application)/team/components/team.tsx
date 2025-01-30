@@ -23,11 +23,11 @@ export const TeamDisplay: React.FunctionComponent<TeamDisplayProps> = ({
 }) => {
   const [show, setShow] = useState(false)
   return (
-    <div className='hw-flex hw-flex-col hw-gap-4'>
-      <div className='hw-flex hw-items-center hw-mb-4'>
+    <div className='flex flex-col gap-4'>
+      <div className='flex items-center mb-4'>
         <Header>My Team</Header>
-        <Button className='hw-w-fit hw-ml-auto' onClick={() => setShow(true)}>
-          <PlusIcon className='hw-h-4 hw-w-4 hw-mr-1' /> Invite Team Member
+        <Button className='w-fit ml-auto' onClick={() => setShow(true)}>
+          <PlusIcon className='h-4 w-4 mr-1' /> Invite Team Member
         </Button>
       </div>
       <TeamGrid members={members} />
@@ -109,11 +109,7 @@ export const TeamMirrorDisplay: React.FunctionComponent<{
             link: {
               compareKey: item.link,
               label: (
-                <a
-                  className='hw-text-blue-400'
-                  href={item.link}
-                  target='_blank'
-                >
+                <a className='text-blue-400' href={item.link} target='_blank'>
                   Mirror
                 </a>
               ),
@@ -170,42 +166,38 @@ const CreateNewProjectModal: React.FunctionComponent<
   }
   return (
     <HarmonyModal show={show} onClose={onClose}>
-      <div className='hw-flex hw-gap-2 hw-items-center'>
+      <div className='flex gap-2 items-center'>
         <Header level={3}>Invite a Team Member</Header>
       </div>
-      <div className='hw-mt-2 hw-max-w-xl hw-text-sm hw-text-gray-500'>
+      <div className='mt-2 max-w-xl text-sm text-gray-500'>
         <p>Fill out the following fields to invite someone to your team</p>
       </div>
-      <div className='hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-4 sm:hw-grid-cols-6 hw-my-2'>
-        <Label className='sm:hw-col-span-3' label='Name:'>
+      <div className='grid grid-cols-1 gap-x-6 gap-y-4 sm:grid-cols-6 my-2'>
+        <Label className='sm:col-span-3' label='Name:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={teamMember.name}
             onChange={changeProperty.formFunc('name', teamMember)}
           />
         </Label>
-        <Label className='sm:hw-col-span-3' label='Role:'>
+        <Label className='sm:col-span-3' label='Role:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={teamMember.role}
             onChange={changeProperty.formFunc('role', teamMember)}
           />
         </Label>
-        <Label className='sm:hw-col-span-full' label='Email:'>
+        <Label className='sm:col-span-full' label='Email:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={teamMember.contact}
             onChange={changeProperty.formFunc('contact', teamMember)}
           />
         </Label>
       </div>
-      {error ? <p className='hw-text-red-400 hw-text-sm'>{error}</p> : null}
-      <div className='hw-flex'>
-        <Button
-          className='hw-ml-auto'
-          onClick={onNewTeamMember}
-          loading={loading}
-        >
+      {error ? <p className='text-red-400 text-sm'>{error}</p> : null}
+      <div className='flex'>
+        <Button className='ml-auto' onClick={onNewTeamMember} loading={loading}>
           Send Invite
         </Button>
       </div>

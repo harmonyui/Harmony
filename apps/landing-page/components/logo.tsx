@@ -17,7 +17,7 @@ export function Logo({ className }: { className?: string }) {
       width={127}
       height={34}
       viewBox='0 0 127 34'
-      className={clsx(className, 'hw-overflow-visible dark:hw-fill-white')}
+      className={clsx(className, 'overflow-visible dark:fill-white')}
     >
       <motion.g
         variants={{

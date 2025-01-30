@@ -9,7 +9,7 @@ export function Gradient({
       {...props}
       className={clsx(
         className,
-        'hw-bg-[linear-gradient(115deg,var(--tw-gradient-stops))] hw-from-[#fff1be] dark:hw-from-[#b45309] hw-from-[28%] hw-via-[#ee87cb] dark:hw-via-[#9d174d] hw-via-[70%] hw-to-[#b060ff] dark:hw-to-[#86198f] sm:hw-bg-[linear-gradient(145deg,var(--tw-gradient-stops))]',
+        'bg-[linear-gradient(115deg,var(--tw-gradient-stops))] from-[#fff1be] dark:from-[#b45309] from-[28%] via-[#ee87cb] dark:via-[#9d174d] via-[70%] to-[#b060ff] dark:to-[#86198f] sm:bg-[linear-gradient(145deg,var(--tw-gradient-stops))]',
       )}
     />
   )
@@ -17,12 +17,12 @@ export function Gradient({
 
 export function GradientBackground() {
   return (
-    <div className='hw-relative hw-mx-auto hw-max-w-7xl'>
+    <div className='relative mx-auto max-w-7xl'>
       <div
         className={clsx(
-          'hw-absolute -hw-right-60 -hw-top-44 hw-h-60 hw-w-[36rem] hw-transform-gpu md:hw-right-0',
-          'hw-bg-[linear-gradient(115deg,var(--tw-gradient-stops))] hw-from-[#fff1be] dark:hw-from-[#b45309] hw-from-[28%] hw-via-[#ee87cb] dark:hw-via-[#9d174d] hw-via-[70%] hw-to-[#b060ff] dark:hw-to-[#86198f]',
-          'hw-rotate-[-10deg] hw-rounded-full hw-blur-3xl',
+          'absolute -right-60 -top-44 h-60 w-[36rem] transform-gpu md:right-0',
+          'bg-[linear-gradient(115deg,var(--tw-gradient-stops))] from-[#fff1be] dark:from-[#b45309] from-[28%] via-[#ee87cb] dark:via-[#9d174d] via-[70%] to-[#b060ff] dark:to-[#86198f]',
+          'rotate-[-10deg] rounded-full blur-3xl',
         )}
       />
     </div>

@@ -214,7 +214,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
       )}
     >
       {({ data }) => (
-        <div className='hw-flex hw-gap-2 hw-items-center'>
+        <div className='flex gap-2 items-center'>
           <ComponentIcon
             type={getComponentType(data.data, harmonyComponents)}
           />
@@ -229,14 +229,14 @@ const ComponentIcon: React.FunctionComponent<{ type: ComponentType }> = ({
   type,
 }) => {
   if (type === ComponentType.Frame) {
-    return <FrameIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
+    return <FrameIcon className='text-[#737373] w-3 h-3' />
   } else if (type === ComponentType.Text) {
-    return <TIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
+    return <TIcon className='text-[#737373] w-3 h-3' />
   } else if (type === ComponentType.Component) {
-    return <ComponentIconRaw className='hw-text-[#737373] hw-w-3 hw-h-3' />
+    return <ComponentIconRaw className='text-[#737373] w-3 h-3' />
   }
 
-  return <ImageIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
+  return <ImageIcon className='text-[#737373] w-3 h-3' />
 }
 
 interface TreeViewItemProps {

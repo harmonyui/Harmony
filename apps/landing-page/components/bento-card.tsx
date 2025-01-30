@@ -29,28 +29,28 @@ export function BentoCard({
       data-dark={dark ? 'true' : undefined}
       className={clsx(
         className,
-        'hw-group hw-elative hw-flex hw-flex-col hw-overflow-hidden hw-rounded-lg',
-        'hw-bg-white hw-shadow-sm hw-ring-1 hw-ring-black/5',
-        'data-[dark]:hw-bg-gray-800 data-[dark]:hw-ring-white/15',
+        'group elative flex flex-col overflow-hidden rounded-lg',
+        'bg-white shadow-sm ring-1 ring-black/5',
+        'data-[dark]:bg-gray-800 data-[dark]:ring-white/15',
       )}
     >
-      <div className='hw-relative hw-h-80 hw-shrink-0'>
+      <div className='relative h-80 shrink-0'>
         {graphic}
         {fade.includes('top') && (
-          <div className='hw-absolute hw-inset-0 hw-bg-gradient-to-b hw-from-white hw-to-50% group-data-[dark]:hw-from-gray-800 group-data-[dark]:hw-from-[-25%]' />
+          <div className='absolute inset-0 bg-gradient-to-b from-white to-50% group-data-[dark]:from-gray-800 group-data-[dark]:from-[-25%]' />
         )}
         {fade.includes('bottom') && (
-          <div className='hw-absolute hw-inset-0 hw-bg-gradient-to-t hw-from-white hw-to-50% group-data-[dark]:hw-from-gray-800 group-data-[dark]:hw-from-[-25%]' />
+          <div className='absolute inset-0 bg-gradient-to-t from-white to-50% group-data-[dark]:from-gray-800 group-data-[dark]:from-[-25%]' />
         )}
       </div>
-      <div className='hw-relative hw-p-10'>
+      <div className='relative p-10'>
         <Subheading as='h3' dark={dark}>
           {eyebrow}
         </Subheading>
-        <p className='hw-mt-1 hw-text-2xl/8 hw-font-medium hw-tracking-tight hw-text-gray-950 group-data-[dark]:hw-text-white'>
+        <p className='mt-1 text-2xl/8 font-medium tracking-tight text-gray-950 group-data-[dark]:text-white'>
           {title}
         </p>
-        <p className='hw-mt-2 hw-max-w-[600px] hw-text-sm/6 hw-text-gray-600 group-data-[dark]:hw-text-gray-400'>
+        <p className='mt-2 max-w-[600px] text-sm/6 text-gray-600 group-data-[dark]:text-gray-400'>
           {description}
         </p>
       </div>

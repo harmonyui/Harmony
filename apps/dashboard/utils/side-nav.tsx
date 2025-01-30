@@ -46,7 +46,7 @@ export const SideNav: React.FunctionComponent<SideNavProps> = ({
       items={items}
       title='Harmony'
       profileItem={
-        <div className='hw-flex hw-gap-2 hw-items-center'>
+        <div className='flex gap-2 items-center'>
           <UserButton showName />
         </div>
       }

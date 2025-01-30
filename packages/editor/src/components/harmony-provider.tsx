@@ -238,11 +238,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
       //Hacky fix for the toolbar zooming weird and the user does not have the updated editor
       const harmonyContainer = document.getElementById('harmony-container')
-      if (
-        harmonyContainer &&
-        harmonyContainer.className.includes('hw-h-full')
-      ) {
-        harmonyContainer.classList.add('hw-w-full')
+      if (harmonyContainer && harmonyContainer.className.includes('h-full')) {
+        harmonyContainer.classList.add('w-full')
       }
     }
   }, [rootComponent, isInitialized])
@@ -527,12 +524,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                   </HarmonyPanel>
                 </>
               ) : (
-                <div className='hw-fixed hw-z-[100] hw-group hw-p-2 hw-bottom-0 hw-left-0'>
+                <div className='fixed z-[100] group p-2 bottom-0 left-0'>
                   <button
-                    className='hw-bg-[#11283B] hover:hw-bg-[#11283B]/80 hw-rounded-md hw-p-2'
+                    className='bg-[#11283B] hover:bg-[#11283B]/80 rounded-md p-2'
                     onClick={onMinimize}
                   >
-                    <MinimizeIcon className='hw-h-5 hw-w-5 hw-fill-white hw-stroke-none' />
+                    <MinimizeIcon className='h-5 w-5 fill-white stroke-none' />
                   </button>
                 </div>
               )}

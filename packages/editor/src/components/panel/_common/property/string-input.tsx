@@ -6,6 +6,6 @@ export const StringInput: PropertyInputComponent<string> = ({
   onChange,
 }) => {
   return (
-    <DesignInput className='hw-col-span-2' value={value} onChange={onChange} />
+    <DesignInput className='col-span-2' value={value} onChange={onChange} />
   )
 }

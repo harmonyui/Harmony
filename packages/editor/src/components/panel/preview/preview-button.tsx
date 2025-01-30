@@ -30,11 +30,11 @@ export const PreviewButton: React.FunctionComponent = () => {
 
   return (
     <Button
-      className='hover:hw-bg-[#E5E7EB] hw-h-7 hw-px-2.5 hw-rounded-md'
+      className='hover:bg-[#E5E7EB] h-7 px-2.5 rounded-md'
       onClick={onPreview}
       mode='none'
     >
-      <Icon className='hw-h-5 hw-w-5' />
+      <Icon className='h-5 w-5' />
     </Button>
   )
 }

@@ -39,47 +39,45 @@ async function FeaturedPosts() {
   }
 
   return (
-    <div className='hw-mt-16 hw-bg-gradient-to-t hw-from-gray-100 dark:hw-from-gray-800 hw-pb-14 hw-animate-fade-in hw-opacity-0 [--animation-delay:600ms]'>
+    <div className='mt-16 bg-gradient-to-t from-gray-100 dark:from-gray-800 pb-14 animate-fade-in opacity-0 [--animation-delay:600ms]'>
       <Container>
-        <h2 className='hw-text-2xl hw-font-medium hw-tracking-tight'>
-          Featured
-        </h2>
-        <div className='hw-mt-6 hw-grid hw-grid-cols-1 hw-gap-8 lg:hw-grid-cols-3'>
+        <h2 className='text-2xl font-medium tracking-tight'>Featured</h2>
+        <div className='mt-6 grid grid-cols-1 gap-8 lg:grid-cols-3'>
           {featuredPosts.map((post) => (
             <div
               key={post.slug}
-              className='hw-relative hw-flex hw-flex-col hw-rounded-3xl hw-bg-white dark:hw-bg-gray-950 hw-p-2 hw-shadow-md hw-shadow-black/5 hw-ring-1 hw-ring-black/5'
+              className='relative flex flex-col rounded-3xl bg-white dark:bg-gray-950 p-2 shadow-md shadow-black/5 ring-1 ring-black/5'
             >
               {post.mainImage && (
                 <img
                   alt={post.mainImage.alt || ''}
                   src={image(post.mainImage).size(1170, 780).url()}
-                  className='hw-aspect-[3/2] hw-w-full hw-rounded-2xl hw-object-cover'
+                  className='aspect-[3/2] w-full rounded-2xl object-cover'
                 />
               )}
-              <div className='hw-flex hw-flex-1 hw-flex-col hw-p-8'>
-                <div className='hw-text-sm/5 hw-text-gray-700 dark:hw-text-white'>
+              <div className='flex flex-1 flex-col p-8'>
+                <div className='text-sm/5 text-gray-700 dark:text-white'>
                   {dayjs(post.publishedAt).format('dddd, MMMM D, YYYY')}
                 </div>
-                <div className='hw-mt-2 hw-text-base/7 hw-font-medium dark:hw-text-white'>
+                <div className='mt-2 text-base/7 font-medium dark:text-white'>
                   <Link href={`/blog/${post.slug}`}>
-                    <span className='hw-absolute hw-inset-0' />
+                    <span className='absolute inset-0' />
                     {post.title}
                   </Link>
                 </div>
-                <div className='hw-mt-2 hw-flex-1 hw-text-sm/6 hw-text-gray-500 dark:hw-text-gray-300'>
+                <div className='mt-2 flex-1 text-sm/6 text-gray-500 dark:text-gray-300'>
                   {post.excerpt}
                 </div>
                 {post.author && (
-                  <div className='hw-mt-6 hw-flex hw-items-center hw-gap-3'>
+                  <div className='mt-6 flex items-center gap-3'>
                     {post.author.image && (
                       <img
                         alt=''
                         src={image(post.author.image).size(64, 64).url()}
-                        className='hw-aspect-square hw-size-6 hw-rounded-full hw-object-cover'
+                        className='aspect-square size-6 rounded-full object-cover'
                       />
                     )}
-                    <div className='hw-text-sm/5 hw-text-gray-700 dark:hw-text-white'>
+                    <div className='text-sm/5 text-gray-700 dark:text-white'>
                       {post.author.name}
                     </div>
                   </div>
@@ -101,25 +99,25 @@ async function Categories({ selected }: { selected?: string }) {
   }
 
   return (
-    <div className='hw-flex hw-flex-wrap hw-items-center hw-justify-between hw-gap-2'>
+    <div className='flex flex-wrap items-center justify-between gap-2'>
       <Menu as='div'>
-        <MenuButton className='hw-flex hw-items-center hw-justify-between hw-gap-2 hw-font-medium'>
+        <MenuButton className='flex items-center justify-between gap-2 font-medium'>
           {categories.find(({ slug }) => slug === selected)?.title ||
             'All categories'}
-          <ChevronUpDownIcon className='hw-size-4 hw-fill-slate-900' />
+          <ChevronUpDownIcon className='size-4 fill-slate-900' />
         </MenuButton>
         <MenuItems
           anchor='bottom start'
-          className='hw-min-w-40 hw-rounded-lg hw-bg-white hw-p-1 hw-shadow-lg hw-ring-1 hw-ring-gray-200 [--anchor-gap:6px] [--anchor-offset:-4px] [--anchor-padding:10px]'
+          className='min-w-40 rounded-lg bg-white p-1 shadow-lg ring-1 ring-gray-200 [--anchor-gap:6px] [--anchor-offset:-4px] [--anchor-padding:10px]'
         >
           <MenuItem>
             <Link
               href='/blog'
               data-selected={selected === undefined ? true : undefined}
-              className='hw-group hw-grid hw-grid-cols-[1rem,1fr] hw-items-center hw-gap-2 hw-rounded-md hw-px-2 hw-py-1 data-[focus]:hw-bg-gray-950/5'
+              className='group grid grid-cols-[1rem,1fr] items-center gap-2 rounded-md px-2 py-1 data-[focus]:bg-gray-950/5'
             >
-              <CheckIcon className='hw-hidden hw-size-4 group-data-[selected]:hw-block' />
-              <p className='hw-col-start-2 hw-text-sm/6'>All categories</p>
+              <CheckIcon className='hidden size-4 group-data-[selected]:block' />
+              <p className='col-start-2 text-sm/6'>All categories</p>
             </Link>
           </MenuItem>
           {categories.map((category) => (
@@ -127,17 +125,17 @@ async function Categories({ selected }: { selected?: string }) {
               <Link
                 href={`/blog?category=${category.slug}`}
                 data-selected={category.slug === selected ? true : undefined}
-                className='hw-group hw-grid hw-grid-cols-[16px,1fr] hw-items-center hw-gap-2 hw-rounded-md hw-px-2 hw-py-1 data-[focus]:hw-bg-gray-950/5'
+                className='group grid grid-cols-[16px,1fr] items-center gap-2 rounded-md px-2 py-1 data-[focus]:bg-gray-950/5'
               >
-                <CheckIcon className='hw-hidden hw-size-4 group-data-[selected]:hw-block' />
-                <p className='hw-col-start-2 hw-text-sm/6'>{category.title}</p>
+                <CheckIcon className='hidden size-4 group-data-[selected]:block' />
+                <p className='col-start-2 text-sm/6'>{category.title}</p>
               </Link>
             </MenuItem>
           ))}
         </MenuItems>
       </Menu>
-      <Button variant='outline' href='/blog/feed.xml' className='hw-gap-1'>
-        <RssIcon className='hw-size-4' />
+      <Button variant='outline' href='/blog/feed.xml' className='gap-1'>
+        <RssIcon className='size-4' />
         RSS Feed
       </Button>
     </div>
@@ -156,48 +154,48 @@ async function Posts({ page, category }: { page: number; category?: string }) {
   }
 
   if (posts.length === 0) {
-    return <p className='hw-mt-6 hw-text-gray-500'>No posts found.</p>
+    return <p className='mt-6 text-gray-500'>No posts found.</p>
   }
 
   return (
-    <div className='hw-mt-6'>
+    <div className='mt-6'>
       {posts.map((post) => (
         <div
           key={post.slug}
-          className='hw-relative hw-grid hw-grid-cols-1 hw-border-b hw-border-b-gray-100 dark:hw-border-b-gray-800 hw-py-10 first:hw-border-t first:hw-border-t-gray-200 first:dark:hw-border-t-gray-700 max-sm:hw-gap-3 sm:hw-grid-cols-3'
+          className='relative grid grid-cols-1 border-b border-b-gray-100 dark:border-b-gray-800 py-10 first:border-t first:border-t-gray-200 first:dark:border-t-gray-700 max-sm:gap-3 sm:grid-cols-3'
         >
           <div>
-            <div className='hw-text-sm/5 max-sm:hw-text-gray-700 sm:hw-font-medium'>
+            <div className='text-sm/5 max-sm:text-gray-700 sm:font-medium'>
               {dayjs(post.publishedAt).format('dddd, MMMM D, YYYY')}
             </div>
             {post.author && (
-              <div className='hw-mt-2.5 hw-flex hw-items-center hw-gap-3'>
+              <div className='mt-2.5 flex items-center gap-3'>
                 {post.author.image && (
                   <img
                     alt=''
                     src={image(post.author.image).width(64).height(64).url()}
-                    className='hw-aspect-square hw-size-6 hw-rounded-full hw-object-cover'
+                    className='aspect-square size-6 rounded-full object-cover'
                   />
                 )}
-                <div className='hw-text-sm/5 hw-text-gray-700 dark:hw-text-white'>
+                <div className='text-sm/5 text-gray-700 dark:text-white'>
                   {post.author.name}
                 </div>
               </div>
             )}
           </div>
-          <div className='sm:hw-col-span-2 sm:hw-max-w-2xl'>
-            <h2 className='hw-text-sm/5 hw-font-medium'>{post.title}</h2>
-            <p className='hw-mt-3 hw-text-sm/6 hw-text-gray-500 dark:hw-text-gray-300'>
+          <div className='sm:col-span-2 sm:max-w-2xl'>
+            <h2 className='text-sm/5 font-medium'>{post.title}</h2>
+            <p className='mt-3 text-sm/6 text-gray-500 dark:text-gray-300'>
               {post.excerpt}
             </p>
-            <div className='hw-mt-4'>
+            <div className='mt-4'>
               <Link
                 href={`/blog/${post.slug}`}
-                className='hw-flex hw-items-center hw-gap-1 hw-text-sm/5 hw-font-medium dark:hw-text-white'
+                className='flex items-center gap-1 text-sm/5 font-medium dark:text-white'
               >
-                <span className='hw-absolute hw-inset-0' />
+                <span className='absolute inset-0' />
                 Read more
-                <ChevronRightIcon className='hw-size-4 hw-fill-gray-400' />
+                <ChevronRightIcon className='size-4 fill-gray-400' />
               </Link>
             </div>
           </div>
@@ -235,26 +233,26 @@ async function Pagination({
   }
 
   return (
-    <div className='hw-mt-6 hw-flex hw-items-center hw-justify-between hw-gap-2'>
+    <div className='mt-6 flex items-center justify-between gap-2'>
       <Button
         variant='outline'
         href={previousPageUrl}
         disabled={!previousPageUrl}
       >
-        <ChevronLeftIcon className='hw-size-4' />
+        <ChevronLeftIcon className='size-4' />
         Previous
       </Button>
-      <div className='hw-flex hw-gap-2 max-sm:hw-hidden'>
+      <div className='flex gap-2 max-sm:hidden'>
         {Array.from({ length: pageCount }, (_, i) => (
           <Link
             key={i + 1}
             href={url(i + 1)}
             data-active={i + 1 === page ? true : undefined}
             className={clsx(
-              'hw-size-7 hw-rounded-lg hw-text-center hw-text-sm/7 hw-font-medium dark:hw-text-white',
-              'data-[hover]:hw-bg-gray-100 dark:data-[hover]:hw-bg-gray-900',
-              'data-[active]:hw-shadow data-[active]:hw-ring-1 data-[active]:hw-ring-black/10 dark:data-[active]:hw-ring-white/80',
-              'data-[active]:data-[hover]:hw-bg-gray-50',
+              'size-7 rounded-lg text-center text-sm/7 font-medium dark:text-white',
+              'data-[hover]:bg-gray-100 dark:data-[hover]:bg-gray-900',
+              'data-[active]:shadow data-[active]:ring-1 data-[active]:ring-black/10 dark:data-[active]:ring-white/80',
+              'data-[active]:data-[hover]:bg-gray-50',
             )}
           >
             {i + 1}
@@ -263,7 +261,7 @@ async function Pagination({
       </div>
       <Button variant='outline' href={nextPageUrl} disabled={!nextPageUrl}>
         Next
-        <ChevronRightIcon className='hw-size-4' />
+        <ChevronRightIcon className='size-4' />
       </Button>
     </div>
   )
@@ -288,25 +286,25 @@ export default async function Blog({
       : undefined
 
   return (
-    <main className='hw-overflow-hidden'>
+    <main className='overflow-hidden'>
       <GradientBackground />
       <Container>
-        <Subheading className='hw-mt-32 hw-animate-fade-in hw-opacity-0'>
+        <Subheading className='mt-32 animate-fade-in opacity-0'>
           Blog
         </Subheading>
         <Heading
           as='h1'
-          className='hw-mt-2 hw-animate-fade-in hw-opacity-0 [--animation-delay:200ms]'
+          className='mt-2 animate-fade-in opacity-0 [--animation-delay:200ms]'
         >
           What’s happening at Harmony.
         </Heading>
-        <Lead className='hw-mt-6 hw-max-w-3xl hw-animate-fade-in hw-opacity-0 [--animation-delay:400ms]'>
+        <Lead className='mt-6 max-w-3xl animate-fade-in opacity-0 [--animation-delay:400ms]'>
           Stay informed with product updates, company news, and insights on how
           to sell smarter at your company.
         </Lead>
       </Container>
       {page === 1 && !category && <FeaturedPosts />}
-      <Container className='hw-mt-16 hw-pb-24 hw-animate-fade-in hw-opacity-0 [--animation-delay:600ms]'>
+      <Container className='mt-16 pb-24 animate-fade-in opacity-0 [--animation-delay:600ms]'>
         <Categories selected={category} />
         <Posts page={page} category={category} />
         <Pagination page={page} category={category} />
