@@ -24,7 +24,7 @@ const SelectImageModal: React.FunctionComponent<{
   const [selectedImage, setSelectedImage] = useState<string | undefined>(
     undefined,
   )
-  const { setIsUploadModalOpen, selectImage } = useUploadImage()
+  const { setIsUploadModalOpen, selectImage, canUpload } = useUploadImage()
 
   const onSelect = () => {
     if (!selectedImage) return
@@ -40,9 +40,11 @@ const SelectImageModal: React.FunctionComponent<{
         size='lg'
       />
       <div className='flex gap-2 justify-end mt-4'>
-        <Button mode='secondary' onClick={() => setIsUploadModalOpen(true)}>
-          Upload
-        </Button>
+        {canUpload ? (
+          <Button mode='secondary' onClick={() => setIsUploadModalOpen(true)}>
+            Upload
+          </Button>
+        ) : null}
         <Button onClick={onSelect} disabled={!selectImage}>
           Select
         </Button>
