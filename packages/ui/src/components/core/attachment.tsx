@@ -8,11 +8,11 @@ export const Attachment = ({ label, link }: AttachmentProps) => {
   return (
     <a
       href={link}
-      className='hw-relative hw-mt-2 hw-inline-flex hw-items-center hw-text-sm hw-font-medium hover:hw-text-teal-500 focus-visible:hw-text-teal-500 dark:hover:hw-text-teal-300 dark:focus-visible:hw-text-teal-300'
+      className='relative mt-2 inline-flex items-center text-sm font-medium hover:text-teal-500 focus-visible:text-teal-500 dark:hover:text-teal-300 dark:focus-visible:text-teal-300'
       target='_blank'
       rel='noreferrer'
     >
-      <AttachmentIcon className='hw-mr-2 hw-h-3 hw-w-3' />
+      <AttachmentIcon className='mr-2 h-3 w-3' />
       <span>{label}</span>
     </a>
   )

@@ -17,16 +17,14 @@ import type {
 } from '@harmony/util/src/updates/component'
 import type { ComponentUpdateWithoutGlobal } from '../../harmony-context'
 import { useHarmonyContext } from '../../harmony-context'
-import {
-  getComponentIdAndChildIndex,
-  getVscodeLink,
-} from '../../../utils/element-utils'
+import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
 import { ComponentType } from '../../attributes/types'
 import { getComponentType } from '../design/utils'
 import { useHarmonyStore } from '../../../hooks/state'
 import { useComponentMenu } from '../../harmonycn/component-provider'
 import { useUpdateComponent } from '../../harmonycn/update-component'
 import { generateComponentIdFromParent } from '@harmony/util/src/utils/component'
+import { useOpenEditor } from '../../../hooks/open-editor'
 
 export interface TransformNode extends Record<string, NonNullable<unknown>> {
   id: string
@@ -214,7 +212,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
       )}
     >
       {({ data }) => (
-        <div className='hw-flex hw-gap-2 hw-items-center'>
+        <div className='flex gap-2 items-center'>
           <ComponentIcon
             type={getComponentType(data.data, harmonyComponents)}
           />
@@ -229,14 +227,14 @@ const ComponentIcon: React.FunctionComponent<{ type: ComponentType }> = ({
   type,
 }) => {
   if (type === ComponentType.Frame) {
-    return <FrameIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
+    return <FrameIcon className='text-[#737373] w-3 h-3' />
   } else if (type === ComponentType.Text) {
-    return <TIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
+    return <TIcon className='text-[#737373] w-3 h-3' />
   } else if (type === ComponentType.Component) {
-    return <ComponentIconRaw className='hw-text-[#737373] hw-w-3 hw-h-3' />
+    return <ComponentIconRaw className='text-[#737373] w-3 h-3' />
   }
 
-  return <ImageIcon className='hw-text-[#737373] hw-w-3 hw-h-3' />
+  return <ImageIcon className='text-[#737373] w-3 h-3' />
 }
 
 interface TreeViewItemProps {
@@ -253,8 +251,10 @@ const TreeViewItem = ({
   onWrap,
   onUnWrap,
 }: TreeViewItemProps) => {
+  const { openEditor, isActive } = useOpenEditor()
+
   const hoveredComponent = useHarmonyStore((store) => store.hoveredComponent)
-  const localRootPath = useHarmonyStore((store) => store.localRootPath)
+
   const isGroup = useMemo(() => {
     if (hoveredComponent) {
       if (hoveredComponent.children.length > 0) {
@@ -304,17 +304,11 @@ const TreeViewItem = ({
     })
   }
 
-  if (localRootPath && hoveredComponent) {
+  if (isActive) {
     items.push({
       id: 'open-in-editor',
       name: (
-        <TreeViewPopupLineItem
-          onClick={() => {
-            window
-              .open(getVscodeLink(hoveredComponent, localRootPath), '_blank')
-              ?.focus()
-          }}
-        >
+        <TreeViewPopupLineItem onClick={openEditor}>
           Open in Editor
         </TreeViewPopupLineItem>
       ),

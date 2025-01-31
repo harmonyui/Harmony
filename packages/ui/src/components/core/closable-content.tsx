@@ -14,12 +14,10 @@ export const ClosableContent: React.FunctionComponent<ClosableContentProps> = ({
   xMarkClassName,
 }) => {
   return (
-    <div className={getClass('hw-relative', className)}>
-      <div className='hw-absolute hw-top-[5px] hw-right-[5px]'>
-        <button className='hover:hw-opacity-50' onClick={onClose} type='button'>
-          <XMarkIcon
-            className={xMarkClassName || 'hw-w-4 hw-h-4 dark:hw-fill-white'}
-          />
+    <div className={getClass('relative', className)}>
+      <div className='absolute top-[5px] right-[5px]'>
+        <button className='hover:opacity-50' onClick={onClose} type='button'>
+          <XMarkIcon className={xMarkClassName || 'w-4 h-4 dark:fill-white'} />
         </button>
       </div>
       {children}

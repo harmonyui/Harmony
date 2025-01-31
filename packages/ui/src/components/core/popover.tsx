@@ -25,7 +25,7 @@ const PopoverContent = React.forwardRef<
         align={align}
         sideOffset={sideOffset}
         className={getClass(
-          'hw-overflow-auto hw-border hw-border-gray-300 hw-rounded-md hw-shadow-lg hw-mt-2 hw-z-10 hw-bg-white hw-text-popover-foreground hw-outline-none data-[state=open]:hw-animate-in data-[state=closed]:hw-animate-out data-[state=closed]:hw-fade-out-0 data-[state=open]:hw-fade-in-0 data-[state=closed]:hw-zoom-out-95 data-[state=open]:hw-zoom-in-95 data-[side=bottom]:hw-slide-in-from-top-2 data-[side=left]:hw-slide-in-from-right-2 data-[side=right]:hw-slide-in-from-left-2 data-[side=top]:hw-slide-in-from-bottom-2',
+          'overflow-auto border border-gray-300 rounded-md shadow-lg mt-2 z-10 bg-white text-popover-foreground outline-none data-[state=open]:animate-in data-[state=closed]:animate-out data-[state=closed]:fade-out-0 data-[state=open]:fade-in-0 data-[state=closed]:zoom-out-95 data-[state=open]:zoom-in-95 data-[side=bottom]:slide-in-from-top-2 data-[side=left]:slide-in-from-right-2 data-[side=right]:slide-in-from-left-2 data-[side=top]:slide-in-from-bottom-2',
           className,
         )}
         {...props}
@@ -57,7 +57,7 @@ export const Popover: React.FunctionComponent<PopoverProps> = ({
         <div className={buttonClass}>{button}</div>
       </PopoverTrigger>
       <PopoverContent
-        className={getClass(className, 'hw-z-[10000]')}
+        className={getClass(className, 'z-[10000]')}
         container={container}
       >
         {children}

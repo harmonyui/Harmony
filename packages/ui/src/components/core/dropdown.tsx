@@ -24,17 +24,17 @@ export const ListBoxPopover = <T,>({
 }: ListBoxPopoverProps<T>): React.JSX.Element => {
   return (
     <Popover
-      className='hw-bg-white hw-border hw-rounded-lg hw-max-h-52'
+      className='bg-white border rounded-lg max-h-52'
       button={children}
       buttonClass={className}
       container={container}
       {...isOpenStuff}
     >
-      {header ? <div className='hw-p-2'>{header}</div> : null}
-      <div className='hw-min-w-[11rem]'>
+      {header ? <div className='p-2'>{header}</div> : null}
+      <div className='min-w-[11rem]'>
         <ul
           aria-labelledby='dropdownDefaultButton'
-          className='hw-text-sm hw-text-gray-700 dark:hw-text-gray-200'
+          className='text-sm text-gray-700 dark:text-gray-200'
         >
           {items.map((item, i) => (
             <li key={i}>{item.name}</li>
@@ -61,7 +61,7 @@ export const ListBox = <T,>({
 }: ListBoxProps<T>): React.JSX.Element => {
   const button = (
     <Button className={buttonClass} mode={mode}>
-      <div className='hw-flex hw-items-center hw-w-full'>{children}</div>
+      <div className='flex items-center w-full'>{children}</div>
     </Button>
   )
   return (
@@ -150,10 +150,10 @@ export const Dropdown = <T,>({
       setIsOpen={setIsOpen}
       container={container}
     >
-      {BeforeIcon ? <BeforeIcon className='hw-w-4 hw-h-4 hw-mr-1' /> : null}
-      <div className='hw-flex hw-w-full hw-justify-between hw-items-center'>
+      {BeforeIcon ? <BeforeIcon className='w-4 h-4 mr-1' /> : null}
+      <div className='flex w-full justify-between items-center'>
         {value === undefined || !showValue ? children : value.name}{' '}
-        {chevron ? <ChevronDownIcon className='hw-w-4 hw-h-4 hw-ml-1' /> : null}
+        {chevron ? <ChevronDownIcon className='w-4 h-4 ml-1' /> : null}
       </div>
     </ListBox>
   )
@@ -178,10 +178,10 @@ export const DropdownLineItem = <C extends React.ElementType>({
       {...restProps}
       className={getClass(
         selected
-          ? 'hw-bg-gray-200 hw-text-gray-900 hover:hw-bg-gray-300'
-          : 'hw-text-gray-900 hover:hw-bg-gray-100 ',
+          ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
+          : 'text-gray-900 hover:bg-gray-100 ',
         className,
-        'group hw-flex hw-w-full hw-items-center hw-rounded-md hw-p-2 hw-text-sm hw-cursor-pointer [&>*]:hw-flex-1',
+        'group flex w-full items-center rounded-md p-2 text-sm cursor-pointer [&>*]:flex-1',
       )}
     >
       {children}
@@ -242,8 +242,8 @@ export const DropdownListItem: React.FunctionComponent<
   DropdownListItemProps
 > = ({ item }) => {
   return (
-    <span className='hw-flex hw-items-center hw-text-sm hw-font-medium'>
-      <CheckboxInput className='hw-mr-1' value={item.value} />
+    <span className='flex items-center text-sm font-medium'>
+      <CheckboxInput className='mr-1' value={item.value} />
       {item.label}
     </span>
   )
@@ -264,7 +264,7 @@ export const DropdownIcon = <T,>({
     mode === 'none'
       ? className
       : getClass(
-          'hover:hw-bg-gray-100 dark:hover:hw-bg-gray-700 focus:hw-ring-4 focus:hw-outline-none focus:hw-ring-gray-200 dark:focus:hw-ring-gray-700 hw-rounded-lg hw-text-sm hw-p-1.5',
+          'hover:bg-gray-100 dark:hover:bg-gray-700 focus:ring-4 focus:outline-none focus:ring-gray-200 dark:focus:ring-gray-700 rounded-lg text-sm p-1.5',
           className,
         )
   return (
@@ -275,7 +275,7 @@ export const DropdownIcon = <T,>({
       chevron={false}
       showValue={false}
     >
-      <Icon className='hw-h-5 hw-w-5' />
+      <Icon className='h-5 w-5' />
     </Dropdown>
   )
 }

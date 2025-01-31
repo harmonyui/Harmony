@@ -11,9 +11,9 @@ export const LinkButton: React.FunctionComponent<{
   return (
     <ButtonGroupButton show={false} onClick={() => setIsExpanded(!isExpanded)}>
       {isExpanded ? (
-        <ChainLinkIcon className='hw-w-4 hw-h-4' />
+        <ChainLinkIcon className='w-4 h-4' />
       ) : (
-        <ChainLinkSlashIcon className='hw-w-4 hw-h-4' />
+        <ChainLinkSlashIcon className='w-4 h-4' />
       )}
     </ButtonGroupButton>
   )

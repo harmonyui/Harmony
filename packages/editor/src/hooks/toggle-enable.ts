@@ -5,7 +5,7 @@ import { useBranchId } from './branch-id'
 export const useToggleEnable = () => {
   const { branchId, setBranchId } = useBranchId()
   const previousBranchId = usePrevious(branchId)
-  useHotKeys('ctrl+shift+l, command+shift+l', () => {
+  useHotKeys('ctrl+., command+.', () => {
     if (branchId === undefined && previousBranchId === undefined) {
       setBranchId('local')
     } else {

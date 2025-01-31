@@ -10,7 +10,7 @@ export const Spinner: React.FunctionComponent<{
         aria-hidden='true'
         className={getClass(
           sizeClass,
-          'hw-text-gray-200 hw-animate-spin dark:hw-text-gray-600 hw-fill-primary',
+          'text-gray-200 animate-spin dark:text-gray-600 fill-primary',
         )}
         viewBox='0 0 100 101'
         fill='none'
@@ -25,7 +25,7 @@ export const Spinner: React.FunctionComponent<{
           fill='currentFill'
         />
       </svg>
-      <span className='hw-sr-only'>Loading...</span>
+      <span className='sr-only'>Loading...</span>
     </div>
   )
 }

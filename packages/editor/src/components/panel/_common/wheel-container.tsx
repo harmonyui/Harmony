@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/no-empty-function -- ok*/
 import { useHarmonyContext } from '../../harmony-context'
 import { usePinchGesture } from '../../harmony-provider'
 
@@ -25,20 +24,20 @@ export const WheelContainer: React.FunctionComponent<WheelContainerProps> = ({
 
   return (
     <div
-      className='hw-flex hw-h-full'
+      className='flex h-full'
       ref={(ref) => {
         ref?.addEventListener('wheel', onTouchHeader)
       }}
     >
       {sidePanel}
-      <div className='hw-relative hw-flex hw-flex-col hw-divide-y hw-divide-gray-200 hw-w-full hw-h-full hw-overflow-hidden hw-rounded-lg hw-bg-white hw-shadow-md'>
+      <div className='relative flex flex-col divide-y divide-gray-200 w-full h-full overflow-hidden rounded-lg bg-white shadow-md'>
         <div data-name='harmony-panel'>{toolbarPanel}</div>
         <div
           id='harmony-scroll-container'
           ref={(ref) => {
             ref?.addEventListener('wheel', onTouch)
           }}
-          className='hw-relative hw-flex hw-w-full hw-overflow-auto hw-flex-1 hw-px-4 hw-py-5 sm:hw-px-[250px] hw-bg-gray-200'
+          className='relative flex w-full overflow-auto flex-1 px-4 py-5 sm:px-[250px] bg-gray-200'
         >
           {children}
         </div>

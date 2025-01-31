@@ -22,14 +22,12 @@ export const TokenLinkInput: React.FunctionComponent<LinkInputProps> = ({
   const value = useMemo(() => getAttribute(attribute), [getAttribute])
 
   return (
-    <div
-      className={getClass('hw-flex hw-gap-1 hw-items-center hw-h-6', className)}
-    >
+    <div className={getClass('flex gap-1 items-center h-6', className)}>
       {isExpanded ? (
         <TokenDropdown attribute={attribute} />
       ) : (
         <DesignInput
-          className='hw-w-full'
+          className='w-full'
           value={value}
           onChange={(value) =>
             onAttributeChange({

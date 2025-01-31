@@ -28,7 +28,7 @@ export const Input: React.FunctionComponent<InputProps> = ({
   const props = {
     className: `${
       className || ''
-    } hw-border focus:hw-outline-0 focus:hw-border-gray-400 hw-border-gray-400 hw-shadow-sm hw-rounded-[3px] hw-px-3 hw-py-1.5 hw-text-sm hw-text-gray-900 focus:hw-ring-primary focus:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none placeholder:hw-text-gray-400`,
+    } border focus:outline-0 focus:border-gray-400 border-gray-400 shadow-sm rounded-[3px] px-3 py-1.5 text-sm text-gray-900 focus:ring-primary focus:ring-1 transition-[box-shadow] focus-visible:outline-none placeholder:text-gray-400`,
     onChange: (
       e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>,
     ) => {
@@ -48,12 +48,12 @@ export const Input: React.FunctionComponent<InputProps> = ({
     )
   if (inlineLabel !== undefined) {
     input = (
-      <div className='hw-flex hw-border hw-border-gray-300 hw-rounded-[3px] hw-shadow-sm focus-within:hw-ring-primary focus-within:hw-ring-1 hw-transition-[box-shadow] focus-visible:hw-outline-none sm:hw-max-w-md'>
-        <span className='hw-flex hw-select-none hw-items-center hw-pl-3 hw-text-gray-500 sm:hw-text-sm'>
+      <div className='flex border border-gray-300 rounded-[3px] shadow-sm focus-within:ring-primary focus-within:ring-1 transition-[box-shadow] focus-visible:outline-none sm:max-w-md'>
+        <span className='flex select-none items-center pl-3 text-gray-500 sm:text-sm'>
           {inlineLabel}
         </span>
         <input
-          className='hw-block hw-flex-1 hw-border-0 hw-bg-transparent hw-py-1.5 hw-pl-1 hw-text-gray-900 placeholder:hw-text-gray-400 focus:hw-ring-0 sm:hw-text-sm sm:hw-leading-6'
+          className='block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-900 placeholder:text-gray-400 focus:ring-0 sm:text-sm sm:leading-6'
           placeholder={placeholder}
           type='text'
         />
@@ -107,17 +107,17 @@ export const CheckboxInput: React.FunctionComponent<CheckboxInputProps> = ({
   const input = (
     <div
       className={`${
-        value ? 'hw-bg-primary' : 'hw-bg-gray-100'
-      } ${className} hw-text-blue-600 hw-border-gray-300 hw-rounded focus:hw-ring-primary-light dark:focus:hw-ring-primary dark:hw-ring-offset-gray-800 focus:hw-ring-2 dark:hw-bg-gray-700 dark:hw-border-gray-600 hw-cursor-pointer hw-relative`}
+        value ? 'bg-primary' : 'bg-gray-100'
+      } ${className} text-blue-600 border-gray-300 rounded focus:ring-primary-light dark:focus:ring-primary dark:ring-offset-gray-800 focus:ring-2 dark:bg-gray-700 dark:border-gray-600 cursor-pointer relative`}
     >
       <input
         checked={value}
-        className='hw-absolute hw-top-0 hw-left-0 hw-opacity-0'
+        className='absolute top-0 left-0 opacity-0'
         onChange={onInputChange}
         type='checkbox'
       />
       <CheckmarkIcon
-        className={`hw-w-4 hw-h-4 hw-fill-white ${value ? 'hw-visible' : 'hw-invisible'}`}
+        className={`w-4 h-4 fill-white ${value ? 'visible' : 'invisible'}`}
       />
     </div>
   )
@@ -158,9 +158,9 @@ export const NumberStepperInput: React.FunctionComponent<
   }
 
   return (
-    <div className='hw-flex hw-rounded-[3px] hw-border hw-border-gray-400 hw-items-center hw-overflow-auto'>
+    <div className='flex rounded-[3px] border border-gray-400 items-center overflow-auto'>
       <button
-        className='hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-r hw-border-gray-400'
+        className='hover:bg-gray-100 py-[1px] px-2.5 border-r border-gray-400'
         onClick={() => {
           changeValue(valueProp - 1)
         }}
@@ -168,13 +168,13 @@ export const NumberStepperInput: React.FunctionComponent<
         -
       </button>
       <input
-        className='hw-px-1.5 hw-text-sm hw-py-[1px] hw-border-none hw-w-8 focus:hw-ring-0'
+        className='px-1.5 text-sm py-[1px] border-none w-8 focus:ring-0'
         value={value}
         onChange={onChange}
         onBlur={onBlur}
       />
       <button
-        className='hover:hw-bg-gray-100 hw-py-[1px] hw-px-2.5 hw-border-l hw-border-gray-400'
+        className='hover:bg-gray-100 py-[1px] px-2.5 border-l border-gray-400'
         onClick={() => {
           changeValue(valueProp + 1)
         }}

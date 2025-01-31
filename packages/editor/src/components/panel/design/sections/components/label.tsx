@@ -8,10 +8,7 @@ export const Label: React.FunctionComponent<{
   return (
     <>
       <label
-        className={getClass(
-          'hw-text-sm hw-text-gray-700 hw-font-normal',
-          className,
-        )}
+        className={getClass('text-sm text-gray-700 font-normal', className)}
       >
         {label}
       </label>

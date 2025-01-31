@@ -6,6 +6,6 @@
   flex-direction: row-reverse;
 }
 
-.cl-userButtonOuterIdentifier:is(.hw-dark *) {
+.cl-userButtonOuterIdentifier:is(.dark *) {
   color: #fff;
 }

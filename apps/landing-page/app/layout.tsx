@@ -30,7 +30,7 @@ export default function RootLayout({
         />
       </head>
       <body
-        className={`hw-min-h-screen hw-bg-background hw-font-sans hw-antialiased ${inter.className}`}
+        className={`min-h-screen bg-background font-sans antialiased ${inter.className}`}
       >
         {children}
         {process.env.ENV !== 'production' ? (

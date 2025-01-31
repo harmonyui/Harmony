@@ -11,7 +11,6 @@ export const files = [
 ]
 
 const config: Config = {
-  prefix: 'hw-',
   content: files,
   darkMode: 'class',
   theme: {

@@ -36,20 +36,18 @@ export const CreateProjectPage: StartPageComponent = ({ onOpenProject }) => {
   }
 
   return (
-    <div className='hw-flex hw-flex-col hw-gap-4'>
+    <div className='flex flex-col gap-4'>
       <Label label='Project Name'>
         <Input
-          className='hw-w-full'
+          className='w-full'
           value={projectName}
           onChange={setProjectName}
         />
       </Label>
       <div>
-        {error ? (
-          <p className='hw-text-red-400 hw-text-sm hw-mb-1'>{error}</p>
-        ) : null}
+        {error ? <p className='text-red-400 text-sm mb-1'>{error}</p> : null}
         <Button
-          className='hw-w-full'
+          className='w-full'
           disabled={!projectName}
           onClick={onCreate}
           loading={loading}

@@ -20,13 +20,13 @@ export const ButtonGroup = ({
   return (
     <div
       className={getClass(
-        'hw-flex hw-gap-1 hw-rounded-lg',
-        className ? className : 'hw-col-span-2',
+        'flex gap-1 rounded-lg',
+        className ? className : 'col-span-2',
       )}
     >
       {items.map((item) => (
         <ButtonGroupButton
-          className='hw-flex-1'
+          className='flex-1'
           key={item.value}
           show={
             item.value === value ||
@@ -50,8 +50,8 @@ export const ButtonGroupButton: React.FunctionComponent<{
   return (
     <Button
       className={getClass(
-        'hw-flex hw-items-center hw-justify-center hw-p-1 !hw-border-0 hover:hw-bg-[#E5E7EB] hw-rounded-lg',
-        show ? 'hw-bg-[#E5E7EB]' : '',
+        'flex items-center justify-center p-1 !border-0 hover:bg-[#E5E7EB] rounded-lg',
+        show ? 'bg-[#E5E7EB]' : '',
         className,
       )}
       mode='none'

@@ -523,7 +523,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
 
   return (
     <>
-      <div ref={containerRef} className='hw-z-100' id='harmonyInspector'>
+      <div ref={containerRef} className='z-100' id='harmonyInspector'>
         <div id='harmony-snap-guides'></div>
       </div>
       <Alert label={error} setLabel={setError} />
@@ -941,7 +941,7 @@ export class OverlayRect {
       }
       hotkeys('F', this.onFlexClick)
       const $displayText = $(
-        `<div name="harmony-flex-text" class="hw-absolute hw-text-xs hw-right-0 hw-top-0 hw-mr-2 hw-mt-2 hw-text-white hw-rounded-sm hw-px-1 hw-font-ligh hw-pointer-events-auto hover:hw-cursor-pointer hover:hw-bg-opacity-80 data-[harmony-flex=false]:hw-bg-[#64BDFE] data-[harmony-flex=true]:hw-bg-[#0094FF] after:data-[harmony-flex=false]:hw-content-[''] after:data-[harmony-flex=false]:hw-absolute after:data-[harmony-flex=false]:hw-left-0 after:data-[harmony-flex=false]:hw-top-[8px] after:data-[harmony-flex=false]:hw-w-[36px] after:data-[harmony-flex=false]:hw-border-t after:data-[harmony-flex=false]:hw-border-t-white after:data-[harmony-flex=false]:hw-rotate-[22deg] after:data-[harmony-flex=false]:hw-origin-center" data-harmony-flex="${element.dataset.harmonyFlex}">FLEX</div>`,
+        `<div name="harmony-flex-text" class="absolute text-xs right-0 top-0 mr-2 mt-2 text-white rounded-sm px-1 font-ligh pointer-events-auto hover:cursor-pointer hover:bg-opacity-80 data-[harmony-flex=false]:bg-[#64BDFE] data-[harmony-flex=true]:bg-[#0094FF] after:data-[harmony-flex=false]:content-[''] after:data-[harmony-flex=false]:absolute after:data-[harmony-flex=false]:left-0 after:data-[harmony-flex=false]:top-[8px] after:data-[harmony-flex=false]:w-[36px] after:data-[harmony-flex=false]:border-t after:data-[harmony-flex=false]:border-t-white after:data-[harmony-flex=false]:rotate-[22deg] after:data-[harmony-flex=false]:origin-center" data-harmony-flex="${element.dataset.harmonyFlex}">FLEX</div>`,
       )
       $displayText.css('font-size', Math.min(12 / scale, 12))
       $displayText.css(

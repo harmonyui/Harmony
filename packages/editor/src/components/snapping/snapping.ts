@@ -1,15 +1,7 @@
-/* eslint-disable object-shorthand -- ok*/
 /* eslint-disable no-constant-condition -- ok*/
-/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
-/* eslint-disable @typescript-eslint/no-empty-function -- ok*/
-/* eslint-disable no-nested-ternary -- ok*/
+
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
-/* eslint-disable @typescript-eslint/non-nullable-type-assertion-style -- ok*/
-/* eslint-disable no-lonely-if -- ok*/
-/* eslint-disable @typescript-eslint/no-unnecessary-type-assertion -- ok*/
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-/* eslint-disable no-param-reassign -- ok*/
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
+
 /* eslint-disable import/no-cycle -- ok*/
 import {
   capitalizeFirstLetter,
@@ -1877,14 +1869,14 @@ const handleGuides = (
     const height = rect.y1 - rect.y0 || 1
     const width = rect.x1 - rect.x0 || 1
 
-    const lineTemplate = `<div name="harmony-guide-0" class="hw-bg-primary hw-absolute hw-z-[100]" style="top: ${rect.y0}px; left: ${rect.x0}px; height: ${height}px; width: ${width}px">
+    const lineTemplate = `<div name="harmony-guide-0" class="bg-primary absolute z-[100]" style="top: ${rect.y0}px; left: ${rect.x0}px; height: ${height}px; width: ${width}px">
             ${
               rect.text && height > 1
-                ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-top-1/2 -hw-translate-y-1/2 hw-left-1">
+                ? `<div class="bg-primary rounded-full absolute text-[8px] p-1 text-white top-1/2 -translate-y-1/2 left-1">
                 ${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
             </div>`
                 : rect.text && width > 1
-                  ? `<div class="hw-bg-primary hw-rounded-full hw-absolute hw-text-[8px] hw-p-1 hw-text-white hw-left-1/2 -hw-translate-x-1/2 hw-top-1">
+                  ? `<div class="bg-primary rounded-full absolute text-[8px] p-1 text-white left-1/2 -translate-x-1/2 top-1">
             ${typeof rect.text === 'number' ? round(rect.text, 2) : rect.text}
         </div>`
                   : ''

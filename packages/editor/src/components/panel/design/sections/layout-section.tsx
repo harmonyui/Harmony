@@ -30,18 +30,18 @@ export const LayoutSection: DesignPanelSectionComponent = () => {
 
   return (
     <Section label='Layout'>
-      <div className='hw-grid hw-grid-cols-3 hw-gap-y-2 hw-items-center'>
+      <div className='grid grid-cols-3 gap-y-2 items-center'>
         <Label label='Directions'>
           <AttributeButtonGroup
             attribute='flexDirection'
             items={[
               {
                 value: 'column',
-                children: <ArrowVerticalIcon className='hw-h-4 hw-w-4' />,
+                children: <ArrowVerticalIcon className='h-4 w-4' />,
               },
               {
                 value: 'row',
-                children: <ArrowHorizontalIcon className='hw-h-4 hw-w-4' />,
+                children: <ArrowHorizontalIcon className='h-4 w-4' />,
               },
             ]}
           />
@@ -52,15 +52,15 @@ export const LayoutSection: DesignPanelSectionComponent = () => {
             items={[
               {
                 value: 'flex-start',
-                children: <AlignTopIcon className='hw-h-4 hw-w-4' />,
+                children: <AlignTopIcon className='h-4 w-4' />,
               },
               {
                 value: 'center',
-                children: <AlignCenterVerticalIcon className='hw-h-4 hw-w-4' />,
+                children: <AlignCenterVerticalIcon className='h-4 w-4' />,
               },
               {
                 value: 'flex-end',
-                children: <AlignBottomIcon className='hw-h-4 hw-w-4' />,
+                children: <AlignBottomIcon className='h-4 w-4' />,
               },
             ]}
           />
@@ -127,7 +127,7 @@ const JustifyDropdown: React.FunctionComponent = () => {
 
   return (
     <DesignDropdown
-      className='hw-col-span-2 hw-w-full'
+      className='col-span-2 w-full'
       items={justifyItems}
       initialValue={getAttribute('justifyContent')}
       onChange={(item) =>
@@ -149,7 +149,7 @@ const GapInput: React.FunctionComponent = () => {
           items={[
             {
               value: 'expand',
-              children: <EllipsisHorizontalIcon className='hw-w-4 hw-h-4' />,
+              children: <EllipsisHorizontalIcon className='w-4 h-4' />,
             },
           ]}
           onChange={() => setIsExpanded(!isExpanded)}

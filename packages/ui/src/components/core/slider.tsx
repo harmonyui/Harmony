@@ -16,18 +16,18 @@ export const Slider: React.FunctionComponent<SliderProps> = ({
     onChange(e.target.valueAsNumber)
   }
   return (
-    // <div className="hw-relative hw-w-full hw-min-w-[200px] hw-text-gray-900 hw-h-0.5">
-    //     {/* <label className="hw-absolute hw-inset-0 hw-z-10 hw-rounded-l-full hw-h-full hw-pointer-events-none hw-bg-current" style={{width: `${value * 100}%`}}></label> */}
-    //     <input className="range hw-inset-0 hw-w-full hw-h-full " type="range" value={value} onChange={onInputChange} max={max}/>
+    // <div className="relative w-full min-w-[200px] text-gray-900 h-0.5">
+    //     {/* <label className="absolute inset-0 z-10 rounded-l-full h-full pointer-events-none bg-current" style={{width: `${value * 100}%`}}></label> */}
+    //     <input className="range inset-0 w-full h-full " type="range" value={value} onChange={onInputChange} max={max}/>
     // </div>
     <div
       className={getClass(
-        'hw-relative hw-w-full hw-min-w-[200px] hw-text-gray-900 hw-h-0.5',
+        'relative w-full min-w-[200px] text-gray-900 h-0.5',
         className,
       )}
     >
       <label
-        className='hw-absolute hw-inset-0 hw-z-10 hw-rounded-l-full hw-h-full hw-pointer-events-none hw-bg-current'
+        className='absolute inset-0 z-10 rounded-l-full h-full pointer-events-none bg-current'
         style={{ width: `${(value / max) * 100}%` }}
       ></label>
       <input
@@ -36,7 +36,7 @@ export const Slider: React.FunctionComponent<SliderProps> = ({
         value={value}
         onChange={onInputChange}
         max={max}
-        className='hw-w-full hw-absolute hw-inset-0 hw-bg-transparent hw-cursor-pointer focus:hw-outline-none focus:hw-outline-0 hw-appearance-none [-webkit-appearance:none] [&::-webkit-slider-runnable-track]:hw-h-full [&::-moz-range-track]:hw-h-full [&::-webkit-slider-runnable-track]:hw-rounded-full [&::-moz-range-track]:hw-rounded-full [&::-webkit-slider-runnable-track]:hw-bg-gray-200 [&::-moz-range-track]:hw-bg-gray-200 [&::-moz-range-thumb]:hw-appearance-none [&::-moz-range-thumb]:[-webkit-appearance:none] [&::-webkit-slider-thumb]:hw-appearance-none [&::-webkit-slider-thumb]:[-webkit-appearance:none] [&::-moz-range-thumb]:hw-rounded-full [&::-webkit-slider-thumb]:hw-rounded-full [&::-moz-range-thumb]:hw-border-0 [&::-webkit-slider-thumb]:hw-border-0 [&::-moz-range-thumb]:hw-ring-2 [&::-webkit-slider-thumb]:hw-ring-2 [&::-moz-range-thumb]:hw-ring-current [&::-webkit-slider-thumb]:hw-ring-current [&::-moz-range-thumb]:hw-bg-white [&::-webkit-slider-thumb]:hw-bg-white [&::-moz-range-thumb]:hw-relative [&::-webkit-slider-thumb]:hw-relative [&::-moz-range-thumb]:hw-z-20 [&::-webkit-slider-thumb]:hw-z-20 [&::-moz-range-thumb]:hw-w-2 [&::-webkit-slider-thumb]:hw-w-2 [&::-moz-range-thumb]:hw-h-2 [&::-webkit-slider-thumb]:hw-h-2 [&::-moz-range-thumb]:-hw-mt-[3px] [&::-webkit-slider-thumb]:-hw-mt-[3px]'
+        className='w-full absolute inset-0 bg-transparent cursor-pointer focus:outline-none focus:outline-0 appearance-none [-webkit-appearance:none] [&::-webkit-slider-runnable-track]:h-full [&::-moz-range-track]:h-full [&::-webkit-slider-runnable-track]:rounded-full [&::-moz-range-track]:rounded-full [&::-webkit-slider-runnable-track]:bg-gray-200 [&::-moz-range-track]:bg-gray-200 [&::-moz-range-thumb]:appearance-none [&::-moz-range-thumb]:[-webkit-appearance:none] [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:[-webkit-appearance:none] [&::-moz-range-thumb]:rounded-full [&::-webkit-slider-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-webkit-slider-thumb]:border-0 [&::-moz-range-thumb]:ring-2 [&::-webkit-slider-thumb]:ring-2 [&::-moz-range-thumb]:ring-current [&::-webkit-slider-thumb]:ring-current [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:bg-white [&::-moz-range-thumb]:relative [&::-webkit-slider-thumb]:relative [&::-moz-range-thumb]:z-20 [&::-webkit-slider-thumb]:z-20 [&::-moz-range-thumb]:w-2 [&::-webkit-slider-thumb]:w-2 [&::-moz-range-thumb]:h-2 [&::-webkit-slider-thumb]:h-2 [&::-moz-range-thumb]:-mt-[3px] [&::-webkit-slider-thumb]:-mt-[3px]'
       />
     </div>
   )

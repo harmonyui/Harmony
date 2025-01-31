@@ -45,17 +45,17 @@ export function Button<T extends React.ElementType>({
   const Component = as || 'button'
   const buttonClasses: { [key in ButtonType]: string } = {
     primary:
-      'hw-bg-primary disabled:hw-bg-primary-light hw-border-none hw-text-white enabled:hover:hw-bg-primary/80 hw-fill-white',
-    secondary: 'enabled:hover:hw-bg-gray-50 hw-bg-white',
-    other: `hw-text-secondary enabled:hover:hw-opacity-80`,
-    dark: `hw-bg-[#11283B] hw-text-white hw-border-none enabled:hover:hw-bg-[#11283B]/80 hw-fill-white`,
-    none: `hw-text-sm hw-font-semibold hw-leading-6 hw-text-gray-900`,
+      'bg-primary disabled:bg-primary-light border-none text-white enabled:hover:bg-primary/80 fill-white',
+    secondary: 'enabled:hover:bg-gray-50 bg-white',
+    other: `text-secondary enabled:hover:opacity-80`,
+    dark: `bg-[#11283B] text-white border-none enabled:hover:bg-[#11283B]/80 fill-white`,
+    none: `text-sm font-semibold leading-6 text-gray-900`,
   }
   const style = mode === 'other' ? { backgroundColor } : undefined
   const _class = getClass(
     buttonClasses[mode],
     mode !== 'none'
-      ? 'hw-inline-flex hw-items-center hw-justify-center hw-rounded-md hw-px-2.5 hw-py-1.5 hw-text-sm hw-border hw-border-gray-400 focus:hw-outline-none focus-visible:hw-ring-2 focus-visible:hw-ring-white focus-visible:hw-ring-opacity-75'
+      ? 'inline-flex items-center justify-center rounded-md px-2.5 py-1.5 text-sm border border-gray-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-white focus-visible:ring-opacity-75'
       : '',
     className,
   )
@@ -69,12 +69,8 @@ export function Button<T extends React.ElementType>({
       disabled={disabled}
       style={loading && size ? { ...size, ...style } : style}
     >
-      {loading ? (
-        <Spinner className='hw-rounded' sizeClass='hw-w-5 hw-h-5' />
-      ) : (
-        children
-      )}
-      {/* {loading ? <div className="hw-invisible">{children}</div> : children} */}
+      {loading ? <Spinner className='rounded' sizeClass='w-5 h-5' /> : children}
+      {/* {loading ? <div className="invisible">{children}</div> : children} */}
     </Component>
   )
 }

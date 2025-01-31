@@ -47,17 +47,17 @@ export const AIPanel: React.FunctionComponent = () => {
 
   return (
     <DraggablePanel title='AI' id={Panels.AI} defaultActive={false}>
-      <div className='hw-max-w-xs hw-flex hw-flex-col hw-gap-2'>
+      <div className='max-w-xs flex flex-col gap-2'>
         <p>Select an element and use natural language to make changes to it.</p>
         <Input
           type='textarea'
-          className='hw-w-full'
+          className='w-full'
           placeholder='Add a border to this element...'
           value={text}
           onChange={setText}
         />
         <Button
-          className='hw-ml-auto'
+          className='ml-auto'
           disabled={!text || !data}
           loading={loading}
           onClick={() => onSubmit()}

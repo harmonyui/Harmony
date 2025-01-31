@@ -234,8 +234,8 @@ export class Setuper implements Setup {
 
     ReactDOM.createPortal = createPortal
     this.bodyObserver.disconnect()
-    this.harmonyContainer.classList.remove('hw-h-full')
-    this.harmonyContainer.classList.remove('hw-w-full')
+    this.harmonyContainer.classList.remove('h-full')
+    this.harmonyContainer.classList.remove('w-full')
 
     return true
   }
@@ -284,7 +284,7 @@ export class Setuper implements Setup {
       })
     }
 
-    this.harmonyContainer.className = 'hw-h-full hw-w-full'
+    this.harmonyContainer.className = 'h-full w-full'
     if (document.body.dataset.harmonyId && this.container) {
       ;(this.container as HTMLElement).dataset.harmonyId =
         document.body.dataset.harmonyId
@@ -327,8 +327,8 @@ export function setupHarmonyProvider(setupHarmonyContainer = true) {
   const setup = new Setuper(harmonyContainer)
 
   //container.className = documentBody.className;
-  documentBody.classList.add('hw-h-full')
-  document.documentElement.classList.add('hw-h-full')
+  documentBody.classList.add('h-full')
+  document.documentElement.classList.add('h-full')
   //documentBody.contentEditable = 'true';
 
   //TODO: Probably need to do this for all styles;

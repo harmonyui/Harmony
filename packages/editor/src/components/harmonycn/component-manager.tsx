@@ -39,14 +39,14 @@ const FrameComponent: React.FunctionComponent<{
   }
 
   return createPortal(
-    <div className='hw-border hw-border-dashed hw-p-2 flex'>
+    <div className='border border-dashed p-2 flex'>
       <Button
         mode='none'
-        className='hw-rounded-full hw-bg-primary'
+        className='rounded-full bg-primary'
         onClick={onAddClick}
         data-non-selectable='true'
       >
-        <PlusIcon className='hw-h-4 hw-w-4 hw-text-white' />
+        <PlusIcon className='h-4 w-4 text-white' />
       </Button>
     </div>,
     component.element,

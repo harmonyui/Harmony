@@ -27,13 +27,13 @@ const AccordionTrigger = React.forwardRef<
     <AccordionPrimitive.Trigger
       ref={ref}
       className={getClass(
-        'hw-flex hw-flex-1 hw-items-center hw-justify-between hw-py-2 hw-font-semibold hw-transition-all hover:hw-underline [&[data-state=open]>svg]:hw-rotate-180 hw-w-full',
+        'flex flex-1 items-center justify-between py-2 font-semibold transition-all hover:underline [&[data-state=open]>svg]:rotate-180 w-full',
         className,
       )}
       {...props}
     >
       {children}
-      <ChevronDownIcon className='hw-h-4 hw-w-4 hw-shrink-0 hw-transition-transform hw-duration-200' />
+      <ChevronDownIcon className='h-4 w-4 shrink-0 transition-transform duration-200' />
     </AccordionPrimitive.Trigger>
   </AccordionPrimitive.Header>
 ))
@@ -45,10 +45,10 @@ const AccordionContent = React.forwardRef<
 >(({ className, children, ...props }, ref) => (
   <AccordionPrimitive.Content
     ref={ref}
-    className='hw-overflow-hidden hw-text-sm hw-transition-all data-[state=closed]:hw-animate-accordion-up data-[state=open]:hw-animate-accordion-down'
+    className='overflow-hidden text-sm transition-all data-[state=closed]:animate-accordion-up data-[state=open]:animate-accordion-down'
     {...props}
   >
-    <div className={getClass('hw-pb-2 hw-pt-0', className)}>{children}</div>
+    <div className={getClass('pb-2 pt-0', className)}>{children}</div>
   </AccordionPrimitive.Content>
 ))
 

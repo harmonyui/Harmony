@@ -31,11 +31,11 @@ export const SelectProjectsPage: StartPageComponent = ({ onOpenProject }) => {
   )
 
   if (loading) {
-    return <Spinner sizeClass='hw-h-5 hw-w-5'></Spinner>
+    return <Spinner sizeClass='h-5 w-5'></Spinner>
   }
 
   return (
-    <div className='hw-grid hw-grid-cols-1 sm:hw-grid-cols-2 lg:hw-grid-cols-3 hw-gap-6 hw-mt-6'>
+    <div className='grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mt-6'>
       {filteredProjects.length > 0 ? (
         projects.map((item) => (
           <ProjectCard
@@ -56,22 +56,20 @@ const ProjectCard: React.FunctionComponent<{
   onClick: () => void
 }> = ({ item, onClick }) => {
   return (
-    <button className='hw-group' onClick={onClick}>
-      <div className='hw-relative hw-flex hw-items-center hw-justify-center hw-overflow-hidden hw-rounded-lg hw-h-48'>
+    <button className='group' onClick={onClick}>
+      <div className='relative flex items-center justify-center overflow-hidden rounded-lg h-48'>
         <img
           src={`${EDITOR_URL}/icon-128.png`}
           alt='Harmony Logo'
-          className='hw-object-cover hw-h-8 hw-w-8 group-hover:hw-scale-105 hw-transition-transform hw-duration-300'
+          className='object-cover h-8 w-8 group-hover:scale-105 transition-transform duration-300'
         />
-        <div className='hw-absolute hw-inset-0 hw-bg-black/50 hw-flex hw-items-center hw-justify-center hw-opacity-0 group-hover:hw-opacity-100 hw-transition-opacity hw-duration-300'>
-          <div className='hw-text-white hw-text-lg hw-font-semibold'>
-            View Project
-          </div>
+        <div className='absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300'>
+          <div className='text-white text-lg font-semibold'>View Project</div>
         </div>
       </div>
-      <div className='hw-mt-3'>
-        <h3 className='hw-text-lg hw-font-semibold'>{item.label}</h3>
-        {/* <p className='hw-text-[#6e6e77] hw-text-sm'>
+      <div className='mt-3'>
+        <h3 className='text-lg font-semibold'>{item.label}</h3>
+        {/* <p className='text-[#6e6e77] text-sm'>
           {item.description}
         </p> */}
       </div>

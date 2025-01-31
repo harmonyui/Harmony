@@ -12,12 +12,12 @@ function AnimatedGradientText({
   return (
     <div
       className={getClass(
-        'hw-group hw-relative hw-mx-auto hw-flex hw-max-w-fit hw-flex-row hw-items-center hw-justify-center hw-rounded-2xl hw-bg-white/40 hw-px-4 hw-py-1.5 hw-text-sm hw-font-medium hw-shadow-[inset_0_-8px_10px_#8fdfff1f] hw-backdrop-blur-sm hw-transition-shadow hw-duration-500 hw-ease-out [--bg-size:300%] hover:hw-shadow-[inset_0_-5px_10px_#8fdfff3f] dark:hw-bg-black/40',
+        'group relative mx-auto flex max-w-fit flex-row items-center justify-center rounded-2xl bg-white/40 px-4 py-1.5 text-sm font-medium shadow-[inset_0_-8px_10px_#8fdfff1f] backdrop-blur-sm transition-shadow duration-500 ease-out [--bg-size:300%] hover:shadow-[inset_0_-5px_10px_#8fdfff3f] dark:bg-black/40',
         className,
       )}
     >
       <div
-        className={`hw-absolute hw-inset-0 hw-block hw-h-full hw-w-full hw-animate-gradient hw-bg-gradient-to-r hw-from-[#ffaa40]/50 hw-via-[#9c40ff]/50 hw-to-[#ffaa40]/50 hw-bg-[length:var(--bg-size)_100%] hw-p-[1px] ![mask-composite:subtract] [border-radius:inherit] [mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)]`}
+        className={`absolute inset-0 block h-full w-full animate-gradient bg-gradient-to-r from-[#ffaa40]/50 via-[#9c40ff]/50 to-[#ffaa40]/50 bg-[length:var(--bg-size)_100%] p-[1px] ![mask-composite:subtract] [border-radius:inherit] [mask:linear-gradient(#fff_0_0)_content-box,linear-gradient(#fff_0_0)]`}
       />
 
       {children}
@@ -31,15 +31,15 @@ export const GradientButton: React.FunctionComponent<{
 }> = ({ children, className }) => {
   return (
     <AnimatedGradientText className={className}>
-      🎉 <hr className='hw-mx-2 hw-h-4 hw-w-[1px] hw-shrink-0 hw-bg-gray-300' />{' '}
+      🎉 <hr className='mx-2 h-4 w-[1px] shrink-0 bg-gray-300' />{' '}
       <span
         className={getClass(
-          `hw-inline hw-animate-gradient hw-bg-gradient-to-r hw-from-[#ffaa40] hw-via-[#9c40ff] hw-to-[#ffaa40] hw-bg-[length:var(--bg-size)_100%] hw-bg-clip-text hw-text-transparent`,
+          `inline animate-gradient bg-gradient-to-r from-[#ffaa40] via-[#9c40ff] to-[#ffaa40] bg-[length:var(--bg-size)_100%] bg-clip-text text-transparent`,
         )}
       >
         {children}
       </span>
-      <ChevronRightIcon className='hw-ml-1 hw-size-3 hw-transition-transform hw-duration-300 hw-ease-in-out group-hover:hw-translate-x-0.5 dark:hw-fill-white' />
+      <ChevronRightIcon className='ml-1 size-3 transition-transform duration-300 ease-in-out group-hover:translate-x-0.5 dark:fill-white' />
     </AnimatedGradientText>
   )
 }

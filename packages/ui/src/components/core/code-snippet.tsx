@@ -23,24 +23,24 @@ const CodeSnippet: React.FC<CodeSnippetProps> = ({
   }
 
   return (
-    <div className='hw-rounded-lg hw-shadow-md hw-overflow-hidden hw-text-sm'>
-      <div className='hw-flex hw-justify-between hw-bg-gray-700 hw-p-4 hw-items-center hw-text-white'>
-        <h2 className='hw-font-semibold hw-uppercase'>{language}</h2>
+    <div className='rounded-lg shadow-md overflow-hidden text-sm'>
+      <div className='flex justify-between bg-gray-700 p-4 items-center text-white'>
+        <h2 className='font-semibold uppercase'>{language}</h2>
         {copied ? (
           <span className=''>Copied!</span>
         ) : (
           <button
             onClick={copyCodeToClipboard}
-            className='hw-flex hw-items-center hw-p-1 hw-bg-primary hw-rounded-md hover:hw-bg-primary/80 focus:hw-outline-none focus:hw-ring focus:hw-border-blue-300'
+            className='flex items-center p-1 bg-primary rounded-md hover:bg-primary/80 focus:outline-none focus:ring focus:border-blue-300'
           >
-            <ClipboardIcon className='hw-w-5 hw-h-5 ' />
-            <span className='hw-ml-2 '>Copy code</span>
+            <ClipboardIcon className='w-5 h-5 ' />
+            <span className='ml-2 '>Copy code</span>
           </button>
         )}
       </div>
       {/* <pre
         ref={codeContainerRef}
-        className="hw-overflow-x-auto hw-max-h-48 hw-text-white hw-p-4"
+        className="overflow-x-auto max-h-48 text-white p-4"
       >
         <code>{code}</code>
       </pre> */}

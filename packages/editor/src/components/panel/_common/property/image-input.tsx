@@ -9,7 +9,7 @@ export const ImageInput: PropertyInputComponent<string> = () => {
   const [isOpen, setIsOpen] = useState(false)
   return (
     <>
-      <div className='hw-col-span-2'>
+      <div className='col-span-2'>
         <Button onClick={() => setIsOpen(true)}>Select Image</Button>
       </div>
       <SelectImageModal isOpen={isOpen} onClose={() => setIsOpen(false)} />
@@ -24,7 +24,7 @@ const SelectImageModal: React.FunctionComponent<{
   const [selectedImage, setSelectedImage] = useState<string | undefined>(
     undefined,
   )
-  const { setIsUploadModalOpen, selectImage } = useUploadImage()
+  const { setIsUploadModalOpen, selectImage, canUpload } = useUploadImage()
 
   const onSelect = () => {
     if (!selectedImage) return
@@ -39,10 +39,12 @@ const SelectImageModal: React.FunctionComponent<{
         setSelectedImage={setSelectedImage}
         size='lg'
       />
-      <div className='flex gap-2 hw-justify-end hw-mt-4'>
-        <Button mode='secondary' onClick={() => setIsUploadModalOpen(true)}>
-          Upload
-        </Button>
+      <div className='flex gap-2 justify-end mt-4'>
+        {canUpload ? (
+          <Button mode='secondary' onClick={() => setIsUploadModalOpen(true)}>
+            Upload
+          </Button>
+        ) : null}
         <Button onClick={onSelect} disabled={!selectImage}>
           Select
         </Button>

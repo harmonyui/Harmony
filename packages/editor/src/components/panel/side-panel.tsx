@@ -45,16 +45,16 @@ export const SidePanel: React.FunctionComponent = () => {
   return (
     <Transition
       as={'div'}
-      enter='hw-transition hw-ease-out hw-duration-200'
-      enterFrom='hw-opacity-0 -hw-translate-x-1'
-      enterTo='hw-opacity-100 hw-translate-x-0'
-      leave='hw-transition hw-ease-in hw-duration-150'
-      leaveFrom='hw-opacity-100 hw-translate-x-0'
-      leaveTo='hw-opacity-0 -hw-translate-x-1'
+      enter='transition ease-out duration-200'
+      enterFrom='opacity-0 -translate-x-1'
+      enterTo='opacity-100 translate-x-0'
+      leave='transition ease-in duration-150'
+      leaveFrom='opacity-100 translate-x-0'
+      leaveTo='opacity-0 -translate-x-1'
       show={panel !== undefined}
-      className='hw-h-full'
+      className='h-full'
     >
-      <div className='hw-h-full hw-overflow-auto hw-relative hw-z-[1000] hw-bg-white'>
+      <div className='h-full overflow-auto relative z-[1000] bg-white'>
         {panel?.content}
       </div>
     </Transition>

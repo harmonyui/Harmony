@@ -139,7 +139,7 @@ function LoadingIcon(props: React.ComponentPropsWithoutRef<'svg'>) {
 function HighlightQuery({ text, query }: { text: string; query: string }) {
   return (
     <Highlighter
-      highlightClassName='group-aria-selected:hw-underline hw-bg-transparent hw-text-sky-600 dark:hw-text-sky-400'
+      highlightClassName='group-aria-selected:underline bg-transparent text-sky-600 dark:text-sky-400'
       searchWords={[query]}
       autoEscape={true}
       textToHighlight={text}
@@ -169,7 +169,7 @@ function SearchResult({
 
   return (
     <li
-      className='hw-group hw-block hw-cursor-default hw-rounded-lg hw-px-3 hw-py-2 aria-selected:hw-bg-slate-100 dark:aria-selected:hw-bg-slate-700/30'
+      className='group block cursor-default rounded-lg px-3 py-2 aria-selected:bg-slate-100 dark:aria-selected:bg-slate-700/30'
       aria-labelledby={`${id}-hierarchy ${id}-title`}
       {...autocomplete.getItemProps({
         item: result,
@@ -179,7 +179,7 @@ function SearchResult({
       <div
         id={`${id}-title`}
         aria-hidden='true'
-        className='hw-text-sm hw-text-slate-700 group-aria-selected:hw-text-sky-600 dark:hw-text-slate-300 dark:group-aria-selected:hw-text-sky-400'
+        className='text-sm text-slate-700 group-aria-selected:text-sky-600 dark:text-slate-300 dark:group-aria-selected:text-sky-400'
       >
         <HighlightQuery text={result.title} query={query} />
       </div>
@@ -187,7 +187,7 @@ function SearchResult({
         <div
           id={`${id}-hierarchy`}
           aria-hidden='true'
-          className='hw-mt-0.5 hw-truncate hw-whitespace-nowrap hw-text-xs hw-text-slate-500 dark:hw-text-slate-400'
+          className='mt-0.5 truncate whitespace-nowrap text-xs text-slate-500 dark:text-slate-400'
         >
           {hierarchy.map((item, itemIndex, items) => (
             <Fragment key={itemIndex}>
@@ -195,8 +195,8 @@ function SearchResult({
               <span
                 className={
                   itemIndex === items.length - 1
-                    ? 'hw-sr-only'
-                    : 'hw-mx-2 hw-text-slate-300 dark:hw-text-slate-700'
+                    ? 'sr-only'
+                    : 'mx-2 text-slate-300 dark:text-slate-700'
                 }
               >
                 /

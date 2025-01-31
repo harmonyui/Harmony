@@ -13,19 +13,17 @@ export const Label: React.FunctionComponent<LabelProps> = ({
 }) => {
   return (
     <div
-      className={`${className || ''} ${
-        sameLine ? 'hw-flex hw-items-center' : ''
-      }`}
+      className={`${className || ''} ${sameLine ? 'flex items-center' : ''}`}
     >
       <label
         className={getClass(
-          'hw-block hw-text-sm hw-font-medium hw-leading-6 hw-text-gray-900 dark:hw-text-white',
-          sameLine ? 'hw-mr-2' : '',
+          'block text-sm font-medium leading-6 text-gray-900 dark:text-white',
+          sameLine ? 'mr-2' : '',
         )}
       >
         {label}
       </label>
-      {sameLine ? children : <div className='hw-mt-2'>{children}</div>}
+      {sameLine ? children : <div className='mt-2'>{children}</div>}
     </div>
   )
 }

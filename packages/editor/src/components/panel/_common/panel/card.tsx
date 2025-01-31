@@ -19,14 +19,14 @@ export const Card = <T,>({
   container,
 }: CardProps<T>): React.JSX.Element => {
   return (
-    <div className='hw-bg-white hw-rounded-lg hw-p-4 hw-shadow-sm'>
+    <div className='bg-white rounded-lg p-4 shadow-sm'>
       {label ? (
-        <div className='hw-flex hw-justify-between hw-items-center hw-mb-2'>
-          <h3 className='hw-text-sm hw-text-gray-600'>{label}</h3>
+        <div className='flex justify-between items-center mb-2'>
+          <h3 className='text-sm text-gray-600'>{label}</h3>
           {options ? (
             <DropdownIcon
-              className='!hw-p-0'
-              buttonClass='hw-border-none'
+              className='!p-0'
+              buttonClass='border-none'
               items={options}
               icon={EllipsisHorizontalIcon}
               onChange={onOptionChange}

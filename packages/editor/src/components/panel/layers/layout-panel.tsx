@@ -118,7 +118,7 @@ const ComponentTreeView: React.FunctionComponent = () => {
   return (
     <div className='flex flex-col gap-2'>
       <Input
-        className='hw-w-full'
+        className='w-full'
         placeholder='Search'
         value={search}
         onChange={setSearch}

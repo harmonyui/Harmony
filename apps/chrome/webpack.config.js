@@ -1,5 +1,6 @@
 const path = require('node:path')
 const webpack = require('webpack')
+const utmc = require('harmony-ai-editor/unplugin-tailwindcss-mangle/webpack.cjs')
 
 module.exports = {
   entry: {
@@ -15,7 +16,7 @@ module.exports = {
   resolve: {
     extensions: ['.tsx', '.ts', '.js', '.jsx'],
   },
-  plugins: [new webpack.EnvironmentPlugin({ ...process.env })],
+  plugins: [new webpack.EnvironmentPlugin({ ...process.env }), utmc()],
   module: {
     rules: [
       {

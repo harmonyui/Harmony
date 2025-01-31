@@ -48,20 +48,20 @@ export const AddImagePanel: React.FunctionComponent = () => {
 
   return (
     <>
-      <div className='hw-flex hw-flex-col hw-justify-between hw-max-w-[300px] hw-h-full'>
+      <div className='flex flex-col justify-between max-w-[300px] h-full'>
         {selectedComponent ? (
           <>
             <ImageList
               selectedImage={selectedImage}
               setSelectedImage={setSelectedImage}
             />
-            <div className='hw-flex hw-justify-end hw-mt-4'>
+            <div className='flex justify-end mt-4'>
               {uploadImage ? (
                 <Button onClick={onUpload} mode='secondary'>
                   Upload
                 </Button>
               ) : null}
-              <Button className='hw-ml-2' onClick={onSave}>
+              <Button className='ml-2' onClick={onSave}>
                 Select
               </Button>
             </div>

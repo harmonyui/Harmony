@@ -77,9 +77,9 @@ export function HeroVideoDialog({
   const selectedAnimation = animationVariants[animationStyle]
 
   return (
-    <div className={getClass('hw-relative', className)}>
+    <div className={getClass('relative', className)}>
       <div
-        className='hw-relative hw-cursor-pointer hw-group'
+        className='relative cursor-pointer group'
         onClick={() => setIsVideoOpen(true)}
       >
         <img
@@ -87,15 +87,15 @@ export function HeroVideoDialog({
           alt={thumbnailAlt}
           width={1920}
           height={1080}
-          className='hw-w-full hw-transition-all hw-duration-200 group-hover:hw-brightness-[0.8] hw-ease-out hw-rounded-md hw-shadow-lg hw-border'
+          className='w-full transition-all duration-200 group-hover:brightness-[0.8] ease-out rounded-md shadow-lg border'
         />
-        <div className='hw-absolute hw-inset-0 hw-flex hw-items-center hw-justify-center group-hover:hw-scale-100 hw-scale-[0.9] hw-transition-all hw-duration-200 hw-ease-out hw-rounded-2xl'>
-          <div className='hw-bg-primary/10 hw-flex hw-items-center hw-justify-center hw-rounded-full hw-backdrop-blur-md hw-size-28'>
+        <div className='absolute inset-0 flex items-center justify-center group-hover:scale-100 scale-[0.9] transition-all duration-200 ease-out rounded-2xl'>
+          <div className='bg-primary/10 flex items-center justify-center rounded-full backdrop-blur-md size-28'>
             <div
-              className={`hw-flex hw-items-center hw-justify-center hw-bg-gradient-to-b hw-from-primary/30 hw-to-primary hw-shadow-md hw-rounded-full hw-size-20 hw-transition-all hw-ease-out hw-duration-200 hw-relative group-hover:hw-scale-[1.2] hw-scale-100`}
+              className={`flex items-center justify-center bg-gradient-to-b from-primary/30 to-primary shadow-md rounded-full size-20 transition-all ease-out duration-200 relative group-hover:scale-[1.2] scale-100`}
             >
               <PlayIcon
-                className='hw-size-8 hw-text-white hw-fill-white group-hover:hw-scale-105 hw-scale-100 hw-transition-transform hw-duration-200 hw-ease-out'
+                className='size-8 text-white fill-white group-hover:scale-105 scale-100 transition-transform duration-200 ease-out'
                 style={{
                   filter:
                     'drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06))',
@@ -112,20 +112,20 @@ export function HeroVideoDialog({
             animate={{ opacity: 1 }}
             onClick={() => setIsVideoOpen(false)}
             exit={{ opacity: 0 }}
-            className='hw-fixed hw-inset-0 hw-z-50 hw-flex hw-items-center hw-justify-center hw-bg-black/50 hw-backdrop-blur-md'
+            className='fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-md'
           >
             <motion.div
               {...selectedAnimation}
               transition={{ type: 'spring', damping: 30, stiffness: 300 }}
-              className='hw-relative hw-w-full hw-max-w-4xl hw-aspect-video hw-mx-4 md:hw-mx-0'
+              className='relative w-full max-w-4xl aspect-video mx-4 md:mx-0'
             >
-              <motion.button className='hw-absolute -hw-top-16 hw-right-0 hw-text-white hw-text-xl hw-bg-neutral-900/50 hw-ring-1 hw-backdrop-blur-md hw-rounded-full hw-p-2 dark:hw-bg-neutral-100/50 dark:hw-text-black'>
-                <XMarkIcon className='hw-size-5' />
+              <motion.button className='absolute -top-16 right-0 text-white text-xl bg-neutral-900/50 ring-1 backdrop-blur-md rounded-full p-2 dark:bg-neutral-100/50 dark:text-black'>
+                <XMarkIcon className='size-5' />
               </motion.button>
-              <div className='hw-size-full hw-border-2 hw-border-white hw-rounded-2xl hw-overflow-hidden hw-isolate hw-z-[1] hw-relative'>
+              <div className='size-full border-2 border-white rounded-2xl overflow-hidden isolate z-[1] relative'>
                 <iframe
                   src={videoSrc}
-                  className='hw-size-full hw-rounded-2xl'
+                  className='size-full rounded-2xl'
                   allowFullScreen
                   allow='accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share'
                 ></iframe>

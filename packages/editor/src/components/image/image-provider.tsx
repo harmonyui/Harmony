@@ -41,6 +41,8 @@ export const useUploadImage = () => {
   const rootComponent = useHarmonyStore((state) => state.rootComponent)
   const cdnImages = useHarmonyStore((state) => state.cdnImages)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
+  const uploadImage = useHarmonyStore((state) => state.uploadImage)
+
   const { onElementPropertyChange: onPropertyChange } = useHarmonyContext()
   const contextProps = useContext(UploadImageContext)
 
@@ -88,5 +90,11 @@ export const useUploadImage = () => {
     throw new Error('UploadImageContext is not provided')
   }
 
-  return { selectImage, imageTags, svgTags, ...contextProps }
+  return {
+    selectImage,
+    imageTags,
+    svgTags,
+    canUpload: uploadImage !== undefined,
+    ...contextProps,
+  }
 }

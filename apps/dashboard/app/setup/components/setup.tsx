@@ -85,8 +85,8 @@ const SetupLayout: React.FunctionComponent<{ children: React.ReactNode }> = ({
   children,
 }) => {
   return (
-    <main className='hw-flex hw-min-h-screen hw-flex-col hw-items-center hw-justify-between hw-p-24 dark:hw-bg-gray-900'>
-      <div className='hw-flex hw-flex-col hw-gap-4 hw-bg-white dark:hw-bg-gray-800 hw-rounded-md hw-py-10 hw-px-20 hw-max-w-[800px]'>
+    <main className='flex min-h-screen flex-col items-center justify-between p-24 dark:bg-gray-900'>
+      <div className='flex flex-col gap-4 bg-white dark:bg-gray-800 rounded-md py-10 px-20 max-w-[800px]'>
         <Header level={1}>Welcome to Harmony</Header>
         {children}
       </div>
@@ -131,27 +131,24 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({
   return (
     <>
       <Header level={4}>Please enter your account details:</Header>
-      <div className='hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-8 sm:hw-grid-cols-6'>
-        <Label className='sm:hw-col-span-3' label='First Name:'>
+      <div className='grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6'>
+        <Label className='sm:col-span-3' label='First Name:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={account.firstName}
             onChange={changeProperty.formFunc('firstName', account)}
           />
         </Label>
-        <Label className='sm:hw-col-span-3' label='Last Name:'>
+        <Label className='sm:col-span-3' label='Last Name:'>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={account.lastName}
             onChange={changeProperty.formFunc('lastName', account)}
           />
         </Label>
-        <Label
-          className='sm:hw-col-span-3'
-          label='What best describes your role'
-        >
+        <Label className='sm:col-span-3' label='What best describes your role'>
           <Dropdown
-            className='hw-w-full'
+            className='w-full'
             items={items}
             initialValue={isOther ? 'other' : account.role}
             onChange={(item) => {
@@ -163,17 +160,17 @@ const WelcomeSetup: React.FunctionComponent<WelcomeSetupProps> = ({
           </Dropdown>
         </Label>
         {isOther ? (
-          <Label className='sm:hw-col-span-3' label='Other Role'>
+          <Label className='sm:col-span-3' label='Other Role'>
             <Input
-              className='hw-w-full'
+              className='w-full'
               onChange={changeProperty.formFunc('role', account)}
             />
           </Label>
         ) : null}
       </div>
-      {error ? <p className='hw-text-sm hw-text-red-400'>{error}</p> : null}
+      {error ? <p className='text-sm text-red-400'>{error}</p> : null}
       <Button
-        className='hw-w-fit hw-ml-auto'
+        className='w-fit ml-auto'
         onClick={onContinueClick}
         loading={loading}
       >
@@ -223,17 +220,17 @@ export const DesignerSetup: React.FunctionComponent<DesignerSetupProps> = ({
           To set up Harmony, we need to connect to your Github repositories.
         </Header>
         <HarmonyToGithubThing />
-        <p className='dark:hw-text-white'>
+        <p className='dark:text-white'>
           Invite a developer to your Harmony team to initiate the process.
         </p>
         <CopyText text={setupUrl} />
-        {/*<div className="hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-8 sm:hw-grid-cols-6">
-                    <Label className="sm:hw-col-span-full" label="Developer Email:">
-                        <Input className="hw-w-full" value={email} onChange={setEmail}/>
+        {/*<div className="grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6">
+                    <Label className="sm:col-span-full" label="Developer Email:">
+                        <Input className="w-full" value={email} onChange={setEmail}/>
                     </Label>
                 </div> */}
-        {error ? <p className='hw-text-sm hw-text-red-400'>{error}</p> : null}
-        <Button className='hw-w-fit hw-ml-auto' onClick={onFinish}>
+        {error ? <p className='text-sm text-red-400'>{error}</p> : null}
+        <Button className='w-fit ml-auto' onClick={onFinish}>
           Continue
         </Button>
       </SetupLayout>
@@ -243,19 +240,16 @@ export const DesignerSetup: React.FunctionComponent<DesignerSetupProps> = ({
 
 const HarmonyToGithubThing = () => {
   return (
-    <div className='hw-flex hw-justify-evenly'>
-      <img className='hw-w-20 hw-h-20 dark:hw-hidden' src='/icon-128.png' />
-      <img
-        className='hw-w-20 hw-h-20 hw-hidden dark:hw-block'
-        src='/icon-dark-128.png'
-      />
+    <div className='flex justify-evenly'>
+      <img className='w-20 h-20 dark:hidden' src='/icon-128.png' />
+      <img className='w-20 h-20 hidden dark:block' src='/icon-dark-128.png' />
       <svg
         xmlns='http://www.w3.org/2000/svg'
         fill='none'
         viewBox='0 0 24 24'
         strokeWidth={1}
         stroke='currentColor'
-        className='hw-w-24 hw-h-20 dark:hw-text-white'
+        className='w-24 h-20 dark:text-white'
       >
         <path
           strokeLinecap='round'
@@ -264,7 +258,7 @@ const HarmonyToGithubThing = () => {
         />
       </svg>
       <svg
-        className='dark:hw-fill-white hw-w-20 hw-h-20'
+        className='dark:fill-white w-20 h-20'
         xmlns='http://www.w3.org/2000/svg'
         viewBox='0 0 16 16'
         fill='black'
@@ -391,7 +385,7 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({
   return (
     <SetupLayout>
       {pages[page]}
-      {error ? <p className='hw-text-sm hw-text-red-400'>{error}</p> : null}
+      {error ? <p className='text-sm text-red-400'>{error}</p> : null}
     </SetupLayout>
   )
 }
@@ -421,7 +415,7 @@ const StartPage: React.FunctionComponent<StartPageProps> = ({ clientId }) => {
       </Header>
       <HarmonyToGithubThing />
       {href ? (
-        <Button as='a' href={href} className='hw-w-fit hw-ml-auto'>
+        <Button as='a' href={href} className='w-fit ml-auto'>
           Continue
         </Button>
       ) : (
@@ -468,25 +462,21 @@ const GitImportRepository: React.FunctionComponent<
   return (
     <>
       <Header level={4}>Step 1: Import Git Repository</Header>
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         In order to make changes to the UI, we will need to access to your
         project on Github
       </p>
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         Please select which project you would like to intergrate with Harmony
       </p>
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         To install the Harmony App in a new repo, visit{' '}
-        <a
-          className='hw-text-blue-500'
-          href={githubInstallLink}
-          target='_blank'
-        >
+        <a className='text-blue-500' href={githubInstallLink} target='_blank'>
           this
         </a>{' '}
         link
       </p>
-      {error ? <p className='hw-text-red-400 hw-text-sm'>{error}</p> : null}
+      {error ? <p className='text-red-400 text-sm'>{error}</p> : null}
       {repos ? (
         repos.length === 0 ? (
           <Button
@@ -498,15 +488,13 @@ const GitImportRepository: React.FunctionComponent<
           </Button>
         ) : (
           <>
-            <div className='hw-flex hw-flex-col hw-gap-2'>
+            <div className='flex flex-col gap-2'>
               {repos.map((repo) => (
                 <div
                   key={repo.id}
-                  className='hw-flex hw-justify-between hw-items-center hw-border dark:hw-border-gray-700 hw-rounded-md hw-p-3'
+                  className='flex justify-between items-center border dark:border-gray-700 rounded-md p-3'
                 >
-                  <span className='hw-text-sm dark:hw-text-white'>
-                    {repo.name}
-                  </span>
+                  <span className='text-sm dark:text-white'>{repo.name}</span>
                   <Button onClick={() => onImport(repo)}>Import</Button>
                 </div>
               ))}
@@ -550,32 +538,32 @@ const AdditionalRepositoryInfo: React.FunctionComponent<
   return (
     <>
       <Header level={4}>Additional Repository Information</Header>
-      <div className='hw-grid hw-grid-cols-1 hw-gap-x-6 hw-gap-y-8 sm:hw-grid-cols-6'>
+      <div className='grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6'>
         {/* TODO: Should make a dropdown that pulls the available branches */}
-        <Label className='sm:hw-col-span-full' label='Branch'>
-          <p className='hw-text-sm hw-text-gray-400'>
+        <Label className='sm:col-span-full' label='Branch'>
+          <p className='text-sm text-gray-400'>
             Enter the name of the branch that pull requests will be merged into
             (probably a staging branch).
           </p>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={repository.branch}
             onChange={changeProperty.formFunc('branch', repository)}
           />
         </Label>
-        <Label className='sm:hw-col-span-full' label='Default Url'>
-          <p className='hw-text-sm hw-text-gray-400 dark:hw-text-gray-200'>
+        <Label className='sm:col-span-full' label='Default Url'>
+          <p className='text-sm text-gray-400 dark:text-gray-200'>
             Enter the url of your staging app url.
           </p>
           <Input
-            className='hw-w-full'
+            className='w-full'
             value={repository.defaultUrl}
             onChange={changeProperty.formFunc('defaultUrl', repository)}
           />
         </Label>
-        <Label className='sm:hw-col-span-3' label='CSS Framework:'>
+        <Label className='sm:col-span-3' label='CSS Framework:'>
           <Dropdown
-            className='hw-w-full'
+            className='w-full'
             items={items}
             initialValue={repository.cssFramework}
             onChange={(item) => {
@@ -587,13 +575,13 @@ const AdditionalRepositoryInfo: React.FunctionComponent<
         </Label>
         {repository.cssFramework === 'tailwind' ? (
           <Label
-            className='sm:hw-col-span-full'
+            className='sm:col-span-full'
             label='Tailwind Prefix (if applicable):'
           >
-            <p className='hw-text-sm hw-text-gray-400 dark:hw-text-gray-200'>
+            <p className='text-sm text-gray-400 dark:text-gray-200'>
               Enter the{' '}
               <a
-                className='hw-text-blue-600'
+                className='text-blue-600'
                 href='https://tailwindcss.com/docs/configuration#prefix'
                 target='_blank'
               >
@@ -602,15 +590,15 @@ const AdditionalRepositoryInfo: React.FunctionComponent<
               that is used for the tailwind classes
             </p>
             <Input
-              className='hw-w-full'
+              className='w-full'
               value={repository.tailwindPrefix}
               onChange={changeProperty.formFunc('tailwindPrefix', repository)}
             />
           </Label>
         ) : null}
       </div>
-      {error ? <p className='hw-text-sm hw-text-red-400'>{error}</p> : null}
-      <Button className='hw-w-fit hw-ml-auto' onClick={onContinueClick}>
+      {error ? <p className='text-sm text-red-400'>{error}</p> : null}
+      <Button className='w-fit ml-auto' onClick={onContinueClick}>
         Continue
       </Button>
     </>
@@ -745,62 +733,62 @@ export const fonts: Font[] = [
   return (
     <>
       <Header level={4}>Step 2: Install Design Suite</Header>
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         In the repository you selected, checkout a new branch to make these
         changes, eventually you will merge these changes back to master.
       </p>
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         Install the harmony packages using your package manager
       </p>
       <CodeSnippet
         language='terminal'
         code='npm install harmony-ai-plugin harmony-ai-editor'
       />
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         Then, import from <SmallCode>harmony-ai-editor</SmallCode> and add the
         following component before your closing <SmallCode>body</SmallCode> tag
       </p>
       <CodeSnippet language='javascript' code={designSuiteCode} />
 
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         Noted that we marked NODE_ENV as the environment variable. You can
         change NODE_ENV to whatever make sense to your project.
       </p>
 
       <Header level={4}>Configure Data Tagging (NextJS Only)</Header>
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         In order for the front-end to communicate with the code base, you need
         to use the Harmony SWC plugin. Create a next.config.js file in the root
         (if it doesn&#39;t exist) and insert the following code:
       </p>
       <CodeSnippet language='javascript' code={swcPluginCode} />
 
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         Alternatively, if you are using .mjs for your Next.js config file.
         Insert the following code.
       </p>
       <CodeSnippet language='javascript' code={swcPluginCodeMjs} />
 
       <Header level={4}>Using Fonts (Optional)</Header>
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         If you want to be able to pick between fonts in your editor, then you
         need to install the fonts on your own machine. To do that, add the
         following file somewhere in your code base (ex. in a utils folder). Feel
         free to add or remove any fonts you want from google fonts and add it to
         the fonts array
       </p>
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         Note: This only works with NextJS Fonts
       </p>
       <CodeSnippet language='typescript' code={fontsFile} />
-      <p className='hw-text-sm dark:hw-text-white'>
+      <p className='text-sm dark:text-white'>
         Then where you added the HarmonySetup component, pass in the fonts array
         you just created.
       </p>
       <CodeSnippet language='javascript' code={designSuiteCodeWithFonts} />
 
-      <div className='hw-flex'>
-        <Button className='hw-ml-auto' onClick={onContinue}>
+      <div className='flex'>
+        <Button className='ml-auto' onClick={onContinue}>
           Continue
         </Button>
       </div>
@@ -814,7 +802,7 @@ const SmallCode: React.FunctionComponent<{ children: string }> = ({
   return (
     <code
       style={{ background: 'rgb(29, 31, 33)' }}
-      className='hw-text-white hw-p-0.5'
+      className='text-white p-0.5'
     >
       {children}
     </code>

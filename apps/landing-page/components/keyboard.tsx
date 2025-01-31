@@ -9,7 +9,7 @@ const KeyboardContext = createContext<{ highlighted: string[] }>({
 })
 
 function Row(props: { children: React.ReactNode }) {
-  return <div {...props} className='hw-group hw-flex hw-h-9 hw-gap-2' />
+  return <div {...props} className='group flex h-9 gap-2' />
 }
 
 function Key({

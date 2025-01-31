@@ -19,7 +19,7 @@ export const ClassVariantInput: PropertyInputComponent<string> = ({
 
   return (
     <Dropdown
-      className='hw-col-span-2 hw-w-full'
+      className='col-span-2 w-full'
       items={items}
       initialValue={value}
       onChange={(item) => onChange(item.id)}
