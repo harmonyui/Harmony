@@ -9,7 +9,7 @@ var _unplugin = require('unplugin');
 
 // src/core/factory.ts
 var _pluginutils = require('@rollup/pluginutils');
-var _core = require('@tailwindcss-mangle/core');
+var _core = require('./@tailwindcss-mangle/core/index.cjs');
 var _iscssrequest = require('is-css-request');
 var WEBPACK_LOADER = _chunkDKIKMCW5cjs.path.resolve(__dirname, false ? "../../dist/core/loader.cjs" : "core/loader.cjs");
 var factory = (options) => {
