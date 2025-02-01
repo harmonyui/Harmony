@@ -20,6 +20,6 @@ const config = defineConfig({
       classPrefix,
     },
   },
-})
+}) as unknown
 
 export default config
