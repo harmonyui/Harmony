@@ -3,7 +3,9 @@ import './globals.css'
 import { inter } from '@harmony/util/src/fonts'
 import { DarkmodeHTML } from './components/dark-mode-toggle'
 import { HarmonySetup } from 'harmony-ai-editor/src'
+
 import 'harmony-ai-editor/src/global-provider'
+import { uploadImage } from './actions'
 
 export const metadata: Metadata = {
   title: 'Harmony UI',
@@ -34,7 +36,10 @@ export default function RootLayout({
       >
         {children}
         {process.env.ENV !== 'production' ? (
-          <HarmonySetup repositoryId={process.env.REPOSITORY_ID} />
+          <HarmonySetup
+            repositoryId={process.env.REPOSITORY_ID}
+            uploadImage={uploadImage}
+          />
         ) : null}
       </body>
     </DarkmodeHTML>

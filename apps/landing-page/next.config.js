@@ -10,6 +10,9 @@ const nextConfig = {
     return config
   },
   experimental: {
+    serverActions: {
+      bodySizeLimit: '3mb',
+    },
     swcPlugins:
       process.env.ENV !== 'production'
         ? [
