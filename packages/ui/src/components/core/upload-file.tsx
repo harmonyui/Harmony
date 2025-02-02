@@ -36,10 +36,10 @@ export const UploadFile: React.FunctionComponent<UploadFileProps> = ({
           <span className='text-sm text-gray-600'>Uploading...</span>
         ) : (
           <>
-            <div className='mt-4 flex text-sm leading-6 text-gray-600 justify-center'>
+            <div className='mt-4 flex text-sm leading-6 text-gray-600 dark:text-white/80 justify-center'>
               <label
                 htmlFor='file-upload'
-                className='relative cursor-pointer rounded-md bg-white font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary-lighter'
+                className='relative cursor-pointer rounded-md bg-white dark:bg-transparent font-semibold text-primary focus-within:outline-none focus-within:ring-2 focus-within:ring-primary focus-within:ring-offset-2 hover:text-primary-lighter'
               >
                 <span>Upload a file</span>
                 <input
@@ -52,7 +52,7 @@ export const UploadFile: React.FunctionComponent<UploadFileProps> = ({
               </label>
               <p className='pl-1'>or drag and drop</p>
             </div>
-            <p className='text-xs leading-5 text-gray-600'>
+            <p className='text-xs leading-5 text-gray-600 dark:text-white/80'>
               PNG, JPG, GIF up to 10MB
             </p>
           </>

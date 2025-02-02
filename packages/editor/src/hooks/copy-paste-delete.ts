@@ -76,30 +76,34 @@ export const useCopyPasteDelete = () => {
               throw new Error(`Cannot find main style info ${update.selector}`)
 
             mainStyleInfo.class.split(' ').forEach((c) => {
-              const classElements = Array.from(
-                document.querySelectorAll(`.${c}`),
-              ).filter((e) => e.contains(element))
-              classElements.forEach((el) => {
-                const { componentId, childIndex } = getComponentIdAndChildIndex(
-                  el as HTMLElement,
-                )
-                const info = styleUpdate.classes.find(
-                  (classInfo) =>
-                    componentId === classInfo.componentId &&
-                    childIndex === classInfo.childIndex,
-                )
-                if (info) {
-                  if (!info.className.split(' ').includes(c)) {
-                    info.className += ` ${c}`
+              if (!c) return
+              try {
+                const classElements = Array.from(
+                  document.querySelectorAll(`.${c}`),
+                ).filter((e) => e.contains(element))
+                classElements.forEach((el) => {
+                  const { componentId, childIndex } =
+                    getComponentIdAndChildIndex(el as HTMLElement)
+                  const info = styleUpdate.classes.find(
+                    (classInfo) =>
+                      componentId === classInfo.componentId &&
+                      childIndex === classInfo.childIndex,
+                  )
+                  if (info) {
+                    if (!info.className.split(' ').includes(c)) {
+                      info.className += ` ${c}`
+                    }
+                  } else {
+                    styleUpdate.classes.push({
+                      componentId,
+                      childIndex,
+                      className: c,
+                    })
                   }
-                } else {
-                  styleUpdate.classes.push({
-                    componentId,
-                    childIndex,
-                    className: c,
-                  })
-                }
-              })
+                })
+              } catch {
+                return
+              }
             })
 
             //If the element has not been added yet, add it with an empty class (this is needed in the backend)

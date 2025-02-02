@@ -15,6 +15,10 @@ import { UploadImageModal } from './upload-image-modal'
 interface UploadImageContextProps {
   isUploadModalOpen: boolean
   setIsUploadModalOpen: (isOpen: boolean) => void
+  selectImage: (image: string) => void
+  imageTags: string[]
+  svgTags: string[]
+  canUpload: boolean
 }
 const UploadImageContext = createContext<UploadImageContextProps | undefined>(
   undefined,
@@ -24,27 +28,12 @@ export const UploadImageProvider: React.FunctionComponent<{
   children: React.ReactNode
 }> = ({ children }) => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false)
-  return (
-    <UploadImageContext.Provider
-      value={{ isUploadModalOpen, setIsUploadModalOpen }}
-    >
-      {children}
-      <UploadImageModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-      />
-    </UploadImageContext.Provider>
-  )
-}
-
-export const useUploadImage = () => {
   const rootComponent = useHarmonyStore((state) => state.rootComponent)
   const cdnImages = useHarmonyStore((state) => state.cdnImages)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
   const uploadImage = useHarmonyStore((state) => state.uploadImage)
 
   const { onElementPropertyChange: onPropertyChange } = useHarmonyContext()
-  const contextProps = useContext(UploadImageContext)
 
   const { imageTags, svgTags } = useMemo(() => {
     const images: string[] = cdnImages || []
@@ -86,15 +75,40 @@ export const useUploadImage = () => {
     [handleAddImage, imageTags],
   )
 
+  const onUpload = useCallback(
+    (fileName: string) => {
+      selectImage(fileName)
+    },
+    [selectImage],
+  )
+
+  return (
+    <UploadImageContext.Provider
+      value={{
+        isUploadModalOpen,
+        setIsUploadModalOpen,
+        selectImage,
+        imageTags,
+        svgTags,
+        canUpload: uploadImage !== undefined,
+      }}
+    >
+      {children}
+      <UploadImageModal
+        isOpen={isUploadModalOpen}
+        onClose={() => setIsUploadModalOpen(false)}
+        onUpload={onUpload}
+      />
+    </UploadImageContext.Provider>
+  )
+}
+
+export const useUploadImage = () => {
+  const contextProps = useContext(UploadImageContext)
+
   if (!contextProps) {
     throw new Error('UploadImageContext is not provided')
   }
 
-  return {
-    selectImage,
-    imageTags,
-    svgTags,
-    canUpload: uploadImage !== undefined,
-    ...contextProps,
-  }
+  return contextProps
 }

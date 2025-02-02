@@ -1964,6 +1964,45 @@ describe('code-updator', () => {
         `),
       )
     })
+
+    it('Should add text to a component with multiple children', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(
+        ['complexText'],
+        {
+          cssFramework: 'tailwind',
+        },
+      )
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'text',
+          name: '2',
+          value: 'New Content',
+          oldValue: '',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.complexText).toBeTruthy()
+
+      const codeUpdates = fileUpdates.complexText
+      expect(codeUpdates.filePath).toBe('complexText')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          export const App = () => {
+            return <div>
+              Hello there
+              <br/>
+              New Content
+            </div>
+          }
+        `),
+      )
+    })
   })
 })
 
@@ -2202,6 +2241,14 @@ const testFiles = {
           <h3>Here</h3>
           {str ? <h4>{str}</h4> : null}
         </div>
+      </div>
+    }
+  `,
+  complexText: `
+    export const App = () => {
+      return <div>
+        Hello there
+        <br/>
       </div>
     }
   `,

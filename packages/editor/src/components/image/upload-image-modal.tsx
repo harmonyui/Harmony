@@ -6,17 +6,18 @@ import { useHarmonyStore } from '../../hooks/state'
 interface UploadImageModalProps {
   isOpen: boolean
   onClose: () => void
+  onUpload: (fileName: string) => void
 }
 export const UploadImageModal: React.FunctionComponent<
   UploadImageModalProps
-> = ({ isOpen, onClose }) => {
+> = ({ isOpen, onClose, onUpload: onUploadProps }) => {
   const uploadImage = useHarmonyStore((state) => state.uploadImage)
   if (!uploadImage) return null
 
   const onUpload = async (file: File) => {
     const formData = new FormData()
     formData.append('image', file)
-    await uploadImage(formData)
+    onUploadProps(await uploadImage(formData))
     onClose()
   }
   return (
