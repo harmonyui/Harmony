@@ -354,6 +354,7 @@ export const parseJSXElementText = (text: string): JSXElementNode[] => {
 export const getClassNameValue = async (
   name: string,
   value: string,
+  formattedValue: string,
   cssFramework: string,
 ) => {
   if (name === 'class')
@@ -361,7 +362,7 @@ export const getClassNameValue = async (
   if (cssFramework !== 'tailwind')
     return createUpdate<ClassNameValue>({ type: 'style', value })
 
-  const tailwindValue = await convertCSSToTailwind(name, value)
+  const tailwindValue = await convertCSSToTailwind(name, value, formattedValue)
   if (!tailwindValue) {
     return createUpdate<ClassNameValue>({
       type: 'style',

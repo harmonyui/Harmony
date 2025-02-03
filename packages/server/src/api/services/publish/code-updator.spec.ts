@@ -292,6 +292,55 @@ describe('code-updator', () => {
       )
     })
 
+    it('Should combine class properties', async () => {
+      const file: TestFile = 'tailwindPrefix'
+      const { codeUpdator, elementInstances } = await setupGitRepo([file])
+      const updateInfos: ComponentUpdate[] = [
+        {
+          value: '10px',
+          oldValue: '4px',
+          type: 'className',
+          name: 'padding-left',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: '10px',
+          oldValue: '4px',
+          type: 'className',
+          name: 'padding-right',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updateInfos)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const TailwindComponent = ({label, innerClassName, noOp, noWhere}) => {
+            return (
+                <div className='hw-group hw-flex hw-py-2 px-2.5'>
+                    <h1 className='hw-flex hw-flex-col'>Hello there</h1>
+                    <h2 className={innerClassName}>{label}</h2>
+                    <h3 className={noWhere}>{noOp}</h3>
+                </div>
+            )
+        }
+        const UseTailwindComponent = ({noWhere}) => {
+          return (
+            <TailwindComponent label='Thank you' innerClassName='hw-p-2' noWhere={noWhere}/>
+          )
+        }
+        `),
+      )
+    })
+
     it('Should update text literals and comments for dynamic text', async () => {
       const file: TestFile = 'tailwindPrefix'
       const { codeUpdator, elementInstances } = await setupGitRepo([file])

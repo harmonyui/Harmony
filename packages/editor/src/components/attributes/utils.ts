@@ -1,5 +1,3 @@
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-
 import type { Font } from '@harmony/util/src/fonts'
 import {
   camelToKebab,
@@ -155,12 +153,15 @@ function getAppliedComputedStyles(
 
   const retval: Record<string, string> = {}
 
-  // eslint-disable-next-line @typescript-eslint/prefer-for-of -- ok
   for (let i = 0; i < styles.length; i++) {
     const key = styles[i]
     const value = styles.getPropertyValue(key)
 
-    element.style.setProperty(key, 'unset')
+    // https://developer.mozilla.org/en-US/docs/Web/CSS/unset#border
+    element.style.setProperty(
+      key,
+      key.includes('border') ? 'inherit' : 'revert',
+    )
 
     const unsetValue = styles.getPropertyValue(key)
 
@@ -176,6 +177,8 @@ function getAppliedComputedStyles(
   }
 
   styleInfo.matches.forEach((match) => {
+    if (match.selector.includes('*')) return
+
     match.styles.forEach((style) => {
       if (
         style.value === styleMap.get(style.name)?.toString() &&

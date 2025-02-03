@@ -48,7 +48,12 @@ export const updateStyle: UpdateComponent = async (info, graph, repository) => {
 
       const update = parseUpdate(
         classNameValueSchema,
-        await getClassNameValue(propertyName, value, repository.cssFramework),
+        await getClassNameValue(
+          propertyName,
+          value,
+          '',
+          repository.cssFramework,
+        ),
       )
       updateElementClassName({
         componentId,
