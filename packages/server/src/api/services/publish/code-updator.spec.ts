@@ -1931,10 +1931,10 @@ describe('code-updator', () => {
               import { Button } from './file1'
               const App = () => {
                 return <div>
-                  <div className="flex">
+                  <div>
                     <Button>
-                      <div className="flex">
-                        <div className="flex">
+                      <div>
+                        <div>
                           <span>Content1</span>
                         </div>
                         <span>Content2</span>
@@ -2001,7 +2001,7 @@ describe('code-updator', () => {
           export const App = () => {
             const str = 'Hello';
             return <div>
-              <div className='flex'>
+              <div>
                 {str ? <h1>{str}</h1> : null}
                 <h2>There</h2>
               </div>
