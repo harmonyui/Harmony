@@ -626,9 +626,7 @@ describe('code-updator', () => {
             return (
                 <div className='hw-group hw-flex hw-py-2'>
                     <h1 className='hw-flex hw-flex-col'>Hello there</h1>
-                    <h2 className={innerClassName} style={{
-                      paddingLeft: '10px'
-                    }}>{label}</h2>
+                    <h2 className={innerClassName} style={{ paddingLeft: '10px' }}>{label}</h2>
                     <h3 className={noWhere}>{noOp}</h3>
                 </div>
             )
@@ -810,31 +808,11 @@ describe('code-updator', () => {
         }
         const App = () => {
             const categories = [
-              {
-                name: 'Goodbye sir',
-                style: 'block',
-              },
-              {
-                name: 'Thank you sir',
-                style: 'gap-2.5',
-              },
+              { name: 'Goodbye sir', style: 'block' },
+              { name: 'Thank you sir', style: 'gap-2.5' },
             ]
-            const classes = [
-              {
-                start: 'bg-black',
-              },
-              {
-                end: 'text-black',
-              },
-            ]
-            const inHouseMapping = [
-              {
-                name: 'name1-changed',
-              },
-              {
-                name: 'name2-changed',
-              },
-            ]
+            const classes = [{ start: 'bg-black' }, { end: 'text-black' }]
+            const inHouseMapping = [{ name: 'name1-changed' }, { name: 'name2-changed' }]
             return <>
                 <ComponentArrays array1={['Hello good sir', 'There good sir']} array2={classes}/>
                 <ComponentMapping categories={categories}/>
@@ -954,6 +932,7 @@ describe('code-updator', () => {
         await formatCode(`
         const AddComponent = () => {
           const error = ''
+
           return (
             <div>
               <h1>Change Hello</h1>
@@ -967,6 +946,7 @@ describe('code-updator', () => {
             </div>
           )
         }
+
         const App = () => {
           return <AddComponent />
         }
@@ -1039,6 +1019,7 @@ describe('code-updator', () => {
         await formatCode(`
         const AddComponent = () => {
           const error = ''
+
           return (
             <div>
               {error ? <h2>Change There</h2> : null}
@@ -1046,6 +1027,7 @@ describe('code-updator', () => {
             </div>
           )
         }
+
         const App = () => {
           return <AddComponent />
         }
@@ -1107,6 +1089,7 @@ describe('code-updator', () => {
         await formatCode(`
         const AddComponent = () => {
           const error = ''
+
           return (
             <div>
               {error ? <h2>There</h2> : null}
@@ -1115,6 +1098,7 @@ describe('code-updator', () => {
             </div>
           )
         }
+
         const App = () => {
           return <AddComponent />
         }
@@ -1157,6 +1141,7 @@ describe('code-updator', () => {
           import { Button } from '@/components/button'
           const AddComponent = () => {
             const error = ''
+            
             return (
               <div>
                 <h1>Hello</h1>
@@ -1166,6 +1151,7 @@ describe('code-updator', () => {
               </div>
             )
           }
+
           const App = () => {
             return <AddComponent />
           }
@@ -1235,13 +1221,7 @@ describe('code-updator', () => {
               const Comp = asChild ? Slot : 'button';
               return (
                 <Comp
-                  className={getClass(
-                    buttonVariants({
-                      variant,
-                      size,
-                      className,
-                    })
-                  )}
+                  className={getClass(buttonVariants({ variant, size, className }))}
                   ref={ref}
                   {...props}
                 >
@@ -1254,6 +1234,7 @@ describe('code-updator', () => {
               );
             }
           );
+
           const UpdateProperty = () => {
             const variant = 'secondary';
             return (
@@ -1433,6 +1414,7 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
               import { Button } from './file1'
+
               const App = () => {
                 return <div>
                   <Button>
@@ -1640,6 +1622,7 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
           import { Button } from './file1'
+
           const App = () => {
             return <div className="flex p-3">
               <Button>
@@ -1702,35 +1685,17 @@ describe('code-updator', () => {
                     },
                     keyframes: {
                       'fade-in': {
-                        from: { 
-                          opacity: '0', 
-                          transform: 'translateY(-10px)' 
-                        },
-                        to: { 
-                          opacity: '1', 
-                          transform: 'none' 
-                        },
+                        from: { opacity: '0', transform: 'translateY(-10px)' },
+                        to: { opacity: '1', transform: 'none' },
                       },
                       'fade-up': {
-                        from: { 
-                          opacity: '0', 
-                          transform: 'translateY(20px)' 
-                        },
-                        to: { 
-                          opacity: '1', 
-                          transform: 'none' 
-                        },
+                        from: { opacity: '0', transform: 'translateY(20px)' },
+                        to: { opacity: '1', transform: 'none' },
                       },
-                      'slideIn': {
-                        '0%': { 
-                          'transform': 'translateY(2rem)', 
-                          'opacity': '0.01' 
-                        },
-                        '100%': { 
-                          'transform': 'translateY(0px)', 
-                          'opacity': '1' 
-                        }
-                      }
+                      slideIn: {
+                        '0%': { transform: 'translateY(2rem)', opacity: '0.01' },
+                        '100%': { transform: 'translateY(0px)', opacity: '1' },
+                      },
                     },
                     animation: {
                       'fade-in': 'fade-in 1s var(--animation-delay,0ms) ease forwards',
@@ -1740,6 +1705,7 @@ describe('code-updator', () => {
                   },
                 },
               }
+
               export default config
             `),
       )
@@ -1751,6 +1717,7 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
               import { Button } from './file1'
+              
               const App = () => {
                 return <div className="opacity-0 animate-slide-in [animation-delay:calc(var(--animation-order)*75ms)]">
                   <Button>
@@ -1929,6 +1896,7 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
               import { Button } from './file1'
+
               const App = () => {
                 return <div>
                   <div>

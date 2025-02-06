@@ -43,6 +43,8 @@
   },
   "dependencies": {
     "@clerk/clerk-sdk-node": "^5.1.6",
+    "@harmony/server": "workspace:*",
+    "@harmony/util": "workspace:*",
     "@trpc/client": "^10.45.2",
     "@trpc/server": "^10.45.2",
     "commander": "^13.0.0",

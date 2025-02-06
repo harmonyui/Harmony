@@ -158,7 +158,10 @@ export const getSnippetFromNode = (node: t.Node): string => {
   if (t.isTemplateElement(node)) {
     return node.value.raw
   }
-  const result = generator(node, { retainLines: true })
+  const result = generator(
+    node,
+    t.isProgram(node) ? { retainLines: true } : undefined,
+  )
 
   return result.code
 }
