@@ -2,6 +2,7 @@
 import { Command } from 'commander'
 import packageJson from '../package.json'
 import { start } from './commands/start'
+import { init } from './commands/init'
 
 process.on('SIGINT', () => process.exit(0))
 process.on('SIGTERM', () => process.exit(0))
@@ -17,6 +18,7 @@ async function main() {
     )
 
   program.addCommand(start)
+  program.addCommand(init)
 
   program.parse()
 }

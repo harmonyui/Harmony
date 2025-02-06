@@ -19,6 +19,8 @@ import { propertyUpdate } from './updates/property'
 import { updateStyle } from './updates/style'
 import { getClassNameValue } from './updates/utils'
 import { updateWrapUnwrap } from './updates/wrap'
+import { camelToKebab, round } from '@harmony/util/src/utils/common'
+import { nonFormattedCSS } from './css-conveter'
 
 export class CodeUpdator {
   constructor(
@@ -57,14 +59,16 @@ export class CodeUpdator {
   private async getUpdateInfo(
     updates: ComponentUpdate[],
   ): Promise<UpdateInfo[]> {
+    const normalized = this.normalizeUpdates(updates)
     return Promise.all(
-      updates.map(async (update) => {
+      normalized.map(async (update) => {
         //Get the css value if the update is a className
         const value =
           update.type === 'className'
             ? await getClassNameValue(
                 update.name,
                 update.value,
+                update.formattedValue,
                 this.gitRepository.repository.cssFramework,
               )
             : update.value
@@ -73,6 +77,7 @@ export class CodeUpdator {
             ? await getClassNameValue(
                 update.name,
                 update.oldValue,
+                update.formattedValue,
                 this.gitRepository.repository.cssFramework,
               )
             : update.oldValue
@@ -84,6 +89,46 @@ export class CodeUpdator {
           oldValue,
         }
       }),
+    )
+  }
+
+  private normalizeUpdates(
+    updates: ComponentUpdate[],
+  ): (ComponentUpdate & { formattedValue: string })[] {
+    return updates.reduce<(ComponentUpdate & { formattedValue: string })[]>(
+      (prev, c) => {
+        const curr = { ...c, formattedValue: '' }
+        if (
+          curr.type === 'className' &&
+          !['font', ...nonFormattedCSS].includes(curr.name)
+        ) {
+          const cssName = camelToKebab(curr.name)
+          //Round the pixel values
+          const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(curr.value)
+          if (match) {
+            const value = parseFloat(match[1] || '0')
+            const unit = match[2]
+            curr.value = `${round(value)}${unit}`
+          }
+          curr.formattedValue = `${cssName}:${curr.value};`
+
+          const classNameUpdate = prev.find(
+            (up) =>
+              up.componentId === curr.componentId &&
+              (up.childIndex === undefined ||
+                up.childIndex === curr.childIndex) &&
+              up.type === 'className',
+          )
+          if (classNameUpdate) {
+            classNameUpdate.formattedValue += curr.formattedValue
+            return prev
+          }
+        }
+
+        prev.push(curr)
+        return prev
+      },
+      [],
     )
   }
 

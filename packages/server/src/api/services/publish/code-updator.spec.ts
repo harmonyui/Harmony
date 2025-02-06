@@ -292,6 +292,55 @@ describe('code-updator', () => {
       )
     })
 
+    it('Should combine class properties', async () => {
+      const file: TestFile = 'tailwindPrefix'
+      const { codeUpdator, elementInstances } = await setupGitRepo([file])
+      const updateInfos: ComponentUpdate[] = [
+        {
+          value: '10px',
+          oldValue: '4px',
+          type: 'className',
+          name: 'padding-left',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: '10px',
+          oldValue: '4px',
+          type: 'className',
+          name: 'padding-right',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updateInfos)
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates[file]).toBeTruthy()
+      const codeUpdates = fileUpdates[file]
+      expect(codeUpdates.filePath).toBe(file)
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+        const TailwindComponent = ({label, innerClassName, noOp, noWhere}) => {
+            return (
+                <div className='hw-group hw-flex hw-py-2 px-2.5'>
+                    <h1 className='hw-flex hw-flex-col'>Hello there</h1>
+                    <h2 className={innerClassName}>{label}</h2>
+                    <h3 className={noWhere}>{noOp}</h3>
+                </div>
+            )
+        }
+        const UseTailwindComponent = ({noWhere}) => {
+          return (
+            <TailwindComponent label='Thank you' innerClassName='hw-p-2' noWhere={noWhere}/>
+          )
+        }
+        `),
+      )
+    })
+
     it('Should update text literals and comments for dynamic text', async () => {
       const file: TestFile = 'tailwindPrefix'
       const { codeUpdator, elementInstances } = await setupGitRepo([file])
@@ -577,9 +626,7 @@ describe('code-updator', () => {
             return (
                 <div className='hw-group hw-flex hw-py-2'>
                     <h1 className='hw-flex hw-flex-col'>Hello there</h1>
-                    <h2 className={innerClassName} style={{
-                      paddingLeft: '10px'
-                    }}>{label}</h2>
+                    <h2 className={innerClassName} style={{ paddingLeft: '10px' }}>{label}</h2>
                     <h3 className={noWhere}>{noOp}</h3>
                 </div>
             )
@@ -761,31 +808,11 @@ describe('code-updator', () => {
         }
         const App = () => {
             const categories = [
-              {
-                name: 'Goodbye sir',
-                style: 'block',
-              },
-              {
-                name: 'Thank you sir',
-                style: 'gap-2.5',
-              },
+              { name: 'Goodbye sir', style: 'block' },
+              { name: 'Thank you sir', style: 'gap-2.5' },
             ]
-            const classes = [
-              {
-                start: 'bg-black',
-              },
-              {
-                end: 'text-black',
-              },
-            ]
-            const inHouseMapping = [
-              {
-                name: 'name1-changed',
-              },
-              {
-                name: 'name2-changed',
-              },
-            ]
+            const classes = [{ start: 'bg-black' }, { end: 'text-black' }]
+            const inHouseMapping = [{ name: 'name1-changed' }, { name: 'name2-changed' }]
             return <>
                 <ComponentArrays array1={['Hello good sir', 'There good sir']} array2={classes}/>
                 <ComponentMapping categories={categories}/>
@@ -905,6 +932,7 @@ describe('code-updator', () => {
         await formatCode(`
         const AddComponent = () => {
           const error = ''
+
           return (
             <div>
               <h1>Change Hello</h1>
@@ -918,6 +946,7 @@ describe('code-updator', () => {
             </div>
           )
         }
+
         const App = () => {
           return <AddComponent />
         }
@@ -990,6 +1019,7 @@ describe('code-updator', () => {
         await formatCode(`
         const AddComponent = () => {
           const error = ''
+
           return (
             <div>
               {error ? <h2>Change There</h2> : null}
@@ -997,6 +1027,7 @@ describe('code-updator', () => {
             </div>
           )
         }
+
         const App = () => {
           return <AddComponent />
         }
@@ -1058,6 +1089,7 @@ describe('code-updator', () => {
         await formatCode(`
         const AddComponent = () => {
           const error = ''
+
           return (
             <div>
               {error ? <h2>There</h2> : null}
@@ -1066,6 +1098,7 @@ describe('code-updator', () => {
             </div>
           )
         }
+
         const App = () => {
           return <AddComponent />
         }
@@ -1108,6 +1141,7 @@ describe('code-updator', () => {
           import { Button } from '@/components/button'
           const AddComponent = () => {
             const error = ''
+            
             return (
               <div>
                 <h1>Hello</h1>
@@ -1117,6 +1151,7 @@ describe('code-updator', () => {
               </div>
             )
           }
+
           const App = () => {
             return <AddComponent />
           }
@@ -1186,13 +1221,7 @@ describe('code-updator', () => {
               const Comp = asChild ? Slot : 'button';
               return (
                 <Comp
-                  className={getClass(
-                    buttonVariants({
-                      variant,
-                      size,
-                      className,
-                    })
-                  )}
+                  className={getClass(buttonVariants({ variant, size, className }))}
                   ref={ref}
                   {...props}
                 >
@@ -1205,6 +1234,7 @@ describe('code-updator', () => {
               );
             }
           );
+
           const UpdateProperty = () => {
             const variant = 'secondary';
             return (
@@ -1384,6 +1414,7 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
               import { Button } from './file1'
+
               const App = () => {
                 return <div>
                   <Button>
@@ -1591,6 +1622,7 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
           import { Button } from './file1'
+
           const App = () => {
             return <div className="flex p-3">
               <Button>
@@ -1653,35 +1685,17 @@ describe('code-updator', () => {
                     },
                     keyframes: {
                       'fade-in': {
-                        from: { 
-                          opacity: '0', 
-                          transform: 'translateY(-10px)' 
-                        },
-                        to: { 
-                          opacity: '1', 
-                          transform: 'none' 
-                        },
+                        from: { opacity: '0', transform: 'translateY(-10px)' },
+                        to: { opacity: '1', transform: 'none' },
                       },
                       'fade-up': {
-                        from: { 
-                          opacity: '0', 
-                          transform: 'translateY(20px)' 
-                        },
-                        to: { 
-                          opacity: '1', 
-                          transform: 'none' 
-                        },
+                        from: { opacity: '0', transform: 'translateY(20px)' },
+                        to: { opacity: '1', transform: 'none' },
                       },
-                      'slideIn': {
-                        '0%': { 
-                          'transform': 'translateY(2rem)', 
-                          'opacity': '0.01' 
-                        },
-                        '100%': { 
-                          'transform': 'translateY(0px)', 
-                          'opacity': '1' 
-                        }
-                      }
+                      slideIn: {
+                        '0%': { transform: 'translateY(2rem)', opacity: '0.01' },
+                        '100%': { transform: 'translateY(0px)', opacity: '1' },
+                      },
                     },
                     animation: {
                       'fade-in': 'fade-in 1s var(--animation-delay,0ms) ease forwards',
@@ -1691,6 +1705,7 @@ describe('code-updator', () => {
                   },
                 },
               }
+
               export default config
             `),
       )
@@ -1702,6 +1717,7 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
               import { Button } from './file1'
+              
               const App = () => {
                 return <div className="opacity-0 animate-slide-in [animation-delay:calc(var(--animation-order)*75ms)]">
                   <Button>
@@ -1880,12 +1896,13 @@ describe('code-updator', () => {
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
               import { Button } from './file1'
+
               const App = () => {
                 return <div>
-                  <div className="flex">
+                  <div>
                     <Button>
-                      <div className="flex">
-                        <div className="flex">
+                      <div>
+                        <div>
                           <span>Content1</span>
                         </div>
                         <span>Content2</span>
@@ -1952,13 +1969,52 @@ describe('code-updator', () => {
           export const App = () => {
             const str = 'Hello';
             return <div>
-              <div className='flex'>
+              <div>
                 {str ? <h1>{str}</h1> : null}
                 <h2>There</h2>
               </div>
               
               <h3>Here</h3>
               {str ? <h4>{str}</h4> : null}
+            </div>
+          }
+        `),
+      )
+    })
+
+    it('Should add text to a component with multiple children', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(
+        ['complexText'],
+        {
+          cssFramework: 'tailwind',
+        },
+      )
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'text',
+          name: '2',
+          value: 'New Content',
+          oldValue: '',
+          componentId: elementInstances[0].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.complexText).toBeTruthy()
+
+      const codeUpdates = fileUpdates.complexText
+      expect(codeUpdates.filePath).toBe('complexText')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          export const App = () => {
+            return <div>
+              Hello there
+              <br/>
+              New Content
             </div>
           }
         `),
@@ -2202,6 +2258,14 @@ const testFiles = {
           <h3>Here</h3>
           {str ? <h4>{str}</h4> : null}
         </div>
+      </div>
+    }
+  `,
+  complexText: `
+    export const App = () => {
+      return <div>
+        Hello there
+        <br/>
       </div>
     }
   `,

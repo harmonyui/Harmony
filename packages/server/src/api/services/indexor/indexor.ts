@@ -1,7 +1,3 @@
-/* eslint-disable no-nested-ternary -- ok*/
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
-
-/* eslint-disable no-await-in-loop -- ok*/
 import { prisma } from '@harmony/db/lib/prisma'
 import type {
   ComponentProp,
@@ -480,6 +476,11 @@ export const convertGraphToHarmonyComponents = (
             parent: instances[0],
             values: [-1],
           })
+        } else if (
+          mappingIndexes.length === 1 &&
+          mappingIndexes[0].values.length === 0
+        ) {
+          mappingIndexes[0].values.push(-1)
         }
         for (const index of mappingIndexes[0].values) {
           node.setMappingIndex(index)

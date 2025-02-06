@@ -78,6 +78,7 @@ export const attributeTools = [
   'transitionDelay',
   'objectFit',
   'objectPosition',
+  'filter',
 ] as const satisfies (keyof CSSProperties)[]
 export const colorTools = ['color', 'backgroundColor', 'borderColor'] as const
 export enum ComponentType {

@@ -17,12 +17,25 @@ export const updateText: UpdateComponent = async (
   )
 
   const index = parseInt(componentUpdate.name)
-  const textAttribute = attributes.find(
+  let textAttribute = attributes.find(
     (attr) =>
       attr.name === 'children' &&
       (attr.attribute?.getChildIndex() === index ||
         attr.addArguments.length > 0),
   )
+  if (!textAttribute && attributes.find((attr) => attr.name === 'children')) {
+    textAttribute = {
+      addArguments: [
+        {
+          propertyName: 'children',
+          values: [],
+          parent: graphElements[0],
+        },
+      ],
+      name: 'children',
+      elementValues: [],
+    }
+  }
   if (!textAttribute) {
     const commentValue = `Change inner text for ${graphElements[0].name} tag from ${oldValue} to ${value}`
     addCommentToElement(graphElements[0], commentValue, graph)

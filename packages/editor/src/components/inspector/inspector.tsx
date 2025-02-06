@@ -557,19 +557,7 @@ const useOverlayRef = ({
   const updateOverlay = useHarmonyStore((state) => state.updateCounter)
   const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
 
-  //Create the overlay
-  useEffect(() => {
-    if (containerElement && overlayRef.current?.parent !== parentElement) {
-      overlayRef.current = new Overlay(
-        containerElement,
-        parentElement!,
-        offsetElement,
-      )
-    }
-  }, [overlayRef, parentElement, containerElement, offsetElement])
-
-  //Update the overlay when the counter has changed
-  useEffect(() => {
+  const updateOverlayRef = useEffectEvent(() => {
     const container = containerElement
     if (container === null || parentElement === undefined) return
 
@@ -589,14 +577,28 @@ const useOverlayRef = ({
       overlayRef.current.remove('select')
     }
     overlayRef.current.remove('hover')
-  }, [updateOverlay, scale, inspectorState])
+  })
+
+  //Create the overlay
+  useEffect(() => {
+    if (containerElement && overlayRef.current?.parent !== parentElement) {
+      overlayRef.current = new Overlay(
+        containerElement,
+        parentElement!,
+        offsetElement,
+      )
+    }
+  }, [overlayRef, parentElement, containerElement, offsetElement])
+
+  //Update the overlay when the counter has changed
+  useEffect(() => {
+    updateOverlayRef()
+  }, [updateOverlay, updateOverlayRef])
+
+  const onScroll = useEffectEvent(() => updateOverlayRef())
 
   //Change the counter when we scroll to keep the overlay rect up to date
   useEffect(() => {
-    const onScroll = () => {
-      update()
-    }
-
     document.addEventListener('scroll', onScroll)
 
     return () => {

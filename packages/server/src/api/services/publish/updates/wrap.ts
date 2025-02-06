@@ -56,7 +56,7 @@ const updateWrap: UpdateComponent = async ({ value, update }, graph) => {
     {
       componentIds: [],
       dependencies: [],
-      implementation: '<div className="flex"></div>',
+      implementation: '<div></div>',
     },
     graph,
   )

@@ -4,20 +4,20 @@ import { getVscodeLink } from '../utils/element-utils'
 import { useHotKeys } from './hotkeys'
 
 export const useOpenEditor = () => {
-  const selectedComponent = useHarmonyStore((store) => store.selectedComponent)
+  const hoveredComponent = useHarmonyStore((store) => store.hoveredComponent)
   const localRootPath = useHarmonyStore((store) => store.localRootPath)
 
   const openEditor = useCallback(() => {
-    if (!selectedComponent || !localRootPath) return
+    if (!hoveredComponent || !localRootPath) return
 
     window
-      .open(getVscodeLink(selectedComponent.element, localRootPath), '_blank')
+      .open(getVscodeLink(hoveredComponent, localRootPath), '_blank')
       ?.focus()
-  }, [selectedComponent, localRootPath])
+  }, [hoveredComponent, localRootPath])
 
   return {
     openEditor,
-    isActive: Boolean(localRootPath) && Boolean(selectedComponent),
+    isActive: Boolean(localRootPath) && Boolean(hoveredComponent),
   }
 }
 

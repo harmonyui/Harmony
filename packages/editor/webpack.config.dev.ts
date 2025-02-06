@@ -25,9 +25,9 @@ export default {
     // }
   },
   plugins: [
+    umtc(),
     new webpack.EnvironmentPlugin({ ...process.env }),
     new webpack.HotModuleReplacementPlugin(),
-    umtc(),
   ],
   module: {
     rules: [

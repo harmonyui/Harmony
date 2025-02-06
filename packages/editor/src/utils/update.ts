@@ -230,9 +230,11 @@ export const createNewElementUpdates = ({
 
   const textElement = isTextElement(element) ? element : undefined
   if (textElement) {
+    //Only do a non-zero index if the element is a text element
+    const textIndex = element.dataset.harmonyText === 'true' ? index : 0
     updates.push({
       type: 'text',
-      name: (index ?? 0).toString(),
+      name: (textIndex ?? 0).toString(),
       componentId,
       childIndex,
       value: textElement.textContent || '',

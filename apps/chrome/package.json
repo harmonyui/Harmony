@@ -6,7 +6,7 @@
   "license": "ISC",
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
-    "build": "rm -rf extension/dist &&  NODE_ENV=production pnpm withenv webpack",
+    "build": "rm -rf extension/dist &&  NODE_ENV=production ENV=production NEXT_PUBLIC_ENV=production pnpm withenv webpack",
     "build:popup": "NODE_ENV=production pnpm withenv webpack --config webpack.config.popup.js",
     "dev": "rm -rf extension/dist && NODE_ENV=development pnpm withenv webpack --watch",
     "test": "vitest run",

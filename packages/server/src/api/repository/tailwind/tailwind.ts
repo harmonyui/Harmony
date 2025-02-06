@@ -64,33 +64,32 @@ export const resolveTailwindConfig = async (
       const defaultColor =
         name === 'colors' ? [{ name: 'default-color', value: '#00000000' }] : []
 
+      const recurseUpdateValue = (
+        name: string,
+        value: unknown,
+      ): { name: string; value: string }[] =>
+        typeof value === 'string'
+          ? [{ name, value }]
+          : Array.isArray(value)
+            ? [{ name, value: value[0] as string }]
+            : typeof value === 'object'
+              ? Object.entries(value as object).flatMap(([a, b]) =>
+                  recurseUpdateValue(
+                    a.toUpperCase() === 'DEFAULT' ? name : `${name}-${a}`,
+                    b,
+                  ),
+                )
+              : []
+
       return {
         name: attribute,
         values: [
           ...defaultColor,
           ...baseValuesFirst.flatMap(([key, value]) =>
-            typeof value === 'string'
-              ? [{ name: key, value }]
-              : Array.isArray(value)
-                ? { name: key, value: value[0] as string }
-                : typeof value === 'object'
-                  ? Object.entries(value as object).map(([a, b]) => ({
-                      name: a.toUpperCase() === 'DEFAULT' ? key : `${key}-${a}`,
-                      value: b as string,
-                    }))
-                  : [],
+            recurseUpdateValue(key, value),
           ),
           ...otherValuesLast.flatMap(([key, value]) =>
-            typeof value === 'string'
-              ? [{ name: key, value }]
-              : Array.isArray(value)
-                ? { name: key, value: value[0] as string }
-                : typeof value === 'object'
-                  ? Object.entries(value as object).map(([a, b]) => ({
-                      name: a.toUpperCase() === 'DEFAULT' ? key : `${key}-${a}`,
-                      value: b as string,
-                    }))
-                  : [],
+            recurseUpdateValue(key, value),
           ),
         ],
       }

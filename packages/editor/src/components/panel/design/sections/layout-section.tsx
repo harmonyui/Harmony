@@ -17,74 +17,80 @@ import { AttributeButtonGroup } from './components/attribute-button-group'
 import { DesignDropdown } from './components/design-dropdown'
 import { AttributeExpand } from './components/attribute-expand'
 import { ButtonGroup } from './components/button-group'
+import { Button } from '@harmony/ui/src/components/core/button'
 
 export const LayoutSection: DesignPanelSectionComponent = () => {
-  const { getAttribute } = useComponentAttribute()
+  const { getAttribute, onAttributeChange } = useComponentAttribute()
   const displayAttribute = useMemo(
     () => getAttribute('display'),
     [getAttribute],
   )
-  if (displayAttribute !== 'flex') {
-    return null
-  }
 
   return (
     <Section label='Layout'>
-      <div className='grid grid-cols-3 gap-y-2 items-center'>
-        <Label label='Directions'>
-          <AttributeButtonGroup
-            attribute='flexDirection'
-            items={[
-              {
-                value: 'column',
-                children: <ArrowVerticalIcon className='h-4 w-4' />,
-              },
-              {
-                value: 'row',
-                children: <ArrowHorizontalIcon className='h-4 w-4' />,
-              },
-            ]}
-          />
-        </Label>
-        <Label label='Align'>
-          <AttributeButtonGroup
-            attribute='alignItems'
-            items={[
-              {
-                value: 'flex-start',
-                children: <AlignTopIcon className='h-4 w-4' />,
-              },
-              {
-                value: 'center',
-                children: <AlignCenterVerticalIcon className='h-4 w-4' />,
-              },
-              {
-                value: 'flex-end',
-                children: <AlignBottomIcon className='h-4 w-4' />,
-              },
-            ]}
-          />
-        </Label>
-        <Label label='Justify'>
-          <JustifyDropdown />
-        </Label>
-        <GapInput />
-        <Label label='Wrap'>
-          <AttributeButtonGroup
-            attribute='flexWrap'
-            items={[
-              {
-                value: 'wrap',
-                children: 'Yes',
-              },
-              {
-                value: 'nowrap',
-                children: 'No',
-              },
-            ]}
-          />
-        </Label>
-      </div>
+      {displayAttribute === 'flex' ? (
+        <div className='grid grid-cols-3 gap-y-2 items-center'>
+          <Label label='Directions'>
+            <AttributeButtonGroup
+              attribute='flexDirection'
+              items={[
+                {
+                  value: 'column',
+                  children: <ArrowVerticalIcon className='h-4 w-4' />,
+                },
+                {
+                  value: 'row',
+                  children: <ArrowHorizontalIcon className='h-4 w-4' />,
+                },
+              ]}
+            />
+          </Label>
+          <Label label='Align'>
+            <AttributeButtonGroup
+              attribute='alignItems'
+              items={[
+                {
+                  value: 'flex-start',
+                  children: <AlignTopIcon className='h-4 w-4' />,
+                },
+                {
+                  value: 'center',
+                  children: <AlignCenterVerticalIcon className='h-4 w-4' />,
+                },
+                {
+                  value: 'flex-end',
+                  children: <AlignBottomIcon className='h-4 w-4' />,
+                },
+              ]}
+            />
+          </Label>
+          <Label label='Justify'>
+            <JustifyDropdown />
+          </Label>
+          <GapInput />
+          <Label label='Wrap'>
+            <AttributeButtonGroup
+              attribute='flexWrap'
+              items={[
+                {
+                  value: 'wrap',
+                  children: 'Yes',
+                },
+                {
+                  value: 'nowrap',
+                  children: 'No',
+                },
+              ]}
+            />
+          </Label>
+        </div>
+      ) : (
+        <Button
+          onClick={() => onAttributeChange({ name: 'display', value: 'flex' })}
+        >
+          Enable Layout
+        </Button>
+      )}
     </Section>
   )
 }
