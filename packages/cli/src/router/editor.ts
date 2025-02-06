@@ -21,7 +21,10 @@ export const editorRouter = createTRPCRouter({
     .input(loadRequestSchema)
     .output(loadResponseSchema)
     .query(async ({ ctx, input }) => {
-      const ret = await ctx.serverClient.editor.loadProject.query(input)
+      const ret = await ctx.serverClient.editor.loadProject.query({
+        ...input,
+        repository: ctx.repository,
+      })
       return {
         ...ret,
         updates,

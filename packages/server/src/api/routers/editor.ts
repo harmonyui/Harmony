@@ -105,7 +105,9 @@ const editorRoutes = {
 
         tokens = await resolveTailwindConfig(repository)
 
-        const ref = await githubRepository.getBranchRef(repository.branch)
+        const ref = repository.branch
+          ? await githubRepository.getBranchRef(repository.branch)
+          : ''
 
         //If the current repository ref is out of date, that means we have some
         //new commits that might affect our previously indexed component elements.
