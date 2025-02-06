@@ -4,7 +4,7 @@ import {
   harmonyComponentInfoSchema,
   updateSchema,
 } from './component'
-import { pullRequestSchema } from './branch'
+import { pullRequestSchema, repositorySchema } from './branch'
 import { emailSchema } from './utils'
 import { tokenSchema } from './tokens'
 
@@ -26,6 +26,7 @@ export type UpdateResponse = z.infer<typeof updateResponseSchema>
 
 export const loadRequestSchema = z.object({
   repositoryId: z.optional(z.string()),
+  repository: z.optional(repositorySchema),
   branchId: z.string(),
 })
 export type LoadRequest = z.infer<typeof loadRequestSchema>
@@ -61,7 +62,7 @@ export type PublishResponse = z.infer<typeof publishResponseSchema>
 
 export const indexComponentsRequestSchema = z.object({
   branchId: z.string(),
-  repositoryId: z.string(),
+  repositoryId: z.union([z.string(), repositorySchema]),
   components: z.array(z.string()),
   contents: z.optional(
     z.array(z.object({ content: z.string(), path: z.string() })),
@@ -80,7 +81,7 @@ export type IndexComponentsResponse = z.infer<
 >
 
 export const codeUpdatesRequestSchema = z.object({
-  repositoryId: z.string(),
+  repository: z.union([z.string(), repositorySchema]),
   updates: z.array(updateSchema),
   contents: z.array(
     z.object({

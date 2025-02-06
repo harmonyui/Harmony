@@ -20,6 +20,8 @@ import {
 import type { CreateTRPCProxyClient } from '@trpc/client'
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
 import type { AppRouter } from '@harmony/server/src/api/root'
+import { Repository, repositorySchema } from '@harmony/util/src/types/branch'
+import { jsonSchema } from '@harmony/util/src/updates/component'
 
 /**
  * 1. CONTEXT
@@ -32,6 +34,7 @@ import type { AppRouter } from '@harmony/server/src/api/root'
 export interface CreateContextOptions {
   path: string
   repositoryId: string | undefined
+  repository: Repository | undefined
   serverClient: CreateTRPCProxyClient<AppRouter>
 }
 
@@ -61,14 +64,20 @@ const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
 
 const createTRPCContext = async (
   localPath: string,
-  repositoryId: string,
+  repositoryId: string | undefined,
+  repository: Repository | undefined,
   serverClient: CreateTRPCProxyClient<AppRouter>,
 ) => {
   return createInnerTRPCContext({
     path: localPath,
     repositoryId,
+    repository,
     serverClient,
   })
+}
+
+const isValidHeader = (header: unknown): header is string => {
+  return typeof header === 'string'
 }
 
 export const createTRPCContextExpress = async ({
@@ -81,10 +90,20 @@ export const createTRPCContextExpress = async ({
   if (!localPath || typeof localPath !== 'string') {
     throw new Error('local-path header is required')
   }
-  const repositoryId = req.headers['repository-id']
-  if (!repositoryId || typeof repositoryId !== 'string') {
-    throw new Error('repository-id header is required')
+  const repositoryIdHeader = req.headers['repository-id']
+  const respositoryHeader = req.headers['repository']
+  if (!isValidHeader(respositoryHeader) && !isValidHeader(repositoryIdHeader)) {
+    throw new Error('repository-id or repository header is required')
   }
+  const repositoryParseResult = isValidHeader(respositoryHeader)
+    ? jsonSchema.pipe(repositorySchema).safeParse(atob(respositoryHeader))
+    : undefined
+  const repository = repositoryParseResult?.success
+    ? repositoryParseResult.data
+    : undefined
+  const repositoryId = isValidHeader(repositoryIdHeader)
+    ? repositoryIdHeader
+    : undefined
 
   const environmentResult = environmentSchema.safeParse(
     req.headers['harmony-environment'],
@@ -98,7 +117,7 @@ export const createTRPCContextExpress = async ({
     getToken: async () => '',
     isLocal: true,
   })
-  return createTRPCContext(localPath, repositoryId, serverClient)
+  return createTRPCContext(localPath, repositoryId, repository, serverClient)
 }
 
 /**
@@ -150,7 +169,7 @@ const getBaseUrl = (environment: Environment): string => {
   return getEditorUrl(environment)
 }
 
-const createClient = ({
+export const createClient = ({
   environment,
   getToken,
   isLocal,

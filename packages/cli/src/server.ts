@@ -4,6 +4,7 @@ import { appRouter } from './router/app'
 import { createTRPCContextExpress } from './trpc'
 import { logger } from './utils/logger'
 import cors from 'cors'
+import { getConfigFile } from './utils/get-config-file'
 
 export const createServer = ({
   port,
@@ -25,6 +26,11 @@ export const createServer = ({
 
   app.use((req, _, next) => {
     req.headers['local-path'] = path
+
+    const repository = getConfigFile(path)
+    if (repository) {
+      req.headers['repository'] = btoa(JSON.stringify(repository))
+    }
 
     next()
   })

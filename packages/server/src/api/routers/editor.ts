@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import {
   codeUpdatesRequestSchema,
@@ -34,13 +33,39 @@ import {
   getComponentUpdates,
 } from '../services/component-update'
 import { CachedGitRepository } from '../repository/git/cached-git'
+import { Repository } from '@harmony/util/src/types/branch'
+import { Db } from '@harmony/db/lib/prisma'
+
+const returnRepository = async (
+  repositoryOrId: string | Repository | undefined,
+  prisma: Db,
+): Promise<Repository | undefined> => {
+  const repositoryId =
+    typeof repositoryOrId === 'string' ? repositoryOrId : undefined
+  let repository =
+    typeof repositoryOrId !== 'string' ? repositoryOrId : undefined
+  if (repository !== undefined) {
+    return repository
+  }
+  if (repositoryId !== undefined) {
+    repository = await getRepository({
+      prisma,
+      repositoryId,
+    })
+    if (!repository) {
+      throw new Error(`Cannot find repository with id ${repositoryId}`)
+    }
+
+    return repository
+  }
+}
 
 const editorRoutes = {
   loadProject: publicProcedure
     .input(loadRequestSchema)
     .output(loadResponseSchema)
     .query(async ({ ctx, input }) => {
-      const { repositoryId, branchId } = input
+      const { repositoryId, branchId, repository: existingRepository } = input
       const { prisma } = ctx
       const isLocal = branchId === 'local'
 
@@ -69,13 +94,12 @@ const editorRoutes = {
         : await getComponentUpdates(branchId, ctx.componentUpdateRepository)
 
       let tokens: Token[] = []
-      if (repositoryId !== undefined) {
-        const repository = await getRepository({
-          prisma,
-          repositoryId,
-        })
-        if (!repository) throw new Error('No repo')
+      const repository = await returnRepository(
+        existingRepository ?? repositoryId,
+        prisma,
+      )
 
+      if (repository !== undefined) {
         const githubRepository =
           ctx.gitRepositoryFactory.createGitRepository(repository)
 
@@ -287,10 +311,8 @@ const editorRoutes = {
         throw new Error(`Cannot find branch with id ${branchId}`)
       }
 
-      const repository = await getRepository({
-        prisma: ctx.prisma,
-        repositoryId,
-      })
+      const repository = await returnRepository(repositoryId, ctx.prisma)
+
       if (!repository) {
         throw new Error(`Cannot find repository with id ${repositoryId}`)
       }
@@ -319,15 +341,18 @@ const editorRoutes = {
     .input(codeUpdatesRequestSchema)
     .output(codeUpdatesResponseSchema)
     .mutation(async ({ ctx, input }) => {
-      const { repositoryId, updates, contents } = input
+      const { repository: repositoryIdOrRepository, updates, contents } = input
       const { prisma } = ctx
 
-      const repository = await getRepository({
+      const repository = await returnRepository(
+        repositoryIdOrRepository,
         prisma,
-        repositoryId,
-      })
+      )
+
       if (!repository) {
-        throw new Error(`Cannot find repository with id ${repositoryId}`)
+        throw new Error(
+          `Cannot find repository with id ${repositoryIdOrRepository}`,
+        )
       }
 
       const gitRepository = new CachedGitRepository(repository, contents)
