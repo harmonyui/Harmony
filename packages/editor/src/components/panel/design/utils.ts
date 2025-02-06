@@ -66,7 +66,7 @@ export function compareCSSValues(
     return areCSSPixelValuesEqual(value1, value2)
   }
   if ((colorTools as readonly string[]).includes(attributeName)) {
-    return areHexColorsEqual(value1 as HexColor, value2 as HexColor)
+    return areHexColorsEqual(value1, value2)
   }
 
   return value1 === value2

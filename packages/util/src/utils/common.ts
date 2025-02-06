@@ -239,13 +239,12 @@ export const constArray =
   <U extends T[]>(array: U) =>
     array
 
-export function convertRgbToHex(rgb: string): HexColor {
+export function convertRgbToHexOrReturn(rgb: string): HexColor | undefined {
   let match = /^rgb\((\d+), \s*(\d+), \s*(\d+)\)$/.exec(rgb)
   if (match === null) {
     match = /^rgba\((\d+), \s*(\d+), \s*(\d+), \s*(\d+(?:\.\d+)?)\)$/.exec(rgb)
     if (!match) {
-      console.error(`Invalid rgb ${rgb}`)
-      return '#000000'
+      return undefined
     }
   }
   function hexCode(i: string) {
@@ -257,6 +256,15 @@ export function convertRgbToHex(rgb: string): HexColor {
   return `#${hexCode(match[1])}${hexCode(match[2])}${hexCode(
     match[3],
   )}${match[4] ? hexCode(`${parseFloat(match[4]) * 255}`) : ''}`
+}
+export function convertRgbToHex(rgb: string): HexColor {
+  const color = convertRgbToHexOrReturn(rgb)
+  if (color === undefined) {
+    console.error(`Invalid rgb ${rgb}`)
+    return '#000000'
+  }
+
+  return color
 }
 
 export function capitalizeFirstLetter(str: string): string {
@@ -323,7 +331,7 @@ export const isValidPath = (path: string): boolean => {
   return validPathRegex.test(path)
 }
 
-export function areHexColorsEqual(color1: HexColor, color2: HexColor): boolean {
+export function areHexColorsEqual(color1: string, color2: string): boolean {
   const normalize = (color: HexColor) => {
     // Remove the hash if present, and make it lowercase
     const hex = color.replace('#', '').toLowerCase()
@@ -333,10 +341,15 @@ export function areHexColorsEqual(color1: HexColor, color2: HexColor): boolean {
           .split('')
           .map((char) => char + char)
           .join('')
-      : hex
+      : hex.length === 8 || hex.slice(6) === 'ff'
+        ? hex.slice(0, 6)
+        : hex
   }
 
-  return normalize(color1) === normalize(color2)
+  return (
+    normalize(convertRgbToHexOrReturn(color1) ?? (color1 as HexColor)) ===
+    normalize(convertRgbToHexOrReturn(color2) ?? (color2 as HexColor))
+  )
 }
 
 export const replaceAll = <T extends string | undefined>(
