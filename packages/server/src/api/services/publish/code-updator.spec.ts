@@ -104,7 +104,7 @@ describe('code-updator', () => {
       cssFramework: cssFramework || 'tailwind',
       defaultUrl: '',
       tailwindPrefix,
-      tailwindConfig: testFiles['tailwind.config.ts'],
+      tailwindConfig: JSON.stringify(tailwindConfig),
       prettierConfig: JSON.stringify({
         trailingComma: 'es5',
         semi: false,
@@ -459,7 +459,7 @@ describe('code-updator', () => {
       const { codeUpdator, elementInstances } = await setupGitRepo([file])
       const updates: ComponentUpdate[] = [
         {
-          value: '#000',
+          value: '#3b7dfd',
           oldValue: '',
           type: 'className',
           name: 'background-color',
@@ -468,10 +468,28 @@ describe('code-updator', () => {
           isGlobal: false,
         },
         {
+          value: '2px',
+          oldValue: '',
+          type: 'className',
+          name: 'padding-left',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
           value: '4px',
           oldValue: '',
           type: 'className',
           name: 'padding-left',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+        },
+        {
+          value: '1.5rem',
+          oldValue: '',
+          type: 'className',
+          name: 'font-size',
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
@@ -497,7 +515,7 @@ describe('code-updator', () => {
         }
         const Parent = () => {
             return (
-                <Child className='bg-black' innerClass='pl-1' />
+                <Child className='bg-custom-blue' innerClass='text-2xl pl-1' />
             )
         }
         `),
@@ -1682,6 +1700,7 @@ describe('code-updator', () => {
                   extend: {
                     colors: {
                       'slate-200': '#f5f7fa',
+                      'custom-blue': '#3b7dfd',
                     },
                     keyframes: {
                       'fade-in': {
@@ -2023,6 +2042,27 @@ describe('code-updator', () => {
   })
 })
 
+const tailwindConfig = {
+  colors: {
+    'slate-200': '#f5f7fa',
+    'custom-blue': '#3b7dfd',
+  },
+  keyframes: {
+    'fade-in': {
+      from: { opacity: '0', transform: 'translateY(-10px)' },
+      to: { opacity: '1', transform: 'none' },
+    },
+    'fade-up': {
+      from: { opacity: '0', transform: 'translateY(20px)' },
+      to: { opacity: '1', transform: 'none' },
+    },
+  },
+  animation: {
+    'fade-in': 'fade-in 1s var(--animation-delay,0ms) ease forwards',
+    'fade-up': 'fade-up 1s var(--animation-delay,0ms) ease forwards',
+  },
+}
+
 type TestFile = keyof typeof testFiles
 const testFiles = {
   tailwindPrefix: `
@@ -2227,6 +2267,7 @@ const testFiles = {
         extend: {
           colors: {
             'slate-200': '#f5f7fa',
+            'custom-blue': '#3b7dfd',
           },
           keyframes: {
             'fade-in': {

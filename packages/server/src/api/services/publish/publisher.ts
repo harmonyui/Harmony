@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop -- ok*/
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { translateUpdatesToCss } from '@harmony/util/src/utils/component'
 import type { BranchItem, PullRequest } from '@harmony/util/src/types/branch'
