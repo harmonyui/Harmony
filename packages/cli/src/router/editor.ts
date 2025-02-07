@@ -52,11 +52,13 @@ export const editorRouter = createTRPCRouter({
         componentIds,
         async (file) => getFileContent(file, path),
       )
-      const repository = ctx.repositoryId
-        ? await ctx.serverClient.editor.getRepository.query({
-            repositoryId: ctx.repositoryId,
-          })
-        : ctx.repository
+      const repository =
+        ctx.repository ??
+        (ctx.repositoryId
+          ? await ctx.serverClient.editor.getRepository.query({
+              repositoryId: ctx.repositoryId,
+            })
+          : ctx.repository)
       if (!repository) {
         throw new Error('Repository not found')
       }
@@ -94,6 +96,7 @@ export const editorRouter = createTRPCRouter({
       )
       return ctx.serverClient.editor.indexComponents.mutate({
         ...input,
+        repositoryId: ctx.repository ?? input.repositoryId,
         contents: fileContents.map(({ file, content }) => ({
           path: file,
           content,
