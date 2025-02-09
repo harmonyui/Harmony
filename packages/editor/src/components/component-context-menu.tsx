@@ -24,7 +24,12 @@ export const ComponentContextMenu: React.FunctionComponent = () => {
   const { isToggled } = useHarmonyContext()
 
   const handleContextMenu = useEffectEvent((e: MouseEvent) => {
-    if (!ref.current || !isToggled) return
+    if (
+      !ref.current ||
+      !isToggled ||
+      document.getElementById('harmony-container')?.contains(e.target as Node)
+    )
+      return
     e.preventDefault()
     ref.current.style.display = 'block'
 
@@ -54,7 +59,7 @@ export const ComponentContextMenu: React.FunctionComponent = () => {
 
   return createPortal(
     <div
-      className='absolute hidden top-0 left-0 z-[10000] min-w-[8rem] overflow-hidden rounded-md border bg-white dark:bg-black p-1 text-popover-foreground shadow-md'
+      className='fixed hidden top-0 left-0 z-[1000000] min-w-[8rem] overflow-hidden rounded-md border bg-white dark:bg-black p-1 text-popover-foreground shadow-md'
       ref={ref}
     >
       <ul>
