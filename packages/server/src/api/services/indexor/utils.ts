@@ -112,16 +112,23 @@ export function getLocationId(
   return getHashFromLocation(location, content)
 }
 
-export type LiteralNode = t.JSXText | t.StringLiteral | t.TemplateElement
+export type LiteralNode =
+  | t.JSXText
+  | t.StringLiteral
+  | t.TemplateElement
+  | t.NumericLiteral
 export const isLiteralNode = (
   node: t.Node | undefined,
 ): node is LiteralNode => {
   return (
-    t.isJSXText(node) || t.isStringLiteral(node) || t.isTemplateElement(node)
+    t.isJSXText(node) ||
+    t.isStringLiteral(node) ||
+    t.isTemplateElement(node) ||
+    t.isNumericLiteral(node)
   )
 }
-export const getLiteralValue = (node: LiteralNode): string => {
-  if (typeof node.value === 'string') {
+export const getLiteralValue = (node: LiteralNode): string | number => {
+  if (typeof node.value === 'string' || typeof node.value === 'number') {
     return node.value
   }
 
@@ -177,7 +184,7 @@ export function getAttributeName(attribute: Attribute): string {
   return name
 }
 
-export const getNameValue = (node: Node): string => {
+export const getNameValue = (node: Node): string | number => {
   const values = node.getValues()
   if (values.length !== 1) {
     return ''

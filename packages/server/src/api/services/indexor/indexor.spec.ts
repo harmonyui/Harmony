@@ -273,8 +273,8 @@ describe('indexor', () => {
 
       expect(textAttributes[0].getValueNode().type).toBe('JSXText')
       expect(
-        getLiteralValue(
-          textAttributes[0].getValueNode().node as LiteralNode,
+        String(
+          getLiteralValue(textAttributes[0].getValueNode().node as LiteralNode),
         ).trim(),
       ).toBe('The ALSCrowd')
       //expectLocationOfString(file, textAttributes[0].location, 'The ALSCrowd')
@@ -287,8 +287,8 @@ describe('indexor', () => {
 
       expect(textAttributes[2].getValueNode().type).toBe('JSXText')
       expect(
-        getLiteralValue(
-          textAttributes[2].getValueNode().node as LiteralNode,
+        String(
+          getLiteralValue(textAttributes[2].getValueNode().node as LiteralNode),
         ).trim(),
       ).toBe('Directory')
       //expectLocationOfString(file, textAttributes[2].location, 'Directory')
@@ -915,8 +915,10 @@ describe('indexor', () => {
         1,
       )
       expect(
-        getLiteralValue(
-          componentElements[0].getAttributes()[2].getDataFlow()[0].node,
+        String(
+          getLiteralValue(
+            componentElements[0].getAttributes()[2].getDataFlow()[0].node,
+          ),
         ).trim(),
       ).toBe("You're welcome")
       expect(componentElements[0].getAttributes()[2].getChildIndex()).toBe(1)
@@ -1310,6 +1312,33 @@ describe('indexor', () => {
         file1,
         componentElements[4].getAttributes()[0].getDataFlow()[0].location,
         'Thank you',
+      )
+    })
+
+    it('Should handle complex property types', () => {
+      const file: TestFile = 'app/complexPropTypes.tsx'
+      const content = testCases[file]
+      const result = getGraph({ file, code: content, importMappings: {} })
+
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(2)
+
+      expect(componentElements[1].getAttributes().length).toBe(1)
+      expect(componentElements[1].getAttributes()[0].name).toBe('numberProp')
+      expect(componentElements[1].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe(1)
+      expectLocationOfString(
+        file,
+        componentElements[1].getAttributes()[0].getDataFlow()[0].location,
+        '1',
       )
     })
 

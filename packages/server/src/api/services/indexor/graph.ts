@@ -118,7 +118,9 @@ export class FlowGraph {
       fromNode.dataDependencies.add(toNode)
       toNode.dataDependents.add(fromNode)
       const parent = fromNode.getParent()
-      parent && this.addParent(toNode.id, parent.id)
+      if (parent) {
+        this.addParent(toNode.id, parent.id)
+      }
     }
   }
 
@@ -174,7 +176,9 @@ export class FlowGraph {
     this.setNode(jsxElementNode)
     this.setNode(jsxElementNode.getOpeningElement())
     const closingElement = jsxElementNode.getClosingElement()
-    closingElement && this.setNode(closingElement)
+    if (closingElement) {
+      this.setNode(closingElement)
+    }
     component.addJSXElement(jsxElementNode)
     jsxElementNode.setParentComponent(component)
     if (beforeSibling && parentElement) {

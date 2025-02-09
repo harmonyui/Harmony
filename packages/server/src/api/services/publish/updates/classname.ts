@@ -130,7 +130,7 @@ export const updateElementClassName = ({
           if (!defaultValue) {
             defaultValue = node
           }
-          const currClasses = getLiteralValue(node.node)
+          const currClasses = String(getLiteralValue(node.node))
           const mergedClasses = mergeTailwindClasses(currClasses, value)
           if (
             mergedClasses.split(' ').length === currClasses.split(' ').length
@@ -159,7 +159,7 @@ export const updateElementClassName = ({
       //to the first value we came across
       if (defaultValue) {
         const currClasses = getLiteralValue(defaultValue.node)
-        const mergedClasses = mergeTailwindClasses(currClasses, value)
+        const mergedClasses = mergeTailwindClasses(String(currClasses), value)
         graph.changeLiteralNode(defaultValue, mergedClasses)
         return
       }

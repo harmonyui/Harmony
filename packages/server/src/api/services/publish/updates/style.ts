@@ -158,7 +158,7 @@ const updateHoverStyle: UpdateComponent = async (info, graph, repository) => {
     updateElementClassName({
       graph,
       repository,
-      value: classNameValue,
+      value: String(classNameValue),
       type: 'class',
       oldValue: '',
       propertyName: '',
