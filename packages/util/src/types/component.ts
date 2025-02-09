@@ -36,9 +36,18 @@ export const componentPropsTypes = z.union([
 ])
 export type ComponentPropsType = z.infer<typeof componentPropsTypes>
 
+export const componentMappingType = z.union([
+  z.literal('attribute'),
+  z.literal('text'),
+])
+export type ComponentMappingType = z.infer<typeof componentMappingType>
+
 export const componentPropSchema = z.object({
   name: z.string(),
   type: componentPropsTypes,
+  mappingType: componentMappingType,
+  // component id
+  mapping: z.string(),
   defaultValue: z.string(),
   values: z.record(z.string(), z.string()),
   isEditable: z.boolean(),

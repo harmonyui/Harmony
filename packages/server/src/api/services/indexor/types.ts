@@ -12,7 +12,7 @@ export interface Attribute {
   index: number
   location: ComponentLocation
   locationType: string
-  reference: HarmonyComponent
+  //reference: HarmonyComponent
   node: t.Node
 }
 

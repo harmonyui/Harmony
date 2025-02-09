@@ -752,6 +752,7 @@ class Overlay {
         value: string,
         oldValue: string,
         selectedElement: HTMLElement | undefined,
+        shouldUpdate?: boolean,
       ) => void
       onFlexClick: () => void
     },
@@ -772,7 +773,7 @@ class Overlay {
         (e) => {
           const target = e.target as HTMLElement
           const value = target.textContent || ''
-          listeners.onTextChange(value, lastTextValue, target)
+          listeners.onTextChange(value, lastTextValue, target, false)
           lastTextValue = value
         },
         { signal: stuff.aborter.signal },

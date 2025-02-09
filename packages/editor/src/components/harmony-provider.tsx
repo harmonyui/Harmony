@@ -353,6 +353,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
       value: string,
       oldValue: string,
       selectedComponent: HTMLElement | undefined,
+      execute = true,
     ) => {
       if (!selectedComponent) return
 
@@ -367,7 +368,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         oldValue,
         childIndex,
       }
-      onAttributesChange([update], false)
+      onAttributesChange([update], execute)
     },
   )
 

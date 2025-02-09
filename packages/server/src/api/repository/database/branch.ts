@@ -75,6 +75,8 @@ export const getRepository = async ({
               ghost: 'hover:bg-accent hover:text-accent-foreground',
               link: 'text-primary underline-offset-4 hover:underline',
             },
+            mapping: '',
+            mappingType: 'attribute',
             isEditable: true,
           },
           {
@@ -87,6 +89,8 @@ export const getRepository = async ({
               lg: 'h-10 rounded-md px-8',
               icon: 'h-9 w-9',
             },
+            mapping: '',
+            mappingType: 'attribute',
             isEditable: true,
           },
           {
@@ -94,6 +98,8 @@ export const getRepository = async ({
             name: 'children',
             defaultValue: 'Click me',
             values: {},
+            mapping: '',
+            mappingType: 'attribute',
             isEditable: true,
           },
         ],
