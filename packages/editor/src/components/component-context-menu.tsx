@@ -32,7 +32,12 @@ export const ComponentContextMenu: React.FunctionComponent = () => {
   })
 
   const handleClose = useEffectEvent((e: MouseEvent) => {
-    if (ref.current?.contains(e.target as Node) || !ref.current) return
+    if (
+      ref.current?.contains(e.target as Node) ||
+      !ref.current ||
+      ref.current.style.display === 'none'
+    )
+      return
     e.preventDefault()
     ref.current.style.display = 'none'
   })
