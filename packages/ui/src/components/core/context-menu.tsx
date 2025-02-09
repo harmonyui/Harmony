@@ -57,9 +57,10 @@ const ContextMenuContent = React.forwardRef<
   React.ElementRef<typeof ContextMenuPrimitive.Content>,
   React.ComponentPropsWithoutRef<typeof ContextMenuPrimitive.Content> & {
     container?: HTMLElement
+    noPortal?: boolean
   }
->(({ className, container, ...props }, ref) => (
-  <ContextMenuPrimitive.Portal container={container}>
+>(({ className, container, noPortal, ...props }, ref) => {
+  const content = (
     <ContextMenuPrimitive.Content
       ref={ref}
       className={getClass(
@@ -68,8 +69,14 @@ const ContextMenuContent = React.forwardRef<
       )}
       {...props}
     />
-  </ContextMenuPrimitive.Portal>
-))
+  )
+  if (noPortal) return content
+  return (
+    <ContextMenuPrimitive.Portal container={container}>
+      {content}
+    </ContextMenuPrimitive.Portal>
+  )
+})
 ContextMenuContent.displayName = ContextMenuPrimitive.Content.displayName
 
 const ContextMenuItem = React.forwardRef<

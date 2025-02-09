@@ -1,17 +1,10 @@
-/* import the TreeView dependency styles */
-
-@import "../node_modules/@syncfusion/ej2-base/styles/material.css";
-@import "../node_modules/@syncfusion/ej2-react-navigations/styles/material.css";
-@import "../node_modules/@syncfusion/ej2-inputs/styles/material.css";
-@import "../node_modules/@syncfusion/ej2-buttons/styles/material.css";
-
 [contenteditable]:focus,
 [contenteditable]:focus-visible {
   outline: 0px solid transparent;
 }
 
-#harmony-section button,
-#harmony-section a {
+#harmony-container button,
+#harmony-container a {
   cursor: default;
 }
 
@@ -19,7 +12,7 @@
 @tailwind components;
 @tailwind utilities;
 
-#harmony-section {
+#harmony-container {
   --background: 0 0% 100%;
   --foreground: 222.2 47.4% 11.2%;
   --muted: 210 40% 96.1%;
@@ -28,4 +21,26 @@
   --popover-foreground: 222.2 47.4% 11.2%;
   --accent: 210 40% 96.1%;
   --accent-foreground: 222.2 47.4% 11.2%;
+}
+
+.dark #harmony-container {
+  --background: 0 0% 0%;
+  --foreground: 0 0% 98%;
+  --card: 0 0% 3.9%;
+  --card-foreground: 0 0% 98%;
+  --popover: 0 0% 3.9%;
+  --popover-foreground: 0 0% 98%;
+  --primary: 0 0% 98%;
+  --primary-foreground: 0 0% 9%;
+  --secondary: 0 0% 14.9%;
+  --secondary-foreground: 0 0% 98%;
+  --muted: 0 0% 14.9%;
+  --muted-foreground: 0 0% 63.9%;
+  --accent: 0 0% 14.9%;
+  --accent-foreground: 0 0% 98%;
+  --destructive: 0 62.8% 30.6%;
+  --destructive-foreground: 0 0% 98%;
+  --border: 0 0% 14.9%;
+  --input: 0 0% 14.9%;
+  --ring: 0 0% 83.1%;
 }

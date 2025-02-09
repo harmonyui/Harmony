@@ -43,25 +43,27 @@ type PopoverProps = React.PropsWithChildren<
     container?: HTMLElement
   } & AllOrNothing<{ isOpen: boolean; setIsOpen: (value: boolean) => void }>
 >
-export const Popover: React.FunctionComponent<PopoverProps> = ({
-  button,
-  buttonClass,
-  className,
-  children,
-  container,
-  ...isOpenStuff
-}) => {
-  return (
-    <PopoverBase open={isOpenStuff.isOpen} onOpenChange={isOpenStuff.setIsOpen}>
-      <PopoverTrigger asChild>
-        <div className={buttonClass}>{button}</div>
-      </PopoverTrigger>
-      <PopoverContent
-        className={getClass(className, 'z-[10000]')}
-        container={container}
+export const Popover = React.forwardRef<HTMLDivElement, PopoverProps>(
+  (
+    { button, buttonClass, className, children, container, ...isOpenStuff },
+    ref,
+  ) => {
+    return (
+      <PopoverBase
+        open={isOpenStuff.isOpen}
+        onOpenChange={isOpenStuff.setIsOpen}
       >
-        {children}
-      </PopoverContent>
-    </PopoverBase>
-  )
-}
+        <PopoverTrigger asChild>
+          <div className={buttonClass}>{button}</div>
+        </PopoverTrigger>
+        <PopoverContent
+          className={getClass(className, 'z-[10000]')}
+          container={container}
+          ref={ref}
+        >
+          {children}
+        </PopoverContent>
+      </PopoverBase>
+    )
+  },
+)
