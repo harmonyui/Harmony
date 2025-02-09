@@ -1,22 +1,16 @@
-import { prisma } from '@harmony/db/lib/prisma'
 import type {
   ComponentProp,
   HarmonyComponentInfo,
 } from '@harmony/util/src/types/component'
 import {
   getFileContentsFromComponents,
+  getLevelId,
   getLocationsFromComponentId,
 } from '@harmony/util/src/utils/component'
-import type { Replace } from '@harmony/util/src/types/utils'
 import { getFileContents } from '@harmony/util/src/utils/common'
-import { PrismaHarmonyComponentRepository } from '../../repository/database/component-element'
 import type { GithubCache } from '../../repository/cache/types'
 import type { GitRepository } from '../../repository/git/types'
-import type {
-  Attribute,
-  HarmonyComponent,
-  HarmonyContainingComponent,
-} from './types'
+import type { HarmonyComponent, HarmonyContainingComponent } from './types'
 import { IndexingFiles } from './github'
 import { getGraph, FlowGraph } from './graph'
 import { JSXElementNode } from './nodes/jsx-element'
@@ -32,25 +26,6 @@ export type ReadFiles = (
   regex: RegExp,
   callback: (filename: string, content: string) => void,
 ) => Promise<void>
-
-export const indexFilesAndUpdateDatabase = async (
-  files: string[],
-  readFile: (filepath: string) => Promise<string>,
-  repositoryId: string,
-  importMappings: Record<string, string>,
-): Promise<HarmonyComponent[]> => {
-  const result = await indexFiles(files, readFile, importMappings)
-  if (result) {
-    await updateDatabase(
-      result.componentDefinitions,
-      result.elementInstance,
-      repositoryId,
-    )
-    return result.elementInstance
-  }
-
-  return []
-}
 
 export const indexFiles = async (
   files: string[],
@@ -160,6 +135,7 @@ export function formatComponentAndErrors(
 export function convertToHarmonyInfo(
   elementInstances: HarmonyComponent[],
 ): HarmonyComponentInfo[] {
+  const componentMap: Record<string, HarmonyComponentInfo> = {}
   return elementInstances
     .filter((i) => !i.isComponent)
     .map((instance) => {
@@ -171,7 +147,9 @@ export function convertToHarmonyInfo(
       const isRootElement =
         getBaseId(instance.containingComponent!.children[0]) ===
         getBaseId(instance.id)
-      return {
+      const parentComponent = instance.getParent()
+
+      const component = {
         id: instance.id,
         isComponent: isRootElement,
         name: isRootElement
@@ -180,11 +158,46 @@ export function convertToHarmonyInfo(
         props: instance.props.map<ComponentProp>((prop) => ({
           isEditable: prop.name === 'string',
           name: getAttributeName(prop),
-          defaultValue: prop.value,
+          defaultValue: prop.value.split(':')[1] ?? '',
           values: {},
+          mappingType: prop.type === 'text' ? 'text' : 'attribute',
+          mapping: instance.id,
           type: getAttributeName(prop) === 'src' ? 'image' : 'string',
         })),
       }
+
+      if (isRootElement && parentComponent) {
+        componentMap[parentComponent.id] = component
+      }
+
+      const parentComponentInfo = parentComponent
+        ? componentMap[parentComponent.id]
+        : undefined
+
+      if (parentComponentInfo) {
+        instance.props.forEach((prop) => {
+          if (prop.name !== 'property') return
+
+          const componentProperty = parentComponent?.props.find(
+            (parentProp) =>
+              parentProp.name === 'string' &&
+              parentProp.value.split(':')[0] === prop.value.split(':')[0],
+          )
+          if (componentProperty) {
+            parentComponentInfo.props.push({
+              isEditable: true,
+              name: getAttributeName(componentProperty),
+              defaultValue: componentProperty.value.split(':')[1] ?? '',
+              values: {},
+              mappingType: prop.type === 'text' ? 'text' : 'attribute',
+              mapping: instance.id,
+              type: getAttributeName(prop) === 'src' ? 'image' : 'string',
+            })
+          }
+        })
+      }
+
+      return component
     })
 }
 
@@ -250,11 +263,7 @@ function getCodeInfoFromFile(
   return true
 }
 
-type HarmonyComponentTemp = Replace<
-  HarmonyComponent,
-  'props',
-  Replace<Attribute, 'reference', string>[]
->
+type HarmonyComponentTemp = HarmonyComponent
 type AttributeTemp = HarmonyComponentTemp['props'][number]
 function normalizeCodeInfo(
   elementInstances: HarmonyComponentTemp[],
@@ -265,176 +274,12 @@ function normalizeCodeInfo(
   for (let i = 0; i < harmonyComponents.length; i++) {
     const instance = harmonyComponents[i]
     for (const attribute of elementInstances[i].props) {
-      const newReference = harmonyComponents.find(
-        (comp) => comp.id === attribute.reference,
-      )
-      if (!newReference) {
-        throw new Error('Reference should be pointer to an ancestor element')
-      }
-      instance.props.push({ ...attribute, reference: newReference })
+      instance.props.push(attribute)
     }
   }
 
   //Sort the instances parents first.
   return harmonyComponents
-}
-
-//For future when mapping path alias will be a need
-// function readTsConfig(tsConfigPath) {
-// 	const tsConfig = JSON.parse(fs.readFileSync(tsConfigPath, 'utf-8'));
-// 	return tsConfig.compilerOptions.paths || {};
-//   }
-
-//   // Function to resolve path alias
-//   function resolvePathAlias(alias, pathMappings) {
-// 	// Find the alias in the pathMappings
-// 	for (const [aliasKey, paths] of Object.entries(pathMappings)) {
-// 	  if (alias.startsWith(aliasKey)) {
-// 		const resolvedPath = alias.replace(aliasKey, paths[0]); // Use the first path mapping
-// 		return path.resolve(resolvedPath);
-// 	  }
-// 	}
-// 	return alias; // Return original alias if no mapping found
-//   }
-// const tsConfigPath = '/path/to/tsconfig.json';
-// const aliasMappings = readTsConfig(tsConfigPath);
-
-// // Resolve an alias
-// const alias = '@harmony/ui/src/component';
-// const resolvedPath = resolvePathAlias(alias, aliasMappings);
-
-export async function updateDatabaseComponentDefinitions(
-  elementInstances: HarmonyComponent[],
-  repositoryId: string,
-): Promise<void> {
-  const containingComponents = elementInstances.reduce<
-    HarmonyContainingComponent[]
-  >((prev, curr) => {
-    const def = prev.find((d) => d.id === curr.containingComponent?.id)
-    if (!def) {
-      prev.push(curr.containingComponent!)
-    }
-
-    return prev
-  }, [])
-
-  const alreadyCreated = await prisma.componentDefinition.findMany({
-    where: {
-      id: {
-        in: containingComponents.map(({ id }) => id),
-      },
-    },
-  })
-  const newComponents = containingComponents.filter(
-    (comp) => !alreadyCreated.find((already) => already.id === comp.id),
-  )
-  const newLocations = await prisma.location.createManyAndReturn({
-    data: newComponents.map((component) => ({
-      file: component.location.file,
-      start: component.location.start,
-      end: component.location.end,
-    })),
-  })
-
-  await prisma.componentDefinition.createMany({
-    data: newComponents.map((component, i) => ({
-      id: component.id,
-      repository_id: repositoryId,
-      name: component.name,
-      location_id: newLocations[i].id,
-    })),
-  })
-
-  await Promise.all(
-    containingComponents.map((component) =>
-      prisma.componentDefinition.upsert({
-        where: {
-          id: component.id,
-        },
-        create: {
-          id: component.id,
-          repository_id: repositoryId,
-          name: component.name,
-          location: {
-            create: {
-              file: component.location.file,
-              start: component.location.start,
-              end: component.location.end,
-            },
-          },
-        },
-        update: {
-          id: component.id,
-          repository_id: repositoryId,
-          name: component.name,
-        },
-      }),
-    ),
-  )
-}
-
-export async function updateDatabaseComponentErrors(
-  elementInstances: HarmonyComponent[],
-  repositoryId: string,
-): Promise<void> {
-  const errorElements = findErrorElements(elementInstances)
-
-  //const componentElementRepository = new PrismaHarmonyComponentRepository(prisma);
-
-  const ids = errorElements.map(({ id }) => id)
-  const alreadyUpdated = await prisma.componentError.findMany({
-    where: {
-      component_id: {
-        in: ids,
-      },
-      repository_id: repositoryId,
-    },
-  })
-  const newErrorElements = errorElements.filter(
-    (element) =>
-      !alreadyUpdated.find(
-        (already) =>
-          already.component_id === element.id && already.type === element.type,
-      ),
-  )
-
-  // await updateDatabaseComponentDefinitions(newErrorElements, repositoryId);
-  // await componentElementRepository.createOrUpdateElements(newErrorElements, repositoryId);
-
-  await prisma.componentError.createMany({
-    data: newErrorElements.map((newEl) => ({
-      component_id: newEl.id,
-      repository_id: repositoryId,
-      type: newEl.type,
-    })),
-  })
-}
-
-async function updateDatabase(
-  componentDefinitions: Record<string, HarmonyContainingComponent>,
-  elementInstances: HarmonyComponent[],
-  repositoryId: string,
-  onProgress?: (progress: number) => void,
-) {
-  elementInstances.sort(
-    (a, b) => a.id.split('#').length - b.id.split('#').length,
-  )
-  await updateDatabaseComponentDefinitions(elementInstances, repositoryId)
-
-  const componentElementRepository = new PrismaHarmonyComponentRepository(
-    prisma,
-  )
-
-  for (let i = 0; i < elementInstances.length; i++) {
-    const instance = elementInstances[i]
-    await componentElementRepository.createOrUpdateElement(
-      instance,
-      repositoryId,
-    )
-
-    //await createElement(instance);
-    onProgress && onProgress(i / elementInstances.length)
-  }
 }
 
 export const convertGraphToHarmonyComponents = (
@@ -457,7 +302,8 @@ export const convertGraphToHarmonyComponents = (
   try {
     for (const node of elementInstances) {
       const rootInstances = node.getRootInstances()
-      for (const instances of rootInstances) {
+      for (let i = 0; i < rootInstances.length; i++) {
+        const instances = rootInstances[i]
         const containingComponent = node.getParentComponent()
         const ids = instances.map((instance, i) =>
           getIdFromParents([instance, ...instances.slice(i + 1)]),
@@ -503,8 +349,20 @@ export const convertGraphToHarmonyComponents = (
             node: node.node,
             props: [],
             children: [],
-            getParent: () => undefined,
+            getParent: () => components.find((comp) => comp.id === ids[1]),
           }
+          const childComponents = components.filter(
+            (component) => getLevelId(component.id, 1) === id,
+          )
+          childComponents.forEach((child) => {
+            if (child.containingComponent?.name !== component.name) {
+              throw new Error(
+                'Error setting child components for component ' +
+                  component.name,
+              )
+            }
+            child.getParent = () => component
+          })
           component.props = node
             .getAttributes()
             .flatMap<AttributeTemp>((attr) => {
@@ -516,30 +374,6 @@ export const convertGraphToHarmonyComponents = (
                     ? 'text'
                     : 'property'
               const attrs: AttributeTemp[] = []
-              const { identifiers } = attr.getArgumentReferences()
-              if (type !== 'text') {
-                attrs.push(
-                  ...identifiers
-                    .filter(
-                      (ident) =>
-                        instances.length > 1 &&
-                        ident.getValues((_node) =>
-                          isChildNode(_node, instances[1]),
-                        ).length === 0,
-                    )
-                    .map<AttributeTemp>((reference) => ({
-                      id: attr.id,
-                      index: attr.getChildIndex(),
-                      location: instances[1].getOpeningElement().location,
-                      locationType: 'add',
-                      name: 'string',
-                      value: reference.name,
-                      type,
-                      reference: ids[1],
-                      node: instances[1].getOpeningElement().node,
-                    })),
-                )
-              }
               attrs.push(
                 ...attr
                   .getDataFlowWithParents()
@@ -555,12 +389,7 @@ export const convertGraphToHarmonyComponents = (
                       location: flow.location,
                       locationType: 'component',
                       name: isLiteralNode(flow.node) ? 'string' : 'property',
-                      value:
-                        type === 'property'
-                          ? `${name}:${isLiteralNode(flow.node) ? getLiteralValue(flow.node) : ''}`
-                          : isLiteralNode(flow.node)
-                            ? getLiteralValue(flow.node)
-                            : '',
+                      value: `${name}:${isLiteralNode(flow.node) ? getLiteralValue(flow.node) : ''}`,
                       type,
                       reference:
                         ids[
@@ -569,6 +398,46 @@ export const convertGraphToHarmonyComponents = (
                       node: flow.node,
                     })),
                   ),
+              )
+
+              const { identifiers } = attr.getArgumentReferences()
+              attrs.push(
+                ...identifiers
+                  .map<AttributeTemp | undefined>((reference) => {
+                    const isAddIdentifier =
+                      instances.length > 1 &&
+                      reference.getValues((_node) =>
+                        isChildNode(_node, instances[1]),
+                      ).length === 0
+                    if (isAddIdentifier) {
+                      if (type === 'text') return undefined
+
+                      return {
+                        id: attr.id,
+                        index: attr.getChildIndex(),
+                        location: instances[1].getOpeningElement().location,
+                        locationType: 'add',
+                        name: 'string',
+                        value: reference.name,
+                        type,
+                        reference: ids[1],
+                        node: instances[1].getOpeningElement().node,
+                      }
+                    }
+
+                    return {
+                      id: attr.id,
+                      index: attr.getChildIndex(),
+                      location: reference.location,
+                      locationType: 'component',
+                      name: 'property',
+                      value: reference.name,
+                      type,
+                      reference: ids[0],
+                      node: reference.node,
+                    }
+                  })
+                  .filter((attr) => attr !== undefined),
               )
 
               //If no data flow, then it is a dynamic value
@@ -581,7 +450,6 @@ export const convertGraphToHarmonyComponents = (
                   name: 'property',
                   value: `${name}:`,
                   type,
-                  reference: ids[0],
                   node: attr.getValueNode().node,
                 })
               }

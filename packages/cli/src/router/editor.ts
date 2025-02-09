@@ -1,12 +1,8 @@
 import {
   indexComponentsRequestSchema,
-  indexComponentsResponseSchema,
   loadRequestSchema,
-  loadResponseSchema,
   publishRequestSchema,
-  publishResponseSchema,
   updateRequestBodySchema,
-  updateResponseSchema,
 } from '@harmony/util/src/types/network'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { getComponentIdsFromUpdates } from '@harmony/util/src/updates/utils'
@@ -19,7 +15,6 @@ const updates: ComponentUpdate[] = []
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
     .input(loadRequestSchema)
-    .output(loadResponseSchema)
     .query(async ({ ctx, input }) => {
       const ret = await ctx.serverClient.editor.loadProject.query({
         ...input,
@@ -33,7 +28,6 @@ export const editorRouter = createTRPCRouter({
     }),
   saveProject: publicProcedure
     .input(updateRequestBodySchema)
-    .output(updateResponseSchema)
     .mutation(async ({ input }) => {
       updates.push(...input.values.flatMap(({ update }) => update))
 
@@ -43,7 +37,6 @@ export const editorRouter = createTRPCRouter({
     }),
   publishProject: publicProcedure
     .input(publishRequestSchema)
-    .output(publishResponseSchema)
     .mutation(async ({ ctx }) => {
       const { path } = ctx
 
@@ -52,11 +45,13 @@ export const editorRouter = createTRPCRouter({
         componentIds,
         async (file) => getFileContent(file, path),
       )
-      const repository = ctx.repositoryId
-        ? await ctx.serverClient.editor.getRepository.query({
-            repositoryId: ctx.repositoryId,
-          })
-        : ctx.repository
+      const repository =
+        ctx.repository ??
+        (ctx.repositoryId
+          ? await ctx.serverClient.editor.getRepository.query({
+              repositoryId: ctx.repositoryId,
+            })
+          : ctx.repository)
       if (!repository) {
         throw new Error('Repository not found')
       }
@@ -86,7 +81,6 @@ export const editorRouter = createTRPCRouter({
     }),
   indexComponents: publicProcedure
     .input(indexComponentsRequestSchema)
-    .output(indexComponentsResponseSchema)
     .mutation(async ({ ctx, input }) => {
       const fileContents = await getFileContentsFromComponents(
         input.components,
@@ -94,6 +88,7 @@ export const editorRouter = createTRPCRouter({
       )
       return ctx.serverClient.editor.indexComponents.mutate({
         ...input,
+        repositoryId: ctx.repository ?? input.repositoryId,
         contents: fileContents.map(({ file, content }) => ({
           path: file,
           content,

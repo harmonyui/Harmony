@@ -43,7 +43,7 @@ export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
   }
 
   public getName() {
-    return getNameValue(this.key)
+    return String(getNameValue(this.key))
   }
 
   public getValueNode() {
@@ -67,7 +67,7 @@ export class ObjectPropertyExpressionNode
     super(base)
   }
   public getName() {
-    return getNameValue(this.key)
+    return String(getNameValue(this.key))
   }
 
   public getValueNode() {

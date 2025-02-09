@@ -53,6 +53,7 @@ export const updateStyle: UpdateComponent = async (info, graph, repository) => {
           value,
           '',
           repository.cssFramework,
+          repository.tailwindConfig,
         ),
       )
       updateElementClassName({
@@ -157,7 +158,7 @@ const updateHoverStyle: UpdateComponent = async (info, graph, repository) => {
     updateElementClassName({
       graph,
       repository,
-      value: classNameValue,
+      value: String(classNameValue),
       type: 'class',
       oldValue: '',
       propertyName: '',

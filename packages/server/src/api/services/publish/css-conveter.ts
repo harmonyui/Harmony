@@ -4,26 +4,28 @@ import { camelToKebab } from '@harmony/util/src/utils/common'
 //These css names should not have calculated formatted values
 export const nonFormattedCSS = ['borderColor', 'backgroundImage']
 
-export const converter = new TailwindConverter({
-  remInPx: 16, // set null if you don't want to convert rem to pixels
-  //postCSSPlugins: [], // add any postcss plugins to this array
-  tailwindConfig: {
-    // your tailwind config here
-    content: [],
-    theme: {
-      extend: {},
+export const converter = (tailwindConfig: string) =>
+  new TailwindConverter({
+    remInPx: 16, // set null if you don't want to convert rem to pixels
+    //postCSSPlugins: [], // add any postcss plugins to this array
+    tailwindConfig: {
+      // your tailwind config here
+      content: [],
+      theme: {
+        extend: JSON.parse(tailwindConfig),
+      },
     },
-  },
-})
+  })
 
 export const convertCSSToTailwind = async (
   propertyName: string,
   value: string,
   formattedValue: string,
+  tailwindConfig: string,
 ): Promise<string> => {
   // This converter has a bug where border color does not work
   if (propertyName === 'borderColor') {
-    const classes = await convertToCSSProperty('color', value)
+    const classes = await convertToCSSProperty('color', value, tailwindConfig)
     return classes.replace('text', 'border')
     //The converter also has a bug with background images where underscores are escaped
   } else if (propertyName === 'backgroundImage') {
@@ -31,25 +33,33 @@ export const convertCSSToTailwind = async (
   }
 
   return formattedValue
-    ? convertToCSSValue(formattedValue)
-    : convertToCSSProperty(propertyName, value)
+    ? convertToCSSValue(formattedValue, tailwindConfig)
+    : convertToCSSProperty(propertyName, value, tailwindConfig)
 }
 
 export const convertStyleSheetToTailwind = async (
   css: string,
-): Promise<ReturnType<typeof converter.convertCSS>> => {
-  return converter.convertCSS(css)
+  tailwindConfig: string,
+): Promise<ReturnType<TailwindConverter['convertCSS']>> => {
+  return converter(tailwindConfig).convertCSS(css)
 }
 
 const convertToCSSProperty = async (
   propertyName: string,
   value: string,
+  tailwindConfig: string,
 ): Promise<string> => {
-  return convertToCSSValue(`${camelToKebab(propertyName)}: ${value};`)
+  return convertToCSSValue(
+    `${camelToKebab(propertyName)}: ${value};`,
+    tailwindConfig,
+  )
 }
 
-const convertToCSSValue = async (value: string): Promise<string> => {
-  const converted = await converter.convertCSS(`.example {
+const convertToCSSValue = async (
+  value: string,
+  tailwindConfig: string,
+): Promise<string> => {
+  const converted = await converter(tailwindConfig).convertCSS(`.example {
     ${value}
 }`)
   return converted.nodes.reduce(

@@ -273,8 +273,8 @@ describe('indexor', () => {
 
       expect(textAttributes[0].getValueNode().type).toBe('JSXText')
       expect(
-        getLiteralValue(
-          textAttributes[0].getValueNode().node as LiteralNode,
+        String(
+          getLiteralValue(textAttributes[0].getValueNode().node as LiteralNode),
         ).trim(),
       ).toBe('The ALSCrowd')
       //expectLocationOfString(file, textAttributes[0].location, 'The ALSCrowd')
@@ -287,8 +287,8 @@ describe('indexor', () => {
 
       expect(textAttributes[2].getValueNode().type).toBe('JSXText')
       expect(
-        getLiteralValue(
-          textAttributes[2].getValueNode().node as LiteralNode,
+        String(
+          getLiteralValue(textAttributes[2].getValueNode().node as LiteralNode),
         ).trim(),
       ).toBe('Directory')
       //expectLocationOfString(file, textAttributes[2].location, 'Directory')
@@ -915,8 +915,10 @@ describe('indexor', () => {
         1,
       )
       expect(
-        getLiteralValue(
-          componentElements[0].getAttributes()[2].getDataFlow()[0].node,
+        String(
+          getLiteralValue(
+            componentElements[0].getAttributes()[2].getDataFlow()[0].node,
+          ),
         ).trim(),
       ).toBe("You're welcome")
       expect(componentElements[0].getAttributes()[2].getChildIndex()).toBe(1)
@@ -1313,6 +1315,33 @@ describe('indexor', () => {
       )
     })
 
+    it('Should handle complex property types', () => {
+      const file: TestFile = 'app/complexPropTypes.tsx'
+      const content = testCases[file]
+      const result = getGraph({ file, code: content, importMappings: {} })
+
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+      expect(componentElements.length).toBe(2)
+
+      expect(componentElements[1].getAttributes().length).toBe(1)
+      expect(componentElements[1].getAttributes()[0].name).toBe('numberProp')
+      expect(componentElements[1].getAttributes()[0].getDataFlow().length).toBe(
+        1,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[1].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe(1)
+      expectLocationOfString(
+        file,
+        componentElements[1].getAttributes()[0].getDataFlow()[0].location,
+        '1',
+      )
+    })
+
     //TODO: Finish this
     // it('Should handle imports from various files', () => {
     //   const componentElements: HarmonyComponent[] = []
@@ -1367,10 +1396,10 @@ describe('indexor', () => {
       if (!result) return
 
       expect(result.length).toBe(15)
-      expect(componentElements[5].props.length).toBe(3)
+      expect(componentElements[5].props.length).toBe(4)
       expect(componentElements[5].props[0].type).toBe('className')
       expect(componentElements[5].props[0].name).toBe('string')
-      expect(componentElements[5].props[0].value).toBe('m-2')
+      expect(componentElements[5].props[0].value).toBe('className:m-2')
       expectLocationOfString(
         'app/multipleLayers1.tsx',
         componentElements[5].props[0].location,
@@ -1378,7 +1407,7 @@ describe('indexor', () => {
       )
       expect(componentElements[5].props[1].type).toBe('className')
       expect(componentElements[5].props[1].name).toBe('string')
-      expect(componentElements[5].props[1].value).toBe('bg-white')
+      expect(componentElements[5].props[1].value).toBe('className:bg-white')
       expectLocationOfString(
         'app/multipleLayers2.tsx',
         componentElements[5].props[1].location,
@@ -1387,7 +1416,7 @@ describe('indexor', () => {
       expect(componentElements[5].props[2].type).toBe('className')
       expect(componentElements[5].props[2].name).toBe('string')
       expect(componentElements[5].props[2].value).toBe(
-        'bg-blue-50 flex flex-col',
+        'className:bg-blue-50 flex flex-col',
       )
       expectLocationOfString(
         'app/multipleLayers1.tsx',
@@ -1395,19 +1424,19 @@ describe('indexor', () => {
         '"bg-blue-50 flex flex-col"',
       )
 
-      expect(componentElements[8].props.length).toBe(1)
+      expect(componentElements[8].props.length).toBe(2)
       expect(componentElements[8].props[0].type).toBe('text')
       expect(componentElements[8].props[0].name).toBe('string')
-      expect(componentElements[8].props[0].value).toBe('Hello there')
+      expect(componentElements[8].props[0].value).toBe('children:Hello there')
       expectLocationOfString(
         'app/multipleLayers1.tsx',
         componentElements[8].props[0].location,
         '"Hello there"',
       )
-      expect(componentElements[9].props.length).toBe(1)
+      expect(componentElements[9].props.length).toBe(2)
       expect(componentElements[9].props[0].type).toBe('text')
       expect(componentElements[9].props[0].name).toBe('string')
-      expect(componentElements[9].props[0].value).toBe('A Name')
+      expect(componentElements[9].props[0].value).toBe('children:A Name')
       expectLocationOfString(
         'app/multipleLayers2.tsx',
         componentElements[9].props[0].location,
@@ -1495,7 +1524,7 @@ describe('indexor', () => {
       const harmonyInfo = convertToHarmonyInfo(result)
 
       expect(harmonyInfo[0].name).toBe('Component')
-      expect(harmonyInfo[0].props.length).toBe(2)
+      expect(harmonyInfo[0].props.length).toBe(3)
       expect(harmonyInfo[0].props[0].name).toBe('className')
       expect(harmonyInfo[0].props[0].isEditable).toBe(false)
       expect(harmonyInfo[0].props[1].name).toBe('children')

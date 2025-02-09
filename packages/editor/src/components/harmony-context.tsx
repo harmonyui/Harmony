@@ -47,6 +47,7 @@ interface HarmonyContextProps {
     value: string,
     oldValue: string,
     element: HTMLElement | undefined,
+    execute?: boolean,
   ) => void
   onElementPropertyChange: (
     name: string,

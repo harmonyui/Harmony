@@ -511,6 +511,15 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         </div>
     }
   `,
+  'app/complexPropTypes.tsx': `
+    const Button = ({numberProp}) => {
+        return <button>{numberProp}</button>
+    }
+
+    const App = () => {
+        return <Button numberProp={1}/>
+    }
+  `,
 } as const
 
 export type TestFile = keyof typeof testCases

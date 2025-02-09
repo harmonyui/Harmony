@@ -356,13 +356,19 @@ export const getClassNameValue = async (
   value: string,
   formattedValue: string,
   cssFramework: string,
+  tailwindConfig: string,
 ) => {
   if (name === 'class')
     return createUpdate<ClassNameValue>({ type: 'class', value })
   if (cssFramework !== 'tailwind')
     return createUpdate<ClassNameValue>({ type: 'style', value })
 
-  const tailwindValue = await convertCSSToTailwind(name, value, formattedValue)
+  const tailwindValue = await convertCSSToTailwind(
+    name,
+    value,
+    formattedValue,
+    tailwindConfig,
+  )
   if (!tailwindValue) {
     return createUpdate<ClassNameValue>({
       type: 'style',

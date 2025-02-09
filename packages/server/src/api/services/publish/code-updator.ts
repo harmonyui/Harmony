@@ -21,6 +21,7 @@ import { getClassNameValue } from './updates/utils'
 import { updateWrapUnwrap } from './updates/wrap'
 import { camelToKebab, round } from '@harmony/util/src/utils/common'
 import { nonFormattedCSS } from './css-conveter'
+import { normalizeSortedUpdates } from '../component-update'
 
 export class CodeUpdator {
   constructor(
@@ -29,8 +30,10 @@ export class CodeUpdator {
   ) {}
 
   public async updateFiles(
-    updates: ComponentUpdate[],
+    updatesRaw: ComponentUpdate[],
   ): Promise<FileUpdateInfo> {
+    const updates = normalizeSortedUpdates(updatesRaw)
+
     const graph = await buildGraphForComponents(
       getComponentIdsFromUpdates(updates),
       this.gitRepository,
@@ -70,6 +73,7 @@ export class CodeUpdator {
                 update.value,
                 update.formattedValue,
                 this.gitRepository.repository.cssFramework,
+                this.gitRepository.repository.tailwindConfig,
               )
             : update.value
         const oldValue =
@@ -79,6 +83,7 @@ export class CodeUpdator {
                 update.oldValue,
                 update.formattedValue,
                 this.gitRepository.repository.cssFramework,
+                this.gitRepository.repository.tailwindConfig,
               )
             : update.oldValue
 
@@ -103,12 +108,14 @@ export class CodeUpdator {
           !['font', ...nonFormattedCSS].includes(curr.name)
         ) {
           const cssName = camelToKebab(curr.name)
-          //Round the pixel values
-          const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(curr.value)
-          if (match) {
-            const value = parseFloat(match[1] || '0')
-            const unit = match[2]
-            curr.value = `${round(value)}${unit}`
+          if (curr.value.endsWith('px')) {
+            //Round the pixel values
+            const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(curr.value)
+            if (match) {
+              const value = parseFloat(match[1] || '0')
+              const unit = match[2]
+              curr.value = `${round(value)}${unit}`
+            }
           }
           curr.formattedValue = `${cssName}:${curr.value};`
 

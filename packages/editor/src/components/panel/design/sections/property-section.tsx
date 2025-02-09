@@ -2,17 +2,31 @@ import { useCallback, useMemo } from 'react'
 import type { ComponentProp } from '@harmony/util/src/types/component'
 import type { UpdateProperty } from '@harmony/util/src/updates/property'
 import { useHarmonyStore } from '../../../../hooks/state'
-import { translatePropertyName } from '../../../../utils/element-utils'
+import {
+  findElementsFromId,
+  translatePropertyName,
+} from '../../../../utils/element-utils'
 import { useHarmonyContext } from '../../../harmony-context'
 import { PropertyInput } from '../../_common/property/property-input'
 import type { DesignPanelSectionComponent } from './components/section'
 import { Section } from './components/section'
 import { Label } from './components/label'
 
+const isUnique = <T, K extends keyof T>(
+  values: T[],
+  keySelector: (value: T) => T[K],
+) => {
+  return values.filter((value) => {
+    const key = keySelector(value)
+    return values.filter((v) => keySelector(v) === key).length === 1
+  })
+}
+
 export const PropertySection: DesignPanelSectionComponent = () => {
-  const { onElementPropertyChange, onComponentPropertyChange } =
+  const { onElementPropertyChange, onComponentPropertyChange, onTextChange } =
     useHarmonyContext()
   const selectedComponent = useHarmonyStore((store) => store.selectedComponent)
+  const rootElement = useHarmonyStore((state) => state.rootComponent)?.element
   const getPropValue = useCallback(
     (prop: ComponentProp) => {
       if (prop.type === 'classVariant') {
@@ -25,17 +39,27 @@ export const PropertySection: DesignPanelSectionComponent = () => {
         return ''
       }
 
-      const attributeName = prop.name === 'className' ? 'class' : prop.name
-      return selectedComponent?.element.getAttribute(attributeName) ?? ''
+      const mappedElement = findElementsFromId(prop.mapping, rootElement)[0]
+      if (!mappedElement) return ''
+
+      if (prop.mappingType === 'attribute') {
+        const attributeName = prop.name === 'className' ? 'class' : prop.name
+        return mappedElement.getAttribute(attributeName) ?? ''
+      } else {
+        return mappedElement.textContent ?? ''
+      }
     },
     [selectedComponent],
   )
 
   const props = useMemo(
     () =>
-      selectedComponent?.props
-        .map((prop) => ({ ...prop, value: getPropValue(prop) }))
-        .filter((prop) => prop.isEditable && prop.value) ?? [],
+      isUnique(
+        selectedComponent?.props
+          .map((prop) => ({ ...prop, value: getPropValue(prop) }))
+          .filter((prop) => prop.isEditable && prop.value) ?? [],
+        (prop) => prop.name,
+      ),
     [selectedComponent, getPropValue],
   )
 
@@ -65,17 +89,30 @@ export const PropertySection: DesignPanelSectionComponent = () => {
       )
       return
     }
-    onElementPropertyChange(prop.name, value, selectedComponent?.element)
+
+    const mappedElement = findElementsFromId(prop.mapping, rootElement)[0]
+    if (!mappedElement) {
+      throw new Error("Couldn't find element to update property")
+    }
+
+    if (prop.mappingType === 'attribute') {
+      onElementPropertyChange(prop.name, value, mappedElement)
+    } else {
+      onTextChange(value, mappedElement.textContent ?? '', mappedElement)
+    }
   }
 
   return (
     <Section label='Properties'>
       <div className='grid grid-cols-3 items-center gap-2'>
         {props.map((prop) => (
-          <Label key={prop.name} label={translatePropertyName(prop.name)}>
+          <Label
+            key={`${selectedComponent?.id}-${prop.name}`}
+            label={translatePropertyName(prop.name)}
+          >
             <PropertyInput
               type={prop.type}
-              key={prop.name}
+              key={`${selectedComponent?.id}-${prop.name}`}
               value={prop.value}
               onChange={(value) => onPropChange(prop, value)}
               values={prop.values}

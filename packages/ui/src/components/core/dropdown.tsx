@@ -14,36 +14,44 @@ export type ListBoxPopoverProps<T> = {
   children: React.ReactNode
   container?: HTMLElement
 } & AllOrNothing<{ isOpen: boolean; setIsOpen: (value: boolean) => void }>
-export const ListBoxPopover = <T,>({
-  items,
-  className = '',
-  header,
-  children,
-  container,
-  ...isOpenStuff
-}: ListBoxPopoverProps<T>): React.JSX.Element => {
-  return (
-    <Popover
-      className='bg-white border rounded-lg max-h-52'
-      button={children}
-      buttonClass={className}
-      container={container}
-      {...isOpenStuff}
-    >
-      {header ? <div className='p-2'>{header}</div> : null}
-      <div className='min-w-[11rem]'>
-        <ul
-          aria-labelledby='dropdownDefaultButton'
-          className='text-sm text-gray-700 dark:text-gray-200'
-        >
-          {items.map((item, i) => (
-            <li key={i}>{item.name}</li>
-          ))}
-        </ul>
-      </div>
-    </Popover>
-  )
-}
+export const ListBoxPopover = React.forwardRef(
+  <T,>(
+    {
+      items,
+      className = '',
+      header,
+      children,
+      container,
+      ...isOpenStuff
+    }: ListBoxPopoverProps<T>,
+    ref: React.Ref<HTMLDivElement>,
+  ): React.JSX.Element => {
+    return (
+      <Popover
+        className='bg-white dark:bg-black border rounded-lg max-h-52'
+        button={children}
+        buttonClass={className}
+        container={container}
+        ref={ref}
+        {...isOpenStuff}
+      >
+        {header ? <div className='p-2'>{header}</div> : null}
+        <div className='min-w-[11rem]'>
+          <ul
+            aria-labelledby='dropdownDefaultButton'
+            className='text-sm text-gray-700 dark:text-gray-200'
+          >
+            {items.map((item, i) => (
+              <li key={i}>{item.name}</li>
+            ))}
+          </ul>
+        </div>
+      </Popover>
+    )
+  },
+) as <T>(
+  props: ListBoxPopoverProps<T> & { ref?: React.Ref<HTMLDivElement> },
+) => React.JSX.Element
 
 export type ListBoxProps<T> = ListBoxPopoverProps<T> & {
   mode?: 'primary' | 'secondary' | 'none'
@@ -178,10 +186,10 @@ export const DropdownLineItem = <C extends React.ElementType>({
       {...restProps}
       className={getClass(
         selected
-          ? 'bg-gray-200 text-gray-900 hover:bg-gray-300'
-          : 'text-gray-900 hover:bg-gray-100 ',
+          ? 'bg-gray-200 dark:bg-accent text-gray-900 dark:text-white hover:bg-gray-300 dark:hover:bg-accent'
+          : 'text-popover-foreground hover:bg-gray-100 dark:hover:bg-accent',
         className,
-        'group flex w-full items-center rounded-md p-2 text-sm cursor-pointer [&>*]:flex-1',
+        'group text-left flex w-full items-center rounded-md text-sm cursor-pointer [&>*]:flex-1 relative select-none px-8 py-1.5 outline-none data-[disabled]:pointer-events-none data-[disabled]:opacity-50',
       )}
     >
       {children}
