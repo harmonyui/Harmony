@@ -4,7 +4,7 @@ import { writeRepository } from '../utils/write-repository'
 
 const initOptions = z.object({
   cwd: z.string(),
-  repositoryId: z.string(),
+  repositoryId: z.optional(z.string()),
 })
 
 export const init = new Command()

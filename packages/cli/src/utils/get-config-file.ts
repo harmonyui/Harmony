@@ -8,5 +8,9 @@ export const getConfigFile = (path: string): Repository | undefined => {
     return undefined
   }
 
-  return jsonSchema.pipe(repositorySchema).safeParse(configFileContents).data
+  const parseResult = jsonSchema
+    .pipe(repositorySchema)
+    .safeParse(configFileContents)
+
+  return parseResult.data
 }
