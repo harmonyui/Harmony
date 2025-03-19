@@ -222,7 +222,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
               : false),
         ),
       ) &&
-      mutations[0].removedNodes[0] !== mutations[1].addedNodes[0]
+      mutations[0]?.removedNodes[0] !== mutations[1]?.addedNodes[0]
     ) {
       void recurseAndUpdateElements()
     }
