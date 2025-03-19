@@ -133,7 +133,7 @@ export function getVscodeLink(
   if (!componentId) return undefined
 
   const { file, startLine } = getLocationsFromComponentId(componentId)[0]
-  return `vscode://file${rootPath}/${file}:${startLine}`
+  return `cursor://file${rootPath}/${file}:${startLine}`
 }
 
 export const createComponentId = (element: HTMLElement): string => {
