@@ -115,25 +115,6 @@ export class Node<T extends t.Node = t.Node> {
     return values
   }
 
-  public traceParent(
-    predicate: (node: Node | undefined) => boolean = (node) =>
-      node ? simplePredicate(node) : false,
-  ): Node | undefined {
-    if (predicate(this.getParent())) {
-      return this.getParent()
-    }
-    let parent: Node | undefined
-    this.dataDependents.forEach((node) => {
-      if (parent) return
-      const nodeParent = node.traceParent(predicate)
-      if (nodeParent) {
-        parent = nodeParent
-      }
-    })
-
-    return parent
-  }
-
   public getValuesWithParents<N extends Node, P extends Node, Return>(
     predicate: (node: Node) => node is N,
     parentPredicate: (node: Node) => node is P,
@@ -171,7 +152,7 @@ export class Node<T extends t.Node = t.Node> {
     return ret
   }
 
-  public setParent(parent: Node) {
+  public setParent(parent: Node | undefined) {
     this.parent = parent
   }
   public getParent(): Node | undefined {

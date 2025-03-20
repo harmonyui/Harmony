@@ -401,7 +401,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     `,
   'app/arrayStuff.tsx': `
         const ComponentArrays = ({array1, array2}) => {
-        const [first, second] = array2;
+            const [first, second] = array2;
             return <div>
                 <h1 className={first.start}>{array1[0]}</h1>
                 <h2 className={second.end}>{array1[1]}</h2>
@@ -411,6 +411,9 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
             return <div>
                 {categories.map((category) => {
                     return <h1>{category.name}</h1>
+                })}
+                {categories.map(({name}) => {
+                    return <h2>{name}</h2>
                 })}
             </div>
         }

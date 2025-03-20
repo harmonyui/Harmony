@@ -750,7 +750,7 @@ describe('code-updator', () => {
           oldValue: 'Hello sir',
           type: 'text',
           name: '0',
-          componentId: elementInstances[4].id,
+          componentId: elementInstances[8].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -759,7 +759,7 @@ describe('code-updator', () => {
           oldValue: 'There sir',
           type: 'text',
           name: '0',
-          componentId: elementInstances[4].id,
+          componentId: elementInstances[8].id,
           childIndex: 1,
           isGlobal: false,
         },
@@ -768,7 +768,7 @@ describe('code-updator', () => {
           oldValue: 'flex',
           type: 'className',
           name: 'display',
-          componentId: elementInstances[4].id,
+          componentId: elementInstances[6].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -777,7 +777,7 @@ describe('code-updator', () => {
           oldValue: '8px',
           type: 'className',
           name: 'gap',
-          componentId: elementInstances[4].id,
+          componentId: elementInstances[6].id,
           childIndex: 1,
           isGlobal: false,
         },
@@ -786,7 +786,7 @@ describe('code-updator', () => {
           oldValue: 'name1',
           type: 'text',
           name: '0',
-          componentId: elementInstances[8].id,
+          componentId: elementInstances[16].id,
           childIndex: 0,
           isGlobal: false,
         },
@@ -795,7 +795,7 @@ describe('code-updator', () => {
           oldValue: 'name2',
           type: 'text',
           name: '0',
-          componentId: elementInstances[8].id,
+          componentId: elementInstances[16].id,
           childIndex: 1,
           isGlobal: false,
         },
@@ -820,7 +820,12 @@ describe('code-updator', () => {
         const ComponentMapping = ({categories}) => {
             return <div>
                 {categories.map((category) => {
-                    return <h1 className={category.style}>{category.name}</h1>
+                    return <div>
+                      <div className={category.style} />
+                      <div>
+                        <h1>{category.name}</h1>
+                      </div>
+                    </div>
                 })}
             </div>
         }
@@ -830,11 +835,14 @@ describe('code-updator', () => {
               { name: 'Thank you sir', style: 'gap-2.5' },
             ]
             const classes = [{ start: 'bg-black' }, { end: 'text-black' }]
-            const inHouseMapping = [{ name: 'name1-changed' }, { name: 'name2-changed' }]
+            const inHouseMapping = [{ name: 'name1-changed', style: 'bg-white' }, { name: 'name2-changed', style: 'text-white' }]
             return <>
                 <ComponentArrays array1={['Hello good sir', 'There good sir']} array2={classes}/>
                 <ComponentMapping categories={categories}/>
-                {inHouseMapping.map((category) => <div key={category.name}>{category.name}</div>)}
+                {inHouseMapping.map(({style, name}) => <div>
+                  <div className={style}/>
+                  <span>{name}</span>
+                </div>)}
             </>
         }
         `),
@@ -2157,18 +2165,26 @@ const testFiles = {
         const ComponentMapping = ({categories}) => {
             return <div>
                 {categories.map((category) => {
-                    return <h1 className={category.style}>{category.name}</h1>
+                    return <div>
+                      <div className={category.style} />
+                      <div>
+                        <h1>{category.name}</h1>
+                      </div>
+                    </div>
                 })}
             </div>
         }
         const App = () => {
             const categories = [{name: 'Hello sir', style: 'flex'}, {name: 'There sir', style: 'gap-2'}];
             const classes = [{start: 'bg-blue-50'}, {end: 'text-white'}];
-            const inHouseMapping = [{name: 'name1'}, {name: 'name2'}];
+            const inHouseMapping = [{name: 'name1', style: 'bg-white'}, {name: 'name2', style: 'text-white'}];
             return <>
                 <ComponentArrays array1={['Hello', 'There']} array2={classes}/>
                 <ComponentMapping categories={categories}/>
-                {inHouseMapping.map((category) => <div key={category.name}>{category.name}</div>)}
+                {inHouseMapping.map(({style, name}) => <div>
+                  <div className={style}/>
+                  <span>{name}</span>
+                </div>)}
             </>
         }
   `,

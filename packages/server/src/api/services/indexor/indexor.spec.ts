@@ -1061,7 +1061,7 @@ describe('indexor', () => {
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
-      expect(componentElements.length).toBe(7)
+      expect(componentElements.length).toBe(8)
 
       expect(componentElements[1].getAttributes().length).toBe(2)
       expect(componentElements[1].getAttributes()[0].name).toBe('className')
@@ -1132,7 +1132,7 @@ describe('indexor', () => {
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
-      expect(componentElements.length).toBe(7)
+      expect(componentElements.length).toBe(8)
 
       expect(componentElements[4].getAttributes().length).toBe(1)
       expect(componentElements[4].getAttributes()[0].name).toBe('children')
@@ -1158,6 +1158,33 @@ describe('indexor', () => {
       expectLocationOfString(
         file,
         componentElements[4].getAttributes()[0].getDataFlow()[1].location,
+        '"There sir"',
+      )
+
+      expect(componentElements[5].getAttributes().length).toBe(1)
+      expect(componentElements[5].getAttributes()[0].name).toBe('children')
+      expect(componentElements[5].getAttributes()[0].getDataFlow().length).toBe(
+        2,
+      )
+      expect(
+        getLiteralValue(
+          componentElements[5].getAttributes()[0].getDataFlow()[0].node,
+        ),
+      ).toBe('Hello sir')
+      expectLocationOfString(
+        file,
+        componentElements[5].getAttributes()[0].getDataFlow()[0].location,
+        '"Hello sir"',
+      )
+
+      expect(
+        getLiteralValue(
+          componentElements[5].getAttributes()[0].getDataFlow()[1].node,
+        ),
+      ).toBe('There sir')
+      expectLocationOfString(
+        file,
+        componentElements[5].getAttributes()[0].getDataFlow()[1].location,
         '"There sir"',
       )
     })

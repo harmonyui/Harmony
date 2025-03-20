@@ -786,6 +786,12 @@ const addMappedExpressionEdge: AddEdge<t.Node> = (node, graph) => {
     graph.createNode(getSnippetFromNode(node.node), node.path),
   )
   graph.setNode(arrayPropertyNode)
+  if (isObjectPattern(node)) {
+    addObjectPatternEdge(node, graph)
+    // Hacky fix for the fact that this node should not have a parent, but it does when multiple jsx elements are tied to it
+    ;(graph.nodes.get(node.id) as Node).setParent(undefined)
+  }
+
   const setNode = graph.nodes.get(arrayPropertyNode.id) ?? arrayPropertyNode
   if (!isArrayProperty(setNode)) {
     throw new Error('Array property node not found')
