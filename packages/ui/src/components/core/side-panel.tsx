@@ -1,48 +1,48 @@
 /* eslint-disable no-nested-ternary -- ok*/
-'use client'
+'use client';
 
-import { useState } from 'react'
+import { useState } from 'react';
 import {
   Dialog,
   DialogBackdrop,
   DialogPanel,
   TransitionChild,
-} from '@headlessui/react'
-import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline'
-import { getClass } from '@harmony/util/src/utils/common'
-import { ToggleIcon, type IconComponent } from './icons'
+} from '@headlessui/react';
+import { Bars3Icon, XMarkIcon } from '@heroicons/react/24/outline';
+import { getClass } from '@harmony/util/src/utils/common';
+import { ToggleIcon, type IconComponent } from './icons';
 
 export interface SidePanelItems {
-  label: string
-  icon?: IconComponent | React.ReactNode
-  href: string
-  current: boolean
+  label: string;
+  icon?: IconComponent | React.ReactNode;
+  href: string;
+  current: boolean;
 }
 export interface ProfileItem {
-  img: string
-  name: string
+  img: string;
+  name: string;
   navigation: ({ name: string } & (
     | {
-        href?: undefined
-        onClick: () => void
+        href?: undefined;
+        onClick: () => void;
       }
     | { href: string; onClick?: undefined }
-  ))[]
+  ))[];
 }
 export type SidePanelProps = {
-  className?: string
-  items: SidePanelItems[]
-  onBodyClick?: () => void
-  title?: string
-  profileItem?: React.ReactNode
-} & React.PropsWithChildren
+  className?: string;
+  items: SidePanelItems[];
+  onBodyClick?: () => void;
+  title?: string;
+  profileItem?: React.ReactNode;
+} & React.PropsWithChildren;
 
 export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
   items,
   children,
   profileItem,
 }) => {
-  const [sidebarOpen, setSidebarOpen] = useState(false)
+  const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
     <>
@@ -107,7 +107,7 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                                 item.current
                                   ? 'bg-gray-50 text-primary dark:gray-800 dark:text-white'
                                   : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
-                                'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+                                'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6'
                               )}
                             >
                               {item.icon ? (
@@ -128,37 +128,37 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                       </ul>
                     </li>
                     {/* <li>
-                      <div className='text-xs font-semibold leading-6 text-gray-400'>
-                        Your teams
-                      </div>
-                      <ul role='list' className='-mx-2 mt-2 space-y-1'>
-                        {teams.map((team) => (
-                          <li key={team.name}>
-                            <a
-                              href={team.href}
-                              className={getClass(
-                                team.current
-                                  ? 'bg-gray-50 text-primary dark:bg-gray-800 dark:text-white'
-                                  : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
-                                'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
-                              )}
-                            >
-                              <span
-                                className={getClass(
-                                  team.current
-                                    ? 'border-primary text-primary'
-                                    : 'border-gray-200 text-gray-400 group-hover:border-primary group-hover:text-primary dark:group-hover:text-white dark:border-gray-700 dark:bg-gray-800',
-                                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
-                                )}
-                              >
-                                {team.initial}
-                              </span>
-                              <span className='truncate'>{team.name}</span>
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </li> */}
+                       <div className='text-xs font-semibold leading-6 text-gray-400'>
+                         Your teams
+                       </div>
+                       <ul role='list' className='-mx-2 mt-2 space-y-1'>
+                         {teams.map((team) => (
+                           <li key={team.name}>
+                             <a
+                               href={team.href}
+                               className={getClass(
+                                 team.current
+                                   ? 'bg-gray-50 text-primary dark:bg-gray-800 dark:text-white'
+                                   : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
+                                 'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+                               )}
+                             >
+                               <span
+                                 className={getClass(
+                                   team.current
+                                     ? 'border-primary text-primary'
+                                     : 'border-gray-200 text-gray-400 group-hover:border-primary group-hover:text-primary dark:group-hover:text-white dark:border-gray-700 dark:bg-gray-800',
+                                   'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
+                                 )}
+                               >
+                                 {team.initial}
+                               </span>
+                               <span className='truncate'>{team.name}</span>
+                             </a>
+                           </li>
+                         ))}
+                       </ul>
+                      </li> */}
                   </ul>
                 </nav>
               </div>
@@ -192,13 +192,15 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                   <ul role='list' className='-mx-2 space-y-1'>
                     {items.map((item) => (
                       <li key={item.label}>
+                        /*Change inner text for a tag from Projects to Hello
+                        there*/
                         <a
                           href={item.href}
                           className={getClass(
                             item.current
                               ? 'bg-gray-50 text-primary dark:bg-gray-800 dark:text-white'
                               : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
-                            'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+                            'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6'
                           )}
                         >
                           {item.icon ? (
@@ -219,37 +221,37 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                   </ul>
                 </li>
                 {/* <li>
-                  <div className='text-xs font-semibold leading-6 text-gray-400'>
-                    Your teams
-                  </div>
-                  <ul role='list' className='-mx-2 mt-2 space-y-1'>
-                    {teams.map((team) => (
-                      <li key={team.name}>
-                        <a
-                          href={team.href}
-                          className={getClass(
-                           team.current
-                                  ? 'bg-gray-50 text-primary dark:bg-gray-800 dark:text-white'
-                                  : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
-                                'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
-                          )}
-                        >
-                          <span
-                            className={getClass(
-                              team.current
-                                ? 'border-primary text-primary'
-                                    : 'border-gray-200 text-gray-400 group-hover:border-primary group-hover:text-primary dark:group-hover:text-white dark:border-gray-700 dark:bg-gray-800',
-                                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
-                            )}
-                          >
-                            {team.initial}
-                          </span>
-                          <span className='truncate'>{team.name}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </li> */}
+                   <div className='text-xs font-semibold leading-6 text-gray-400'>
+                     Your teams
+                   </div>
+                   <ul role='list' className='-mx-2 mt-2 space-y-1'>
+                     {teams.map((team) => (
+                       <li key={team.name}>
+                         <a
+                           href={team.href}
+                           className={getClass(
+                            team.current
+                                   ? 'bg-gray-50 text-primary dark:bg-gray-800 dark:text-white'
+                                   : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
+                                 'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
+                           )}
+                         >
+                           <span
+                             className={getClass(
+                               team.current
+                                 ? 'border-primary text-primary'
+                                     : 'border-gray-200 text-gray-400 group-hover:border-primary group-hover:text-primary dark:group-hover:text-white dark:border-gray-700 dark:bg-gray-800',
+                                   'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
+                             )}
+                           >
+                             {team.initial}
+                           </span>
+                           <span className='truncate'>{team.name}</span>
+                         </a>
+                       </li>
+                     ))}
+                   </ul>
+                  </li> */}
                 <li className='mb-6 mt-auto'>{profileItem}</li>
               </ul>
             </nav>
@@ -283,5 +285,5 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
         </main>
       </div>
     </>
-  )
-}
+  );
+};
