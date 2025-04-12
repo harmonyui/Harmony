@@ -1,7 +1,6 @@
 import path from 'node:path'
 import type { Configuration } from 'webpack'
 import webpack from 'webpack'
-import umtc from './unplugin-tailwindcss-mangle/webpack'
 
 export default {
   entry: [
@@ -25,7 +24,6 @@ export default {
     // }
   },
   plugins: [
-    umtc(),
     new webpack.EnvironmentPlugin({ ...process.env }),
     new webpack.HotModuleReplacementPlugin(),
   ],

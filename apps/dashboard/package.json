@@ -43,7 +43,7 @@
     "interactjs": "^1.10.27",
     "ioredis": "^5.4.2",
     "jquery": "^3.7.1",
-    "next": "15.1.5",
+    "next": "15.2.5",
     "react": "^19.0.0",
     "react-aria": "^3.37.0",
     "react-dom": "^19.0.0",

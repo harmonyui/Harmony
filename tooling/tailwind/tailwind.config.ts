@@ -1,5 +1,5 @@
 import type { Config } from 'tailwindcss'
-import forms from '@tailwindcss/forms'
+import animate from 'tailwindcss-animate'
 
 export const files = [
   '../../packages/ui/src/**/*.{ts,tsx}',
@@ -85,8 +85,6 @@ const config: Config = {
       },
     },
   },
-  plugins: [
-    //forms
-  ],
+  plugins: [animate],
 }
 export default config
