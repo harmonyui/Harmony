@@ -7,9 +7,13 @@ export const useToggleEnable = () => {
   const previousBranchId = usePrevious(branchId)
   useHotKeys('ctrl+., command+.', () => {
     if (branchId === undefined && previousBranchId === undefined) {
-      setBranchId('local')
+      setBranchId({ name: 'Local', id: 'local', label: 'Local' })
     } else {
-      setBranchId(previousBranchId)
+      setBranchId(
+        previousBranchId
+          ? { name: 'Branch', id: previousBranchId, label: 'Branch' }
+          : undefined,
+      )
     }
   })
 }

@@ -32,12 +32,10 @@ interface PublishState {
     request: PullRequest,
     setError?: (error: string) => void,
   ) => Promise<void>
-  currentBranch:
-    | {
-        name: string
-        id: string
-      }
-    | undefined
+  currentBranch: {
+    name: string
+    id: string
+  } | null
 }
 type PublishButtonState = Pick<PublishState, 'onPublish' | 'loading'> & {
   icon: IconComponent
@@ -54,7 +52,6 @@ export const PublishProvider: React.FunctionComponent<{
   const [error, setError] = useState('')
   const { isSaving, setError: setErrorProps } = useHarmonyContext()
   const publish = useHarmonyStore((state) => state.publishChanges)
-  const branchId = useHarmonyStore((state) => state.currentBranch.id)
   const currentBranch = useHarmonyStore((state) => state.currentBranch)
   const pullRequestProps = useHarmonyStore((state) => state.pullRequest)
   const isDemo = useHarmonyStore((state) => state.isDemo)
@@ -71,9 +68,10 @@ export const PublishProvider: React.FunctionComponent<{
       pullRequest: PullRequest,
       _setError: (error: string) => void = setError,
     ) => {
+      if (!currentBranch?.id) return
       setLoading(true)
       const request: PublishRequest = {
-        branchId,
+        branchId: currentBranch.id,
         pullRequest,
       }
       try {
@@ -93,11 +91,11 @@ export const PublishProvider: React.FunctionComponent<{
         setLoading(false)
       }
     },
-    [setLoading, setShow, publish, branchId],
+    [setLoading, setShow, publish, currentBranch?.id],
   )
 
   const onViewCode = useCallback(async () => {
-    if (!currentBranch.id) return
+    if (!currentBranch?.id) return
 
     if (isSaving) {
       setErrorProps('Please wait to finish saving before publishing')
@@ -125,6 +123,10 @@ export const PublishProvider: React.FunctionComponent<{
   ])
 
   const onPublish = useCallback(() => {
+    if (!currentBranch?.id) {
+      setErrorProps('Please select a project')
+      return
+    }
     if (isDemo || isPublished || isLocal) {
       void onViewCode()
       if (isLocal) {
@@ -173,8 +175,8 @@ export const usePublishButton = (): PublishButtonState => {
   if (!context)
     throw new Error('Must wrap the publish button in a PublishProvider')
 
-  const { onPublish, loading, currentBranch } = context
-  return { onPublish, loading, icon: PreviewIcon, disabled: !currentBranch }
+  const { onPublish, loading } = context
+  return { onPublish, loading, icon: PreviewIcon, disabled: false }
 }
 
 export const PublishButton: React.FunctionComponent = () => {
@@ -226,7 +228,9 @@ const PublishModal: React.FunctionComponent<{ preview?: boolean }> = () => {
 }
 
 const NotConnected: React.FunctionComponent = () => {
-  const branch = useHarmonyStore((state) => state.currentBranch)
+  const branch = useHarmonyStore(
+    (state) => state.currentBranch ?? { id: '', name: '' },
+  )
 
   const text = useMemo(() => {
     const url = new URL(window.location.href)
@@ -251,7 +255,9 @@ const Connected: React.FunctionComponent = () => {
     (state) => state.updatePublishState,
   )
   const publishState = useHarmonyStore((state) => state.publishState)
-  const branch = useHarmonyStore((state) => state.currentBranch)
+  const branch = useHarmonyStore(
+    (state) => state.currentBranch ?? { id: '', name: '' },
+  )
 
   const changeProperty = useChangeProperty<PullRequest>(updatePublishState)
   const publishContext = useContext(PublishContext)

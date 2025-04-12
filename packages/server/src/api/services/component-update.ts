@@ -48,8 +48,11 @@ export const normalizeSortedUpdates = (
     if (prevUpdateIndex < 0) {
       prev.push(curr)
     } else {
-      //Otherwise replace because we are doing ascending, so last one wins
-      prev[prevUpdateIndex] = curr
+      //Otherwise replace because we are doing ascending, so last one wins (preserve the old value)
+      prev[prevUpdateIndex] = {
+        ...curr,
+        oldValue: prev[prevUpdateIndex].oldValue,
+      }
     }
 
     return prev

@@ -1,7 +1,7 @@
 'use client'
 
 import { Root } from 'react-dom/client'
-import React, { useEffect, useRef } from 'react'
+import React, { useCallback, useEffect, useRef } from 'react'
 import ReactDOM from 'react-dom'
 import type { Fiber } from 'react-reconciler'
 import type { Environment } from '@harmony/util/src/utils/component'
@@ -10,8 +10,6 @@ import {
   QueryStateProvider,
   useQueryState,
 } from '@harmony/ui/src/hooks/query-state'
-import { WEB_URL } from '@harmony/util/src/constants'
-import { useToggleEvent } from '../hooks/toggle-event'
 import type { HarmonyProviderProps } from './harmony-provider'
 import { getComponentElementFiber } from './inspector/component-identifier'
 import type { FiberHTMLElement } from './inspector/fiber'
@@ -19,7 +17,7 @@ import { getElementFiber } from './inspector/fiber'
 import { useToggleEnable } from '../hooks/toggle-enable'
 import { useBranchId } from '../hooks/branch-id'
 import { getRepositoryId } from '../utils/get-repository-id'
-
+import { useStorageState } from '@harmony/ui/src/hooks/storage-state'
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
   | 'repositoryId'
@@ -46,6 +44,11 @@ const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
   options,
 ) => {
   const { branchId, setBranchId } = useBranchId()
+  const [chrome] = useStorageState({
+    key: 'chrome',
+    defaultValue: false,
+    storage: 'local',
+  })
 
   const [_environment] = useQueryState<Environment | undefined>({
     key: 'harmony-environment',
@@ -56,14 +59,9 @@ const HarmonySetupPrimitive: React.FunctionComponent<HarmonySetupProps> = (
     process.env.NEXT_PUBLIC_ENV) as Environment | undefined
 
   useHarmonySetup(
-    { ...options, environment, show: Boolean(branchId) },
+    { ...options, environment, initShow: !chrome, show: Boolean(branchId) },
     branchId,
   )
-
-  useToggleEvent(() => {
-    setBranchId(undefined)
-    window.location.replace(WEB_URL)
-  })
 
   useToggleEnable()
 
@@ -82,16 +80,20 @@ export const useHarmonySetup = (
   const resultRef = useRef<ReturnType<typeof setupHarmonyProvider>>(null)
   const rootRef = useRef<Root>(null)
 
+  const cleanup = useCallback(() => {
+    resultRef.current?.setup.changeMode(false)
+    const container = document.getElementById('harmony-container')
+    if (container) {
+      rootRef.current?.unmount()
+      container.remove()
+    }
+  }, [resultRef, rootRef])
+
   useEffect(() => {
     if (!initShow) return
 
     if (!show) {
-      resultRef.current?.setup.changeMode(false)
-      const container = document.getElementById('harmony-container')
-      if (container) {
-        rootRef.current?.unmount()
-        container.remove()
-      }
+      cleanup()
 
       return
     }
@@ -125,6 +127,8 @@ export const useHarmonySetup = (
       }
     }
   }, [show, resultRef])
+
+  return cleanup
 }
 
 function createProductionScript(

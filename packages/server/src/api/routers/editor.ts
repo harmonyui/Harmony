@@ -2,6 +2,7 @@ import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import {
   codeUpdatesRequestSchema,
   codeUpdatesResponseSchema,
+  createProjectRequestSchema,
   createUpdateFromTextRequestSchema,
   createUpdateFromTextResponseSchema,
   indexComponentsRequestSchema,
@@ -22,11 +23,15 @@ import {
   formatComponentAndErrors,
   indexForComponents,
 } from '../services/indexor/indexor'
-import { createTRPCRouter, publicProcedure } from '../trpc'
+import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
 import { generateUpdatesFromText } from '../repository/openai'
-import { getRepository, getBranch } from '../repository/database/branch'
+import {
+  getRepository,
+  getBranch,
+  createBranch,
+} from '../repository/database/branch'
 import { resolveTailwindConfig } from '../repository/tailwind/tailwind'
 import {
   createComponentUpdates,
@@ -35,6 +40,7 @@ import {
 import { CachedGitRepository } from '../repository/git/cached-git'
 import { Repository } from '@harmony/util/src/types/branch'
 import { Db } from '@harmony/db/lib/prisma'
+import { wordToKebabCase } from '@harmony/util/src/utils/common'
 
 const returnRepository = async (
   repositoryOrId: string | Repository | undefined,
@@ -67,7 +73,7 @@ const editorRoutes = {
     .query(async ({ ctx, input }) => {
       const { repositoryId, branchId, repository: existingRepository } = input
       const { prisma } = ctx
-      const isLocal = branchId === 'local'
+      const isLocal = branchId === 'local' || !branchId
 
       const pullRequest = await prisma.pullRequest.findUnique({
         where: {
@@ -146,6 +152,7 @@ const editorRoutes = {
         branches: branches.map((branch) => ({
           id: branch.id,
           name: branch.label,
+          label: branch.name,
         })),
         pullRequest: pullRequest || undefined,
         showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
@@ -156,16 +163,19 @@ const editorRoutes = {
   saveProject: publicProcedure
     .input(updateRequestBodySchema)
     .mutation(async ({ ctx, input }) => {
-      const { branchId } = input
+      const { branchId, repositoryId } = input
       const body = input
       const { prisma } = ctx
 
-      const branch = await prisma.branch.findUnique({
-        where: {
-          id: branchId,
-        },
-      })
-      if (branch === null) {
+      const branch = branchId
+        ? await prisma.branch.findUnique({
+            where: {
+              id: branchId,
+            },
+          })
+        : undefined
+
+      if (branchId && !branch) {
         throw new Error(`Cannot find branch with id ${branchId}`)
       }
 
@@ -181,36 +191,38 @@ const editorRoutes = {
 
       const repository = await getRepository({
         prisma,
-        repositoryId: branch.repository_id,
+        repositoryId: repositoryId ?? branch?.repository_id ?? '',
       })
       if (!repository) {
         throw new Error(
-          `Cannot find repository with id ${branch.repository_id}`,
+          `Cannot find repository with id ${repositoryId ?? branch?.repository_id ?? ''}`,
         )
       }
 
-      const accountTiedToBranch = await prisma.account.findFirst({
-        where: {
-          branch: {
-            some: {
-              id: branchId,
+      if (branchId) {
+        const accountTiedToBranch = await prisma.account.findFirst({
+          where: {
+            branch: {
+              some: {
+                id: branchId,
+              },
             },
           },
-        },
-      })
+        })
 
-      if (!accountTiedToBranch) {
-        throw new Error(`Cannot find account tied to branch ${branchId}`)
+        if (!accountTiedToBranch) {
+          throw new Error(`Cannot find account tied to branch ${branchId}`)
+        }
+
+        await prisma.account.update({
+          where: {
+            id: accountTiedToBranch.id,
+          },
+          data: {
+            seen_welcome_screen: true,
+          },
+        })
       }
-
-      await prisma.account.update({
-        where: {
-          id: accountTiedToBranch.id,
-        },
-        data: {
-          seen_welcome_screen: true,
-        },
-      })
 
       //const gitRepository = ctx.gitRepositoryFactory.createGitRepository(repository);
       const updates: ComponentUpdate[] = []
@@ -232,7 +244,7 @@ const editorRoutes = {
           const error = await prisma.componentError.findFirst({
             where: {
               component_id: update.componentId,
-              repository_id: branch.repository_id,
+              repository_id: repositoryId ?? branch?.repository_id ?? '',
               type: update.type,
             },
           })
@@ -245,11 +257,13 @@ const editorRoutes = {
         }
       }
 
-      await createComponentUpdates(
-        updates,
-        branchId,
-        ctx.componentUpdateRepository,
-      )
+      if (branchId) {
+        await createComponentUpdates(
+          updates,
+          branchId,
+          ctx.componentUpdateRepository,
+        )
+      }
 
       const reversed = reverseUpdates(errorUpdates)
       const response: UpdateResponse = { errorUpdates: reversed }
@@ -307,11 +321,7 @@ const editorRoutes = {
     .input(indexComponentsRequestSchema)
     .output(indexComponentsResponseSchema)
     .mutation(async ({ ctx, input }) => {
-      const { branchId, repositoryId, contents } = input
-      const branch = await getBranch({ prisma: ctx.prisma, branchId })
-      if (!branch && branchId !== 'local') {
-        throw new Error(`Cannot find branch with id ${branchId}`)
-      }
+      const { repositoryId, contents } = input
 
       const repository = await returnRepository(repositoryId, ctx.prisma)
 
@@ -402,6 +412,23 @@ const editorRoutes = {
       }
 
       return repository
+    }),
+  createProject: protectedProcedure
+    .input(createProjectRequestSchema)
+    .mutation(async ({ ctx, input }) => {
+      return createBranch({
+        prisma: ctx.prisma,
+        branch: {
+          name: wordToKebabCase(input.name),
+          url: input.url,
+          lastUpdated: new Date(),
+          label: input.name,
+          commits: [],
+          id: '',
+        },
+        repositoryId: input.repositoryId,
+        accountId: ctx.session.account.id,
+      })
     }),
 } satisfies Parameters<typeof createTRPCRouter>[0]
 

@@ -41,6 +41,7 @@ import { UploadImageProvider } from './image/image-provider'
 import { ComponentProvider } from './harmonycn/component-provider'
 import { useHotKeys } from '../hooks/hotkeys'
 import { useHotKeyOpenEditor } from '../hooks/open-editor'
+import { Alert } from '@harmony/ui/src/components/core/alert'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -131,6 +132,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         cdnImages,
         uploadImage,
         registryComponents: components,
+        fonts,
       })
     }
 
@@ -542,6 +544,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
               />
             </UploadImageProvider>
           </ComponentProvider>
+          <Alert label={error} setLabel={setError} />
         </HarmonyContext.Provider>
       }
     </>

@@ -46,7 +46,7 @@ export function Button<T extends React.ElementType>({
   const buttonClasses: { [key in ButtonType]: string } = {
     primary:
       'bg-primary disabled:bg-primary-light border-none text-white enabled:hover:bg-primary/80 fill-white',
-    secondary: 'enabled:hover:bg-gray-50 bg-white',
+    secondary: 'enabled:hover:bg-gray-50 bg-white text-black',
     other: `text-secondary enabled:hover:opacity-80`,
     dark: `bg-[#11283B] text-white border-none enabled:hover:bg-[#11283B]/80 fill-white`,
     none: `text-sm font-semibold leading-6 text-gray-900`,

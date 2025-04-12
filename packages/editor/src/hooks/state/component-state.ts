@@ -14,6 +14,7 @@ import { createHarmonySlice } from './factory'
 import type { ComponentUpdateState } from './component-update/slice'
 import type { ProjectInfoState } from './project-info'
 import type { HarmonyCnState } from './harmonycn'
+import { reverseUpdates } from '@harmony/util/src/utils/component'
 
 export type Source = 'document' | 'iframe'
 export interface ComponentState {
@@ -257,6 +258,13 @@ export const createComponentStateSlice = createHarmonySlice<
       isInitialized(curr, prev) {
         if (curr && !prev) {
           updateRootElement(get().harmonyComponents)
+        }
+        if (!curr && prev) {
+          void get().makeUpdates(
+            reverseUpdates(get().componentUpdates),
+            get().fonts,
+            get().rootComponent?.element,
+          )
         }
       },
     },

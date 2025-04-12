@@ -7,19 +7,23 @@ import { createHarmonySlice } from './factory'
 import type { DataLayerState } from './data-layer'
 import type { ImageCdnState } from './image-cdn'
 import type { HarmonyCnState } from './harmonycn'
+import { Font } from '@harmony/util/src/fonts'
 
 export interface ProjectInfoState {
-  currentBranch: { name: string; id: string }
+  currentBranch: { name: string; id: string } | null
+  setBranch: (
+    branch: { name: string; id: string; label: string } | undefined,
+  ) => void
   repositoryId: string | undefined
-  branches: { name: string; id: string }[]
+  branches: { name: string; id: string; label: string }[]
   showWelcomeScreen: boolean
   isDemo: boolean | undefined
   isInitialized: boolean
   isRepositoryConnected: boolean
   isOverlay: boolean
-  isLocal: boolean
   localRootPath: string | undefined
   harmonyTokens: Token[]
+  fonts: Font[] | undefined
   setIsOverlay: (value: boolean) => void
   updateWelcomeScreen: (value: boolean) => void
   initializeProject: (props: {
@@ -29,6 +33,7 @@ export interface ProjectInfoState {
     cdnImages?: string[]
     uploadImage?: (form: FormData) => Promise<string>
     registryComponents: RegistryComponent[]
+    fonts: Font[] | undefined
   }) => Promise<void>
 }
 
@@ -49,16 +54,41 @@ export const createProjectInfoSlice = createHarmonySlice<
   isOverlay: false,
   isRepositoryConnected: false,
   harmonyTokens: [],
-  isLocal:
-    typeof window !== 'undefined'
-      ? window.location.hostname === 'localhost'
-      : false,
+  fonts: undefined,
   localRootPath: undefined,
   setIsOverlay(value: boolean) {
     set({ isOverlay: value })
   },
   updateWelcomeScreen(value: boolean) {
     set({ showWelcomeScreen: value })
+  },
+  environment: 'production',
+  setBranch(branch: { name: string; id: string; label: string } | undefined) {
+    branch &&
+      get().initializeProject({
+        branchId: branch?.id ?? '',
+        repositoryId: get().repositoryId ?? '',
+        environment: get().environment,
+        cdnImages: get().cdnImages,
+        uploadImage: get().uploadImage,
+        registryComponents: [],
+        fonts: get().fonts,
+      })
+    if (branch?.id === 'local') {
+      set({
+        currentBranch: { name: 'Local', id: 'local' },
+      })
+    } else {
+      const currentBranch = get().branches.find(
+        (branch) => branch.id === branch.id,
+      )
+
+      set((prev) => ({
+        currentBranch: branch || null,
+        branches:
+          !currentBranch && branch ? [...prev.branches, branch] : prev.branches,
+      }))
+    }
   },
   async initializeProject({
     branchId,
@@ -67,9 +97,10 @@ export const createProjectInfoSlice = createHarmonySlice<
     cdnImages,
     uploadImage,
     registryComponents,
+    fonts,
   }) {
     const isLocal = branchId === 'local'
-    if (get().client === undefined) {
+    if (get().client === undefined || get().currentBranch?.id !== branchId) {
       get().initializeDataLayer(
         environment,
         async () => '',
@@ -80,13 +111,14 @@ export const createProjectInfoSlice = createHarmonySlice<
 
     get().initializeRegistry(registryComponents)
 
-    set({ cdnImages })
+    cdnImages && set({ cdnImages })
     uploadImage && get().setUploadImage(uploadImage)
 
     if (!branchId && !repositoryId) {
       set({
         isInitialized: true,
         isRepositoryConnected: false,
+        fonts,
       })
       return
     }
@@ -95,6 +127,7 @@ export const createProjectInfoSlice = createHarmonySlice<
     })
 
     try {
+      set({ isInitialized: false })
       const response = await get().loadProject({ branchId, repositoryId })
 
       const {
@@ -106,10 +139,11 @@ export const createProjectInfoSlice = createHarmonySlice<
         harmonyTokens,
         rootPath,
       } = response
-      const currentBranch = branches.find((branch) => branch.id === branchId)
-      if (!currentBranch && branchId !== 'local') {
-        throw new Error(`Invalid branch with id ${branchId}`)
-      }
+      const currentBranch =
+        branchId === 'local'
+          ? { name: 'Local', id: 'local' }
+          : (branches.find((branch) => branch.id === branchId) ?? null)
+
       if (isLocal && !rootPath) {
         throw new Error('Root path is not set for local environment')
       }
@@ -120,12 +154,14 @@ export const createProjectInfoSlice = createHarmonySlice<
         pullRequest,
         showWelcomeScreen,
         isDemo,
-        currentBranch: currentBranch ?? { name: 'local', id: 'local' },
+        currentBranch: currentBranch,
         repositoryId,
         isInitialized: true,
         isRepositoryConnected: repositoryId !== undefined,
         harmonyTokens,
         localRootPath: rootPath,
+        environment,
+        fonts,
       })
     } catch (err) {
       console.log(err)

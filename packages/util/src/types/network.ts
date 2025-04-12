@@ -4,7 +4,7 @@ import {
   harmonyComponentInfoSchema,
   updateSchema,
 } from './component'
-import { pullRequestSchema, repositorySchema } from './branch'
+import { branchItemSchema, pullRequestSchema, repositorySchema } from './branch'
 import { emailSchema } from './utils'
 import { tokenSchema } from './tokens'
 
@@ -15,7 +15,7 @@ export const updateRequestBodySchema = z.object({
     }),
   ),
   repositoryId: z.optional(z.string()),
-  branchId: z.string(),
+  branchId: z.optional(z.string()),
 })
 export type UpdateRequest = z.infer<typeof updateRequestBodySchema>
 
@@ -27,7 +27,7 @@ export type UpdateResponse = z.infer<typeof updateResponseSchema>
 export const loadRequestSchema = z.object({
   repositoryId: z.optional(z.string()),
   repository: z.optional(repositorySchema),
-  branchId: z.string(),
+  branchId: z.optional(z.string()),
 })
 export type LoadRequest = z.infer<typeof loadRequestSchema>
 export const loadResponseSchema = z.object({
@@ -36,6 +36,7 @@ export const loadResponseSchema = z.object({
     z.object({
       id: z.string(),
       name: z.string(),
+      label: z.string(),
     }),
   ),
   pullRequest: z.optional(pullRequestSchema),
@@ -79,6 +80,16 @@ export const indexComponentsResponseSchema = z.object({
 export type IndexComponentsResponse = z.infer<
   typeof indexComponentsResponseSchema
 >
+
+export const createProjectRequestSchema = z.object({
+  name: z.string(),
+  url: z.string(),
+  repositoryId: z.string(),
+})
+export type CreateProjectRequest = z.infer<typeof createProjectRequestSchema>
+
+export const createProjectResponseSchema = branchItemSchema
+export type CreateProjectResponse = z.infer<typeof createProjectResponseSchema>
 
 export const codeUpdatesRequestSchema = z.object({
   repository: z.union([z.string(), repositorySchema]),

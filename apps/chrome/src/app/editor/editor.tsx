@@ -1,11 +1,12 @@
-import { environment } from '@harmony/util/src/utils/component'
+import { Environment, environment } from '@harmony/util/src/utils/component'
 import { useHarmonySetup } from 'harmony-ai-editor/src/components/harmony-setup'
 import 'harmony-ai-editor/src/global.css'
-import { useCallback, useEffect } from 'react'
+import { useCallback, useEffect, useState } from 'react'
 import {
   QueryStateProvider,
   useQueryState,
 } from '@harmony/ui/src/hooks/query-state'
+import { useStorageState } from '@harmony/ui/src/hooks/storage-state'
 import { useToggleEvent } from 'harmony-ai-editor/src/hooks/toggle-event'
 import { DataLayerProvider } from '../../hooks/data-layer'
 import type { ActionsPayload } from '../../utils/helpers'
@@ -36,28 +37,28 @@ export const EditorChrome: React.FunctionComponent = () => {
 const EditorChromeAfterProviders: React.FunctionComponent = () => {
   const { branchId, setBranchId } = useBranchId()
 
-  const [chrome, setChrome] = useQueryState({
+  const [chrome, setChrome] = useStorageState({
     key: 'chrome',
     defaultValue: false,
+    storage: 'local',
   })
-  const [showStartModal, setShowStartModal] = useQueryState({
-    key: 'start-modal',
-    defaultValue: false,
+  const [_environment] = useQueryState<Environment | undefined>({
+    key: 'harmony-environment',
   })
+  const [showStartModal, setShowStartModal] = useState(false)
 
   useSendAuthentication()
 
   const onToggleEditor = useCallback(() => {
-    if (branchId === undefined) {
-      setShowStartModal(true)
-    } else {
-      setBranchId(undefined)
+    setChrome(!chrome)
+    if (!chrome) {
+      cleanup()
     }
-  }, [setBranchId, setShowStartModal, branchId])
+  }, [setChrome, chrome])
 
   const onSelectProject = useCallback((_branchId: string) => {
     setShowStartModal(false)
-    setBranchId(_branchId)
+    setBranchId({ name: 'Local', id: _branchId, label: _branchId })
     setChrome(true)
   }, [])
 
@@ -65,13 +66,13 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
 
   useToggleEnable()
 
-  useHarmonySetup(
+  const cleanup = useHarmonySetup(
     {
       local: true,
       repositoryId: undefined,
       overlay: true,
-      show: Boolean(branchId),
-      environment,
+      show: chrome,
+      environment: _environment || environment,
       initShow: chrome,
     },
     branchId,

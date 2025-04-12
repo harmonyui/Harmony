@@ -6,13 +6,8 @@ import { Button } from './button'
 import type { IconComponent } from './icons'
 import { Dock, DockIcon } from '../magicui/dock'
 import { Separator } from '../shadcn/separator'
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from '../shadcn/tooltip'
 import { cn } from '../../libs/utils'
+import { Popover } from './popover'
 
 export interface ToolbarItem {
   icon: IconComponent
@@ -22,6 +17,7 @@ export interface ToolbarItem {
   loading?: boolean
   disabled?: boolean
   active?: boolean
+  popover?: React.ReactNode
 }
 export interface ToolbarProps {
   items: ToolbarItem[][]
@@ -34,6 +30,7 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = ({ items }) => {
   const onClickDefault = (label: string): void => {
     setInfo(`The ${label} item is coming soon!`)
   }
+
   return (
     <>
       <Dock direction='middle'>
@@ -48,8 +45,9 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = ({ items }) => {
                 mode,
                 loading,
                 disabled,
-              }) => (
-                <DockIcon key={label}>
+                popover,
+              }) => {
+                const button = (
                   <Button
                     className={getClass(
                       'group flex items-center justify-center w-12 h-10 !rounded-lg outline-none !cursor-pointer disabled:opacity-50',
@@ -80,8 +78,25 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = ({ items }) => {
                       </div>
                     ) : null}
                   </Button>
-                </DockIcon>
-              ),
+                )
+                return (
+                  <DockIcon key={label}>
+                    {popover ? (
+                      <Popover
+                        button={button}
+                        container={
+                          document.getElementById('harmony-container') ??
+                          undefined
+                        }
+                      >
+                        {popover}
+                      </Popover>
+                    ) : (
+                      button
+                    )}
+                  </DockIcon>
+                )
+              },
             )}
             {i < items.length - 1 ? (
               <Separator orientation='vertical' className='h-full' />

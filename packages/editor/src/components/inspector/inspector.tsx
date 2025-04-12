@@ -526,7 +526,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       <div ref={containerRef} className='z-100' id='harmonyInspector'>
         <div id='harmony-snap-guides'></div>
       </div>
-      <Alert label={error} setLabel={setError} />
     </>
   )
 }

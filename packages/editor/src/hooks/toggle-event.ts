@@ -1,8 +1,10 @@
 import { useEffect } from 'react'
 
 export const TOGGLE_EVENT = 'toggleEditor'
-export const dispatchToggleEvent = () => {
-  window.dispatchEvent(new CustomEvent(TOGGLE_EVENT))
+export const dispatchToggleEvent = (token?: string) => {
+  window.dispatchEvent(
+    new CustomEvent(TOGGLE_EVENT, token ? { detail: token } : undefined),
+  )
 }
 
 export const useToggleEvent = (

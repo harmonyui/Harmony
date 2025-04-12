@@ -1,6 +1,6 @@
 import {
   ChatTeardropIcon,
-  TextIcon,
+  FolderIcon,
   XMarkIcon,
 } from '@harmony/ui/src/components/core/icons'
 import type { ToolbarItem } from '@harmony/ui/src/components/core/toolbar'
@@ -13,10 +13,12 @@ import { useImageButton } from '../image/image-button'
 import { useDesignButton } from '../design/design-button'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
+import { SelectProject } from '../project/select-project'
 
 type HarmonyToolbar = object
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
   const [isOpen, setIsOpen] = useState(false)
+
   const { icon: DesignIcon, onDesign, active: designActive } = useDesignButton()
   const { icon: PublishIcon, loading, disabled, onPublish } = usePublishButton()
   const {
@@ -67,6 +69,15 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
     ],
     [
       {
+        icon: FolderIcon,
+        mode: 'none',
+        label: 'Projects',
+        onClick: () => undefined,
+        popover: <SelectProject />,
+      },
+    ],
+    [
+      {
         icon: PreviewIcon,
         onClick: onPreview,
         mode: 'none',
@@ -92,31 +103,33 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
     ],
   ]
   return (
-    <div className='absolute bottom-2 left-1/2 -translate-x-1/2 z-[999]'>
-      <AnimatePresence mode='wait'>
-        {isOpen ? (
-          <motion.div
-            key='A'
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.1 }}
-          >
-            <Toolbar items={items} />
-          </motion.div>
-        ) : (
-          <motion.div
-            key='B'
-            initial={{ opacity: 0, scale: 0.8 }}
-            animate={{ opacity: 1, scale: 1 }}
-            exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.1 }}
-          >
-            <HarmonyCollapsedToolbar onClick={() => setIsOpen(!isOpen)} />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
+    <>
+      <div className='absolute bottom-2 left-1/2 -translate-x-1/2 z-[999]'>
+        <AnimatePresence mode='wait'>
+          {isOpen ? (
+            <motion.div
+              key='A'
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.1 }}
+            >
+              <Toolbar items={items} />
+            </motion.div>
+          ) : (
+            <motion.div
+              key='B'
+              initial={{ opacity: 0, scale: 0.8 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.8 }}
+              transition={{ duration: 0.1 }}
+            >
+              <HarmonyCollapsedToolbar onClick={() => setIsOpen(!isOpen)} />
+            </motion.div>
+          )}
+        </AnimatePresence>
+      </div>
+    </>
   )
 }
 

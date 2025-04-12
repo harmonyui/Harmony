@@ -1,4 +1,4 @@
-import type { z } from 'zod'
+import { z } from 'zod'
 import type {
   LoadRequest,
   LoadResponse,
@@ -10,6 +10,8 @@ import type {
   IndexComponentsResponse,
   CreateUpdateFromTextRequest,
   CreateUpdateFromTextResponse,
+  CreateProjectRequest,
+  CreateProjectResponse,
 } from '@harmony/util/src/types/network'
 import {
   loadResponseSchema,
@@ -17,10 +19,16 @@ import {
   publishResponseSchema,
   indexComponentsResponseSchema,
   createUpdateFromTextResponseSchema,
+  createProjectResponseSchema,
 } from '@harmony/util/src/types/network'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { createClient } from '../../trpc'
 import { createHarmonySlice } from './factory'
+import { jsonSchema } from '@harmony/util/src/updates/component'
+import {
+  ComponentUpdate,
+  updateSchema,
+} from '@harmony/util/src/types/component'
 
 const dataFetch =
   <Request, Response>(
@@ -47,10 +55,14 @@ export interface DataLayerState {
   createUpdateFromText: (
     args: CreateUpdateFromTextRequest,
   ) => Promise<CreateUpdateFromTextResponse>
+  createProject: (args: CreateProjectRequest) => Promise<CreateProjectResponse>
   client: ReturnType<typeof createClient> | undefined
+  environment: Environment
+  isLocal: boolean
+  getToken: () => Promise<string>
 }
 export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
-  (set) => ({
+  (set, get) => ({
     loadProject() {
       throw new Error('Data layer not initialized')
     },
@@ -66,7 +78,18 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
     createUpdateFromText() {
       throw new Error('Data layer not initialized')
     },
+    createProject() {
+      throw new Error('Data layer not initialized')
+    },
+    getToken() {
+      throw new Error('Data layer not initialized')
+    },
     client: undefined,
+    environment: 'production',
+    isLocal:
+      typeof window !== 'undefined'
+        ? window.location.hostname === 'localhost'
+        : false,
     initializeDataLayer(
       environment: Environment,
       getToken: () => Promise<string>,
@@ -80,15 +103,46 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
         repositoryId,
       })
       set({
+        environment,
+        isLocal,
         client,
-        loadProject: dataFetch<LoadRequest, LoadResponse>(
-          client.editor.loadProject.query,
-          loadResponseSchema,
-        ),
-        saveProject: dataFetch<UpdateRequest, UpdateResponse>(
-          client.editor.saveProject.mutate,
-          updateResponseSchema,
-        ),
+        getToken,
+        async loadProject(props) {
+          const response = await dataFetch<LoadRequest, LoadResponse>(
+            client.editor.loadProject.query,
+            loadResponseSchema,
+          )(props)
+
+          if (!props.branchId) {
+            const items = jsonSchema
+              .pipe(z.array(updateSchema))
+              .parse(sessionStorage.getItem('updates') ?? JSON.stringify([]))
+            response.updates = items
+          } else {
+            sessionStorage.removeItem('updates')
+          }
+
+          return response
+        },
+        saveProject(props) {
+          const response = dataFetch<UpdateRequest, UpdateResponse>(
+            client.editor.saveProject.mutate,
+            updateResponseSchema,
+          )(props)
+
+          if (!props.branchId) {
+            sessionStorage.setItem(
+              'updates',
+              JSON.stringify(
+                props.values.flatMap(
+                  ({ update }) => update,
+                ) satisfies ComponentUpdate[],
+              ),
+            )
+          }
+
+          return response
+        },
         publishProject: dataFetch<PublishRequest, PublishResponse>(
           client.editor.publishProject.mutate,
           publishResponseSchema,
@@ -103,6 +157,10 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
         >(
           client.editor.createUpdatesFromText.mutate,
           createUpdateFromTextResponseSchema,
+        ),
+        createProject: dataFetch<CreateProjectRequest, CreateProjectResponse>(
+          client.editor.createProject.mutate,
+          createProjectResponseSchema,
         ),
       })
     },

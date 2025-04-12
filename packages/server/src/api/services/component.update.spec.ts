@@ -1,34 +1,44 @@
 import { describe, expect, it } from 'vitest'
 import type { ComponentUpdateWithDate } from './component-update'
 import { normalizeRecentUpdates } from './component-update'
+import { ComponentUpdate } from '@harmony/util/src/types/component'
 
 describe('component-update', () => {
   describe('normalizeRecentUpdates', () => {
+    const areEqual = (a: ComponentUpdate, b: ComponentUpdate) => {
+      return (
+        a.type === b.type &&
+        a.name === b.name &&
+        a.componentId === b.componentId &&
+        a.childIndex === b.childIndex &&
+        a.value === b.value
+      )
+    }
     it('Should remove older of same updates', () => {
       const updates = testCases.mostRecent
       const normalized = normalizeRecentUpdates(updates)
       expect(normalized.length).toBe(3)
-      expect(normalized[0]).toBe(updates[0])
-      expect(normalized[1]).toBe(updates[1])
-      expect(normalized[2]).toBe(updates[2])
+      expect(areEqual(normalized[0], updates[0])).toBe(true)
+      expect(areEqual(normalized[1], updates[1])).toBe(true)
+      expect(areEqual(normalized[2], updates[2])).toBe(true)
     })
 
     it('Should go with last update when same date', () => {
       const updates = testCases.sameDate
       const normalized = normalizeRecentUpdates(updates)
       expect(normalized.length).toBe(3)
-      expect(normalized[0]).toBe(updates[3])
-      expect(normalized[1]).toBe(updates[0])
-      expect(normalized[2]).toBe(updates[2])
+      expect(areEqual(normalized[0], updates[3])).toBe(true)
+      expect(areEqual(normalized[1], updates[0])).toBe(true)
+      expect(areEqual(normalized[2], updates[2])).toBe(true)
     })
 
     it('Should not normalize different child indexes', () => {
       const updates = testCases.childIndex
       const normalized = normalizeRecentUpdates(updates)
       expect(normalized.length).toBe(3)
-      expect(normalized[0]).toBe(updates[0])
-      expect(normalized[1]).toBe(updates[1])
-      expect(normalized[2]).toBe(updates[2])
+      expect(areEqual(normalized[0], updates[0])).toBe(true)
+      expect(areEqual(normalized[1], updates[1])).toBe(true)
+      expect(areEqual(normalized[2], updates[2])).toBe(true)
     })
   })
 
