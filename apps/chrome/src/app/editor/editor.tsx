@@ -51,8 +51,9 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
 
   const onToggleEditor = useCallback(() => {
     setChrome(!chrome)
-    if (!chrome) {
+    if (chrome) {
       cleanup()
+      setBranchId(undefined)
     }
   }, [setChrome, chrome])
 
