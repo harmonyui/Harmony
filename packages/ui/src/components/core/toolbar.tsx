@@ -52,8 +52,9 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = ({ items }) => {
                 <DockIcon key={label}>
                   <Button
                     className={getClass(
-                      'group flex items-center justify-center w-12 h-10 !rounded-lg hover:bg-[#E5E7EB] outline-none !cursor-pointer',
+                      'group flex items-center justify-center w-12 h-10 !rounded-lg outline-none !cursor-pointer disabled:opacity-50',
                       active ? 'bg-[#E5E7EB]' : '',
+                      disabled ? '' : 'hover:bg-[#E5E7EB]',
                     )}
                     onClick={() =>
                       onClick ? onClick() : onClickDefault(label)
@@ -65,12 +66,12 @@ export const Toolbar: React.FunctionComponent<ToolbarProps> = ({ items }) => {
                     <div
                       className={cn(
                         'h-5 w-5',
-                        label ? 'block group-hover:hidden' : '',
+                        label && !disabled ? 'block group-hover:hidden' : '',
                       )}
                     >
                       <Icon className='w-full h-full' />
                     </div>
-                    {label ? (
+                    {label && !disabled ? (
                       <div className='hidden group-hover:flex flex-col items-center h-6 w-6 gap-1'>
                         <span className='text-[8px] leading-[7px]'>
                           {label}

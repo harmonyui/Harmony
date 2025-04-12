@@ -11,6 +11,8 @@ type SymbolState<T> = Pick<
   }[keyof T]
 >
 
+const defaultDisplayMode = 'preview'
+
 const queryStorageState: PersistStorage<SymbolState<QueryState>> = {
   getItem: () => {
     const searchParams = new URL(window.location.href).searchParams
@@ -18,7 +20,7 @@ const queryStorageState: PersistStorage<SymbolState<QueryState>> = {
 
     return {
       state: {
-        displayMode: storedValue || 'designer',
+        displayMode: storedValue || defaultDisplayMode,
       },
       version: 0,
     }
@@ -46,7 +48,7 @@ export interface QueryState {
 export const createQueryStateSlice = createHarmonySlice<QueryState>(
   persist(
     (set) => ({
-      displayMode: 'designer',
+      displayMode: defaultDisplayMode,
       setDisplayMode: (mode) => set({ displayMode: mode }),
     }),
     {

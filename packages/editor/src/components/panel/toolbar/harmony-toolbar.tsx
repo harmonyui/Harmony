@@ -36,6 +36,7 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
         mode: 'none',
         label: 'Design',
         active: designActive,
+        disabled: previewActive,
       },
       {
         icon: LayersIcon,
@@ -43,6 +44,7 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
         mode: 'none',
         label: 'Layers',
         active: layerActive,
+        disabled: previewActive,
       },
       {
         icon: AIIcon,
@@ -50,16 +52,12 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
         label: 'AI',
       },
       {
-        icon: TextIcon,
-        mode: 'none',
-        label: 'Text',
-      },
-      {
         icon: ImageIcon,
         mode: 'none',
         label: 'Images',
         onClick: onImage,
         active: imageActive,
+        disabled: previewActive,
       },
       {
         icon: ChatTeardropIcon,
@@ -98,15 +96,24 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
       <AnimatePresence mode='wait'>
         {isOpen ? (
           <motion.div
+            key='A'
             initial={{ opacity: 0, scale: 0.8 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0, scale: 0.8 }}
-            transition={{ duration: 0.2 }}
+            transition={{ duration: 0.1 }}
           >
             <Toolbar items={items} />
           </motion.div>
         ) : (
-          <HarmonyCollapsedToolbar onClick={() => setIsOpen(!isOpen)} />
+          <motion.div
+            key='B'
+            initial={{ opacity: 0, scale: 0.8 }}
+            animate={{ opacity: 1, scale: 1 }}
+            exit={{ opacity: 0, scale: 0.8 }}
+            transition={{ duration: 0.1 }}
+          >
+            <HarmonyCollapsedToolbar onClick={() => setIsOpen(!isOpen)} />
+          </motion.div>
         )}
       </AnimatePresence>
     </div>
