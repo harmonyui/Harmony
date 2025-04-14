@@ -29,7 +29,7 @@ export default function RootLayout({
             {children}
             {process.env.ENV === 'staging' ? (
               <HarmonySetup
-                repositoryId='da286f25-b5de-4003-94ed-2944162271ed'
+                repositoryId={repositoryId}
                 fonts={fonts}
                 environment='staging'
                 overlay
