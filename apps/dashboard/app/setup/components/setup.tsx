@@ -272,12 +272,12 @@ const HarmonyToGithubThing = () => {
 
 interface DeveloperSetupProps {
   repository: Repository | undefined
-  teamId: string
+  workspaceName: string
   clientId: string
 }
 export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({
   repository: repositoryProp,
-  teamId,
+  workspaceName,
   clientId,
 }) => {
   const { mutate } = api.setup.connectRepository.useMutation()
@@ -347,7 +347,7 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({
     if (!repository) throw new Error('Repository should be defined')
 
     mutate(
-      { repository },
+      { repository, name: workspaceName },
       {
         onSuccess: () => {
           setPage(page + 1)

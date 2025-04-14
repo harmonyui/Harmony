@@ -2,16 +2,16 @@ import { DeveloperSetup } from '../../components/setup'
 
 const clientId = process.env.GITHUB_APP_CLIENT_ID || ''
 const DeveloperSetupPage = async ({
-  params,
+  searchParams,
 }: {
-  params: Promise<{ teamId: string }>
+  searchParams: Promise<{ workspaceName: string }>
 }) => {
-  const { teamId } = await params
+  const { workspaceName } = await searchParams
 
   return (
     <DeveloperSetup
       repository={undefined}
-      teamId={teamId}
+      workspaceName={workspaceName}
       clientId={clientId}
     />
   )

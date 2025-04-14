@@ -1,6 +1,5 @@
 /* eslint-disable @typescript-eslint/no-unused-vars -- ok*/
 
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
 'use client'
 import {
   GitBranchIcon,
@@ -17,7 +16,7 @@ import { Label } from '@harmony/ui/src/components/core/label'
 import type { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
 import { Dropdown } from '@harmony/ui/src/components/core/dropdown'
 import { HarmonyModal } from '@harmony/ui/src/components/core/modal'
-import { api } from '../../../../utils/api'
+import { api } from '../../../../../utils/api'
 
 export const PullRequestDisplay: React.FunctionComponent<{
   items: PullRequest[]

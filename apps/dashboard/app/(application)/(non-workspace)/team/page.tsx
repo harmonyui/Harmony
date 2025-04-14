@@ -1,6 +1,6 @@
 import { emailSchema } from '@harmony/util/src/types/utils'
 import type { TeamMember } from '@harmony/util/src/types/branch'
-import { withAuth } from '../../../utils/protected-routes-hoc'
+import { withAuth } from '../../../../utils/protected-routes-hoc'
 import { TeamDisplay } from './components/team'
 
 const TeamPage = withAuth(async ({ ctx }) => {

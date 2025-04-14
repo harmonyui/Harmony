@@ -24,7 +24,7 @@ export const CreateProjectPage: StartPageComponent = ({ onOpenProject }) => {
     }
     setLoading(true)
     client?.branch.createBranch
-      .mutate({ branch })
+      .mutate({ branch, repositoryId: undefined })
       .then((data) => {
         onOpenProject(data.id)
         setLoading(false)

@@ -15,8 +15,10 @@ import {
   publicProcedure,
   registerdProcedure,
 } from '../trpc'
-import { createRepository } from '../repository/database/repository'
-import { createWorkspace } from '../repository/database/workspace'
+import {
+  createWorkspace,
+  getDefaultWorkspace,
+} from '../repository/database/workspace'
 
 const accountCreateSchema = z.object({
   firstName: z.string(),
@@ -71,16 +73,18 @@ export const setupRoute = createTRPCRouter({
       //const email = input.email;
     }),
   connectRepository: protectedProcedure
-    .input(z.object({ repository: repositorySchema }))
+    .input(
+      z.object({ repository: repositorySchema, name: z.optional(z.string()) }),
+    )
     .mutation(async ({ ctx, input }) => {
       const workspace = await createWorkspace({
         prisma: ctx.prisma,
-        name: `${ctx.session.account.firstName}'s Workspace`,
+        name: input.name ?? `${ctx.session.account.firstName}'s Workspace`,
         teamId: ctx.session.account.teamId,
         repository: input.repository,
       })
 
-      return workspace.repository
+      return workspace
     }),
   // importRepository: protectedProcedure
   // 	.input(z.object({repository: repositorySchema}))
@@ -241,13 +245,20 @@ export async function createNewAccount({
     },
   })
 
+  const repository = await getRepositoryFromTeam(newAccount.team_id)
+
   return {
     id: newAccount.id,
     firstName: newAccount.firstName,
     lastName: newAccount.lastName,
     role: newAccount.role,
-    repository: await getRepositoryFromTeam(newAccount.team_id),
+    repository: repository,
     teamId: newAccount.team_id,
+    workspace:
+      (await getDefaultWorkspace({
+        prisma,
+        teamId: newAccount.team_id,
+      })) ?? undefined,
     contact: emailSchema.parse(newAccount.contact),
     seenWelcomeScreen: newAccount.seen_welcome_screen,
   } satisfies Account

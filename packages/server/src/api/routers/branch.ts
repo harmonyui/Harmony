@@ -17,7 +17,12 @@ export const branchRoute = createTRPCRouter({
     })
   }),
   createBranch: protectedProcedure
-    .input(z.object({ branch: branchItemSchema }))
+    .input(
+      z.object({
+        branch: branchItemSchema,
+        repositoryId: z.string().optional(),
+      }),
+    )
     .mutation(async ({ ctx, input }) => {
       if (!ctx.session.account.repository) {
         throw new Error('Cannot create a branch without a repository')
@@ -26,7 +31,7 @@ export const branchRoute = createTRPCRouter({
       return createBranch({
         prisma: ctx.prisma,
         branch: input.branch,
-        repositoryId: ctx.session.account.repository.id,
+        repositoryId: input.repositoryId ?? ctx.session.account.repository.id,
         accountId: ctx.session.account.id,
       })
     }),

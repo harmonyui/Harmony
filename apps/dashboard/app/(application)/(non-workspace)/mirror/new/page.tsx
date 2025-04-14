@@ -1,6 +1,6 @@
 import { redirect } from 'next/navigation'
-import { withAuth } from '../../../../utils/protected-routes-hoc'
-import { NewButton } from '../../../../utils/new-button'
+import { withAuth } from '../../../../../utils/protected-routes-hoc'
+import { NewButton } from '../../../../../utils/new-button'
 
 //TODO: Add admin God auth check in layout
 const NewAccount = withAuth(({ ctx }) => {

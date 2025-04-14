@@ -4,11 +4,13 @@ import { ProjectDisplay as ProjectDisplayPrimitive } from '@harmony/ui/src/compo
 import type { BranchItem } from '@harmony/util/src/types/branch'
 import { useRouter } from 'next/navigation'
 import { createUrlFromProject } from '@harmony/util/src/utils/component'
-import { api } from '../../../../utils/api'
+import { api } from '../../../../../utils/api'
 
 export const ProjectDisplay: React.FunctionComponent<
-  Pick<ProjectDisplayProps, 'projects' | 'defaultUrl' | 'getThumbnail'>
-> = ({ projects, defaultUrl, getThumbnail }) => {
+  Pick<ProjectDisplayProps, 'projects' | 'defaultUrl' | 'getThumbnail'> & {
+    repositoryId: string
+  }
+> = ({ projects, defaultUrl, getThumbnail, repositoryId }) => {
   const { mutate: deleteItem } = api.branch.deleteBranch.useMutation()
   const { mutate } = api.branch.createBranch.useMutation()
 
@@ -19,7 +21,7 @@ export const ProjectDisplay: React.FunctionComponent<
     { onFinish, onError },
   ): void => {
     mutate(
-      { branch: item },
+      { branch: item, repositoryId },
       {
         onSuccess(data) {
           onFinish(data)

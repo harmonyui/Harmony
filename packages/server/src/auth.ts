@@ -82,6 +82,9 @@ export const getAccount = async (
     teamId: account.team_id,
     contact: emailSchema.parse(account.contact),
     seenWelcomeScreen: account.seen_welcome_screen,
+    workspace:
+      (await getDefaultWorkspace({ prisma, teamId: account.team_id })) ??
+      undefined,
   }
 }
 

@@ -1,4 +1,3 @@
-/* eslint-disable no-nested-ternary -- ok*/
 'use client'
 
 import { useState } from 'react'
@@ -35,12 +34,14 @@ export type SidePanelProps = {
   onBodyClick?: () => void
   title?: string
   profileItem?: React.ReactNode
+  workspaceSwitcher?: React.ReactNode
 } & React.PropsWithChildren
 
 export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
   items,
   children,
   profileItem,
+  workspaceSwitcher,
 }) => {
   const [sidebarOpen, setSidebarOpen] = useState(false)
 
@@ -92,9 +93,11 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                       src='/icon-dark-128.png'
                       className='h-6 w-6 text-primary mr-2 hidden dark:inline-block'
                     />
-                    Harmony UI
+                    {workspaceSwitcher ? null : 'Harmony UI'}
                   </a>
+                  {workspaceSwitcher ? workspaceSwitcher : null}
                 </div>
+
                 <nav className='flex flex-1 flex-col'>
                   <ul role='list' className='flex flex-1 flex-col gap-y-7'>
                     <li>
@@ -127,38 +130,6 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                         ))}
                       </ul>
                     </li>
-                    {/* <li>
-                      <div className='text-xs font-semibold leading-6 text-gray-400'>
-                        Your teams
-                      </div>
-                      <ul role='list' className='-mx-2 mt-2 space-y-1'>
-                        {teams.map((team) => (
-                          <li key={team.name}>
-                            <a
-                              href={team.href}
-                              className={getClass(
-                                team.current
-                                  ? 'bg-gray-50 text-primary dark:bg-gray-800 dark:text-white'
-                                  : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
-                                'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
-                              )}
-                            >
-                              <span
-                                className={getClass(
-                                  team.current
-                                    ? 'border-primary text-primary'
-                                    : 'border-gray-200 text-gray-400 group-hover:border-primary group-hover:text-primary dark:group-hover:text-white dark:border-gray-700 dark:bg-gray-800',
-                                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
-                                )}
-                              >
-                                {team.initial}
-                              </span>
-                              <span className='truncate'>{team.name}</span>
-                            </a>
-                          </li>
-                        ))}
-                      </ul>
-                    </li> */}
                   </ul>
                 </nav>
               </div>
@@ -183,8 +154,9 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                   src='/icon-dark-128.png'
                   className='h-6 w-6 text-primary mr-2 hidden dark:inline-block'
                 />
-                Harmony UI
+                {workspaceSwitcher ? null : 'Harmony UI'}
               </a>
+              {workspaceSwitcher ? workspaceSwitcher : null}
             </div>
             <nav className='flex flex-1 flex-col'>
               <ul role='list' className='flex flex-1 flex-col gap-y-7'>
@@ -218,38 +190,6 @@ export const SidePanel: React.FunctionComponent<SidePanelProps> = ({
                     ))}
                   </ul>
                 </li>
-                {/* <li>
-                  <div className='text-xs font-semibold leading-6 text-gray-400'>
-                    Your teams
-                  </div>
-                  <ul role='list' className='-mx-2 mt-2 space-y-1'>
-                    {teams.map((team) => (
-                      <li key={team.name}>
-                        <a
-                          href={team.href}
-                          className={getClass(
-                           team.current
-                                  ? 'bg-gray-50 text-primary dark:bg-gray-800 dark:text-white'
-                                  : 'text-gray-700 hover:bg-gray-50 hover:text-primary dark:text-gray-400 dark:hover:bg-gray-800 dark:hover:text-white',
-                                'group flex gap-x-3 rounded-md p-2 text-sm font-semibold leading-6',
-                          )}
-                        >
-                          <span
-                            className={getClass(
-                              team.current
-                                ? 'border-primary text-primary'
-                                    : 'border-gray-200 text-gray-400 group-hover:border-primary group-hover:text-primary dark:group-hover:text-white dark:border-gray-700 dark:bg-gray-800',
-                                  'flex h-6 w-6 shrink-0 items-center justify-center rounded-lg border bg-white text-[0.625rem] font-medium',
-                            )}
-                          >
-                            {team.initial}
-                          </span>
-                          <span className='truncate'>{team.name}</span>
-                        </a>
-                      </li>
-                    ))}
-                  </ul>
-                </li> */}
                 <li className='mb-6 mt-auto'>{profileItem}</li>
               </ul>
             </nav>

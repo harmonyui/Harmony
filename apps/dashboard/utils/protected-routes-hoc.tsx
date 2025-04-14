@@ -1,15 +1,14 @@
-/* eslint-disable @typescript-eslint/no-shadow -- ok*/
-/* eslint-disable @typescript-eslint/consistent-indexed-object-style -- ok*/
-/* eslint-disable @typescript-eslint/no-non-null-assertion -- ok*/
 import { type GetServerSideProps } from 'next'
 import type { FullSession, Session } from '@harmony/server/src/auth'
 import { getServerAuthSession } from '@harmony/server/src/auth'
-import { redirect } from 'next/navigation'
+import { notFound, redirect } from 'next/navigation'
 import type { AuthContext } from '@harmony/server/src/api/trpc'
 import { prisma } from '@harmony/db/lib/prisma'
 import { cookies } from 'next/headers'
 import { auth } from '@clerk/nextjs/server'
 import { mailer } from '@harmony/server/src/api'
+import { Workspace } from '@harmony/util/src/types/branch'
+import { getWorkspace } from '@harmony/server/src/api/repository/database/workspace'
 
 interface RequireRouteProps {
   redirect: string
@@ -78,6 +77,24 @@ export const withAuth =
       />
     )
   }
+
+export const withWorkspace = (
+  Component: React.FunctionComponent<
+    AuthProps & PageProps & { workspace: Workspace }
+  >,
+): React.FunctionComponent<PageProps> => {
+  return withAuth(async (props) => {
+    const { workspaceId } = await props.params
+    const workspace = await getWorkspace({
+      prisma: props.ctx.prisma,
+      workspaceId,
+    })
+    if (!workspace) {
+      notFound()
+    }
+    return <Component {...props} workspace={workspace} />
+  })
+}
 
 // export const requireRole = (role: UserRole) =>
 //   requireRoute({
