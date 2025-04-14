@@ -347,7 +347,7 @@ export const DeveloperSetup: React.FunctionComponent<DeveloperSetupProps> = ({
     if (!repository) throw new Error('Repository should be defined')
 
     mutate(
-      { repository, teamId },
+      { repository },
       {
         onSuccess: () => {
           setPage(page + 1)

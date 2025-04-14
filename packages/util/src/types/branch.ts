@@ -62,3 +62,11 @@ export const teamMemberSchema = z.object({
 })
 
 export type TeamMember = z.infer<typeof teamMemberSchema>
+
+export const workspaceSchema = z.object({
+  id: z.string(),
+  name: z.string(),
+  repository: repositorySchema,
+})
+
+export type Workspace = z.infer<typeof workspaceSchema>

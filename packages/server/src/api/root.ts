@@ -4,6 +4,7 @@ import { editorRouter } from './routers/editor'
 import { pullRequestRouter } from './routers/pull-request'
 import { setupRoute } from './routers/setup'
 import { teamRouter } from './routers/team'
+import { workspaceRouter } from './routers/workspace'
 import { createTRPCRouter } from './trpc'
 
 /**
@@ -18,6 +19,7 @@ export const appRouter = createTRPCRouter({
   changeLog: changeLogRouter,
   editor: editorRouter,
   pullRequest: pullRequestRouter,
+  workspace: workspaceRouter,
 })
 
 // export type definition of API

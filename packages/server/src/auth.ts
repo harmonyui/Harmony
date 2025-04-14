@@ -1,13 +1,13 @@
 import { clerkClient } from '@clerk/nextjs'
 import { z } from 'zod'
-import type { Prisma } from '@harmony/db/lib/prisma'
 import { prisma } from '@harmony/db/lib/prisma'
 import type { Repository } from '@harmony/util/src/types/branch'
 import {
-  repositoryConfigSchema,
   repositorySchema,
+  workspaceSchema,
 } from '@harmony/util/src/types/branch'
 import { emailSchema } from '@harmony/util/src/types/utils'
+import { getDefaultWorkspace } from './api/repository/database/workspace'
 
 export interface User {
   id: string
@@ -22,6 +22,7 @@ export const accountSchema = z.object({
   lastName: z.string(),
   role: z.string(),
   repository: z.optional(repositorySchema),
+  workspace: z.optional(workspaceSchema),
   teamId: z.string(),
   contact: emailSchema,
   seenWelcomeScreen: z.boolean(),
@@ -48,28 +49,10 @@ export type Session =
     }
   | FullSession
 
-const teamPayload = { include: { repository: true } }
-
-export const getRepositoryFromTeam = (
-  team: Prisma.TeamGetPayload<typeof teamPayload>,
-): Repository | undefined => {
-  return team.repository.length > 0
-    ? {
-        id: team.repository[0].id,
-        branch: team.repository[0].branch,
-        name: team.repository[0].name,
-        owner: team.repository[0].owner,
-        ref: team.repository[0].ref,
-        installationId: team.repository[0].installationId,
-        cssFramework: team.repository[0].css_framework,
-        tailwindPrefix: team.repository[0].tailwind_prefix || undefined,
-        defaultUrl: team.repository[0].default_url,
-        tailwindConfig: team.repository[0].tailwind_config,
-        prettierConfig: team.repository[0].prettier_config,
-        registry: {},
-        config: repositoryConfigSchema.parse(team.repository[0].config),
-      }
-    : undefined
+export const getRepositoryFromTeam = async (
+  teamId: string,
+): Promise<Repository | undefined> => {
+  return (await getDefaultWorkspace({ prisma, teamId }))?.repository
 }
 
 export const getAccount = async (
@@ -80,17 +63,15 @@ export const getAccount = async (
       userId,
     },
     include: {
-      team: {
-        include: {
-          repository: true,
-        },
-      },
+      team: true,
     },
   })
 
   if (account === null) return undefined
 
-  const repository: Repository | undefined = getRepositoryFromTeam(account.team)
+  const repository: Repository | undefined = await getRepositoryFromTeam(
+    account.team_id,
+  )
 
   return {
     id: account.id,

@@ -27,11 +27,7 @@ import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
 import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
 import { generateUpdatesFromText } from '../repository/openai'
-import {
-  getRepository,
-  getBranch,
-  createBranch,
-} from '../repository/database/branch'
+import { getBranch, createBranch } from '../repository/database/branch'
 import { resolveTailwindConfig } from '../repository/tailwind/tailwind'
 import {
   createComponentUpdates,
@@ -41,6 +37,7 @@ import { CachedGitRepository } from '../repository/git/cached-git'
 import { Repository } from '@harmony/util/src/types/branch'
 import { Db } from '@harmony/db/lib/prisma'
 import { wordToKebabCase } from '@harmony/util/src/utils/common'
+import { getRepository } from '../repository/database/repository'
 
 const returnRepository = async (
   repositoryOrId: string | Repository | undefined,

@@ -17,9 +17,21 @@ datasource db {
 }
 
 model Team {
-  id         String       @id @default(cuid())
-  repository Repository[]
-  accounts   Account[]
+  id          String      @id @default(cuid())
+  accounts    Account[]
+  workspaces  Workspace[]
+  created_at  DateTime    @default(now())
+  updated_at  DateTime    @updatedAt
+}
+
+model Workspace {
+  id            String     @id @default(cuid())
+  name          String
+  team_id       String
+  team          Team       @relation(fields: [team_id], references: [id])
+  repository    Repository?
+  created_at    DateTime   @default(now())
+  updated_at    DateTime   @updatedAt
 }
 
 // Necessary for Next auth
@@ -136,13 +148,13 @@ model ComponentDefinition {
 
 model Repository {
   id              String  @id @default(cuid())
-  team_id         String
+  workspace_id    String @unique
+  workspace       Workspace    @relation(fields: [workspace_id], references: [id])
   name            String
   owner           String
   branch          String
   installationId  Int
   ref             String
-  team            Team    @relation(fields: [team_id], references: [id])
   css_framework   String
   default_url     String
   //TODO: We don't need this in the future hopefully

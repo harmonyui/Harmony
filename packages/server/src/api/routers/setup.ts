@@ -1,11 +1,7 @@
-/* eslint-disable @typescript-eslint/no-shadow -- ok */
 import crypto from 'node:crypto'
 import { z } from 'zod'
 import type { Repository } from '@harmony/util/src/types/branch'
-import {
-  repositoryConfigSchema,
-  repositorySchema,
-} from '@harmony/util/src/types/branch'
+import { repositorySchema } from '@harmony/util/src/types/branch'
 import type { components } from '@octokit/openapi-types/types'
 import { emailSchema } from '@harmony/util/src/types/utils'
 import { cookies } from 'next/headers'
@@ -19,6 +15,8 @@ import {
   publicProcedure,
   registerdProcedure,
 } from '../trpc'
+import { createRepository } from '../repository/database/repository'
+import { createWorkspace } from '../repository/database/workspace'
 
 const accountCreateSchema = z.object({
   firstName: z.string(),
@@ -72,43 +70,17 @@ export const setupRoute = createTRPCRouter({
     .mutation(async () => {
       //const email = input.email;
     }),
-  connectRepository: publicProcedure
-    .input(z.object({ repository: repositorySchema, teamId: z.string() }))
+  connectRepository: protectedProcedure
+    .input(z.object({ repository: repositorySchema }))
     .mutation(async ({ ctx, input }) => {
-      const teamId = input.teamId
-      const newRepository = await ctx.prisma.repository.create({
-        data: {
-          id: input.repository.id,
-          branch: input.repository.branch,
-          name: input.repository.name,
-          owner: input.repository.owner,
-          ref: input.repository.ref,
-          installationId: input.repository.installationId,
-          team_id: teamId,
-          css_framework: input.repository.cssFramework,
-          tailwind_prefix: input.repository.tailwindPrefix,
-          tailwind_config: input.repository.tailwindConfig,
-          prettier_config: input.repository.prettierConfig,
-          default_url: input.repository.defaultUrl,
-          config: input.repository.config,
-        },
+      const workspace = await createWorkspace({
+        prisma: ctx.prisma,
+        name: `${ctx.session.account.firstName}'s Workspace`,
+        teamId: ctx.session.account.teamId,
+        repository: input.repository,
       })
 
-      return {
-        id: newRepository.id,
-        branch: newRepository.branch,
-        installationId: newRepository.installationId,
-        name: newRepository.name,
-        owner: newRepository.owner,
-        ref: newRepository.ref,
-        tailwindPrefix: newRepository.tailwind_prefix || undefined,
-        cssFramework: newRepository.css_framework,
-        defaultUrl: newRepository.default_url,
-        tailwindConfig: newRepository.tailwind_config,
-        prettierConfig: newRepository.prettier_config,
-        registry: {},
-        config: repositoryConfigSchema.parse(newRepository.config),
-      } satisfies Repository
+      return workspace.repository
     }),
   // importRepository: protectedProcedure
   // 	.input(z.object({repository: repositorySchema}))
@@ -265,11 +237,7 @@ export async function createNewAccount({
       },
     },
     include: {
-      team: {
-        include: {
-          repository: true,
-        },
-      },
+      team: true,
     },
   })
 
@@ -278,7 +246,7 @@ export async function createNewAccount({
     firstName: newAccount.firstName,
     lastName: newAccount.lastName,
     role: newAccount.role,
-    repository: getRepositoryFromTeam(newAccount.team),
+    repository: await getRepositoryFromTeam(newAccount.team_id),
     teamId: newAccount.team_id,
     contact: emailSchema.parse(newAccount.contact),
     seenWelcomeScreen: newAccount.seen_welcome_screen,
