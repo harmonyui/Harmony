@@ -21,7 +21,7 @@ export const SelectProject: React.FunctionComponent<
   const disabled = !isInitialized || branchId === 'local'
   return (
     <>
-      <div className='p-4 bg-background'>
+      <div className='p-4 bg-background max-h-80'>
         <div className='flex flex-col gap-2'>
           <ToggleSwitch
             label='Local Development'

@@ -117,21 +117,19 @@ export const useHighlighter = ({
     })
 
   //Disables the event
-  const onMouseEvent = useEffectEvent(
-    (event: MouseEvent): boolean | undefined => {
-      const target = event.target as HTMLElement | null
-      if (
-        noEvents.some((no) => document.querySelector(no)?.contains(target)) ||
-        target?.closest('[data-non-selectable="true"]')
-      )
-        return
-      event.preventDefault()
-      event.stopPropagation()
-      event.stopImmediatePropagation()
+  const onMouseEvent = useEffectEvent((event: Event): boolean | undefined => {
+    const target = event.target as HTMLElement | null
+    if (
+      noEvents.some((no) => document.querySelector(no)?.contains(target)) ||
+      target?.closest('[data-non-selectable="true"]')
+    )
+      return
+    event.preventDefault()
+    event.stopPropagation()
+    event.stopImmediatePropagation()
 
-      return false
-    },
-  )
+    return false
+  })
 
   const onPointerUp = highligherDispatcher(onPointerUpProps)
   // const onPointerUp = () => {

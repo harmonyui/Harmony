@@ -86,6 +86,7 @@ export const useHarmonySetup = (
     if (container) {
       rootRef.current?.unmount()
       container.remove()
+      resultRef.current?.controller.abort()
     }
   }, [resultRef, rootRef])
 
@@ -312,9 +313,15 @@ export function setupHarmonyProvider(setupHarmonyContainer = true) {
     return undefined
 
   let harmonyContainer: HTMLDivElement
+  const controller = new AbortController()
   if (setupHarmonyContainer) {
     harmonyContainer = document.createElement('div')
     harmonyContainer.id = 'harmony-container'
+    harmonyContainer.style.pointerEvents = 'auto'
+
+    // Radix and other libraries use pretty aggressive focus capturing in their dialogs, so these events get around that.
+    handleFocusCapturing(harmonyContainer, controller)
+
     document.body.appendChild(harmonyContainer)
   } else {
     const _container = document.getElementById('harmony-container') as
@@ -339,5 +346,30 @@ export function setupHarmonyProvider(setupHarmonyContainer = true) {
   //container.style.backgroundColor = 'white';
   //const {bodyObserver} = setupHarmonyMode(container, harmonyContainer, documentBody);
 
-  return { harmonyContainer, setup }
+  return { harmonyContainer, setup, controller }
+}
+
+/**
+ * Radix and other libraries use pretty aggressive focus capturing in their dialogs, so these events get around that.
+ */
+function handleFocusCapturing(
+  container: HTMLElement,
+  controller: AbortController,
+) {
+  const stopPropagation = (e: Event) => {
+    e.stopPropagation()
+  }
+  container.addEventListener('pointerdown', stopPropagation)
+  document.addEventListener('focusin', stopPropagation, {
+    capture: true,
+    signal: controller.signal,
+  })
+  document.addEventListener('focusout', stopPropagation, {
+    capture: true,
+    signal: controller.signal,
+  })
+  document.addEventListener('wheel', stopPropagation, {
+    capture: true,
+    signal: controller.signal,
+  })
 }
