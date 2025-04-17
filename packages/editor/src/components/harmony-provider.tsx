@@ -42,6 +42,8 @@ import { ComponentProvider } from './harmonycn/component-provider'
 import { useHotKeys } from '../hooks/hotkeys'
 import { useHotKeyOpenEditor } from '../hooks/open-editor'
 import { Alert } from '@harmony/ui/src/components/core/alert'
+import { CommentCreator } from './panel/comment/comment-creator'
+import { ChatBubbles } from './panel/comment/chat-bubbles'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -70,6 +72,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   overlay = true,
 }) => {
   const [isToggled, setIsToggled] = useState(false)
+  const [isComment, setIsComment] = useState(false)
   const harmonyContainerRef = useRef<HTMLDivElement | null>(null)
   const [mode, setMode] = useState<SelectMode>('tweezer')
   const [scale, _setScale] = useState(0.8)
@@ -160,7 +163,22 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
     setIsToggled(!isToggled)
   })
 
-  useHotKeys('T', onToggle)
+  const onToggleComment = useEffectEvent(() => {
+    // Ensure editor mode is active when entering comment mode
+    if (!isToggled && !isComment) {
+      setIsToggled(true)
+    }
+    const newIsComment = !isComment
+    setIsComment(newIsComment)
+
+    // Toggle comment mode class on body
+    if (newIsComment) {
+      document.body.classList.add('harmony-comment-mode')
+    } else {
+      document.body.classList.remove('harmony-comment-mode')
+    }
+  })
+
   useHotKeyOpenEditor()
 
   useEffect(() => {
@@ -486,6 +504,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
             onComponentPropertyChange,
             onToggleInspector: onToggle,
             isToggled,
+            isComment,
+            onToggleComment,
           }}
         >
           <ComponentProvider>
@@ -542,9 +562,11 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
                 onUndo={onUndo}
                 executeCommand={executeCommand}
               />
+              <Alert label={error} setLabel={setError} />
+              <CommentCreator />
+              {isToggled ? <ChatBubbles /> : null}
             </UploadImageProvider>
           </ComponentProvider>
-          <Alert label={error} setLabel={setError} />
         </HarmonyContext.Provider>
       }
     </>

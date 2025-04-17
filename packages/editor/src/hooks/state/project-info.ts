@@ -8,6 +8,7 @@ import type { DataLayerState } from './data-layer'
 import type { ImageCdnState } from './image-cdn'
 import type { HarmonyCnState } from './harmonycn'
 import { Font } from '@harmony/util/src/fonts'
+import { ChatBubbleState } from './chat-bubble'
 
 export interface ProjectInfoState {
   currentBranch: { name: string; id: string } | null
@@ -43,7 +44,8 @@ export const createProjectInfoSlice = createHarmonySlice<
     ComponentUpdateState &
     DataLayerState &
     ImageCdnState &
-    HarmonyCnState
+    HarmonyCnState &
+    ChatBubbleState
 >((set, get) => ({
   branches: [],
   showWelcomeScreen: false,
@@ -138,6 +140,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         isDemo,
         harmonyTokens,
         rootPath,
+        chatBubbles,
       } = response
       const currentBranch =
         branchId === 'local'
@@ -162,6 +165,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         localRootPath: rootPath,
         environment,
         fonts,
+        chatBubbles,
       })
     } catch (err) {
       console.log(err)

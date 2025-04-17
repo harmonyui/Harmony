@@ -11,6 +11,7 @@ import { useLayersButton } from '../layers/layers-button'
 import { useAIButton } from '../ai/ai-button'
 import { useImageButton } from '../image/image-button'
 import { useDesignButton } from '../design/design-button'
+import { useCommentButton } from '../comment/comment-button'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SelectProject } from '../project/select-project'
@@ -29,6 +30,11 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
   const { icon: LayersIcon, onLayers, active: layerActive } = useLayersButton()
   const { icon: AIIcon } = useAIButton()
   const { icon: ImageIcon, onImage, active: imageActive } = useImageButton()
+  const {
+    icon: CommentIcon,
+    onClick: onComment,
+    active: commentActive,
+  } = useCommentButton()
 
   const items: ToolbarItem[][] = [
     [
@@ -62,9 +68,11 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
         disabled: previewActive,
       },
       {
-        icon: ChatTeardropIcon,
+        icon: CommentIcon,
         mode: 'none',
         label: 'Comments',
+        onClick: onComment,
+        active: commentActive,
       },
     ],
     [

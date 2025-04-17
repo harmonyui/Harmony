@@ -12,6 +12,11 @@ import type {
   CreateUpdateFromTextResponse,
   CreateProjectRequest,
   CreateProjectResponse,
+  CreateChatBubbleRequest,
+  CreateChatBubbleResponse,
+  CreateCommentInput,
+  DeleteChatBubbleRequest,
+  DeleteChatBubbleResponse,
 } from '@harmony/util/src/types/network'
 import {
   loadResponseSchema,
@@ -20,6 +25,8 @@ import {
   indexComponentsResponseSchema,
   createUpdateFromTextResponseSchema,
   createProjectResponseSchema,
+  createChatBubbleResponseSchema,
+  deleteChatBubbleResponseSchema,
 } from '@harmony/util/src/types/network'
 import type { Environment } from '@harmony/util/src/utils/component'
 import { createClient } from '../../trpc'
@@ -29,6 +36,7 @@ import {
   ComponentUpdate,
   updateSchema,
 } from '@harmony/util/src/types/component'
+import { ChatBubble } from '@harmony/util/src/types/branch'
 
 const dataFetch =
   <Request, Response>(
@@ -56,6 +64,10 @@ export interface DataLayerState {
     args: CreateUpdateFromTextRequest,
   ) => Promise<CreateUpdateFromTextResponse>
   createProject: (args: CreateProjectRequest) => Promise<CreateProjectResponse>
+  createComment: (args: CreateCommentInput) => Promise<ChatBubble>
+  deleteComment: (
+    args: DeleteChatBubbleRequest,
+  ) => Promise<DeleteChatBubbleResponse>
   client: ReturnType<typeof createClient> | undefined
   environment: Environment
   isLocal: boolean
@@ -79,6 +91,12 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
       throw new Error('Data layer not initialized')
     },
     createProject() {
+      throw new Error('Data layer not initialized')
+    },
+    createComment() {
+      throw new Error('Data layer not initialized')
+    },
+    deleteComment() {
       throw new Error('Data layer not initialized')
     },
     getToken() {
@@ -161,6 +179,20 @@ export const createDataLayerSlice = createHarmonySlice<DataLayerState>(
         createProject: dataFetch<CreateProjectRequest, CreateProjectResponse>(
           client.editor.createProject.mutate,
           createProjectResponseSchema,
+        ),
+        createComment: dataFetch<
+          CreateChatBubbleRequest,
+          CreateChatBubbleResponse
+        >(
+          client.editor.createChatBubble.mutate,
+          createChatBubbleResponseSchema,
+        ),
+        deleteComment: dataFetch<
+          DeleteChatBubbleRequest,
+          DeleteChatBubbleResponse
+        >(
+          client.editor.deleteChatBubble.mutate,
+          deleteChatBubbleResponseSchema,
         ),
       })
     },

@@ -8,6 +8,14 @@
   cursor: default;
 }
 
+.harmony-comment-mode {
+  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%2311283B'><path d='M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.546 20.2c-.17.46.29.92.75.75l3.032-.892A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z'/></svg>") 16 16, auto;
+}
+
+.harmony-comment-mode * {
+  cursor: inherit !important;
+}
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;

@@ -61,6 +61,8 @@ interface HarmonyContextProps {
   ) => void
   onToggleInspector: () => void
   isToggled: boolean
+  isComment: boolean
+  onToggleComment: () => void
 }
 export const HarmonyContext = createContext<HarmonyContextProps>({
   isSaving: false,
@@ -85,6 +87,8 @@ export const HarmonyContext = createContext<HarmonyContextProps>({
   onComponentPropertyChange: noop,
   onToggleInspector: noop,
   isToggled: false,
+  isComment: false,
+  onToggleComment: noop,
 })
 
 export const useHarmonyContext = () => {

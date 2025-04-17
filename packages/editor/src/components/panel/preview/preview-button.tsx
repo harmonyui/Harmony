@@ -5,6 +5,7 @@ import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { useSetHarmonyPanels } from '../_common/panel/panel'
 import { useHarmonyContext } from '../../harmony-context'
 import { useOnChange } from '@harmony/ui/src/hooks/on-change'
+import { useHotKeys } from '../../../hooks/hotkeys'
 
 interface PreviewButtonState {
   onPreview: () => void
@@ -21,6 +22,8 @@ export const usePreviewButton = (): PreviewButtonState => {
   const onPreview = useEffectEvent(() => {
     onToggleInspector()
   })
+
+  useHotKeys('T', onToggleInspector)
 
   return { onPreview, icon: MonitorPlayIcon, active: !isAllActive }
 }

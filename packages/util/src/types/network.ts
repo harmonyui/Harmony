@@ -189,3 +189,13 @@ export const createUpdateFromTextResponseSchema = z.array(updateSchema)
 export type CreateUpdateFromTextResponse = z.infer<
   typeof createUpdateFromTextResponseSchema
 >
+
+export const createCommentInputSchema = z.object({
+  content: z.string(),
+  componentId: z.string(),
+  offsetX: z.number(),
+  offsetY: z.number(),
+  branchId: z.string(),
+})
+
+export type CreateCommentInput = z.infer<typeof createCommentInputSchema>

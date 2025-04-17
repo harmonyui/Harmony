@@ -69,9 +69,17 @@ model ChatBubble {
    - Integration with existing authentication system
 
 3. **State Management**
+
    - Chat bubbles will be loaded with initial project data
-   - Local state updates for immediate feedback
+   - Add chatBubbles to HarmonyStore for local state management
    - Server state synchronization on changes
+   - New state slice for managing comment mode and active comment creation
+
+4. **UI Components**
+   - Comment mode toggle in HarmonyToolbar
+   - Custom cursor using ChatTeardrop icon when in comment mode
+   - Comment input dialog for entering comment content
+   - Comment bubble component for displaying comments
 
 ### 2. Integration Points
 
@@ -88,6 +96,99 @@ model ChatBubble {
 2. **Load Project Integration**
    - Extend loadProject response to include chatBubbles array
    - Include chat bubbles in initial state management setup
+
+### 3. Comment Creation Flow
+
+1. **Entering Comment Mode**
+
+   ```typescript
+   // New context properties in HarmonyContext
+   interface HarmonyContextProps {
+     isComment: boolean;
+     onToggleComment: () => void;
+     // ... existing props
+   }
+   ```
+
+2. **Mode Handling**
+
+   - When comment mode is toggled ON:
+     - Ensure editor mode is active (call `onToggleInspector` if needed)
+     - Change cursor to chat teardrop icon
+     - Enable comment placement click handler
+   - When comment mode is toggled OFF:
+     - Reset cursor to default
+     - Disable comment placement click handler
+     - Cancel any in-progress comment creation
+
+3. **Comment Creation Process**
+
+   - User clicks on a component in comment mode
+   - System captures:
+     - Selected component from HarmonyStore
+     - Click position relative to component's top-left corner
+     - Round offsetX and offsetY to nearest whole number
+   - Show comment input dialog
+   - On dialog submit:
+     - Call `createComment` method with:
+       ```typescript
+       interface CreateCommentInput {
+         branchId: string;
+         componentId: string;
+         content: string;
+         offsetX: number;
+         offsetY: number;
+       }
+       ```
+   - On dialog cancel/click away:
+     - Clean up any temporary state
+     - Keep comment mode active
+
+4. **Data Layer Integration**
+
+   ```typescript
+   // New method in data layer
+   interface DataLayerState {
+     createComment: (input: CreateCommentInput) => Promise<ChatBubble>;
+     // ... existing methods
+   }
+   ```
+
+5. **Store Integration**
+   ```typescript
+   interface HarmonyState {
+     chatBubbles: ChatBubble[];
+     addChatBubble: (bubble: ChatBubble) => void;
+     removeChatBubble: (id: string) => void;
+     // ... existing state
+   }
+   ```
+
+### 4. UI/UX Considerations
+
+1. **Cursor Management**
+
+   - Use ChatTeardrop icon as custom cursor in comment mode
+   - Apply cursor style through CSS:
+     ```css
+     .comment-mode {
+       cursor:
+         url("path-to-chat-teardrop.svg") 16 16,
+         auto;
+     }
+     ```
+
+2. **Comment Input Dialog**
+
+   - Modal dialog with text input
+   - Submit and cancel buttons
+   - Click-away behavior to cancel
+   - Maintains position relative to clicked location
+
+3. **Visual Feedback**
+   - Highlight targetable elements when in comment mode
+   - Show preview of where comment will be placed
+   - Smooth transitions between states
 
 ## Implementation Progress
 
@@ -120,6 +221,21 @@ model ChatBubble {
    - Added deleteChatBubble endpoint
    - Updated loadProject to include chat bubbles
    - Integrated with chat repository methods
+
+5. ✅ UI State Management
+
+   - Added isComment toggle to HarmonyContext
+   - Added onToggleComment handler
+   - Added chat bubble state to HarmonyStore
+   - Integrated comment mode with editor state
+
+### In Progress
+
+1. 🔄 UI Components
+   - Comment mode toggle in HarmonyToolbar
+   - Custom cursor for comment mode
+   - Comment input dialog
+   - Chat bubble display component
 
 ### Todo
 
