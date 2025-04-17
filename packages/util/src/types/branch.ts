@@ -70,3 +70,13 @@ export const workspaceSchema = z.object({
 })
 
 export type Workspace = z.infer<typeof workspaceSchema>
+
+export const chatBubbleSchema = z.object({
+  id: z.string(),
+  branchId: z.string(),
+  componentId: z.string(),
+  content: z.string(),
+  offsetX: z.number(),
+  offsetY: z.number(),
+})
+export type ChatBubble = z.infer<typeof chatBubbleSchema>

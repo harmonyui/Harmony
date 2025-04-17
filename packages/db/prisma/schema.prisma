@@ -46,6 +46,7 @@ model Account {
   seen_welcome_screen Boolean  @default(false)
   team                Team     @relation(fields: [team_id], references: [id])
   branch              Branch[]
+  chat_bubbles        ChatBubble[]
 }
 
 model Branch {
@@ -60,6 +61,7 @@ model Branch {
   is_deleted    Boolean           @default(false)
   account_id    String
   account       Account           @relation(fields: [account_id], references: [id])
+  chat_bubbles  ChatBubble[]
 }
 
 model ComponentUpdate {
@@ -175,4 +177,20 @@ model ChangeLog {
 model User {
   id   String @id
   role String
+}
+
+model ChatBubble {
+  id         String   @id @default(cuid())
+  branch_id  String
+  branch     Branch   @relation(fields: [branch_id], references: [id])
+  component_id String
+  content    String
+  offset_x   Float
+  offset_y   Float
+  account_id String?
+  account    Account? @relation(fields: [account_id], references: [id])
+  created_at DateTime @default(now())
+
+  @@index([branch_id])
+  @@index([component_id])
 }

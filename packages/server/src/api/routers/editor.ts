@@ -11,6 +11,12 @@ import {
   loadResponseSchema,
   publishRequestSchema,
   updateRequestBodySchema,
+  updateChatBubbleRequestSchema,
+  updateChatBubbleResponseSchema,
+  createChatBubbleRequestSchema,
+  createChatBubbleResponseSchema,
+  deleteChatBubbleRequestSchema,
+  deleteChatBubbleResponseSchema,
 } from '@harmony/util/src/types/network'
 import type {
   PublishResponse,
@@ -38,6 +44,12 @@ import { Repository } from '@harmony/util/src/types/branch'
 import { Db } from '@harmony/db/lib/prisma'
 import { wordToKebabCase } from '@harmony/util/src/utils/common'
 import { getRepository } from '../repository/database/repository'
+import {
+  createChatBubble,
+  getChatBubbles,
+  updateChatBubble as updateChatBubbleRepo,
+  deleteChatBubble as deleteChatBubbleRepo,
+} from '../repository/database/chat'
 
 const returnRepository = async (
   repositoryOrId: string | Repository | undefined,
@@ -144,6 +156,10 @@ const editorRoutes = {
 
       const isDemo = accountTiedToBranch?.role === 'quick'
 
+      const chatBubbles = isLocal
+        ? []
+        : await getChatBubbles({ prisma, branchId })
+
       return {
         updates,
         branches: branches.map((branch) => ({
@@ -155,6 +171,8 @@ const editorRoutes = {
         showWelcomeScreen: isDemo && !accountTiedToBranch.seen_welcome_screen,
         isDemo,
         harmonyTokens: tokens,
+        chatBubbles,
+        rootPath: undefined,
       }
     }),
   saveProject: publicProcedure
@@ -426,6 +444,47 @@ const editorRoutes = {
         repositoryId: input.repositoryId,
         accountId: ctx.session.account.id,
       })
+    }),
+  createChatBubble: protectedProcedure
+    .input(createChatBubbleRequestSchema)
+    .output(createChatBubbleResponseSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { prisma } = ctx
+      return createChatBubble({
+        prisma,
+        branchId: input.branchId,
+        componentId: input.componentId,
+        content: input.content,
+        offsetX: input.offsetX,
+        offsetY: input.offsetY,
+        accountId: ctx.session?.account?.id,
+      })
+    }),
+
+  updateChatBubble: protectedProcedure
+    .input(updateChatBubbleRequestSchema)
+    .output(updateChatBubbleResponseSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { prisma } = ctx
+      return updateChatBubbleRepo({
+        prisma,
+        id: input.id,
+        content: input.content,
+        offsetX: input.offsetX,
+        offsetY: input.offsetY,
+      })
+    }),
+
+  deleteChatBubble: protectedProcedure
+    .input(deleteChatBubbleRequestSchema)
+    .output(deleteChatBubbleResponseSchema)
+    .mutation(async ({ ctx, input }) => {
+      const { prisma } = ctx
+      await deleteChatBubbleRepo({
+        prisma,
+        id: input.id,
+      })
+      return { success: true }
     }),
 } satisfies Parameters<typeof createTRPCRouter>[0]
 

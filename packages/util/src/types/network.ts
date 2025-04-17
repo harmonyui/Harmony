@@ -4,7 +4,12 @@ import {
   harmonyComponentInfoSchema,
   updateSchema,
 } from './component'
-import { branchItemSchema, pullRequestSchema, repositorySchema } from './branch'
+import {
+  branchItemSchema,
+  chatBubbleSchema,
+  pullRequestSchema,
+  repositorySchema,
+} from './branch'
 import { emailSchema } from './utils'
 import { tokenSchema } from './tokens'
 
@@ -30,6 +35,52 @@ export const loadRequestSchema = z.object({
   branchId: z.optional(z.string()),
 })
 export type LoadRequest = z.infer<typeof loadRequestSchema>
+
+export const createChatBubbleRequestSchema = z.object({
+  branchId: z.string(),
+  componentId: z.string(),
+  content: z.string(),
+  offsetX: z.number(),
+  offsetY: z.number(),
+})
+export type CreateChatBubbleRequest = z.infer<
+  typeof createChatBubbleRequestSchema
+>
+
+export const createChatBubbleResponseSchema = chatBubbleSchema
+export type CreateChatBubbleResponse = z.infer<
+  typeof createChatBubbleResponseSchema
+>
+
+export const updateChatBubbleRequestSchema = z.object({
+  id: z.string(),
+  content: z.string(),
+  offsetX: z.number(),
+  offsetY: z.number(),
+})
+export type UpdateChatBubbleRequest = z.infer<
+  typeof updateChatBubbleRequestSchema
+>
+
+export const updateChatBubbleResponseSchema = chatBubbleSchema
+export type UpdateChatBubbleResponse = z.infer<
+  typeof updateChatBubbleResponseSchema
+>
+
+export const deleteChatBubbleRequestSchema = z.object({
+  id: z.string(),
+})
+export type DeleteChatBubbleRequest = z.infer<
+  typeof deleteChatBubbleRequestSchema
+>
+
+export const deleteChatBubbleResponseSchema = z.object({
+  success: z.boolean(),
+})
+export type DeleteChatBubbleResponse = z.infer<
+  typeof deleteChatBubbleResponseSchema
+>
+
 export const loadResponseSchema = z.object({
   updates: z.array(updateSchema),
   branches: z.array(
@@ -44,6 +95,7 @@ export const loadResponseSchema = z.object({
   isDemo: z.boolean(),
   harmonyTokens: z.array(tokenSchema),
   rootPath: z.optional(z.string()),
+  chatBubbles: z.array(chatBubbleSchema),
 })
 export type LoadResponse = z.infer<typeof loadResponseSchema>
 
