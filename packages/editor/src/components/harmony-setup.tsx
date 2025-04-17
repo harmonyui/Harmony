@@ -356,15 +356,47 @@ function handleFocusCapturing(
   container: HTMLElement,
   controller: AbortController,
 ) {
+  const listeners: {
+    listener: EventListener
+    options?: AddEventListenerOptions | boolean
+    target: EventTarget
+  }[] = []
+
+  // We need to stopPropagation for modal library pointerdown events so that dialogs don't close when clicking on the editor.
+  // However, this will also turn off pointer events for draggable panels in the editor.
+  // To get around this, we create a base pointerdown listener for all bubbling events in the editor.
+  // This will call the draggable panel events and stopPropagation for the modal library events.
+  const addEventListener = EventTarget.prototype.addEventListener
+  EventTarget.prototype.addEventListener = function (
+    type: string,
+    listener: EventListener,
+    options?: AddEventListenerOptions | boolean,
+  ) {
+    if (
+      type === 'pointerdown' &&
+      // Only bubble events because the inspector does pointerdown on capture.
+      (!options || (typeof options === 'object' && !options.capture))
+    ) {
+      listeners.push({ listener, options, target: this })
+      return
+    }
+    return addEventListener.call(this, type, listener, options)
+  }
+  addEventListener.call(container, 'pointerdown', (e) => {
+    for (const listener of listeners) {
+      listener.listener.call(listener.target, e)
+    }
+    e.stopPropagation()
+  })
+
+  controller.signal.addEventListener('abort', () => {
+    EventTarget.prototype.addEventListener = addEventListener
+  })
+  // Prevent aggresive focus capturing and enable scrolling
   const stopPropagation = (e: Event) => {
     e.stopPropagation()
   }
-  container.addEventListener('pointerdown', stopPropagation)
   document.addEventListener('focusin', stopPropagation, {
-    capture: true,
-    signal: controller.signal,
-  })
-  document.addEventListener('focusout', stopPropagation, {
     capture: true,
     signal: controller.signal,
   })
