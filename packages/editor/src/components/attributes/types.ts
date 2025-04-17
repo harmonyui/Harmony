@@ -20,6 +20,7 @@ export const attributeTools = [
   'flexWrap',
   'flexGrow',
   'flexShrink',
+  'flex',
   'order',
   'gridTemplateColumns',
   'gridTemplateRows',

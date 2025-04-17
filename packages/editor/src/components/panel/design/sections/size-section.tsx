@@ -1,7 +1,6 @@
 import { useComponentAttribute } from '../../../attributes/attribute-provider'
 import type { CommonTools } from '../../../attributes/types'
 import { Section } from './components/section'
-import { InputLabel } from './components/input-label'
 import { TokenLinkInput } from './components/token-link-input'
 import { Label } from './components/label'
 import { DropdownItem } from '@harmony/ui/src/components/core/dropdown'
@@ -9,6 +8,9 @@ import { useMemo } from 'react'
 import { camelToKebab, kebabToWord } from '@harmony/util/src/utils/common'
 import { Button } from '@harmony/ui/src/components/core/button'
 import { XMarkIcon } from '@harmony/ui/src/components/core/icons'
+import { ToggleButton } from '@harmony/ui/src/components/core/toggle-button'
+import { useHarmonyStore } from '../../../../hooks/state'
+import { getTextToolsFromAttributes } from '../../../attributes/utils'
 
 export const SizeSection: React.FunctionComponent = () => {
   const { onAttributeChange, getTokenValues } = useComponentAttribute()
@@ -42,10 +44,10 @@ export const SizeSection: React.FunctionComponent = () => {
     <Section label='Size' options={options} onOptionChange={onOptionChange}>
       <div className='grid grid-cols-3 gap-y-2 gap-x-2 items-center pt-1 pr-1'>
         <Label label='Width'>
-          <TokenLinkInput className='col-span-2' attribute='width' />
+          <SizeInput attribute='width' />
         </Label>
         <Label label='Height'>
-          <TokenLinkInput className='col-span-2' attribute='height' />
+          <SizeInput attribute='height' />
         </Label>
         <RemovableInput attribute='minWidth' />
         <RemovableInput attribute='minHeight' />
@@ -53,6 +55,44 @@ export const SizeSection: React.FunctionComponent = () => {
         <RemovableInput attribute='maxHeight' />
       </div>
     </Section>
+  )
+}
+
+const SizeInput: React.FunctionComponent<{
+  attribute: Extract<CommonTools, 'width' | 'height'>
+}> = ({ attribute }) => {
+  const selectedComponent = useHarmonyStore((state) => state.selectedComponent)
+  const { getAttribute, onAttributeChange } = useComponentAttribute()
+
+  const isParentFlex = useMemo(() => {
+    const parent = selectedComponent?.element.parentElement
+    if (parent) {
+      const parentTools = getTextToolsFromAttributes(parent, undefined)
+      return parentTools?.some(
+        (t) => t.name === 'display' && t.value === 'flex',
+      )
+    }
+    return false
+  }, [selectedComponent])
+
+  const _attribute = isParentFlex && attribute === 'width' ? 'flex' : attribute
+
+  return (
+    <div className='flex col-span-2 items-center gap-2'>
+      <ToggleButton
+        buttons={[
+          {
+            id: isParentFlex ? '100%' : '1 1 100%',
+            label: 'Fill',
+          },
+        ]}
+        selected={getAttribute(_attribute)}
+        setSelected={(value) => {
+          onAttributeChange({ name: _attribute, value })
+        }}
+      />
+      <TokenLinkInput attribute={attribute} />
+    </div>
   )
 }
 

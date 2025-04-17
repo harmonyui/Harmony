@@ -26,7 +26,7 @@ import { TokenLinkInput } from './components/token-link-input'
 export const TypographySection: DesignPanelSectionComponent = () => {
   const { getAttribute, onAttributeChange } = useComponentAttribute()
 
-  const spacing = useMemo(() => getAttribute('letterSpacing'), [getAttribute])
+  const spacing = getAttribute('letterSpacing')
   const onChange = (name: CommonTools) => (value: string) =>
     onAttributeChange({ name, value })
 
