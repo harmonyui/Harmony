@@ -18,6 +18,7 @@ import { useToggleEnable } from '../hooks/toggle-enable'
 import { useBranchId } from '../hooks/branch-id'
 import { getRepositoryId } from '../utils/get-repository-id'
 import { useStorageState } from '@harmony/ui/src/hooks/storage-state'
+import interact from 'interactjs'
 type HarmonySetupProps = Pick<
   HarmonyProviderProps,
   | 'repositoryId'
@@ -382,7 +383,8 @@ function handleFocusCapturing(
     }
     return addEventListener.call(this, type, listener, options)
   }
-  addEventListener.call(container, 'pointerdown', (e) => {
+  // document.body because most libraries use document for pointerdown events, so we need to capture it before then.
+  addEventListener.call(document.body, 'pointerdown', (e) => {
     for (const listener of listeners) {
       listener.listener.call(listener.target, e)
     }
@@ -391,6 +393,10 @@ function handleFocusCapturing(
 
   controller.signal.addEventListener('abort', () => {
     EventTarget.prototype.addEventListener = addEventListener
+    try {
+      // interact.js does not re-add the event listeners when harmony is turned off, so we need to do it manually.
+      interact.removeDocument(document)
+    } catch {} // if a document does not exist (no draggable element was initialized), then an error will be thrown, so we catch it.
   })
   // Prevent aggresive focus capturing and enable scrolling
   const stopPropagation = (e: Event) => {

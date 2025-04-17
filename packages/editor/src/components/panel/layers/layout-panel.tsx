@@ -13,9 +13,6 @@ import { recurseComponents } from '../../../utils/element-utils'
 import { TreeView } from './tree-view'
 
 export const LayoutPanel: React.FunctionComponent = () => {
-  const isDemo = useHarmonyStore((state) => state.isDemo)
-  if (isDemo || isDemo === undefined) return null
-
   return (
     <DraggablePanel title='Layers' id={Panels.Layers} defaultActive={false}>
       <Card>
