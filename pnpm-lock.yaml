@@ -50,7 +50,7 @@ importers:
         version: link:../../packages/util
       harmony-ai-editor:
         specifier: workspace:*
-        version: link:../../packages/editor/dist
+        version: link:../../packages/editor
       react:
         specifier: ^19.0.0
         version: 19.0.0
@@ -225,7 +225,7 @@ importers:
         version: 8.0.0
       harmony-ai-editor:
         specifier: workspace:*
-        version: link:../../packages/editor/dist
+        version: link:../../packages/editor
       hotkeys-js:
         specifier: ^3.13.9
         version: 3.13.9
@@ -494,7 +494,7 @@ importers:
         version: 11.18.1(react-dom@19.0.0)(react@19.0.0)
       harmony-ai-editor:
         specifier: workspace:*
-        version: link:../../packages/editor/dist
+        version: link:../../packages/editor
       next:
         specifier: 15.1.5
         version: 15.1.5(@babel/core@7.26.0)(react-dom@19.0.0)(react@19.0.0)

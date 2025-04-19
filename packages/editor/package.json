@@ -9,7 +9,8 @@
     "directory": "dist",
     "main": "./setup/bundle.js",
     "module": "./setup/bundle.js",
-    "types": "./esm/packages/editor/src/index.d.ts"
+    "types": "./esm/packages/editor/src/index.d.ts",
+    "linkDirectory": false
   },
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
