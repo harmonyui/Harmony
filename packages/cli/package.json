@@ -1,9 +1,13 @@
 {
   "name": "harmonyapp",
-  "version": "0.1.4",
+  "version": "0.1.6",
   "description": "",
   "publishConfig": {
-    "access": "public"
+    "access": "public",
+    "directory": "dist",
+    "exports": "./index.mjs",
+    "bin": "./index.mjs",
+    "main": "./index.mjs"
   },
   "license": "MIT",
   "author": {
@@ -15,13 +19,11 @@
     "url": "https://github.com/harmonyui/Harmony.git",
     "directory": "packages/cli"
   },
-  "files": [
-    "dist"
-  ],
   "exports": "./dist/index.mjs",
   "bin": "./dist/index.mjs",
   "main": "./dist/index.mjs",
   "scripts": {
+    "prepack": "pnpm build && node ../../scripts/prepare-publish.js",
     "withenv": "dotenv -e ../../.env --",
     "dev": "pnpm withenv tsx watch src/index.ts",
     "build": "pnpm withenv tsup",

@@ -4,12 +4,16 @@
   "main": "./dist/setup/bundle.js",
   "module": "./dist/setup/bundle.js",
   "types": "./dist/esm/packages/editor/src/index.d.ts",
-  "files": [
-    "dist"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "directory": "dist",
+    "main": "./setup/bundle.js",
+    "module": "./setup/bundle.js",
+    "types": "./esm/packages/editor/src/index.d.ts"
+  },
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
-    "prepublish": "pnpm run build",
+    "prepack": "pnpm run build && node ../../scripts/prepare-publish.js",
     "build": "npm run build:editor && cp ./dist/editor/bundle.js ./public/bundle.js && pnpm run build-webpack",
     "dev": "NODE_ENV=development pnpm withenv tsx watch ./src/server.ts",
     "build:setup:editor": "pnpm run build:editor && pnpm run build:setup",
