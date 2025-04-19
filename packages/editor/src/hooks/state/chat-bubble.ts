@@ -6,6 +6,8 @@ export interface ChatBubbleState {
   chatBubbles: ChatBubble[]
   addChatBubble: (chatBubble: ChatBubble) => Promise<void>
   deleteChatBubble: (chatBubble: ChatBubble) => Promise<void>
+  selectedChatBubble: ChatBubble | null
+  setSelectedChatBubble: (chatBubble: ChatBubble | null) => void
 }
 export const createChatBubblesSlice = createHarmonySlice<
   ChatBubbleState,
@@ -25,5 +27,9 @@ export const createChatBubblesSlice = createHarmonySlice<
         (bubble) => bubble.id !== chatBubble.id,
       ),
     }))
+  },
+  selectedChatBubble: null,
+  setSelectedChatBubble: (chatBubble) => {
+    set({ selectedChatBubble: chatBubble })
   },
 }))

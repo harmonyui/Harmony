@@ -15,6 +15,8 @@ import { useCommentButton } from '../comment/comment-button'
 import { useState } from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { SelectProject } from '../project/select-project'
+import { AnimateButton } from '@harmony/ui/src/components/design/animate-button'
+import { AnimateOpenClose } from '@harmony/ui/src/components/design/animate-open-close'
 
 type HarmonyToolbar = object
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
@@ -113,29 +115,13 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
   return (
     <>
       <div className='absolute bottom-2 left-1/2 -translate-x-1/2 z-[999]'>
-        <AnimatePresence mode='wait'>
-          {isOpen ? (
-            <motion.div
-              key='A'
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.1 }}
-            >
-              <Toolbar items={items} />
-            </motion.div>
-          ) : (
-            <motion.div
-              key='B'
-              initial={{ opacity: 0, scale: 0.8 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.8 }}
-              transition={{ duration: 0.1 }}
-            >
-              <HarmonyCollapsedToolbar onClick={() => setIsOpen(!isOpen)} />
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <AnimateOpenClose
+          openElement={<Toolbar items={items} />}
+          closedElement={
+            <HarmonyCollapsedToolbar onClick={() => setIsOpen(!isOpen)} />
+          }
+          isOpen={isOpen}
+        />
       </div>
     </>
   )
@@ -145,17 +131,14 @@ const HarmonyCollapsedToolbar: React.FunctionComponent<{
   onClick: () => void
 }> = ({ onClick }) => {
   return (
-    <motion.button
+    <AnimateButton
       className='flex items-center justify-center p-2 bg-white rounded-full !cursor-pointer border border-[#e5e5e5]'
       onClick={onClick}
-      whileHover={{ scale: 1.1 }}
-      whileTap={{ scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 400, damping: 17 }}
     >
       <img
         src='https://dashboard.harmonyui.app/icon-128.png'
         className='size-5'
       />
-    </motion.button>
+    </AnimateButton>
   )
 }

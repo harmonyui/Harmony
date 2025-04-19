@@ -319,6 +319,7 @@ export function setupHarmonyProvider(setupHarmonyContainer = true) {
     harmonyContainer = document.createElement('div')
     harmonyContainer.id = 'harmony-container'
     harmonyContainer.style.pointerEvents = 'auto'
+    harmonyContainer.classList.add('harmony-comment-mode-disable')
 
     // Radix and other libraries use pretty aggressive focus capturing in their dialogs, so these events get around that.
     handleFocusCapturing(harmonyContainer, controller)

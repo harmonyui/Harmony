@@ -1,4 +1,4 @@
-import { ChatTeardropIcon } from '@harmony/ui/src/components/core/icons'
+import { ChatTeardropOutlineIcon } from '@harmony/ui/src/components/core/icons'
 import { useHarmonyContext } from '../../../components/harmony-context'
 import { useHotKeys } from '../../../hooks/hotkeys'
 import { useEffect } from 'react'
@@ -15,7 +15,7 @@ export const useCommentButton = () => {
   }, [isToggled, isComment, onToggleComment])
 
   return {
-    icon: ChatTeardropIcon,
+    icon: ChatTeardropOutlineIcon,
     onClick: onToggleComment,
     active: isComment,
   }

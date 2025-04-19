@@ -21,14 +21,25 @@ export const useCommentCreation = () => {
   const hoveredComponent = useHarmonyStore((state) => state.hoveredComponent)
   const [isDialogOpen, setIsDialogOpen] = useState(false)
   const [position, setPosition] = useState<CommentPosition | null>(null)
+  const selectedChatBubble = useHarmonyStore(
+    (store) => store.selectedChatBubble,
+  )
+  const setSelectedChatBubble = useHarmonyStore(
+    (store) => store.setSelectedChatBubble,
+  )
 
   const handleClick = useEffectEvent((e: MouseEvent) => {
     if (
-      !isComment ||
       !hoveredComponent ||
       document.getElementById('harmony-container')?.contains(e.target as Node)
     )
       return
+
+    if (isDialogOpen || selectedChatBubble || !isComment) {
+      setIsDialogOpen(false)
+      setSelectedChatBubble(null)
+      return
+    }
 
     const element = hoveredComponent
 
@@ -77,5 +88,6 @@ export const useCommentCreation = () => {
     handleClick,
     handleSubmit,
     handleClose,
+    setDialogOpen: setIsDialogOpen,
   }
 }

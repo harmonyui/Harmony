@@ -9,11 +9,15 @@
 }
 
 .harmony-comment-mode {
-  cursor: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='32' height='32' viewBox='0 0 24 24' fill='%2311283B'><path d='M12 2C6.477 2 2 6.477 2 12c0 1.89.525 3.66 1.438 5.168L2.546 20.2c-.17.46.29.92.75.75l3.032-.892A9.957 9.957 0 0012 22c5.523 0 10-4.477 10-10S17.523 2 12 2z'/></svg>") 16 16, auto;
+  cursor: url("data:image/svg+xml;utf8,<svg fill='white' width='32' height='32' viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'><path d='M232,123.99219a100.113,100.113,0,0,1-100,100H47.667A15.68449,15.68449,0,0,1,32,208.32568V123.99219a100,100,0,0,1,200,0Z' /></svg>") 16 16, auto;
 }
 
-.harmony-comment-mode * {
+.harmony-comment-mode :not(.harmony-comment-mode-disable) {
   cursor: inherit !important;
+}
+
+.harmony-comment-mode-disable {
+  cursor: auto !important;
 }
 
 @tailwind base;

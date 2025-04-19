@@ -5,17 +5,25 @@ import { useCommentCreation } from './use-comment-creation'
 
 export const CommentCreator: React.FC = () => {
   const { isComment } = useHarmonyContext()
-  const { isDialogOpen, position, handleClick, handleSubmit, handleClose } =
-    useCommentCreation()
+  const {
+    isDialogOpen,
+    position,
+    handleClick,
+    handleSubmit,
+    handleClose,
+    setDialogOpen,
+  } = useCommentCreation()
 
   useEffect(() => {
-    if (isComment) {
-      document.addEventListener('mousedown', handleClick)
-      return () => document.removeEventListener('mousedown', handleClick)
-    }
-  }, [isComment, handleClick])
+    document.addEventListener('mousedown', handleClick)
+    return () => document.removeEventListener('mousedown', handleClick)
+  }, [handleClick])
 
-  if (!position) return null
+  useEffect(() => {
+    if (!isComment) {
+      setDialogOpen(false)
+    }
+  }, [isComment])
 
   return (
     <CommentDialog
