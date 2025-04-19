@@ -383,13 +383,21 @@ function handleFocusCapturing(
     }
     return addEventListener.call(this, type, listener, options)
   }
-  // document.body because most libraries use document for pointerdown events, so we need to capture it before then.
-  addEventListener.call(document.body, 'pointerdown', (e) => {
-    for (const listener of listeners) {
-      listener.listener.call(listener.target, e)
-    }
-    e.stopPropagation()
-  })
+  // container because most libraries use document for pointerdown events, so we need to capture it for every event on the harmony container.
+  // NOTE: stopPropagation is called on the `onClick` event handler in the inspector to achieve the same effect while in editor mode.
+  addEventListener.call(
+    container,
+    'pointerdown',
+    (e) => {
+      for (const listener of listeners) {
+        listener.listener.call(listener.target, e)
+      }
+      e.stopPropagation()
+    },
+    {
+      signal: controller.signal,
+    },
+  )
 
   controller.signal.addEventListener('abort', () => {
     EventTarget.prototype.addEventListener = addEventListener

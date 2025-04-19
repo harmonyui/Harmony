@@ -34,21 +34,9 @@ export const useHighlighter = ({
   noEvents,
 }: HighlighterProps) => {
   const timeoutRef = useRef<NodeJS.Timeout>(undefined)
-  //const [isHolding, setIsHolding] = useState(false);
-  const isHoldingRef = useRef(false)
+
   const registerListeners = useEffectEvent((): void => {
     controller = new AbortController()
-    // const elements = window.document.body.querySelectorAll('*');
-    // elements.forEach((element) => {
-    // 	const htmlElement = element as HTMLElement
-    // 	htmlElement.addEventListener('pointerup', onPointerUp, false);
-    // 	htmlElement.addEventListener('pointerover', onPointerOver, false);
-    // 	htmlElement.addEventListener('pointerdown', onMouseEvent, false); //TODO: Add a mouse hold event
-    // 	htmlElement.addEventListener('click', onMouseEvent, false)
-    // 	htmlElement.addEventListener('mousedown', onMouseEvent, false)
-    // 	htmlElement.addEventListener('mouseover', onMouseEvent, false)
-    // 	htmlElement.addEventListener('mouseup', onMouseEvent, false);
-    // });
     const options: AddEventListenerOptions = {
       signal: controller.signal,
       capture: true,
@@ -60,19 +48,11 @@ export const useHighlighter = ({
     container?.addEventListener('mouseover', onMouseEvent, options)
     //container?.addEventListener('mouseup', onMouseEvent, options)
     container?.addEventListener('pointerdown', onPointerDown, options)
-    //container?.addEventListener('pointerdown', onMouseEvent, options)
     container?.addEventListener('dblclick', onDoubleClick, options)
   })
 
   const removeListeners = useEffectEvent((): void => {
     controller.abort()
-    // container?.removeEventListener('pointerup', onPointerUp, false);
-    // container?.removeEventListener('pointermove', onPointerOver, false);
-    // container?.removeEventListener('click', onMouseEvent, false)
-    // container?.removeEventListener('mousedown', onMouseEvent, false)
-    // container?.removeEventListener('mouseover', onMouseEvent, false)
-    // container?.removeEventListener('mouseup', onMouseEvent, false)
-    // container?.removeEventListener('pointerdown', onMouseEvent, false)
   })
 
   useEffect(() => {
@@ -81,8 +61,6 @@ export const useHighlighter = ({
     return () => {
       removeListeners()
       clearTimeout(timeoutRef.current)
-      //setIsHolding(false);
-      isHoldingRef.current = false
     }
   }, [registerListeners, removeListeners, container])
 
@@ -97,13 +75,6 @@ export const useHighlighter = ({
         target?.closest('[data-non-selectable="true"]')
       )
         return
-      if (!isHoldingRef.current) {
-        // event.preventDefault();
-        // event.stopPropagation();
-        // console.log('Not holding');
-      } else {
-        //console.log('Holding');
-      }
       while (
         target !== null &&
         !dispatch(target, event.clientX, event.clientY, event)
@@ -132,21 +103,7 @@ export const useHighlighter = ({
   })
 
   const onPointerUp = highligherDispatcher(onPointerUpProps)
-  // const onPointerUp = () => {
-  // 	clearTimeout(timeoutRef.current);
-  // 	//setIsHolding(false);
-  // 	isHoldingRef.current = false;
-  // }
   const onPointerOver = highligherDispatcher(onHover)
   const onPointerDown = highligherDispatcher(onClick)
   const onDoubleClick = highligherDispatcher(onDoubleClickProps)
-  // const onPointerDown = highligherDispatcher(onClick, useEffectEvent((element: HTMLElement) => {
-  // 	timeoutRef.current = setTimeout(() => {
-  // 		//setIsHolding(true);
-  // 		isHoldingRef.current = true;
-  // 		onHold(element);
-  // 	}, 100);
-
-  // 	return false;
-  // }));
 }

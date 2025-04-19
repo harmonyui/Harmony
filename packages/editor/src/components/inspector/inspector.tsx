@@ -1,14 +1,11 @@
 /* eslint-disable prefer-const -- ok */
 /* eslint-disable @typescript-eslint/no-explicit-any -- ok */
 
-/* eslint-disable import/no-cycle -- ok*/
 'use client'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import hotkeys from 'hotkeys-js'
 import $ from 'jquery'
-import { usePrevious } from '@harmony/ui/src/hooks/previous'
-import { Alert } from '@harmony/ui/src/components/core/alert'
 import { useSnapping } from '../snapping/snapping'
 import type {
   SelectMode,
@@ -83,6 +80,7 @@ export interface InspectorProps {
     execute?: boolean,
   ) => void
   scale: number
+  enableDrag?: boolean
 }
 export const Inspector: React.FunctionComponent<InspectorProps> = ({
   onChange,
@@ -90,9 +88,10 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   parentElement,
   mode,
   scale,
+  enableDrag = false,
 }) => {
   const containerRef = useRef<HTMLDivElement>(null)
-  const { error, setError, onTextChange } = useHarmonyContext()
+  const { setError, onTextChange } = useHarmonyContext()
   const isDemo = useHarmonyStore((state) => state.isDemo)
 
   const source = useHarmonyStore((state) => state.source)
@@ -104,7 +103,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   const hoveredComponent = useHarmonyStore((state) => state.hoveredComponent)
   const onHoverProps = useHarmonyStore((state) => state.hoverComponent)
 
-  const previousError = usePrevious(error)
   const { panel } = useSidePanel()
 
   useCopyPasteDelete()
@@ -143,7 +141,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
   })
 
   const { isDragging } = useSnapping({
-    enabled: false,
+    enabled: enableDrag,
     element: selectedComponent
       ? selectDesignerElement(selectedComponent)
       : undefined,
@@ -192,8 +190,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
           const propValue = element.style[property as unknown as number]
           if (!propValue || propValue === 'auto') return
 
-          // const match = /^(-?\d+(?:\.\d+)?)(\D*)$/.exec(propValue);
-          // if (!match) throw new Error("Invalid property value " + propValue);
           const float = parseFloat(propValue)
           if (isNaN(float)) return
 
@@ -207,8 +203,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
           element.style[property as unknown as number] = value
         })
 
-        // const oldValues: string[] = [];
-        // const keys: (keyof MarginValues | keyof FlexValues | 'width' | 'height')[] = ['marginLeft', 'marginRight', 'marginTop', 'marginBottom', 'display', 'paddingLeft', 'paddingRight', 'paddingTop', 'paddingBottom', 'gap', 'justifyContent', 'alignItems', 'width', 'height'];
         Object.keys(oldProperties).forEach((property) => {
           const value = element.style[property as unknown as number]
           if (!value) return
@@ -290,7 +284,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
 
     //TODO: Hacky fix. Inline elements are not affected by vertical margin, so the only way to get them to move when next
     //to a block element is to change it to a block element.
-    if (selectedComponent) {
+    if (selectedComponent && enableDrag) {
       const parent = selectedComponent.parentElement!
       const selfIndex = Array.from(parent.children).indexOf(selectedComponent)
       const prevSibling =
@@ -357,7 +351,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
     } else {
       overlayRef.current.remove('select')
     }
-  }, [selectedComponent, scale, inspectorState])
+  }, [selectedComponent, scale, inspectorState, enableDrag])
 
   useEffect(() => {
     const container = containerRef.current
@@ -377,12 +371,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       overlayRef.current.remove('hover')
     }
   }, [hoveredComponent, scale, isDragging, inspectorState])
-
-  useEffect(() => {
-    if (error !== previousError && error) {
-      //showAlert(error);
-    }
-  }, [error, previousError])
 
   const isInteractableComponent = useCallback(
     (component: HTMLElement) => {
@@ -414,8 +402,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       if (container === null) return false
       if (rootElement && !rootElement.contains(element)) return true
 
-      //const component: ComponentElement = componentIdentifier.getComponentFromElement(element);
-
       if (isDragging || !isInteractableComponent(element) || event.altKey) {
         onHoverProps(undefined)
         return false
@@ -445,6 +431,9 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       setTimeout(() => {
         onSelect(element)
       })
+
+      // This stops the event from bubbling up to the modal libraries like Radix
+      event.stopPropagation()
 
       return true
     },
@@ -481,9 +470,6 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
           return trueElement.dataset.harmonyError === 'text'
         }
         if (selectedComponent) {
-          // if (!selectedComponent.dataset.selected) {
-          // 	selectedComponent.dataset.selected = 'true';
-          // } else
           if (
             !isDragging &&
             isTextElement(selectedComponent) &&
@@ -608,15 +594,6 @@ const useOverlayRef = ({
   return overlayRef
 }
 
-// interface Box {
-// 	x: number;
-// 	y: number;
-// 	height: number;
-// 	width: number;
-// 	lx: number; //The direction
-// 	ly: number; //The direction
-// }
-
 export interface Rect {
   bottom: number
   height: number
@@ -737,7 +714,6 @@ class Overlay {
   }
 
   hover(element: HTMLElement, scale: number, inspectorState: InspectorState) {
-    //element.style.cursor = 'default';
     this.inspect(element, 'hover', scale, false, inspectorState)
   }
 
@@ -811,8 +787,6 @@ class Overlay {
     error: boolean,
     inspectorState: InspectorState,
   ) {
-    //
-
     // We can't get the size of text nodes or comment nodes. React as of v15
     // heavily uses comment nodes to delimit text.
     if (element.nodeType !== Node.ELEMENT_NODE) {
@@ -937,8 +911,6 @@ export class OverlayRect {
 
     if (element.dataset.harmonyFlex && onFlexClick) {
       this.onFlexClick = () => {
-        // const result = onFlexClick();
-        // $displayText[0].dataset.harmonyFlex = result;
         onFlexClick()
       }
       hotkeys('F', this.onFlexClick)
@@ -965,7 +937,6 @@ export class OverlayRect {
 
     this.border.style.borderColor = overlayStyles.background
     this.padding.style.borderColor = overlayStyles.padding
-    //this.content.style.backgroundColor = overlayStyles.background
 
     Object.assign(this.node.style, {
       borderColor: overlayStyles.margin,
@@ -1230,22 +1201,6 @@ export function getNestedBoundingClientRect({
   if (boundaryWindow) {
     const boundaryRect = boundaryWindow.getBoundingClientRect()
 
-    // let scalingAncestor: HTMLElement | null = boundaryWindow;
-    // let scaleX = 1;
-    // let scaleY = 1;
-    // while (scalingAncestor !== null && scalingAncestor !== document.body) {
-    // 	const style = window.getComputedStyle(scalingAncestor);
-    // 	const transformMatrix = new DOMMatrix(style.transform);
-
-    // 	// Check if the ancestor has a scaling transformation
-    // 	if (transformMatrix.a !== 1 || transformMatrix.d !== 1) {
-    // 		scaleX = transformMatrix.a;
-    // 		scaleY = transformMatrix.b;
-    // 		break;
-    // 	}
-
-    // 	scalingAncestor = scalingAncestor.parentElement;
-    // }
     const boundaryStyle = window.getComputedStyle(boundaryWindow)
     const transformMatrix = new DOMMatrix(boundaryStyle.transform)
 
