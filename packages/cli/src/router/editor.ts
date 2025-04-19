@@ -1,7 +1,13 @@
 import {
+  createChatBubbleRequestSchema,
+  createChatBubbleResponseSchema,
+  deleteChatBubbleRequestSchema,
+  deleteChatBubbleResponseSchema,
   indexComponentsRequestSchema,
   loadRequestSchema,
   publishRequestSchema,
+  updateChatBubbleRequestSchema,
+  updateChatBubbleResponseSchema,
   updateRequestBodySchema,
 } from '@harmony/util/src/types/network'
 import type { ComponentUpdate } from '@harmony/util/src/types/component'
@@ -9,8 +15,11 @@ import { getComponentIdsFromUpdates } from '@harmony/util/src/updates/utils'
 import { getFileContentsFromComponents } from '@harmony/util/src/utils/component'
 import { createTRPCRouter, publicProcedure } from '../trpc'
 import { getFileContent, updateFileContent } from '../utils/get-files'
+import { ChatBubble } from '@harmony/util/src/types/branch'
+import { generateUniqueId } from '@harmony/util/src/utils/common'
 
 const updates: ComponentUpdate[] = []
+const chatBubbles: ChatBubble[] = []
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
@@ -23,6 +32,7 @@ export const editorRouter = createTRPCRouter({
       return {
         ...ret,
         updates,
+        chatBubbles,
         rootPath: ctx.path,
       }
     }),
@@ -63,7 +73,7 @@ export const editorRouter = createTRPCRouter({
 
       const codeUpdates = await ctx.serverClient.editor.getCodeUpdates.mutate({
         updates,
-        repository: ctx.repository || ctx.repositoryId,
+        repository,
         contents: fileContents.map(({ file, content }) => ({
           path: file,
           content,
@@ -94,5 +104,41 @@ export const editorRouter = createTRPCRouter({
           content,
         })),
       })
+    }),
+
+  createChatBubble: publicProcedure
+    .input(createChatBubbleRequestSchema)
+    .output(createChatBubbleResponseSchema)
+    .mutation(async ({ input }) => {
+      const newChatBubble = { id: generateUniqueId(), ...input }
+      chatBubbles.push(newChatBubble)
+
+      return newChatBubble
+    }),
+
+  updateChatBubble: publicProcedure
+    .input(updateChatBubbleRequestSchema)
+    .output(updateChatBubbleResponseSchema)
+    .mutation(async ({ input }) => {
+      const chatBubble = chatBubbles.find((cb) => cb.id === input.id)
+      if (!chatBubble) {
+        throw new Error('Chat bubble not found')
+      }
+      chatBubble.content = input.content
+      chatBubble.offsetX = input.offsetX
+      chatBubble.offsetY = input.offsetY
+      return chatBubble
+    }),
+
+  deleteChatBubble: publicProcedure
+    .input(deleteChatBubbleRequestSchema)
+    .output(deleteChatBubbleResponseSchema)
+    .mutation(async ({ input }) => {
+      const chatBubble = chatBubbles.find((cb) => cb.id === input.id)
+      if (!chatBubble) {
+        throw new Error('Chat bubble not found')
+      }
+      chatBubbles.splice(chatBubbles.indexOf(chatBubble), 1)
+      return { success: true }
     }),
 })

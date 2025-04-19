@@ -671,6 +671,9 @@ importers:
       superjson:
         specifier: ^2.2.2
         version: 2.2.2
+      typescript:
+        specifier: ^5.7.3
+        version: 5.7.3
       zod:
         specifier: ^3.24.1
         version: 3.24.1
@@ -10470,7 +10473,7 @@ packages:
       webpack: ^5.82.0
       webpack-cli: 6.x.x
     dependencies:
-      webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
+      webpack: 5.97.1(webpack-cli@6.0.1)
       webpack-cli: 6.0.1(webpack@5.97.1)
     dev: true
 
@@ -10481,7 +10484,7 @@ packages:
       webpack: ^5.82.0
       webpack-cli: 6.x.x
     dependencies:
-      webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
+      webpack: 5.97.1(webpack-cli@6.0.1)
       webpack-cli: 6.0.1(webpack@5.97.1)
     dev: true
 
@@ -10496,7 +10499,7 @@ packages:
       webpack-dev-server:
         optional: true
     dependencies:
-      webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
+      webpack: 5.97.1(webpack-cli@6.0.1)
       webpack-cli: 6.0.1(webpack@5.97.1)
     dev: true
 
@@ -12011,7 +12014,7 @@ packages:
       postcss-modules-values: 4.0.0(postcss@8.5.1)
       postcss-value-parser: 4.2.0
       semver: 7.6.3
-      webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
+      webpack: 5.97.1(webpack-cli@6.0.1)
     dev: true
 
   /css-select@5.1.0:
@@ -17142,7 +17145,7 @@ packages:
       jiti: 1.21.7
       postcss: 8.5.1
       semver: 7.6.3
-      webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
+      webpack: 5.97.1(webpack-cli@6.0.1)
     transitivePeerDependencies:
       - typescript
     dev: true
@@ -19331,7 +19334,7 @@ packages:
     peerDependencies:
       webpack: ^5.27.0
     dependencies:
-      webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
+      webpack: 5.97.1(webpack-cli@6.0.1)
     dev: true
 
   /style-mod@4.1.2:
@@ -19924,7 +19927,7 @@ packages:
       semver: 7.6.3
       source-map: 0.7.4
       typescript: 5.7.3
-      webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
+      webpack: 5.97.1(webpack-cli@6.0.1)
     dev: true
 
   /tsc-alias@1.8.10:
@@ -20857,7 +20860,7 @@ packages:
       import-local: 3.2.0
       interpret: 3.1.1
       rechoir: 0.8.0
-      webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
+      webpack: 5.97.1(webpack-cli@6.0.1)
       webpack-merge: 6.0.1
     dev: true
 

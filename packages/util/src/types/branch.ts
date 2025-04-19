@@ -78,5 +78,6 @@ export const chatBubbleSchema = z.object({
   content: z.string(),
   offsetX: z.number(),
   offsetY: z.number(),
+  childIndex: z.number(),
 })
 export type ChatBubble = z.infer<typeof chatBubbleSchema>

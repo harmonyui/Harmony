@@ -184,6 +184,7 @@ model ChatBubble {
   branch_id  String
   branch     Branch   @relation(fields: [branch_id], references: [id])
   component_id String
+  childIndex Int
   content    String
   offset_x   Float
   offset_y   Float

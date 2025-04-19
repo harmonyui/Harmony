@@ -457,6 +457,7 @@ const editorRoutes = {
         content: input.content,
         offsetX: input.offsetX,
         offsetY: input.offsetY,
+        childIndex: input.childIndex,
         accountId: ctx.session?.account?.id,
       })
     }),

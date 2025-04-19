@@ -25,6 +25,7 @@
     "withenv": "dotenv -e ../../.env --",
     "dev": "pnpm withenv tsx watch src/index.ts",
     "build": "pnpm withenv tsup",
+    "typecheck": "tsc --noEmit",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix .",
     "lint": "pnpm withenv eslint ."
   },
@@ -53,6 +54,7 @@
     "kleur": "^4.1.5",
     "ora": "^8.1.1",
     "superjson": "^2.2.2",
+    "typescript": "^5.7.3",
     "zod": "^3.24.1"
   }
 }

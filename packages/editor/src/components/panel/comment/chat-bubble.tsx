@@ -3,7 +3,7 @@ import {
   XMarkIcon,
 } from '@harmony/ui/src/components/core/icons'
 import { Button } from '@harmony/ui/src/components/core/button'
-import { useEffect, useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChatBubble as ChatBubbleType } from '@harmony/util/src/types/branch'
 import { findElementFromId } from '../../../utils/element-utils'
 import { useHarmonyStore } from '../../../hooks/state'
@@ -22,21 +22,21 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
   const [isExpanded, setIsExpanded] = useState(false)
   const rootComponent = useHarmonyStore((store) => store.rootComponent)
 
-  const position = (function () {
+  const position = useMemo(() => {
     const element = findElementFromId(
       chatBubble.componentId,
-      0,
+      chatBubble.childIndex,
       rootComponent?.element,
     )
-    if (!element) return { x: 0, y: 0 }
+    if (!element) return
     const rect = element.getBoundingClientRect()
     return {
       x: rect.left + chatBubble.offsetX,
       y: rect.top + chatBubble.offsetY,
     }
-  })()
+  }, [chatBubble, rootComponent])
 
-  return (
+  return position ? (
     <div
       className='absolute z-[1000000]'
       style={{
@@ -89,5 +89,5 @@ export const ChatBubble: React.FC<ChatBubbleProps> = ({
         </Button>
       )}
     </div>
-  )
+  ) : null
 }

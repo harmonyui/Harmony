@@ -16,6 +16,7 @@ const prismaToChatBubble = (chat: PrismaChatBubble): ChatBubble => {
     content: chat.content,
     offsetX: chat.offset_x,
     offsetY: chat.offset_y,
+    childIndex: chat.childIndex,
   }
 }
 
@@ -44,6 +45,7 @@ export const createChatBubble = async ({
   offsetX,
   offsetY,
   accountId,
+  childIndex,
 }: {
   prisma: Db
   branchId: string
@@ -52,6 +54,7 @@ export const createChatBubble = async ({
   offsetX: number
   offsetY: number
   accountId?: string
+  childIndex: number
 }): Promise<ChatBubble> => {
   const chatBubble = await prisma.chatBubble.create({
     data: {
@@ -61,6 +64,7 @@ export const createChatBubble = async ({
       offset_x: offsetX,
       offset_y: offsetY,
       account_id: accountId,
+      childIndex,
     },
     ...chatBubblePayload,
   })

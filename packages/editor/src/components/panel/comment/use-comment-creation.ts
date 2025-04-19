@@ -3,11 +3,13 @@ import { useHarmonyContext } from '../../../components/harmony-context'
 import { useEffectEvent } from '@harmony/ui/src/hooks/effect-event'
 import { useHarmonyStore } from '../../../hooks/state'
 import { useBranchId } from '../../../hooks/branch-id'
+import { getComponentIdAndChildIndex } from '../../../utils/element-utils'
 
 interface CommentPosition {
   x: number
   y: number
-  elementId: string
+  componentId: string
+  childIndex: number
   offsetX: number
   offsetY: number
 }
@@ -34,10 +36,13 @@ export const useCommentCreation = () => {
     const offsetX = e.clientX - rect.left
     const offsetY = e.clientY - rect.top
 
+    const { componentId, childIndex } = getComponentIdAndChildIndex(element)
+
     setPosition({
       x: e.clientX,
       y: e.clientY,
-      elementId: element.dataset.harmonyId!,
+      componentId,
+      childIndex,
       offsetX,
       offsetY,
     })
@@ -51,10 +56,8 @@ export const useCommentCreation = () => {
       addChatBubble({
         id: '',
         content,
-        componentId: position.elementId,
-        offsetX: position.offsetX,
-        offsetY: position.offsetY,
         branchId: branchId ?? '',
+        ...position,
       })
 
       setIsDialogOpen(false)

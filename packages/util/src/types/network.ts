@@ -42,6 +42,7 @@ export const createChatBubbleRequestSchema = z.object({
   content: z.string(),
   offsetX: z.number(),
   offsetY: z.number(),
+  childIndex: z.number(),
 })
 export type CreateChatBubbleRequest = z.infer<
   typeof createChatBubbleRequestSchema
@@ -196,6 +197,7 @@ export const createCommentInputSchema = z.object({
   offsetX: z.number(),
   offsetY: z.number(),
   branchId: z.string(),
+  childIndex: z.number(),
 })
 
 export type CreateCommentInput = z.infer<typeof createCommentInputSchema>
