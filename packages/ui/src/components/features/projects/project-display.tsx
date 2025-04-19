@@ -1,39 +1,39 @@
-'use client'
+'use client';
 
-import type { BranchItem } from '@harmony/util/src/types/branch'
+import type { BranchItem } from '@harmony/util/src/types/branch';
 import {
   displayElapsedTime,
   wordToKebabCase,
-} from '@harmony/util/src/utils/common'
-import { useEffect, useState } from 'react'
-import { WEB_URL } from '@harmony/util/src/constants'
-import { useChangeProperty } from '../../../hooks/change-property'
-import { ConfirmModal } from '../../core/confirm'
-import { DropdownIcon } from '../../core/dropdown'
-import { Header } from '../../core/header'
+} from '@harmony/util/src/utils/common';
+import { useEffect, useState } from 'react';
+import { WEB_URL } from '@harmony/util/src/constants';
+import { useChangeProperty } from '../../../hooks/change-property';
+import { ConfirmModal } from '../../core/confirm';
+import { DropdownIcon } from '../../core/dropdown';
+import { Header } from '../../core/header';
 import {
   PlusIcon,
   GitBranchIcon,
   EllipsisHorizontalIcon,
-} from '../../core/icons'
-import { HarmonyModal, ModalProvider } from '../../core/modal'
-import { Button } from '../../core/button'
-import { Label } from '../../core/label'
-import { Input } from '../../core/input'
+} from '../../core/icons';
+import { HarmonyModal, ModalProvider } from '../../core/modal';
+import { Button } from '../../core/button';
+import { Label } from '../../core/label';
+import { Input } from '../../core/input';
 
 export interface ProjectDisplayProps {
-  projects: BranchItem[]
-  defaultUrl: string
-  onDelete: (item: BranchItem) => void
+  projects: BranchItem[];
+  defaultUrl: string;
+  onDelete: (item: BranchItem) => void;
   onCreate: (
     item: BranchItem,
     options: {
-      onFinish: (data: BranchItem) => void
-      onError: (value: string) => void
-    },
-  ) => void
-  onOpenProject: (item: BranchItem) => void
-  getThumbnail: (url: string) => Promise<string>
+      onFinish: (data: BranchItem) => void;
+      onError: (value: string) => void;
+    }
+  ) => void;
+  onOpenProject: (item: BranchItem) => void;
+  getThumbnail: (url: string) => Promise<string>;
 }
 export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
   projects,
@@ -43,17 +43,17 @@ export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
   onOpenProject,
   getThumbnail,
 }) => {
-  const [showNewProject, setShowNewProject] = useState(false)
+  const [showNewProject, setShowNewProject] = useState(false);
 
   return (
     <ModalProvider>
       <div className='flex flex-col gap-4 h-full'>
         <div className='flex items-center'>
-          <Header>My Projects</Header>
+          <Header>Hello there</Header>
           <Button
             className='w-fit ml-auto'
             onClick={() => {
-              setShowNewProject(true)
+              setShowNewProject(true);
             }}
           >
             <PlusIcon className='ml-1 h-5 w-5 mr-1' /> Add Project
@@ -66,10 +66,10 @@ export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
                 key={item.name}
                 item={item}
                 onOpenHarmony={() => {
-                  onOpenProject(item)
+                  onOpenProject(item);
                 }}
                 onDelete={() => {
-                  onDelete(item)
+                  onDelete(item);
                 }}
                 getThumbnail={getThumbnail}
               />
@@ -83,21 +83,21 @@ export const ProjectDisplay: React.FunctionComponent<ProjectDisplayProps> = ({
         <CreateNewProjectModal
           show={showNewProject}
           onClose={() => {
-            setShowNewProject(false)
+            setShowNewProject(false);
           }}
           defaultUrl={defaultUrl}
           onCreate={onCreate}
         />
       </div>
     </ModalProvider>
-  )
-}
+  );
+};
 
 interface CreateNewProjectModalProps {
-  show: boolean
-  onClose: () => void
-  defaultUrl: string
-  onCreate: ProjectDisplayProps['onCreate']
+  show: boolean;
+  onClose: () => void;
+  defaultUrl: string;
+  onCreate: ProjectDisplayProps['onCreate'];
 }
 const CreateNewProjectModal: React.FunctionComponent<
   CreateNewProjectModalProps
@@ -109,33 +109,33 @@ const CreateNewProjectModal: React.FunctionComponent<
     url: defaultUrl,
     commits: [],
     lastUpdated: new Date(),
-  })
-  const changeProperty = useChangeProperty<BranchItem>(setProject)
-  const [loading, setLoading] = useState(false)
-  const [error, setError] = useState('')
+  });
+  const changeProperty = useChangeProperty<BranchItem>(setProject);
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
   const onNewProject = () => {
     if (!project.label || !project.url) {
-      setError('Please fill out all fields')
-      return
+      setError('Please fill out all fields');
+      return;
     }
-    const name = wordToKebabCase(project.label)
-    setLoading(true)
-    setError('')
+    const name = wordToKebabCase(project.label);
+    setLoading(true);
+    setError('');
     onCreate(
       { ...project, name },
       {
         onFinish: () => {
-          setLoading(false)
-          onClose()
+          setLoading(false);
+          onClose();
         },
         onError: (value) => {
-          setError(value)
-          setLoading(false)
+          setError(value);
+          setLoading(false);
         },
-      },
-    )
-  }
+      }
+    );
+  };
   return (
     <HarmonyModal show={show} onClose={onClose}>
       <div className='flex gap-2 items-center'>
@@ -170,14 +170,14 @@ const CreateNewProjectModal: React.FunctionComponent<
         </Button>
       </div>
     </HarmonyModal>
-  )
-}
+  );
+};
 
 export interface ProjectLineItemProps {
-  item: BranchItem
-  onOpenHarmony: () => void
-  onDelete: () => void
-  getThumbnail: (url: string) => Promise<string>
+  item: BranchItem;
+  onOpenHarmony: () => void;
+  onDelete: () => void;
+  getThumbnail: (url: string) => Promise<string>;
 }
 export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
   item,
@@ -186,42 +186,42 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
   getThumbnail,
 }) => {
   const [thumbnail, setThumbnail] = useState<string>(
-    `${WEB_URL}/harmony-project-placeholder.svg`,
-  )
-  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false)
+    `${WEB_URL}/harmony-project-placeholder.svg`
+  );
+  const [showDeleteConfirm, setShowDeleteConfirm] = useState(false);
 
   useEffect(() => {
     const initalize = async () => {
       try {
-        const thumbnailUrl = await getThumbnail(item.url)
-        setThumbnail(thumbnailUrl)
+        const thumbnailUrl = await getThumbnail(item.url);
+        setThumbnail(thumbnailUrl);
       } catch (err) {
-        console.error(err)
+        console.error(err);
       }
-    }
+    };
 
-    void initalize()
-  }, [])
+    void initalize();
+  }, []);
 
   const onDeleteDesire = () => {
-    setShowDeleteConfirm(true)
-  }
+    setShowDeleteConfirm(true);
+  };
 
   const onDelete = () => {
-    setShowDeleteConfirm(false)
-    onDeleteProps()
-  }
+    setShowDeleteConfirm(false);
+    onDeleteProps();
+  };
 
   const moreItems = [
     { id: '0', name: 'Open', onClick: onOpenHarmony },
     { id: '1', name: 'Delete', onClick: onDeleteDesire },
-  ]
+  ];
 
   return (
     <>
       <div className='w-[250px] border dark:border-gray-700 p-2 rounded-md'>
         {/* <h4 className="mt-10">Hello there</h4>
-			<p className="mt-5">Thank you please</p> */}
+          <p className="mt-5">Thank you please</p> */}
         <button className='rounded-md overflow-auto block'>
           <img
             className='w-[250px] h-[250px] object-cover'
@@ -238,7 +238,7 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
               items={moreItems}
               mode='none'
               onChange={(_item) => {
-                ;(_item as (typeof moreItems)[number]).onClick()
+                (_item as (typeof moreItems)[number]).onClick();
               }}
             />
           </div>
@@ -253,9 +253,9 @@ export const ProjectLineItem: React.FunctionComponent<ProjectLineItemProps> = ({
         message={`Are you sure you want to delete the project ${item.label}`}
         onConfirm={onDelete}
         onCancel={() => {
-          setShowDeleteConfirm(false)
+          setShowDeleteConfirm(false);
         }}
       />
     </>
-  )
-}
+  );
+};
