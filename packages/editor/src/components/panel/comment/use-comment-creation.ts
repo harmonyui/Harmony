@@ -72,14 +72,12 @@ export const useCommentCreation = () => {
       })
 
       setIsDialogOpen(false)
-      setPosition(null)
     },
     [position, addChatBubble, branchId],
   )
 
   const handleClose = useCallback(() => {
     setIsDialogOpen(false)
-    setPosition(null)
   }, [])
 
   return {

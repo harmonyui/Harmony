@@ -43,6 +43,9 @@ export function findElementFromId(
   if (!rootElement) {
     throw new Error('Cannot find root element')
   }
+  if (rootElement.matches(selector)) {
+    return rootElement
+  }
   const elements = rootElement.querySelectorAll(selector)
   if (elements.length > 0) {
     return elements[0] as HTMLElement
