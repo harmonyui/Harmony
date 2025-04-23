@@ -11,7 +11,7 @@ export async function createPullRequest({
   pullRequest: { title: string; body: string }
   gitRepository: GitRepository
 }) {
-  const url = await gitRepository.createPullRequest(
+  const { url, number } = await gitRepository.createPullRequest(
     branch.name,
     pullRequest.title,
     pullRequest.body,
@@ -24,6 +24,7 @@ export async function createPullRequest({
       body: pullRequest.body,
       url,
       branch_id: branch.id,
+      number,
     },
   })
 
@@ -32,5 +33,6 @@ export async function createPullRequest({
     title: newPullRequest.title,
     body: newPullRequest.body,
     url: newPullRequest.url,
+    number: newPullRequest.number,
   } satisfies PullRequest
 }

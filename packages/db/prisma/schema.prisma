@@ -87,6 +87,7 @@ model PullRequest {
   url           String
   branch_id     String @unique
   branch        Branch @relation(fields: [branch_id], references: [id])
+  number        Int
 }
 
 model Location {

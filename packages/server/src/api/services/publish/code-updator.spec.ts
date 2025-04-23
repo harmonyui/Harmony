@@ -154,7 +154,10 @@ describe('code-updator', () => {
         return undefined
       },
       async createPullRequest() {
-        return ''
+        return {
+          number: 0,
+          url: '',
+        }
       },
       async updateFilesAndCommit() {
         return undefined
@@ -167,6 +170,9 @@ describe('code-updator', () => {
       },
       async getProjectUrl() {
         return ''
+      },
+      async createComment() {
+        return undefined
       },
       repository,
     }

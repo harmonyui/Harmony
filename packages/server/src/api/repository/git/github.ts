@@ -1,7 +1,3 @@
-/* eslint-disable no-nested-ternary -- ok*/
-
-/* eslint-disable no-await-in-loop -- ok*/
-/* eslint-disable @typescript-eslint/no-unnecessary-condition -- ok*/
 import fs from 'node:fs'
 import crypto from 'node:crypto'
 import type { Octokit } from 'octokit'
@@ -393,7 +389,20 @@ export class GithubRepository implements GitRepository {
       head: branch,
     })
 
-    return response.data.html_url
+    return {
+      number: response.data.number,
+      url: response.data.html_url,
+    }
+  }
+
+  public async createComment(pullRequestNumber: number, comment: string) {
+    const octokit = await this.getOctokit()
+    const response = await octokit.rest.issues.createComment({
+      owner: this.repository.owner,
+      repo: this.repository.name,
+      issue_number: pullRequestNumber,
+      body: comment,
+    })
   }
 
   private decodeContent(content: string): string {

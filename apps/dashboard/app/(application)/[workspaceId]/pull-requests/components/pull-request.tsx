@@ -57,6 +57,7 @@ export const CreateNewPullRequestModal: React.FunctionComponent<
     title: '',
     body: '',
     url: '',
+    number: 0,
   })
   const changeProperty = useChangeProperty<PullRequest>(setPullRequest)
   const [branchItem, setBranchItem] = useState<BranchItem | undefined>(branch)

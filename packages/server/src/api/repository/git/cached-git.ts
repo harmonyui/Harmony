@@ -47,8 +47,11 @@ export class CachedGitRepository implements GitRepository {
     branch: string,
     title: string,
     body: string,
-  ): Promise<string> {
-    return ''
+  ): Promise<{ number: number; url: string }> {
+    return {
+      number: 0,
+      url: '',
+    }
   }
   public async getUpdatedFiles(
     branch: string,
@@ -62,4 +65,5 @@ export class CachedGitRepository implements GitRepository {
   public async getProjectUrl(): Promise<string> {
     return ''
   }
+  public async createComment() {}
 }

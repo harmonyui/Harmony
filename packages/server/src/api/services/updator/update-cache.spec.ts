@@ -92,7 +92,10 @@ describe('update-cache', () => {
             return undefined
           },
           async createPullRequest() {
-            return ''
+            return {
+              number: 0,
+              url: '',
+            }
           },
           async updateFilesAndCommit() {
             return undefined
@@ -105,6 +108,9 @@ describe('update-cache', () => {
           },
           async getProjectUrl() {
             return ''
+          },
+          async createComment() {
+            return undefined
           },
           repository,
         }

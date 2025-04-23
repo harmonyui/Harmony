@@ -27,6 +27,7 @@ export const pullRequestSchema = z.object({
   title: z.string(),
   body: z.string(),
   url: z.string(),
+  number: z.number(),
 })
 
 export type PullRequest = z.infer<typeof pullRequestSchema>

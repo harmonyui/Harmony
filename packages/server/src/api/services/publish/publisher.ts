@@ -37,6 +37,11 @@ export class Publisher {
       gitRepository: this.gitRepository,
     })
 
+    await this.gitRepository.createComment(
+      newPullRequest.number,
+      `<p><a href="${branch.url}?branch-id=${branch.id}">View Changes</a></p>`,
+    )
+
     return newPullRequest
   }
 

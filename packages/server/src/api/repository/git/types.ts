@@ -44,9 +44,10 @@ export interface GitRepository {
     branch: string,
     title: string,
     body: string,
-  ) => Promise<string>
+  ) => Promise<{ number: number; url: string }>
   getUpdatedFiles: (branch: string, oldRef: string) => Promise<UpdateFile[]>
   repository: Repository
   getStarCount: () => Promise<number>
   getProjectUrl: () => Promise<string>
+  createComment: (number: number, comment: string) => Promise<void>
 }

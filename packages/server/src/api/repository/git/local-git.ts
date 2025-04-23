@@ -1,4 +1,3 @@
-/* eslint-disable no-await-in-loop -- ok*/
 import path from 'node:path'
 import fs from 'node:fs'
 import type { Change } from 'diff'
@@ -101,7 +100,9 @@ export class LocalGitRepository implements GitRepository {
   > {
     throw new Error('Not implemented')
   }
-  public async createPullRequest(branch: string): Promise<string> {
+  public async createPullRequest(
+    branch: string,
+  ): Promise<{ number: number; url: string }> {
     const updates = this.commits[branch] as LocalUpdate[] | undefined
     if (!updates) {
       throw new Error('Cannot find updates')
@@ -111,6 +112,11 @@ export class LocalGitRepository implements GitRepository {
       fs.writeFileSync(file, update.newContent, 'utf8')
     }
 
-    return ''
+    return {
+      number: 0,
+      url: '',
+    }
   }
+
+  public async createComment() {}
 }

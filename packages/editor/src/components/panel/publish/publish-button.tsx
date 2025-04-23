@@ -107,6 +107,7 @@ export const PublishProvider: React.FunctionComponent<{
       title: currentBranch.name,
       body: '',
       url: '',
+      number: 0,
     }
     if (!pullRequestProps) {
       await sendPullRequest(pullRequest, setErrorProps)
@@ -272,6 +273,7 @@ const Connected: React.FunctionComponent = () => {
         title: branch.name,
         body: '',
         url: '',
+        number: 0,
       },
     [publishState],
   )
