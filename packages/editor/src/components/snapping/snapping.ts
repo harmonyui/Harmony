@@ -2097,13 +2097,13 @@ export const useDraggable = ({
             end: stopDragging,
           },
           modifiers,
-          cursorChecker: function (a, b, e) {
+          cursorChecker: function (a, b, e, interacting) {
             const getCursor = () => {
               if ((e as HTMLElement).contentEditable === 'true') {
                 return 'auto'
               }
 
-              return 'default'
+              return 'move'
             }
             const cursor = getCursor()
             e.style.cursor = cursor
