@@ -58,6 +58,7 @@ export class PrismaComponentUpdateRepository
         componentId: up.id,
         childIndex: up.childIndex,
         isGlobal: up.isGlobal,
+        dateModified: up.dateModified,
         ...selected,
       }
     })
@@ -97,6 +98,7 @@ export class PrismaComponentUpdateRepository
       isGlobal: update.is_global,
       value: update.value,
       oldValue: update.old_value,
+      dateModified: update.date_modified,
     }
   }
 }

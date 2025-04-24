@@ -24,7 +24,6 @@ interface ComponentUpdatorProps {
   isSaving: boolean
   setIsSaving: (value: boolean) => void
   isPublished: boolean
-  fonts: Font[] | undefined
   onError: (error: string) => void
   environment: Environment
   behaviors: BehaviorType[]
@@ -35,7 +34,6 @@ export const useComponentUpdator = ({
   isSaving,
   isPublished,
   setIsSaving,
-  fonts,
   onError,
 }: ComponentUpdatorProps) => {
   const [undoStack, setUndoStack] = useState<HarmonyCommand[]>([])
@@ -173,7 +171,7 @@ export const useComponentUpdator = ({
   const change = async ({ update }: HarmonyCommandChange): Promise<void> => {
     if (!rootComponent) return
     for (const up of update) {
-      await makeUpdates([up], fonts, rootElement)
+      await makeUpdates([up], rootElement)
     }
 
     onChange && onChange()

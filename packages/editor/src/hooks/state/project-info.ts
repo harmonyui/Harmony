@@ -20,12 +20,14 @@ export interface ProjectInfoState {
   showWelcomeScreen: boolean
   isDemo: boolean | undefined
   isInitialized: boolean
+  isReady: boolean
   isRepositoryConnected: boolean
   isOverlay: boolean
   localRootPath: string | undefined
   harmonyTokens: Token[]
   fonts: Font[] | undefined
   setIsOverlay: (value: boolean) => void
+  setIsReady: (value: boolean) => void
   updateWelcomeScreen: (value: boolean) => void
   initializeProject: (props: {
     branchId: string
@@ -53,6 +55,7 @@ export const createProjectInfoSlice = createHarmonySlice<
   currentBranch: { name: '', id: '' },
   repositoryId: undefined,
   isInitialized: false,
+  isReady: false,
   isOverlay: false,
   isRepositoryConnected: false,
   harmonyTokens: [],
@@ -91,6 +94,9 @@ export const createProjectInfoSlice = createHarmonySlice<
           !currentBranch && branch ? [...prev.branches, branch] : prev.branches,
       }))
     }
+  },
+  setIsReady(value: boolean) {
+    set({ isReady: value })
   },
   async initializeProject({
     branchId,

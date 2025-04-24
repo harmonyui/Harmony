@@ -14,7 +14,7 @@ import type {
   ComponentToolData,
   ToolAttributeValue,
 } from './types'
-import { getTextToolsFromAttributes } from './utils'
+import { getTextToolsFromAttributes, getTokenValue } from './utils'
 
 interface ComponentAttributeContextProps {
   selectedComponent: HTMLElement | undefined
@@ -76,6 +76,7 @@ export const ComponentAttributeProvider: React.FunctionComponent<
       value: values.value,
       oldValue,
       childIndex,
+      dateModified: new Date(),
     }
 
     onChange([update])
@@ -109,18 +110,7 @@ export const ComponentAttributeProvider: React.FunctionComponent<
       valueOverride?: string,
     ): Token['values'][number] | undefined => {
       const value = valueOverride ?? getAttribute(name)
-      const token = tokens.find((t) => t.name === name)
-      // If the token is found and the value is not empty and is not a compound value
-      if (token && value && value.split(' ').length === 1) {
-        const tokenValue = token.values.find((v) =>
-          compareCSSValues(name, v.value, value),
-        )
-        if (tokenValue) {
-          return tokenValue
-        }
-      }
-
-      return undefined
+      return getTokenValue(name, value, tokens)
     },
     [getAttribute, tokens],
   )

@@ -126,6 +126,7 @@ export const ElementContextMenu = ({
       childIndex: newChildIndex,
       oldValue: createUpdate(unwrap),
       value: createUpdate(wrap),
+      dateModified: new Date(),
     }
     onAttributesChange([update])
   })
@@ -156,6 +157,7 @@ export const ElementContextMenu = ({
       childIndex,
       oldValue: createUpdate(wrap),
       value: createUpdate(unwrap),
+      dateModified: new Date(),
     }
     onAttributesChange([update])
   })

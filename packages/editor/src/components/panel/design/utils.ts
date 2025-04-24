@@ -58,7 +58,7 @@ export const getComponentName = (component: ComponentElement): string => {
 }
 
 export function compareCSSValues(
-  attributeName: CommonTools,
+  attributeName: string,
   value1: string,
   value2: string,
 ): boolean {

@@ -13,10 +13,10 @@ import { useImageButton } from '../image/image-button'
 import { useDesignButton } from '../design/design-button'
 import { useCommentButton } from '../comment/comment-button'
 import { useState } from 'react'
-import { motion, AnimatePresence } from 'framer-motion'
 import { SelectProject } from '../project/select-project'
 import { AnimateButton } from '@harmony/ui/src/components/design/animate-button'
 import { AnimateOpenClose } from '@harmony/ui/src/components/design/animate-open-close'
+import { useVersionsButton } from '../versions/versions-button'
 
 type HarmonyToolbar = object
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
@@ -37,6 +37,11 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
     onClick: onComment,
     active: commentActive,
   } = useCommentButton()
+  const {
+    icon: VersionsIcon,
+    onVersions,
+    active: versionsActive,
+  } = useVersionsButton()
 
   const items: ToolbarItem[][] = [
     [
@@ -78,6 +83,14 @@ export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
       },
     ],
     [
+      {
+        icon: VersionsIcon,
+        mode: 'none',
+        label: 'Changes',
+        onClick: onVersions,
+        active: versionsActive,
+        disabled: previewActive,
+      },
       {
         icon: FolderIcon,
         mode: 'none',

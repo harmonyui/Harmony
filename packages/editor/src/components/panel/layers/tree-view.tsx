@@ -108,6 +108,7 @@ export const TreeView = ({ items }: TreeViewProps) => {
         parentChildIndex: newParentChildIndex,
         index: newIndex,
       }),
+      dateModified: new Date(),
     }
     onAttributesChange([update])
   }

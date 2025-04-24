@@ -102,12 +102,12 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   const setDisplayMode = useHarmonyStore((state) => state.setDisplayMode)
   const setIsOverlay = useHarmonyStore((state) => state.setIsOverlay)
   const initMutationObserverRef = useRef<MutationObserver | null>(null)
+  const setIsReady = useHarmonyStore((state) => state.setIsReady)
 
   const { executeCommand, onUndo, clearUpdates } = useComponentUpdator({
     isSaving,
     environment,
     setIsSaving,
-    fonts,
     isPublished: Boolean(pullRequest),
     branchId,
     behaviors,
@@ -205,7 +205,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         ? componentUpdates.filter(updateFilter)
         : componentUpdates
 
-      await makeUpdates(filteredUpdates, fonts, rootComponent)
+      await makeUpdates(filteredUpdates, rootComponent)
 
       if (repositoryId) {
         void updateComponentsFromIds(
@@ -263,6 +263,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
       if (harmonyContainer && harmonyContainer.className.includes('h-full')) {
         harmonyContainer.classList.add('w-full')
       }
+      setIsReady(true)
     }
   }, [rootComponent, isInitialized])
 
@@ -351,6 +352,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         value,
         oldValue,
         childIndex,
+        dateModified: new Date(),
       }
 
       onAttributesChange([update], false)
@@ -387,6 +389,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         value,
         oldValue,
         childIndex,
+        dateModified: new Date(),
       }
       onAttributesChange([update], execute)
     },
@@ -414,6 +417,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
           value: oldValue,
         } satisfies UpdateAttributeValue),
         childIndex,
+        dateModified: new Date(),
       }
       onAttributesChange([update], true)
     },
@@ -436,6 +440,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         value: createUpdate<UpdateProperty>(value),
         oldValue: createUpdate<UpdateProperty>(oldValue),
         childIndex,
+        dateModified: new Date(),
       }
       onAttributesChange([update], true)
     },

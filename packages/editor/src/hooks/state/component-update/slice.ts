@@ -22,6 +22,7 @@ import { classNameComponentUpdate } from './classname'
 import { styleComponentUpdate } from './style'
 import { textComponentUpdate } from './text'
 import { wrapComponentUpdate } from './wrap'
+import { ProjectInfoState } from '../project-info'
 
 export interface ComponentUpdateState {
   componentUpdates: ComponentUpdate[]
@@ -29,7 +30,6 @@ export interface ComponentUpdateState {
   clearComponentUpdates: () => void
   makeUpdates: (
     updates: ComponentUpdate[],
-    fonts: Font[] | undefined,
     rootElement: HTMLElement | undefined,
   ) => Promise<ComponentUpdate[]>
   deletedElements: CreatedComponent[]
@@ -38,7 +38,7 @@ export interface ComponentUpdateState {
 
 export const createComponentUpdateSlice = createHarmonySlice<
   ComponentUpdateState,
-  HarmonyCnState & ComponentState
+  HarmonyCnState & ComponentState & ProjectInfoState
 >((set, get, api) => ({
   deletedElements: [],
   componentUpdates: [],
@@ -59,7 +59,6 @@ export const createComponentUpdateSlice = createHarmonySlice<
   },
   async makeUpdates(
     updates: ComponentUpdate[],
-    fonts: Font[] | undefined,
     rootElement: HTMLElement | undefined,
   ) {
     const appliedUpdates: ComponentUpdate[] = []
@@ -191,7 +190,7 @@ export const createComponentUpdateSlice = createHarmonySlice<
         const htmlElement = element
 
         if (update.type === 'className') {
-          classNameComponentUpdate(update, htmlElement, fonts)
+          classNameComponentUpdate(update, htmlElement, get().fonts)
           appliedUpdates.push(update)
         }
       }

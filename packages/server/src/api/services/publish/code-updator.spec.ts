@@ -226,6 +226,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'flex-direction:row;padding-left:10px;',
@@ -235,6 +236,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -277,6 +279,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -310,6 +313,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '10px',
@@ -319,6 +323,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -359,6 +364,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'Yes sir',
@@ -368,6 +374,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'This is new text',
@@ -377,6 +384,7 @@ describe('code-updator', () => {
           componentId: elementInstances[3].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -421,6 +429,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '10px',
@@ -430,6 +439,7 @@ describe('code-updator', () => {
           componentId: elementInstances[3].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -472,6 +482,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '2px',
@@ -481,6 +492,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '4px',
@@ -490,6 +502,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '1.5rem',
@@ -499,6 +512,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -540,6 +554,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'font-size:15px;',
@@ -549,6 +564,7 @@ describe('code-updator', () => {
           componentId: elementInstances[3].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'More children',
@@ -558,6 +574,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'background-color:#000;',
@@ -567,6 +584,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'Label you',
@@ -576,6 +594,7 @@ describe('code-updator', () => {
           componentId: elementInstances[4].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -634,6 +653,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -686,6 +706,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -723,6 +744,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'There good sir',
@@ -732,6 +754,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '#000',
@@ -741,6 +764,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '#000',
@@ -750,6 +774,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'Goodbye sir',
@@ -759,6 +784,7 @@ describe('code-updator', () => {
           componentId: elementInstances[8].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'Thank you sir',
@@ -768,6 +794,7 @@ describe('code-updator', () => {
           componentId: elementInstances[8].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'block',
@@ -777,6 +804,7 @@ describe('code-updator', () => {
           componentId: elementInstances[6].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '10px',
@@ -786,6 +814,7 @@ describe('code-updator', () => {
           componentId: elementInstances[6].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'name1-changed',
@@ -795,6 +824,7 @@ describe('code-updator', () => {
           componentId: elementInstances[16].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'name2-changed',
@@ -804,6 +834,7 @@ describe('code-updator', () => {
           componentId: elementInstances[16].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -869,6 +900,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'Change There',
@@ -878,6 +910,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -893,6 +926,7 @@ describe('code-updator', () => {
           componentId: 'new-frame-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -908,6 +942,7 @@ describe('code-updator', () => {
           componentId: 'new-frame-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -923,6 +958,7 @@ describe('code-updator', () => {
           componentId: 'new-frame-3',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'Change this',
@@ -932,6 +968,7 @@ describe('code-updator', () => {
           componentId: 'new-frame-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '20px',
@@ -941,6 +978,7 @@ describe('code-updator', () => {
           componentId: 'new-frame-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '8px',
@@ -950,6 +988,7 @@ describe('code-updator', () => {
           componentId: 'new-frame-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1002,6 +1041,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'Change There',
@@ -1011,6 +1051,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -1026,6 +1067,7 @@ describe('code-updator', () => {
           componentId: 'new-frame-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<DeleteComponent>({
@@ -1037,6 +1079,7 @@ describe('code-updator', () => {
           componentId: 'new-frame-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1085,6 +1128,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: '8px',
@@ -1094,6 +1138,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<ReorderComponent>({
@@ -1107,6 +1152,7 @@ describe('code-updator', () => {
           componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1158,6 +1204,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1215,6 +1262,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<UpdateProperty>({
@@ -1234,6 +1282,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1293,6 +1342,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -1308,6 +1358,7 @@ describe('code-updator', () => {
           componentId: 'new-button',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'component',
@@ -1326,6 +1377,7 @@ describe('code-updator', () => {
           componentId: 'copy-paste-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'text',
@@ -1335,6 +1387,7 @@ describe('code-updator', () => {
           componentId: 'new-button',
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'text',
@@ -1344,6 +1397,7 @@ describe('code-updator', () => {
           componentId: elementInstances[2].id,
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'className',
@@ -1353,6 +1407,7 @@ describe('code-updator', () => {
           componentId: 'copy-paste-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'component',
@@ -1364,6 +1419,7 @@ describe('code-updator', () => {
           componentId: 'new-button',
           childIndex: 1,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1416,6 +1472,7 @@ describe('code-updator', () => {
           componentId: elementInstances[4].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'component',
@@ -1434,6 +1491,7 @@ describe('code-updator', () => {
           componentId: 'new-button',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1477,6 +1535,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'className',
@@ -1486,6 +1545,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -1501,6 +1561,7 @@ describe('code-updator', () => {
           componentId: 'new-button',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'className',
@@ -1510,6 +1571,7 @@ describe('code-updator', () => {
           componentId: 'new-button',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -1525,6 +1587,7 @@ describe('code-updator', () => {
           componentId: 'new-button-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'className',
@@ -1534,6 +1597,7 @@ describe('code-updator', () => {
           componentId: 'new-button-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'className',
@@ -1544,6 +1608,7 @@ describe('code-updator', () => {
           componentId: 'new-button-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'text',
@@ -1553,6 +1618,7 @@ describe('code-updator', () => {
           componentId: 'new-button-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -1568,6 +1634,7 @@ describe('code-updator', () => {
           componentId: 'new-link-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<UpdateAttributeValue>({
@@ -1581,6 +1648,7 @@ describe('code-updator', () => {
           componentId: 'new-link-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'I <3 You',
@@ -1590,6 +1658,7 @@ describe('code-updator', () => {
           componentId: 'new-link-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -1605,6 +1674,7 @@ describe('code-updator', () => {
           componentId: 'new-link-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: 'Link 2',
@@ -1614,6 +1684,7 @@ describe('code-updator', () => {
           componentId: 'new-link-2',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<AddComponent>({
@@ -1629,6 +1700,7 @@ describe('code-updator', () => {
           componentId: 'new-image-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           value: createUpdate<UpdateAttributeValue>({
@@ -1642,6 +1714,7 @@ describe('code-updator', () => {
           componentId: 'new-image-1',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1698,6 +1771,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1804,6 +1878,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1850,6 +1925,7 @@ describe('code-updator', () => {
           componentId: btoa('file2:new-component'),
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'component',
@@ -1867,6 +1943,7 @@ describe('code-updator', () => {
           componentId: btoa('file1:new-wrapped-component-2'),
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'component',
@@ -1884,6 +1961,7 @@ describe('code-updator', () => {
           componentId: 'new-wrapped-component-3',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'component',
@@ -1895,6 +1973,7 @@ describe('code-updator', () => {
           componentId: btoa('file1:new-wrapped-component-2'),
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'component',
@@ -1916,6 +1995,7 @@ describe('code-updator', () => {
           componentId: 'new-wrapped-component-4',
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -1976,6 +2056,7 @@ describe('code-updator', () => {
           componentId: btoa('dataDependencies:new-component'),
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
         {
           type: 'component',
@@ -1987,6 +2068,7 @@ describe('code-updator', () => {
           componentId: elementInstances[3].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 
@@ -2031,6 +2113,7 @@ describe('code-updator', () => {
           componentId: elementInstances[0].id,
           childIndex: 0,
           isGlobal: false,
+          dateModified: new Date(),
         },
       ]
 

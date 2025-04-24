@@ -111,6 +111,7 @@ export const createNewElementUpdates = ({
         parentId,
       }),
       isGlobal: false,
+      dateModified: new Date(),
     })
   } else if (element.dataset.harmonyText !== 'true') {
     updates.push({
@@ -135,6 +136,7 @@ export const createNewElementUpdates = ({
         parentId,
       }),
       isGlobal: false,
+      dateModified: new Date(),
     })
   }
   const animationStyles = styleInfo.matches.filter((selector) =>
@@ -193,6 +195,7 @@ export const createNewElementUpdates = ({
         value: font.id,
         oldValue: '',
         isGlobal: false,
+        dateModified: new Date(),
       })
       continue
     }
@@ -224,6 +227,7 @@ export const createNewElementUpdates = ({
         value,
         oldValue: '',
         isGlobal: false,
+        dateModified: new Date(),
       })
     }
   }
@@ -240,6 +244,7 @@ export const createNewElementUpdates = ({
       value: textElement.textContent || '',
       oldValue: '',
       isGlobal: false,
+      dateModified: new Date(),
     })
   }
 
@@ -260,6 +265,7 @@ export const createNewElementUpdates = ({
         action: 'update',
       }),
       isGlobal: false,
+      dateModified: new Date(),
     })
   }
 
@@ -280,6 +286,7 @@ export const createNewElementUpdates = ({
         action: 'update',
       }),
       isGlobal: false,
+      dateModified: new Date(),
     })
   }
 

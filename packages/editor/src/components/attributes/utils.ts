@@ -19,6 +19,8 @@ import type {
   ComponentToolData,
   ToolAttributeValue,
 } from './types'
+import { Token } from '@harmony/util/src/types/tokens'
+import { compareCSSValues } from '../panel/design/utils'
 
 export const getTextToolsFromAttributes = (
   element: HTMLElement,
@@ -139,6 +141,21 @@ export const getTextToolsFromAttributes = (
   ])
 
   return all
+}
+
+export const getTokenValue = (name: string, value: string, tokens: Token[]) => {
+  const token = tokens.find((t) => t.name === name)
+  // If the token is found and the value is not empty and is not a compound value
+  if (token && value && value.split(' ').length === 1) {
+    const tokenValue = token.values.find((v) =>
+      compareCSSValues(name, v.value, value),
+    )
+    if (tokenValue) {
+      return tokenValue
+    }
+  }
+
+  return undefined
 }
 
 function getAppliedComputedStyles(

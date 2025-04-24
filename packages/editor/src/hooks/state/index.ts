@@ -11,6 +11,7 @@ import { createImageCDNSlice } from './image-cdn'
 import { createHarmonyCnSlice } from './harmonycn'
 import { createCopyPasteComponentSlice } from './copy-paste-component'
 import { createChatBubblesSlice } from './chat-bubble'
+import { createVersionUpdatesSlice } from './version-updates'
 
 export const useHarmonyStore = createHarmonyStore(
   createComponentStateSlice,
@@ -25,4 +26,5 @@ export const useHarmonyStore = createHarmonyStore(
   createHarmonyCnSlice,
   createCopyPasteComponentSlice,
   createChatBubblesSlice,
+  createVersionUpdatesSlice,
 )

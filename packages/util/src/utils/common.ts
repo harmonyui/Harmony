@@ -11,6 +11,10 @@ export const displayDateFull = (date: Date) => {
   return dayjs(date).format('MMM DD, YYYY')
 }
 
+export const displayDateShort = (date: Date): string => {
+  return dayjs(date).format('MMM DD')
+}
+
 export const displayTime = (date: Date): string => {
   return dayjs(date).format('h:mm A')
 }

@@ -7,7 +7,7 @@
     "config": "tailwind.config.ts",
     "css": "",
     "baseColor": "neutral",
-    "cssVariables": true
+    "cssVariables": false
   },
   "iconLibrary": "lucide",
   "aliases": {
@@ -15,6 +15,6 @@
     "hooks": "src/hooks",
     "lib": "src/lib",
     "utils": "src/lib/utils",
-    "ui": "src/components"
+    "ui": "src/components/shadcn"
   }
 }

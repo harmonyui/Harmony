@@ -63,6 +63,7 @@ export const useUpdateComponent = () => {
           index,
           action: 'create',
         }),
+        dateModified: new Date(),
       }
       onAttributesChange([update])
     },
@@ -93,6 +94,7 @@ export const useUpdateComponent = () => {
         index,
         action: 'create',
       }),
+      dateModified: new Date(),
     }
     onAttributesChange([update])
   }, [])

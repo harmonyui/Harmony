@@ -226,6 +226,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
             value,
             oldValue,
             childIndex,
+            dateModified: new Date(),
           }
 
           updates.push(update)

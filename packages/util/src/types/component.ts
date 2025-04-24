@@ -18,6 +18,7 @@ export const updateSchema = z.object({
   behavior: z.optional(z.array(behaviorTypesSchema)),
   //Whether or not a certain change affects all components, or just one instance of a component
   isGlobal: z.boolean(),
+  dateModified: z.date(),
 })
 export type ComponentUpdate = z.infer<typeof updateSchema>
 

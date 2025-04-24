@@ -13,6 +13,7 @@ import { LayoutPanel } from './layers/layout-panel'
 import { AIPanel } from './ai/ai-panel'
 import { ImagePanel } from './image/image-panel'
 import { ComponentContextMenu } from '../component-context-menu'
+import { VersionsPanel } from './versions/versions-panel'
 
 export interface HarmonyPanelProps {
   onAttributesChange: (updates: ComponentUpdateWithoutGlobal[]) => void
@@ -46,6 +47,7 @@ export const HarmonyPanel: React.FunctionComponent<
                 <AIPanel />
                 <ImagePanel />
                 <ComponentContextMenu />
+                <VersionsPanel />
                 {inspector}
               </div>
             </div>

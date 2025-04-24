@@ -179,6 +179,7 @@ export const useCopyPasteDelete = () => {
           componentId,
           childIndex,
           isGlobal: false,
+          dateModified: new Date(),
         })
       })
       return allUpdates

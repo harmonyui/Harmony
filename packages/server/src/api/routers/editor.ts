@@ -410,6 +410,7 @@ const editorRoutes = {
             ?.value ?? '',
         isGlobal: false,
         childIndex: input.childIndex,
+        dateModified: new Date(),
       }))
 
       return updates

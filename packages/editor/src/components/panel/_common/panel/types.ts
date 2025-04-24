@@ -3,4 +3,5 @@ export enum Panels {
   Layers = 'layers-panel',
   AI = 'ai-panel',
   Image = 'image-panel',
+  Versions = 'versions-panel',
 }

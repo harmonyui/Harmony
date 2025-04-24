@@ -182,31 +182,6 @@ export const createComponentStateSlice = createHarmonySlice<
           return
         }
 
-        const findElement = (
-          currComponent: ComponentElement,
-          elementIdToFind: string,
-          childIndexToFind: number,
-        ): ComponentElement | undefined => {
-          if (
-            currComponent.id === elementIdToFind &&
-            currComponent.childIndex === childIndexToFind
-          )
-            return currComponent
-
-          for (const child of currComponent.children) {
-            const foundInChild = findElement(
-              child,
-              elementIdToFind,
-              childIndexToFind,
-            )
-            if (foundInChild) {
-              return foundInChild
-            }
-          }
-
-          return undefined
-        }
-
         const { componentId: id, childIndex } =
           getComponentIdAndChildIndex(element)
 
@@ -262,7 +237,6 @@ export const createComponentStateSlice = createHarmonySlice<
         if (!curr && prev) {
           void get().makeUpdates(
             reverseUpdates(get().componentUpdates),
-            get().fonts,
             get().rootComponent?.element,
           )
         }
@@ -270,3 +244,24 @@ export const createComponentStateSlice = createHarmonySlice<
     },
   }
 })
+
+export const findElement = (
+  currComponent: ComponentElement,
+  elementIdToFind: string,
+  childIndexToFind: number,
+): ComponentElement | undefined => {
+  if (
+    currComponent.id === elementIdToFind &&
+    currComponent.childIndex === childIndexToFind
+  )
+    return currComponent
+
+  for (const child of currComponent.children) {
+    const foundInChild = findElement(child, elementIdToFind, childIndexToFind)
+    if (foundInChild) {
+      return foundInChild
+    }
+  }
+
+  return undefined
+}
