@@ -1,0 +1,45 @@
+name: Chrome Deploy
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: "📦 install dependencies"
+        uses: pnpm/action-setup@v3
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "pnpm"
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Build extension
+        run: pnpm build --filter=chrome
+
+      - name: Update manifest version
+        run: |
+          VERSION="1.$(( $GITHUB_RUN_NUMBER + 20 ))"
+          jq --arg version "$VERSION" '.version = $version' apps/chrome/extension/manifest.json > temp.json && mv temp.json apps/chrome/extension/manifest.json
+
+      - name: Create ZIP file
+        run: |
+          zip -r chrome-extension.zip apps/chrome/extension/
+
+      - name: Upload to Chrome Web Store
+        uses: mobilefirstllc/cws-publish@latest
+        with:
+          action: "publish"
+          client_id: ${{ secrets.CHROME_CLIENT_ID }}
+          client_secret: ${{ secrets.CHROME_CLIENT_SECRET }}
+          refresh_token: ${{ secrets.CHROME_REFRESH_TOKEN }}
+          extension_id: "bkpgfoekhinnaooppklccljgdoaababj"
+          zip_file: "chrome-extension.zip"
