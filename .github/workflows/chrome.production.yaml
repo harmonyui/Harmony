@@ -24,13 +24,16 @@ jobs:
         run: pnpm install
 
       - name: Build extension
-        run: pnpm build
-        working-directory: apps/chrome
+        run: pnpm build --filter=chrome
+
+      - name: Update manifest version
+        run: |
+          VERSION="1.$(( $GITHUB_RUN_NUMBER + 20 ))"
+          jq --arg version "$VERSION" '.version = $version' apps/chrome/extension/manifest.json > temp.json && mv temp.json apps/chrome/extension/manifest.json
 
       - name: Create ZIP file
         run: |
-          cd apps/chrome
-          zip -r ../../chrome-extension.zip extension/
+          zip -r chrome-extension.zip apps/chrome/extension/
 
       - name: Upload to Chrome Web Store
         uses: mobilefirstllc/cws-publish@latest
