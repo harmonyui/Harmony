@@ -27,6 +27,7 @@ import {
 import { VersionUpdate } from '../../../utils/version-updates'
 import { displayDateFull } from '@harmony/util/src/utils/common'
 import { EyeIcon, EyeOffIcon } from '@harmony/ui/src/components/core/icons'
+import { AnimatePresence, motion } from 'framer-motion'
 
 interface VersionsProps {
   data: VersionUpdate[]
@@ -175,36 +176,43 @@ export const VersionsView: React.FunctionComponent<VersionsProps> = ({
                         <ChevronRight className='h-4 w-4 text-gray-500' />
                       )}
                     </button>
-                    {expandedDays[day.date.toISOString()] && (
-                      <div className='ml-2 mt-1 space-y-1 border-l pl-3 border-gray-400'>
-                        {day.changes.map((change) => (
-                          <div key={change.id} className='relative'>
-                            {hiddenChanges.includes(change.id) ? (
-                              <div className='absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary' />
-                            ) : null}
-                            <button
-                              className='flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-gray-200'
-                              onClick={() => onSelect(change)}
-                              onMouseOver={() => onHover(change)}
-                            >
-                              <div className='flex w-full items-center justify-between'>
-                                <div className='flex items-center gap-1.5'>
-                                  {/* <Badge
+                    <AnimatePresence>
+                      {expandedDays[day.date.toISOString()] && (
+                        <motion.div
+                          initial={{ height: 0, opacity: 0 }}
+                          animate={{ height: 'auto', opacity: 1 }}
+                          exit={{ height: 0, opacity: 0 }}
+                          transition={{ duration: 0.2 }}
+                          className='ml-2 mt-1 space-y-1 border-l pl-3 border-gray-400 overflow-hidden'
+                        >
+                          {day.changes.map((change) => (
+                            <div key={change.id} className='relative'>
+                              {hiddenChanges.includes(change.id) ? (
+                                <div className='absolute -left-4 top-1/2 -translate-y-1/2 w-2 h-2 rounded-full bg-primary' />
+                              ) : null}
+                              <button
+                                className='flex w-full flex-col items-start rounded-md px-2 py-1.5 text-left text-sm hover:bg-gray-200'
+                                onClick={() => onSelect(change)}
+                                onMouseOver={() => onHover(change)}
+                              >
+                                <div className='flex w-full items-center justify-between'>
+                                  <div className='flex items-center gap-1.5'>
+                                    {/* <Badge
                                   variant={getBadgeVariant(change.changeType)}
                                   className='capitalize text-xs px-1 py-0'
                                 >
                                   {change.changeType.substring(0, 1)}
                                 </Badge> */}
-                                  <span className='font-medium truncate'>
-                                    {change.element}
-                                  </span>
+                                    <span className='font-medium truncate'>
+                                      {change.element}
+                                    </span>
+                                  </div>
+                                  <div className='flex items-center text-xs text-gray-500'>
+                                    <Clock className='mr-1 h-3 w-3' />
+                                    {change.time}
+                                  </div>
                                 </div>
-                                <div className='flex items-center text-xs text-gray-500'>
-                                  <Clock className='mr-1 h-3 w-3' />
-                                  {change.time}
-                                </div>
-                              </div>
-                              {/* <div className='mt-1 w-full flex gap-1'>
+                                {/* <div className='mt-1 w-full flex gap-1'>
                               <div className='w-1/2 h-12 rounded overflow-hidden border'>
                                 <img
                                   src={change.beforeImage || '/placeholder.svg'}
@@ -220,17 +228,18 @@ export const VersionsView: React.FunctionComponent<VersionsProps> = ({
                                 />
                               </div>
                             </div> */}
-                              <p className='mt-0.5 text-xs text-gray-500 truncate w-full'>
-                                {change.description}
-                              </p>
-                              <div className='mt-0.5 text-xs text-gray-500'>
-                                by {change.author}
-                              </div>
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    )}
+                                <p className='mt-0.5 text-xs text-gray-500 truncate w-full'>
+                                  {change.description}
+                                </p>
+                                <div className='mt-0.5 text-xs text-gray-500'>
+                                  by {change.author}
+                                </div>
+                              </button>
+                            </div>
+                          ))}
+                        </motion.div>
+                      )}
+                    </AnimatePresence>
                   </div>
                 ))
               ) : (
