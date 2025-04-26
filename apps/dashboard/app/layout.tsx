@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './global.css'
 import { HarmonySetup } from 'harmony-ai-editor/src'
 import 'harmony-ai-editor/src/global-provider'
-import { ClerkProvider, useUser } from '@clerk/nextjs'
+import { ClerkProvider } from '@clerk/nextjs'
 import { fonts, mulish } from '@harmony/util/src/fonts'
 import { TrpcProvider } from '../utils/trpc-provider'
 
@@ -19,7 +19,6 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
-  const { user } = useUser()
   return (
     <ClerkProvider>
       <TrpcProvider>
@@ -28,33 +27,33 @@ export default function RootLayout({
             className={`${mulish.className} h-full bg-white dark:bg-gray-900`}
           >
             {children}
-            {process.env.ENV === 'staging' && user ? (
+            {process.env.ENV === 'staging' ? (
               <HarmonySetup
                 repositoryId={repositoryId}
                 fonts={fonts}
                 environment='staging'
                 overlay
                 user={{
-                  id: user.id,
-                  firstName: user.firstName ?? '',
-                  lastName: user.lastName ?? '',
-                  email: user.emailAddresses[0].emailAddress,
-                  imageUrl: user.imageUrl,
+                  id: '123',
+                  firstName: 'John',
+                  lastName: 'Doe',
+                  email: 'john.doe@example.com',
+                  imageUrl: 'https://example.com/image.png',
                 }}
               />
             ) : null}
-            {process.env.ENV === 'development' && user ? (
+            {process.env.ENV === 'development' ? (
               <HarmonySetup
                 repositoryId={repositoryId}
                 fonts={fonts}
                 environment='development'
                 overlay
                 user={{
-                  id: user.id,
-                  firstName: user.firstName ?? '',
-                  lastName: user.lastName ?? '',
-                  email: user.emailAddresses[0].emailAddress,
-                  imageUrl: user.imageUrl,
+                  id: '123',
+                  firstName: 'John',
+                  lastName: 'Doe',
+                  email: 'john.doe@example.com',
+                  imageUrl: 'https://example.com/image.png',
                 }}
               />
             ) : null}
