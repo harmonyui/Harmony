@@ -1,5 +1,5 @@
 import * as path from 'node:path'
-import type * as t from '@babel/types'
+import * as t from '@babel/types'
 import type { NodeBase } from '../types'
 import { Node } from '../types'
 
@@ -29,6 +29,9 @@ export class ImportStatement extends Node<
   }
 
   public getName() {
+    if (t.isImportSpecifier(this.node) && t.isIdentifier(this.node.imported)) {
+      return this.node.imported.name
+    }
     return this.node.local.name
   }
 

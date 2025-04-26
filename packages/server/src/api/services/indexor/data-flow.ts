@@ -771,6 +771,20 @@ const addImportSpecifier: AddEdge<
   )
   graph.setNode(newNode)
   graph.tryConnectImportStatementToDefinition(newNode)
+
+  // If there is an import alias (like import { Button as ButtonAlias })
+  // we want to add an edge from the local alias to the statement
+  const localNode = isImportSpecifier(node)
+    ? graph.createNode(
+        getSnippetFromNode(node.node.local),
+        node.path.get('local'),
+      )
+    : newNode
+  if (localNode.id !== newNode.id) {
+    addDataEdge(localNode, graph)
+    graph.addDataDependency(localNode.id, newNode.id)
+  }
+
   return []
 }
 

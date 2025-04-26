@@ -1452,7 +1452,7 @@ describe('code-updator', () => {
       )
     })
 
-    it('Should do updates with multple layers', async () => {
+    it('Should do updates with multiple layers', async () => {
       const { codeUpdator, elementInstances } = await setupGitRepo(
         ['file1', 'file2'],
         {
@@ -1469,7 +1469,7 @@ describe('code-updator', () => {
             index: 0,
           }),
           oldValue: '',
-          componentId: elementInstances[4].id,
+          componentId: elementInstances[5].id,
           childIndex: 0,
           isGlobal: false,
           dateModified: new Date(),
@@ -1479,7 +1479,7 @@ describe('code-updator', () => {
           name: 'delete-create',
           value: createUpdate<AddComponent>({
             action: 'create',
-            parentId: elementInstances[1].id,
+            parentId: elementInstances[2].id,
             parentChildIndex: 0,
             index: 1,
             copiedFrom: {
@@ -1489,6 +1489,16 @@ describe('code-updator', () => {
           }),
           oldValue: '',
           componentId: 'new-button',
+          childIndex: 0,
+          isGlobal: false,
+          dateModified: new Date(),
+        },
+        {
+          type: 'text',
+          name: '0',
+          value: 'Content3Changed',
+          oldValue: '',
+          componentId: elementInstances[1].id,
           childIndex: 0,
           isGlobal: false,
           dateModified: new Date(),
@@ -1503,7 +1513,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('file2')
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
-              import { Button } from './file1'
+              import { Button, Button2 as Button2Alias } from './file1'
 
               const App = () => {
                 return <div>
@@ -1515,6 +1525,7 @@ describe('code-updator', () => {
                     <span>Content2</span>
                     <span>Content1</span>
                   </Button>
+                  <Button2Alias>Content3Changed</Button2Alias>
                 </div>
               }
             `),
@@ -1726,7 +1737,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe(file)
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
-          import { Button } from './file1'
+          import { Button, Button2 as Button2Alias } from './file1'
 
           const App = () => {
             return <div className="flex p-3">
@@ -1740,6 +1751,7 @@ describe('code-updator', () => {
               <div className="block">
                 <div className="p-3 bg-[url('https://maeflowerswim.com/cdn/shop/files/IMG_8836.jpg?v=1721103505')]">New Content</div>
               </div>
+              <Button2Alias>Content3</Button2Alias>
             </div>
           }
         `),
@@ -1823,7 +1835,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('file2')
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
-              import { Button } from './file1'
+              import { Button, Button2 as Button2Alias } from './file1'
               
               const App = () => {
                 return <div className="opacity-0 animate-slide-in [animation-delay:calc(var(--animation-order)*75ms)]">
@@ -1831,6 +1843,7 @@ describe('code-updator', () => {
                     <span>Content1</span>
                     <span>Content2</span>
                   </Button>
+                  <Button2Alias>Content3</Button2Alias>
                 </div>
               }
             `),
@@ -1934,7 +1947,7 @@ describe('code-updator', () => {
             action: 'wrap',
             elements: [
               {
-                componentId: elementInstances[3].id,
+                componentId: elementInstances[4].id,
                 childIndex: 0,
               },
             ],
@@ -1952,7 +1965,7 @@ describe('code-updator', () => {
             action: 'wrap',
             elements: [
               {
-                componentId: elementInstances[3].id,
+                componentId: elementInstances[4].id,
                 childIndex: 0,
               },
             ],
@@ -1986,7 +1999,7 @@ describe('code-updator', () => {
                 childIndex: 0,
               },
               {
-                componentId: elementInstances[4].id,
+                componentId: elementInstances[5].id,
                 childIndex: 0,
               },
             ],
@@ -2008,7 +2021,7 @@ describe('code-updator', () => {
       expect(codeUpdates.filePath).toBe('file2')
       expect(await formatCode(codeUpdates.newContent)).toBe(
         await formatCode(`
-              import { Button } from './file1'
+              import { Button, Button2 as Button2Alias } from './file1'
 
               const App = () => {
                 return <div>
@@ -2022,6 +2035,7 @@ describe('code-updator', () => {
                       </div>
                     </Button>
                   </div>
+                  <Button2Alias>Content3</Button2Alias>
                 </div>
               }
             `),
@@ -2344,9 +2358,13 @@ const testFiles = {
     export const Button = ({children}) => {
         return <button>{children}</button>
     }
+
+    export const Button2 = ({children}) => {
+        return <button>{children}</button>
+    }
   `,
   file2: `
-    import { Button } from './file1'
+    import { Button, Button2 as Button2Alias } from './file1'
 
     const App = () => {
       return <div>
@@ -2354,6 +2372,7 @@ const testFiles = {
           <span>Content1</span>
           <span>Content2</span>
         </Button>
+        <Button2Alias>Content3</Button2Alias>
       </div>
     }
   `,

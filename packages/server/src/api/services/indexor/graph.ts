@@ -338,6 +338,7 @@ export class FlowGraph {
             importNode.getResolvedSource(),
             node.location.file,
           ) &&
+          importNode.getName() === node.name &&
           importNode.isDefault() === isDefaultExport
         ) {
           this.addDataDependency(importNode.id, node.id)

@@ -112,9 +112,11 @@ export const createTRPCContextExpress = async ({
     ? environmentResult.data
     : 'production'
 
+  const token = req.headers['authorization']?.split(' ')[1]
+
   const serverClient = createClient({
     environment,
-    getToken: async () => '',
+    getToken: async () => token ?? '',
     isLocal: true,
   })
   return createTRPCContext(localPath, repositoryId, repository, serverClient)

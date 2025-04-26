@@ -19,7 +19,7 @@
       "type": "node-terminal",
       "request": "launch",
       "name": "CLI",
-      "command": "pnpm dev start -c /Users/braydonjones/Documents/leland/leland-applicant-web",
+      "command": "pnpm dev start -c ${workspaceFolder}",
       "cwd": "${workspaceFolder}/packages/cli"
     },
     {

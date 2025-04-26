@@ -1214,7 +1214,7 @@ describe('indexor', () => {
       const componentElements = result
         .getNodes()
         .filter((node) => node instanceof JSXElementNode)
-      expect(componentElements.length).toBe(5)
+      expect(componentElements.length).toBe(7)
 
       expect(componentElements[1].getName()).toBe('Button')
       expect(componentElements[1].getNameNode().getValues().length).toBe(1)
@@ -1222,10 +1222,23 @@ describe('indexor', () => {
         componentElements[1].getNameNode().getValues()[0] instanceof
           ComponentNode,
       ).toBe(true)
+      expect(componentElements[1].getNameNode().getValues()[0].name).toBe(
+        'Button',
+      )
       expect(componentElements[1].getDependencies().length).toBe(1)
       expect(
         componentElements[1].getDependencies()[0] instanceof ImportStatement,
       ).toBe(true)
+
+      expect(componentElements[2].getName()).toBe('Button2')
+      expect(componentElements[2].getNameNode().getValues().length).toBe(1)
+      expect(
+        componentElements[2].getNameNode().getValues()[0] instanceof
+          ComponentNode,
+      ).toBe(true)
+      expect(componentElements[2].getNameNode().getValues()[0].name).toBe(
+        'Button2',
+      )
     })
 
     it('Should get correct element name', () => {

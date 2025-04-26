@@ -114,7 +114,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     
     }`,
   'app/multipleLayers1.tsx': `
-    const Component2 = ({className, name}) => {
+    export const Component2 = ({className, name}) => {
         const bob = name;
         return (<>
             <Component1 className={cn("m-2", className)} label={bob}/>
@@ -131,7 +131,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         )
     } 
 
-    const Component3 = () => {
+    export const Component3 = () => {
         const anotherOne = "Hello there";
         return (
             <Component2 className={\`p-3\`} name={\`\${anotherOne}\`}/>
@@ -141,7 +141,7 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     export default Component2
     `,
   'app/multipleLayers2.tsx': `
-    import Component2 from './multipleLayers1';
+    import {Component2, Component3} from './multipleLayers1';
 
     const App = () => {
         return (
@@ -439,17 +439,22 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
     `,
 
   'app/importedComponents1.tsx': `
-    import DifferentName, {Button} from 'app/importedComponents2';
+    import DifferentName, {Button, Button2 as Button2Alias} from 'app/importedComponents2';
 
     const App = () => {
         return <div>
             <Button>Click me</Button>
+            <Button2Alias>Click me 2</Button2Alias>
             <DifferentName label="Change me"/>
         </div>
     }
     `,
   'app/importedComponents2.tsx': `
         export const Button = ({children}) => {
+            return <button className="flex rounded-full">{children}</button>
+        }
+
+        export const Button2 = ({children}) => {
             return <button className="flex rounded-full">{children}</button>
         }
 

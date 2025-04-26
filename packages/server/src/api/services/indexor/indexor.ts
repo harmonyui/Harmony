@@ -355,12 +355,6 @@ export const convertGraphToHarmonyComponents = (
             (component) => getLevelId(component.id, 1) === id,
           )
           childComponents.forEach((child) => {
-            if (child.containingComponent?.name !== component.name) {
-              throw new Error(
-                'Error setting child components for component ' +
-                  component.name,
-              )
-            }
             child.getParent = () => component
           })
           component.props = node

@@ -92,6 +92,7 @@ const editorRoutes = {
 
       const accountTiedToBranch = await prisma.account.findFirst({
         where: {
+          id: ctx.session.account.id,
           branch: {
             some: {
               id: branchId,

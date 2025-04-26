@@ -144,9 +144,9 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getDefinitionComponent() {
-    return this.nameNode
-      .getValues((node) => node instanceof ComponentNode)
-      .find((node) => node.name === this.name) as ComponentNode | undefined
+    return this.nameNode.getValues(
+      (node) => node instanceof ComponentNode,
+    )[0] as ComponentNode | undefined
   }
 
   public addAttribute(attribute: JSXAttribute) {
