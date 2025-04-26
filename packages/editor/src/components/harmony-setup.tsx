@@ -29,6 +29,7 @@ type HarmonySetupProps = Pick<
   | 'cdnImages'
   | 'uploadImage'
   | 'components'
+  | 'user'
 > & {
   local?: boolean
 }
@@ -92,7 +93,7 @@ export const useHarmonySetup = (
   }, [resultRef, rootRef])
 
   useEffect(() => {
-    if (!initShow) return
+    if (!initShow || !options.user) return
 
     if (!show) {
       cleanup()
@@ -128,7 +129,7 @@ export const useHarmonySetup = (
         )
       }
     }
-  }, [show, resultRef])
+  }, [show, resultRef, options.user])
 
   return cleanup
 }

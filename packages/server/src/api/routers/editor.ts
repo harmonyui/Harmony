@@ -76,7 +76,7 @@ const returnRepository = async (
 }
 
 const editorRoutes = {
-  loadProject: publicProcedure
+  loadProject: protectedProcedure
     .input(loadRequestSchema)
     .output(loadResponseSchema)
     .query(async ({ ctx, input }) => {
@@ -175,7 +175,7 @@ const editorRoutes = {
         rootPath: undefined,
       }
     }),
-  saveProject: publicProcedure
+  saveProject: protectedProcedure
     .input(updateRequestBodySchema)
     .mutation(async ({ ctx, input }) => {
       const { branchId, repositoryId } = input
@@ -284,7 +284,7 @@ const editorRoutes = {
       const response: UpdateResponse = { errorUpdates: reversed }
       return response
     }),
-  publishProject: publicProcedure
+  publishProject: protectedProcedure
     .input(publishRequestSchema)
     .mutation(async ({ ctx, input }) => {
       const data = input
@@ -332,7 +332,7 @@ const editorRoutes = {
 
       return response
     }),
-  indexComponents: publicProcedure
+  indexComponents: protectedProcedure
     .input(indexComponentsRequestSchema)
     .output(indexComponentsResponseSchema)
     .mutation(async ({ ctx, input }) => {
@@ -364,7 +364,7 @@ const editorRoutes = {
       }
     }),
 
-  getCodeUpdates: publicProcedure
+  getCodeUpdates: protectedProcedure
     .input(codeUpdatesRequestSchema)
     .output(codeUpdatesResponseSchema)
     .mutation(async ({ ctx, input }) => {
@@ -392,7 +392,7 @@ const editorRoutes = {
       }))
     }),
 
-  createUpdatesFromText: publicProcedure
+  createUpdatesFromText: protectedProcedure
     .input(createUpdateFromTextRequestSchema)
     .output(createUpdateFromTextResponseSchema)
     .mutation(async ({ input }) => {
@@ -415,7 +415,7 @@ const editorRoutes = {
 
       return updates
     }),
-  getRepository: publicProcedure
+  getRepository: protectedProcedure
     .input(z.object({ repositoryId: z.string() }))
     .query(async ({ ctx, input }) => {
       const { prisma } = ctx

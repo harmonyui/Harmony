@@ -16,9 +16,11 @@ import { StartModal } from './start-modal/start-modal'
 import { useToggleEnable } from 'harmony-ai-editor/src/hooks/toggle-enable'
 import { HarmonyProviderFunc } from 'harmony-ai-editor/src/global-provider'
 import { useBranchId } from 'harmony-ai-editor/src/hooks/branch-id'
+import { User } from 'harmony-ai-editor/src/utils/types'
 
 export const EditorChrome: React.FunctionComponent = () => {
   const getToken = useCallback(async () => {
+    console.log('getToken')
     const token = await sendMessage<object, string>({
       action: Actions.GetToken,
     })
@@ -46,6 +48,7 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
     key: 'harmony-environment',
   })
   const [showStartModal, setShowStartModal] = useState(false)
+  const [user, setUser] = useState<User | undefined>(undefined)
 
   useSendAuthentication()
 
@@ -67,6 +70,16 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
 
   useToggleEnable()
 
+  useEffect(() => {
+    sendMessage<object, User>({
+      action: Actions.GetUser,
+    }).then((user) => {
+      console.log('got user')
+      console.log(user)
+      setUser(user)
+    })
+  }, [setUser])
+
   const cleanup = useHarmonySetup(
     {
       local: true,
@@ -75,6 +88,7 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
       show: chrome,
       environment: _environment || environment,
       initShow: chrome,
+      user: user as User,
     },
     branchId,
   )

@@ -39,4 +39,14 @@ setupMessageListeners([
       updateActiveTab(tabId)
     },
   },
+  {
+    action: Actions.GetUser,
+    handler: async () => {
+      const cookie = await Storage.getCookie()
+
+      if (!cookie) throw new Error('No cookie found')
+
+      return Clerk.getUser(cookie)
+    },
+  },
 ])

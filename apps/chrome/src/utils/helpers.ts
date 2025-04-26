@@ -1,6 +1,7 @@
 import type { Environment } from '@harmony/util/src/utils/component'
 import { getWebUrl } from '@harmony/util/src/utils/component'
 import { cookieParser, parseJwt } from './utils'
+import { User } from 'harmony-ai-editor/src/utils/types'
 
 export const AuthUrl = {
   getAuthUrlBase(environment: Environment): string {
@@ -41,6 +42,42 @@ export const Clerk = {
     const data = (await response.json()) as { jwt: string; object: 'token' }
     return data.jwt
   },
+  async getUser(cookie: string): Promise<User> {
+    const cookieData = cookieParser(cookie)
+    const jwtResult = parseJwt<{ sid: string }>(cookieData.__session)
+
+    const response = await fetch(
+      `${this.baseUrl}/v1/client/sessions/${jwtResult.sid}?__dev_session=${cookieData.__clerk_db_jwt}`,
+      {
+        method: 'GET',
+      },
+    )
+
+    if (!response.ok) {
+      throw new Error('Failed to fetch user data')
+    }
+
+    const data = (await response.json()) as {
+      response: {
+        user: {
+          id: string
+          first_name: string
+          last_name: string
+          email_addresses: {
+            email_address: string
+          }[]
+          image_url: string
+        }
+      }
+    }
+    return {
+      id: data.response.user.id,
+      firstName: data.response.user.first_name,
+      lastName: data.response.user.last_name,
+      email: data.response.user.email_addresses[0]?.email_address,
+      imageUrl: data.response.user.image_url,
+    }
+  },
 }
 
 export const Storage = {
@@ -64,6 +101,7 @@ export enum Actions {
   InitEditor = 'extensionIconClicked',
   GetToken = 'getToken',
   SetCookie = 'setCookie',
+  GetUser = 'getUser',
 }
 // eslint-disable-next-line @typescript-eslint/no-namespace -- ok
 export namespace ActionsPayload {

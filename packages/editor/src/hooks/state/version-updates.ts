@@ -78,13 +78,15 @@ export const createVersionUpdatesSlice = createHarmonySlice<
         type: componentUpdate.type,
       })
 
+      const user = get().user
+
       return {
         id: index,
         update: componentUpdate,
         description: '',
         time: displayTime(componentUpdate.dateModified),
         element: name,
-        author: 'Braydon Jones',
+        author: user ? `${user.firstName} ${user.lastName}` : 'Unknown',
         beforeImage: '',
         afterImage: '',
         beforeCode,

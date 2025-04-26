@@ -44,6 +44,7 @@ import { useHotKeyOpenEditor } from '../hooks/open-editor'
 import { Alert } from '@harmony/ui/src/components/core/alert'
 import { CommentCreator } from './panel/comment/comment-creator'
 import { ChatBubbles } from './panel/comment/chat-bubbles'
+import { User } from '../utils/types'
 
 export interface HarmonyProviderProps {
   repositoryId: string | undefined
@@ -57,6 +58,7 @@ export interface HarmonyProviderProps {
   cdnImages?: string[]
   uploadImage?: (data: FormData) => Promise<string>
   components?: RegistryComponent[]
+  user: User
 }
 export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   repositoryId,
@@ -70,6 +72,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
   environment = 'production',
   source = 'document',
   overlay = true,
+  user,
 }) => {
   const [isToggled, setIsToggled] = useState(false)
   const [isComment, setIsComment] = useState(false)
@@ -136,6 +139,7 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
         uploadImage,
         registryComponents: components,
         fonts,
+        user,
       })
     }
 

@@ -9,6 +9,7 @@ import type { ImageCdnState } from './image-cdn'
 import type { HarmonyCnState } from './harmonycn'
 import { Font } from '@harmony/util/src/fonts'
 import { ChatBubbleState } from './chat-bubble'
+import { User } from '../../utils/types'
 
 export interface ProjectInfoState {
   currentBranch: { name: string; id: string } | null
@@ -37,7 +38,9 @@ export interface ProjectInfoState {
     uploadImage?: (form: FormData) => Promise<string>
     registryComponents: RegistryComponent[]
     fonts: Font[] | undefined
+    user: User
   }) => Promise<void>
+  user: User | undefined
 }
 
 export const createProjectInfoSlice = createHarmonySlice<
@@ -67,8 +70,13 @@ export const createProjectInfoSlice = createHarmonySlice<
   updateWelcomeScreen(value: boolean) {
     set({ showWelcomeScreen: value })
   },
+  user: undefined,
   environment: 'production',
   setBranch(branch: { name: string; id: string; label: string } | undefined) {
+    const user = get().user
+    if (!user) {
+      throw new Error('User is not set')
+    }
     branch &&
       get().initializeProject({
         branchId: branch?.id ?? '',
@@ -78,6 +86,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         uploadImage: get().uploadImage,
         registryComponents: [],
         fonts: get().fonts,
+        user,
       })
     if (branch?.id === 'local') {
       set({
@@ -106,12 +115,13 @@ export const createProjectInfoSlice = createHarmonySlice<
     uploadImage,
     registryComponents,
     fonts,
+    user,
   }) {
     const isLocal = branchId === 'local'
     if (get().client === undefined || get().currentBranch?.id !== branchId) {
       get().initializeDataLayer(
         environment,
-        async () => '',
+        get().getToken,
         isLocal,
         repositoryId ?? '',
       )
@@ -132,6 +142,7 @@ export const createProjectInfoSlice = createHarmonySlice<
     }
     set({
       isLocal,
+      user,
     })
 
     try {
