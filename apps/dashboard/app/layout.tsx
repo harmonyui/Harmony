@@ -2,7 +2,7 @@ import type { Metadata } from 'next'
 import './global.css'
 import { HarmonySetup } from 'harmony-ai-editor/src'
 import 'harmony-ai-editor/src/global-provider'
-import { ClerkProvider } from '@clerk/nextjs'
+import { ClerkProvider, useUser } from '@clerk/nextjs'
 import { fonts, mulish } from '@harmony/util/src/fonts'
 import { TrpcProvider } from '../utils/trpc-provider'
 
@@ -19,6 +19,7 @@ export default function RootLayout({
 }: {
   children: React.ReactNode
 }) {
+  const { user } = useUser()
   return (
     <ClerkProvider>
       <TrpcProvider>
@@ -27,20 +28,34 @@ export default function RootLayout({
             className={`${mulish.className} h-full bg-white dark:bg-gray-900`}
           >
             {children}
-            {process.env.ENV === 'staging' ? (
+            {process.env.ENV === 'staging' && user ? (
               <HarmonySetup
                 repositoryId={repositoryId}
                 fonts={fonts}
                 environment='staging'
                 overlay
+                user={{
+                  id: user.id,
+                  firstName: user.firstName ?? '',
+                  lastName: user.lastName ?? '',
+                  email: user.emailAddresses[0].emailAddress,
+                  imageUrl: user.imageUrl,
+                }}
               />
             ) : null}
-            {process.env.ENV === 'development' ? (
+            {process.env.ENV === 'development' && user ? (
               <HarmonySetup
                 repositoryId={repositoryId}
                 fonts={fonts}
                 environment='development'
                 overlay
+                user={{
+                  id: user.id,
+                  firstName: user.firstName ?? '',
+                  lastName: user.lastName ?? '',
+                  email: user.emailAddresses[0].emailAddress,
+                  imageUrl: user.imageUrl,
+                }}
               />
             ) : null}
             {/* <Script id="harmony-tag" src="bundle.js"></Script>
