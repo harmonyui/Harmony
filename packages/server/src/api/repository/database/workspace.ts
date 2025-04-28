@@ -72,7 +72,7 @@ export async function getDefaultWorkspace({
     ...workspacePayload,
   })
 
-  return workspace ? prismaToWorkspace(workspace) : null
+  return workspace && workspace.repository ? prismaToWorkspace(workspace) : null
 }
 
 export async function createWorkspace({

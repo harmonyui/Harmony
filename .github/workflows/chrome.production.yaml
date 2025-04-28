@@ -2,7 +2,7 @@ name: Chrome Deploy
 on:
   push:
     branches:
-      - master
+      - no-op # Disabling for now.
 jobs:
   build-and-deploy:
     runs-on: ubuntu-latest
