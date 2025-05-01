@@ -29,7 +29,7 @@
     "feed": "^4.2.2",
     "framer-motion": "^11.18.1",
     "harmony-ai-editor": "workspace:*",
-    "next": "15.1.5",
+    "next": "15.2.4",
     "next-sanity": "^9.8.38",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",

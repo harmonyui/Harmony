@@ -7,7 +7,7 @@ import { PricingCard } from './components/pricing-card'
 export const Harmony = () => {
   return process.env.ENV !== 'production' ? (
     <HarmonySetup
-      repositoryId={process.env.REPOSITORY_ID}
+      repositoryId='da286f25-b5de-4003-94ed-2944162271ed'
       uploadImage={uploadImage}
       components={[
         {

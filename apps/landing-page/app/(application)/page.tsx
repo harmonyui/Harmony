@@ -104,8 +104,8 @@ export default function Home() {
                     fill='none'
                     stroke='currentColor'
                     strokeWidth='2'
-                    stroke-linecap='round'
-                    stroke-linejoin='round'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
                     className='block border-l-0 border-r-0 border-t-0 border-b-0 overflow-x-hidden overflow-y-hidden'
                   >
                     <path d='M22 14a8 8 0 0 1-8 8'></path>
@@ -129,8 +129,8 @@ export default function Home() {
                     fill='none'
                     stroke='currentColor'
                     strokeWidth='2'
-                    stroke-linecap='round'
-                    stroke-linejoin='round'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
                     className='block border-l-0 border-r-0 border-t-0 border-b-0 overflow-x-hidden overflow-y-hidden'
                   >
                     <path d='M21 11V5a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h6'></path>
@@ -151,8 +151,8 @@ export default function Home() {
                     fill='none'
                     stroke='currentColor'
                     strokeWidth='2'
-                    stroke-linecap='round'
-                    stroke-linejoin='round'
+                    strokeLinecap='round'
+                    strokeLinejoin='round'
                     className='block border-l-0 border-r-0 border-t-0 border-b-0 overflow-x-hidden overflow-y-hidden'
                   >
                     <line x1='22' x2='2' y1='6' y2='6'></line>
@@ -225,8 +225,8 @@ export default function Home() {
                       className='block absolute top-1 left-1 border-l-0 border-r-0 border-t-0 border-b-0 overflow-x-hidden overflow-y-hidden text-primary'
                     >
                       <path
-                        stroke-linecap='round'
-                        stroke-linejoin='round'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
                         d='M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z'
                       ></path>
                     </svg>
@@ -251,8 +251,8 @@ export default function Home() {
                       className='block absolute top-1 left-1 border-l-0 border-r-0 border-t-0 border-b-0 overflow-x-hidden overflow-y-hidden text-primary'
                     >
                       <path
-                        stroke-linecap='round'
-                        stroke-linejoin='round'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
                         d='M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25'
                       ></path>
                     </svg>
@@ -331,8 +331,8 @@ export default function Home() {
                       className='block absolute top-1 left-1 border-l-0 border-r-0 border-t-0 border-b-0 overflow-x-hidden overflow-y-hidden text-primary'
                     >
                       <path
-                        stroke-linecap='round'
-                        stroke-linejoin='round'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
                         d='M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z'
                       ></path>
                     </svg>
@@ -357,8 +357,8 @@ export default function Home() {
                       className='block absolute top-1 left-1 border-l-0 border-r-0 border-t-0 border-b-0 overflow-x-hidden overflow-y-hidden text-primary'
                     >
                       <path
-                        stroke-linecap='round'
-                        stroke-linejoin='round'
+                        strokeLinecap='round'
+                        strokeLinejoin='round'
                         d='M12 6.042A8.967 8.967 0 0 0 6 3.75c-1.052 0-2.062.18-3 .512v14.25A8.987 8.987 0 0 1 6 18c2.305 0 4.408.867 6 2.292m0-14.25a8.966 8.966 0 0 1 6-2.292c1.052 0 2.062.18 3 .512v14.25A8.987 8.987 0 0 0 18 18a8.967 8.967 0 0 0-6 2.292m0-14.25v14.25'
                       ></path>
                     </svg>
