@@ -202,7 +202,7 @@ export type Environment = z.infer<typeof environmentSchema>
 
 export function getWebUrl(_environment: Environment) {
   if (_environment === 'production') {
-    return 'https://dashboard.harmonyui.app'
+    return 'https://app.harmonyui.dev'
   } else if (_environment === 'staging') {
     return 'https://harmony-xi.vercel.app'
   }

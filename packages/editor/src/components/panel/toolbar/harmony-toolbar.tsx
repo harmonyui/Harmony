@@ -1,8 +1,4 @@
-import {
-  ChatTeardropIcon,
-  FolderIcon,
-  XMarkIcon,
-} from '@harmony/ui/src/components/core/icons'
+import { FolderIcon, XMarkIcon } from '@harmony/ui/src/components/core/icons'
 import type { ToolbarItem } from '@harmony/ui/src/components/core/toolbar'
 import { Toolbar } from '@harmony/ui/src/components/core/toolbar'
 import { usePublishButton } from '../publish/publish-button'
@@ -17,6 +13,7 @@ import { SelectProject } from '../project/select-project'
 import { AnimateButton } from '@harmony/ui/src/components/design/animate-button'
 import { AnimateOpenClose } from '@harmony/ui/src/components/design/animate-open-close'
 import { useVersionsButton } from '../versions/versions-button'
+import { WEB_URL } from '@harmony/util/src/constants'
 
 type HarmonyToolbar = object
 export const HarmonyToolbar: React.FunctionComponent<HarmonyToolbar> = () => {
@@ -148,10 +145,7 @@ const HarmonyCollapsedToolbar: React.FunctionComponent<{
       className='flex items-center justify-center p-2 bg-white rounded-full !cursor-pointer border border-[#e5e5e5]'
       onClick={onClick}
     >
-      <img
-        src='https://dashboard.harmonyui.app/icon-128.png'
-        className='size-5'
-      />
+      <img src={`${WEB_URL}/icon-128.png`} className='size-5' />
     </AnimateButton>
   )
 }

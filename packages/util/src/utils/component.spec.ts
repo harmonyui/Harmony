@@ -165,7 +165,7 @@ describe('index', () => {
 
     it('Should return production url when in production mode', () => {
       const url = getWebUrl('production')
-      expect(url).toBe('https://dashboard.harmonyui.app')
+      expect(url).toBe('https://app.harmonyui.dev')
     })
   })
 

@@ -1,6 +1,8 @@
 import Link from 'next/link'
 import { DarkModeToggle } from './dark-mode-toggle'
 import { GithubStars } from '@/app/components/github-stars'
+import { getWebUrl } from '@harmony/util/src/utils/component'
+import { WEB_URL } from '@harmony/util/src/constants'
 
 export const Navbar: React.FunctionComponent = () => {
   return (
@@ -31,7 +33,7 @@ export const Navbar: React.FunctionComponent = () => {
           </Link>
           <Link
             className='inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2 mr-6 text-sm'
-            href='https://dashboard.harmonyui.app'
+            href={WEB_URL}
           >
             Join Beta
           </Link>

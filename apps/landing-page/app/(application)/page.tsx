@@ -4,6 +4,7 @@ import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-di
 import { ShineBorder } from '@harmony/ui/src/components/design/shine-border'
 import { PricingCard } from '../components/pricing-card'
 import { GradientBackground } from '@/components/gradient'
+import { WEB_URL } from '@harmony/util/src/constants'
 export default function Home() {
   return (
     <>
@@ -29,13 +30,13 @@ export default function Home() {
           </p>
           <div className='flex gap-2 justify-center opacity-0 ease-in-out [--animation-delay:600ms] animate-fade-in translate-y-[-1rem] '>
             <a
-              href='https://dashboard.harmonyui.app'
+              href={WEB_URL}
               className='inline-flex items-center justify-center whitespace-nowrap text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary shadow hover:bg-primary/90 h-9 px-4 py-2 gap-1 rounded-lg text-white'
             >
               Get started
             </a>
             <a
-              href='https://dashboard.harmonyui.app/setup/quick?teamId=clua06nan0001dvpho5cb10sr'
+              href={`${WEB_URL}/setup/quick?teamId=clua06nan0001dvpho5cb10sr`}
               className='inline-flex items-center justify-center whitespace-nowrap rounded-md font-medium transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80 h-9 px-4 py-2 mr-6 text-sm'
             >
               Try Demo
@@ -397,7 +398,7 @@ export default function Home() {
                   'Edit existing pages',
                   'Commented UI code',
                 ]}
-                link='https://dashboard.harmonyui.app'
+                link={WEB_URL}
               />
               <PricingCard
                 title='Growth'
@@ -409,13 +410,13 @@ export default function Home() {
                   'Request new features and integrations',
                 ]}
                 popular
-                link='https://dashboard.harmonyui.app'
+                link={WEB_URL}
               />
               <PricingCard
                 title='Enterprise'
                 description='For teams'
                 custom
-                link='https://j48inpgngmc.typeform.com/to/Ch60XpCt'
+                link={WEB_URL}
               />
             </div>
           </div>

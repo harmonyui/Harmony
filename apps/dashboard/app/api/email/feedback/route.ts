@@ -1,5 +1,6 @@
 import { emailFeedbackRequestSchema } from '@harmony/util/src/types/network'
 import { NodeMailerEmailService } from '@harmony/server/src/api/services/email-service'
+import { SUPPORT_EMAIL } from '@harmony/util/src/constants'
 
 export async function POST(req: Request): Promise<Response> {
   const request = emailFeedbackRequestSchema.parse(await req.json())
@@ -9,7 +10,7 @@ export async function POST(req: Request): Promise<Response> {
   const subject = `Feedback From ${request.name}`
   const body = request.comments
   await mailer.sendMail({
-    to: 'jacob@harmonyui.app',
+    to: SUPPORT_EMAIL,
     subject,
     body,
   })
