@@ -302,7 +302,8 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
       )
       const styles = getComputedStyle(element)
       //Sticky elements behavior weirdly in the editor (follow us down the screen at a slow pace), so let's make them not sticky
-      if (styles.position === 'sticky') {
+      // Using overlay, is that the correct variable for when it is in the editor?
+      if (styles.position === 'sticky' && !overlay) {
         element.style.position = 'relative'
       }
 
