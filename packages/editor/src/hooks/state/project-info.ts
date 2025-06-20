@@ -137,6 +137,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         isInitialized: true,
         isRepositoryConnected: false,
         fonts,
+        user,
       })
       return
     }
@@ -183,6 +184,7 @@ export const createProjectInfoSlice = createHarmonySlice<
         environment,
         fonts,
         chatBubbles,
+        user,
       })
     } catch (err) {
       console.log(err)
