@@ -68,7 +68,11 @@ export const updateElementClassName = ({
 
   const classNameAttribute = attributes.find(
     (attr) =>
-      attr.attribute?.getName() === 'className' || attr.addArguments.length > 0,
+      attr.attribute?.getName() === 'className' ||
+      (attr.addArguments.length > 0 &&
+        attr.addArguments.some((arg) =>
+          arg.propertyName.toLowerCase().includes('class'),
+        )),
   )
 
   if (!classNameAttribute) {

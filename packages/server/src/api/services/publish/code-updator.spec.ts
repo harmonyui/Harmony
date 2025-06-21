@@ -2150,6 +2150,43 @@ describe('code-updator', () => {
         `),
       )
     })
+
+    it('Should add class name to a component that has an object property', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo(
+        ['addAttribute'],
+        {
+          cssFramework: 'tailwind',
+        },
+      )
+
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'className',
+          name: 'font-weight',
+          value: '500',
+          oldValue: '',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+          dateModified: new Date(),
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.addAttribute).toBeTruthy()
+      expect(await formatCode(fileUpdates.addAttribute.newContent)).toBe(
+        await formatCode(`
+          const App = ({bootcamp}) => {
+            return <Bootcamps bootcamp={bootcamp} />
+          }
+          const Bootcamps = ({bootcamp}) => {
+            return <Link href={bootcamp.url} className='bg-white font-medium'>{bootcamp.name}</Link>
+          }
+        `),
+      )
+    })
   })
 })
 
@@ -2432,6 +2469,14 @@ const testFiles = {
         Hello there
         <br/>
       </div>
+    }
+  `,
+  addAttribute: `
+    const App = ({bootcamp}) => {
+      return <Bootcamps bootcamp={bootcamp} />
+    }
+    const Bootcamps = ({bootcamp}) => {
+      return <Link href={bootcamp.url} className="bg-white">{bootcamp.name}</Link>
     }
   `,
 }
