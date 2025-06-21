@@ -19,6 +19,8 @@ import { CopyText } from '@harmony/ui/src/components/core/copy-text'
 import { WEB_URL } from '@harmony/util/src/constants'
 import { useHarmonyContext } from '../../harmony-context'
 import { useHarmonyStore } from '../../../hooks/state'
+import { useHotKeys } from '../../../hooks/hotkeys'
+import { Alert } from '@harmony/ui/src/components/core/alert'
 
 interface PublishState {
   show: boolean
@@ -50,6 +52,7 @@ export const PublishProvider: React.FunctionComponent<{
   const [show, setShow] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState('')
+  const [info, setInfo] = useState<string | undefined>(undefined)
   const { isSaving, setError: setErrorProps } = useHarmonyContext()
   const publish = useHarmonyStore((state) => state.publishChanges)
   const currentBranch = useHarmonyStore((state) => state.currentBranch)
@@ -85,6 +88,7 @@ export const PublishProvider: React.FunctionComponent<{
         if (published.pullRequest) {
           window.open(published.pullRequest.url, '_blank')?.focus()
         }
+        setInfo('Published changes')
       } catch {
         _setError('There was an error when publishing')
       } finally {
@@ -123,13 +127,13 @@ export const PublishProvider: React.FunctionComponent<{
     setErrorProps,
   ])
 
-  const onPublish = useCallback(() => {
+  const onPublish = useCallback(async () => {
     if (!currentBranch?.id) {
       setErrorProps('Please select a project')
       return
     }
     if (isDemo || isPublished || isLocal) {
-      void onViewCode()
+      await onViewCode()
       if (isLocal) {
         clearUpdates()
       }
@@ -167,6 +171,7 @@ export const PublishProvider: React.FunctionComponent<{
     >
       {children}
       <PublishModal preview={preview} />
+      <Alert label={info} setLabel={setInfo} type='info' />
     </PublishContext.Provider>
   )
 }
@@ -175,6 +180,11 @@ export const usePublishButton = (): PublishButtonState => {
   const context = useContext(PublishContext)
   if (!context)
     throw new Error('Must wrap the publish button in a PublishProvider')
+
+  useHotKeys('ctrl+s,cmd+s', (e) => {
+    e.preventDefault()
+    context.onPublish()
+  })
 
   const { onPublish, loading } = context
   return { onPublish, loading, icon: PreviewIcon, disabled: false }
