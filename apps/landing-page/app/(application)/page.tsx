@@ -1,10 +1,10 @@
-import { GradientButton } from '@harmony/ui/src/components/design/gradient-button';
-import { Particles } from '@harmony/ui/src/components/design/particles';
-import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog';
-import { ShineBorder } from '@harmony/ui/src/components/design/shine-border';
-import { PricingCard } from '../components/pricing-card';
-import { GradientBackground } from '@/components/gradient';
-import { WEB_URL } from '@harmony/util/src/constants';
+import { GradientButton } from '@harmony/ui/src/components/design/gradient-button'
+import { Particles } from '@harmony/ui/src/components/design/particles'
+import { HeroVideoDialog } from '@harmony/ui/src/components/design/hero-video-dialog'
+import { ShineBorder } from '@harmony/ui/src/components/design/shine-border'
+import { PricingCard } from '../components/pricing-card'
+import { GradientBackground } from '@/components/gradient'
+import { WEB_URL } from '@harmony/util/src/constants'
 export default function Home() {
   return (
     <>
@@ -230,11 +230,11 @@ export default function Home() {
                         d='M7.5 14.25v2.25m3-4.5v4.5m3-6.75v6.75m3-9v9M6 20.25h12A2.25 2.25 0 0 0 20.25 18V6A2.25 2.25 0 0 0 18 3.75H6A2.25 2.25 0 0 0 3.75 6v12A2.25 2.25 0 0 0 6 20.25Z'
                       ></path>
                     </svg>
-                    Effecient
+                    Efficient
                   </dt>
                   <dd className='inline mr-0 ml-0 mt-0 mb-0 border-l-0 border-r-0 border-t-0 border-b-0 dark:text-white/80 text-gray-600'>
                     Make your production application pixel perfect without
-                    needing to wait for your engineers
+                    needing to wait for your engineers.
                   </dd>
                 </div>
                 <div className='block relative mt-8 pl-9 border-l-0 border-r-0 border-t-0 border-b-0'>
@@ -328,5 +328,5 @@ export default function Home() {
         color='#fff1be'
       />
     </>
-  );
+  )
 }
