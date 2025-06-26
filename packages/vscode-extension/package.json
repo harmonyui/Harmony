@@ -1,8 +1,10 @@
 {
   "name": "Harmony",
-  "displayName": "Harmony UI",
+  "displayName": "Harmony Dev",
   "description": "Harmony UI development server for VS Code",
   "version": "0.1.0",
+  "publisher": "Harmony UI",
+  "icon": "icons/icon-128.png",
   "engines": {
     "vscode": "^1.93.0"
   },

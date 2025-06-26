@@ -60,4 +60,7 @@ generated
 #chrome
 *.zip
 
+#vscode
+*.vsix
+
 harmony.config.json

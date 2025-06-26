@@ -18,8 +18,27 @@ import { getFileContent, updateFileContent } from '../utils/get-files'
 import { ChatBubble } from '@harmony/util/src/types/branch'
 import { generateUniqueId } from '@harmony/util/src/utils/common'
 
-const updates: ComponentUpdate[] = []
-const chatBubbles: ChatBubble[] = []
+type State = {
+  updates: ComponentUpdate[]
+  chatBubbles: ChatBubble[]
+}
+
+const state: Record<string, State> = {}
+
+const getState = <KEY extends keyof State>(
+  path: string,
+  key: KEY,
+): State[KEY] => {
+  let ret = state[path]
+  if (!ret) {
+    ret = {
+      updates: [],
+      chatBubbles: [],
+    }
+    state[path] = ret
+  }
+  return ret[key]
+}
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
@@ -29,6 +48,9 @@ export const editorRouter = createTRPCRouter({
         ...input,
         repository: ctx.repository,
       })
+      const updates = getState(ctx.path, 'updates')
+      const chatBubbles = getState(ctx.path, 'chatBubbles')
+
       return {
         ...ret,
         updates,
@@ -38,8 +60,14 @@ export const editorRouter = createTRPCRouter({
     }),
   saveProject: publicProcedure
     .input(updateRequestBodySchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const updates = getState(ctx.path, 'updates')
       updates.push(...input.values.flatMap(({ update }) => update))
+
+      state[ctx.path] = {
+        updates,
+        chatBubbles: [],
+      }
 
       return {
         errorUpdates: [],
@@ -49,6 +77,8 @@ export const editorRouter = createTRPCRouter({
     .input(publishRequestSchema)
     .mutation(async ({ ctx }) => {
       const { path } = ctx
+
+      const updates = getState(path, 'updates')
 
       const componentIds = getComponentIdsFromUpdates(updates)
       const fileContents = await getFileContentsFromComponents(
@@ -109,8 +139,9 @@ export const editorRouter = createTRPCRouter({
   createChatBubble: publicProcedure
     .input(createChatBubbleRequestSchema)
     .output(createChatBubbleResponseSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
       const newChatBubble = { id: generateUniqueId(), ...input }
+      const chatBubbles = getState(ctx.path, 'chatBubbles')
       chatBubbles.push(newChatBubble)
 
       return newChatBubble
@@ -119,7 +150,8 @@ export const editorRouter = createTRPCRouter({
   updateChatBubble: publicProcedure
     .input(updateChatBubbleRequestSchema)
     .output(updateChatBubbleResponseSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const chatBubbles = getState(ctx.path, 'chatBubbles')
       const chatBubble = chatBubbles.find((cb) => cb.id === input.id)
       if (!chatBubble) {
         throw new Error('Chat bubble not found')
@@ -133,7 +165,8 @@ export const editorRouter = createTRPCRouter({
   deleteChatBubble: publicProcedure
     .input(deleteChatBubbleRequestSchema)
     .output(deleteChatBubbleResponseSchema)
-    .mutation(async ({ input }) => {
+    .mutation(async ({ ctx, input }) => {
+      const chatBubbles = getState(ctx.path, 'chatBubbles')
       const chatBubble = chatBubbles.find((cb) => cb.id === input.id)
       if (!chatBubble) {
         throw new Error('Chat bubble not found')
