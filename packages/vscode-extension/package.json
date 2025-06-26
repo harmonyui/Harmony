@@ -1,0 +1,83 @@
+{
+  "name": "Harmony",
+  "displayName": "Harmony UI",
+  "description": "Harmony UI development server for VS Code",
+  "version": "0.1.0",
+  "engines": {
+    "vscode": "^1.93.0"
+  },
+  "categories": [
+    "Other"
+  ],
+  "activationEvents": [
+    "onStartupFinished"
+  ],
+  "main": "./dist/extension.js",
+  "contributes": {
+    "commands": [
+      {
+        "command": "harmony.startServer",
+        "title": "Start Harmony Server",
+        "category": "Harmony"
+      },
+      {
+        "command": "harmony.stopServer",
+        "title": "Stop Harmony Server",
+        "category": "Harmony"
+      }
+    ],
+    "statusBar": {
+      "items": [
+        {
+          "id": "harmony.serverStatus",
+          "name": "Harmony Server Status",
+          "alignment": "left",
+          "priority": 100
+        }
+      ]
+    },
+    "configuration": {
+      "title": "Harmony",
+      "properties": {
+        "harmony.autoStartServer": {
+          "type": "boolean",
+          "default": false,
+          "description": "Automatically start the Harmony server when the extension activates"
+        }
+      }
+    }
+  },
+  "scripts": {
+    "vscode:prepublish": "pnpm compile",
+    "build": "tsc -p ./",
+    "watch": "tsc -watch -p ./",
+    "compile": "webpack",
+    "lint": "eslint src --ext ts",
+    "package": "vsce package --no-dependencies",
+    "publish": "vsce publish"
+  },
+  "devDependencies": {
+    "@harmony/eslint-config-custom": "workspace:^",
+    "@harmony/tsconfig": "workspace:^",
+    "@types/cors": "^2.8.17",
+    "@types/express": "^5.0.0",
+    "@types/node": "^22.10.7",
+    "@types/vscode": "^1.93.0",
+    "ts-loader": "^9.5.2",
+    "typescript": "^5.7.3",
+    "vsce": "^2.15.0",
+    "webpack": "^5.99.9",
+    "webpack-cli": "^6.0.1"
+  },
+  "dependencies": {
+    "@clerk/clerk-sdk-node": "^5.1.6",
+    "@harmony/server": "workspace:*",
+    "@harmony/util": "workspace:*",
+    "@trpc/client": "^10.45.2",
+    "@trpc/server": "^10.45.2",
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "superjson": "^2.2.2",
+    "zod": "^3.24.1"
+  }
+}

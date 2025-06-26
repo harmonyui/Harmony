@@ -28,6 +28,18 @@
       "request": "launch",
       "command": "pnpm run dev",
       "cwd": "${workspaceFolder}/apps/landing-page"
-    }
+    },
+    {
+			"name": "Run Extension",
+			"type": "extensionHost",
+			"request": "launch",
+			"args": [
+				"--extensionDevelopmentPath=${workspaceFolder}/packages/vscode-extension"
+			],
+			"outFiles": [
+				"${workspaceFolder}/packages/vscode-extension/dist/**/*.js"
+			],
+      "cwd": "${workspaceFolder}/packages/vscode-extension"
+		}
   ]
 }
