@@ -13,6 +13,7 @@ import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
 import type { AppRouter } from '@harmony/server/src/api/root'
 import { Repository, repositorySchema } from '@harmony/util/src/types/branch'
 import { jsonSchema } from '@harmony/util/src/updates/component'
+import { getConfigFile } from './utils/get-config-file'
 
 export interface CreateContextOptions {
   path: string
@@ -47,32 +48,29 @@ const isValidHeader = (header: unknown): header is string => {
   return typeof header === 'string'
 }
 
+// Global variable to store the current workspace path
+let currentWorkspacePath: string = ''
+
+export const setCurrentWorkspacePath = (path: string) => {
+  currentWorkspacePath = path
+}
+
 export const createTRPCContextExpress = async ({
   req,
+  path: localPath,
 }: {
   res: CreateExpressContextOptions['res']
   req: Request
+  path: string
 }) => {
-  const localPath = req.headers['local-path']
-  if (!localPath || typeof localPath !== 'string') {
-    throw new Error('local-path header is required')
+  // Use the current workspace path instead of headers
+  if (!localPath) {
+    throw new Error('No workspace path available')
   }
-  const repositoryIdHeader = req.headers['repository-id']
-  const respositoryHeader = req.headers['repository']
-  if (!isValidHeader(respositoryHeader) && !isValidHeader(repositoryIdHeader)) {
-    throw new Error('repository-id or repository header is required')
-  }
-  const repositoryParseResult = isValidHeader(respositoryHeader)
-    ? jsonSchema
-        .pipe(repositorySchema)
-        .safeParse(Buffer.from(respositoryHeader, 'base64').toString())
-    : undefined
-  const repository = repositoryParseResult?.success
-    ? repositoryParseResult.data
-    : undefined
-  const repositoryId = isValidHeader(repositoryIdHeader)
-    ? repositoryIdHeader
-    : undefined
+
+  // Get repository from config file
+  const repository = getConfigFile(localPath)
+  const repositoryId = repository?.id
 
   const environmentResult = environmentSchema.safeParse(
     req.headers['harmony-environment'],

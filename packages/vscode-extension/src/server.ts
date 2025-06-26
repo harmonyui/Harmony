@@ -1,73 +1,47 @@
 import express from 'express'
 import { createExpressMiddleware } from '@trpc/server/adapters/express'
 import { appRouter } from './router/app'
-import { createTRPCContextExpress } from './trpc'
+import { createTRPCContextExpress, setCurrentWorkspacePath } from './trpc'
 import cors from 'cors'
 import { getConfigFile } from './utils/get-config-file'
 import { StatusBarManager } from './statusBar'
 import * as http from 'http'
+import { z } from 'zod'
 
 export class HarmonyServer {
   private app: express.Application
   private server: http.Server | undefined
   private isServerRunning = false
   private readonly port = 4300
-  private path: string
+  private readonly getPathConfig: (
+    requestPath?: string,
+  ) => Record<string, string>
+
+  private getPath(): Record<string, string>
+  private getPath(requestPath: string): string
+  private getPath(requestPath?: string): string | Record<string, string> {
+    const pathConfig = this.getPathConfig(requestPath)
+    if (requestPath) {
+      const path = pathConfig[requestPath]
+      if (!path) {
+        throw new Error(`No path configured for request path: ${requestPath}`)
+      }
+      return path
+    }
+    return pathConfig
+  }
+
   private readonly statusBar: StatusBarManager
 
-  constructor(path: string, statusBar: StatusBarManager) {
-    this.path = path
+  constructor(
+    getPathConfig: (requestPath?: string) => Record<string, string>,
+    statusBar: StatusBarManager,
+  ) {
     this.statusBar = statusBar
     this.app = express()
+    this.getPathConfig = getPathConfig
     this.setupMiddleware()
     this.setupRoutes()
-  }
-
-  private setupMiddleware() {
-    this.app.use(
-      cors({
-        origin(origin, callback) {
-          callback(null, origin)
-        },
-        credentials: true,
-      }),
-    )
-
-    this.app.use((req, _, next) => {
-      req.headers['local-path'] = this.path
-
-      const repository = getConfigFile(this.path)
-      if (repository) {
-        req.headers['repository'] = Buffer.from(
-          JSON.stringify(repository),
-        ).toString('base64')
-      }
-
-      next()
-    })
-  }
-
-  private setupRoutes() {
-    this.app.use(
-      '/trpc',
-      createExpressMiddleware({
-        router: appRouter,
-        createContext: createTRPCContextExpress,
-        onError({ error }) {
-          console.error('tRPC Error:', error)
-        },
-      }),
-    )
-
-    // Health check endpoint
-    this.app.get('/health', (req, res) => {
-      res.json({ status: 'ok', port: this.port })
-    })
-  }
-
-  public changePath(path: string): void {
-    this.path = path
-    this.afterStart()
   }
 
   async start(): Promise<void> {
@@ -76,18 +50,23 @@ export class HarmonyServer {
     }
 
     return new Promise((resolve, reject) => {
-      this.server = this.app.listen(this.port, () => {
-        this.afterStart()
-        resolve()
-      })
+      try {
+        this.server = this.app.listen(this.port, () => {
+          this.isServerRunning = true
+          console.log(`Harmony server started on port ${this.port}`)
+          resolve()
+        })
 
-      this.server.on('error', (error) => {
-        if ((error as any).code === 'EADDRINUSE') {
-          reject(new Error(`Port ${this.port} is already in use`))
-        } else {
-          reject(error)
-        }
-      })
+        this.server.on('error', (error: NodeJS.ErrnoException) => {
+          if (error.code === 'EADDRINUSE') {
+            reject(new Error('Port 4300 is already in use'))
+          } else {
+            reject(error)
+          }
+        })
+      } catch (error) {
+        reject(error)
+      }
     })
   }
 
@@ -96,27 +75,69 @@ export class HarmonyServer {
       return
     }
 
-    return new Promise((resolve) => {
-      this.server!.close(() => {
-        this.isServerRunning = false
-        this.statusBar.updateStatus('stopped')
-        console.log('Harmony server stopped')
-        resolve()
+    return new Promise((resolve, reject) => {
+      this.server!.close((error) => {
+        if (error) {
+          reject(error)
+        } else {
+          this.isServerRunning = false
+          this.server = undefined
+          console.log('Harmony server stopped')
+          resolve()
+        }
       })
     })
-  }
-
-  private afterStart(): void {
-    this.isServerRunning = true
-    this.statusBar.updateStatus('running')
-    console.log(`Harmony server is running on port ${this.port}`)
   }
 
   isRunning(): boolean {
     return this.isServerRunning
   }
 
-  getPort(): number {
-    return this.port
+  private setupMiddleware(): void {
+    this.app.use(
+      cors({
+        origin(origin, callback) {
+          callback(null, origin)
+        },
+        credentials: true,
+      }),
+    )
+    this.app.use(express.json())
+  }
+
+  private setupRoutes(): void {
+    // tRPC middleware
+    this.app.use(
+      '/trpc',
+      createExpressMiddleware({
+        router: appRouter,
+        createContext: ({ req, res }) => {
+          const origin = req.headers.origin
+          if (!origin) {
+            throw new Error('Origin is required')
+          }
+          return createTRPCContextExpress({
+            req,
+            res,
+            path: this.getPath(origin),
+          })
+        },
+      }),
+    )
+
+    // Health check endpoint
+    this.app.get('/health', (req, res) => {
+      res.json({ status: 'ok', port: this.port })
+    })
+
+    // Root endpoint
+    this.app.get('/', (req, res) => {
+      res.json({
+        message: 'Harmony UI Server',
+        port: this.port,
+        status: this.isServerRunning ? 'running' : 'stopped',
+        path: this.getPath(),
+      })
+    })
   }
 }

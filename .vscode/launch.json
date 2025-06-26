@@ -39,7 +39,8 @@
 			"outFiles": [
 				"${workspaceFolder}/packages/vscode-extension/dist/**/*.js"
 			],
-      "cwd": "${workspaceFolder}/packages/vscode-extension"
+      "cwd": "${workspaceFolder}/packages/vscode-extension",
+      "preLaunchTask": "npm: compile - packages/vscode-extension",
 		}
   ]
 }

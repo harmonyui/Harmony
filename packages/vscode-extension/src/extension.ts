@@ -1,91 +1,116 @@
 import * as vscode from 'vscode'
-import { HarmonyServer } from './server'
+import { GlobalServerManager } from './globalServerManager'
 import { StatusBarManager } from './statusBar'
+import { getConfigFile } from './utils/get-config-file'
 
-let server: HarmonyServer | undefined
 let statusBar: StatusBarManager | undefined
+let globalServerManager: GlobalServerManager
+let windowFocusDisposable: vscode.Disposable | undefined
+let windowId: string
 
 export function activate(context: vscode.ExtensionContext) {
   console.log('Harmony UI extension is now active!')
 
-  // Initialize status bar
+  // Generate a unique ID for this window
+  windowId = `${Date.now()}-${Math.random().toString(36).substr(2, 9)}`
+
   statusBar = new StatusBarManager()
+
+  // Initialize global server manager
+  globalServerManager = new GlobalServerManager(statusBar, windowId)
 
   // Register commands
   const startServerCommand = vscode.commands.registerCommand(
     'harmony.startServer',
     async () => {
-      if (server?.isRunning()) {
-        vscode.window.showInformationMessage(
-          'Harmony server is already running',
-        )
-        return
-      }
-      const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
-      if (!workspaceFolder) {
-        vscode.window.showErrorMessage('No workspace folder found')
-        return
-      }
-      server = new HarmonyServer(workspaceFolder.uri.fsPath, statusBar!)
-
-      try {
-        await server.start()
-
-        vscode.window.showInformationMessage(
-          'Harmony server started on port 4300',
-        )
-      } catch (error) {
-        if (
-          error instanceof Error &&
-          error.message === 'Port 4300 is already in use'
-        ) {
-          server.changePath(workspaceFolder.uri.fsPath)
-          vscode.window.showInformationMessage(
-            'Harmony server is already running on port 4300, changing path to workspace folder',
-          )
-          return
-        }
-
-        vscode.window.showErrorMessage(
-          `Failed to start Harmony server: ${error}`,
-        )
-      }
+      await requestServerControl()
     },
   )
 
   const stopServerCommand = vscode.commands.registerCommand(
     'harmony.stopServer',
     async () => {
-      if (!server?.isRunning()) {
-        vscode.window.showInformationMessage('Harmony server is not running')
-        return
-      }
+      await releaseServerControl()
+    },
+  )
 
-      try {
-        await server.stop()
-        vscode.window.showInformationMessage('Harmony server stopped')
-      } catch (error) {
-        vscode.window.showErrorMessage(
-          `Failed to stop Harmony server: ${error}`,
-        )
+  // Register VS Code window focus event handler
+  // This only triggers when switching between VS Code windows, not when switching to other applications
+  windowFocusDisposable = vscode.window.onDidChangeWindowState(
+    (windowState) => {
+      // Only handle VS Code window focus changes, not general application focus
+      if (windowState.focused && !isStopped()) {
+        // This VS Code window gained focus - try to take control of the server
+        requestServerControl()
       }
     },
   )
 
-  context.subscriptions.push(startServerCommand, stopServerCommand)
+  // Add disposables to context
+  context.subscriptions.push(
+    startServerCommand,
+    stopServerCommand,
+    windowFocusDisposable,
+  )
 
-  // Auto-start server if enabled
-  const config = vscode.workspace.getConfiguration('harmony')
-  if (config.get('autoStartServer', false)) {
-    vscode.commands.executeCommand('harmony.startServer')
+  // If this window is focused on activation, try to start the server
+  if (vscode.window.state.focused) {
+    // Small delay to ensure everything is initialized
+    setTimeout(() => {
+      requestServerControl()
+    }, 1000)
   }
 }
 
 export function deactivate() {
-  if (server) {
-    server.stop()
+  console.log('Harmony UI extension is deactivating...')
+
+  // Release server control when extension deactivates
+  if (globalServerManager) {
+    releaseServerControl()
+    globalServerManager.dispose()
   }
-  if (statusBar) {
-    statusBar.dispose()
+}
+
+async function requestServerControl(): Promise<void> {
+  if (!statusBar || !globalServerManager) {
+    return
   }
+
+  const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
+  if (!workspaceFolder) {
+    statusBar.updateStatus('error')
+    vscode.window.showErrorMessage('No workspace folder found')
+    return
+  }
+
+  const workspacePath = workspaceFolder.uri.fsPath
+
+  // Check if this is a Harmony workspace
+  const config = getConfigFile(workspacePath)
+  if (!config) {
+    statusBar.updateStatus('error')
+    vscode.window.showErrorMessage(
+      'No harmony.config.json found in workspace. This is not a Harmony project.',
+    )
+    return
+  }
+
+  // Request server control from global manager
+  const success = await globalServerManager.requestServerControl(
+    windowId,
+    workspacePath,
+  )
+}
+
+async function releaseServerControl(): Promise<void> {
+  if (!globalServerManager) {
+    return
+  }
+
+  await globalServerManager.releaseServerControl()
+}
+
+function isStopped(): boolean {
+  return statusBar?.status === 'stopped'
 }
