@@ -1,10 +1,10 @@
 {
-  "name": "Harmony",
+  "name": "vscode-harmonyui",
   "displayName": "Harmony Dev",
   "description": "Harmony UI development server for VS Code",
-  "version": "0.1.0",
-  "publisher": "Harmony UI",
-  "icon": "icons/icon-128.png",
+  "version": "1.0.0",
+  "publisher": "harmonyui",
+  "icon": "icons/icon-dark-128.png",
   "engines": {
     "vscode": "^1.93.0"
   },
@@ -56,7 +56,7 @@
     "compile": "webpack",
     "lint": "eslint src --ext ts",
     "package": "vsce package --no-dependencies",
-    "publish": "vsce publish"
+    "publish": "vsce publish --no-dependencies"
   },
   "devDependencies": {
     "@harmony/eslint-config-custom": "workspace:^",

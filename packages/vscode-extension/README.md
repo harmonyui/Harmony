@@ -1,31 +1,37 @@
-# Harmony UI VS Code Extension
+# Harmony Dev VS Code Extension
 
-This VS Code extension provides a Harmony UI development server that runs on port 4300, just like the CLI package but integrated directly into VS Code.
+A VS Code extension that provides a local development server for Harmony Dev, enabling developers to edit their React applications using no-code tools directly from VS Code.
+
+## What is Harmony Dev?
+
+Harmony Dev allows developers to edit their React applications locally using no-code tools. This VS Code extension acts as the development server that handles code updates, while users interact with their applications through the Harmony UI Chrome extension.
 
 ## Features
 
+- **Local Development Server**: Runs a Harmony Dev server on port 4300 for seamless development
 - **Automatic Server Management**: Start and stop the Harmony server directly from VS Code
 - **Multi-Window Coordination**: Only one server runs on port 4300 at a time, controlled by the focused VS Code window
 - **Efficient Control Transfer**: Server control transfers between windows without stopping/starting the server
-- **Browser-Friendly**: Server stays running when you switch to your browser to use the Harmony UI
+- **Browser-Friendly**: Server stays running when you switch to your browser to use the Harmony UI Chrome extension
 - **Status Bar Integration**: See the server status in the VS Code status bar
-- **Same tRPC API**: Exposes the same tRPC routes as the CLI package
+- **tRPC API**: Exposes a complete API for the Harmony UI Chrome extension to communicate with
+
+## How It Works
+
+1. **Install the Extension**: Install this VS Code extension in your development environment
+2. **Install the Chrome Extension**: Download and install the Harmony UI Chrome extension from the Chrome Web Store
+3. **Start Development**: Open a React project in VS Code and the server will automatically start
+4. **Make Edits**: Use the Harmony UI Chrome extension to make no-code edits to your React application
+5. **See Changes**: Code updates are automatically applied to your local development environment
 
 ## Multi-Window Behavior
 
-The extension intelligently manages the server across multiple VS Code windows using a file-based coordination system:
+The extension intelligently manages the server across multiple VS Code windows:
 
-- **When you switch to your browser**: The server stays running so you can continue using the Harmony UI
+- **When you switch to your browser**: The server stays running so you can continue using the Harmony UI Chrome extension
 - **When you switch to another VS Code window**: Server control transfers to the newly focused window (no server restart)
 - **Only one server at a time**: Ensures no port conflicts between different VS Code instances
 - **Efficient transfers**: Control changes happen instantly without stopping/starting the server
-
-### How It Works
-
-1. **First Window**: Starts the server and creates a control file in the system temp directory
-2. **Other Windows**: Read the control file to see if a server is already running
-3. **Control Transfer**: When switching windows, the control file is updated to transfer ownership
-4. **File Watching**: All windows watch the control file for changes to update their status bars
 
 ### Status Bar Indicators
 
@@ -62,7 +68,7 @@ The extension intelligently manages the server across multiple VS Code windows u
 
 ### Automatic Behavior
 
-1. **Open a Harmony project** (with `harmony.config.json`)
+1. **Open a React project** in VS Code
 2. **Focus a VS Code window** - the server will automatically start
 3. **Switch to your browser** - the server stays running
 4. **Switch to another VS Code window** - server control transfers to the new window instantly
@@ -76,28 +82,6 @@ The extension intelligently manages the server across multiple VS Code windows u
 
 - Click the status bar item to start/stop the server
 - Hover to see detailed status information
-
-## Technical Details
-
-### File-Based Coordination
-
-The extension uses a control file (`harmony-server-control.json`) in the system temp directory to coordinate between VS Code windows:
-
-```json
-{
-  "windowId": "unique-window-id",
-  "workspacePath": "/path/to/workspace",
-  "timestamp": 1234567890,
-  "port": 4300
-}
-```
-
-This approach ensures:
-
-- **Cross-process communication**: Different VS Code windows can coordinate
-- **No server restarts**: Control transfers happen instantly
-- **Automatic cleanup**: Control file is removed when server stops
-- **File watching**: Real-time status updates across all windows
 
 ## Development
 
@@ -124,27 +108,30 @@ pnpm package
 
 - VS Code 1.85.0 or higher
 - Node.js 18+ (for building)
-- A Harmony project with `harmony.config.json`
+- A React project
+- Harmony UI Chrome extension (for making edits)
 
 ## Troubleshooting
 
 - **Port 4300 in use**: The extension will show an error if another process is using port 4300
-- **No harmony.config.json**: The extension only works in Harmony projects
 - **Server not starting**: Check the VS Code Developer Console for error messages
-- **Control file issues**: The control file is automatically managed, but you can delete it from the temp directory if needed
+- **Chrome extension not working**: Ensure the Harmony UI Chrome extension is installed and the server is running
+- **No changes appearing**: Make sure your React application is configured to work with Harmony Dev
 
 ## API Endpoints
 
-The server exposes the same endpoints as the CLI package:
+The server exposes the following endpoints for the Harmony UI Chrome extension:
 
-- `http://localhost:4300/trpc/*` - tRPC API endpoints
+- `http://localhost:4300/trpc/*` - tRPC API endpoints for code updates
 - `http://localhost:4300/health` - Health check endpoint
 - `http://localhost:4300/` - Root endpoint with server info
 
-## Differences from CLI
+## Getting Started
 
-- **Automatic management**: No need to manually start/stop the server
-- **Multi-window support**: Works seamlessly across multiple VS Code windows
-- **Browser-friendly**: Server stays running when switching to browser
-- **Visual feedback**: Status bar shows server state
-- **File-based coordination**: Efficient control transfer between windows
+1. Install this VS Code extension
+2. Install the Harmony UI Chrome extension from the Chrome Web Store
+3. Open your React project in VS Code
+4. The server will automatically start
+5. Open your React application in Chrome
+6. Use the Harmony UI Chrome extension to make no-code edits
+7. See your changes reflected in real-time in your development environment
