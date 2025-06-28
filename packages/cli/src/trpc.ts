@@ -20,7 +20,12 @@ import {
 import type { CreateTRPCProxyClient } from '@trpc/client'
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
 import type { AppRouter } from '@harmony/server/src/api/root'
-import { Repository, repositorySchema } from '@harmony/util/src/types/branch'
+import {
+  Repository,
+  RepositoryConfig,
+  repositoryConfigSchema,
+  repositorySchema,
+} from '@harmony/util/src/types/branch'
 import { jsonSchema } from '@harmony/util/src/updates/component'
 
 /**
@@ -34,7 +39,7 @@ import { jsonSchema } from '@harmony/util/src/updates/component'
 export interface CreateContextOptions {
   path: string
   repositoryId: string | undefined
-  repository: Repository | undefined
+  repositoryConfig: RepositoryConfig | undefined
   serverClient: CreateTRPCProxyClient<AppRouter>
 }
 
@@ -65,13 +70,13 @@ const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
 const createTRPCContext = async (
   localPath: string,
   repositoryId: string | undefined,
-  repository: Repository | undefined,
+  repositoryConfig: RepositoryConfig | undefined,
   serverClient: CreateTRPCProxyClient<AppRouter>,
 ) => {
   return createInnerTRPCContext({
     path: localPath,
     repositoryId,
-    repository,
+    repositoryConfig,
     serverClient,
   })
 }
@@ -96,9 +101,9 @@ export const createTRPCContextExpress = async ({
     throw new Error('repository-id or repository header is required')
   }
   const repositoryParseResult = isValidHeader(respositoryHeader)
-    ? jsonSchema.pipe(repositorySchema).safeParse(atob(respositoryHeader))
+    ? jsonSchema.pipe(repositoryConfigSchema).safeParse(atob(respositoryHeader))
     : undefined
-  const repository = repositoryParseResult?.success
+  const repositoryConfig = repositoryParseResult?.success
     ? repositoryParseResult.data
     : undefined
   const repositoryId = isValidHeader(repositoryIdHeader)
@@ -119,7 +124,12 @@ export const createTRPCContextExpress = async ({
     getToken: async () => token ?? '',
     isLocal: true,
   })
-  return createTRPCContext(localPath, repositoryId, repository, serverClient)
+  return createTRPCContext(
+    localPath,
+    repositoryId,
+    repositoryConfig,
+    serverClient,
+  )
 }
 
 /**

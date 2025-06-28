@@ -10,35 +10,12 @@ import {
   updateChatBubbleResponseSchema,
   updateRequestBodySchema,
 } from '@harmony/util/src/types/network'
-import type { ComponentUpdate } from '@harmony/util/src/types/component'
 import { getComponentIdsFromUpdates } from '@harmony/util/src/updates/utils'
 import { getFileContentsFromComponents } from '@harmony/util/src/utils/component'
 import { createTRPCRouter, publicProcedure } from '../trpc'
 import { getFileContent, updateFileContent } from '../utils/get-files'
-import { ChatBubble } from '@harmony/util/src/types/branch'
 import { generateUniqueId } from '@harmony/util/src/utils/common'
-
-type State = {
-  updates: ComponentUpdate[]
-  chatBubbles: ChatBubble[]
-}
-
-const state: Record<string, State> = {}
-
-const getState = <KEY extends keyof State>(
-  path: string,
-  key: KEY,
-): State[KEY] => {
-  let ret = state[path]
-  if (!ret) {
-    ret = {
-      updates: [],
-      chatBubbles: [],
-    }
-    state[path] = ret
-  }
-  return ret[key]
-}
+import { getState, setState } from '../utils/state'
 
 export const editorRouter = createTRPCRouter({
   loadProject: publicProcedure
@@ -46,7 +23,7 @@ export const editorRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const ret = await ctx.serverClient.editor.loadProject.query({
         ...input,
-        repository: ctx.repository,
+        repositoryConfig: ctx.repositoryConfig,
       })
       const updates = getState(ctx.path, 'updates')
       const chatBubbles = getState(ctx.path, 'chatBubbles')
@@ -64,10 +41,7 @@ export const editorRouter = createTRPCRouter({
       const updates = getState(ctx.path, 'updates')
       updates.push(...input.values.flatMap(({ update }) => update))
 
-      state[ctx.path] = {
-        updates,
-        chatBubbles: [],
-      }
+      setState(ctx.path, 'updates', updates)
 
       return {
         errorUpdates: [],
@@ -85,25 +59,19 @@ export const editorRouter = createTRPCRouter({
         componentIds,
         async (file) => getFileContent(file, path),
       )
-      const repository =
-        ctx.repository ??
-        (ctx.repositoryId
-          ? await ctx.serverClient.editor.getRepository.query({
-              repositoryId: ctx.repositoryId,
-            })
-          : ctx.repository)
-      if (!repository) {
+      const repositoryConfig = ctx.repositoryConfig
+      if (!repositoryConfig) {
         throw new Error('Repository not found')
       }
 
       fileContents.push({
-        content: getFileContent(repository.config.tailwindPath, path),
-        file: repository.config.tailwindPath,
+        content: getFileContent(repositoryConfig.tailwindPath, path),
+        file: repositoryConfig.tailwindPath,
       })
 
       const codeUpdates = await ctx.serverClient.editor.getCodeUpdates.mutate({
         updates,
-        repository,
+        repositoryConfig,
         contents: fileContents.map(({ file, content }) => ({
           path: file,
           content,
@@ -128,7 +96,7 @@ export const editorRouter = createTRPCRouter({
       )
       return ctx.serverClient.editor.indexComponents.mutate({
         ...input,
-        repositoryId: ctx.repository ?? input.repositoryId,
+        repositoryId: ctx.repositoryConfig ?? input.repositoryId,
         contents: fileContents.map(({ file, content }) => ({
           path: file,
           content,

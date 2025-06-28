@@ -180,14 +180,19 @@ export const setupRoute = createTRPCRouter({
             installationId: curr.installation_id,
             cssFramework: 'other',
             tailwindPrefix: undefined,
-            tailwindConfig: '{}',
-            prettierConfig:
-              '{"trailingComma":"es5","semi":true,"tabWidth":2,"singleQuote":true,"jsxSingleQuote":true}',
             defaultUrl: '',
             registry: {},
             config: {
               tailwindPath: 'tailwind.config.ts',
               packageResolution: {},
+              prettierConfig: {
+                trailingComma: 'es5',
+                semi: true,
+                tabWidth: 2,
+                singleQuote: true,
+                jsxSingleQuote: true,
+              },
+              tailwindConfig: {},
             },
           })),
         ],

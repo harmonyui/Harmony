@@ -53,7 +53,7 @@ export const updateStyle: UpdateComponent = async (info, graph, repository) => {
           value,
           '',
           repository.cssFramework,
-          repository.tailwindConfig,
+          repository.config.tailwindConfig,
         ),
       )
       updateElementClassName({

@@ -8,6 +8,7 @@ import {
   branchItemSchema,
   chatBubbleSchema,
   pullRequestSchema,
+  repositoryConfigSchema,
   repositorySchema,
 } from './branch'
 import { emailSchema } from './utils'
@@ -31,7 +32,7 @@ export type UpdateResponse = z.infer<typeof updateResponseSchema>
 
 export const loadRequestSchema = z.object({
   repositoryId: z.optional(z.string()),
-  repository: z.optional(repositorySchema),
+  repositoryConfig: z.optional(repositoryConfigSchema),
   branchId: z.optional(z.string()),
 })
 export type LoadRequest = z.infer<typeof loadRequestSchema>
@@ -116,7 +117,7 @@ export type PublishResponse = z.infer<typeof publishResponseSchema>
 
 export const indexComponentsRequestSchema = z.object({
   branchId: z.string(),
-  repositoryId: z.union([z.string(), repositorySchema]),
+  repositoryId: z.union([z.string(), repositoryConfigSchema]),
   components: z.array(z.string()),
   contents: z.optional(
     z.array(z.object({ content: z.string(), path: z.string() })),
@@ -145,7 +146,7 @@ export const createProjectResponseSchema = branchItemSchema
 export type CreateProjectResponse = z.infer<typeof createProjectResponseSchema>
 
 export const codeUpdatesRequestSchema = z.object({
-  repository: z.union([z.string(), repositorySchema]),
+  repositoryConfig: repositoryConfigSchema,
   updates: z.array(updateSchema),
   contents: z.array(
     z.object({

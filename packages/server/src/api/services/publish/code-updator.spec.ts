@@ -104,15 +104,6 @@ describe('code-updator', () => {
       cssFramework: cssFramework || 'tailwind',
       defaultUrl: '',
       tailwindPrefix,
-      tailwindConfig: JSON.stringify(tailwindConfig),
-      prettierConfig: JSON.stringify({
-        trailingComma: 'es5',
-        semi: false,
-        tabWidth: 2,
-        singleQuote: true,
-        jsxSingleQuote: true,
-        parser: 'typescript',
-      }),
       registry: {
         Button: {
           name: 'Button',
@@ -131,6 +122,15 @@ describe('code-updator', () => {
         tailwindPath: 'tailwind.config.ts',
         packageResolution: {
           ui: 'packages/ui',
+        },
+        tailwindConfig,
+        prettierConfig: {
+          trailingComma: 'es5',
+          semi: false,
+          tabWidth: 2,
+          singleQuote: true,
+          jsxSingleQuote: true,
+          parser: 'typescript',
         },
       },
     }

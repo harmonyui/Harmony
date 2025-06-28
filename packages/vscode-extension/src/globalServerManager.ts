@@ -5,6 +5,7 @@ import * as net from 'net'
 import * as fs from 'fs'
 import * as path from 'path'
 import * as os from 'os'
+import { resetState } from './utils/state'
 
 interface ServerControlFile {
   windowId: string
@@ -18,9 +19,7 @@ interface ServerControlFile {
 
 export class GlobalServerManager {
   private fileContents: string | null = null
-  private statusBar: StatusBarManager
   private server: HarmonyServer | null = null
-  private windowId: string
   private readonly port = 4300
   private readonly controlFile = path.join(
     os.tmpdir(),
@@ -29,16 +28,15 @@ export class GlobalServerManager {
   private isShuttingDown = false
   private controlFileWatcher: fs.StatWatcher | null = null
 
-  constructor(statusBar: StatusBarManager, windowId: string) {
-    this.statusBar = statusBar
-    this.windowId = windowId
+  constructor(
+    private statusBar: StatusBarManager,
+    private windowId: string,
+    public workspacePath: string,
+  ) {
     this.setupControlFileWatcher()
   }
 
-  async requestServerControl(
-    windowId: string,
-    workspacePath: string,
-  ): Promise<boolean> {
+  async requestServerControl(): Promise<boolean> {
     // Check if there's already a server running
     const existingControl = this.readControlFile()
 
@@ -84,16 +82,18 @@ export class GlobalServerManager {
 
         // Write control file
         this.writeControlFile({
-          windowId,
-          workspacePath,
+          windowId: this.windowId,
+          workspacePath: this.workspacePath,
           pathConfig: {},
           timestamp: Date.now(),
           port: this.port,
-          activeWindowIds: new Set([windowId]),
-          activeServer: windowId,
+          activeWindowIds: new Set([this.windowId]),
+          activeServer: this.windowId,
         })
 
-        console.log(`Server started for window ${windowId} at ${workspacePath}`)
+        console.log(
+          `Server started for window ${this.windowId} at ${this.workspacePath}`,
+        )
         return true
       } catch (error) {
         console.error('Failed to start server:', error)
@@ -105,22 +105,22 @@ export class GlobalServerManager {
       }
     }
 
-    if (existingControl && existingControl.windowId !== windowId) {
+    if (existingControl && existingControl.windowId !== this.windowId) {
       // Another window controls the server - update control file to transfer control
       console.log(
-        `Transferring server control from window ${existingControl.windowId} to ${windowId}`,
+        `Transferring server control from window ${existingControl.windowId} to ${this.windowId}`,
       )
 
       // Update the control file to indicate this window now controls the server
       this.writeControlFile({
-        windowId,
+        windowId: this.windowId,
         pathConfig: existingControl.pathConfig,
-        workspacePath,
+        workspacePath: this.workspacePath,
         timestamp: Date.now(),
         port: this.port,
         activeWindowIds: new Set([
           ...existingControl.activeWindowIds,
-          windowId,
+          this.windowId,
         ]),
         activeServer: existingControl.activeServer,
       })
@@ -149,6 +149,7 @@ export class GlobalServerManager {
       }
 
       control.activeWindowIds.delete(this.windowId)
+      resetState(this.workspacePath)
 
       if (control.activeWindowIds.size === 0) {
         // Remove control file

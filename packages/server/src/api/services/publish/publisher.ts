@@ -16,9 +16,8 @@ export class Publisher {
   ): Promise<PullRequest | undefined> {
     const updates = prepareUpdatesForGenerator(updatesRaw)
 
-    const configOptions = JSON.parse(
-      this.gitRepository.repository.prettierConfig,
-    ) as prettier.Options
+    const configOptions = this.gitRepository.repository.config
+      .prettierConfig as prettier.Options
     const fileUpdates = await getCodeUpdates({
       updates,
       gitRepository: this.gitRepository,
@@ -48,9 +47,8 @@ export class Publisher {
   public async updateChanges(updatesRaw: ComponentUpdate[]) {
     const _updates = prepareUpdatesForGenerator(updatesRaw)
 
-    const configOptions = JSON.parse(
-      this.gitRepository.repository.prettierConfig,
-    ) as prettier.Options
+    const configOptions = this.gitRepository.repository.config
+      .prettierConfig as prettier.Options
     const fileUpdates = await getCodeUpdates({
       updates: _updates,
       gitRepository: this.gitRepository,

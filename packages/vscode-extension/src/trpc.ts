@@ -11,14 +11,12 @@ import {
 import type { CreateTRPCProxyClient } from '@trpc/client'
 import { createTRPCProxyClient, httpBatchLink } from '@trpc/client'
 import type { AppRouter } from '@harmony/server/src/api/root'
-import { Repository, repositorySchema } from '@harmony/util/src/types/branch'
-import { jsonSchema } from '@harmony/util/src/updates/component'
+import { Repository, RepositoryConfig } from '@harmony/util/src/types/branch'
 import { getConfigFile } from './utils/get-config-file'
 
 export interface CreateContextOptions {
   path: string
-  repositoryId: string | undefined
-  repository: Repository | undefined
+  repositoryConfig: RepositoryConfig | undefined
   serverClient: CreateTRPCProxyClient<AppRouter>
 }
 
@@ -32,14 +30,12 @@ const createInnerTRPCContext = (opts: CreateContextOptions): CreateContext => {
 
 const createTRPCContext = async (
   localPath: string,
-  repositoryId: string | undefined,
-  repository: Repository | undefined,
+  repositoryConfig: RepositoryConfig | undefined,
   serverClient: CreateTRPCProxyClient<AppRouter>,
 ) => {
   return createInnerTRPCContext({
     path: localPath,
-    repositoryId,
-    repository,
+    repositoryConfig,
     serverClient,
   })
 }
@@ -70,7 +66,6 @@ export const createTRPCContextExpress = async ({
 
   // Get repository from config file
   const repository = getConfigFile(localPath)
-  const repositoryId = repository?.id
 
   const environmentResult = environmentSchema.safeParse(
     req.headers['harmony-environment'],
@@ -86,7 +81,7 @@ export const createTRPCContextExpress = async ({
     getToken: async () => token ?? '',
     isLocal: true,
   })
-  return createTRPCContext(localPath, repositoryId, repository, serverClient)
+  return createTRPCContext(localPath, repository, serverClient)
 }
 
 const t = initTRPC.context<typeof createTRPCContextExpress>().create({

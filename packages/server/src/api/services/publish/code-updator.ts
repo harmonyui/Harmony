@@ -73,7 +73,7 @@ export class CodeUpdator {
                 update.value,
                 update.formattedValue,
                 this.gitRepository.repository.cssFramework,
-                this.gitRepository.repository.tailwindConfig,
+                this.gitRepository.repository.config.tailwindConfig,
               )
             : update.value
         const oldValue =
@@ -83,7 +83,7 @@ export class CodeUpdator {
                 update.oldValue,
                 update.formattedValue,
                 this.gitRepository.repository.cssFramework,
-                this.gitRepository.repository.tailwindConfig,
+                this.gitRepository.repository.config.tailwindConfig,
               )
             : update.oldValue
 

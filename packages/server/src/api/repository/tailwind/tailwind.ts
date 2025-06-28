@@ -38,7 +38,7 @@ const attributToConfigMapping: Record<
 export const resolveTailwindConfig = async (
   repository: Repository,
 ): Promise<Token[]> => {
-  const baseConfig = JSON.parse(repository.tailwindConfig) as Required<
+  const baseConfig = repository.config.tailwindConfig as Required<
     Required<Config>['theme']
   >['extend']
   const fullConfig = resolveConfig({

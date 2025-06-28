@@ -21,12 +21,13 @@ describe('update-cache', () => {
       installationId: 123,
       cssFramework: 'tailwind',
       defaultUrl: '',
-      tailwindConfig: '',
-      prettierConfig: '',
+      tailwindPrefix: '',
       registry: {},
       config: {
         tailwindPath: '',
         packageResolution: {},
+        tailwindConfig: {},
+        prettierConfig: {},
       },
     }
     type Files = 'file1.tsx' | 'file2.tsx' | 'file3.tsx'

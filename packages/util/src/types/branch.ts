@@ -34,8 +34,12 @@ export type PullRequest = z.infer<typeof pullRequestSchema>
 
 export const repositoryConfigSchema = z.object({
   tailwindPath: z.string(),
+  tailwindConfig: z.record(z.string(), z.unknown()),
+  prettierConfig: z.record(z.string(), z.unknown()),
   packageResolution: z.record(z.string(), z.string()),
 })
+
+export type RepositoryConfig = z.infer<typeof repositoryConfigSchema>
 
 export const repositorySchema = z.object({
   id: z.string(),
@@ -46,14 +50,18 @@ export const repositorySchema = z.object({
   installationId: z.number(),
   cssFramework: z.string(),
   tailwindPrefix: z.optional(z.string()),
-  tailwindConfig: z.string(),
-  prettierConfig: z.string(),
   defaultUrl: z.string(),
   registry: z.record(z.string(), registryItemSchema),
   config: repositoryConfigSchema,
 })
 
 export type Repository = z.infer<typeof repositorySchema>
+
+export const isRepository = (
+  repository: Repository | RepositoryConfig,
+): repository is Repository => {
+  return 'id' in repository
+}
 
 export const teamMemberSchema = z.object({
   id: z.string(),

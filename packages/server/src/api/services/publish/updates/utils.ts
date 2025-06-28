@@ -356,7 +356,7 @@ export const getClassNameValue = async (
   value: string,
   formattedValue: string,
   cssFramework: string,
-  tailwindConfig: string,
+  tailwindConfig: Record<string, unknown>,
 ) => {
   if (name === 'class')
     return createUpdate<ClassNameValue>({ type: 'class', value })

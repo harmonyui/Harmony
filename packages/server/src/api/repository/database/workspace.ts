@@ -1,6 +1,6 @@
 import { Db, Prisma } from '@harmony/db/lib/prisma'
 import { Repository, Workspace } from '@harmony/util/src/types/branch'
-import { prismaToRepository } from './repository'
+import { prismaToRepository, repositoryToPrisma } from './repository'
 
 const workspacePayload = {
   include: {
@@ -91,19 +91,7 @@ export async function createWorkspace({
       name,
       team_id: teamId,
       repository: {
-        create: {
-          branch: repository.branch,
-          name: repository.name,
-          owner: repository.owner,
-          ref: repository.ref,
-          installationId: repository.installationId,
-          css_framework: repository.cssFramework,
-          tailwind_prefix: repository.tailwindPrefix,
-          tailwind_config: repository.tailwindConfig,
-          prettier_config: repository.prettierConfig,
-          default_url: repository.defaultUrl,
-          config: repository.config,
-        },
+        create: repositoryToPrisma(repository),
       },
     },
     ...workspacePayload,

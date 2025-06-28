@@ -29,7 +29,7 @@ import {
   formatComponentAndErrors,
   indexForComponents,
 } from '../services/indexor/indexor'
-import { createTRPCRouter, protectedProcedure, publicProcedure } from '../trpc'
+import { createTRPCRouter, protectedProcedure } from '../trpc'
 import { updateFileCache } from '../services/updator/update-cache'
 import { Publisher } from '../services/publish/publisher'
 import { generateUpdatesFromText } from '../repository/openai'
@@ -40,7 +40,11 @@ import {
   getComponentUpdates,
 } from '../services/component-update'
 import { CachedGitRepository } from '../repository/git/cached-git'
-import { Repository } from '@harmony/util/src/types/branch'
+import {
+  isRepository,
+  Repository,
+  RepositoryConfig,
+} from '@harmony/util/src/types/branch'
 import { Db } from '@harmony/db/lib/prisma'
 import { wordToKebabCase } from '@harmony/util/src/utils/common'
 import { getRepository } from '../repository/database/repository'
@@ -52,12 +56,12 @@ import {
 } from '../repository/database/chat'
 
 const returnRepository = async (
-  repositoryOrId: string | Repository | undefined,
+  repositoryOrId: string | RepositoryConfig | undefined,
   prisma: Db,
-): Promise<Repository | undefined> => {
+): Promise<Repository | RepositoryConfig | undefined> => {
   const repositoryId =
     typeof repositoryOrId === 'string' ? repositoryOrId : undefined
-  let repository =
+  let repository: Repository | RepositoryConfig | undefined =
     typeof repositoryOrId !== 'string' ? repositoryOrId : undefined
   if (repository !== undefined) {
     return repository
@@ -80,7 +84,7 @@ const editorRoutes = {
     .input(loadRequestSchema)
     .output(loadResponseSchema)
     .query(async ({ ctx, input }) => {
-      const { repositoryId, branchId, repository: existingRepository } = input
+      const { repositoryId, branchId, repositoryConfig } = input
       const { prisma } = ctx
       const isLocal = branchId === 'local' || !branchId
 
@@ -111,11 +115,11 @@ const editorRoutes = {
 
       let tokens: Token[] = []
       const repository = await returnRepository(
-        existingRepository ?? repositoryId,
+        repositoryConfig ?? repositoryId,
         prisma,
       )
 
-      if (repository !== undefined) {
+      if (repository !== undefined && isRepository(repository)) {
         const githubRepository =
           ctx.gitRepositoryFactory.createGitRepository(repository)
 
@@ -130,7 +134,6 @@ const editorRoutes = {
         //Let's go through the diffs and update those component ids
         if (ref !== repository.ref) {
           if (!repository.ref.startsWith('http')) {
-            // await updateComponentIdsFromUpdates(updates, repository.ref, githubRepository);
             await updateFileCache(
               ctx.gitRepositoryFactory,
               repository,
@@ -345,8 +348,8 @@ const editorRoutes = {
         throw new Error(`Cannot find repository with id ${repositoryId}`)
       }
 
-      const gitRepository = contents
-        ? new CachedGitRepository(repository, contents)
+      const gitRepository = !isRepository(repository)
+        ? new CachedGitRepository(repository, contents ?? [])
         : ctx.gitRepositoryFactory.createGitRepository(repository)
 
       const instances = await indexForComponents(
@@ -368,22 +371,10 @@ const editorRoutes = {
   getCodeUpdates: protectedProcedure
     .input(codeUpdatesRequestSchema)
     .output(codeUpdatesResponseSchema)
-    .mutation(async ({ ctx, input }) => {
-      const { repository: repositoryIdOrRepository, updates, contents } = input
-      const { prisma } = ctx
+    .mutation(async ({ input }) => {
+      const { repositoryConfig, updates, contents } = input
 
-      const repository = await returnRepository(
-        repositoryIdOrRepository,
-        prisma,
-      )
-
-      if (!repository) {
-        throw new Error(
-          `Cannot find repository with id ${repositoryIdOrRepository}`,
-        )
-      }
-
-      const gitRepository = new CachedGitRepository(repository, contents)
+      const gitRepository = new CachedGitRepository(repositoryConfig, contents)
       const publisher = new Publisher(gitRepository)
       const updateChanges = await publisher.updateChanges(updates)
 

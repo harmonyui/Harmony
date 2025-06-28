@@ -16,8 +16,14 @@ export function activate(context: vscode.ExtensionContext) {
 
   statusBar = new StatusBarManager()
 
+  const workspacePath = getAndValidateWorkspacePath(statusBar)
+
   // Initialize global server manager
-  globalServerManager = new GlobalServerManager(statusBar, windowId)
+  globalServerManager = new GlobalServerManager(
+    statusBar,
+    windowId,
+    workspacePath ?? '',
+  )
 
   // Register commands
   const startServerCommand = vscode.commands.registerCommand(
@@ -77,6 +83,32 @@ async function requestServerControl(): Promise<void> {
     return
   }
 
+  const workspacePath = getAndValidateWorkspacePath(statusBar)
+  if (!workspacePath) {
+    return
+  }
+
+  globalServerManager.workspacePath = workspacePath
+
+  // Request server control from global manager
+  const success = await globalServerManager.requestServerControl()
+}
+
+async function releaseServerControl(): Promise<void> {
+  if (!globalServerManager) {
+    return
+  }
+
+  await globalServerManager.releaseServerControl()
+}
+
+function isStopped(): boolean {
+  return statusBar?.status === 'stopped'
+}
+
+const getAndValidateWorkspacePath = (
+  statusBar: StatusBarManager,
+): string | undefined => {
   const workspaceFolder = vscode.workspace.workspaceFolders?.[0]
   if (!workspaceFolder) {
     statusBar.updateStatus('error')
@@ -96,21 +128,5 @@ async function requestServerControl(): Promise<void> {
     return
   }
 
-  // Request server control from global manager
-  const success = await globalServerManager.requestServerControl(
-    windowId,
-    workspacePath,
-  )
-}
-
-async function releaseServerControl(): Promise<void> {
-  if (!globalServerManager) {
-    return
-  }
-
-  await globalServerManager.releaseServerControl()
-}
-
-function isStopped(): boolean {
-  return statusBar?.status === 'stopped'
+  return workspacePath
 }

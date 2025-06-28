@@ -1,4 +1,8 @@
-import type { CommitItem, Repository } from '@harmony/util/src/types/branch'
+import type {
+  CommitItem,
+  Repository,
+  RepositoryConfig,
+} from '@harmony/util/src/types/branch'
 import type { Change } from 'diff'
 import type { ContentOrDirectory, GitRepository, UpdateFile } from './types'
 
@@ -7,10 +11,24 @@ type FileAndContent = {
   content: string
 }[]
 export class CachedGitRepository implements GitRepository {
+  public repository: Repository
   constructor(
-    public repository: Repository,
+    repositoryConfig: RepositoryConfig,
     private files: FileAndContent,
-  ) {}
+  ) {
+    this.repository = {
+      id: '',
+      name: '',
+      owner: '',
+      branch: '',
+      ref: '',
+      installationId: 0,
+      cssFramework: 'tailwind',
+      defaultUrl: '',
+      registry: {},
+      config: repositoryConfig,
+    }
+  }
   public async getContentOrDirectory(): Promise<
     | ContentOrDirectory
     | ContentOrDirectory[]

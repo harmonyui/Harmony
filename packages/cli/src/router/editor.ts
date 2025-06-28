@@ -27,7 +27,7 @@ export const editorRouter = createTRPCRouter({
     .query(async ({ ctx, input }) => {
       const ret = await ctx.serverClient.editor.loadProject.query({
         ...input,
-        repository: ctx.repository,
+        repositoryConfig: ctx.repositoryConfig,
       })
       return {
         ...ret,
@@ -55,25 +55,27 @@ export const editorRouter = createTRPCRouter({
         componentIds,
         async (file) => getFileContent(file, path),
       )
-      const repository =
-        ctx.repository ??
+      const repositoryConfig =
+        ctx.repositoryConfig ??
         (ctx.repositoryId
-          ? await ctx.serverClient.editor.getRepository.query({
-              repositoryId: ctx.repositoryId,
-            })
-          : ctx.repository)
-      if (!repository) {
+          ? (
+              await ctx.serverClient.editor.getRepository.query({
+                repositoryId: ctx.repositoryId,
+              })
+            ).config
+          : ctx.repositoryConfig)
+      if (!repositoryConfig) {
         throw new Error('Repository not found')
       }
 
       fileContents.push({
-        content: getFileContent(repository.config.tailwindPath, path),
-        file: repository.config.tailwindPath,
+        content: getFileContent(repositoryConfig.tailwindPath, path),
+        file: repositoryConfig.tailwindPath,
       })
 
       const codeUpdates = await ctx.serverClient.editor.getCodeUpdates.mutate({
         updates,
-        repository,
+        repositoryConfig,
         contents: fileContents.map(({ file, content }) => ({
           path: file,
           content,
@@ -98,7 +100,7 @@ export const editorRouter = createTRPCRouter({
       )
       return ctx.serverClient.editor.indexComponents.mutate({
         ...input,
-        repositoryId: ctx.repository ?? input.repositoryId,
+        repositoryId: ctx.repositoryConfig ?? input.repositoryId,
         contents: fileContents.map(({ file, content }) => ({
           path: file,
           content,
