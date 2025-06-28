@@ -5,7 +5,10 @@ export const navigation = [
   },
   {
     title: 'Installation',
-    links: [{ title: 'NextJS', href: '/docs/installation/nextjs' }],
+    links: [
+      { title: 'NextJS', href: '/docs/installation/nextjs' },
+      { title: 'Harmony Dev', href: '/docs/installation/harmony-dev' },
+    ],
   },
   // {
   //   title: 'Core concepts',
