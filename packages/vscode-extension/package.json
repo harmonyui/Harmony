@@ -2,7 +2,7 @@
   "name": "vscode-harmonyui",
   "displayName": "Harmony Dev",
   "description": "Harmony UI development server for VS Code",
-  "version": "0.1.0",
+  "version": "1.0.1",
   "publisher": "harmonyui",
   "repository": "https://github.com/harmonyui/harmony",
   "icon": "icons/icon-dark-128.png",

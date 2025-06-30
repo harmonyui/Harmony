@@ -32,7 +32,7 @@ export const createHarmonyComponentSlice = createHarmonySlice<
     )
     const { harmonyComponents, errorElements } = await get().indexComponents({
       ...request,
-      components: uniqueElements,
+      components: Array.from(new Set(uniqueElements)),
     })
 
     get().updateErrorElements(errorElements, rootElement)
