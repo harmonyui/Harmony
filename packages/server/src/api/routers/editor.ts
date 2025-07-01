@@ -119,11 +119,15 @@ const editorRoutes = {
         prisma,
       )
 
+      tokens = repository
+        ? isRepository(repository)
+          ? await resolveTailwindConfig(repository.config.tailwindConfig)
+          : await resolveTailwindConfig(repository.tailwindConfig)
+        : []
+
       if (repository !== undefined && isRepository(repository)) {
         const githubRepository =
           ctx.gitRepositoryFactory.createGitRepository(repository)
-
-        tokens = await resolveTailwindConfig(repository)
 
         const ref = repository.branch
           ? await githubRepository.getBranchRef(repository.branch)

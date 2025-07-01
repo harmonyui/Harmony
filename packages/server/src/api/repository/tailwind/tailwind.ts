@@ -1,7 +1,7 @@
 import resolveConfig from 'tailwindcss/resolveConfig'
 import type { Config } from 'tailwindcss'
 import type { Token } from '@harmony/util/src/types/tokens'
-import type { Repository } from '@harmony/util/src/types/branch'
+import type { RepositoryConfig } from '@harmony/util/src/types/branch'
 
 const attributToConfigMapping: Record<
   string,
@@ -36,9 +36,9 @@ const attributToConfigMapping: Record<
 }
 
 export const resolveTailwindConfig = async (
-  repository: Repository,
+  tailwindConfig: RepositoryConfig['tailwindConfig'],
 ): Promise<Token[]> => {
-  const baseConfig = repository.config.tailwindConfig as Required<
+  const baseConfig = tailwindConfig as Required<
     Required<Config>['theme']
   >['extend']
   const fullConfig = resolveConfig({

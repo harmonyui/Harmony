@@ -2187,6 +2187,116 @@ describe('code-updator', () => {
         `),
       )
     })
+
+    it('Should update className with multiple classes', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo([
+        'classNameTests',
+      ])
+
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'className',
+          name: 'backgroundColor',
+          value: '#713f12',
+          oldValue: '',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+          dateModified: new Date(),
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.classNameTests).toBeTruthy()
+
+      const codeUpdates = fileUpdates.classNameTests
+      expect(codeUpdates.filePath).toBe('classNameTests')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          const Component = () => {
+            const options = [
+              {
+                backgroundColor: 'bg-yellow-900',
+                label: 'Hello',
+              },
+              {
+                backgroundColor: 'bg-black',
+                label: 'There',
+              },
+            ]
+
+            return <div>
+              {options.map((option) => {
+                return <div className={\`rounded-md \${option.backgroundColor}\`}>
+                  <h1>{option.label}</h1>
+                </div>
+              })}
+            </div>
+          }
+
+          const App = () => {
+            return <Component />
+          }
+        `),
+      )
+    })
+
+    it('Should update className with template literal', async () => {
+      const { codeUpdator, elementInstances } = await setupGitRepo([
+        'classNameTests',
+      ])
+
+      const updates: ComponentUpdate[] = [
+        {
+          type: 'className',
+          name: 'borderRadius',
+          value: '4px',
+          oldValue: '',
+          componentId: elementInstances[1].id,
+          childIndex: 0,
+          isGlobal: false,
+          dateModified: new Date(),
+        },
+      ]
+
+      const fileUpdates = await codeUpdator.updateFiles(updates)
+
+      expect(Object.keys(fileUpdates).length).toBe(1)
+      expect(fileUpdates.classNameTests).toBeTruthy()
+
+      const codeUpdates = fileUpdates.classNameTests
+      expect(codeUpdates.filePath).toBe('classNameTests')
+      expect(await formatCode(codeUpdates.newContent)).toBe(
+        await formatCode(`
+          const Component = () => {
+            const options = [
+              {
+                backgroundColor: 'bg-white',
+                label: 'Hello',
+              },
+              {
+                backgroundColor: 'bg-black',
+                label: 'There',
+              },
+            ]
+
+            return <div>
+              {options.map((option) => {
+                return <div className={\`rounded \${option.backgroundColor}\`}>
+                  <h1>{option.label}</h1>
+                </div>
+              })}
+            </div>
+          }
+
+          const App = () => {
+            return <Component />
+          }
+        `),
+      )
+    })
   })
 })
 
@@ -2477,6 +2587,31 @@ const testFiles = {
     }
     const Bootcamps = ({bootcamp}) => {
       return <Link href={bootcamp.url} className="bg-white">{bootcamp.name}</Link>
+    }
+  `,
+  classNameTests: `
+    const Component = () => {
+    const options = [
+      {
+        backgroundColor: 'bg-white',
+        label: 'Hello',
+      },
+      {
+        backgroundColor: 'bg-black',
+        label: 'There',
+      },
+    ]
+      return <div>
+        {options.map((option) => {
+          return <div className={\`rounded-md \${option.backgroundColor}\`}>
+            <h1>{option.label}</h1>
+          </div>
+        })}
+      </div>
+    }
+
+    const App = () => {
+      return <Component />
     }
   `,
 }

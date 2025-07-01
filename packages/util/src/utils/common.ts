@@ -414,3 +414,10 @@ export const getFileContents = async (
 export const generateUniqueId = () => {
   return uuidv4()
 }
+
+export const addOnTrim = (str: string, strWithTrim: string) => {
+  const match = strWithTrim.match(/^(\s*)(.*?)(\s*)$/)
+  if (!match) return str
+  const [, leadingSpaces, , trailingSpaces] = match
+  return `${leadingSpaces}${str}${trailingSpaces}`
+}

@@ -5,6 +5,7 @@ import {
   getWebUrl,
   updateLocationFromContent,
 } from './component'
+import { addOnTrim } from './common'
 
 describe('index', () => {
   describe('updateLocationFromDiffs', () => {
@@ -178,6 +179,43 @@ describe('index', () => {
     it('Should return production url when in production mode', () => {
       const url = getEditorUrl('production')
       expect(url).toBe('https://harmony-ui.fly.dev')
+    })
+  })
+
+  describe('addOnTrim', () => {
+    it('Should add on trim', () => {
+      const str = 'bg-red-500'
+      const strWithTrim = '  bg-blue-500  '
+      const result = addOnTrim(str, strWithTrim)
+      expect(result).toBe('  bg-red-500  ')
+    })
+
+    it('Should add on trim with leading spaces', () => {
+      const str = 'bg-red-500'
+      const strWithTrim = '  bg-blue-500'
+      const result = addOnTrim(str, strWithTrim)
+      expect(result).toBe('  bg-red-500')
+    })
+
+    it('Should add on trim with trailing spaces', () => {
+      const str = 'bg-red-500'
+      const strWithTrim = 'bg-blue-500  '
+      const result = addOnTrim(str, strWithTrim)
+      expect(result).toBe('bg-red-500  ')
+    })
+
+    it('Should add on trim with no spaces', () => {
+      const str = 'bg-red-500'
+      const strWithTrim = 'bg-blue-500'
+      const result = addOnTrim(str, strWithTrim)
+      expect(result).toBe('bg-red-500')
+    })
+
+    it('Should add on trim with middle space', () => {
+      const str = 'bg- red-500'
+      const strWithTrim = ' bg- blue-500     '
+      const result = addOnTrim(str, strWithTrim)
+      expect(result).toBe(' bg- red-500     ')
     })
   })
 })

@@ -17,6 +17,7 @@ import {
   rotateThroughValuesAndMakeChanges,
 } from './utils'
 import type { UpdateComponent } from './types'
+import { addOnTrim } from '@harmony/util/src/utils/common'
 
 export const updateClassName: UpdateComponent = async (
   { value: unparsedValue, oldValue: unparsedOldValue, update: componentUpdate },
@@ -110,6 +111,19 @@ export const updateElementClassName = ({
       return mergedWithPrefix
     }
 
+    const getMergeInfo = (node: Node<LiteralNode>) => {
+      const currClassesOriginal = String(getLiteralValue(node.node))
+      const currClasses = currClassesOriginal.trim()
+      const mergedClasses = mergeTailwindClasses(currClasses, value)
+      const shouldMerge =
+        mergedClasses.split(' ').length === currClasses.split(' ').length
+      const mergedValue = addOnTrim(mergedClasses, currClassesOriginal)
+      return {
+        shouldMerge,
+        mergedValue,
+      }
+    }
+
     //Figure out which value can accept our new class
     let defaultValue: Node<LiteralNode> | undefined
     if (
@@ -134,12 +148,9 @@ export const updateElementClassName = ({
           if (!defaultValue) {
             defaultValue = node
           }
-          const currClasses = String(getLiteralValue(node.node))
-          const mergedClasses = mergeTailwindClasses(currClasses, value)
-          if (
-            mergedClasses.split(' ').length === currClasses.split(' ').length
-          ) {
-            graph.changeLiteralNode(node, mergedClasses)
+          const { shouldMerge, mergedValue } = getMergeInfo(node)
+          if (shouldMerge) {
+            graph.changeLiteralNode(node, mergedValue)
             return true
           }
         }
@@ -162,9 +173,8 @@ export const updateElementClassName = ({
       //If we could not find classes to merge with, just add the new classes
       //to the first value we came across
       if (defaultValue) {
-        const currClasses = getLiteralValue(defaultValue.node)
-        const mergedClasses = mergeTailwindClasses(String(currClasses), value)
-        graph.changeLiteralNode(defaultValue, mergedClasses)
+        const { mergedValue } = getMergeInfo(defaultValue)
+        graph.changeLiteralNode(defaultValue, mergedValue)
         return
       }
 
