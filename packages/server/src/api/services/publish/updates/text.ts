@@ -1,10 +1,7 @@
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
+import { rotateThroughDateFlow } from '../../indexor/utils'
 import type { UpdateComponent } from './types'
-import {
-  addCommentToElement,
-  getInstanceInfo,
-  rotateThroughValuesAndMakeChanges,
-} from './utils'
+import { addCommentToElement, getInstanceInfo } from './utils'
 
 export const updateText: UpdateComponent = async (
   { update: componentUpdate, oldValue, value },
@@ -43,7 +40,7 @@ export const updateText: UpdateComponent = async (
   }
 
   if (
-    !rotateThroughValuesAndMakeChanges(textAttribute, (nodeValue, parent) => {
+    !rotateThroughDateFlow(textAttribute.elementValues, (nodeValue, parent) => {
       const addArgument = textAttribute.addArguments.find(
         (arg) => arg.propertyName === 'children' && arg.values.length === 0,
       )

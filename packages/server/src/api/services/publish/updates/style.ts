@@ -24,10 +24,10 @@ import {
   getClassNameValue,
   getElementInstanceNodes,
   getInstanceFromElement,
-  getJSXElementFromLevels,
   parseJSXElementText,
   parseText,
 } from './utils'
+import { getJSXElementFromLevels } from '../../indexor/jsx-levels'
 
 export const updateStyle: UpdateComponent = async (info, graph, repository) => {
   const { type, properties } = parseUpdate(styleUpdateSchema, info.value)

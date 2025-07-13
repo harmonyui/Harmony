@@ -367,7 +367,7 @@ export const Inspector: React.FunctionComponent<InspectorProps> = ({
       overlayRef.current = new Overlay(container, parentElement, offsetElement)
     }
     if (hoveredComponent && !isDragging) {
-      overlayRef.current.hover(hoveredComponent, scale, inspectorState)
+      overlayRef.current.hover(hoveredComponent.element, scale, inspectorState)
     } else {
       overlayRef.current.remove('hover')
     }

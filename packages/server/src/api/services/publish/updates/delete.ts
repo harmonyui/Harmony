@@ -2,7 +2,7 @@ import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { deleteComponentSchema } from '@harmony/util/src/updates/component'
 import type { FlowGraph } from '../../indexor/graph'
 import type { InstanceInfo, UpdateComponent } from './types'
-import { getJSXElementFromLevels } from './utils'
+import { getJSXElementFromLevels } from '../../indexor/jsx-levels'
 
 export const deleteUpdate: UpdateComponent = async (
   { value, update },

@@ -10,6 +10,8 @@ import type { Attribute } from './types'
 import { Node } from './types'
 import { ComponentNode } from './nodes/component'
 import type { FlowGraph } from './graph'
+import { JSXAttribute } from './nodes/jsx-attribute'
+import { JSXElementNode } from './nodes/jsx-element'
 
 export function createNode<T extends t.Node>(
   name: string,
@@ -202,4 +204,32 @@ export const getNameValue = (node: Node): string | number => {
   }
 
   return ''
+}
+
+export const rotateThroughDateFlow = (
+  elementValues: ReturnType<JSXAttribute['getDataFlowWithParents']>,
+  makeChangeFunc: (
+    node: Node,
+    parent: JSXElementNode,
+    level: number,
+  ) => boolean,
+) => {
+  let updated = false
+  for (let i = elementValues.length - 1; i >= 0; i--) {
+    const elementValue = elementValues[i]
+    for (const val of elementValue.values) {
+      if (
+        makeChangeFunc(
+          val,
+          elementValue.parent,
+          i - elementValue.values.length + 1,
+        )
+      ) {
+        updated = true
+        break
+      }
+    }
+  }
+
+  return updated
 }

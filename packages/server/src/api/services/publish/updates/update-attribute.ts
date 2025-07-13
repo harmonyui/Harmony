@@ -2,11 +2,8 @@ import { updateAttributeValue } from '@harmony/util/src/updates/component'
 import { parseUpdate } from '@harmony/util/src/updates/utils'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { UpdateComponent } from './types'
-import {
-  addCommentToElement,
-  getInstanceInfo,
-  rotateThroughValuesAndMakeChanges,
-} from './utils'
+import { addCommentToElement, getInstanceInfo } from './utils'
+import { rotateThroughDateFlow } from '../../indexor/utils'
 
 export const updateAttribute: UpdateComponent = async (
   { value, oldValue, update },
@@ -32,7 +29,7 @@ export const updateAttribute: UpdateComponent = async (
     }
 
     if (
-      !rotateThroughValuesAndMakeChanges(srcAttribute, (node, parent) => {
+      !rotateThroughDateFlow(srcAttribute.elementValues, (node, parent) => {
         const addArgument = srcAttribute.addArguments.find(
           (arg) => arg.propertyName === name && arg.values.length === 0,
         )

@@ -33,23 +33,6 @@ interface AttributeInfo {
     values: Node<LiteralNode>[]
   }[]
 }
-export const rotateThroughValuesAndMakeChanges = (
-  attribute: AttributeInfo,
-  makeChangeFunc: (node: Node, parent: JSXElementNode) => boolean,
-) => {
-  let updated = false
-  for (let i = attribute.elementValues.length - 1; i >= 0; i--) {
-    const elementValue = attribute.elementValues[i]
-    for (const val of elementValue.values) {
-      if (makeChangeFunc(val, elementValue.parent)) {
-        updated = true
-        break
-      }
-    }
-  }
-
-  return updated
-}
 
 export const addCommentToElement = (
   element: JSXElementNode,
@@ -290,47 +273,6 @@ export const getElementInstanceNodes = <
     nodes: otherNodes,
   }
 }
-
-export const getJSXElementFromLevels = (
-  componentId: string,
-  childIndex: number,
-  graph: FlowGraph,
-  filter: (element: JSXElementNode) => boolean = (element: JSXElementNode) =>
-    element.getParentComponent().getJSXElements()[0]?.id !== element.id,
-): JSXElementNode | undefined => {
-  const numLevels = componentId.split('#').length
-  let element: JSXElementNode | undefined
-  for (let i = 0; i < numLevels; i++) {
-    const _componentId = getLevelId(componentId, i)
-    element = graph.getJSXElementById(_componentId, childIndex)
-    if (!element) {
-      continue
-    }
-
-    if (!filter(element)) {
-      continue
-    }
-
-    return element
-  }
-
-  return element
-}
-
-export const getJSXParentElement = (
-  componentId: string,
-  childIndex: number,
-  graph: FlowGraph,
-) =>
-  getJSXElementFromLevels(
-    componentId,
-    childIndex,
-    graph,
-    (_element) =>
-      _element.getChildren().length > 1 ||
-      _element.getAttributes().find((attr) => attr.getName() === 'children') ===
-        undefined,
-  )
 
 export const parseText = <T extends Node>(
   text: string,

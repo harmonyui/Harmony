@@ -41,7 +41,7 @@ export const useCommentCreation = () => {
       return
     }
 
-    const element = hoveredComponent
+    const element = hoveredComponent.element
 
     const rect = element.getBoundingClientRect()
     const offsetX = e.clientX - rect.left

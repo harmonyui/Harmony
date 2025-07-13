@@ -21,7 +21,7 @@ export interface ComponentState {
   selectedComponent: ComponentElement | undefined
   rootComponent: ComponentElement | undefined
   selectElement: (element: HTMLElement | undefined) => void
-  hoveredComponent: HTMLElement | undefined
+  hoveredComponent: ComponentElement | undefined
   hoverComponent: (element: HTMLElement | undefined) => void
   globalUpdate: ComponentUpdateWithoutGlobal[] | undefined
   onApplyGlobal: (updates: ComponentUpdateWithoutGlobal[] | undefined) => void
@@ -101,6 +101,7 @@ export const createComponentStateSlice = createHarmonySlice<
           children: getComponentChildren(element),
           props,
           isComponent,
+          level: harmonyComponent.level,
         }
       }
 
@@ -118,6 +119,7 @@ export const createComponentStateSlice = createHarmonySlice<
         children: getComponentChildren(element),
         props,
         isComponent: false,
+        level: 0,
       }
     }
 
@@ -173,7 +175,19 @@ export const createComponentStateSlice = createHarmonySlice<
         return amountOfIndexes
       },
       hoverComponent(element: HTMLElement | undefined) {
-        set({ hoveredComponent: element })
+        const rootComponent = get().rootComponent
+        if (!rootComponent || !element) {
+          set({ hoveredComponent: undefined })
+          return
+        }
+
+        const { componentId: id, childIndex } =
+          getComponentIdAndChildIndex(element)
+
+        const component = findElement(rootComponent, id, childIndex)
+        set({
+          hoveredComponent: component ? { ...component, element } : undefined,
+        })
       },
       selectElement(element: HTMLElement | undefined) {
         const rootComponent = get().rootComponent

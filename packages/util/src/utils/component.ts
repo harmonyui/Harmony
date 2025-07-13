@@ -351,6 +351,17 @@ export const getLevelId = (componentId: string, level: number): string => {
   return split[split.length - 1 - level]
 }
 
+/**
+ * Return the whole component id split at the given level
+ * @param componentId
+ * @param level
+ * @returns
+ */
+export const splitByLevelId = (componentId: string, level: number): string => {
+  const split = componentId.split('#')
+  return split.slice(0, split.length - level).join('#')
+}
+
 export const getFileContentsFromComponents = async (
   componentIds: string[],
   readFile: (path: string) => Promise<string>,

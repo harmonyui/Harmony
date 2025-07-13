@@ -10,6 +10,7 @@ export interface ComponentElement {
   isComponent: boolean
   element: HTMLElement
   children: ComponentElement[]
+  level: number
 }
 
 export const getComponentElementFiber = (

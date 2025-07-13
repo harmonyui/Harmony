@@ -528,6 +528,26 @@ export default function SummaryMetadata({ surveySummary, className }: SummaryMet
         return <Button numberProp={1}/>
     }
   `,
+  'app/levels.tsx': `
+    const Button = ({children}) => {
+        return <button>{children}</button>
+    }
+
+    const Header = ({children}) => {
+        return <h1>{children}</h1>
+    }
+
+    const ComponentWithButton = () => {
+        return <>
+            <Button>Hello</Button>
+            <Header>Thank you</Header>
+        </>
+    }
+
+    const App = () => {
+        return <ComponentWithButton/>
+    }
+  `,
 } as const
 
 export type TestFile = keyof typeof testCases

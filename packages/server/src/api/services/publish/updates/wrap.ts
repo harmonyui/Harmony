@@ -6,7 +6,7 @@ import {
   wrapUnwrapComponentSchema,
 } from '@harmony/util/src/updates/component'
 import { createComponent } from './create'
-import { getJSXElementFromLevels, getJSXParentElement } from './utils'
+import { getJSXElementFromLevels } from '../../indexor/jsx-levels'
 import { reorderElement } from './reorder'
 import { deleteComponent } from './delete'
 

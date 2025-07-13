@@ -62,6 +62,7 @@ const initHarmonyComponents = (): HarmonyComponentInfo[] => {
           isComponent: false,
           props: [],
           name: element.tagName.toLowerCase(),
+          level: 0,
         })
       }
     },

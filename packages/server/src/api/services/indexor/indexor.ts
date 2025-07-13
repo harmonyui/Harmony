@@ -19,7 +19,10 @@ import {
   getLiteralValue,
   isChildNode,
   isLiteralNode,
+  rotateThroughDateFlow,
 } from './utils'
+import { getElementLevel, getJSXElementFromLevels } from './jsx-levels'
+import { isLiteral } from './predicates/simple-predicates'
 
 export type ReadFiles = (
   dirname: string,
@@ -136,69 +139,72 @@ export function convertToHarmonyInfo(
   elementInstances: HarmonyComponent[],
 ): HarmonyComponentInfo[] {
   const componentMap: Record<string, HarmonyComponentInfo> = {}
-  return elementInstances
-    .filter((i) => !i.isComponent)
-    .map((instance) => {
-      const getBaseId = (id: string): string => {
-        const split = id.split('#')
-        return split[split.length - 1]
-      }
+  return (
+    elementInstances
+      //.filter((i) => !i.isComponent)
+      .map((instance) => {
+        const getBaseId = (id: string): string => {
+          const split = id.split('#')
+          return split[split.length - 1]
+        }
 
-      const isRootElement =
-        getBaseId(instance.containingComponent!.children[0]) ===
-        getBaseId(instance.id)
-      const parentComponent = instance.getParent()
+        const isRootElement =
+          getBaseId(instance.containingComponent!.children[0]) ===
+          getBaseId(instance.id)
+        const parentComponent = instance.getParent()
 
-      const component = {
-        id: instance.id,
-        isComponent: isRootElement,
-        name: isRootElement
-          ? instance.containingComponent!.name
-          : instance.name,
-        props: instance.props.map<ComponentProp>((prop) => ({
-          isEditable: prop.name === 'string',
-          name: getAttributeName(prop),
-          defaultValue: prop.value.split(':')[1] ?? '',
-          values: {},
-          mappingType: prop.type === 'text' ? 'text' : 'attribute',
-          mapping: instance.id,
-          type: getAttributeName(prop) === 'src' ? 'image' : 'string',
-        })),
-      }
+        const component = {
+          id: instance.id,
+          isComponent: isRootElement,
+          name: isRootElement
+            ? instance.containingComponent!.name
+            : instance.name,
+          props: instance.props.map<ComponentProp>((prop) => ({
+            isEditable: prop.name === 'string',
+            name: getAttributeName(prop),
+            defaultValue: prop.value.split(':')[1] ?? '',
+            values: {},
+            mappingType: prop.type === 'text' ? 'text' : 'attribute',
+            mapping: instance.id,
+            type: getAttributeName(prop) === 'src' ? 'image' : 'string',
+          })),
+          level: instance.level,
+        }
 
-      if (isRootElement && parentComponent) {
-        componentMap[parentComponent.id] = component
-      }
+        if (isRootElement && parentComponent) {
+          componentMap[parentComponent.id] = component
+        }
 
-      const parentComponentInfo = parentComponent
-        ? componentMap[parentComponent.id]
-        : undefined
+        const parentComponentInfo = parentComponent
+          ? componentMap[parentComponent.id]
+          : undefined
 
-      if (parentComponentInfo) {
-        instance.props.forEach((prop) => {
-          if (prop.name !== 'property') return
+        if (parentComponentInfo) {
+          instance.props.forEach((prop) => {
+            if (prop.name !== 'property') return
 
-          const componentProperty = parentComponent?.props.find(
-            (parentProp) =>
-              parentProp.name === 'string' &&
-              parentProp.value.split(':')[0] === prop.value.split(':')[0],
-          )
-          if (componentProperty) {
-            parentComponentInfo.props.push({
-              isEditable: true,
-              name: getAttributeName(componentProperty),
-              defaultValue: componentProperty.value.split(':')[1] ?? '',
-              values: {},
-              mappingType: prop.type === 'text' ? 'text' : 'attribute',
-              mapping: instance.id,
-              type: getAttributeName(prop) === 'src' ? 'image' : 'string',
-            })
-          }
-        })
-      }
+            const componentProperty = parentComponent?.props.find(
+              (parentProp) =>
+                parentProp.name === 'string' &&
+                parentProp.value.split(':')[0] === prop.value.split(':')[0],
+            )
+            if (componentProperty) {
+              parentComponentInfo.props.push({
+                isEditable: true,
+                name: getAttributeName(componentProperty),
+                defaultValue: componentProperty.value.split(':')[1] ?? '',
+                values: {},
+                mappingType: prop.type === 'text' ? 'text' : 'attribute',
+                mapping: instance.id,
+                type: getAttributeName(prop) === 'src' ? 'image' : 'string',
+              })
+            }
+          })
+        }
 
-      return component
-    })
+        return component
+      })
+  )
 }
 
 function findErrorElements(
@@ -296,6 +302,42 @@ export const convertGraphToHarmonyComponents = (
     return ids
   }
 
+  // First try to get the level from where the children property is defined
+  // Otherwise,
+  const getLevel = (node: JSXElementNode, id: string): number => {
+    const childrenAttributes = node
+      .getAttributes()
+      .filter(
+        (attr) =>
+          id.includes(attr.getParentElement().id) &&
+          attr.getName() === 'children',
+      )
+    if (childrenAttributes.length > 0) {
+      let level: number = 0
+      rotateThroughDateFlow(
+        childrenAttributes[0].getDataFlowWithParents(id),
+        (node, parent) => {
+          if (isLiteral(node)) {
+            level = id.split('#').length - id.split('#').indexOf(parent.id) - 1
+            if (level < 0) {
+              throw new Error(
+                `Level is less than 0 for parent ${parent.id} and id ${id}`,
+              )
+            }
+            return true
+          }
+
+          return false
+        },
+      )
+
+      return level
+    }
+
+    // If no children property is defined, then do the default level calculation
+    return getElementLevel(id, 0, graph)?.level ?? 0
+  }
+
   const elementInstances = graph
     .getNodes()
     .filter((node) => node instanceof JSXElementNode)
@@ -343,6 +385,7 @@ export const convertGraphToHarmonyComponents = (
               props: [],
               children: containingComponent.getJSXElements().map((el) => el.id),
               getParent: () => undefined,
+              level: 0,
             },
             isComponent: node.name[0].toUpperCase() === node.name[0],
             location: node.location,
@@ -350,6 +393,7 @@ export const convertGraphToHarmonyComponents = (
             props: [],
             children: [],
             getParent: () => components.find((comp) => comp.id === ids[1]),
+            level: getLevel(node, id),
           }
           const childComponents = components.filter(
             (component) => getLevelId(component.id, 1) === id,

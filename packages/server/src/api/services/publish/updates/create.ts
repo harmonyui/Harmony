@@ -8,9 +8,11 @@ import {
   getElementInstanceNodes,
   getInstanceFromComponent,
   getInstanceFromElement,
+} from './utils'
+import {
   getJSXElementFromLevels,
   getJSXParentElement,
-} from './utils'
+} from '../../indexor/jsx-levels'
 
 export const createUpdate: UpdateComponent = async (
   { value, update: componentUpdate },

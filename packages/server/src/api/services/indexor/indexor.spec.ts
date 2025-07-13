@@ -12,6 +12,7 @@ import type { LiteralNode } from './utils'
 import { getLiteralValue } from './utils'
 import { ComponentNode } from './nodes/component'
 import { ImportStatement } from './nodes/import-statement'
+import { getElementLevel } from './jsx-levels'
 
 describe('indexor', () => {
   const expectLocationOfString = (
@@ -1507,6 +1508,21 @@ describe('indexor', () => {
 
       expect(result.length).toBe(15)
     })
+
+    it('Should handle correct levels', () => {
+      const componentElements: HarmonyComponent[] = []
+      const file: TestFile = 'app/classNameTests.tsx'
+      const content = testCases[file]
+      const result = getCodeInfoAndNormalizeFromFiles(
+        [{ file, content }],
+        componentElements,
+        {},
+      )
+      expect(result).toBeTruthy()
+      if (!result) return
+
+      expect(componentElements[0].level).toBe(1)
+    })
   })
 
   describe('convertToHarmonyInfo', () => {
@@ -1574,6 +1590,20 @@ describe('indexor', () => {
       expect(harmonyInfo[2].props.length).toBe(1)
       expect(harmonyInfo[2].props[0].name).toBe('children')
       expect(harmonyInfo[2].props[0].isEditable).toBe(false)
+    })
+  })
+
+  describe('getElementLevel', () => {
+    it('Should handle correct levels', () => {
+      const file: TestFile = 'app/levels.tsx'
+      const content = testCases[file]
+      const result = getGraph({ file, code: content, importMappings: {} })
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+
+      expect(getElementLevel(componentElements[0].id, 0, result)?.level).toBe(1)
+      expect(getElementLevel(componentElements[1].id, 0, result)?.level).toBe(1)
     })
   })
 })

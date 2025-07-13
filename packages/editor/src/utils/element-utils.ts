@@ -1,7 +1,11 @@
 import $ from 'jquery'
 import { capitalizeFirstLetter } from '@harmony/util/src/utils/common'
 import type { ComponentElement } from '../components/inspector/component-identifier'
-import { getLocationsFromComponentId } from '@harmony/util/src/utils/component'
+import {
+  getLevelId,
+  getLocationsFromComponentId,
+  splitByLevelId,
+} from '@harmony/util/src/utils/component'
 
 export const recurseElements = (
   element: HTMLElement,
@@ -126,13 +130,10 @@ export function getComponentBaseId(
 }
 
 export function getVscodeLink(
-  component: HTMLElement,
+  component: ComponentElement,
   rootPath: string,
 ): string | undefined {
-  const componentId = getComponentBaseId(
-    component,
-    'harmonyComponentId',
-  ).componentId
+  const componentId = getLevelId(component.id, component.level)
   if (!componentId) return undefined
 
   const { file, startLine } = getLocationsFromComponentId(componentId)[0]

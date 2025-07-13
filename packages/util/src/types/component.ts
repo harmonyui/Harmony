@@ -61,6 +61,7 @@ export const harmonyComponentInfoSchema = z.object({
   name: z.string(),
   props: z.array(componentPropSchema),
   isComponent: z.boolean(),
+  level: z.number(),
 })
 export type HarmonyComponentInfo = z.infer<typeof harmonyComponentInfoSchema>
 

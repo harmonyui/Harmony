@@ -27,6 +27,7 @@ export interface HarmonyComponent {
   location: ComponentLocation
   children: string[]
   node: t.JSXElement
+  level: number
 }
 
 export type HarmonyContainingComponent = Omit<HarmonyComponent, 'node'> & {

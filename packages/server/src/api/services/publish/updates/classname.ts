@@ -6,16 +6,11 @@ import { classNameValueSchema } from '@harmony/util/src/updates/classname'
 import type { Repository } from '@harmony/util/src/types/branch'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { LiteralNode } from '../../indexor/utils'
-import { getLiteralValue } from '../../indexor/utils'
+import { getLiteralValue, rotateThroughDateFlow } from '../../indexor/utils'
 import type { Node } from '../../indexor/types'
 import { addPrefixToClassName } from '../css-conveter'
 import type { FlowGraph } from '../../indexor/graph'
-import {
-  addCommentToElement,
-  getInstanceInfo,
-  replaceAll,
-  rotateThroughValuesAndMakeChanges,
-} from './utils'
+import { addCommentToElement, getInstanceInfo, replaceAll } from './utils'
 import type { UpdateComponent } from './types'
 import { addOnTrim } from '@harmony/util/src/utils/common'
 
@@ -127,36 +122,40 @@ export const updateElementClassName = ({
     //Figure out which value can accept our new class
     let defaultValue: Node<LiteralNode> | undefined
     if (
-      !rotateThroughValuesAndMakeChanges(classNameAttribute, (node, parent) => {
-        const addArgument = classNameAttribute.addArguments.find(
-          (arg) => arg.propertyName === 'className' && arg.values.length === 0,
-        )
-        const shouldDoAddArgument =
-          addArgument &&
-          graphElements.findIndex((el) => el.id === addArgument.parent.id) >
-            graphElements.findIndex((el) => el.id === parent.id)
+      !rotateThroughDateFlow(
+        classNameAttribute.elementValues,
+        (node, parent) => {
+          const addArgument = classNameAttribute.addArguments.find(
+            (arg) =>
+              arg.propertyName === 'className' && arg.values.length === 0,
+          )
+          const shouldDoAddArgument =
+            addArgument &&
+            graphElements.findIndex((el) => el.id === addArgument.parent.id) >
+              graphElements.findIndex((el) => el.id === parent.id)
 
-        if (shouldDoAddArgument) {
-          const { parent: addArgumentParent, propertyName: _propertyName } =
-            addArgument
-          graph.addAttributeToElement(addArgumentParent, _propertyName, value)
-          return true
-        }
-
-        if (isLiteral(node)) {
-          //Save off the first value in ciase none of the classes can be merged
-          if (!defaultValue) {
-            defaultValue = node
-          }
-          const { shouldMerge, mergedValue } = getMergeInfo(node)
-          if (shouldMerge) {
-            graph.changeLiteralNode(node, mergedValue)
+          if (shouldDoAddArgument) {
+            const { parent: addArgumentParent, propertyName: _propertyName } =
+              addArgument
+            graph.addAttributeToElement(addArgumentParent, _propertyName, value)
             return true
           }
-        }
 
-        return false
-      })
+          if (isLiteral(node)) {
+            //Save off the first value in ciase none of the classes can be merged
+            if (!defaultValue) {
+              defaultValue = node
+            }
+            const { shouldMerge, mergedValue } = getMergeInfo(node)
+            if (shouldMerge) {
+              graph.changeLiteralNode(node, mergedValue)
+              return true
+            }
+          }
+
+          return false
+        },
+      )
     ) {
       const addArgumet = classNameAttribute.addArguments.find(
         (arg) =>
