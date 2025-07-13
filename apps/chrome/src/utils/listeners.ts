@@ -1,5 +1,9 @@
-/* eslint-disable @typescript-eslint/no-explicit-any -- ok */
-import { Actions } from './helpers'
+import {
+  ActionHandler,
+  Actions,
+  PayloadForAction,
+  ReturnTypeForAction,
+} from './actions'
 
 export const setupExtensionIconClickedListener = (
   callback: (tabId: number) => Promise<void>,
@@ -12,7 +16,7 @@ export const setupExtensionIconClickedListener = (
 }
 
 export const sendInitEditorMessage = (tabId: number) => {
-  void chrome.tabs.sendMessage(tabId, { action: Actions.InitEditor })
+  void chrome.tabs.sendMessage(tabId, { action: Actions.InitEditor, tabId })
 }
 
 export const createTab = (url: string) => {
@@ -27,36 +31,41 @@ export const removeTab = (tabId: number) => {
   void chrome.tabs.remove(tabId)
 }
 
-interface Message {
-  action: string
-  handler: (payload: any) => Promise<any>
+type ActionMessage = {
+  [K in Actions]: {
+    action: K
+    handler: ActionHandler<K>
+  }
+}[Actions]
+
+export const setupMessageListeners = (messages: ActionMessage[]) => {
+  chrome.runtime.onMessage.addListener((message, sender, sendResponse) => {
+    const { action, ...payload } = message
+    const handler = messages.find((m) => m.action === action)?.handler
+
+    if (handler) {
+      void handler(payload).then((result) => sendResponse(result))
+    }
+
+    return true
+  })
 }
-export const setupMessageListeners = (messages: Message[]) => {
-  chrome.runtime.onMessage.addListener(
-    (message: { action: string } & object, sender, sendResponse) => {
-      const handler = messages.find((m) => m.action === message.action)?.handler
 
-      if (handler) {
-        void handler({ ...message, action: undefined }).then((result) =>
-          sendResponse(result),
-        )
-      }
+type SendMessageOptions<T extends Actions> =
+  PayloadForAction<T> extends undefined
+    ? { action: T; payload?: undefined }
+    : { action: T; payload: PayloadForAction<T> }
 
-      return true
-    },
-  )
-}
-
-export const sendMessage = <T, R>({
+export const sendMessage = <T extends Actions>({
   action,
   payload,
-}: {
-  action: string
-  payload?: T
-}): Promise<R> => {
-  return new Promise<R>((resolve) => {
-    chrome.runtime.sendMessage({ action, ...payload }, (ret: R) => {
-      resolve(ret)
-    })
+}: SendMessageOptions<T>): Promise<ReturnTypeForAction<T>> => {
+  return new Promise<ReturnTypeForAction<T>>((resolve) => {
+    chrome.runtime.sendMessage(
+      { action, ...payload },
+      (ret: ReturnTypeForAction<T>) => {
+        resolve(ret)
+      },
+    )
   })
 }

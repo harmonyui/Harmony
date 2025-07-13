@@ -9,29 +9,19 @@ import {
 import { useStorageState } from '@harmony/ui/src/hooks/storage-state'
 import { useToggleEvent } from 'harmony-ai-editor/src/hooks/toggle-event'
 import { DataLayerProvider } from '../../hooks/data-layer'
-import type { ActionsPayload } from '../../utils/helpers'
-import { Actions, AuthUrl } from '../../utils/helpers'
+import { Actions } from '../../utils/actions'
 import { sendMessage } from '../../utils/listeners'
-import { StartModal } from './start-modal/start-modal'
 import { useToggleEnable } from 'harmony-ai-editor/src/hooks/toggle-enable'
 import { HarmonyProviderFunc } from 'harmony-ai-editor/src/global-provider'
 import { useBranchId } from 'harmony-ai-editor/src/hooks/branch-id'
 import { User } from 'harmony-ai-editor/src/utils/types'
+import { LoginModal } from './login-modal'
+import { AuthUrl } from '../../utils/auth-url'
 
 export const EditorChrome: React.FunctionComponent = () => {
-  const getToken = useCallback(async () => {
-    console.log('getToken')
-    const token = await sendMessage<object, string>({
-      action: Actions.GetToken,
-    })
-    return token
-  }, [])
-
   return (
     <QueryStateProvider>
-      <DataLayerProvider getToken={getToken}>
-        <EditorChromeAfterProviders />
-      </DataLayerProvider>
+      <EditorChromeAfterProviders />
     </QueryStateProvider>
   )
 }
@@ -44,41 +34,71 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
     defaultValue: false,
     storage: 'local',
   })
+  const [chromeTabId, setChromeTabId] = useStorageState<number>({
+    key: 'chromeTabId',
+    storage: 'local',
+  })
   const [_environment] = useQueryState<Environment | undefined>({
     key: 'harmony-environment',
   })
-  const [showStartModal, setShowStartModal] = useState(false)
-  const [user, setUser] = useState<User | undefined>(undefined)
+  const [showLoginModal, setShowLoginModal] = useState(false)
+  const [user, setUser] = useState<User | null>(null)
 
   useSendAuthentication()
 
-  const onToggleEditor = useCallback(() => {
-    setChrome(!chrome)
-    if (chrome) {
-      cleanup()
-      setBranchId(undefined)
-    }
-  }, [setChrome, chrome])
-
-  const onSelectProject = useCallback((_branchId: string) => {
-    setShowStartModal(false)
-    setBranchId({ name: 'Local', id: _branchId, label: _branchId })
-    setChrome(true)
-  }, [])
+  const onToggleEditor = useCallback(
+    (e: CustomEventInit<number>) => {
+      setChrome(!chrome)
+      if (e.detail) {
+        setChromeTabId(e.detail)
+      }
+      if (chrome) {
+        cleanup()
+        setBranchId(undefined)
+      }
+    },
+    [setChrome, chrome],
+  )
 
   useToggleEvent(onToggleEditor)
 
   useToggleEnable()
 
-  useEffect(() => {
-    sendMessage<object, User>({
+  const tryGetUser = useCallback(async () => {
+    const user = await sendMessage<Actions.GetUser>({
       action: Actions.GetUser,
-    }).then((user) => {
-      console.log('got user')
-      console.log(user)
-      setUser(user)
     })
-  }, [setUser])
+    setUser(user)
+    if (user) {
+      setShowLoginModal(false)
+    } else {
+      setShowLoginModal(true)
+    }
+  }, [setShowLoginModal, setUser])
+
+  const getToken = useCallback(async () => {
+    const token = await sendMessage<Actions.GetToken>({
+      action: Actions.GetToken,
+    })
+    if (!token) {
+      // Reset the cookie so that getting the user will fail, triggering the login modal
+      await sendMessage<Actions.SetCookie>({
+        action: Actions.SetCookie,
+        payload: {
+          cookie: document.cookie,
+        },
+      })
+      setShowLoginModal(true)
+      return ''
+    }
+    return token
+  }, [])
+
+  useEffect(() => {
+    if (!chromeTabId || !chrome) return
+
+    tryGetUser()
+  }, [tryGetUser, chromeTabId, chrome])
 
   const cleanup = useHarmonySetup(
     {
@@ -94,11 +114,15 @@ const EditorChromeAfterProviders: React.FunctionComponent = () => {
   )
 
   return (
-    <StartModal
-      isOpen={showStartModal}
-      onClose={() => setShowStartModal(false)}
-      onSelectProject={onSelectProject}
-    />
+    <DataLayerProvider getToken={getToken}>
+      {chromeTabId ? (
+        <LoginModal
+          show={showLoginModal}
+          tabId={chromeTabId}
+          onTryAgain={tryGetUser}
+        />
+      ) : null}
+    </DataLayerProvider>
   )
 }
 
@@ -113,7 +137,7 @@ const useSendAuthentication = () => {
           event.data.isSignedIn &&
           window.location.origin === AuthUrl.getAuthUrlBase(environment)
         ) {
-          void sendMessage<ActionsPayload.SetCookie, undefined>({
+          void sendMessage<Actions.SetCookie>({
             action: Actions.SetCookie,
             payload: {
               cookie: document.cookie,

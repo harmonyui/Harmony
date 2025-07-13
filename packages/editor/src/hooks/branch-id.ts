@@ -5,6 +5,7 @@ import { useHarmonyStore } from './state'
 export const useBranchId = () => {
   const [branchId, setBranchId] = useQueryStorageState<string>({
     key: 'branch-id',
+    writeMode: 'storage',
   })
   const setBranch = useHarmonyStore((state) => state.setBranch)
 

@@ -1,14 +1,14 @@
 import { useEffect } from 'react'
 
 export const TOGGLE_EVENT = 'toggleEditor'
-export const dispatchToggleEvent = (token?: string) => {
+export const dispatchToggleEvent = (tabId?: number) => {
   window.dispatchEvent(
-    new CustomEvent(TOGGLE_EVENT, token ? { detail: token } : undefined),
+    new CustomEvent(TOGGLE_EVENT, tabId ? { detail: tabId } : undefined),
   )
 }
 
 export const useToggleEvent = (
-  callback: (e: CustomEventInit<string>) => void,
+  callback: (e: CustomEventInit<number>) => void,
 ) => {
   useEffect(() => {
     window.addEventListener(TOGGLE_EVENT, callback)

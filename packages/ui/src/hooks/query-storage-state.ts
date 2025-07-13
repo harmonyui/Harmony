@@ -1,23 +1,29 @@
 import { useCallback, useEffect, useMemo } from 'react'
 import { decodeState, encodeState, useQueryState } from './query-state'
 
+type WriteMode = 'storage' | 'url' | 'both'
+
 export function useQueryStorageState<T = undefined>(props: {
   key: string
   storage?: 'local' | 'session'
+  writeMode?: WriteMode
 }): [T | undefined, (value: T | undefined) => void]
 export function useQueryStorageState<T>(props: {
   key: string
   defaultValue: T
   storage?: 'local' | 'session'
+  writeMode?: WriteMode
 }): [T, (value: T) => void]
 export function useQueryStorageState<T>({
   key,
   defaultValue,
   storage = 'session',
+  writeMode = 'both',
 }: {
   key: string
   defaultValue?: T
   storage?: 'local' | 'session'
+  writeMode?: WriteMode
 }): [T | undefined, (value: T | undefined) => void] {
   const [value, setValue] = useQueryState({ key, defaultValue })
 
@@ -38,9 +44,13 @@ export function useQueryStorageState<T>({
 
   const setStorageValue = useCallback(
     (storageValue: T | undefined): void => {
-      putValueIntoStorage(storageValue)
+      if (writeMode === 'storage' || writeMode === 'both') {
+        putValueIntoStorage(storageValue)
+      }
 
-      setValue(storageValue)
+      if (writeMode === 'url' || writeMode === 'both') {
+        setValue(storageValue)
+      }
     },
     [setValue, putValueIntoStorage],
   )

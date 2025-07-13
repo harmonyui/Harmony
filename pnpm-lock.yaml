@@ -1192,6 +1192,9 @@ importers:
       framer-motion:
         specifier: ^11.18.1
         version: 11.18.1(react-dom@19.0.0)(react@19.0.0)
+      lucide-react:
+        specifier: ^0.503.0
+        version: 0.503.0(react@19.0.0)
       motion:
         specifier: ^12.6.5
         version: 12.6.5(react-dom@19.0.0)(react@19.0.0)
@@ -20199,7 +20202,7 @@ packages:
       '@jridgewell/trace-mapping': 0.3.25
       esbuild: 0.24.2
       jest-worker: 27.5.1
-      schema-utils: 4.3.0
+      schema-utils: 4.3.2
       serialize-javascript: 6.0.2
       terser: 5.37.0
       webpack: 5.97.1(esbuild@0.24.2)(webpack-cli@6.0.1)
