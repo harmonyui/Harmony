@@ -48,6 +48,11 @@ export interface NodeBase<T extends t.Node> {
   graph: FlowGraph
 }
 
+export interface GetValuesOptions {
+  predicate?: (node: Node) => boolean
+  visitor?: (node: Node) => void
+}
+
 const simplePredicate = (node: Node): boolean =>
   node.dataDependencies.size === 0
 export class Node<T extends t.Node = t.Node> {
@@ -96,21 +101,28 @@ export class Node<T extends t.Node = t.Node> {
     this.instanceIndex = index
   }
 
-  public getValues(
-    predicate: (node: Node) => boolean = simplePredicate,
-  ): Node[] {
-    return this.getValuesBase(predicate)
+  public getValues({
+    predicate = simplePredicate,
+    visitor,
+  }: GetValuesOptions = {}): Node[] {
+    return this.getValuesBase({ predicate, visitor })
   }
 
-  protected getValuesBase(
-    predicate: (node: Node) => boolean = simplePredicate,
-  ): Node[] {
+  protected getValuesBase({
+    predicate = simplePredicate,
+    visitor,
+  }: {
+    predicate?: (node: Node) => boolean
+    visitor?: (node: Node) => void
+  }): Node[] {
+    visitor?.(this)
+
     if (predicate(this)) {
       return [this]
     }
     const values: Node[] = []
     this.dataDependencies.forEach((node) => {
-      values.push(...node.getValues(predicate))
+      values.push(...node.getValues({ predicate, visitor }))
     })
 
     return values
@@ -125,10 +137,6 @@ export class Node<T extends t.Node = t.Node> {
   ): { parent: P; values: Return[] }[] {
     const ret: { parent: P; values: Return[] }[] = []
     const innerPredicate = (node: Node) => {
-      const parent = node.getParent()
-      if (parent && parentPredicate(parent) && parents[0] !== parent) {
-        parents.unshift(parent)
-      }
       const currParent = parents[0]
 
       if (!predicate(node)) return false
@@ -144,10 +152,23 @@ export class Node<T extends t.Node = t.Node> {
 
       return true
     }
+
+    const innerVisitor = (node: Node) => {
+      const parent = node.getParent()
+      if (parent && parentPredicate(parent) && parents[0] !== parent) {
+        parents.unshift(parent)
+      }
+    }
     if (useBase) {
-      this.getValuesBase(innerPredicate)
+      this.getValuesBase({
+        predicate: innerPredicate,
+        visitor: innerVisitor,
+      })
     } else {
-      this.getValues(innerPredicate)
+      this.getValues({
+        predicate: innerPredicate,
+        visitor: innerVisitor,
+      })
     }
 
     return ret

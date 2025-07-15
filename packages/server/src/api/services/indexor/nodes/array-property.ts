@@ -1,6 +1,11 @@
 import type * as t from '@babel/types'
 import { isArray } from '../predicates/simple-predicates'
-import type { ArrayProperty, NodeBase, ArrayNode } from '../types'
+import type {
+  ArrayProperty,
+  NodeBase,
+  ArrayNode,
+  GetValuesOptions,
+} from '../types'
 import { Node } from '../types'
 
 export class ArrayPropertyNode extends Node implements ArrayProperty {
@@ -19,16 +24,23 @@ export class ArrayPropertyNode extends Node implements ArrayProperty {
     this.index = index
   }
 
-  public override getValues(predicate?: (node: Node) => boolean): Node[] {
+  public override getValues({
+    predicate,
+    visitor,
+  }: GetValuesOptions = {}): Node[] {
     const values: Node[] = []
+    visitor?.(this)
     if (predicate && predicate(this)) {
       return [this]
     }
 
-    const superValues = super.getValues((node) => isArray(node)) as ArrayNode[]
+    const superValues = super.getValues({
+      predicate: (node) => isArray(node),
+      visitor,
+    }) as ArrayNode[]
 
     if (superValues.length === 0) {
-      return super.getValues(predicate)
+      return super.getValues({ predicate, visitor })
     }
 
     superValues.forEach((node) => {
@@ -38,7 +50,9 @@ export class ArrayPropertyNode extends Node implements ArrayProperty {
           ? node.getArrayElements()
           : [node.getArrayElements()[index]].filter(Boolean)
       values.push(
-        ...attributes.flatMap((attribute) => attribute.getValues(predicate)),
+        ...attributes.flatMap((attribute) =>
+          attribute.getValues({ predicate, visitor }),
+        ),
       )
     })
 
@@ -46,6 +60,8 @@ export class ArrayPropertyNode extends Node implements ArrayProperty {
   }
 
   public getArrayExpression() {
-    return super.getValues((node) => isArray(node)) as ArrayNode[]
+    return super.getValues({
+      predicate: (node) => isArray(node),
+    }) as ArrayNode[]
   }
 }

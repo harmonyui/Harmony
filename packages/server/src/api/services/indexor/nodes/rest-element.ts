@@ -1,6 +1,11 @@
 import type * as t from '@babel/types'
 import type { NodePath } from '@babel/traverse'
-import type { NodeBase, ObjectNode, ObjectProperty } from '../types'
+import type {
+  GetValuesOptions,
+  NodeBase,
+  ObjectNode,
+  ObjectProperty,
+} from '../types'
 import { Node } from '../types'
 import { createNode, getSnippetFromNode } from '../utils'
 import { isObject } from '../predicates/simple-predicates'
@@ -49,13 +54,14 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
     this.graph.dirtyNode(this)
   }
 
-  public override getValues(predicate?: (node: Node) => boolean): Node[] {
+  public override getValues({ predicate, visitor }: GetValuesOptions): Node[] {
+    visitor?.(this)
     if (predicate) {
-      return super.getValues(predicate)
+      return super.getValues({ predicate, visitor })
     }
-    const argumentValues = super.getValues(
-      (node) => node !== this && isObject(node),
-    ) as ObjectNode[]
+    const argumentValues = super.getValues({
+      predicate: (node) => node !== this && isObject(node),
+    }) as ObjectNode[]
     const notPropertyNames = this.notProperties.map((notProperty) =>
       notProperty.getName(),
     )
@@ -69,7 +75,7 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
       if (attributes.length === 0) return
       values.push(
         ...attributes.flatMap((attribute) =>
-          attribute.getValueNode().getValues(predicate),
+          attribute.getValueNode().getValues({ predicate, visitor }),
         ),
       )
     })
@@ -97,9 +103,9 @@ export class RestElement<T extends t.RestElement | t.JSXSpreadAttribute>
   }
 
   private getObjectNodes(): ObjectNode[] {
-    return super.getValues(
-      (node) => node !== this && isObject(node),
-    ) as ObjectNode[]
+    return super.getValues({
+      predicate: (node) => node !== this && isObject(node),
+    }) as ObjectNode[]
   }
 }
 

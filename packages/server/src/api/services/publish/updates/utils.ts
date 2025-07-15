@@ -112,7 +112,9 @@ export const getInstanceInfo = (
           ? attribute.getArgumentReferences().identifiers.map((identifier) => ({
               parent: instances[1],
               propertyName: identifier.name,
-              values: identifier.getValues(isLiteral) as Node<LiteralNode>[],
+              values: identifier.getValues({
+                predicate: isLiteral,
+              }) as Node<LiteralNode>[],
             }))
           : [],
     }))

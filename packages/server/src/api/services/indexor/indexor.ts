@@ -444,9 +444,9 @@ export const convertGraphToHarmonyComponents = (
                   .map<AttributeTemp | undefined>((reference) => {
                     const isAddIdentifier =
                       instances.length > 1 &&
-                      reference.getValues((_node) =>
-                        isChildNode(_node, instances[1]),
-                      ).length === 0
+                      reference.getValues({
+                        predicate: (_node) => isChildNode(_node, instances[1]),
+                      }).length === 0
                     if (isAddIdentifier) {
                       if (type === 'text') return undefined
 

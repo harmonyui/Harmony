@@ -1,5 +1,10 @@
 import type * as t from '@babel/types'
-import type { NodeBase, ObjectNode, ObjectProperty } from '../types'
+import type {
+  GetValuesOptions,
+  NodeBase,
+  ObjectNode,
+  ObjectProperty,
+} from '../types'
 import { Node } from '../types'
 import { getNameValue } from '../utils'
 import { isObject } from '../predicates/simple-predicates'
@@ -17,18 +22,23 @@ export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
     super(base)
   }
 
-  public override getValues(predicate?: (node: Node) => boolean): Node[] {
+  public override getValues({
+    predicate,
+    visitor,
+  }: GetValuesOptions = {}): Node[] {
+    visitor?.(this)
     const values: Node[] = []
     if (predicate && predicate(this)) {
       return [this]
     }
 
-    const superValues = super.getValues((node) =>
-      isObject(node),
-    ) as ObjectNode[]
+    const superValues = super.getValues({
+      predicate: (node) => isObject(node),
+      visitor,
+    }) as ObjectNode[]
 
     if (superValues.length === 0) {
-      return super.getValues(predicate)
+      return super.getValues({ predicate, visitor })
     }
 
     superValues.forEach((node) => {
@@ -36,7 +46,7 @@ export abstract class AbstractObjectProperty<T extends t.Node = t.Node>
         .getAttributes()
         .find((_attribute) => _attribute.getName() === this.getName())
       if (!attribute) return
-      values.push(...attribute.getValueNode().getValues(predicate))
+      values.push(...attribute.getValueNode().getValues({ predicate, visitor }))
     })
 
     return values

@@ -1383,6 +1383,24 @@ describe('indexor', () => {
       )
     })
 
+    it('Should get parents correctly', () => {
+      const file: TestFile = 'app/arrayStuff.tsx'
+      const content = testCases[file]
+      const result = getGraph({ file, code: content, importMappings: {} })
+      const componentElements = result
+        .getNodes()
+        .filter((node) => node instanceof JSXElementNode)
+
+      expect(componentElements[1].getAttributes().length).toBe(2)
+      expect(
+        componentElements[1].getAttributes()[0].getDataFlowWithParents().length,
+      ).toBe(1)
+      expect(
+        componentElements[1].getAttributes()[0].getDataFlowWithParents()[0]
+          .parent.id,
+      ).toBe(componentElements[6].id)
+    })
+
     //TODO: Finish this
     // it('Should handle imports from various files', () => {
     //   const componentElements: HarmonyComponent[] = []

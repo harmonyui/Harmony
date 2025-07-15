@@ -71,9 +71,9 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
 
   public getDependencies(): Node[] {
     const dependencies: Node[] = []
-    const importStatements = this.nameNode.getValues(
-      (node) => node instanceof ImportStatement,
-    )
+    const importStatements = this.nameNode.getValues({
+      predicate: (node) => node instanceof ImportStatement,
+    })
     dependencies.push(...importStatements)
 
     return dependencies
@@ -144,9 +144,9 @@ export class JSXElementNode extends Node<t.JSXElement> implements ObjectNode {
   }
 
   public getDefinitionComponent() {
-    return this.nameNode.getValues(
-      (node) => node instanceof ComponentNode,
-    )[0] as ComponentNode | undefined
+    return this.nameNode.getValues({
+      predicate: (node) => node instanceof ComponentNode,
+    })[0] as ComponentNode | undefined
   }
 
   public addAttribute(attribute: JSXAttribute) {

@@ -85,21 +85,23 @@ export class JSXAttribute<T extends t.Node = t.Node>
     const argument = definitionComponent.getArguments()[0] as Node | undefined
     if (!argument) return { identifiers: [], argument }
 
-    const identifiers = this.value.getValues((node) =>
-      isIdentifier(node),
-    ) as Node<t.Identifier>[]
+    const identifiers = this.value.getValues({
+      predicate: (node) => isIdentifier(node),
+    }) as Node<t.Identifier>[]
 
     return {
       identifiers: identifiers
         .filter(
           (identifier) =>
-            identifier.getValues((node) => isChildNode(node, argument)).length >
-            0,
+            identifier.getValues({
+              predicate: (node) => isChildNode(node, argument),
+            }).length > 0,
         )
         .filter((ident) =>
           filterByInstance
-            ? ident.getValues((_node) => isChildNode(_node, filterByInstance))
-                .length === 0
+            ? ident.getValues({
+                predicate: (_node) => isChildNode(_node, filterByInstance),
+              }).length === 0
             : true,
         ),
       argument,
@@ -110,9 +112,10 @@ export class JSXAttribute<T extends t.Node = t.Node>
     parent: JSXElementNode
     values: { index: number; values: Node[] }[]
   }[] {
-    const values = this.value.getValues(
-      (node) => isArrayProperty(node) && node.getIndex() === undefined,
-    ) as ArrayProperty[]
+    const values = this.value.getValues({
+      predicate: (node) =>
+        isArrayProperty(node) && node.getIndex() === undefined,
+    }) as ArrayProperty[]
     if (values.length > 1)
       throw new Error('Should not have more than one array property')
 

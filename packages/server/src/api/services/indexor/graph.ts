@@ -358,7 +358,9 @@ export class FlowGraph {
   }
 
   public evaluateProperty(node: Node, property: string): Node | undefined {
-    const objectNode = node.getValues(isObject) as ObjectNode[]
+    const objectNode = node.getValues({
+      predicate: (node) => isObject(node),
+    }) as ObjectNode[]
     if (objectNode.length !== 1) {
       return undefined
     }
@@ -483,7 +485,9 @@ export class FlowGraph {
       node.addProperty('style', expressionNode)
     } else {
       const styleValue = styleAttribute.getValueNode()
-      const objectNodes = styleValue.getValues(isObject) as ObjectNode[]
+      const objectNodes = styleValue.getValues({
+        predicate: (node) => isObject(node),
+      }) as ObjectNode[]
       if (objectNodes.length !== 1) {
         throw new Error('Style value is not an object')
       }
