@@ -38,7 +38,9 @@ export async function getWorkspacesForTeam({
     ...workspacePayload,
   })
 
-  return workspaces.map(prismaToWorkspace)
+  return workspaces
+    .filter((workspace) => workspace.repository)
+    .map(prismaToWorkspace)
 }
 
 export async function getWorkspace({
