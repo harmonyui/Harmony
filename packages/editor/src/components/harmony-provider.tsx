@@ -211,9 +211,14 @@ export const HarmonyProvider: React.FunctionComponent<HarmonyProviderProps> = ({
 
       await makeUpdates(filteredUpdates, rootComponent)
 
-      if (repositoryId) {
+      // Local branch does not have a repositoryId and just uses the harmony.config.json file.
+      if (repositoryId || branchId === 'local') {
         void updateComponentsFromIds(
-          { branchId, components: componentIds, repositoryId },
+          {
+            branchId,
+            components: componentIds,
+            repositoryId: repositoryId || '',
+          },
           rootComponent,
         )
       } else {
