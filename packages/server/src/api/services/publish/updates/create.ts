@@ -11,6 +11,7 @@ import {
   getJSXElementFromLevels,
   getJSXParentElement,
 } from './utils'
+import { IFlowGraph } from '../i-flow-graph'
 
 export const createUpdate: UpdateComponent = async (
   { value, update: componentUpdate },
@@ -57,7 +58,7 @@ export const createComponent = (
     index,
   }: { parentId: string; parentChildIndex: number; index: number },
   code: InstanceInfo,
-  graph: FlowGraph,
+  graph: IFlowGraph,
 ) => {
   const parentElement = getJSXParentElement(parentId, parentChildIndex, graph)
   if (!parentElement) {
@@ -82,7 +83,7 @@ export const createComponent = (
 const getInstanceFromCopiedFrom = (
   componentId: string,
   childIndex: number,
-  graph: FlowGraph,
+  graph: IFlowGraph,
 ): InstanceInfo => {
   const element = getJSXElementFromLevels(componentId, childIndex, graph)
   if (!element) {

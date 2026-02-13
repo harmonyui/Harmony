@@ -5,7 +5,7 @@ import type {
 import type * as t from '@babel/types'
 import type { Repository } from '@harmony/util/src/types/branch'
 import type { RegistryItem } from '@harmony/util/src/harmonycn/types'
-import type { FlowGraph } from '../../indexor/graph'
+import type { IFlowGraph } from '../i-flow-graph'
 
 export interface UpdateInfo {
   componentId: string
@@ -21,7 +21,7 @@ export interface CodeUpdateInfo {
 
 export type UpdateComponent = (
   info: UpdateInfo,
-  graph: FlowGraph,
+  graph: IFlowGraph,
   repository: Repository,
 ) => Promise<void>
 

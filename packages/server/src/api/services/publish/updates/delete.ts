@@ -3,6 +3,7 @@ import { deleteComponentSchema } from '@harmony/util/src/updates/component'
 import type { FlowGraph } from '../../indexor/graph'
 import type { InstanceInfo, UpdateComponent } from './types'
 import { getJSXElementFromLevels } from './utils'
+import { IFlowGraph } from '../i-flow-graph'
 
 export const deleteUpdate: UpdateComponent = async (
   { value, update },
@@ -15,7 +16,7 @@ export const deleteUpdate: UpdateComponent = async (
 
 export const deleteComponent = (
   { componentId, childIndex }: { componentId: string; childIndex: number },
-  graph: FlowGraph,
+  graph: IFlowGraph,
 ): InstanceInfo & { componentId: string } => {
   const deleteElement = getJSXElementFromLevels(componentId, childIndex, graph)
   if (!deleteElement) {

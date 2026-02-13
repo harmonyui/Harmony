@@ -19,6 +19,7 @@ import type { LiteralNode } from '../../indexor/utils'
 import { isLiteral } from '../../indexor/predicates/simple-predicates'
 import type { InstanceInfo } from './types'
 import * as t from '@babel/types'
+import { IFlowGraph } from '../i-flow-graph'
 
 interface AttributeInfo {
   name: string
@@ -54,7 +55,7 @@ export const rotateThroughValuesAndMakeChanges = (
 export const addCommentToElement = (
   element: JSXElementNode,
   comment: string,
-  graph: FlowGraph,
+  graph: IFlowGraph,
 ) => {
   graph.addLeadingComment(element.getOpeningElement(), comment)
 }
@@ -74,7 +75,7 @@ export const replaceAll = <T extends string | undefined>(
 export const getInstanceInfo = (
   componentId: string,
   childIndex: number,
-  graph: FlowGraph,
+  graph: IFlowGraph,
 ) => {
   const setMappingIndex = (
     element: JSXElementNode,
@@ -294,7 +295,7 @@ export const getElementInstanceNodes = <
 export const getJSXElementFromLevels = (
   componentId: string,
   childIndex: number,
-  graph: FlowGraph,
+  graph: IFlowGraph,
   filter: (element: JSXElementNode) => boolean = (element: JSXElementNode) =>
     element.getParentComponent().getJSXElements()[0]?.id !== element.id,
 ): JSXElementNode | undefined => {
@@ -320,7 +321,7 @@ export const getJSXElementFromLevels = (
 export const getJSXParentElement = (
   componentId: string,
   childIndex: number,
-  graph: FlowGraph,
+  graph: IFlowGraph,
 ) =>
   getJSXElementFromLevels(
     componentId,

@@ -28,6 +28,7 @@ import {
   parseJSXElementText,
   parseText,
 } from './utils'
+import { IFlowGraph } from '../i-flow-graph'
 
 export const updateStyle: UpdateComponent = async (info, graph, repository) => {
   const { type, properties } = parseUpdate(styleUpdateSchema, info.value)
@@ -170,7 +171,7 @@ const updateHoverStyle: UpdateComponent = async (info, graph, repository) => {
 
 const buildReducedClassElement = (
   classes: StyleUpdate['classes'],
-  graph: FlowGraph,
+  graph: IFlowGraph,
 ) => {
   interface ClassInfo {
     element: JSXElementNode

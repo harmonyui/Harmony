@@ -24,6 +24,7 @@ import { ImportStatement } from './nodes/import-statement'
 import { ProgramNode } from './nodes/program'
 import { ObjectExpressionNode } from './nodes/object-expression'
 import { ObjectPropertyExpressionNode } from './nodes/object-property'
+import type { IFlowGraph } from '../publish/i-flow-graph'
 
 export type FileUpdateInfo = Record<
   string,
@@ -32,7 +33,7 @@ export type FileUpdateInfo = Record<
     newContent: string
   }
 >
-export class FlowGraph {
+export class FlowGraph implements IFlowGraph {
   public nodes: Map<string, Node>
   public file = ''
   public code = ''

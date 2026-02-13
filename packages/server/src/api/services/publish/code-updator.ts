@@ -22,16 +22,20 @@ import { updateWrapUnwrap } from './updates/wrap'
 import { camelToKebab, round } from '@harmony/util/src/utils/common'
 import { nonFormattedCSS } from './css-conveter'
 import { normalizeSortedUpdates } from '../component-update'
+import type { PublisherMode, BuildContext } from './types'
+import { ContextBuilder } from './context-builder'
+import { FlowGraphContextWrapper } from './graph-context-wrapper'
 
-export class CodeUpdator {
+export class CodeUpdator<T extends PublisherMode = 'code-update'> {
   constructor(
     private gitRepository: GitRepository,
     private options: prettier.Options,
+    private mode: T = 'code-update' as T,
   ) {}
 
   public async updateFiles(
     updatesRaw: ComponentUpdate[],
-  ): Promise<FileUpdateInfo> {
+  ): Promise<T extends 'code-update' ? FileUpdateInfo : BuildContext> {
     const updates = normalizeSortedUpdates(updatesRaw)
 
     const graph = await buildGraphForComponents(
@@ -48,15 +52,35 @@ export class CodeUpdator {
       importMappings: this.gitRepository.repository.config.packageResolution,
     })
 
+    // Conditionally wrap graph for context building
+    const contextBuilder = new ContextBuilder()
+    const effectiveGraph =
+      this.mode === 'build-context'
+        ? new FlowGraphContextWrapper(graph, contextBuilder)
+        : graph
+
     const updateInfo = await this.getUpdateInfo(updates)
 
     for (const info of updateInfo) {
-      await this.getChangeAndLocation(info, graph)
+      // Set current update context for wrapper to access
+      if (this.mode === 'build-context') {
+        ;(effectiveGraph as FlowGraphContextWrapper).setCurrentUpdate(info)
+      }
+      await this.getChangeAndLocation(info, effectiveGraph)
+    }
+
+    // Return based on mode
+    if (this.mode === 'build-context') {
+      return contextBuilder.build() as T extends 'code-update'
+        ? FileUpdateInfo
+        : BuildContext
     }
 
     const fileUpdates = await graph.getFileUpdates(this.options)
 
-    return fileUpdates
+    return fileUpdates as T extends 'code-update'
+      ? FileUpdateInfo
+      : BuildContext
   }
 
   private async getUpdateInfo(
@@ -141,7 +165,7 @@ export class CodeUpdator {
 
   private async getChangeAndLocation(
     update: UpdateInfo,
-    graph: FlowGraph,
+    graph: FlowGraph | FlowGraphContextWrapper,
   ): Promise<void> {
     const repository = this.gitRepository.repository
 
@@ -183,12 +207,14 @@ export const getCodeUpdates = ({
   updates,
   gitRepository,
   prettierOptions,
+  mode = 'code-update',
 }: {
   updates: ComponentUpdate[]
   gitRepository: GitRepository
   prettierOptions: prettier.Options
-}): Promise<FileUpdateInfo> => {
-  const codeUpdator = new CodeUpdator(gitRepository, prettierOptions)
+  mode?: PublisherMode
+}): Promise<FileUpdateInfo | BuildContext> => {
+  const codeUpdator = new CodeUpdator(gitRepository, prettierOptions, mode)
 
   return codeUpdator.updateFiles(updates)
 }

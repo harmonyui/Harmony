@@ -18,6 +18,7 @@ import {
 } from './utils'
 import type { UpdateComponent } from './types'
 import { addOnTrim } from '@harmony/util/src/utils/common'
+import { IFlowGraph } from '../i-flow-graph'
 
 export const updateClassName: UpdateComponent = async (
   { value: unparsedValue, oldValue: unparsedOldValue, update: componentUpdate },
@@ -58,7 +59,7 @@ export const updateElementClassName = ({
   propertyName: string
   componentId: string
   childIndex: number
-  graph: FlowGraph
+  graph: IFlowGraph
   repository: Repository
 }) => {
   const { attributes, instances: graphElements } = getInstanceInfo(

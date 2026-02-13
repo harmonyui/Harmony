@@ -3,7 +3,7 @@ import { reorderComponentSchema } from '@harmony/util/src/updates/component'
 import { createComponent } from './create'
 import { deleteComponent } from './delete'
 import type { UpdateComponent } from './types'
-import { FlowGraph } from '../../indexor/graph'
+import { IFlowGraph } from '../i-flow-graph'
 
 export const reorderUpdate: UpdateComponent = async (info, graph) => {
   const value = parseUpdate(reorderComponentSchema, info.value)
@@ -13,7 +13,7 @@ export const reorderUpdate: UpdateComponent = async (info, graph) => {
 export const reorderElement = (
   parentInfo: { parentId: string; parentChildIndex: number; index: number },
   componentInfo: { componentId: string; childIndex: number },
-  graph: FlowGraph,
+  graph: IFlowGraph,
 ) => {
   const codeInfo = deleteComponent(componentInfo, graph)
 
