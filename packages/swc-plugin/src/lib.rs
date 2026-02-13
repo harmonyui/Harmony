@@ -1,15 +1,14 @@
 extern crate console_error_panic_hook;
 use base64::prelude::*;
 use fancy_regex::Regex;
-use std::panic;
 use std::sync::Arc;
-use swc_ecma_visit::{visit_mut_pass, VisitMut, VisitMutWith};
+use swc_core::ecma::visit::{VisitMut, VisitMutWith};
 
 use path_slash::PathExt as _;
 use std::path::Path;
 
 use serde_json::Value;
-use swc_common::{
+use swc_core::common::{
     plugin::metadata::TransformPluginMetadataContextKind, SourceMapper, SyntaxContext, DUMMY_SP,
 };
 use swc_core::{
@@ -202,11 +201,11 @@ impl VisitMut for TransformVisitor {
                     ))),
                     prop: MemberProp::Computed(ComputedPropName {
                         expr: Box::new(Expr::Lit(Lit::Num(Number {
-                            span: swc_common::DUMMY_SP,
+                            span: DUMMY_SP,
                             value: i as f64,
                             raw: None,
                         }))),
-                        span: swc_common::DUMMY_SP,
+                        span: DUMMY_SP,
                     }),
                 }));
                 if let Some(value) = default_value {
@@ -317,11 +316,11 @@ impl VisitMut for TransformVisitor {
                     ))),
                     prop: MemberProp::Computed(ComputedPropName {
                         expr: Box::new(Expr::Lit(Lit::Num(Number {
-                            span: swc_common::DUMMY_SP,
+                            span: DUMMY_SP,
                             value: i as f64,
                             raw: None,
                         }))),
-                        span: swc_common::DUMMY_SP,
+                        span: DUMMY_SP,
                     }),
                 }));
                 if let Some(value) = default_value {
@@ -369,17 +368,17 @@ impl VisitMut for TransformVisitor {
             if let JSXElementName::Ident(ref ident) = node.opening.name {
                 if ident.sym == "body" {
                     let data_harmony_id_attribute = JSXAttr {
-                        span: swc_common::DUMMY_SP,
+                        span: DUMMY_SP,
                         name: JSXAttrName::Ident(
                             Ident::new(
                                 swc_core::atoms::atom!("data-harmony-repository-id"),
-                                swc_common::DUMMY_SP,
+                                DUMMY_SP,
                                 SyntaxContext::empty(),
                             )
                             .into(),
                         ),
                         value: Some(JSXAttrValue::Lit(Lit::Str(Str {
-                            span: swc_common::DUMMY_SP,
+                            span: DUMMY_SP,
                             value: BASE64_STANDARD.encode(repository_id.clone()).into(),
                             raw: None,
                         }))),
@@ -415,10 +414,10 @@ impl VisitMut for TransformVisitor {
 
                     //
                     // let data_harmony_id_attribute = JSXAttr {
-                    //     span: swc_common::DUMMY_SP,
-                    //     name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-id"), swc_common::DUMMY_SP)),
+                    //     span: DUMMY_SP,
+                    //     name: JSXAttrName::Ident(Ident::new(js_word!("data-harmony-id"), DUMMY_SP)),
                     //     value: Some(JSXAttrValue::Lit(Lit::Str(Str {
-                    //         span: swc_common::DUMMY_SP,
+                    //         span: DUMMY_SP,
                     //         value: harmony_id.into(),
                     //         raw: None
                     //     }))),
@@ -428,26 +427,26 @@ impl VisitMut for TransformVisitor {
                     let parent_expression = OptChainExpr {
                         span: DUMMY_SP,
                         base: Box::new(OptChainBase::Member(MemberExpr {
-                            span: swc_common::DUMMY_SP,
+                            span: DUMMY_SP,
                             obj: (Box::new(Expr::Member(MemberExpr {
-                                span: swc_common::DUMMY_SP,
+                                span: DUMMY_SP,
                                 obj: Box::new(Expr::Ident(Ident::new(
                                     "harmonyArguments".into(),
-                                    swc_common::DUMMY_SP,
+                                    DUMMY_SP,
                                     SyntaxContext::empty(),
                                 ))),
                                 prop: MemberProp::Computed(ComputedPropName {
                                     expr: Box::new(Expr::Lit(Lit::Num(Number {
-                                        span: swc_common::DUMMY_SP,
+                                        span: DUMMY_SP,
                                         value: 0.0,
                                         raw: None,
                                     }))),
-                                    span: swc_common::DUMMY_SP,
+                                    span: DUMMY_SP,
                                 }),
                             }))),
                             prop: MemberProp::Computed(ComputedPropName {
                                 expr: Box::new(Expr::Lit(Lit::Str(Str {
-                                    span: swc_common::DUMMY_SP,
+                                    span: DUMMY_SP,
                                     value: "data-harmony-id".into(),
                                     raw: None,
                                 }))),
@@ -459,7 +458,7 @@ impl VisitMut for TransformVisitor {
 
                     // Create the attribute value: typeof harmonyArguments !== 'undefined' ? harmonyArguments[0]?["data-harmony-id"] : undefined
                     let data_harmony_id = JSXAttrValue::JSXExprContainer(JSXExprContainer {
-                        span: swc_common::DUMMY_SP,
+                        span: DUMMY_SP,
                         expr: JSXExpr::Expr(Box::new(Expr::Cond(CondExpr {
                             span: DUMMY_SP,
                             test: Box::new(Expr::Bin(BinExpr {
@@ -501,11 +500,11 @@ impl VisitMut for TransformVisitor {
                     });
 
                     let data_harmony_id_attribute = JSXAttr {
-                        span: swc_common::DUMMY_SP,
+                        span: DUMMY_SP,
                         name: JSXAttrName::Ident(
                             Ident::new(
                                 swc_core::atoms::atom!("data-harmony-id"),
-                                swc_common::DUMMY_SP,
+                                DUMMY_SP,
                                 SyntaxContext::empty(),
                             )
                             .into(),
@@ -530,37 +529,43 @@ impl VisitMut for TransformVisitor {
 }
 
 #[plugin_transform]
-fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata) -> Program {
-    panic::set_hook(Box::new(console_error_panic_hook::hook));
+fn relay_plugin_transform(mut program: Program, data: TransformPluginProgramMetadata) -> Program {
+    console_error_panic_hook::set_once();
+
     let filename =
         if let Some(filename) = data.get_context(&TransformPluginMetadataContextKind::Filename) {
             filename
         } else {
-            "default".to_string()
+            return program;
         };
-    let plugin_config: Value = serde_json::from_str(
+
+    let plugin_config: Value = match serde_json::from_str(
         &data
             .get_transform_plugin_config()
-            .expect("failed to get plugin config for relay"),
-    )
-    .expect("Should provide plugin config");
+            .unwrap_or_default(),
+    ) {
+        Ok(config) => config,
+        Err(_) => return program,
+    };
 
-    let root_dir = Path::new(
-        plugin_config["rootDir"]
-            .as_str()
-            .expect("rootDir is expected"),
-    );
+    let root_dir_str = match plugin_config["rootDir"].as_str() {
+        Some(dir) => dir,
+        None => return program,
+    };
 
+    let root_dir = Path::new(root_dir_str);
     let repository_id = plugin_config["repositoryId"].as_str();
 
-    let start = Path::to_slash(Path::new(filename.as_str())).unwrap();
+    let start = match Path::to_slash(Path::new(filename.as_str())) {
+        Some(s) => s,
+        None => return program,
+    };
 
     // Strip the prefix and replace backslashes with forward slashes
-    let result = start
-        .strip_prefix(root_dir.to_str().unwrap())
-        .unwrap_or_else(|| {
-            panic!("Failed to strip prefix from path: {:?}", start);
-        });
+    let result = match start.strip_prefix(root_dir.to_str().unwrap_or("")) {
+        Some(r) => r,
+        None => start.as_ref(),
+    };
 
     let modified_result = {
         let mut result_string = result.to_string().replace("\\", "/");
@@ -569,15 +574,16 @@ fn relay_plugin_transform(program: Program, data: TransformPluginProgramMetadata
         }
         result_string
     };
-    //Striping the prefix leaves a '/' at the beginning, so let's get rid of that
+
     let cleaned_path = format!("{}", modified_result);
 
-    console_error_panic_hook::set_once();
     let source_map = std::sync::Arc::new(data.source_map);
-    program.apply(&mut visit_mut_pass(TransformVisitor::new(
+    let mut visitor = TransformVisitor::new(
         Some(source_map),
         cleaned_path,
         filename,
         repository_id.map(|s| s.to_string()),
-    )))
+    );
+    program.visit_mut_with(&mut visitor);
+    program 
 }
