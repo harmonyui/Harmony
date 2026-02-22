@@ -35,7 +35,7 @@
     "dotenv-cli": "^8.0.0",
     "express": "^4.21.2",
     "ioredis": "^5.4.2",
-    "next": "15.1.5",
+    "next": "15.1.11",
     "nodemailer": "^6.9.16",
     "octokit": "^3.1.2",
     "openai": "^4.79.1",
