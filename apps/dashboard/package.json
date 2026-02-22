@@ -5,7 +5,7 @@
   "scripts": {
     "withenv": "dotenv -e ../../.env --",
     "dev": "pnpm withenv next dev --webpack",
-    "build": "pnpm withenv next build",
+    "build": "pnpm withenv next build --webpack",
     "start": "pnpm withenv next start",
     "lint": "pnpm withenv next lint",
     "format": "prettier --write \"**/*.{ts,tsx,md,json}\" && eslint --fix .",
